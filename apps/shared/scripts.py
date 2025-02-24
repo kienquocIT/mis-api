@@ -1062,12 +1062,12 @@ def change_field_doc_id_to_lead_id_in_lead():
 
 
 def create_default_masterdata_fixed_asset():
-    Fixed_Asset_Classification_Group_data = [
+    Fixed_Asset_Group_data = [
         {'code': 'FACG001', 'title': 'Tài sản cố định hữu hình', 'is_default': 1},
         {'code': 'FACG002', 'title': 'Tài sản cố định vô hình', 'is_default': 1},
         {'code': 'FACG003', 'title': 'Tài sản cố định thuê tài chính', 'is_default': 1}
     ]
-    Fixed_Asset_Classification_data = [
+    Fixed_Asset_data = [
         {'code': 'FAC001', 'title': 'Nhà cửa, vật kiến trúc - quản lý', 'is_default': 1},
         {'code': 'FAC002', 'title': 'Máy móc thiết bị - sản xuất', 'is_default': 1},
         {'code': 'FAC003', 'title': 'Phương tiện vận tải, truyền dẫn - kinh doanh', 'is_default': 1},
@@ -1085,25 +1085,25 @@ def create_default_masterdata_fixed_asset():
             tangible_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
                 tenant=company.tenant,
                 company=company,
-                **Fixed_Asset_Classification_Group_data[0]
+                **Fixed_Asset_Group_data[0]
             )
 
             # tai san co dinh vo hinh
             intangible_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
                 tenant=company.tenant,
                 company=company,
-                **Fixed_Asset_Classification_Group_data[1]
+                **Fixed_Asset_Group_data[1]
             )
 
             # tai san co dinh thue tai chinh
             finance_leasing_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
                 tenant=company.tenant,
                 company=company,
-                **Fixed_Asset_Classification_Group_data[2]
+                **Fixed_Asset_Group_data[2]
             )
 
             # create asset classification
-            for index, data in enumerate(Fixed_Asset_Classification_data):
+            for index, data in enumerate(Fixed_Asset_data):
                 if index < 3:
                     # First 3 items belong to tangible_fixed_asset_group_instance
                     group_instance = tangible_fixed_asset_group_instance

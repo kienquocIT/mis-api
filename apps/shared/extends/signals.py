@@ -77,12 +77,6 @@ class SaleDefaultData:
         {'code': 'TC004', 'title': 'Thuế tiêu thụ đặc biệt', 'is_default': 1},
         {'code': 'TC005', 'title': 'Thuế nhà thầu', 'is_default': 1},
     ]
-    Currency_data = [
-        {'title': 'VIETNAM DONG', 'abbreviation': 'VND', 'is_default': 1, 'is_primary': 1, 'rate': 1.0},
-        {'title': 'US DOLLAR', 'abbreviation': 'USD', 'is_default': 1, 'is_primary': 0, 'rate': None},
-        {'title': 'YEN', 'abbreviation': 'JPY', 'is_default': 1, 'is_primary': 0, 'rate': None},
-        {'title': 'EURO', 'abbreviation': 'EUR', 'is_default': 1, 'is_primary': 0, 'rate': None},
-    ]
     Price_general_data = [
         {'title': 'General Price List', 'price_list_type': 0, 'factor': 1.0, 'is_default': 1}
     ]
@@ -116,12 +110,12 @@ class SaleDefaultData:
         {'code': 'DOCTYPE14', 'title': 'Giới thiệu dịch vụ hỗ trợ vận hành', 'is_default': 0, 'doc_type_category': 'consulting'},
         {'code': 'DOCTYPE15', 'title': 'Thuyết trình phạm vi dự án', 'is_default': 0, 'doc_type_category': 'consulting'},
     ]
-    Fixed_Asset_Classification_Group_data = [
+    Fixed_Asset_Group_data = [
         {'code': 'FACG001', 'title': 'Tài sản cố định hữu hình', 'is_default': 1},
         {'code': 'FACG002', 'title': 'Tài sản cố định vô hình', 'is_default': 1},
         {'code': 'FACG003', 'title': 'Tài sản cố định thuê tài chính', 'is_default': 1}
     ]
-    Fixed_Asset_Classification_data= [
+    Fixed_Asset_data= [
         {'code': 'FAC001', 'title': 'Nhà cửa, vật kiến trúc - quản lý', 'is_default': 1},
         {'code': 'FAC002', 'title': 'Máy móc thiết bị - sản xuất', 'is_default': 1},
         {'code': 'FAC003', 'title': 'Phương tiện vận tải, truyền dẫn - kinh doanh', 'is_default': 1},
@@ -144,8 +138,8 @@ class SaleDefaultData:
                 self.create_price_default()
                 self.create_account_types()
                 self.create_uom_group()
-                self.create_company_function_number()
                 self.create_document_types()
+                self.create_company_function_number()
                 self.create_fixed_asset_masterdata()
             return True
         except Exception as err:
@@ -161,14 +155,6 @@ class SaleDefaultData:
             for pt_item in self.ProductType_data
         ]
         ProductType.objects.bulk_create(objs)
-        return True
-
-    def create_account_types(self):
-        objs = [
-            AccountType(tenant=self.company_obj.tenant, company=self.company_obj, **at_item)
-            for at_item in self.Account_types_data
-        ]
-        AccountType.objects.bulk_create(objs)
         return True
 
     def create_tax_category(self):
@@ -220,6 +206,14 @@ class SaleDefaultData:
             PriceListCurrency.objects.create(price=general_pr, currency_id=primary_current_id)
             return True
         return False
+
+    def create_account_types(self):
+        objs = [
+            AccountType(tenant=self.company_obj.tenant, company=self.company_obj, **at_item)
+            for at_item in self.Account_types_data
+        ]
+        AccountType.objects.bulk_create(objs)
+        return True
 
     def create_uom_group(self):
         objs = [
@@ -307,6 +301,14 @@ class SaleDefaultData:
         #     )
         return True
 
+    def create_document_types(self):
+        objs = [
+            DocumentType(tenant=self.company_obj.tenant, company=self.company_obj, **item)
+            for item in self.Document_Type_data
+        ]
+        DocumentType.objects.bulk_create(objs)
+        return True
+
     def create_company_function_number(self):
         objs = []
         for cf_item in range(0, 10):
@@ -320,38 +322,30 @@ class SaleDefaultData:
         CompanyFunctionNumber.objects.bulk_create(objs)
         return True
 
-    def create_document_types(self):
-        objs = [
-            DocumentType(tenant=self.company_obj.tenant, company=self.company_obj, **item)
-            for item in self.Document_Type_data
-        ]
-        DocumentType.objects.bulk_create(objs)
-        return True
-
     def create_fixed_asset_masterdata(self):
         # tai san co dinh huu hinh
         tangible_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
             tenant=self.company_obj.tenant,
             company=self.company_obj,
-            **self.Fixed_Asset_Classification_Group_data[0]
+            **self.Fixed_Asset_Group_data[0]
         )
 
         # tai san co dinh vo hinh
         intangible_fixed_asset_group_instance =  FixedAssetClassificationGroup.objects.create(
             tenant=self.company_obj.tenant,
             company=self.company_obj,
-            **self.Fixed_Asset_Classification_Group_data[1]
+            **self.Fixed_Asset_Group_data[1]
         )
 
         # tai san co dinh thue tai chinh
         finance_leasing_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
             tenant=self.company_obj.tenant,
             company=self.company_obj,
-            **self.Fixed_Asset_Classification_Group_data[2]
+            **self.Fixed_Asset_Group_data[2]
         )
 
         #create asset classification
-        for index, data in enumerate(self.Fixed_Asset_Classification_data):
+        for index, data in enumerate(self.Fixed_Asset_data):
             if index < 3:
                 # First 3 items belong to tangible_fixed_asset_group_instance
                 group_instance = tangible_fixed_asset_group_instance
@@ -370,6 +364,7 @@ class SaleDefaultData:
                 **data
             )
         return True
+
 
 class ConfigDefaultData:
     """
