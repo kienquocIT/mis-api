@@ -336,7 +336,7 @@ class GoodsTransfer(DataAbstractModel):
         )
 
     def save(self, *args, **kwargs):
-        SubPeriods.check_period_open(self.tenant_id, self.company_id)
+        SubPeriods.check_period(self.tenant_id, self.company_id)
 
         if self.system_status in [2, 3]:
             if not self.code:

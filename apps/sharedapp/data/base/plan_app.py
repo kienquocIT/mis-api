@@ -381,6 +381,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",  # Fixed asset
     },
+    "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",  # Instrument Tool
+    },
     "a196c182-01d4-4450-a4ef-86c16b536daa": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "a196c182-01d4-4450-a4ef-86c16b536daa",  # Goods Recovery
@@ -415,7 +419,7 @@ _PlanApplication_eOffice_data = {
     "08e41084-4379-4778-9e16-c09401f0a66e": {
         "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
         "application_id": "08e41084-4379-4778-9e16-c09401f0a66e",  # Asset, Tools Return
-    }
+    },
 }
 
 PlanApplication_data = {

@@ -83,8 +83,6 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_fiscal_year(cls, value):
-        if value < datetime.now().year:
-            raise serializers.ValidationError({"Fiscal year": 'Passed fiscal year'})
         if Periods.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
@@ -96,19 +94,16 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         validate_data['space_month'] = validate_data['start_date'].month - 1
         validate_data['end_date'] = validate_data['start_date'] + relativedelta(months=12) - relativedelta(days=1)
-        software_start_using_time = self.initial_data.get('software_start_using_time')
-        if software_start_using_time:
-            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
-            if self.context.get('company_current'):
-                if not self.context.get('company_current').software_start_using_time:
-                    self.context.get('company_current').software_start_using_time = software_start_using_time_format
-                    self.context.get('company_current').save(update_fields=['software_start_using_time'])
-                else:
-                    raise serializers.ValidationError(
-                        {"software_start_using_time": 'You have set up software using time already'}
-                    )
-            else:
-                raise serializers.ValidationError({"company_current": 'Company does not exist'})
+        if validate_data['end_date'] < datetime.now().date():
+            raise serializers.ValidationError({"Fiscal year": 'Passed fiscal year'})
+
+        if self.context.get('company_current'):
+            if self.context.get('company_current').software_start_using_time:
+                raise serializers.ValidationError(
+                    {"software_start_using_time": 'You have set up software using time already'}
+                )
+        else:
+            raise serializers.ValidationError({"company_current": 'Company does not exist'})
         return validate_data
 
     def create(self, validated_data):
@@ -119,6 +114,12 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
         for item in sub_period_data:
             bulk_info.append(SubPeriods(period_mapped=period, **item))
         SubPeriods.objects.bulk_create(bulk_info)
+
+        software_start_using_time = self.initial_data.get('software_start_using_time')
+        if software_start_using_time:
+            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
+            self.context.get('company_current').software_start_using_time = software_start_using_time_format
+            self.context.get('company_current').save(update_fields=['software_start_using_time'])
         return period
 
 

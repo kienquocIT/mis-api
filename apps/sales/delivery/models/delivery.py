@@ -515,6 +515,7 @@ class OrderDeliverySub(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
+        SubPeriods.check_period(self.tenant_id, self.company_id)
         if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
@@ -531,7 +532,6 @@ class OrderDeliverySub(DataAbstractModel):
 
                     self.prepare_data_for_logging(self)
 
-        SubPeriods.check_period_open(self.tenant_id, self.company_id)
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
             times_arr = OrderDeliverySub.objects.filter(order_delivery=self.order_delivery).values_list(

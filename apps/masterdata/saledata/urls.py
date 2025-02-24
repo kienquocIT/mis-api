@@ -1,5 +1,6 @@
 from django.urls import path
 
+from apps.masterdata.saledata.views.asset import ToolClassificationDetail
 from apps.masterdata.saledata.views.contacts import (
     SalutationList, SalutationDetail, InterestsList, InterestsDetail, ContactList, ContactDetail,
     ContactListNotMapAccount,
@@ -209,4 +210,6 @@ urlpatterns += [
          name='FixedAssetClassificationList'),
     path('tool/classification/list', ToolClassificationList.as_view(),
          name='ToolClassificationList'),
+    path('tool/classification/detail/<str:pk>', ToolClassificationDetail.as_view(),
+         name='ToolClassificationDetail'),
 ]
