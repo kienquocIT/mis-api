@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.sales.inventory.models import GoodsRecovery
+from apps.sales.inventory.models import GoodsRecovery, RecoveryLeaseGenerate
 from apps.sales.inventory.serializers.goods_recovery_sub import RecoveryCommonCreate, RecoveryCommonValidate, \
     RecoveryDeliverySerializer
 from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
@@ -147,3 +147,12 @@ class GoodsRecoveryUpdateSerializer(AbstractCreateSerializerModel):
         RecoveryCommonCreate().create_sub_models(instance=instance)
 
         return instance
+
+
+class GoodsRecoveryLeaseGenerateListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RecoveryLeaseGenerate
+        fields = (
+            'id',
+            'serial_id',
+        )
