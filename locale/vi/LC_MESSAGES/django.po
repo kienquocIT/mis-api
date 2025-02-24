@@ -1489,3 +1489,27 @@ msgstr "Tài sản cố định"
 #
 msgid "Instrument & Tool"
 msgstr "Công cụ dụng cụ"
+
+#
+msgid "Product information"
+msgstr "Thông tin sản phẩm"
+
+#
+msgid "Cost information"
+msgstr "Thông tin giá vốn"
+
+#
+msgid "Expense information"
+msgstr "Thông tin chi phí"
+
+#
+msgid "Logistic information"
+msgstr "Thông tin vận chuyển"
+
+#
+msgid "Indicator information"
+msgstr "Thông tin chỉ tiêu tài chính"
+
+#
+msgid "Sales person"
+msgstr "NV kinh doanh"
