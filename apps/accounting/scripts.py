@@ -635,6 +635,7 @@ class AccountingMasterData:
             ChartOfAccounts.objects.bulk_create(level3_bulk_create)
             print(f'Done for {company.title}')
         ChartOfAccounts.objects.filter(has_child=False).update(is_account=True)
+        print('Done :))')
         return True
 
     @staticmethod
@@ -717,3 +718,4 @@ class AccountingMasterData:
                 DefaultAccountDefinition.objects.bulk_create(bulk_info)
                 print(f'Create data done in {company.title}')
         print('Done :))')
+        return True
