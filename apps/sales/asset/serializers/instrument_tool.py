@@ -21,7 +21,7 @@ __all__= [
 ]
 
 
-class AssetSourcesCreateSerializer(serializers.ModelSerializer):
+class ToolAssetSourcesCreateSerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     @classmethod
@@ -107,7 +107,7 @@ class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
     use_department = serializers.ListSerializer(
         child=serializers.UUIDField(required=False)
     )
-    asset_sources = AssetSourcesCreateSerializer(many=True)
+    asset_sources = ToolAssetSourcesCreateSerializer(many=True)
     increase_fa_list = serializers.JSONField(required=False)
     asset_code = serializers.CharField(required=False)
 
@@ -343,7 +343,7 @@ class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
     use_department = serializers.ListSerializer(
         child=serializers.UUIDField(required=False)
     )
-    asset_sources = AssetSourcesCreateSerializer(many=True)
+    asset_sources = ToolAssetSourcesCreateSerializer(many=True)
     increase_fa_list = serializers.JSONField(required=False)
     asset_code = serializers.CharField(required=False)
 

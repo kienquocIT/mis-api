@@ -16,7 +16,7 @@ from apps.core.base.models import BaseItemUnit
 
 logger = logging.getLogger(__name__)
 
-class ProductImportSerializer(serializers.Serializer):
+class ProductImportSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -53,12 +53,12 @@ class ProductImportSerializer(serializers.Serializer):
             'code', 'title', 'description', 'product_choice', 'part_number',
             # General
             'general_product_category',
-            'general_product_types_mapped'
+            'general_product_types_mapped',
             'general_uom_group',
             'general_traceability_method',
             'width', 'height', 'length', 'volume', 'weight',
             # Sale
-            'sale_default_uom', 'sale_tax', 'sale_general_price'
+            'sale_default_uom', 'sale_tax', 'sale_general_price',
             # Inventory
             'inventory_uom', 'valuation_method', 'standard_price',
             # Purchase
