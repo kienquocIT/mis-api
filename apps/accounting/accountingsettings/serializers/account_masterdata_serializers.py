@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.accounting.accountingsettings.models import (
+from apps.accounting.accountingsettings.models.account_masterdata_models import (
     ChartOfAccounts, DefaultAccountDetermination,
     DEFAULT_ACCOUNT_DETERMINATION_TYPE
 )
@@ -60,8 +60,7 @@ class DefaultAccountDeterminationListSerializer(serializers.ModelSerializer):
             'title',
             'account_mapped',
             'default_account_determination_type',
-            'default_account_determination_type_convert',
-            'is_default'
+            'default_account_determination_type_convert'
         )
 
     @classmethod

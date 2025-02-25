@@ -1,6 +1,8 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDetermination
-from apps.accounting.accountingsettings.serializers import (
+from apps.accounting.accountingsettings.models.account_masterdata_models import (
+    ChartOfAccounts, DefaultAccountDetermination
+)
+from apps.accounting.accountingsettings.serializers.account_masterdata_serializers import (
     ChartOfAccountsListSerializer, ChartOfAccountsCreateSerializer, ChartOfAccountsDetailSerializer,
     DefaultAccountDeterminationListSerializer, DefaultAccountDeterminationCreateSerializer,
     DefaultAccountDeterminationDetailSerializer

@@ -81,22 +81,14 @@ class ChartOfAccounts(MasterDataAbstractModel):
             else:
                 print('Can not found parent account || existed account')
 
-    @classmethod
-    def add_account_default(cls):
-        # thêm 13881: Giao hàng nhưng chưa xuất hóa đơn bán hàng
-        cls.add_account(
-            parent_acc_type=1,
-            parent_acc_code=1388,
-            new_acc_code=13881,
-            new_acc_name='Giao hàng nhưng chưa xuất hóa đơn bán hàng',
-            new_foreign_acc_name='Delivered but no AR Invoice yet'
-        )
-
 
 class DefaultAccountDetermination(MasterDataAbstractModel):
-    account_mapped = models.ForeignKey(ChartOfAccounts, on_delete=models.CASCADE)
+    account_mapped = models.ForeignKey(
+        ChartOfAccounts,
+        on_delete=models.CASCADE,
+        related_name='default_account_deter_account'
+    )
     default_account_determination_type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DETERMINATION_TYPE, default=0)
-    is_default = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Default Account Determination'

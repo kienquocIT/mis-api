@@ -1,10 +1,13 @@
-from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDetermination
+from apps.accounting.accountingsettings.models import *
+from apps.accounting.accountingsettings.utils import *
 from apps.core.company.models import Company
+from apps.masterdata.saledata.models import WareHouse, ProductType, Product
 
 
 class AccountingMasterData:
     @staticmethod
     def generate_account_200():
+        """ Tạo các tài khoản kế toản (TT200) """
         list_table = [
             'account_chart_assets_table',
             'account_chart_liabilities_table',
@@ -575,7 +578,6 @@ class AccountingMasterData:
             level1_bulk_create = []
             level2_bulk_create = []
             level3_bulk_create = []
-            ChartOfAccounts.objects.filter(company=company, tenant=company.tenant).delete()
             for table in list_table:
                 len1 = len(list_table_data[table]['acc_code_list'])
                 len2 = len(list_table_data[table]['acc_name_list'])
@@ -630,55 +632,58 @@ class AccountingMasterData:
                             level2_bulk_create[-1].has_child = True
                             level3_bulk_create.append(item)
                         order += 1
+            ChartOfAccounts.objects.filter(company=company, tenant=company.tenant).delete()
             ChartOfAccounts.objects.bulk_create(level1_bulk_create)
             ChartOfAccounts.objects.bulk_create(level2_bulk_create)
             ChartOfAccounts.objects.bulk_create(level3_bulk_create)
+            ChartOfAccounts.objects.filter(has_child=False).update(is_account=True)
             print(f'Done for {company.title}')
-        ChartOfAccounts.objects.filter(has_child=False).update(is_account=True)
         print('Done :))')
         return True
 
     @staticmethod
     def generate_default_account_determination_200():
+        """ Xác định các tài khoản kế toán mặc định (TT200) """
         sale_type_data = [
             'Phải thu của khách hàng',
-            'Thu tiền bán hàng - tiền mặt',
-            'Thu tiền bán hàng - chuyển khoản',
-            'Doanh thu bán hàng hóa',
-            'Thuế giá trị gia tăng đầu ra'
+            'Thu tiền bán hàng (tiền mặt)',
+            'Thu tiền bán hàng (chuyển khoản)',
+            'Doanh thu bán hàng',
+            'Thuế GTGT đầu ra'
         ]
         purchasing_type_data = [
-            'Phải trả cho nhà cung cấp',
-            'Trả tiền mua hàng - tiền mặt',
-            'Trả tiền mua hàng - chuyển khoản',
-            'Thuế giá trị gia tăng đầu vào'
+            # 'Phải trả cho nhà cung cấp',
+            # 'Trả tiền mua hàng - tiền mặt',
+            # 'Trả tiền mua hàng - chuyển khoản',
+            # 'Thuế giá trị gia tăng đầu vào'
         ]
         inventory_type_data = [
             'Xuất kho bán hàng hóa',
             'Giá vốn hàng bán',
-            'Hàng gửi đi bán'
+            'Xuất kho giao hàng (chưa xuất hóa đơn)'
         ]
         for company in Company.objects.all():
             account_mapped_data_sale = [
                 ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='131').first(),
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1111').first(),
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1112').first(),
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='5111').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='111').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='112').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='511').first(),
                 ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='33311').first(),
             ]
             account_mapped_data_purchasing = [
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='331').first(),
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1111').first(),
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1112').first(),
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1331').first(),
+                # ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='331').first(),
+                # ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='111').first(),
+                # ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='112').first(),
+                # ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='133').first(),
             ]
             account_mapped_data_inventory = [
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1561').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='156').first(),
                 ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='632').first(),
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='157').first(),
+                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='13881').first(),
             ]
             if None in account_mapped_data_sale + account_mapped_data_purchasing + account_mapped_data_inventory:
                 print(f'Create data failed in {company.title}')
+                return False
             else:
                 bulk_info = []
                 for i in range(len(sale_type_data)):
@@ -688,8 +693,7 @@ class AccountingMasterData:
                             tenant=company.tenant,
                             title=sale_type_data[i],
                             account_mapped=account_mapped_data_sale[i],
-                            default_account_determination_type=0,
-                            is_default=True
+                            default_account_determination_type=0
                         )
                     )
                 for i in range(len(purchasing_type_data)):
@@ -699,8 +703,7 @@ class AccountingMasterData:
                             tenant=company.tenant,
                             title=purchasing_type_data[i],
                             account_mapped=account_mapped_data_purchasing[i],
-                            default_account_determination_type=1,
-                            is_default=True
+                            default_account_determination_type=1
                         )
                     )
                 for i in range(len(inventory_type_data)):
@@ -710,12 +713,36 @@ class AccountingMasterData:
                             tenant=company.tenant,
                             title=inventory_type_data[i],
                             account_mapped=account_mapped_data_inventory[i],
-                            default_account_determination_type=2,
-                            is_default=True
+                            default_account_determination_type=2
                         )
                     )
-                DefaultAccountDetermination.objects.filter(company=company, tenant=company.tenant).delete()
-                DefaultAccountDetermination.objects.bulk_create(bulk_info)
-                print(f'Create data done in {company.title}')
+            DefaultAccountDetermination.objects.filter(company=company, tenant=company.tenant).delete()
+            DefaultAccountDetermination.objects.bulk_create(bulk_info)
+            print(f'Done for {company.title}')
+        print('Done :))')
+        return True
+
+    @staticmethod
+    def push_default_account_determination_200():
+        """ Đẩy các tài khoản kế toán xác định mặc định (TT200) vào KHO - PRODUCT TYPE - PRODUCT """
+        for warehouse_obj in WareHouse.objects.all():
+            AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj)
+        for product_type_obj in ProductType.objects.all():
+            AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj)
+        for product_obj in Product.objects.all():
+            AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj)
+        print(f'Done :))')
+        return True
+
+    @staticmethod
+    def add_account_default():
+        # thêm 13881: Giao hàng nhưng chưa xuất hóa đơn bán hàng
+        ChartOfAccounts.add_account(
+            parent_acc_type=1,
+            parent_acc_code=1388,
+            new_acc_code=13881,
+            new_acc_name='Giao hàng nhưng chưa xuất hóa đơn bán hàng',
+            new_foreign_acc_name='Delivered but no AR Invoice yet'
+        )
         print('Done :))')
         return True
