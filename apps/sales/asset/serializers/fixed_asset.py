@@ -245,6 +245,7 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
     use_department = serializers.SerializerMethodField()
     asset_sources = serializers.SerializerMethodField()
     ap_invoice_items = serializers.SerializerMethodField()
+    fa_status = serializers.SerializerMethodField()
 
     class Meta:
         model = FixedAsset
@@ -257,7 +258,7 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
             'manage_department',
             'use_department',
             'use_customer',
-            'status',
+            'fa_status',
             'source_type',
             'original_cost',
             'accumulative_depreciation',
@@ -335,6 +336,9 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
             } for item in obj.ap_invoice_items.all()
         ]
 
+    @classmethod
+    def get_fa_status(cls, obj):
+        return obj.get_status_display()
 
 class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
     classification = serializers.UUIDField()
