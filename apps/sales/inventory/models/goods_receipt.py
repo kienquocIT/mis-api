@@ -118,6 +118,8 @@ class GoodsReceipt(DataAbstractModel):
     total_tax = models.FloatField(default=0)
     total = models.FloatField(default=0)
     total_revenue_before_tax = models.FloatField(default=0)
+    # is no warehouse
+    is_no_warehouse = models.BooleanField(default=False, help_text="flag to know goods receipts to warehouse or not")
 
     class Meta:
         verbose_name = 'Goods Receipt'
