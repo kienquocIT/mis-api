@@ -6,7 +6,7 @@ from .mask_view import mask_view, EmployeeAttribute
 from .models import (
     SimpleAbstractModel, DataAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel,
     DisperseModel,
-    SignalRegisterMetaClass, CoreSignalRegisterMetaClass, RecurrenceAbstractModel,
+    SignalRegisterMetaClass, CoreSignalRegisterMetaClass, RecurrenceAbstractModel, AccountingAbstractModel
 )
 from .managers import NormalManager
 from .utils import LinkListHandler, StringHandler, ListHandler, CustomizeEncoder, TypeCheck, FORMATTING

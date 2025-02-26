@@ -248,5 +248,5 @@ class CashInflowListForReconSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_recon_balance(cls, obj):
-        recon_value = sum(item.recon_amount for item in obj.recon_item_cash_inflow.all())
-        return obj.total_value - recon_value
+        sum_recon_amount = sum(item.recon_amount for item in obj.recon_item_cash_inflow.all())
+        return obj.total_value - sum_recon_amount

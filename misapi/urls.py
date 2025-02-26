@@ -30,6 +30,7 @@ urlpatterns = [
     path('api/', include('apps.masterdata.urls')),
     path('api/private-system/', include('apps.sharedapp.urls')),
     path('api/', include('apps.sales.urls')),
+    path('api/', include('apps.accounting.urls')),
     path('api/', include('apps.eoffice.urls')),
     path('api/hrm/', include('apps.hrm.urls')),
     path('django-admin/', my_admin_site.urls),

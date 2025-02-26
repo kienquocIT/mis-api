@@ -1491,6 +1491,18 @@ msgid "Instrument & Tool"
 msgstr "Công cụ dụng cụ"
 
 #
+msgid "Sale"
+msgstr "Bán hàng"
+
+#
+msgid "Purchasing"
+msgstr "Mua hàng"
+
+#
+msgid "Inventory"
+msgstr "Hàng tồn kho"
+
+#
 msgid "Product information"
 msgstr "Thông tin sản phẩm"
 

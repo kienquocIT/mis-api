@@ -130,18 +130,37 @@ class SendMailController:  # pylint: disable=R0902
         timestamp = timezone.now().timestamp()
         return f'<{timestamp}.{doc_id}@bflow.vn>'
 
-    def send(self, mail_to, mail_cc, mail_bcc, as_name, template, data, doc_id=None, previous_id=None):
+    def combine_email_header(self, doc_id, previous_id):
+        headers = {
+            'Content-Language': 'en',
+            'Content-Type': 'text/html; charset=UTF-8',
+            # 'MIME-Version': '1.0'
+            'Return-Path': self.from_email,
+            # 'List-Unsubscribe': '<mailto:unsubscribe@example.com>',
+            'Importance': 'High',
+            'X-Priority': '1 (Highest)',
+            'Message-ID': self.random_msg_id(doc_id=doc_id),
+            **(
+                {'In-Reply-To': previous_id} if previous_id else {}
+            )
+        }
+        if self.reply_to:
+            headers['Reply-To'] = self.reply_to
+        elif settings.EMAIL_SERVER_DEFAULT_REPLY:
+            headers['Reply-To'] = settings.headers['Reply-To'] = self.reply_to
+        return headers
+
+    def send(self, mail_to, mail_cc, mail_bcc, as_name, template, data, doc_id=None, previous_id=None, fpath_list=None):
         if mail_bcc is None:
             mail_bcc = []
         if mail_cc is None:
             mail_cc = []
+        if fpath_list is None:
+            fpath_list = []
         if self.confirm_config():
             try:
                 with self.connection as connection:
                     data = self.data_resolve(data=data)
-                    html_content = HTMLController(
-                        html_str=template, is_unescape=True
-                    ).handle_params(data=data).to_string()
 
                     # send_mail(
                     #     subject=self.subject,
@@ -152,24 +171,6 @@ class SendMailController:  # pylint: disable=R0902
                     #     html_message=HTMLController.unescape(html_content),
                     # )
 
-                    headers = {
-                        'Content-Language': 'en',
-                        'Content-Type': 'text/html; charset=UTF-8',
-                        # 'MIME-Version': '1.0'
-                        'Return-Path': self.from_email,
-                        # 'List-Unsubscribe': '<mailto:unsubscribe@example.com>',
-                        'Importance': 'High',
-                        'X-Priority': '1 (Highest)',
-                        'Message-ID': self.random_msg_id(doc_id=doc_id),
-                        **(
-                            {'In-Reply-To': previous_id} if previous_id else {}
-                        )
-                    }
-                    if self.reply_to:
-                        headers['Reply-To'] = self.reply_to
-                    elif settings.EMAIL_SERVER_DEFAULT_REPLY:
-                        headers['Reply-To'] = settings.headers['Reply-To'] = self.reply_to
-
                     email = EmailMultiAlternatives(
                         subject=self.subject,
                         body=json.dumps(data),
@@ -178,9 +179,16 @@ class SendMailController:  # pylint: disable=R0902
                         cc=mail_cc if isinstance(mail_cc, list) else [],
                         bcc=mail_bcc if isinstance(mail_bcc, list) else [],
                         connection=connection,
-                        headers=headers
+                        headers=self.combine_email_header(doc_id, previous_id)
                     )
-                    email.attach_alternative(html_content, "text/html")
+                    email.attach_alternative(
+                        HTMLController(
+                            html_str=template, is_unescape=True
+                        ).handle_params(data=data).to_string(),
+                        "text/html"
+                    )
+                    for fpath in fpath_list:
+                        email.attach_file(fpath)
                     email.send()
                     return True
             except Exception as err:

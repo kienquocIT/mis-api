@@ -102,8 +102,7 @@ class ProductToolsListForBOM(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().filter(
-            general_product_types_mapped__code='asset_tool',
-            general_product_types_mapped__is_asset_tool=True
+            general_product_types_mapped__is_tool=True
         ).select_related().prefetch_related()
 
     @swagger_auto_schema(

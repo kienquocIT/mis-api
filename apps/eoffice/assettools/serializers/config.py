@@ -91,13 +91,13 @@ class AssetToolsConfigDetailUpdateSerializers(serializers.ModelSerializer):
         return True
 
     @classmethod
-    def set_is_asset_tool_product_type(cls, instance):
-        for asset_tool in ProductType.objects.filter(company_id=instance.company_id, is_asset_tool=True):
-            asset_tool.is_asset_tool = False
-            asset_tool.save(update_fields=['is_asset_tool'])
+    def set_is_tool_product_type(cls, instance):
+        for tool in ProductType.objects.filter(company_id=instance.company_id, is_tool=True):
+            tool.is_tool = False
+            tool.save(update_fields=['is_tool'])
         if instance.product_type:
-            instance.product_type.is_asset_tool = True
-            instance.product_type.save(update_fields=['is_asset_tool'])
+            instance.product_type.is_tool = True
+            instance.product_type.save(update_fields=['is_tool'])
         return True
 
     def update(self, instance, validated_data):
@@ -110,6 +110,6 @@ class AssetToolsConfigDetailUpdateSerializers(serializers.ModelSerializer):
         if 'employee_tools_list_access' in self.initial_data and len(self.initial_data['employee_tools_list_access']):
             employee_list = self.initial_data['employee_tools_list_access']
             self.cover_employee_tools_list_access(instance, employee_list)
-        # update flag is_asset_tool of MD product type
-        self.set_is_asset_tool_product_type(instance=instance)
+        # update flag is_tool of MD product type
+        self.set_is_tool_product_type(instance=instance)
         return instance
