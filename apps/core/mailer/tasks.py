@@ -1,8 +1,6 @@
 from uuid import UUID
-
 from celery import shared_task
 from django.utils import timezone
-
 from apps.shared import DisperseModel
 from apps.core.mailer.mail_control import SendMailController
 from apps.core.mailer.mail_data import MailDataResolver
@@ -217,6 +215,75 @@ def send_email_sale_activities_email(user_id: UUID or str, email_obj):
                     mail_bcc=[],
                     template=email_obj.content,
                     data={},
+                )
+            except Exception as err:
+                state_send = False
+                log_cls.update(errors_data=str(err))
+
+            if state_send is True:
+                log_cls.update(status_code=1, status_remark=state_send)  # sent
+                log_cls.save()
+                return 'Success'
+            log_cls.update(status_code=2, status_remark=state_send)  # error
+            log_cls.save()
+            return 'SEND_FAILURE'
+        return 'MAIL_CONFIG_DEACTIVATE'
+    return obj_got
+
+
+@shared_task
+def send_email_eoffice_meeting(
+        user_id: UUID or str,
+        meeting_obj,
+        email_to_list: list,
+        email_cc_list: list,
+        email_bcc_list: list,
+        email_subject,
+        email_content,
+        fpath_list: list,
+):
+    obj_got = get_config_template_user(
+        tenant_id=meeting_obj.tenant_id,
+        company_id=meeting_obj.company_id,
+        user_id=user_id,
+        system_code=0
+    )
+    if isinstance(obj_got, list) and len(obj_got) == 3:
+        [config_obj, _, _] = obj_got
+        cls = SendMailController(mail_config=config_obj, timeout=10)
+        if cls.is_active is True:
+            log_cls = MailLogController(
+                tenant_id=meeting_obj.tenant_id,
+                company_id=meeting_obj.company_id,
+                system_code=0,  # other
+                doc_id=user_id,
+                subject=email_subject,
+            )
+            log_cls.create()
+            log_cls.update(
+                address_sender=cls.from_email,
+            )
+            log_cls.update_employee_to(employee_to=[], address_to_init=email_to_list)
+            log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
+            log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
+            log_cls.update_log_data(host=cls.host, port=cls.port)
+
+            try:
+                state_send = cls.setup(
+                    subject=email_subject,
+                    from_email=cls.kwargs['from_email'],
+                    mail_cc=email_cc_list,
+                    bcc=email_bcc_list,
+                    header={},
+                    reply_to=meeting_obj.employee_created.email,  # trả lời người gửi (employee created)
+                ).send(
+                    as_name=meeting_obj.employee_created.get_full_name(2),
+                    mail_to=email_to_list,
+                    mail_cc=email_cc_list,
+                    mail_bcc=email_bcc_list,
+                    template=email_content,
+                    data={},
+                    fpath_list=fpath_list
                 )
             except Exception as err:
                 state_send = False

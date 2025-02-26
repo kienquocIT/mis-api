@@ -74,48 +74,51 @@ class CashInflow(DataAbstractModel):
                 system_status=1,
                 company_id=cif.company_id,
                 tenant_id=cif.tenant_id,
+                system_auto_create=True
             )
-            cif_item = cif.cash_inflow_item_cash_inflow.first()
-            if cif_item and cif_item.ar_invoice:
-                ReconciliationItem.objects.create(
-                    recon=recon_obj,
-                    recon_data={
-                        'id': str(recon_obj.id),
-                        'code': recon_obj.code,
-                        'title': recon_obj.title
-                    },
-                    order=0,
-                    ar_invoice=cif_item.ar_invoice,
-                    ar_invoice_data=cif_item.ar_invoice_data,
-                    recon_balance=cif_item.sum_balance_value,
-                    recon_amount=cif.total_value,
-                    note='',
-                    accounting_account='1311'
-                )
-                ReconciliationItem.objects.create(
-                    recon=recon_obj,
-                    recon_data={
-                        'id': str(recon_obj.id),
-                        'code': recon_obj.code,
-                        'title': recon_obj.title
-                    },
-                    order=1,
-                    cash_inflow=cif,
-                    cash_inflow_data={
-                        'id': str(cif.id),
-                        'code': cif.code,
-                        'title': cif.title,
-                        'type_doc': 'Cash inflow',
-                        'document_date': str(cif.document_date),
-                        'posting_date': str(cif.posting_date),
-                        'sum_total_value': cif.total_value
-                    },
-                    recon_balance=cif.total_value,
-                    recon_amount=cif.total_value,
-                    note='',
-                    accounting_account='1311'
-                )
-                return True
+            order = 0
+            for cif_item in cif.cash_inflow_item_cash_inflow.all():
+                if cif_item.ar_invoice:
+                    ReconciliationItem.objects.create(
+                        recon=recon_obj,
+                        recon_data={
+                            'id': str(recon_obj.id),
+                            'code': recon_obj.code,
+                            'title': recon_obj.title
+                        },
+                        order=order,
+                        ar_invoice=cif_item.ar_invoice,
+                        ar_invoice_data=cif_item.ar_invoice_data,
+                        recon_balance=cif_item.sum_balance_value,
+                        recon_amount=cif_item.sum_payment_value,
+                        note='',
+                        accounting_account='1311'
+                    )
+                    ReconciliationItem.objects.create(
+                        recon=recon_obj,
+                        recon_data={
+                            'id': str(recon_obj.id),
+                            'code': recon_obj.code,
+                            'title': recon_obj.title
+                        },
+                        order=order+1,
+                        cash_inflow=cif,
+                        cash_inflow_data={
+                            'id': str(cif.id),
+                            'code': cif.code,
+                            'title': cif.title,
+                            'type_doc': 'Cash inflow',
+                            'document_date': str(cif.document_date),
+                            'posting_date': str(cif.posting_date),
+                            'sum_total_value': cif.total_value
+                        },
+                        recon_balance=cif_item.sum_balance_value,
+                        recon_amount=cif_item.sum_payment_value,
+                        note='',
+                        accounting_account='1311'
+                    )
+                    order += 2
+            return True
         return False
 
     def save(self, *args, **kwargs):

@@ -1485,3 +1485,15 @@ msgstr "Tài sản cố định"
 #
 msgid "Instrument & Tool"
 msgstr "Công cụ dụng cụ"
+
+#
+msgid "Sale"
+msgstr "Bán hàng"
+
+#
+msgid "Purchasing"
+msgstr "Mua hàng"
+
+#
+msgid "Inventory"
+msgstr "Hàng tồn kho"

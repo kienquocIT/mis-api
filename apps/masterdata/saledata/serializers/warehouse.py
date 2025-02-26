@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.accounting.accountingsettings.utils import AccountDeterminationForWarehouseHandler
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import (
     WareHouse, ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial,
@@ -63,6 +64,11 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
         if validate_data.get('is_agency_location') is True and validate_data.get('agency') is None:
             raise serializers.ValidationError({'agency': WarehouseMsg.AGENCY_NOT_EXIST})
         return validate_data
+
+    def create(self, validated_data):
+        warehouse_obj = WareHouse.objects.create(**validated_data)
+        AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj)
+        return warehouse_obj
 
 
 class WareHouseDetailSerializer(serializers.ModelSerializer):

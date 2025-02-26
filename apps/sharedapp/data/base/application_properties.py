@@ -944,7 +944,7 @@ AppProp_SaleData_Opportunity_data = {
     },
     '35dbf6f2-78a8-4286-8cf3-b95de5c78873': {
         'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
-        'title': 'Decision maker',
+        'title': 'Decision Maker',
         'code': 'decision_maker',
         'type': 1,
         "content_type": "sales_opportunity",
@@ -988,7 +988,7 @@ AppProp_SaleData_Opportunity_data = {
     },
     '39b50254-e32d-473b-8380-f3b7765af434': {
         'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
-        'title': 'Product.Line.Detail',
+        'title': 'Product Line Detail',
         'code': 'product_line_detail',
         'type': 1,
         "content_type": "sales_opportunity",
@@ -1010,7 +1010,7 @@ AppProp_SaleData_Opportunity_data = {
     },
     'c8fa79ae-2490-4286-af25-3407e129fedb': {
         'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
-        'title': 'Competitor.Win',
+        'title': 'Competitor Win',
         'code': 'competitor_win',
         'type': 1,
         "content_type": "sales_opportunity",
@@ -1032,8 +1032,8 @@ AppProp_SaleData_Opportunity_data = {
     },
     'acab2c1e-74f2-421b-8838-7aa55c217f72': {
         'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
-        'title': 'Quotation.confirm',
-        'code': 'quotation_confirm',
+        'title': 'Quotation Status',
+        'code': 'quotation_status',
         'type': 1,
         "content_type": "sales_opportunity",
         'opp_stage_operator': ['=', '≠'],
@@ -1041,20 +1041,20 @@ AppProp_SaleData_Opportunity_data = {
             '=': [
                 {
                     'id': 0,
-                    'value': True,
+                    'value': 'Approved',
                 }
             ],
             '≠': [
                 {
                     'id': 0,
-                    'value': True,
+                    'value': 'Approved',
                 }
             ]
         }
     },
     '9db4e835-c647-4de5-aa1c-43304ddeccd1': {
         'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
-        'title': 'SaleOrder.status',
+        'title': 'SaleOrder Status',
         'code': 'sale_order_status',
         'type': 1,
         "content_type": "sales_opportunity",
@@ -1076,7 +1076,7 @@ AppProp_SaleData_Opportunity_data = {
     },
     'b5aa8550-7fc5-4cb8-a952-b6904b2599e5': {
         'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
-        'title': 'SaleOrder.Delivery.Status',
+        'title': 'SaleOrder Delivery Status',
         'code': 'sale_order_delivery_status',
         'type': 1,
         "content_type": "sales_opportunity",
@@ -1085,13 +1085,13 @@ AppProp_SaleData_Opportunity_data = {
             '=': [
                 {
                     'id': 0,
-                    'value': None,
+                    'value': 'Approved',
                 }
             ],
             '≠': [
                 {
                     'id': 0,
-                    'value': None,
+                    'value': 'Approved',
                 }
             ]
         }

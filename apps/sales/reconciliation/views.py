@@ -87,7 +87,12 @@ class ARInvoiceListForRecon(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related(
+        return super().get_queryset().filter(system_status=3).prefetch_related(
+            'ar_invoice_items',
+            'recon_item_ar_invoice',
+            'customer_mapped__cash_inflow_customer',
+            'customer_mapped__cash_inflow_customer__recon_item_cash_inflow',
+        ).select_related(
             'customer_mapped',
         ).order_by('date_created')
 

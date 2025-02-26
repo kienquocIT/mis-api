@@ -68,7 +68,7 @@ class OpportunityConfigStageCreateSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        stage = OpportunityConfigStage.objects.create(**validated_data, is_delete=True)
+        stage = OpportunityConfigStage.objects.create(**validated_data)
         return stage
 
 

@@ -52,8 +52,8 @@ class ProductType(MasterDataAbstractModel):  # noqa
     is_material = models.BooleanField(
         default=False, help_text='flag to know this type is material of company'
     )
-    is_asset_tool = models.BooleanField(
-        default=False, help_text='flag to know this type is asset tool of company'
+    is_tool = models.BooleanField(
+        default=False, help_text='flag to know this type is tool of company'
     )
     is_service = models.BooleanField(
         default=False, help_text='flag to know this type is service of company'
