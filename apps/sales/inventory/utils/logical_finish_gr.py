@@ -5,12 +5,15 @@ class GRFinishHandler:
     # GR_INFO FOR PO/IA/PRODUCTION
     @classmethod
     def push_gr_info_for_po_ia_production(cls, instance):
+        # Cho PO
         if instance.goods_receipt_type == 0:
             GRFinishHandler.gr_info_for_po(instance=instance)
             GRFinishHandler.receipt_status_po(instance=instance)
+        # Cho IA
         if instance.goods_receipt_type == 1:
             GRFinishHandler.gr_info_for_ia(instance=instance)
             GRFinishHandler.state_ia(instance=instance)
+        # Cho Production
         if instance.goods_receipt_type == 2:
             GRFinishHandler.gr_info_for_production(instance=instance)
 
@@ -161,7 +164,8 @@ class GRFinishHandler:
     # PRODUCT INFO
     @classmethod
     def push_product_info(cls, instance):
-        if instance.goods_receipt_type == 0 and instance.purchase_order:  # GR for PO
+        # Cho PO
+        if instance.goods_receipt_type == 0 and instance.purchase_order:
             for product_receipt in instance.goods_receipt_product_goods_receipt.all():
                 quantity_receipt_actual = 0
                 for product_wh in product_receipt.goods_receipt_warehouse_gr_product.all():
@@ -178,7 +182,8 @@ class GRFinishHandler:
                     },
                     'update_fields': ['wait_receipt_amount', 'available_amount', 'stock_amount']
                 })
-        if instance.goods_receipt_type == 1 and instance.inventory_adjustment:  # GR for IA
+        # Cho IA
+        if instance.goods_receipt_type == 1 and instance.inventory_adjustment:
             for product_receipt in instance.goods_receipt_product_goods_receipt.all():
                 quantity_receipt_actual = 0
                 if product_receipt.is_additional is False:
@@ -193,7 +198,8 @@ class GRFinishHandler:
                     },
                     'update_fields': ['available_amount', 'stock_amount']
                 })
-        if instance.goods_receipt_type == 2 and (instance.production_order or instance.work_order):  # GR for Production
+        # Cho Production
+        if instance.goods_receipt_type == 2 and (instance.production_order or instance.work_order):
             for product_receipt in instance.goods_receipt_product_goods_receipt.all():
                 quantity_receipt_actual = 0
                 for product_wh in product_receipt.goods_receipt_warehouse_gr_product.all():

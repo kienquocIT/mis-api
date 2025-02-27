@@ -99,7 +99,6 @@ class ARInvoiceList(BaseListMixin, BaseCreateMixin):
     def get(self, request, *args, **kwargs):
         if request.query_params.get('update_status'):
             update_ar_status()
-
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(

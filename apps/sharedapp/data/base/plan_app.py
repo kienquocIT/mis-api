@@ -385,6 +385,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",  # Instrument Tool
     },
+    "a196c182-01d4-4450-a4ef-86c16b536daa": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "a196c182-01d4-4450-a4ef-86c16b536daa",  # Goods Recovery
+    },
     "bf724e39-fdd0-45ab-a343-d19c9c559e28": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "bf724e39-fdd0-45ab-a343-d19c9c559e28",  # Fixed asset write off

@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models import (
     ProductWareHouse, SubPeriods, Periods, Product, WareHouse,
     ProductWareHouseSerial, ProductWareHouseLot
 )
-from apps.sales.report.inventory_log import ReportInvCommonFunc, ReportInvLog
+from apps.sales.report.utils.inventory_log import ReportInvCommonFunc, ReportInvLog
 from apps.sales.report.models import (
     ReportStock, ReportInventoryCost, ReportInventorySubFunction,
     ReportStockLog, BalanceInitialization, BalanceInitializationSerial, BalanceInitializationLot
@@ -443,6 +443,64 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
         return self.for_none_project(obj, date_range, div, cost_cfg)
 
 
+class ReportInventoryCostWarehouseDetailSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    detail = serializers.SerializerMethodField()
+    stock_amount = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductWareHouse
+        fields = (
+            'id',
+            'product',
+            'stock_amount',
+            'detail'
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+            'description': obj.product.description,
+            'uom': {
+                "id": obj.product.inventory_uom_id,
+                "code": obj.product.inventory_uom.code,
+                "title": obj.product.inventory_uom.title
+            } if obj.product.inventory_uom else {}
+        } if obj.product else {}
+
+    @classmethod
+    def get_stock_amount(cls, obj):
+        return cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.stock_amount)
+
+    @classmethod
+    def get_detail(cls, obj):
+        lot_data = []
+        sn_data = []
+        for item in obj.product_warehouse_lot_product_warehouse.filter(quantity_import__gt=0):
+            gr_mapped = item.pw_lot_transact_pw_lot.first()
+            goods_receipt_date = None
+            if gr_mapped:
+                goods_receipt_date = gr_mapped.goods_receipt.date_received if gr_mapped.goods_receipt else None
+            lot_data.append({
+                'id': item.id,
+                'lot_number': item.lot_number,
+                'expire_date': item.expire_date,
+                'quantity_import': cast_unit_to_inv_quantity(obj.product.inventory_uom, item.quantity_import),
+                'goods_receipt_date': goods_receipt_date
+            })
+        for item in obj.product_warehouse_serial_product_warehouse.filter(is_delete=False):
+            sn_data.append({
+                'id': item.id,
+                'vendor_serial_number': item.vendor_serial_number,
+                'serial_number': item.serial_number,
+                'goods_receipt_date': item.goods_receipt.date_received if item.goods_receipt else None
+            })
+        return {'lot_data': lot_data, 'sn_data': sn_data}
+
+# balance init
 class BalanceInitializationListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
@@ -716,7 +774,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
             return True
 
     @classmethod
-    def prepare_data_for_logging(cls, instance, prd_wh_obj):
+    def push_to_inventory_report(cls, instance, prd_wh_obj):
+        """ Khởi tạo số dư đầu kì """
         doc_data = []
         if len(instance.data_lot) > 0:
             all_lots = prd_wh_obj.product_warehouse_lot_product_warehouse.all()
@@ -813,7 +872,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         )
         prd_wh_obj = self.create_product_warehouse_data(instance, validated_data)
         self.create_m2m_balance_init_data(instance)
-        self.prepare_data_for_logging(instance, prd_wh_obj)
+        self.push_to_inventory_report(instance, prd_wh_obj)
         SubPeriods.objects.filter(period_mapped=validated_data['period_obj']).update(run_report_inventory=False)
         return instance
 
@@ -883,7 +942,7 @@ class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateS
         )
         prd_wh_obj = self.create_product_warehouse_data(instance, validated_data)
         self.create_m2m_balance_init_data(instance)
-        self.prepare_data_for_logging(instance, prd_wh_obj)
+        self.push_to_inventory_report(instance, prd_wh_obj)
         SubPeriods.objects.filter(period_mapped=validated_data['period_obj']).update(run_report_inventory=False)
         return instance
 
@@ -892,61 +951,3 @@ class BalanceInitializationDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportInventoryCost
         fields = ('id',)
-
-
-class ReportInventoryCostWarehouseDetailSerializer(serializers.ModelSerializer):
-    product = serializers.SerializerMethodField()
-    detail = serializers.SerializerMethodField()
-    stock_amount = serializers.SerializerMethodField()
-
-    class Meta:
-        model = ProductWareHouse
-        fields = (
-            'id',
-            'product',
-            'stock_amount',
-            'detail'
-        )
-
-    @classmethod
-    def get_product(cls, obj):
-        return {
-            'id': obj.product_id,
-            'title': obj.product.title,
-            'code': obj.product.code,
-            'description': obj.product.description,
-            'uom': {
-                "id": obj.product.inventory_uom_id,
-                "code": obj.product.inventory_uom.code,
-                "title": obj.product.inventory_uom.title
-            } if obj.product.inventory_uom else {}
-        } if obj.product else {}
-
-    @classmethod
-    def get_stock_amount(cls, obj):
-        return cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.stock_amount)
-
-    @classmethod
-    def get_detail(cls, obj):
-        lot_data = []
-        sn_data = []
-        for item in obj.product_warehouse_lot_product_warehouse.filter(quantity_import__gt=0):
-            gr_mapped = item.pw_lot_transact_pw_lot.first()
-            goods_receipt_date = None
-            if gr_mapped:
-                goods_receipt_date = gr_mapped.goods_receipt.date_received if gr_mapped.goods_receipt else None
-            lot_data.append({
-                'id': item.id,
-                'lot_number': item.lot_number,
-                'expire_date': item.expire_date,
-                'quantity_import': cast_unit_to_inv_quantity(obj.product.inventory_uom, item.quantity_import),
-                'goods_receipt_date': goods_receipt_date
-            })
-        for item in obj.product_warehouse_serial_product_warehouse.filter(is_delete=False):
-            sn_data.append({
-                'id': item.id,
-                'vendor_serial_number': item.vendor_serial_number,
-                'serial_number': item.serial_number,
-                'goods_receipt_date': item.goods_receipt.date_received if item.goods_receipt else None
-            })
-        return {'lot_data': lot_data, 'sn_data': sn_data}

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from rest_framework import serializers
@@ -83,8 +83,6 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_fiscal_year(cls, value):
-        if value < datetime.now().year:
-            raise serializers.ValidationError({"Fiscal year": 'Passed fiscal year'})
         if Periods.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
@@ -96,19 +94,33 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         validate_data['space_month'] = validate_data['start_date'].month - 1
         validate_data['end_date'] = validate_data['start_date'] + relativedelta(months=12) - relativedelta(days=1)
+        # validate start date
+        for existed_period in Periods.objects.filter(company=self.context.get('company_current')):
+            if validate_data['start_date'] <= existed_period.end_date:
+                raise serializers.ValidationError({"start_date": 'Time overlap with previous period'})
+        # validate end date
+        if validate_data['end_date'] < datetime.now().date():
+            raise serializers.ValidationError({"end_date": 'Passed period'})
+        # check space between 2 periods
+        latest_period = Periods.objects.filter(
+            company=self.context.get('company_current')
+        ).order_by('-fiscal_year').first()
+        if latest_period:
+            gap = validate_data['start_date'] - latest_period.end_date
+            if gap > timedelta(days=1):
+                raise serializers.ValidationError(
+                    {"start_date": f'Cannot create a new period with a gap of {str(gap).split(",", maxsplit=1)[0]} '
+                                   f'from the previous period'}
+                )
+
         software_start_using_time = self.initial_data.get('software_start_using_time')
-        if software_start_using_time:
-            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
-            if self.context.get('company_current'):
-                if not self.context.get('company_current').software_start_using_time:
-                    self.context.get('company_current').software_start_using_time = software_start_using_time_format
-                    self.context.get('company_current').save(update_fields=['software_start_using_time'])
-                else:
-                    raise serializers.ValidationError(
-                        {"software_start_using_time": 'You have set up software using time already'}
-                    )
-            else:
-                raise serializers.ValidationError({"company_current": 'Company does not exist'})
+        if self.context.get('company_current'):
+            if self.context.get('company_current').software_start_using_time and software_start_using_time:
+                raise serializers.ValidationError(
+                    {"software_start_using_time": 'You have set up software using time already'}
+                )
+        else:
+            raise serializers.ValidationError({"company_current": 'Company does not exist'})
         return validate_data
 
     def create(self, validated_data):
@@ -119,6 +131,12 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
         for item in sub_period_data:
             bulk_info.append(SubPeriods(period_mapped=period, **item))
         SubPeriods.objects.bulk_create(bulk_info)
+
+        software_start_using_time = self.initial_data.get('software_start_using_time')
+        if software_start_using_time:
+            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
+            self.context.get('company_current').software_start_using_time = software_start_using_time_format
+            self.context.get('company_current').save(update_fields=['software_start_using_time'])
         return period
 
 
@@ -143,24 +161,25 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         software_start_using_time = self.initial_data.get('software_start_using_time')
-        if software_start_using_time:
-            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
-            if self.context.get('company_current'):
-                if not self.context.get('company_current').software_start_using_time:
-                    self.context.get('company_current').software_start_using_time = software_start_using_time_format
-                    self.context.get('company_current').save(update_fields=['software_start_using_time'])
-                else:
-                    raise serializers.ValidationError(
-                        {"software_start_using_time": 'You have set up software using time already'}
-                    )
-            else:
-                raise serializers.ValidationError({"company_current": 'Company does not exist'})
+        if self.context.get('company_current'):
+            if self.context.get('company_current').software_start_using_time and software_start_using_time:
+                raise serializers.ValidationError(
+                    {"software_start_using_time": 'You have set up software using time already'}
+                )
+        else:
+            raise serializers.ValidationError({"company_current": 'Company does not exist'})
         return validate_data
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
+        software_start_using_time = self.initial_data.get('software_start_using_time')
+        if software_start_using_time:
+            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
+            self.context.get('company_current').software_start_using_time = software_start_using_time_format
+            self.context.get('company_current').save(update_fields=['software_start_using_time'])
 
         if all(key in self.initial_data for key in ['clear_balance_data', 'product_id', 'warehouse_id']):
             if ReportStockLog.objects.filter(

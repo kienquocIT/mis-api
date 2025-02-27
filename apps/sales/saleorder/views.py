@@ -49,13 +49,13 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
         if is_minimal:
             return super().get_queryset()
 
-        main_queryset = super().get_queryset().select_related(
+        return super().get_queryset().select_related(
             "customer",
             "opportunity",
             "quotation",
             "employee_inherit",
         )
-        return self.get_queryset_custom_direct_page(main_queryset)
+        # return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Sale Order List",

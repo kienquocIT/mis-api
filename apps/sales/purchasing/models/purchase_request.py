@@ -148,10 +148,8 @@ class PurchaseRequestProduct(MasterDataAbstractModel):
         null=True
     )
     sub_total_price = models.FloatField()
-    remain_for_purchase_order = models.FloatField(
-        default=0,
-        help_text="this is quantity of product which is not purchased order yet, update when PO finish"
-    )
+    # fields for purchase order
+    remain_for_purchase_order = models.FloatField(default=0, help_text="minus when purchase")
     date_modified = models.DateTimeField(
         default=timezone.now,
     )

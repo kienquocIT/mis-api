@@ -33,10 +33,7 @@ class OpportunityConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
-class CustomerDecisionFactorList(
-    BaseListMixin,
-    BaseCreateMixin
-):
+class CustomerDecisionFactorList(BaseListMixin, BaseCreateMixin):
     queryset = CustomerDecisionFactor.objects
     serializer_list = CustomerDecisionFactorListSerializer
     serializer_create = CustomerDecisionFactorCreateSerializer
@@ -45,9 +42,7 @@ class CustomerDecisionFactorList(
     create_hidden_field = ['company_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            "company"
-        )
+        return super().get_queryset().filter(is_delete=False).select_related("company")
 
     @swagger_auto_schema(
         operation_summary="Opportunity Customer Decision Factor List",
@@ -67,9 +62,7 @@ class CustomerDecisionFactorList(
         return self.create(request, *args, **kwargs)
 
 
-class CustomerDecisionFactorDetail(
-    BaseDestroyMixin,
-):
+class CustomerDecisionFactorDetail(BaseDestroyMixin):
     queryset = CustomerDecisionFactor.objects
 
     @swagger_auto_schema(
@@ -80,10 +73,7 @@ class CustomerDecisionFactorDetail(
         return self.destroy(request, *args, **kwargs)
 
 
-class OpportunityConfigStageList(
-    BaseListMixin,
-    BaseCreateMixin
-):
+class OpportunityConfigStageList(BaseListMixin, BaseCreateMixin):
     queryset = OpportunityConfigStage.objects
     serializer_list = OpportunityConfigStageListSerializer
     serializer_create = OpportunityConfigStageCreateSerializer
@@ -92,7 +82,9 @@ class OpportunityConfigStageList(
     create_hidden_field = ['company_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        return super().get_queryset().filter(
+            is_delete=False
+        ).select_related(
             "company",
         ).prefetch_related(
             "stage_condition__condition_property",
@@ -116,11 +108,7 @@ class OpportunityConfigStageList(
         return self.create(request, *args, **kwargs)
 
 
-class OpportunityConfigStageDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-    BaseDestroyMixin,
-):
+class OpportunityConfigStageDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = OpportunityConfigStage.objects
     serializer_detail = OpportunityConfigStageDetailSerializer
     serializer_update = OpportunityConfigStageUpdateSerializer

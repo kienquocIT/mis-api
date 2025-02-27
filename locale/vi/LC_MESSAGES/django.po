@@ -122,6 +122,10 @@ msgstr "Xuất hàng"
 msgid "Goods Receipt"
 msgstr "Nhập kho"
 
+# a196c182-01d4-4450-a4ef-86c16b536daa
+msgid "Goods Recovery"
+msgstr "Thu hồi"
+
 # 0242ba77-8b02-4589-8ed9-239788083f2b
 msgid "Goods Return"
 msgstr "Đổi - trả hàng"
@@ -1485,3 +1489,39 @@ msgstr "Tài sản cố định"
 #
 msgid "Instrument & Tool"
 msgstr "Công cụ dụng cụ"
+
+#
+msgid "Sale"
+msgstr "Bán hàng"
+
+#
+msgid "Purchasing"
+msgstr "Mua hàng"
+
+#
+msgid "Inventory"
+msgstr "Hàng tồn kho"
+
+#
+msgid "Product information"
+msgstr "Thông tin sản phẩm"
+
+#
+msgid "Cost information"
+msgstr "Thông tin giá vốn"
+
+#
+msgid "Expense information"
+msgstr "Thông tin chi phí"
+
+#
+msgid "Logistic information"
+msgstr "Thông tin vận chuyển"
+
+#
+msgid "Indicator information"
+msgstr "Thông tin chỉ tiêu tài chính"
+
+#
+msgid "Sales person"
+msgstr "NV kinh doanh"
