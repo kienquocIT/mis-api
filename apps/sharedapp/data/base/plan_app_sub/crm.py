@@ -2764,7 +2764,7 @@ GOODS_RECOVERY_APP_CONFIG = {
 FIXED_ASSET_WRITEOFF_APP_CONFIG = {
     "id": "bf724e39-fdd0-45ab-a343-d19c9c559e28",
     "title": "Fixed Asset Write-off",
-    "code": "fixedasset",
+    "code": "fixedassetwriteoff",
     "model_code": "fixedassetwriteoff",
     "app_label": "asset",
     "is_workflow": True,
@@ -2803,7 +2803,7 @@ FIXED_ASSET_WRITEOFF_APP_CONFIG = {
 INSTRUMENT_TOOL_WRITEOFF_APP_CONFIG = {
     "id": "5db2cba4-564f-4386-8b89-86e2457d60e0",
     "title": "Instrument Tool Write-off",
-    "code": "instrumenttool",
+    "code": "instrumenttoolwriteoff",
     "model_code": "instrumenttoolwriteoff",
     "app_label": "asset",
     "is_workflow": True,
