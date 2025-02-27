@@ -583,7 +583,7 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         new_obj.ready_quantity = ready_quantity
         new_obj.picked_quantity = 0
         new_obj.delivery_data = []
-        # Ki?m tra danh s�ch SP d� giao, c�i n�o giao r?i th� c?p nh?t remaining_quantity_leased
+        # Check in old delivery_data, if any delivered then update data remaining_quantity_leased for new obj
         new_obj.product_quantity_leased_data = [
             leased_data for leased_data in new_obj.product_quantity_leased_data
             if leased_data.get('picked_quantity', 0) <= 0
@@ -595,12 +595,12 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
 
     def save(self, *args, **kwargs):
         others_check_list = ['for_goods_return', 'for_goods_recovery']
-        # B?t c? save_for_other n?u c� value n�o thu?c others_check_list trong kwargs
+        # active flag save_for_other if there is any value of others_check_list in kwargs
         save_for_other = any(key in kwargs for key in others_check_list)
-        # X�a key thu?c others_check_list kh?i kwargs
+        # remove key of others_check_list from kwargs
         for key in others_check_list:
             kwargs.pop(key, None)
-        # Save b�nh thu?ng theo ch?c nang Delivery n?u kh�ng c� c? save_for_other
+        # Save normal Delivery if not flag save_for_other
         if not save_for_other:
             self.before_save()
             DeliHandler.create_delivery_product_leased(instance=self)
