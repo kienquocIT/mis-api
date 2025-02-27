@@ -34,7 +34,7 @@ from apps.masterdata.saledata.views import (
 from apps.masterdata.saledata.views.warehouse import (
     ProductWareHouseLotList, ProductWareHouseSerialList,
     ProductWareHouseAssetToolsList, ProductWareHouseListForGoodsTransfer,
-    WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail,
+    WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail, WareHouseForInventoryList,
 )
 
 urlpatterns = [
@@ -177,6 +177,7 @@ urlpatterns += [
         WarehouseEmployeeConfigDetail.as_view(),
         name='WarehouseEmployeeConfigDetail'
     ),
+    path('warehouses-for-inventory', WareHouseForInventoryList.as_view(), name='WareHouseForInventoryList'),
 ]
 # // warehouse
 

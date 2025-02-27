@@ -5,8 +5,8 @@ from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.delivery.models import OrderDeliverySub
-from apps.sales.inventory.models import RecoveryDelivery, RecoveryProduct, RecoveryWarehouse, RecoveryLeaseGenerate
-from apps.sales.inventory.utils.logical_finish_recovery import RecoveryFinishHandler
+from apps.sales.inventory.models import RecoveryDelivery, RecoveryProduct, RecoveryWarehouse, RecoveryLeaseGenerate, \
+    RecoveryProductLeased
 from apps.sales.leaseorder.models import LeaseOrder
 from apps.shared import AccountsMsg, ProductMsg, WarehouseMsg, SaleMsg
 
@@ -15,7 +15,13 @@ class RecoveryCommonCreate:
 
     @classmethod
     def create_recovery_delivery(cls, instance):
-        keys_to_remove = ['id', 'remarks', 'agency', 'full_address', 'is_dropship']
+        keys_to_remove = [
+            'id', 'remarks',
+            'agency', 'full_address',
+            'is_dropship', 'quantity_delivered',
+            'picked_quantity', 'quantity_remain_recovery',
+            'quantity_new_remain_recovery', 'quantity_leased_remain_recovery',
+        ]
         instance.recovery_delivery_recovery.all().delete()
         recovery_delivery_objs = RecoveryDelivery.objects.bulk_create(
             [RecoveryDelivery(
@@ -41,14 +47,37 @@ class RecoveryCommonCreate:
             RecoveryCommonCreate.create_recovery_warehouse(
                 instance=instance, objs=recovery_products_objs, keys_to_remove=keys_to_remove
             )
+            RecoveryCommonCreate.create_recovery_product_leased(
+                instance=instance, objs=recovery_products_objs, keys_to_remove=keys_to_remove
+            )
+        return True
+
+    @classmethod
+    def create_recovery_product_leased(cls, instance, objs, keys_to_remove):
+        for sub_product_obj in objs:
+            recovery_products_leased_objs = RecoveryProductLeased.objects.bulk_create(
+                [RecoveryProductLeased(
+                    recovery_product=sub_product_obj,
+                    tenant_id=instance.tenant_id, company_id=instance.company_id,
+                    **{k: v for k, v in product_leased.items() if k not in keys_to_remove},
+                ) for product_leased in sub_product_obj.product_quantity_leased_data]
+            )
+            RecoveryCommonCreate.create_recovery_warehouse(
+                instance=instance, objs=recovery_products_leased_objs, keys_to_remove=keys_to_remove
+            )
         return True
 
     @classmethod
     def create_recovery_warehouse(cls, instance, objs, keys_to_remove):
         for sub_product_obj in objs:
+            app_code = sub_product_obj._meta.label_lower
             recovery_warehouse_objs = RecoveryWarehouse.objects.bulk_create(
                 [RecoveryWarehouse(
-                    goods_recovery=instance, recovery_product=sub_product_obj,
+                    goods_recovery=instance,
+                    recovery_product=sub_product_obj
+                    if app_code == "inventory.recoveryproduct" else sub_product_obj.recovery_product,
+                    recovery_product_leased=None
+                    if app_code == "inventory.recoveryproduct" else sub_product_obj,
                     tenant_id=instance.tenant_id, company_id=instance.company_id,
                     **{k: v for k, v in recovery_warehouse.items() if k not in keys_to_remove},
                 ) for recovery_warehouse in sub_product_obj.product_warehouse_data]
@@ -73,8 +102,6 @@ class RecoveryCommonCreate:
     @classmethod
     def create_sub_models(cls, instance):
         cls.create_recovery_delivery(instance=instance)
-
-        RecoveryFinishHandler.clone_product_to_lease_product(instance=instance)
         return True
 
 
@@ -161,6 +188,8 @@ class RecoveryWarehouseSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecoveryWarehouse
         fields = (
+            'title',
+            'code',
             'warehouse_id',
             'warehouse_data',
             'quantity_recovery',
@@ -177,8 +206,16 @@ class RecoveryProductSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField()
     offset_id = serializers.UUIDField()
     uom_id = serializers.UUIDField()
-    uom_time_id = serializers.UUIDField()
+    uom_time_id = serializers.UUIDField(required=False)
+    product_depreciation_start_date = serializers.CharField()
+    product_depreciation_end_date = serializers.CharField()
+    product_lease_start_date = serializers.CharField()
+    product_lease_end_date = serializers.CharField()
     product_warehouse_data = RecoveryWarehouseSerializer(many=True, required=False)
+
+    quantity_delivered = serializers.FloatField(default=0)
+    quantity_remain_recovery = serializers.FloatField(default=0)
+    quantity_new_remain_recovery = serializers.FloatField(default=0)
 
     class Meta:
         model = RecoveryProduct
@@ -193,18 +230,30 @@ class RecoveryProductSerializer(serializers.ModelSerializer):
             'uom_time_id',
             'uom_time_data',
             'product_quantity',
+            'product_quantity_new',
+            'product_quantity_leased',
+            'product_quantity_leased_data',
             'product_quantity_time',
-            'product_quantity_depreciation',
             'product_unit_price',
-            'product_depreciation_price',
             'product_subtotal_price',
-            'quantity_ordered',
             'quantity_delivered',
-            'quantity_recovered',
+            'quantity_remain_recovery',
+            'quantity_new_remain_recovery',
             'quantity_recovery',
             'delivery_data',
-
             'product_warehouse_data',
+            # Depreciation fields
+
+            'product_depreciation_subtotal',
+            'product_depreciation_price',
+            'product_depreciation_method',
+            'product_depreciation_adjustment',
+            'product_depreciation_time',
+            'product_depreciation_start_date',
+            'product_depreciation_end_date',
+
+            'product_lease_start_date',
+            'product_lease_end_date',
         )
 
     @classmethod

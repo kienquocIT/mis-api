@@ -511,10 +511,10 @@ def reset_and_run_reports_sale(run_type=0):
     return True
 
 
-def reset_and_run_product_info():
+def reset_and_run_product_info(company_id):
     # reset
     update_fields = ['stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount']
-    for product in Product.objects.all():
+    for product in Product.objects.filter(company_id=company_id):
         product.stock_amount = 0
         product.wait_delivery_amount = 0
         product.wait_receipt_amount = 0
@@ -522,17 +522,19 @@ def reset_and_run_product_info():
         product.save(update_fields=update_fields)
     # set input, output, return
     # input
-    for po in PurchaseOrder.objects.filter(system_status=3):
+    for po in PurchaseOrder.objects.filter(system_status=3, company_id=company_id):
         POFinishHandler.push_product_info(instance=po)
-    for gr in GoodsReceipt.objects.filter(system_status=3):
+    for gr in GoodsReceipt.objects.filter(system_status=3, company_id=company_id):
         GRFinishHandler.push_product_info(instance=gr)
+    for gd in GoodsDetail.objects.filter(company_id=company_id):
+        gd.push_product_info(instance=gd)
     # output
-    for so in SaleOrder.objects.filter(system_status=3):
+    for so in SaleOrder.objects.filter(system_status=3, company_id=company_id):
         SOFinishHandler.push_product_info(instance=so)
-    for deli_sub in OrderDeliverySub.objects.all():
+    for deli_sub in OrderDeliverySub.objects.filter(system_status=3, company_id=company_id):
         DeliFinishHandler.push_product_info(instance=deli_sub)
     # return
-    for return_obj in GoodsReturn.objects.filter(system_status=3):
+    for return_obj in GoodsReturn.objects.filter(system_status=3, company_id=company_id):
         ReturnFinishHandler.push_product_info(instance=return_obj)
     print('reset_and_run_product_info done.')
     return True
@@ -1213,3 +1215,19 @@ class SubScripts:
         cls.update_opp_stage_is_delete_is_default()
         cls.update_product_type_tool_import()
         return True
+
+
+def reset_run_indicator_fields(kwargs):
+    for sale_order in SaleOrder.objects.filter(**kwargs):
+        for so_indicator in SaleOrderIndicator.objects.filter(
+                sale_order=sale_order, quotation_indicator__code__in=["IN0001", "IN0003", "IN0006"]
+        ):
+            if so_indicator.quotation_indicator.code == "IN0001":
+                sale_order.indicator_revenue = so_indicator.indicator_value
+            if so_indicator.quotation_indicator.code == "IN0003":
+                sale_order.indicator_gross_profit = so_indicator.indicator_value
+            if so_indicator.quotation_indicator.code == "IN0006":
+                sale_order.indicator_net_income = so_indicator.indicator_value
+        sale_order.save(update_fields=['indicator_revenue', 'indicator_gross_profit', 'indicator_net_income'])
+    print('reset_run_indicator_fields done.')
+

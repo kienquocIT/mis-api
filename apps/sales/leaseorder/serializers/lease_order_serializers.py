@@ -6,7 +6,8 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.leaseorder.serializers.lease_order_sub import LeaseOrderCommonCreate, LeaseOrderCommonValidate, \
     LeaseOrderProductSerializer, LeaseOrderCostSerializer, LeaseOrderExpenseSerializer, LeaseOrderIndicatorSerializer, \
-    LeaseOrderPaymentStageSerializer, LeaseOrderRuleValidate, LeaseOrderLogisticSerializer
+    LeaseOrderPaymentStageSerializer, LeaseOrderRuleValidate, LeaseOrderLogisticSerializer, \
+    LeaseOrderCostLeasedSerializer
 from apps.sales.leaseorder.models import LeaseOrder
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
@@ -132,6 +133,7 @@ class LeaseOrderDetailSerializer(AbstractDetailSerializerModel):
             'customer_shipping_id',
             'customer_billing_id',
             'lease_costs_data',
+            'lease_costs_leased_data',
             'lease_expenses_data',
             # total amount of products
             'total_product_pretax_amount',
@@ -215,6 +217,10 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    lease_costs_leased_data = LeaseOrderCostLeasedSerializer(
+        many=True,
+        required=False
+    )
     lease_expenses_data = LeaseOrderExpenseSerializer(
         many=True,
         required=False
@@ -287,6 +293,7 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
             'customer_shipping',
             'customer_billing',
             'lease_costs_data',
+            'lease_costs_leased_data',
             'lease_expenses_data',
             # indicator tab
             'lease_indicators_data',
@@ -416,6 +423,10 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    lease_costs_leased_data = LeaseOrderCostLeasedSerializer(
+        many=True,
+        required=False
+    )
     lease_expenses_data = LeaseOrderExpenseSerializer(
         many=True,
         required=False
@@ -468,6 +479,7 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
             'customer_shipping',
             'customer_billing',
             'lease_costs_data',
+            'lease_costs_leased_data',
             'lease_expenses_data',
             # indicator tab
             'lease_indicators_data',

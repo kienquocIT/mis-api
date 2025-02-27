@@ -6,7 +6,8 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel, HRMsg
 from apps.shared.translations.base import AttachmentMsg
-from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
+from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment, \
+    OrderDeliveryProductLeased
 from ..utils import DeliHandler
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
@@ -47,6 +48,11 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'is_promotion',
             'product_data',
             'offset_data',
+            'product_quantity',
+            'product_quantity_new',
+            'remaining_quantity_new',
+            'product_quantity_leased',
+            'product_quantity_leased_data',
             'uom_data',
             'delivery_quantity',
             'delivered_quantity_before',
@@ -55,6 +61,19 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'delivery_data',
             'picked_quantity',
             'is_not_inventory'
+        )
+
+
+class OrderDeliveryProductLeasedListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = OrderDeliveryProductLeased
+        fields = (
+            'product_id',
+            'product_data',
+            'picked_quantity',
+            'delivery_data',
+            'quantity_leased_remain_recovery',
         )
 
 
@@ -157,7 +176,7 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
             'attachments',
             'delivery_logistic',
             'workflow_runtime_id',
-            'employee_inherit'
+            'employee_inherit',
         )
 
 
@@ -165,6 +184,7 @@ class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
     product_id = serializers.UUIDField()
     done = serializers.IntegerField(min_value=1)
     delivery_data = serializers.JSONField(allow_null=True)
+    product_quantity_leased_data = serializers.JSONField(allow_null=True, required=False)
     order = serializers.IntegerField(min_value=1)
 
 
@@ -244,20 +264,32 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         ):
             obj_key = str(obj.product_id) + "___" + str(obj.order)
             if obj_key in product_done:
-                if 1 in obj.product.product_choice or sub.lease_order_data:
-                    # kiểm tra product id và order trùng với product update ko
-                    delivery_data = product_done[obj_key]['delivery_data']  # list format
-                    obj.picked_quantity = product_done[obj_key]['picked_num']
-                    obj.delivery_data = delivery_data
+                target = product_done[obj_key]
+                if all(key in target for key in ['delivery_data', 'picked_num', 'product_quantity_leased_data']):
+                    if 1 in obj.product.product_choice or sub.lease_order_data:
+                        # kiểm tra product id và order trùng với product update ko
+                        delivery_data = target['delivery_data']  # list format
+                        obj.picked_quantity = target['picked_num']
+                        obj.delivery_data = delivery_data
+                        obj.product_quantity_leased_data = target['product_quantity_leased_data']
+                        obj.quantity_remain_recovery = target['picked_num']
+                        obj.quantity_new_remain_recovery = target['picked_num'] - len(obj.product_quantity_leased_data)
 
-                    if (config['is_picking'] and config['is_partial_ship'] and
-                            obj.picked_quantity > obj.remaining_quantity):
-                        raise serializers.ValidationError(
-                            {'detail': _('Products must have picked quantity equal to or less than remaining quantity')}
-                        )
-                else:
-                    obj.picked_quantity = product_done[obj_key]['picked_num']
-                obj.save(update_fields=['picked_quantity', 'delivery_data'])
+                        if (config['is_picking'] and config['is_partial_ship'] and
+                                obj.picked_quantity > obj.remaining_quantity):
+                            raise serializers.ValidationError(
+                                {'detail': _(
+                                    'Products must have picked quantity equal to or less than remaining quantity'
+                                )}
+                            )
+                    else:
+                        obj.picked_quantity = target['picked_num']
+                    # sau khi update sẽ chạy các func trong save()
+                    obj.save(update_fields=[
+                        'picked_quantity', 'delivery_data',
+                        'product_quantity_leased_data', 'quantity_remain_recovery',
+                        'quantity_new_remain_recovery',
+                    ])
         return True
 
     # none_picking_many_delivery
@@ -328,8 +360,9 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             prod_key = str(item['product_id']) + "___" + str(item['order'])
             total_done += item['done']
             product_done[prod_key] = {}
-            product_done[prod_key]['picked_num'] = item['done']
-            product_done[prod_key]['delivery_data'] = item['delivery_data']
+            product_done[prod_key]['picked_num'] = item.get('done', 0)
+            product_done[prod_key]['delivery_data'] = item.get('delivery_data', [])
+            product_done[prod_key]['product_quantity_leased_data'] = item.get('product_quantity_leased_data', [])
         instance.save()
 
         # update instance and product
@@ -347,17 +380,29 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
 
 
 class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
+    delivery_id = serializers.SerializerMethodField()
+    delivery_data = serializers.SerializerMethodField()
     delivery_product_data = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderDeliverySub
         fields = (
-            'id',
-            'code',
-            'date_created',
-            'actual_delivery_date',
+            'delivery_id',
+            'delivery_data',
             'delivery_product_data',
         )
+
+    @classmethod
+    def get_delivery_id(cls, obj):
+        return obj.id
+
+    @classmethod
+    def get_delivery_data(cls, obj):
+        return {
+            'id': obj.id,
+            'code': obj.code,
+            'actual_delivery_date': obj.actual_delivery_date.date(),
+        }
 
     @classmethod
     def get_delivery_product_data(cls, obj):
@@ -371,22 +416,31 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                 'uom_id': deli_product.uom_id,
                 'uom_data': deli_product.uom_data,
                 'product_quantity': deli_product.product_quantity,
+                'product_quantity_new': deli_product.product_quantity_new,
+                'product_quantity_leased': deli_product.product_quantity_leased,
+                'product_quantity_leased_data': OrderDeliveryProductLeasedListSerializer(
+                    deli_product.delivery_product_leased_delivery_product.filter(
+                        quantity_leased_remain_recovery__gt=0
+                    ), many=True
+                ).data,
                 'product_quantity_time': deli_product.product_quantity_time,
-                'product_quantity_depreciation': deli_product.product_quantity_depreciation,
                 'product_unit_price': deli_product.product_unit_price,
                 'product_subtotal_price': 0,
-                'quantity_ordered': deli_product.delivery_quantity,
                 'quantity_delivered': deli_product.picked_quantity,
-                'quantity_recovered': 0,
+                'quantity_remain_recovery': deli_product.quantity_remain_recovery,
+                'quantity_new_remain_recovery': deli_product.quantity_new_remain_recovery,
                 'quantity_recovery': 0,
                 'delivery_data': deli_product.delivery_data,
 
                 'product_depreciation_subtotal': deli_product.product_depreciation_subtotal,
                 'product_depreciation_price': deli_product.product_depreciation_price,
                 'product_depreciation_method': deli_product.product_depreciation_method,
+                'product_depreciation_adjustment': deli_product.product_depreciation_adjustment,
+                'product_depreciation_time': deli_product.product_depreciation_time,
                 'product_depreciation_start_date': obj.actual_delivery_date.date(),
                 'product_depreciation_end_date': deli_product.product_depreciation_end_date,
-                'product_depreciation_adjustment': deli_product.product_depreciation_adjustment,
+
+                'product_lease_start_date': obj.actual_delivery_date.date(),
             }
             for deli_product in obj.delivery_product_delivery_sub.all()
         ]

@@ -16,7 +16,7 @@ from apps.sales.inventory.views import (
     ProductionOrderDetailForGIS, InventoryAdjustmentListForGIS, InventoryAdjustmentDetailForGIS,
     ProductWareHouseSerialListForGIS, ProductWareHouseLotListForGIS, ProductWareHouseListForGIS, WorkOrderListForGIS,
     WorkOrderDetailForGIS, GoodsIssueProductList, GoodsDetailListImportDB, GoodsDetailSerialDataList, GoodsRecoveryList,
-    GoodsRecoveryDetail,
+    GoodsRecoveryDetail, GoodsRecoveryLeaseGenerateList,
 )
 
 urlpatterns = [
@@ -26,6 +26,11 @@ urlpatterns = [
     # goods recovery
     path('goods-recovery/list', GoodsRecoveryList.as_view(), name='GoodsRecoveryList'),
     path('goods-recovery/<str:pk>', GoodsRecoveryDetail.as_view(), name='GoodsRecoveryDetail'),
+    path(
+        'goods-recovery-lease-generate/list',
+        GoodsRecoveryLeaseGenerateList.as_view(),
+        name='GoodsRecoveryLeaseGenerateList'
+    ),
 
     # inventory adjustment
     path('inventory-adjustments', InventoryAdjustmentList.as_view(), name='InventoryAdjustmentList'),
