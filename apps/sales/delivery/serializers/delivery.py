@@ -264,22 +264,32 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         ):
             obj_key = str(obj.product_id) + "___" + str(obj.order)
             if obj_key in product_done:
-                if 1 in obj.product.product_choice or sub.lease_order_data:
-                    # kiểm tra product id và order trùng với product update ko
-                    delivery_data = product_done[obj_key]['delivery_data']  # list format
-                    obj.picked_quantity = product_done[obj_key]['picked_num']
-                    obj.delivery_data = delivery_data
-                    obj.product_quantity_leased_data = product_done[obj_key]['product_quantity_leased_data']
+                target = product_done[obj_key]
+                if all(key in target for key in ['delivery_data', 'picked_num', 'product_quantity_leased_data']):
+                    if 1 in obj.product.product_choice or sub.lease_order_data:
+                        # kiểm tra product id và order trùng với product update ko
+                        delivery_data = target['delivery_data']  # list format
+                        obj.picked_quantity = target['picked_num']
+                        obj.delivery_data = delivery_data
+                        obj.product_quantity_leased_data = target['product_quantity_leased_data']
+                        obj.quantity_remain_recovery = target['picked_num']
+                        obj.quantity_new_remain_recovery = target['picked_num'] - len(obj.product_quantity_leased_data)
 
-                    if (config['is_picking'] and config['is_partial_ship'] and
-                            obj.picked_quantity > obj.remaining_quantity):
-                        raise serializers.ValidationError(
-                            {'detail': _('Products must have picked quantity equal to or less than remaining quantity')}
-                        )
-                else:
-                    obj.picked_quantity = product_done[obj_key]['picked_num']
-                # sau khi update sẽ chạy các func trong save()
-                obj.save(update_fields=['picked_quantity', 'delivery_data', 'product_quantity_leased_data'])
+                        if (config['is_picking'] and config['is_partial_ship'] and
+                                obj.picked_quantity > obj.remaining_quantity):
+                            raise serializers.ValidationError(
+                                {'detail': _(
+                                    'Products must have picked quantity equal to or less than remaining quantity'
+                                )}
+                            )
+                    else:
+                        obj.picked_quantity = target['picked_num']
+                    # sau khi update sẽ chạy các func trong save()
+                    obj.save(update_fields=[
+                        'picked_quantity', 'delivery_data',
+                        'product_quantity_leased_data', 'quantity_remain_recovery',
+                        'quantity_new_remain_recovery',
+                    ])
         return True
 
     # none_picking_many_delivery
