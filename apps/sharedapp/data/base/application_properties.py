@@ -2738,6 +2738,26 @@ AppProp_SaleData_InstrumentTool_data={
     },
 }
 
+AppProp_SaleData_FixedAssetWriteOff_data={
+    "856e4237-cdf2-4334-9d67-9c7e1b86cd77": {
+        "application_id": "bf724e39-fdd0-45ab-a343-d19c9c559e28",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+}
+
+AppProp_SaleData_InstrumentToolWriteOff_data={
+    "443a8e58-a1e5-476c-92e3-a39376e5ab68": {
+        "application_id": "5db2cba4-564f-4386-8b89-86e2457d60e0",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -2776,5 +2796,7 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Consulting_data,
     **AppProp_SaleData_ReportRevenue_data,
     **AppProp_SaleData_FixedAsset_data,
-    **AppProp_SaleData_InstrumentTool_data
+    **AppProp_SaleData_InstrumentTool_data,
+    **AppProp_SaleData_FixedAssetWriteOff_data,
+    **AppProp_SaleData_InstrumentToolWriteOff_data
 }

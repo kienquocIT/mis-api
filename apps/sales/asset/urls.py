@@ -1,7 +1,7 @@
 from django.urls import path
 
 from apps.sales.asset.views import FixedAssetList, FixedAssetDetail, InstrumentToolList, InstrumentToolDetail, \
-    FixedAssetWriteOffList
+    FixedAssetWriteOffList, FixedAssetWriteOffDetail, InstrumentToolWriteOffList, InstrumentToolWriteOffDetail
 
 fixed_asset_urlpatterns = [
     path('fixed-asset/list', FixedAssetList.as_view(), name='FixedAssetList'),
@@ -14,6 +14,25 @@ instrument_tool_urlpatterns = [
 ]
 
 fixed_asset_write_off_urlpatterns = [
-    path('fixed-asset-write-off/list', FixedAssetWriteOffList.as_view(), name='FixedAssetWriteOffList'),
+    path('fixed-asset-writeoff/list', FixedAssetWriteOffList.as_view(), name='FixedAssetWriteOffList'),
+    path(
+        'fixed-asset-writeoff/detail/<str:pk>',
+         FixedAssetWriteOffDetail.as_view(),
+         name='FixedAssetWriteOffDetail'
+    ),
 ]
-urlpatterns = fixed_asset_urlpatterns + instrument_tool_urlpatterns + fixed_asset_write_off_urlpatterns
+
+instrument_tool_write_off_urlpatterns = [
+    path('instrument-tool-writeoff/list', InstrumentToolWriteOffList.as_view(), name='InstrumentToolWriteOffList'),
+    path(
+        'instrument-tool-writeoff/detail/<str:pk>',
+         InstrumentToolWriteOffDetail.as_view(),
+         name='InstrumentToolWriteOffDetail'
+    ),
+]
+urlpatterns = (
+    fixed_asset_urlpatterns
+    + instrument_tool_urlpatterns
+    + fixed_asset_write_off_urlpatterns
+    + instrument_tool_write_off_urlpatterns
+)

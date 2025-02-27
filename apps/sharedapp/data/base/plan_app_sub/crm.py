@@ -2752,6 +2752,84 @@ INSTRUMENT_TOOL_APP_CONFIG = {
     "allow_permit": True,
 }
 
+FIXED_ASSET_WRITEOFF_APP_CONFIG = {
+    "id": "bf724e39-fdd0-45ab-a343-d19c9c559e28",
+    "title": "Fixed Asset Write-off",
+    "code": "fixedasset",
+    "model_code": "fixedassetwriteoff",
+    "app_label": "asset",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
+INSTRUMENT_TOOL_WRITEOFF_APP_CONFIG = {
+    "id": "5db2cba4-564f-4386-8b89-86e2457d60e0",
+    "title": "Instrument Tool Write-off",
+    "code": "instrumenttool",
+    "model_code": "instrumenttoolwriteoff",
+    "app_label": "asset",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -3062,6 +3140,14 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1": ApplicationConfigFrame(**INSTRUMENT_TOOL_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "bf724e39-fdd0-45ab-a343-d19c9c559e28": ApplicationConfigFrame(**FIXED_ASSET_WRITEOFF_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "5db2cba4-564f-4386-8b89-86e2457d60e0": ApplicationConfigFrame(**INSTRUMENT_TOOL_WRITEOFF_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

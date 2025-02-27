@@ -83,8 +83,8 @@ class InstrumentTool(DataAbstractModel):
     depreciation_end_date = models.DateTimeField()
 
     class Meta:
-        verbose_name = 'Fixed Asset'
-        verbose_name_plural = 'Fixed Assets'
+        verbose_name = 'Instrument Tool'
+        verbose_name_plural = 'Instrument Tools'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
