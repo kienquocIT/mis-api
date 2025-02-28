@@ -1,11 +1,8 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.asset.models import FixedAsset, FixedAssetWriteOff, InstrumentToolWriteOff
-from apps.sales.asset.serializers import FixedAssetListSerializer, FixedAssetCreateSerializer, \
-    FixedAssetDetailSerializer, FixedAssetUpdateSerializer, FixedAssetWriteOffListSerializer, \
-    FixedAssetWriteOffCreateSerializer, FixedAssetWriteOffDetailSerializer, InstrumentToolWriteOffListSerializer, \
-    InstrumentToolWriteOffCreateSerializer, InstrumentToolWriteOffDetailSerializer, \
-    InstrumentToolWriteOffUpdateSerializer
+from apps.sales.asset.models import  InstrumentToolWriteOff
+from apps.sales.asset.serializers import InstrumentToolWriteOffListSerializer,InstrumentToolWriteOffCreateSerializer, \
+    InstrumentToolWriteOffDetailSerializer, InstrumentToolWriteOffUpdateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 __all__ =[

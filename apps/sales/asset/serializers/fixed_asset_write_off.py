@@ -2,12 +2,8 @@ import logging
 from django.db import transaction
 from rest_framework import serializers
 
-from apps.core.hr.models import Group
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import FixedAssetClassification, Product
-from apps.sales.apinvoice.models import APInvoiceItems, APInvoice
-from apps.sales.asset.models import FixedAsset, FixedAssetSource, FixedAssetUseDepartment, FixedAssetAPInvoiceItems, \
-    FixedAssetWriteOff
+from apps.sales.asset.models import FixedAsset, FixedAssetWriteOff
 from apps.shared import BaseMsg, FixedAssetMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
 

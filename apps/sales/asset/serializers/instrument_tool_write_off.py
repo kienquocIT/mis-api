@@ -2,7 +2,6 @@ import logging
 from django.db import transaction
 from rest_framework import serializers
 
-from apps.core.hr.models import Group
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.asset.models import InstrumentToolWriteOff, InstrumentTool, InstrumentToolWriteOffQuantity
 from apps.shared import BaseMsg, FixedAssetMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
