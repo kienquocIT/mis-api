@@ -1,5 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+from apps.accounting.accountingsettings.utils import AccountDeterminationForProductHandler
 from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
 from apps.sales.report.utils.inventory_log import ReportInvCommonFunc
@@ -301,27 +302,28 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         validated_data.update(
             {'sale_product_price_list': CommonCreateUpdateProduct.setup_price_list_data_in_sale(self.initial_data)}
         )
-        product = Product.objects.create(**validated_data)
+        product_obj = Product.objects.create(**validated_data)
         CommonCreateUpdateProduct.create_product_types_mapped(
-            product, self.initial_data.get('product_types_mapped_list', [])
+            product_obj, self.initial_data.get('product_types_mapped_list', [])
         )
         if 'volume' in validated_data and 'weight' in validated_data:
             measure_data = {'weight': validated_data['weight'], 'volume': validated_data['volume']}
             if measure_data:
-                CommonCreateUpdateProduct.create_measure(product, measure_data)
+                CommonCreateUpdateProduct.create_measure(product_obj, measure_data)
         if 0 in validated_data['product_choice']:
             CommonCreateUpdateProduct.create_price_list(
-                product,
+                product_obj,
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
         CommonCreateUpdateProduct.create_product_variant_attribute(
-            product, self.initial_data.get('product_variant_attribute_list', [])
+            product_obj, self.initial_data.get('product_variant_attribute_list', [])
         )
         CommonCreateUpdateProduct.create_product_variant_item(
-            product, self.initial_data.get('product_variant_item_list', [])
+            product_obj, self.initial_data.get('product_variant_item_list', [])
         )
-        return product
+        AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj)
+        return product_obj
 
 
 class ProductQuickCreateSerializer(serializers.ModelSerializer):
