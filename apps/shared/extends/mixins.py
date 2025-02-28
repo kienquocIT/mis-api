@@ -1059,10 +1059,8 @@ class BaseUpdateMixin(BaseMixin):
                 if state is True:
                     if is_edit_all_zone is True:
                         return request_data, True, task_id
-                    new_body_data = {}
-                    for key, value in request_data.items():
-                        if key in code_field_arr:
-                            new_body_data[key] = value
+                    new_body_data = {key: value for key, value in request_data.items() if key in code_field_arr}
+
                     return new_body_data, True, task_id
                 # check permission default | wait implement so it is True
         return request_data, False, None

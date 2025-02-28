@@ -1525,3 +1525,71 @@ msgstr "Thông tin chỉ tiêu tài chính"
 #
 msgid "Sales person"
 msgstr "NV kinh doanh"
+
+#
+msgid "Product category"
+msgstr "Danh mục sản phẩm"
+
+#
+msgid "Product type"
+msgstr "Loại sản phẩm"
+
+#
+msgid "Product quantity"
+msgstr "Số lượng sản phẩm"
+
+#
+msgid "Product unit price"
+msgstr "Đơn giá sản phẩm"
+
+#
+msgid "Product subtotal"
+msgstr "Tổng phụ sản phẩm"
+
+#
+msgid "Expense type"
+msgstr "Loại chi phí"
+
+#
+msgid "Labor expense type"
+msgstr "Loại chi phí nhân công"
+
+#
+msgid "Expense quantity"
+msgstr "Số lượng chi phí"
+
+#
+msgid "Expense unit price"
+msgstr "Đơn giá chi phí"
+
+#
+msgid "Expense subtotal before tax"
+msgstr "Tổng phụ chi phí trước thuế"
+
+#
+msgid "Expense subtotal after tax"
+msgstr "Tổng phụ chi phí sau thuế"
+
+#
+msgid "Total revenue before tax"
+msgstr "Tổng doanh thu trước thuế"
+
+#
+msgid "Total revenue after tax"
+msgstr "Tổng doanh thu sau thuế"
+
+#
+msgid "Total cost before tax"
+msgstr "Tổng giá vốn trước thuế"
+
+#
+msgid "Total cost after tax"
+msgstr "Tổng giá vốn sau thuế"
+
+#
+msgid "Total expense before tax"
+msgstr "Tổng chi phí trước thuế"
+
+#
+msgid "Total expense after tax"
+msgstr "Tổng chi phí sau thuế"
