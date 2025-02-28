@@ -53,18 +53,18 @@ class InstrumentToolListCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'tool_list': FixedAssetMsg.TOOL_NOT_FOUND})
         raise serializers.ValidationError({'id': BaseMsg.REQUIRED})
 
-    def validate(self, validate_data): # pylint: disable=C0103
+    def validate(self, validate_data): 
         tool_id = validate_data.get('id', None)
         write_off_quantity = validate_data.get('write_off_quantity', 0)
-        it = InstrumentTool.objects.filter(id=tool_id).first()
+        it_obj = InstrumentTool.objects.filter(id=tool_id).first()
 
-        if it:
+        if it_obj:
             total_write_off_quantity = 0
-            it_write_off_list = it.write_off_quantities.all()
+            it_write_off_list = it_obj.write_off_quantities.all()
             for it_write_off in it_write_off_list:
                 total_write_off_quantity += it_write_off.write_off_quantity
 
-            using_quantity = it.quantity - total_write_off_quantity
+            using_quantity = it_obj.quantity - total_write_off_quantity
             if using_quantity < write_off_quantity:
                 raise serializers.ValidationError({'write_off_quantity': FixedAssetMsg.WRITEOFF_QUANTITY_INVALID})
         return validate_data
@@ -85,19 +85,19 @@ class InstrumentToolWriteOffCreateSerializer(AbstractCreateSerializerModel):
         )
 
     @decorator_run_workflow
-    def create(self, validated_data):  # pylint: disable=C0103
+    def create(self, validated_data):  
         tool_list = validated_data.pop('tool_list')
         try:
             with transaction.atomic():
                 instrument_tool_write_off = InstrumentToolWriteOff.objects.create(**validated_data)
 
                 for tool in tool_list:
-                    it = InstrumentTool.objects.filter(id=tool.get('id', None)).first()
-                    if it:
+                    it_obj = InstrumentTool.objects.filter(id=tool.get('id', None)).first()
+                    if it_obj:
                         write_off_quantity = tool.get('write_off_quantity', 0)
 
                         InstrumentToolWriteOffQuantity.objects.create(
-                            instrument_tool=it,
+                            instrument_tool=it_obj,
                             instrument_tool_write_off = instrument_tool_write_off,
                             write_off_quantity=write_off_quantity
                         )
@@ -126,22 +126,22 @@ class InstrumentToolListUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'tool_list': FixedAssetMsg.TOOL_NOT_FOUND})
         raise serializers.ValidationError({'id': BaseMsg.REQUIRED})
 
-    def validate(self, validate_data): # pylint: disable=C0103
+    def validate(self, validate_data): 
         tool_id = validate_data.get('id', None)
         write_off_quantity = validate_data.get('write_off_quantity', 0)
-        it = InstrumentTool.objects.filter(id=tool_id).first()
+        it_obj = InstrumentTool.objects.filter(id=tool_id).first()
         instrument_tool_write_off_id = self.context.get('instrument_tool_write_off_id', None)
 
-        if it:
+        if it_obj:
             total_write_off_quantity = 0
-            it_write_off_list = it.write_off_quantities.exclude(
+            it_write_off_list = it_obj.write_off_quantities.exclude(
                 instrument_tool_write_off_id = instrument_tool_write_off_id
             )
 
             for it_write_off in it_write_off_list:
                 total_write_off_quantity += it_write_off.write_off_quantity
 
-            using_quantity = it.quantity - total_write_off_quantity
+            using_quantity = it_obj.quantity - total_write_off_quantity
             if using_quantity < write_off_quantity:
                 raise serializers.ValidationError({'write_off_quantity': FixedAssetMsg.WRITEOFF_QUANTITY_INVALID})
 
@@ -163,7 +163,7 @@ class InstrumentToolWriteOffUpdateSerializer(AbstractCreateSerializerModel):
         )
 
     @decorator_run_workflow
-    def update(self, instrument_tool_write_off, validated_data): # pylint: disable=C0103
+    def update(self, instrument_tool_write_off, validated_data): 
         tool_list = validated_data.pop('tool_list')
 
         try:
@@ -175,12 +175,12 @@ class InstrumentToolWriteOffUpdateSerializer(AbstractCreateSerializerModel):
                 instrument_tool_write_off.quantities.all().delete()
 
                 for tool in tool_list:
-                    it = InstrumentTool.objects.filter(id=tool.get('id', None)).first()
-                    if it:
+                    it_obj = InstrumentTool.objects.filter(id=tool.get('id', None)).first()
+                    if it_obj:
                         write_off_quantity = tool.get('write_off_quantity', 0)
 
                         InstrumentToolWriteOffQuantity.objects.create(
-                            instrument_tool=it,
+                            instrument_tool=it_obj,
                             instrument_tool_write_off = instrument_tool_write_off,
                             write_off_quantity=write_off_quantity
                         )
@@ -208,7 +208,7 @@ class InstrumentToolWriteOffDetailSerializer(AbstractDetailSerializerModel):
         )
 
     @classmethod
-    def get_tool_list(cls, obj): # pylint: disable=C0103
+    def get_tool_list(cls, obj): 
         data = []
         for it_write_off_quantity in obj.quantities.all():
             total_quantity = it_write_off_quantity.instrument_tool.quantity
@@ -216,8 +216,8 @@ class InstrumentToolWriteOffDetailSerializer(AbstractDetailSerializerModel):
             it_writeoff_list = InstrumentToolWriteOffQuantity.objects.filter(
                 instrument_tool = it_write_off_quantity.instrument_tool
             )
-            for it in it_writeoff_list:
-                using_quantity = using_quantity - it.write_off_quantity
+            for it_obj in it_writeoff_list:
+                using_quantity = using_quantity - it_obj.write_off_quantity
             data.append({
                 'id': it_write_off_quantity.instrument_tool_id,
                 'title': it_write_off_quantity.instrument_tool.title,

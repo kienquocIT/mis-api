@@ -52,12 +52,12 @@ class AssetListCreateSerializer(AbstractCreateSerializerModel):
                 raise serializers.ValidationError({'asset_list': FixedAssetMsg.ASSET_NOT_FOUND})
         raise serializers.ValidationError({'id': BaseMsg.REQUIRED})
 
-    def validate(self, validate_data): # pylint: disable=C0103
+    def validate(self, validate_data): 
         asset_id = validate_data.get('id', None)
-        fa = FixedAsset.objects.filter(id=asset_id).first()
+        fa_obj = FixedAsset.objects.filter(id=asset_id).first()
 
-        if fa:
-            fa_writeoff = fa.fixed_asset_write_off
+        if fa_obj:
+            fa_writeoff = fa_obj.fixed_asset_write_off
             if fa_writeoff:
                 raise serializers.ValidationError({'asset_list': FixedAssetMsg.ASSET_ALREADY_WRITTEN_OFF})
 
@@ -112,12 +112,12 @@ class AssetListUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'asset_list': FixedAssetMsg.ASSET_NOT_FOUND})
         raise serializers.ValidationError({'id': BaseMsg.REQUIRED})
 
-    def validate(self, validate_data): # pylint: disable=C0103
+    def validate(self, validate_data): 
         asset_id = validate_data.get('id', None)
-        fa = FixedAsset.objects.filter(id=asset_id).first()
+        fa_obj = FixedAsset.objects.filter(id=asset_id).first()
         current_fa_writeoff_id = self.context.get('fixed_asset_write_off_id', None)
-        if fa and fa.fixed_asset_write_off:
-            if str(fa.fixed_asset_write_off.id) != current_fa_writeoff_id:
+        if fa_obj and fa_obj.fixed_asset_write_off:
+            if str(fa_obj.fixed_asset_write_off.id) != current_fa_writeoff_id:
                 raise serializers.ValidationError({'asset_list': FixedAssetMsg.ASSET_ALREADY_WRITTEN_OFF})
 
         return validate_data
