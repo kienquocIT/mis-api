@@ -53,7 +53,7 @@ class InstrumentToolListCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'tool_list': FixedAssetMsg.TOOL_NOT_FOUND})
         raise serializers.ValidationError({'id': BaseMsg.REQUIRED})
 
-    def validate(self, validate_data):
+    def validate(self, validate_data): # pylint: disable=C0103
         tool_id = validate_data.get('id', None)
         write_off_quantity = validate_data.get('write_off_quantity', 0)
         it = InstrumentTool.objects.filter(id=tool_id).first()
@@ -85,7 +85,7 @@ class InstrumentToolWriteOffCreateSerializer(AbstractCreateSerializerModel):
         )
 
     @decorator_run_workflow
-    def create(self, validated_data):
+    def create(self, validated_data):  # pylint: disable=C0103
         tool_list = validated_data.pop('tool_list')
         try:
             with transaction.atomic():
@@ -126,7 +126,7 @@ class InstrumentToolListUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'tool_list': FixedAssetMsg.TOOL_NOT_FOUND})
         raise serializers.ValidationError({'id': BaseMsg.REQUIRED})
 
-    def validate(self, validate_data):
+    def validate(self, validate_data): # pylint: disable=C0103
         tool_id = validate_data.get('id', None)
         write_off_quantity = validate_data.get('write_off_quantity', 0)
         it = InstrumentTool.objects.filter(id=tool_id).first()
@@ -163,7 +163,7 @@ class InstrumentToolWriteOffUpdateSerializer(AbstractCreateSerializerModel):
         )
 
     @decorator_run_workflow
-    def update(self, instrument_tool_write_off, validated_data):
+    def update(self, instrument_tool_write_off, validated_data): # pylint: disable=C0103
         tool_list = validated_data.pop('tool_list')
 
         try:
@@ -208,12 +208,14 @@ class InstrumentToolWriteOffDetailSerializer(AbstractDetailSerializerModel):
         )
 
     @classmethod
-    def get_tool_list(cls, obj):
+    def get_tool_list(cls, obj): # pylint: disable=C0103
         data = []
         for it_write_off_quantity in obj.quantities.all():
             total_quantity = it_write_off_quantity.instrument_tool.quantity
             using_quantity = total_quantity
-            it_writeoff_list = InstrumentToolWriteOffQuantity.objects.filter(instrument_tool = it_write_off_quantity.instrument_tool)
+            it_writeoff_list = InstrumentToolWriteOffQuantity.objects.filter(
+                instrument_tool = it_write_off_quantity.instrument_tool
+            )
             for it in it_writeoff_list:
                 using_quantity = using_quantity - it.write_off_quantity
             data.append({

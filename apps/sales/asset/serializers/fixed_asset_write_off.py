@@ -52,7 +52,7 @@ class AssetListCreateSerializer(AbstractCreateSerializerModel):
                 raise serializers.ValidationError({'asset_list': FixedAssetMsg.ASSET_NOT_FOUND})
         raise serializers.ValidationError({'id': BaseMsg.REQUIRED})
 
-    def validate(self, validate_data):
+    def validate(self, validate_data): # pylint: disable=C0103
         asset_id = validate_data.get('id', None)
         fa = FixedAsset.objects.filter(id=asset_id).first()
 
@@ -112,7 +112,7 @@ class AssetListUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'asset_list': FixedAssetMsg.ASSET_NOT_FOUND})
         raise serializers.ValidationError({'id': BaseMsg.REQUIRED})
 
-    def validate(self, validate_data):
+    def validate(self, validate_data): # pylint: disable=C0103
         asset_id = validate_data.get('id', None)
         fa = FixedAsset.objects.filter(id=asset_id).first()
         current_fa_writeoff_id = self.context.get('fixed_asset_write_off_id', None)
