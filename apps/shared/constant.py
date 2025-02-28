@@ -131,6 +131,8 @@ MAP_FIELD_TITLE = {
     'consulting.consulting': 'title',
     'asset.fixedasset': 'title',
     'asset.instrumenttool': 'title',
+    'asset.fixedassetwriteoff': 'title',
+    'asset.instrumenttoolwriteoff': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

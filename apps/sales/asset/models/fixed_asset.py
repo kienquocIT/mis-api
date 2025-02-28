@@ -92,6 +92,15 @@ class FixedAsset(DataAbstractModel):
     depreciation_end_date = models.DateTimeField()
     depreciation_value = models.FloatField(null=True)
 
+    fixed_asset_write_off = models.ForeignKey(
+        'asset.FixedAssetWriteOff',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="write_off_fixed_assets",
+    )
+
+    depreciation_data = models.JSONField(default=dict, help_text='data for depreciation')
+
     class Meta:
         verbose_name = 'Fixed Asset'
         verbose_name_plural = 'Fixed Assets'
@@ -116,6 +125,7 @@ class FixedAsset(DataAbstractModel):
 
         # hit DB
         super().save(*args, **kwargs)
+
 
 class FixedAssetUseDepartment(SimpleAbstractModel):
     fixed_asset = models.ForeignKey(
