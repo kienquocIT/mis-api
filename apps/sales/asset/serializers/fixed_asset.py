@@ -131,7 +131,8 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
             'depreciation_start_date',
             'depreciation_end_date',
             'increase_fa_list',
-            'depreciation_value'
+            'depreciation_value',
+            'depreciation_data'
         )
 
     @classmethod
@@ -372,7 +373,8 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
             'depreciation_start_date',
             'depreciation_end_date',
             'increase_fa_list',
-            'depreciation_value'
+            'depreciation_value',
+            'depreciation_data'
         )
 
     @classmethod

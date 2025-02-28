@@ -130,7 +130,8 @@ class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
             'depreciation_time_unit',
             'depreciation_start_date',
             'depreciation_end_date',
-            'increase_fa_list'
+            'increase_fa_list',
+            'depreciation_data'
         )
 
     @classmethod
@@ -374,7 +375,8 @@ class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
             'depreciation_time_unit',
             'depreciation_start_date',
             'depreciation_end_date',
-            'increase_fa_list'
+            'increase_fa_list',
+            'depreciation_data'
         )
 
     @classmethod

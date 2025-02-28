@@ -82,6 +82,8 @@ class InstrumentTool(DataAbstractModel):
     depreciation_start_date = models.DateTimeField()
     depreciation_end_date = models.DateTimeField()
 
+    depreciation_data = models.JSONField(default=dict, help_text='data for depreciation')
+
     class Meta:
         verbose_name = 'Instrument Tool'
         verbose_name_plural = 'Instrument Tools'
