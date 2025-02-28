@@ -344,7 +344,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Total product pretax amount',
         'code': 'total_product_pretax_amount',
         'remark': 'Total product pretax amount of quotation',
-        'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
+        'parent_n_id': None,
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -354,7 +354,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Total product discount rate',
         'code': 'total_product_discount_rate',
         'remark': 'Total product discount rate of quotation',
-        'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
+        'parent_n_id': None,
         'type': 6,
     },
     '9dc78b54-0afb-4f53-af42-5ef059451ad3': {
@@ -362,7 +362,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Total product discount',
         'code': 'total_product_discount',
         'remark': 'Total product discount of quotation',
-        'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
+        'parent_n_id': None,
         'type': 6,
     },
     'ced7e425-d284-4f1c-ada4-45f62636b5da': {
@@ -370,7 +370,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Total product tax',
         'code': 'total_product_tax',
         'remark': 'Total product tax of quotation',
-        'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
+        'parent_n_id': None,
         'type': 6,
     },
     'bd9374ec-cdc7-4d95-9ece-363b3b623d3b': {
@@ -378,7 +378,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Total product',
         'code': 'total_product',
         'remark': 'Total product of quotation',
-        'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
+        'parent_n_id': None,
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -388,7 +388,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Total product revenue before tax',
         'code': 'total_product_revenue_before_tax',
         'remark': 'Total product revenue before tax of quotation',
-        'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
+        'parent_n_id': None,
         'type': 6,
     },
     # Totals of costs
@@ -397,7 +397,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Total cost pretax amount',
         'code': 'total_cost_pretax_amount',
         'remark': 'Total cost pretax amount of quotation',
-        'parent_n_id': 'cf82dbac-a903-425c-aa41-b45e7ccec41b',  # tab cost
+        'parent_n_id': None,
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -407,7 +407,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Total cost tax',
         'code': 'total_cost_tax',
         'remark': 'Total cost tax of quotation',
-        'parent_n_id': 'cf82dbac-a903-425c-aa41-b45e7ccec41b',  # tab cost
+        'parent_n_id': None,
         'type': 6,
     },
     'd3ce455f-9ea7-42c0-87b4-5536b437cdd5': {
@@ -415,7 +415,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Total cost',
         'code': 'total_cost',
         'remark': 'Total cost of quotation',
-        'parent_n_id': 'cf82dbac-a903-425c-aa41-b45e7ccec41b',  # tab cost
+        'parent_n_id': None,
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -426,7 +426,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Total expense pretax amount',
         'code': 'total_expense_pretax_amount',
         'remark': 'Total expense pretax amount of quotation',
-        'parent_n_id': '10946df3-1e9d-4538-9173-7f75861ab7ed',  # tab expense
+        'parent_n_id': None,
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -436,7 +436,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Total expense tax',
         'code': 'total_expense_tax',
         'remark': 'Total expense tax of quotation',
-        'parent_n_id': '10946df3-1e9d-4538-9173-7f75861ab7ed',  # tab expense
+        'parent_n_id': None,
         'type': 6,
     },
     '6d02b18b-3e5c-485f-8c99-00101e0af87f': {
@@ -444,7 +444,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Total expense',
         'code': 'total_expense',
         'remark': 'Total expense of quotation',
-        'parent_n_id': '10946df3-1e9d-4538-9173-7f75861ab7ed',  # tab expense
+        'parent_n_id': None,
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -492,6 +492,9 @@ AppProp_SaleData_Quotation_data = {
         'code': 'quotation_products_data',
         'remark': 'Tab line detail of quotation',
         'code_related': [
+            'total_product_pretax_amount', 'total_product_discount_rate',
+            'total_product_discount', 'total_product_tax',
+            'total_product', 'total_product_revenue_before_tax',
             'quotation_costs_data', 'quotation_indicators_data',
             'total_cost_pretax_amount', 'total_cost_tax', 'total_cost'
         ],
@@ -513,7 +516,10 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Cost information',
         'code': 'quotation_costs_data',
         'remark': 'Tab cost of quotation',
-        'code_related': ['quotation_indicators_data'],
+        'code_related': [
+            'total_cost_pretax_amount', 'total_cost_tax',
+            'total_cost', 'quotation_indicators_data',
+        ],
         'type': 1,
         'is_wf_zone': True,
         'is_wf_condition': False,
@@ -523,7 +529,10 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Expense information',
         'code': 'quotation_expenses_data',
         'remark': 'Tab expense of quotation',
-        'code_related': ['quotation_indicators_data'],
+        'code_related': [
+            'total_expense_pretax_amount', 'total_expense_tax',
+            'total_expense', 'quotation_indicators_data',
+        ],
         'type': 1,
         'is_wf_zone': True,
         'is_wf_condition': False,
@@ -1134,7 +1143,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Total product pretax amount',
         'code': 'total_product_pretax_amount',
         'remark': 'Total product pretax amount of sale order',
-        'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
+        'parent_n_id': None,
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -1144,7 +1153,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Total product discount rate',
         'code': 'total_product_discount_rate',
         'remark': 'Total product discount rate of sale order',
-        'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
+        'parent_n_id': None,
         'type': 6,
     },
     '923da4a7-5b53-4961-ab59-4a7cac711631': {
@@ -1152,7 +1161,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Total product discount',
         'code': 'total_product_discount',
         'remark': 'Total product discount of sale order',
-        'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
+        'parent_n_id': None,
         'type': 6,
     },
     '172102c3-43af-4114-b9da-ca3627e38b70': {
@@ -1160,7 +1169,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Total product tax',
         'code': 'total_product_tax',
         'remark': 'Total product tax of sale order',
-        'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
+        'parent_n_id': None,
         'type': 6,
     },
     'cd11b1b0-efd4-45c0-8037-a8f9af5b8785': {
@@ -1168,7 +1177,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Total product',
         'code': 'total_product',
         'remark': 'Total product of sale order',
-        'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
+        'parent_n_id': None,
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -1178,7 +1187,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Total product revenue before tax',
         'code': 'total_product_revenue_before_tax',
         'remark': 'Total product revenue before tax of sale order',
-        'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
+        'parent_n_id': None,
         'type': 6,
     },
     # Totals of costs
@@ -1187,7 +1196,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Total cost pretax amount',
         'code': 'total_cost_pretax_amount',
         'remark': 'Total cost pretax amount of sale order',
-        'parent_n_id': '0cb516c2-2b59-4a11-98cf-4b78fd4a464d',  # tab cost
+        'parent_n_id': None,
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -1197,7 +1206,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Total cost tax',
         'code': 'total_cost_tax',
         'remark': 'Total cost tax of sale order',
-        'parent_n_id': '0cb516c2-2b59-4a11-98cf-4b78fd4a464d',  # tab cost
+        'parent_n_id': None,
         'type': 6,
     },
     'ad38f62e-31d3-48e7-8c23-42e127aeb3d8': {
@@ -1205,7 +1214,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Total cost',
         'code': 'total_cost',
         'remark': 'Total cost of sale order',
-        'parent_n_id': '0cb516c2-2b59-4a11-98cf-4b78fd4a464d',  # tab cost
+        'parent_n_id': None,
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -1216,7 +1225,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Total expense pretax amount',
         'code': 'total_expense_pretax_amount',
         'remark': 'Total expense pretax amount of sale order',
-        'parent_n_id': '4ac8ebc5-adfd-4078-9834-51de58c064d1',  # tab expense
+        'parent_n_id': None,
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -1226,7 +1235,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Total expense tax',
         'code': 'total_expense_tax',
         'remark': 'Total expense tax of sale order',
-        'parent_n_id': '4ac8ebc5-adfd-4078-9834-51de58c064d1',  # tab expense
+        'parent_n_id': None,
         'type': 6,
     },
     '0b0bac8a-9572-4cae-8a57-cc09f2262b8b': {
@@ -1234,7 +1243,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Total expense',
         'code': 'total_expense',
         'remark': 'Total expense of sale order',
-        'parent_n_id': '4ac8ebc5-adfd-4078-9834-51de58c064d1',  # tab expense
+        'parent_n_id': None,
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -1281,8 +1290,11 @@ AppProp_SaleData_SaleOrder_data = {
         'code': 'sale_order_products_data',
         'remark': 'Tab line detail of sale order',
         'code_related': [
+            'total_product_pretax_amount', 'total_product_discount_rate',
+            'total_product_discount', 'total_product_tax',
+            'total_product', 'total_product_revenue_before_tax',
             'sale_order_costs_data', 'sale_order_indicators_data',
-            'total_cost_pretax_amount', 'total_cost_tax', 'total_cost'
+            'total_cost_pretax_amount', 'total_cost_tax', 'total_cost',
         ],
         'type': 1,
         'is_wf_zone': True,
@@ -1302,7 +1314,10 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Cost information',
         'code': 'sale_order_costs_data',
         'remark': 'Tab cost of sale order',
-        'code_related': ['sale_order_indicators_data'],
+        'code_related': [
+            'total_cost_pretax_amount', 'total_cost_tax',
+            'total_cost', 'sale_order_indicators_data',
+        ],
         'type': 1,
         'is_wf_zone': True,
         'is_wf_condition': False,
@@ -1312,7 +1327,10 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Expense information',
         'code': 'sale_order_expenses_data',
         'remark': 'Tab expense of sale order',
-        'code_related': ['sale_order_indicators_data'],
+        'code_related': [
+            'total_expense_pretax_amount', 'total_expense_tax',
+            'total_expense', 'sale_order_indicators_data',
+        ],
         'type': 1,
         'is_wf_zone': True,
         'is_wf_condition': False,

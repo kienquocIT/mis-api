@@ -247,7 +247,7 @@ class SQIndicatorDefaultData:
                     "function_data": [
                         {
                             "id": "8ecc50e2-e7d6-4b0d-9cd5-92eec83f8f95",
-                            "code": "expense_type_title",
+                            "code": "expense_item_data__title",
                             "type": 1,
                             "title": "Expense type",
                             "remark": "Type expense on quotation expense line",
@@ -382,7 +382,7 @@ class SQIndicatorDefaultData:
                             "function_data": [
                                 {
                                     "id": "8ecc50e2-e7d6-4b0d-9cd5-92eec83f8f95",
-                                    "code": "expense_type_title",
+                                    "code": "expense_item_data__title",
                                     "type": 1,
                                     "title": "Expense type",
                                     "remark": "Type expense on quotation expense line",
@@ -457,7 +457,7 @@ class SQIndicatorDefaultData:
                                     "function_data": [
                                         {
                                             "id": "8ecc50e2-e7d6-4b0d-9cd5-92eec83f8f95",
-                                            "code": "expense_type_title",
+                                            "code": "expense_item_data__title",
                                             "type": 1,
                                             "title": "Expense type",
                                             "remark": "Type expense on quotation expense line",
