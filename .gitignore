@@ -17,3 +17,11 @@ logs/*
 z_test*.py
 build/*
 *.egg-info/*
+
+# Bỏ qua file đã biên dịch
+*.c
+*.so
+*.pyd
+build/
+dist/
+__pycache__/
