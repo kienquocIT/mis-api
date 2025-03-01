@@ -23,10 +23,10 @@ echo "📦 Collecting static files..."
 echo "yes" | python manage.py collectstatic --noinput
 
 echo "🚀 Starting Celery workers..."
-celery -A misui worker --loglevel=info &
+celery -A misapi worker --loglevel=info &
 
 echo "📅 Starting Celery Beat scheduler..."
-celery -A misui beat --loglevel=info -S django &
+celery -A misapi beat --loglevel=info -S django &
 
 echo "🔥 Starting Gunicorn server..."
-exec gunicorn misui.wsgi:application --bind 0.0.0.0:8000
+exec gunicorn misapi.wsgi:application --bind 0.0.0.0:8000
