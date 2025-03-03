@@ -15,7 +15,7 @@ class ProductTypeAccountDeterminationList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related('account_mapped')
+        return super().get_queryset().prefetch_related().select_related()
 
     @swagger_auto_schema(
         operation_summary="Product Type Account Determination List",

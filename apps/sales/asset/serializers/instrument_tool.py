@@ -130,7 +130,8 @@ class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
             'depreciation_time_unit',
             'depreciation_start_date',
             'depreciation_end_date',
-            'increase_fa_list'
+            'increase_fa_list',
+            'depreciation_data'
         )
 
     @classmethod
@@ -247,6 +248,7 @@ class InstrumentToolDetailSerializer(AbstractDetailSerializerModel):
     use_department = serializers.SerializerMethodField()
     asset_sources = serializers.SerializerMethodField()
     ap_invoice_items = serializers.SerializerMethodField()
+    using_quantity = serializers.SerializerMethodField()
 
     class Meta:
         model = InstrumentTool
@@ -270,7 +272,8 @@ class InstrumentToolDetailSerializer(AbstractDetailSerializerModel):
             'depreciation_start_date',
             'depreciation_end_date',
             'asset_sources',
-            'ap_invoice_items'
+            'ap_invoice_items',
+            'using_quantity'
         )
 
     @classmethod
@@ -335,6 +338,12 @@ class InstrumentToolDetailSerializer(AbstractDetailSerializerModel):
             } for item in obj.ap_invoice_items.all()
         ]
 
+    @classmethod
+    def get_using_quantity(cls, obj):
+        using_quantity = obj.quantity
+        for write_off_quantity in obj.write_off_quantities.all():
+            using_quantity = using_quantity - write_off_quantity.write_off_quantity
+        return using_quantity
 
 class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
     classification = serializers.UUIDField()
@@ -366,7 +375,8 @@ class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
             'depreciation_time_unit',
             'depreciation_start_date',
             'depreciation_end_date',
-            'increase_fa_list'
+            'increase_fa_list',
+            'depreciation_data'
         )
 
     @classmethod

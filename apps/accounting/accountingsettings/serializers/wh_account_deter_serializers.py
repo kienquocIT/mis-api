@@ -4,7 +4,6 @@ from apps.accounting.accountingsettings.models.wh_account_deter import Warehouse
 
 
 class WarehouseAccountDeterminationListSerializer(serializers.ModelSerializer):
-    account_mapped = serializers.SerializerMethodField()
     account_determination_type_convert = serializers.SerializerMethodField()
 
     class Meta:
@@ -13,20 +12,9 @@ class WarehouseAccountDeterminationListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'warehouse_mapped_id',
-            'account_mapped',
-            'account_determination_type',
+            'account_number_list',
             'account_determination_type_convert'
         )
-
-    @classmethod
-    def get_account_mapped(cls, obj):
-        return {
-            'id': obj.account_mapped_id,
-            'acc_code': obj.account_mapped.acc_code,
-            'acc_name': obj.account_mapped.acc_name,
-            'foreign_acc_name': obj.account_mapped.foreign_acc_name,
-        } if obj.account_mapped else {}
-
 
     @classmethod
     def get_account_determination_type_convert(cls, obj):

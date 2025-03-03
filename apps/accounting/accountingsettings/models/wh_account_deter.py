@@ -4,6 +4,7 @@ from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = [
     'WarehouseAccountDetermination',
+    'WarehouseAccountDeterminationSub'
 ]
 
 
@@ -13,7 +14,10 @@ class WarehouseAccountDetermination(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='wh_account_deter_warehouse_mapped'
     )
-    account_number_list = models.JSONField(default=list)  # [111, 222, 333, 444]
+    account_number_list = models.JSONField(default=list)
+    # [{'id', 'acc_code', 'acc_name', 'foreign_acc_name', 'default_account_determination_type'}]
+    account_determination_type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DETERMINATION_TYPE, default=0)
+    is_change = models.BooleanField(default=False, help_text='True if user has change default account determination')
 
     class Meta:
         verbose_name = 'Warehouse Account Determination'
@@ -34,8 +38,6 @@ class WarehouseAccountDeterminationSub(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='wh_account_deter_subs_account_mapped'
     )
-    account_determination_type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DETERMINATION_TYPE, default=0)
-    is_change = models.BooleanField(default=False, help_text='True if user has change default account determination')
 
     class Meta:
         verbose_name = 'Warehouse Account Determination Sub'
