@@ -385,6 +385,7 @@ class LeaseOrderCost(MasterDataAbstractModel):
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
+    asset_type = models.SmallIntegerField(null=True, help_text='choices= ' + str(ASSET_TYPE))
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,

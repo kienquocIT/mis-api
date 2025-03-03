@@ -497,3 +497,50 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'asset': FixedAssetMsg.ERROR_CREATE})
 
         return fixed_asset
+
+
+class AssetForLeaseListSerializer(AbstractListSerializerModel):
+    asset_id = serializers.SerializerMethodField()
+    asset_data = serializers.SerializerMethodField()
+    origin_cost = serializers.SerializerMethodField()
+    lease_time_previous = serializers.SerializerMethodField()
+    net_value = serializers.SerializerMethodField()
+    depreciation_time = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FixedAsset
+        fields = (
+            'id',
+            'title',
+            'asset_id',
+            'asset_data',
+            'origin_cost',
+            'lease_time_previous',
+            'net_value',
+            'depreciation_time',
+            'depreciation_data',
+        )
+
+    @classmethod
+    def get_asset_id(cls, obj):
+        return str(obj.id)
+
+    @classmethod
+    def get_asset_data(cls, obj):
+        return {'id': str(obj.id), 'title': obj.title, 'code': obj.asset_code}
+
+    @classmethod
+    def get_origin_cost(cls, obj):
+        return obj.original_cost
+
+    @classmethod
+    def get_lease_time_previous(cls, obj):
+        return 0
+
+    @classmethod
+    def get_net_value(cls, obj):
+        return 0
+
+    @classmethod
+    def get_depreciation_time(cls, obj):
+        return obj.depreciation_time

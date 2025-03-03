@@ -3,11 +3,13 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.sales.asset.models import FixedAsset
 from apps.sales.asset.serializers import FixedAssetListSerializer, FixedAssetCreateSerializer, \
     FixedAssetDetailSerializer, FixedAssetUpdateSerializer
+from apps.sales.asset.serializers.fixed_asset import AssetForLeaseListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 __all__ =[
     'FixedAssetList',
-    'FixedAssetDetail'
+    'FixedAssetDetail',
+    'AssetForLeaseList',
 ]
 
 class FixedAssetList(BaseListMixin, BaseCreateMixin):
@@ -76,3 +78,22 @@ class FixedAssetDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {'user': request.user}
         return self.update(request, *args, pk, **kwargs)
+
+
+class AssetForLeaseList(BaseListMixin, BaseCreateMixin):
+    queryset = FixedAsset.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {}
+    serializer_list = AssetForLeaseListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Fixed Asset For Lease List",
+        operation_description="Get Fixed Asset For Lease List",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='asset', model_code='fixedasset', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
