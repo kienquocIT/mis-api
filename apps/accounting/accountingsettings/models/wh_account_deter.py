@@ -33,6 +33,11 @@ class WarehouseAccountDeterminationSub(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='wh_account_deter_subs'
     )
+    wh_account_deter_warehouse = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        related_name='wh_account_deter_subs_warehouse'
+    )
     account_mapped = models.ForeignKey(
         'accountingsettings.ChartOfAccounts',
         on_delete=models.CASCADE,

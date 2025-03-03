@@ -332,6 +332,7 @@ class ProductTestCase(AdvanceTestCase):
                 'purchase_information',
                 'product_choice',
                 'product_warehouse_detail',
+                'account_deter_referenced_by',
                 # Transaction information
                 'stock_amount',
                 'wait_delivery_amount',
@@ -420,6 +421,7 @@ class ProductTestCase(AdvanceTestCase):
                 'purchase_information',
                 'product_choice',
                 'product_warehouse_detail',
+                'account_deter_referenced_by',
                 # Transaction information
                 'stock_amount',
                 'wait_delivery_amount',

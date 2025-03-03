@@ -33,6 +33,11 @@ class ProductTypeAccountDeterminationSub(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='prd_type_account_deter_subs'
     )
+    prd_type_account_deter_prd_type = models.ForeignKey(
+        'saledata.ProductType',
+        on_delete=models.CASCADE,
+        related_name='prd_type_account_deter_subs_prd_type'
+    )
     account_mapped = models.ForeignKey(
         'accountingsettings.ChartOfAccounts',
         on_delete=models.CASCADE,

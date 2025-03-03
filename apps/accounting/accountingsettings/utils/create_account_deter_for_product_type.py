@@ -30,6 +30,7 @@ class AccountDeterminationForProductTypeHandler:
             bulk_info_prd_type_sub.append(
                 ProductTypeAccountDeterminationSub(
                     prd_type_account_deter=prd_type_account_deter_obj,
+                    prd_type_account_deter_prd_type=product_type_obj,
                     account_mapped=default_account.account_mapped,
                 )
             )

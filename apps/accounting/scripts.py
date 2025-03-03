@@ -723,18 +723,6 @@ class AccountingMasterData:
         return True
 
     @staticmethod
-    def push_default_account_determination_200():
-        """ Đẩy các tài khoản kế toán xác định mặc định (TT200) vào KHO - PRODUCT TYPE - PRODUCT """
-        for warehouse_obj in WareHouse.objects.all():
-            AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj)
-        for product_type_obj in ProductType.objects.all():
-            AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj)
-        for product_obj in Product.objects.all():
-            AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj)
-        print(f'Done :))')
-        return True
-
-    @staticmethod
     def add_account_default():
         # thêm 13881: Giao hàng nhưng chưa xuất hóa đơn bán hàng
         ChartOfAccounts.add_account(
@@ -745,4 +733,18 @@ class AccountingMasterData:
             new_foreign_acc_name='Delivered but no AR Invoice yet'
         )
         print('Done :))')
+        return True
+
+
+class AccountingScripts:
+    @staticmethod
+    def push_default_account_determination_200():
+        """ Đẩy các tài khoản kế toán xác định mặc định (TT200) vào KHO - PRODUCT TYPE - PRODUCT """
+        for warehouse_obj in WareHouse.objects.all():
+            AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj)
+        for product_type_obj in ProductType.objects.all():
+            AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj)
+        for product_obj in Product.objects.all():
+            AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj)
+        print(f'Done :))')
         return True

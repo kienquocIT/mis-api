@@ -30,6 +30,7 @@ class AccountDeterminationForWarehouseHandler:
             bulk_info_wh_sub.append(
                 WarehouseAccountDeterminationSub(
                     wh_account_deter=wh_account_deter_obj,
+                    wh_account_deter_warehouse=warehouse_obj,
                     account_mapped=default_account.account_mapped,
                 )
             )

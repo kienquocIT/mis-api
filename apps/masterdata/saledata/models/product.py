@@ -266,6 +266,10 @@ class Product(DataAbstractModel):
     )
     available_notify = models.BooleanField(default=False)
     available_notify_quantity = models.IntegerField(null=True)
+    account_deter_referenced_by = models.SmallIntegerField(
+        choices=[(0, _('Warehouse')), (1, _('Product type')), (2, _('This product'))],
+        default=0
+    )
 
     # Begin lease fields
 
@@ -434,6 +438,26 @@ class Product(DataAbstractModel):
                             'value': opening_value_list_obj.opening_balance_value,
                         })
         return unit_cost_list
+
+    def get_account_determination(self, **kwargs):
+        """
+            Lấy danh sách TK kế toán được xác định cho Sản Phẩm này:
+            - Nếu tham chiếu theo Kho (0): cần truyền 'warehouse_id' vào kwargs
+            - Nếu tham chiếu theo Loại SP (1): cần truyền 'product_type_id' vào kwargs
+            - Nếu xác định theo chính SP đó (2): không cần truyền tham số gì
+            Returns: QuerySet hoặc QuerySet rỗng nếu không tìm thấy dữ liệu
+        """
+        warehouse_id = kwargs.get('warehouse_id')
+        product_type_id = kwargs.get('product_type_id')
+        if self.account_deter_referenced_by == 0 and warehouse_id:
+            warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
+            return warehouse_obj.wh_account_deter_subs_warehouse.all() if warehouse_obj else QuerySet.none()
+        elif self.account_deter_referenced_by == 1 and product_type_id:
+            product_type_obj = ProductType.objects.filter(id=product_type_id).first()
+            return product_type_obj.prd_type_account_deter_subs_prd_type.all() if product_type_obj else QuerySet.none()
+        elif self.account_deter_referenced_by == 2:
+            return self.prd_account_deter_subs_prd.all()
+        return QuerySet.none()
 
     def save(self, *args, **kwargs):
         if 'update_stock_info' in kwargs:
