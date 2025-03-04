@@ -14,3 +14,4 @@ class FixedAssetMsg:
     TOOL_NOT_FOUND = _('Tool is not found')
     TOOL_ALREADY_WRITTEN_OFF = _('Tool is already written off')
     WRITEOFF_QUANTITY_INVALID = _('Writeoff quantity is invalid')
+    VALUE_MUST_BE_POSITIVE = _('Value must be positive')

@@ -46,7 +46,7 @@ class InstrumentToolListSerializer(AbstractListSerializerModel):
     manage_department = serializers.SerializerMethodField()
     use_department = serializers.SerializerMethodField()
     use_customer = serializers.SerializerMethodField()
-
+    write_off_quantity = serializers.SerializerMethodField()
     class Meta:
         model = InstrumentTool
         fields = (
@@ -61,7 +61,8 @@ class InstrumentToolListSerializer(AbstractListSerializerModel):
             'use_customer',
             'date_created',
             'depreciation_time',
-            'depreciation_time_unit'
+            'depreciation_time_unit',
+            'write_off_quantity'
         )
 
     @classmethod
@@ -99,6 +100,12 @@ class InstrumentToolListSerializer(AbstractListSerializerModel):
             'fullname': obj.use_customer.name,
         } if obj.use_customer else {}
 
+    @classmethod
+    def get_write_off_quantity(cls, obj):
+        write_off_quantity = 0
+        for quantity_item in obj.write_off_quantities.filter(instrument_tool_write_off__system_status=3):
+            write_off_quantity += quantity_item.write_off_quantity
+        return write_off_quantity
 
 class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
     classification = serializers.UUIDField()

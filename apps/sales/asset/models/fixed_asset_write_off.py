@@ -12,7 +12,7 @@ FA_WRITE_OFF_CHOICES = [
     (0, _('Disposal or sale')),
     (1, _('Inventory adjustment')),
     (2, _('Return of leased financial assets')),
-    (3, _('Converse fixed assets into instruments and tools')),
+    (3, _('Convert fixed assets into instruments and tools')),
     (4, _('Capital contribution to a subsidiary')),
     (5, _('Capital contribution to a joint venture')),
     (6, _('Capital contribution to an associate company')),
