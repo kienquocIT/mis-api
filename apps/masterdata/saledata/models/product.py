@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import QuerySet
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.periods import Periods
@@ -439,7 +440,7 @@ class Product(DataAbstractModel):
                         })
         return unit_cost_list
 
-    def get_account_determination(self, **kwargs):
+    def get_account_determination(self, account_deter_referenced_by=0, **kwargs):
         """
             Lấy danh sách TK kế toán được xác định cho Sản Phẩm này:
             - Nếu tham chiếu theo Kho (0): cần truyền 'warehouse_id' vào kwargs
@@ -449,14 +450,6 @@ class Product(DataAbstractModel):
         """
         warehouse_id = kwargs.get('warehouse_id')
         product_type_id = kwargs.get('product_type_id')
-        if self.account_deter_referenced_by == 0 and warehouse_id:
-            warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
-            return warehouse_obj.wh_account_deter_subs_warehouse.all() if warehouse_obj else QuerySet.none()
-        elif self.account_deter_referenced_by == 1 and product_type_id:
-            product_type_obj = ProductType.objects.filter(id=product_type_id).first()
-            return product_type_obj.prd_type_account_deter_subs_prd_type.all() if product_type_obj else QuerySet.none()
-        elif self.account_deter_referenced_by == 2:
-            return self.prd_account_deter_subs_prd.all()
         return QuerySet.none()
 
     def save(self, *args, **kwargs):
