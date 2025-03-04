@@ -631,6 +631,14 @@ class OrderDeliveryProductLeased(MasterDataAbstractModel):
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
+    offset = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="delivery_product_leased_offset",
+        null=True
+    )
+    offset_data = models.JSONField(default=dict, help_text='data json of offset')
     remaining_quantity_leased = models.FloatField(default=0, help_text="quantity remain of leased products")
     picked_quantity = models.FloatField(default=0, help_text="quantity delivery leased products")
     delivery_data = models.JSONField(default=list, help_text="data delivery of leased products")

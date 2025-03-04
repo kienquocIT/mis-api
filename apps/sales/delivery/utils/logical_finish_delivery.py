@@ -123,8 +123,7 @@ class DeliFinishHandler:
     @classmethod
     def update_pw(cls, instance, deli_product, config):
         target = deli_product.product
-        app_code = deli_product._meta.label_lower
-        if app_code == "delivery.orderdeliveryproduct" and deli_product.offset:
+        if deli_product.offset:
             target = deli_product.offset
         if target and deli_product.delivery_data:
             for data_deli in deli_product.delivery_data:
@@ -229,10 +228,13 @@ class DeliFinishHandler:
     def push_product_info(cls, instance):
         for deli_product in instance.delivery_product_delivery_sub.all():
             if deli_product.product and deli_product.uom:
+                target = deli_product.product
+                if deli_product.offset:
+                    target = deli_product.offset
                 final_ratio = cls.get_final_uom_ratio(
-                    product_obj=deli_product.product, uom_transaction=deli_product.uom
+                    product_obj=target, uom_transaction=deli_product.uom
                 )
-                deli_product.product.save(**{
+                target.save(**{
                     'update_stock_info': {
                         'quantity_delivery_new': deli_product.picked_quantity * final_ratio,
                         'system_status': 3,
@@ -240,8 +242,8 @@ class DeliFinishHandler:
                     'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
                 })
             for deli_product_leased in deli_product.delivery_product_leased_delivery_product.all():
-                if deli_product_leased.product:
-                    deli_product_leased.product.save(**{
+                if deli_product_leased.offset:
+                    deli_product_leased.offset.save(**{
                         'update_stock_info': {
                             'quantity_delivery_leased': deli_product_leased.picked_quantity,
                             'system_status': 3,

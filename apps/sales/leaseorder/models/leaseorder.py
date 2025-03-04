@@ -343,6 +343,14 @@ class LeaseOrderProductLeased(MasterDataAbstractModel):
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
+    offset = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="lease_order_product_leased_offset",
+        null=True
+    )
+    offset_data = models.JSONField(default=dict, help_text='data json of offset')
 
     class Meta:
         verbose_name = 'Lease Order Product Leased'
@@ -386,6 +394,14 @@ class LeaseOrderCost(MasterDataAbstractModel):
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
     asset_type = models.SmallIntegerField(null=True, help_text='choices= ' + str(ASSET_TYPE))
+    offset = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="lease_order_cost_offset",
+        null=True
+    )
+    offset_data = models.JSONField(default=dict, help_text='data json of offset')
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
@@ -482,6 +498,14 @@ class LeaseOrderCostLeased(MasterDataAbstractModel):
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
+    offset = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="lease_order_cost_leased_offset",
+        null=True
+    )
+    offset_data = models.JSONField(default=dict, help_text='data json of offset')
     uom_time = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,

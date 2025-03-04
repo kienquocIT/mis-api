@@ -125,8 +125,10 @@ class OrderActiveDeliverySerializer:
                 'product_quantity_time': m2m_obj.product_quantity_time,
             })
 
-            if m2m_obj.product:
-                cost_product = m2m_obj.product.lease_order_cost_product.filter(lease_order=self.order_obj).first()
+            if m2m_obj.product and m2m_obj.offset:
+                cost_product = m2m_obj.offset.lease_order_cost_offset.filter(
+                    lease_order=self.order_obj, product=m2m_obj.product
+                ).first()
                 if cost_product:
                     result.update({
                         'product_unit_price': cost_product.product_cost_price,

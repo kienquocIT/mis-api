@@ -33,8 +33,9 @@ class RecoveryFinishHandler:
                     'update_fields': ['quantity_remain_recovery', 'quantity_new_remain_recovery']
                 })
             for product_leased in recovery_product.recovery_product_leased_recovery_product.all():
-                deli_product_leased = product_leased.product.delivery_product_leased_product.filter(
-                    delivery_product__delivery_sub=product_leased.recovery_product.recovery_delivery.delivery
+                deli_product_leased = product_leased.offset.delivery_product_leased_offset.filter(
+                    delivery_product__delivery_sub=product_leased.recovery_product.recovery_delivery.delivery,
+                    product_id=product_leased.product_id,
                 ).first()
                 if deli_product_leased:
                     deli_product_leased.quantity_leased_remain_recovery -= product_leased.quantity_recovery
@@ -149,7 +150,7 @@ class RecoveryFinishHandler:
         for recovery_warehouse in recovery_product.recovery_warehouse_rp.filter(
                 recovery_product_leased__isnull=False
         ):
-            if recovery_warehouse.recovery_product_leased.product:
+            if recovery_warehouse.recovery_product_leased.offset:
                 warehouse_id = recovery_warehouse.warehouse_id
                 quantity_receipt = recovery_warehouse.quantity_recovery
                 if warehouse_id and quantity_receipt > 0:
@@ -164,7 +165,7 @@ class RecoveryFinishHandler:
                     } for lease_generate in recovery_warehouse.recovery_lease_generate_rw.filter(serial__isnull=False)]
                     cls.run_push_to_warehouse_stock(
                         instance=instance,
-                        product_id=recovery_warehouse.recovery_product_leased.product_id,
+                        product_id=recovery_warehouse.recovery_product_leased.offset_id,
                         warehouse_id=warehouse_id,
                         uom_id=recovery_product.uom_id,
                         lot_data=[],
@@ -172,7 +173,7 @@ class RecoveryFinishHandler:
                         amount=quantity_receipt,
                     )
                     # To product info
-                    recovery_warehouse.recovery_product_leased.product.save(**{
+                    recovery_warehouse.recovery_product_leased.offset.save(**{
                         'update_stock_info': {
                             'quantity_receipt_po': 0,
                             'quantity_receipt_actual': quantity_receipt,

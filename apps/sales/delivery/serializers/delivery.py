@@ -71,6 +71,8 @@ class OrderDeliveryProductLeasedListSerializer(serializers.ModelSerializer):
         fields = (
             'product_id',
             'product_data',
+            'offset_id',
+            'offset_data',
             'picked_quantity',
             'delivery_data',
             'quantity_leased_remain_recovery',
@@ -442,5 +444,5 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
 
                 'product_lease_start_date': obj.actual_delivery_date.date(),
             }
-            for deli_product in obj.delivery_product_delivery_sub.all()
+            for deli_product in obj.delivery_product_delivery_sub.filter(quantity_remain_recovery__gt=0)
         ]

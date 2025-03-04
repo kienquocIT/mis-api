@@ -210,6 +210,14 @@ class RecoveryProductLeased(MasterDataAbstractModel):
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
+    offset = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="offset",
+        related_name="recovery_product_leased_offset",
+        null=True
+    )
+    offset_data = models.JSONField(default=dict, help_text='data json of offset')
     quantity_recovery = models.FloatField(default=0)
     delivery_data = models.JSONField(default=list, help_text='data json of product delivery')
     product_warehouse_data = models.JSONField(default=list, help_text='data json of product warehouses')
