@@ -2928,3 +2928,43 @@ def update_end_date():
         item.end_date = item.start_date + relativedelta(months=12) - relativedelta(days=1)
         item.save(update_fields=['end_date'])
     print('Done')
+
+def update_document_type_for_new_companies():
+    document_type_data = [
+        {'code': 'DOCTYPE01', 'title': 'Đơn dự thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE02', 'title': 'Tài liệu chứng minh tư cách pháp nhân', 'is_default': 1,
+         'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE03', 'title': 'Giấy ủy quyền', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE04', 'title': 'Thỏa thuận liên doanh', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE05', 'title': 'Bảo đảm dự thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE06', 'title': 'Tài liệu chứng minh năng lực nhà thầu', 'is_default': 1,
+         'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE07', 'title': 'Đề xuất kĩ thuật', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE08', 'title': 'Đề xuất giá', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'DOCTYPE09', 'title': 'Tài liệu xác định yêu cầu', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE10', 'title': 'Tài liệu giới thiệu sản phẩm', 'is_default': 0,
+         'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE11', 'title': 'Thuyết minh kĩ thuật', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE12', 'title': 'Tài liệu đề xuất giải pháp', 'is_default': 0,
+         'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE13', 'title': 'BOM', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE14', 'title': 'Giới thiệu dịch vụ hỗ trợ vận hành', 'is_default': 0,
+         'doc_type_category': 'consulting'},
+        {'code': 'DOCTYPE15', 'title': 'Thuyết trình phạm vi dự án', 'is_default': 0,
+         'doc_type_category': 'consulting'},
+    ]
+    company_obj_list = Company.objects.all()
+    bulk_data = []
+    for company_obj in company_obj_list:
+        if not DocumentType.objects.filter(company=company_obj, is_default=1).exists():
+            for item in document_type_data:
+                bulk_data.append(
+                    DocumentType(
+                        tenant=company_obj.tenant,
+                        company=company_obj,
+                        **item,
+                    )
+                )
+    if len(bulk_data) > 0:
+        DocumentType.objects.bulk_create(bulk_data)
+    return True
