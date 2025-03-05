@@ -1,6 +1,5 @@
 import logging
 from django.db import models
-from django.db.models import QuerySet
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.periods import Periods
@@ -458,16 +457,22 @@ class Product(DataAbstractModel):
             if account_deter_referenced_by == 0:
                 warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
                 if warehouse_obj:
-                    return warehouse_obj.wh_account_deter_warehouse_mapped.filter(title=account_deter_title).first()
-                logger.error(msg=f'Get account deter by warehouse, but no warehouse found!')
+                    return warehouse_obj.wh_account_deter_warehouse_mapped.filter(
+                        title=account_deter_title
+                    ).first()
+                logger.error(msg='Get account deter by warehouse, but no warehouse found!')
             elif account_deter_referenced_by == 1:
                 prd_type_list = self.general_product_types_mapped.all()
                 if prd_type_list.count() == 1:
                     prd_type_obj = prd_type_list.first()
-                    return prd_type_obj.prd_type_account_deter_product_type_mapped.filter(title=account_deter_title).first()
-                logger.error(msg=f'Get account deter by product type, but there are more than 1 product type found!')
+                    return prd_type_obj.prd_type_account_deter_product_type_mapped.filter(
+                        title=account_deter_title
+                    ).first()
+                logger.error(msg='Get account deter by product type, but there are more than 1 product type found!')
             elif account_deter_referenced_by == 2:
-                return self.prd_account_deter_product_mapped.filter(title=account_deter_title).first()
+                return self.prd_account_deter_product_mapped.filter(
+                    title=account_deter_title
+                ).first()
         return None
 
     def save(self, *args, **kwargs):
