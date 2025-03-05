@@ -126,7 +126,7 @@ class PurchaseRequestProductList(BaseListMixin):
     list_hidden_field = []
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        return super().get_queryset().filter(remain_for_purchase_order__gt=0).select_related(
             'purchase_request',
             'product',
             'product__general_product_category',

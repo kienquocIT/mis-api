@@ -530,6 +530,7 @@ class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
             'content',
             'date_created',
             'opportunity',
+            'send_success',
             'process',
             'process_stage_app',
         )
@@ -852,6 +853,7 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
             'input_result',
             'repeat',
             'is_cancelled',
+            'send_success',
             # process
             'process',
             'process_stage_app',

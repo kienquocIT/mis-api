@@ -889,8 +889,10 @@ class BaseListMixin(BaseMixin):
         return re.sub(pattern, lambda m: f'"{m.group(0)}"', str(data))
 
     def get_queryset_custom_direct_page(self, main_queryset=None):
-        if (self.request.query_params.get('direct_first') or self.request.query_params.get('direct_last') or
-                self.request.query_params.get('direct_previous') or self.request.query_params.get('direct_next')):
+        if (
+                self.request.query_params.get('direct_first') or self.request.query_params.get('direct_last') or
+                self.request.query_params.get('direct_previous') or self.request.query_params.get('direct_next')
+        ):
             queryset = super().get_queryset()
             current_pk = self.request.query_params.get('current_pk')
             current_obj = queryset.filter(id=current_pk).values('date_created').first() if current_pk else None
@@ -900,7 +902,9 @@ class BaseListMixin(BaseMixin):
                 return queryset.filter(date_created__lt=current_obj['date_created']) if current_obj else queryset
             if 'direct_next' in self.request.query_params:
                 return queryset.filter(date_created__gt=current_obj['date_created']) if current_obj else queryset.none()
-        return main_queryset if main_queryset else super().get_queryset()
+        if main_queryset is not None:
+            return main_queryset
+        return super().get_queryset()
 
     def list(self, request, *args, **kwargs):
         """
@@ -1055,10 +1059,8 @@ class BaseUpdateMixin(BaseMixin):
                 if state is True:
                     if is_edit_all_zone is True:
                         return request_data, True, task_id
-                    new_body_data = {}
-                    for key, value in request_data.items():
-                        if key in code_field_arr:
-                            new_body_data[key] = value
+                    new_body_data = {key: value for key, value in request_data.items() if key in code_field_arr}
+
                     return new_body_data, True, task_id
                 # check permission default | wait implement so it is True
         return request_data, False, None
@@ -1168,11 +1170,14 @@ class BaseDestroyMixin(BaseMixin):
     @staticmethod
     def perform_soft_delete(instance):
         """
-        Marks the instance as soft deleted.
+        Marks the instance as soft deleted by field is_delete.
         """
-        instance.is_delete = True
-        instance.save(update_fields=["is_delete"])
-        return ResponseController.no_content_204()
+        if hasattr(instance, "is_delete"):
+            instance.is_delete = True
+            instance.save(update_fields=["is_delete"])
+            return ResponseController.no_content_204()
+        else:
+            raise serializers.ValidationError({'detail': "Soft delete not supported for this model."})
 
     @staticmethod
     def perform_purge(instance):

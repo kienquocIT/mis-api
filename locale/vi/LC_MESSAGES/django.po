@@ -122,6 +122,10 @@ msgstr "Xuất hàng"
 msgid "Goods Receipt"
 msgstr "Nhập kho"
 
+# a196c182-01d4-4450-a4ef-86c16b536daa
+msgid "Goods Recovery"
+msgstr "Thu hồi"
+
 # 0242ba77-8b02-4589-8ed9-239788083f2b
 msgid "Goods Return"
 msgstr "Đổi - trả hàng"
@@ -1413,3 +1417,179 @@ msgstr "Tổng số tiền thanh toán phải bằng tổng số tiền sau thu�
 #
 msgid "This record cannot be deleted because it is associated with other records."
 msgstr "Dữ liệu này không thể xóa vì đã liên kết với dữ liệu khác."
+
+#
+msgid "This product is being used. Can not update general uom group."
+msgstr "Sản phẩm này đang được sử dụng. Không thể cập nhật nhóm đơn vị tính."
+
+#
+msgid "Account Group"
+msgstr "Nhóm tài khoản"
+
+#
+msgid "Account Type"
+msgstr "Loại tài khoản"
+
+#
+msgid "Currency"
+msgstr "Tiền tệ"
+
+#
+msgid "Group Level"
+msgstr "Cấp nhóm"
+
+#
+msgid "Product Category"
+msgstr "Danh mục sản phẩm"
+
+#
+msgid "Product Type"
+msgstr "Loại sản phẩm"
+
+#
+msgid "Salutation"
+msgstr "Danh xưng"
+
+#
+msgid "Tax"
+msgstr "Thuế"
+
+#
+msgid "Tax Category"
+msgstr "Danh mục thuế"
+
+#
+msgid "Unit Of Measure"
+msgstr "Đơn vị tính"
+
+#
+msgid "Unit Of Measure Group"
+msgstr "Nhóm đơn vị tính"
+
+#
+msgid "Code already exists"
+msgstr "Mã đã tồn tại"
+
+#
+msgid "Error create asset"
+msgstr "Lỗi tạo tài sản"
+
+#
+msgid "Description of each source is required"
+msgstr "Mô tả của mỗi nguồn là bắt buộc"
+
+#
+msgid "Total value must be equal to the sum of source value"
+msgstr "Tổng giá trị phải bằng tổng giá trị mỗi nguồn"
+
+#
+msgid "Fixed Asset"
+msgstr "Tài sản cố định"
+
+#
+msgid "Instrument & Tool"
+msgstr "Công cụ dụng cụ"
+
+#
+msgid "Sale"
+msgstr "Bán hàng"
+
+#
+msgid "Purchasing"
+msgstr "Mua hàng"
+
+#
+msgid "Inventory"
+msgstr "Hàng tồn kho"
+
+#
+msgid "Product information"
+msgstr "Thông tin sản phẩm"
+
+#
+msgid "Cost information"
+msgstr "Thông tin giá vốn"
+
+#
+msgid "Expense information"
+msgstr "Thông tin chi phí"
+
+#
+msgid "Logistic information"
+msgstr "Thông tin vận chuyển"
+
+#
+msgid "Indicator information"
+msgstr "Thông tin chỉ tiêu tài chính"
+
+#
+msgid "Sales person"
+msgstr "NV kinh doanh"
+
+#
+msgid "Product category"
+msgstr "Danh mục sản phẩm"
+
+#
+msgid "Product type"
+msgstr "Loại sản phẩm"
+
+#
+msgid "Product quantity"
+msgstr "Số lượng sản phẩm"
+
+#
+msgid "Product unit price"
+msgstr "Đơn giá sản phẩm"
+
+#
+msgid "Product subtotal"
+msgstr "Tổng phụ sản phẩm"
+
+#
+msgid "Expense type"
+msgstr "Loại chi phí"
+
+#
+msgid "Labor expense type"
+msgstr "Loại chi phí nhân công"
+
+#
+msgid "Expense quantity"
+msgstr "Số lượng chi phí"
+
+#
+msgid "Expense unit price"
+msgstr "Đơn giá chi phí"
+
+#
+msgid "Expense subtotal before tax"
+msgstr "Tổng phụ chi phí trước thuế"
+
+#
+msgid "Expense subtotal after tax"
+msgstr "Tổng phụ chi phí sau thuế"
+
+#
+msgid "Total revenue before tax"
+msgstr "Tổng doanh thu trước thuế"
+
+#
+msgid "Total revenue after tax"
+msgstr "Tổng doanh thu sau thuế"
+
+#
+msgid "Total cost before tax"
+msgstr "Tổng giá vốn trước thuế"
+
+#
+msgid "Total cost after tax"
+msgstr "Tổng giá vốn sau thuế"
+
+#
+msgid "Total expense before tax"
+msgstr "Tổng chi phí trước thuế"
+
+#
+msgid "Total expense after tax"
+msgstr "Tổng chi phí sau thuế"

@@ -260,11 +260,8 @@ class PurchaseOrderProduct(SimpleAbstractModel):
     product_subtotal_price = models.FloatField(default=0)
     product_subtotal_price_after_tax = models.FloatField(default=0)
     order = models.IntegerField(default=1)
-    # goods receipt information
-    gr_remain_quantity = models.FloatField(
-        default=0,
-        help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
-    )
+    # fields for receipt
+    gr_remain_quantity = models.FloatField(default=0, help_text="minus when receipt")
     # shipping
     is_shipping = models.BooleanField(default=False, help_text="flag to know this record is shipping not product")
     shipping_title = models.CharField(max_length=100, blank=True)
@@ -320,11 +317,8 @@ class PurchaseOrderRequestProduct(SimpleAbstractModel):
         default=False,
         help_text="True if quantity order > quantity request => create quantity stock"
     )
-    # goods receipt information
-    gr_remain_quantity = models.FloatField(
-        default=0,
-        help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
-    )
+    # fields for receipt
+    gr_remain_quantity = models.FloatField(default=0, help_text="minus when receipt")
 
     class Meta:
         verbose_name = 'Purchase Order Request Product'

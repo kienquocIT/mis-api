@@ -636,6 +636,7 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
 
 class SaleOrderPurchasingStaffListSerializer(serializers.ModelSerializer):
     is_create_purchase_request = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -651,6 +652,19 @@ class SaleOrderPurchasingStaffListSerializer(serializers.ModelSerializer):
     def get_is_create_purchase_request(cls, obj):
         so_product = obj.sale_order_product_sale_order.all()
         return any(item.remain_for_purchase_request > 0 and item.product_id is not None for item in so_product)
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            "id": obj.employee_inherit_id,
+            "code": obj.employee_inherit.code,
+            "full_name": obj.employee_inherit.get_full_name(2),
+            "group": {
+                "id": str(obj.employee_inherit.group_id),
+                "title": obj.employee_inherit.group.title,
+                "code": obj.employee_inherit.group.code
+            } if obj.employee_inherit.group_id else {}
+        } if obj.employee_inherit else {}
 
 
 class SOProductWOListSerializer(serializers.ModelSerializer):

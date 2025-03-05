@@ -333,7 +333,7 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
         model = Runtime
         fields = (
             'id', 'stage_currents', 'date_finished', 'date_created', 'state', 'status', 'action_myself',
-            'zones_hidden_myself',
+            'zones_hidden_myself', 'app_code',
         )
 
 

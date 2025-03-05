@@ -4,6 +4,26 @@ from apps.shared import DisperseModel
 
 
 class DeliFinishHandler:
+    # UPDATE COST DELIVERY PRODUCT
+    @classmethod
+    def update_cost_delivery_product(cls, instance):
+        for deli_product in instance.delivery_product_delivery_sub.all():  # for in product
+            cls.update_cost_by_wh(deli_product=deli_product)
+        return True
+
+    @classmethod
+    def update_cost_by_wh(cls, deli_product):
+        product_obj, delivery_data = deli_product.product, deli_product.delivery_data
+        if product_obj:
+            for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
+                cost = product_obj.get_unit_cost_by_warehouse(
+                    warehouse_id=data_deli.get('warehouse_id', None), get_type=1
+                )
+                data_deli.update({'cost': cost})
+            deli_product.save(update_fields=['delivery_data'])
+
+        return True
+
     # NEW DELIVERY SUB + PRODUCT
     @classmethod
     def create_new(cls, instance):
@@ -57,13 +77,18 @@ class DeliFinishHandler:
 
     @classmethod
     def create_prod(cls, new_sub, instance):
-        # update to current product list of current sub
+        # setup data để tạo records product mới cho sub mới
         prod_arr = []
         model_deli_product = DisperseModel(app_model='delivery.orderdeliveryproduct').get_model()
         if model_deli_product and hasattr(model_deli_product, 'objects'):
             for deli_product in instance.delivery_product_delivery_sub.all():
                 quantity_before = deli_product.delivered_quantity_before + deli_product.picked_quantity
                 remaining_quantity = deli_product.delivery_quantity - quantity_before
+                # SL còn lại SP mới: tổng còn lại - SL SP đã cho thuê mà chưa giao
+                remaining_quantity_new = remaining_quantity
+                for leased_data in deli_product.product_quantity_leased_data:
+                    if leased_data.get('picked_quantity', 0) == 0:
+                        remaining_quantity_new -= 1
                 ready_quantity = deli_product.ready_quantity - deli_product.picked_quantity
                 new_prod = deli_product.setup_new_obj(
                     old_obj=deli_product,
@@ -71,7 +96,8 @@ class DeliFinishHandler:
                     delivery_quantity=deli_product.delivery_quantity,
                     delivered_quantity_before=quantity_before,
                     remaining_quantity=remaining_quantity,
-                    ready_quantity=ready_quantity if ready_quantity > 0 else 0
+                    remaining_quantity_new=remaining_quantity_new if remaining_quantity_new > 0 else 0,
+                    ready_quantity=ready_quantity if ready_quantity > 0 else 0,
                 )
                 new_prod.before_save()
                 prod_arr.append(new_prod)
@@ -83,24 +109,31 @@ class DeliFinishHandler:
     def push_product_warehouse(cls, instance):
         config = cls.get_delivery_config(instance=instance)
         for deli_product in instance.delivery_product_delivery_sub.all():
-            cls.update_pw(instance=instance, deli_product=deli_product, config=config)
-            cls.update_pw_lot(deli_product=deli_product)
-            cls.update_pw_serial(deli_product=deli_product)
+            # Nếu chưa giao hết thì bắt đầu trừ tồn kho
+            if deli_product.remaining_quantity > 0:
+                cls.update_pw(instance=instance, deli_product=deli_product, config=config)
+                cls.update_pw_lot(deli_product=deli_product)
+                cls.update_pw_serial(deli_product=deli_product)
+                for deli_product_leased in deli_product.delivery_product_leased_delivery_product.all():
+                    cls.update_pw(instance=instance, deli_product=deli_product_leased, config=config)
+                    cls.update_pw_lot(deli_product=deli_product_leased)
+                    cls.update_pw_serial(deli_product=deli_product_leased)
         return True
 
     @classmethod
     def update_pw(cls, instance, deli_product, config):
         target = deli_product.product
-        if deli_product.offset:
+        app_code = deli_product._meta.label_lower
+        if app_code == "delivery.orderdeliveryproduct" and deli_product.offset:
             target = deli_product.offset
         if target and deli_product.delivery_data:
             for data_deli in deli_product.delivery_data:
-                if all(key in data_deli for key in ('warehouse', 'uom', 'stock')):
+                if all(key in data_deli for key in ('warehouse_id', 'uom_id', 'picked_quantity')):
                     product_warehouse = target.product_warehouse_product.filter(
                         tenant_id=instance.tenant_id, company_id=instance.company_id,
-                        warehouse_id=data_deli['warehouse'],
+                        warehouse_id=data_deli['warehouse_id'],
                     )
-                    source = {"uom": data_deli['uom'], "quantity": data_deli['stock']}
+                    source = {"uom_id": data_deli['uom_id'], "quantity": data_deli['picked_quantity']}
                     DeliFinishHandler.minus_tock(source, product_warehouse, config)
         return True
 
@@ -120,7 +153,7 @@ class DeliFinishHandler:
                 # nếu trừ đủ update vào warehouse, return true
                 break
             final_ratio = 1
-            uom_delivery = UnitOfMeasure.objects.filter(id=source['uom']).first()
+            uom_delivery = UnitOfMeasure.objects.filter(id=source['uom_id']).first()
             if item.product and uom_delivery:
                 final_ratio = cls.get_final_uom_ratio(product_obj=item.product, uom_transaction=uom_delivery)
             delivery_quantity = source['quantity'] * final_ratio
@@ -146,7 +179,13 @@ class DeliFinishHandler:
 
     @classmethod
     def update_pw_lot(cls, deli_product):
-        for lot in deli_product.delivery_lot_delivery_product.all():
+        targets = []
+        app_code = deli_product._meta.label_lower
+        if app_code == "delivery.orderdeliveryproduct":
+            targets = deli_product.delivery_lot_delivery_product.all()
+        if app_code == "delivery.orderdeliveryproductleased":
+            targets = deli_product.delivery_lot_delivery_product_leased.all()
+        for lot in targets:
             final_ratio = 1
             uom_delivery_rate = deli_product.uom.ratio if deli_product.uom else 1
             if lot.product_warehouse_lot:
@@ -164,8 +203,8 @@ class DeliFinishHandler:
                         'delivery_id': deli_product.delivery_sub_id,
                     }]
                     ProductWareHouseLot.push_pw_lot(
-                        tenant_id=deli_product.delivery_sub.tenant_id,
-                        company_id=deli_product.delivery_sub.company_id,
+                        tenant_id=deli_product.tenant_id,
+                        company_id=deli_product.company_id,
                         product_warehouse_id=product_warehouse.id,
                         lot_data=lot_data,
                         type_transaction=1,
@@ -174,7 +213,13 @@ class DeliFinishHandler:
 
     @classmethod
     def update_pw_serial(cls, deli_product):
-        for serial in deli_product.delivery_serial_delivery_product.all():
+        targets = []
+        app_code = deli_product._meta.label_lower
+        if app_code == "delivery.orderdeliveryproduct":
+            targets = deli_product.delivery_serial_delivery_product.all()
+        if app_code == "delivery.orderdeliveryproductleased":
+            targets = deli_product.delivery_serial_delivery_product_leased.all()
+        for serial in targets:
             serial.product_warehouse_serial.is_delete = True
             serial.product_warehouse_serial.save(update_fields=['is_delete'])
         return True
@@ -189,11 +234,20 @@ class DeliFinishHandler:
                 )
                 deli_product.product.save(**{
                     'update_stock_info': {
-                        'quantity_delivery': deli_product.picked_quantity * final_ratio,
+                        'quantity_delivery_new': deli_product.picked_quantity * final_ratio,
                         'system_status': 3,
                     },
                     'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
                 })
+            for deli_product_leased in deli_product.delivery_product_leased_delivery_product.all():
+                if deli_product_leased.product:
+                    deli_product_leased.product.save(**{
+                        'update_stock_info': {
+                            'quantity_delivery_leased': deli_product_leased.picked_quantity,
+                            'system_status': 3,
+                        },
+                        'update_fields': ['available_amount', 'stock_amount']
+                    })
         return True
 
     # SALE/ LEASE ORDER STATUS
@@ -265,15 +319,15 @@ class DeliFinishHandler:
         actual_value = 0
         if 1 in deli_product.product.product_choice:  # case: product allow inventory
             for data_deli in deli_product.delivery_data:
-                if all(key in data_deli for key in ('warehouse', 'stock')):
+                if all(key in data_deli for key in ('warehouse_id', 'picked_quantity')):
                     cost = deli_product.product.get_current_unit_cost(
                         get_type=1,
                         **{
-                            'warehouse_id': data_deli.get('warehouse', None),
-                            'sale_order_id': data_deli.get('sale_order', None),
+                            'warehouse_id': data_deli.get('warehouse_id', None),
+                            'sale_order_id': data_deli.get('sale_order_id', None),
                         }
                     )
-                    actual_value += cost * data_deli['stock']
+                    actual_value += cost * data_deli['picked_quantity']
         else:  # case: product not allow inventory
             so_cost = deli_product.product.sale_order_cost_product.filter(sale_order=sale_order).first()
             if so_cost:

@@ -21,6 +21,7 @@ __all__ = [
 
 class DistributionPlanListSerializer(AbstractListSerializerModel):
     is_expired = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = DistributionPlan
@@ -32,12 +33,26 @@ class DistributionPlanListSerializer(AbstractListSerializerModel):
             'no_of_month',
             'end_date',
             'system_status',
-            'is_expired'
+            'is_expired',
+            'employee_inherit'
         )
 
     @classmethod
     def get_is_expired(cls, obj):
         return obj.end_date < datetime.now().date()
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            "id": obj.employee_inherit_id,
+            "code": obj.employee_inherit.code,
+            "full_name": obj.employee_inherit.get_full_name(2),
+            "group": {
+                "id": str(obj.employee_inherit.group_id),
+                "title": obj.employee_inherit.group.title,
+                "code": obj.employee_inherit.group.code
+            } if obj.employee_inherit.group_id else {}
+        } if obj.employee_inherit else {}
 
 
 class DistributionPlanCreateSerializer(AbstractCreateSerializerModel):

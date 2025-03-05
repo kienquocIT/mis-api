@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from apps.shared import SimpleAbstractModel, DataAbstractModel
+from apps.shared import SimpleAbstractModel, DataAbstractModel, AccountingAbstractModel
 
 
 __all__ = [
@@ -16,7 +16,7 @@ RECON_TYPE = [
 ]
 
 
-class Reconciliation(DataAbstractModel):
+class Reconciliation(DataAbstractModel, AccountingAbstractModel):
     type = models.SmallIntegerField(choices=RECON_TYPE, default=0)
     customer = models.ForeignKey(
         'saledata.Account',

@@ -273,7 +273,7 @@ class Opportunity(DataAbstractModel):
                     'compare_data': compare_data,
                 }
             ]
-        if condition_title == 'Decision maker':
+        if condition_title == 'Decision Maker':
             stages = [
                 {
                     'condition_property': {
@@ -295,7 +295,7 @@ class Opportunity(DataAbstractModel):
                     'compare_data': compare_data,
                 }
             ]
-        if condition_title == 'Competitor.Win':
+        if condition_title == 'Competitor Win':
             stages = [
                 {
                     'condition_property': {
@@ -308,7 +308,7 @@ class Opportunity(DataAbstractModel):
                     'compare_data': compare_data,
                 }
             ]
-        if condition_title == 'Product.Line.Detail':
+        if condition_title == 'Product Line Detail':
             stages = [
                 {
                     'condition_property': {
@@ -338,7 +338,7 @@ class Opportunity(DataAbstractModel):
         check_quotation, check_so, check_delivery = cls.get_comparison_operators(
             quotation=obj.quotation, sale_order=obj.sale_order
         )
-        if condition_title == 'Quotation.confirm':
+        if condition_title == 'Quotation Status':
             stages = [
                 {
                     'condition_property': {
@@ -349,7 +349,7 @@ class Opportunity(DataAbstractModel):
                     'compare_data': compare_data,
                 }
             ]
-        if condition_title == 'SaleOrder.status':
+        if condition_title == 'SaleOrder Status':
             stages = [
                 {
                     'condition_property': {
@@ -360,7 +360,7 @@ class Opportunity(DataAbstractModel):
                     'compare_data': compare_data,
                 }
             ]
-        if condition_title == 'SaleOrder.Delivery.Status':
+        if condition_title == 'SaleOrder Delivery Status':
             stages = [
                 {
                     'condition_property': {

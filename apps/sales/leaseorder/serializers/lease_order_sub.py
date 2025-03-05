@@ -10,7 +10,7 @@ from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expe
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation, QuotationAppConfig
 from apps.sales.leaseorder.models import LeaseOrderProduct, LeaseOrderCost, LeaseOrderExpense, LeaseOrderIndicator, \
-    LeaseOrderPaymentStage, LeaseOrderLogistic
+    LeaseOrderPaymentStage, LeaseOrderLogistic, LeaseOrderCostLeased, LeaseOrderProductLeased
 from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, \
     DisperseModel, WarehouseMsg
@@ -22,12 +22,19 @@ class LeaseOrderCommonCreate:
     @classmethod
     def create_product(cls, validated_data, instance):
         instance.lease_order_product_lease_order.all().delete()
-        LeaseOrderProduct.objects.bulk_create(
+        created_list = LeaseOrderProduct.objects.bulk_create(
             [LeaseOrderProduct(
                 lease_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
                 **sale_order_product,
             ) for sale_order_product in validated_data['lease_products_data']]
         )
+        for created in created_list:
+            LeaseOrderProductLeased.objects.bulk_create(
+                [LeaseOrderProductLeased(
+                    lease_order_product=created, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                    **product_leased,
+                ) for product_leased in created.product_quantity_leased_data]
+            )
         return True
 
     @classmethod
@@ -49,6 +56,17 @@ class LeaseOrderCommonCreate:
                 lease_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
                 **sale_order_cost,
             ) for sale_order_cost in validated_data['lease_costs_data']]
+        )
+        return True
+
+    @classmethod
+    def create_cost_leased(cls, validated_data, instance):
+        instance.lease_order_cost_leased_lease_order.all().delete()
+        LeaseOrderCostLeased.objects.bulk_create(
+            [LeaseOrderCostLeased(
+                lease_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                **cost_leased,
+            ) for cost_leased in validated_data['lease_costs_leased_data']]
         )
         return True
 
@@ -105,6 +123,8 @@ class LeaseOrderCommonCreate:
             cls.create_logistic(validated_data=validated_data, instance=instance)
         if 'lease_costs_data' in validated_data:
             cls.create_cost(validated_data=validated_data, instance=instance)
+        if 'lease_costs_leased_data' in validated_data:
+            cls.create_cost_leased(validated_data=validated_data, instance=instance)
         if 'lease_expenses_data' in validated_data:
             cls.create_expense(validated_data=validated_data, instance=instance)
         # indicator tab
@@ -349,6 +369,21 @@ class LeaseOrderRuleValidate:
 
 
 # SUB SERIALIZERS
+class LeaseOrderProductLeasedSerializer(serializers.ModelSerializer):
+    product_id = serializers.UUIDField(required=True, allow_null=False)
+
+    class Meta:
+        model = LeaseOrderProductLeased
+        fields = (
+            'product_id',
+            'product_data',
+        )
+
+    @classmethod
+    def validate_product_id(cls, value):
+        return LeaseOrderCommonValidate().validate_product(value=value)
+
+
 class LeaseOrderProductSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=True, allow_null=False)
     asset_type = serializers.IntegerField(required=True)
@@ -358,6 +393,10 @@ class LeaseOrderProductSerializer(serializers.ModelSerializer):
     tax_id = serializers.UUIDField(required=False, allow_null=True)
     promotion_id = serializers.UUIDField(required=False, allow_null=True)
     shipping_id = serializers.UUIDField(required=False, allow_null=True)
+    product_quantity_leased_data = LeaseOrderProductLeasedSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = LeaseOrderProduct
@@ -382,6 +421,7 @@ class LeaseOrderProductSerializer(serializers.ModelSerializer):
             'product_quantity',
             'product_quantity_new',
             'product_quantity_leased',
+            'product_quantity_leased_data',
             'product_quantity_time',
             'product_unit_price',
             'product_discount_value',
@@ -461,6 +501,8 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
     warehouse_id = serializers.UUIDField(required=False, allow_null=True)
     product_depreciation_start_date = serializers.CharField()
     product_depreciation_end_date = serializers.CharField()
+    product_lease_start_date = serializers.CharField()
+    product_lease_end_date = serializers.CharField()
 
     class Meta:
         model = LeaseOrderCost
@@ -482,7 +524,6 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
             'product_uom_code',
             'product_quantity',
             'product_quantity_time',
-            'product_quantity_depreciation',
             'product_cost_price',
             'product_depreciation_price',
             'product_tax_title',
@@ -499,9 +540,13 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
             'product_depreciation_subtotal',
             'product_depreciation_price',
             'product_depreciation_method',
+            'product_depreciation_adjustment',
+            'product_depreciation_time',
             'product_depreciation_start_date',
             'product_depreciation_end_date',
-            'product_depreciation_adjustment',
+
+            'product_lease_start_date',
+            'product_lease_end_date',
         )
 
     @classmethod
@@ -531,6 +576,42 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_product_quantity(cls, value):
         return LeaseOrderValueValidate.validate_quantity(value=value)
+
+
+class LeaseOrderCostLeasedSerializer(serializers.ModelSerializer):
+    product_id = serializers.UUIDField()
+    uom_time_id = serializers.UUIDField(required=False, allow_null=True)
+    product_lease_start_date = serializers.CharField()
+    product_lease_end_date = serializers.CharField()
+
+    class Meta:
+        model = LeaseOrderCostLeased
+        fields = (
+            'product_id',
+            'product_data',
+            'uom_time_id',
+            'uom_time_data',
+            'product_quantity_time',
+            'net_value',
+            'product_depreciation_price',
+            'product_subtotal_price',
+            'order',
+            # depreciation fields
+            'product_depreciation_subtotal',
+            'product_depreciation_price',
+            'product_depreciation_time',
+
+            'product_lease_start_date',
+            'product_lease_end_date',
+        )
+
+    @classmethod
+    def validate_product_id(cls, value):
+        return LeaseOrderCommonValidate().validate_product(value=value)
+
+    @classmethod
+    def validate_uom_time_id(cls, value):
+        return LeaseOrderCommonValidate().validate_unit_of_measure(value=value)
 
 
 class LeaseOrderExpenseSerializer(serializers.ModelSerializer):

@@ -342,9 +342,6 @@ QUOTATION_APP_CONFIG = {
         "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
         "3407d35d-27ce-407e-8260-264574a216e3",  # Payment Term
         "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c",  # Promotion
-        "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a",  # Shipping
-        "245e9f47-df59-4d4a-b355-7eff2859247f",  # Expense Term
-        "022375ce-c99c-4f11-8841-0a26c85f2fc2",  # Expense
     ],
     "permit_mapping": {
         "view": {
@@ -360,9 +357,6 @@ QUOTATION_APP_CONFIG = {
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
                 "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -374,9 +368,6 @@ QUOTATION_APP_CONFIG = {
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
                 "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -407,9 +398,6 @@ SALEORDER_APP_CONFIG = {
         "b9650500-aba7-44e3-b6e0-2542622702a3",  # Quotation
         "3407d35d-27ce-407e-8260-264574a216e3",  # Payment Term
         "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c",  # Promotion
-        "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a",  # Shipping
-        "245e9f47-df59-4d4a-b355-7eff2859247f",  # Expense Item
-        "022375ce-c99c-4f11-8841-0a26c85f2fc2",  # Expense
     ],
     "permit_mapping": {
         "view": {
@@ -426,9 +414,6 @@ SALEORDER_APP_CONFIG = {
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
                 "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -443,9 +428,6 @@ SALEORDER_APP_CONFIG = {
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
                 "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -554,7 +536,6 @@ DELIVERY_APP_CONFIG = {
     "app_label": "delivery",
     "is_workflow": True,
     "app_depend_on": [
-        "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd",  # WareHouse
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # SaleData.Account
     ],
     "permit_mapping": {
@@ -566,16 +547,14 @@ DELIVERY_APP_CONFIG = {
         "create": {
             "range": ["1", "3", "4"],
             "app_depends_on": {
-                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "4", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
         "edit": {
             "range": ["1", "3", "4"],
             "app_depends_on": {
-                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "4", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -2471,9 +2450,6 @@ LEASEORDER_APP_CONFIG = {
         "b9650500-aba7-44e3-b6e0-2542622702a3",  # Quotation
         "3407d35d-27ce-407e-8260-264574a216e3",  # Payment Term
         "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c",  # Promotion
-        "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a",  # Shipping
-        "245e9f47-df59-4d4a-b355-7eff2859247f",  # Expense Item
-        "022375ce-c99c-4f11-8841-0a26c85f2fc2",  # Expense
     ],
     "permit_mapping": {
         "view": {
@@ -2490,9 +2466,6 @@ LEASEORDER_APP_CONFIG = {
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
                 "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -2507,9 +2480,6 @@ LEASEORDER_APP_CONFIG = {
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
                 "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -2672,6 +2642,201 @@ PARTNERCENTER_LISTS_APP_CONFIG = {
     },
     "allow_permit": True,
     "allow_print": True,
+}
+
+FIXED_ASSET_APP_CONFIG = {
+    "id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+    "title": "Fixed Asset",
+    "code": "fixedasset",
+    "model_code": "fixedasset",
+    "app_label": "asset",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
+INSTRUMENT_TOOL_APP_CONFIG = {
+    "id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",
+    "title": "Instrument & Tool",
+    "code": "instrumenttool",
+    "model_code": "instrumenttool",
+    "app_label": "asset",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
+GOODS_RECOVERY_APP_CONFIG = {
+    "id": "a196c182-01d4-4450-a4ef-86c16b536daa",
+    "title": "Goods Recovery",
+    "code": "goodsrecovery",
+    "model_code": "goodsrecovery",
+    "app_label": "inventory",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
+FIXED_ASSET_WRITEOFF_APP_CONFIG = {
+    "id": "bf724e39-fdd0-45ab-a343-d19c9c559e28",
+    "title": "Fixed Asset Write-off",
+    "code": "fixedassetwriteoff",
+    "model_code": "fixedassetwriteoff",
+    "app_label": "asset",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
+INSTRUMENT_TOOL_WRITEOFF_APP_CONFIG = {
+    "id": "5db2cba4-564f-4386-8b89-86e2457d60e0",
+    "title": "Instrument Tool Write-off",
+    "code": "instrumenttoolwriteoff",
+    "model_code": "instrumenttoolwriteoff",
+    "app_label": "asset",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
 }
 
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
@@ -2976,6 +3141,26 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "488a6284-6341-4c51-b837-fb6964e51d82": ApplicationConfigFrame(**PARTNERCENTER_LISTS_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "fc552ebb-eb98-4d7b-81cd-e4b5813b7815": ApplicationConfigFrame(**FIXED_ASSET_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1": ApplicationConfigFrame(**INSTRUMENT_TOOL_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "a196c182-01d4-4450-a4ef-86c16b536daa": ApplicationConfigFrame(**GOODS_RECOVERY_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "bf724e39-fdd0-45ab-a343-d19c9c559e28": ApplicationConfigFrame(**FIXED_ASSET_WRITEOFF_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "5db2cba4-564f-4386-8b89-86e2457d60e0": ApplicationConfigFrame(**INSTRUMENT_TOOL_WRITEOFF_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

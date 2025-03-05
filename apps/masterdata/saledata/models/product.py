@@ -52,8 +52,8 @@ class ProductType(MasterDataAbstractModel):  # noqa
     is_material = models.BooleanField(
         default=False, help_text='flag to know this type is material of company'
     )
-    is_asset_tool = models.BooleanField(
-        default=False, help_text='flag to know this type is asset tool of company'
+    is_tool = models.BooleanField(
+        default=False, help_text='flag to know this type is tool of company'
     )
     is_service = models.BooleanField(
         default=False, help_text='flag to know this type is service of company'
@@ -269,6 +269,7 @@ class Product(DataAbstractModel):
 
     # Begin lease fields
 
+    # These fields will be created/ updated when GoodsRecovery
     lease_source = models.ForeignKey(
         "self",
         null=True,
@@ -277,8 +278,16 @@ class Product(DataAbstractModel):
         help_text="source product which this lease product cloned from"
     )
     lease_code = models.CharField(max_length=100, blank=True)
-    lease_depreciation_price = models.FloatField(default=0)
-    serial_data = models.JSONField(default=dict, help_text="data json of serial")
+    lease_time_previous = models.FloatField(default=0)
+    origin_cost = models.FloatField(default=0, help_text="the first cost of this product before depreciation")
+    date_first_delivery = models.DateField(null=True)
+
+    depreciation_price = models.FloatField(default=0)
+    depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
+    depreciation_adjustment = models.FloatField(default=0)
+    depreciation_time = models.FloatField(default=0)
+    depreciation_start_date = models.DateField(null=True)
+    depreciation_end_date = models.DateField(null=True)
 
     # End lease fields
 

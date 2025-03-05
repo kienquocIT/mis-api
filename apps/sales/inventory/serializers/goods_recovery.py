@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-# from apps.core.workflow.tasks import decorator_run_workflow
-from apps.sales.inventory.models import GoodsRecovery
+from apps.core.workflow.tasks import decorator_run_workflow
+from apps.sales.inventory.models import GoodsRecovery, RecoveryLeaseGenerate
 from apps.sales.inventory.serializers.goods_recovery_sub import RecoveryCommonCreate, RecoveryCommonValidate, \
     RecoveryDeliverySerializer
 from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
@@ -50,9 +50,17 @@ class GoodsRecoveryDetailSerializer(AbstractDetailSerializerModel):
             'id',
             'title',
             'code',
+            'date_recovery',
+            'status_recovery',
             'customer_data',
             'lease_order_data',
+            'remark',
             'recovery_delivery_data',
+            # total
+            'total_pretax',
+            'total_tax',
+            'total',
+            'total_revenue_before_tax',
         )
 
 
@@ -73,7 +81,13 @@ class GoodsRecoveryCreateSerializer(AbstractCreateSerializerModel):
             'customer_data',
             'lease_order_id',
             'lease_order_data',
+            'remark',
             'recovery_delivery_data',
+            # total
+            'total_pretax',
+            'total_tax',
+            'total',
+            'total_revenue_before_tax',
             # attachment
             # 'attachment',
         )
@@ -86,7 +100,7 @@ class GoodsRecoveryCreateSerializer(AbstractCreateSerializerModel):
     def validate_lease_order_id(cls, value):
         return RecoveryCommonValidate().validate_lease_order_id(value=value)
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def create(self, validated_data):
         goods_recovery = GoodsRecovery.objects.create(**validated_data)
         RecoveryCommonCreate().create_sub_models(instance=goods_recovery)
@@ -110,6 +124,11 @@ class GoodsRecoveryUpdateSerializer(AbstractCreateSerializerModel):
             'lease_order_id',
             'lease_order_data',
             'recovery_delivery_data',
+            # total
+            'total_pretax',
+            'total_tax',
+            'total',
+            'total_revenue_before_tax',
         )
 
     @classmethod
@@ -120,10 +139,20 @@ class GoodsRecoveryUpdateSerializer(AbstractCreateSerializerModel):
     def validate_lease_order_id(cls, value):
         return RecoveryCommonValidate().validate_lease_order_id(value=value)
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         RecoveryCommonCreate().create_sub_models(instance=instance)
+
         return instance
+
+
+class GoodsRecoveryLeaseGenerateListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RecoveryLeaseGenerate
+        fields = (
+            'id',
+            'serial_id',
+        )

@@ -370,3 +370,7 @@ class RevenuePlanByReportPermListSerializer(serializers.ModelSerializer):
             'space_month': obj.revenue_plan_mapped.period_mapped.space_month,
             'fiscal_year': obj.revenue_plan_mapped.period_mapped.fiscal_year,
         } if obj.revenue_plan_mapped else {}
+
+    @classmethod
+    def get_profit_type(cls, obj):
+        return obj.revenue_plan_mapped.profit_target_type if obj.revenue_plan_mapped else None

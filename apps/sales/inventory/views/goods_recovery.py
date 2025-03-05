@@ -1,8 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.inventory.models import GoodsRecovery
+from apps.sales.inventory.models import GoodsRecovery, RecoveryLeaseGenerate
 from apps.sales.inventory.serializers import GoodsRecoveryListSerializer, GoodsRecoveryMinimalListSerializer, \
-    GoodsRecoveryCreateSerializer, GoodsRecoveryDetailSerializer, GoodsRecoveryUpdateSerializer
+    GoodsRecoveryCreateSerializer, GoodsRecoveryDetailSerializer, GoodsRecoveryUpdateSerializer, \
+    GoodsRecoveryLeaseGenerateListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -22,10 +23,9 @@ class GoodsRecoveryList(BaseListMixin, BaseCreateMixin):
         if is_minimal:
             return super().get_queryset()
 
-        main_queryset = super().get_queryset().select_related(
+        return super().get_queryset().select_related(
             "customer",
         )
-        return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Goods Recovery List",
@@ -81,3 +81,23 @@ class GoodsRecoveryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+
+class GoodsRecoveryLeaseGenerateList(BaseListMixin):
+    queryset = RecoveryLeaseGenerate.objects
+    search_fields = []
+    filterset_fields = {
+        'goods_recovery__lease_order_id': ['exact'],
+        'goods_recovery__system_status': ['exact'],
+    }
+    serializer_list = GoodsRecoveryLeaseGenerateListSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary='Goods Recovery Lease Generate List',
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

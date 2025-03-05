@@ -26,17 +26,17 @@ class OpportunityConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="Opportunity Config Update",
         request_body=OpportunityConfigUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
         return self.update(request, *args, **kwargs)
 
 
-class CustomerDecisionFactorList(
-    BaseListMixin,
-    BaseCreateMixin
-):
+class CustomerDecisionFactorList(BaseListMixin, BaseCreateMixin):
     queryset = CustomerDecisionFactor.objects
     serializer_list = CustomerDecisionFactorListSerializer
     serializer_create = CustomerDecisionFactorCreateSerializer
@@ -45,9 +45,7 @@ class CustomerDecisionFactorList(
     create_hidden_field = ['company_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            "company"
-        )
+        return super().get_queryset().filter(is_delete=False).select_related("company")
 
     @swagger_auto_schema(
         operation_summary="Opportunity Customer Decision Factor List",
@@ -62,28 +60,29 @@ class CustomerDecisionFactorList(
         operation_description="Create new Opportunity Customer Decision Factor",
         request_body=CustomerDecisionFactorCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
 
-class CustomerDecisionFactorDetail(
-    BaseDestroyMixin,
-):
+class CustomerDecisionFactorDetail(BaseDestroyMixin):
     queryset = CustomerDecisionFactor.objects
 
     @swagger_auto_schema(
         operation_summary="Delete Opportunity Customer Decision Factor",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
 
-class OpportunityConfigStageList(
-    BaseListMixin,
-    BaseCreateMixin
-):
+class OpportunityConfigStageList(BaseListMixin, BaseCreateMixin):
     queryset = OpportunityConfigStage.objects
     serializer_list = OpportunityConfigStageListSerializer
     serializer_create = OpportunityConfigStageCreateSerializer
@@ -92,7 +91,9 @@ class OpportunityConfigStageList(
     create_hidden_field = ['company_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        return super().get_queryset().filter(
+            is_delete=False
+        ).select_related(
             "company",
         ).prefetch_related(
             "stage_condition__condition_property",
@@ -111,16 +112,15 @@ class OpportunityConfigStageList(
         operation_description="Create new Opportunity Customer Decision Factor",
         request_body=CustomerDecisionFactorCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
 
-class OpportunityConfigStageDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-    BaseDestroyMixin,
-):
+class OpportunityConfigStageDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = OpportunityConfigStage.objects
     serializer_detail = OpportunityConfigStageDetailSerializer
     serializer_update = OpportunityConfigStageUpdateSerializer
@@ -136,13 +136,19 @@ class OpportunityConfigStageDetail(
         operation_summary="Opportunity Config Stage Update",
         request_body=OpportunityConfigStageUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False, employee_require=True)
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Delete Opportunity Config Stage",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)

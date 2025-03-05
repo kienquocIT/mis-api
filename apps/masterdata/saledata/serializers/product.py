@@ -2,7 +2,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
-from apps.sales.report.inventory_log import ReportInvCommonFunc
+from apps.sales.report.utils.inventory_log import ReportInvCommonFunc
 from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
 from ..models import ProductWareHouse
@@ -827,7 +827,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 
         old_valuation_method = self.instance.valuation_method
         new_valuation_method = validate_data.get('valuation_method')
-        print(old_valuation_method, new_valuation_method)
         if all([
             ProductWareHouse.objects.filter(product=self.instance).exists(),
             new_valuation_method != old_valuation_method
@@ -837,9 +836,41 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             )
         return validate_data
 
+    @staticmethod
+    def check_related_model(instance):
+        related_objects = instance._meta.get_fields()
+        result = {}
+        for field in related_objects:
+            if field.is_relation and field.auto_created and not field.concrete:
+                related_name = field.get_accessor_name()
+                related_manager = getattr(instance, related_name)
+                related_records = list(related_manager.all())
+                if related_records:
+                    result[related_name] = related_records
+        model_related = []
+        for related_name, record_list in result.items():
+            for record in record_list:
+                model_related.append(record._meta.model_name)
+        if len(model_related) == 1:
+            if 'productproducttype' not in model_related:
+                return True
+        elif len(model_related) == 3:
+            if any([
+                'productproducttype' not in model_related,
+                'price' not in model_related,
+                'productpricelist' not in model_related
+            ]):
+                return True
+        else:
+            return True
+        return False
+
     def update(self, instance, validated_data):
         if validated_data['general_uom_group'].id != instance.general_uom_group_id:
-            raise serializers.ValidationError({'general_uom_group': 'Can not update general uom group.'})
+            if self.check_related_model(instance):
+                raise serializers.ValidationError(
+                    {'general_uom_group': _('This product is being used. Can not update general uom group.')}
+                )
         validated_data.update(
             {'volume': CommonCreateUpdateProduct.sub_validate_volume_obj(self.initial_data, validated_data)}
         )

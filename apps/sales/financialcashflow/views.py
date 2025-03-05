@@ -91,8 +91,14 @@ class ARInvoiceListForCashInflow(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related(
+        return super().get_queryset().filter(system_status=3).prefetch_related(
+            'ar_invoice_items',
+            'recon_item_ar_invoice',
+            'sale_order_mapped__payment_stage_sale_order',
+            'sale_order_mapped__payment_stage_sale_order__cash_inflow_item_detail_so_pm_stage',
+        ).select_related(
             'customer_mapped',
+            'sale_order_mapped',
         ).order_by('date_created')
 
     @swagger_auto_schema(

@@ -1,5 +1,6 @@
 from django.urls import path
 
+from apps.masterdata.saledata.views.asset import ToolClassificationDetail
 from apps.masterdata.saledata.views.contacts import (
     SalutationList, SalutationDetail, InterestsList, InterestsDetail, ContactList, ContactDetail,
     ContactListNotMapAccount,
@@ -27,12 +28,13 @@ from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail, WareHouseListForInventoryAdjustment,
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
     WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail,
-    RevenuePlanConfigList, PriceListItemListImportDB, DocumentTypeList, DocumentTypeDetail
+    RevenuePlanConfigList, PriceListItemListImportDB, DocumentTypeList, DocumentTypeDetail,
+    FixedAssetClassificationList, FixedAssetClassificationGroupList, ToolClassificationList
 )
 from apps.masterdata.saledata.views.warehouse import (
     ProductWareHouseLotList, ProductWareHouseSerialList,
     ProductWareHouseAssetToolsList, ProductWareHouseListForGoodsTransfer,
-    WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail,
+    WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail, WareHouseForInventoryList,
 )
 
 urlpatterns = [
@@ -175,6 +177,7 @@ urlpatterns += [
         WarehouseEmployeeConfigDetail.as_view(),
         name='WarehouseEmployeeConfigDetail'
     ),
+    path('warehouses-for-inventory', WareHouseForInventoryList.as_view(), name='WareHouseForInventoryList'),
 ]
 # // warehouse
 
@@ -197,4 +200,16 @@ urlpatterns += [
     path('document-type', DocumentTypeList.as_view(), name='DocumentTypeList'),
     path('document-type/<str:pk>', DocumentTypeDetail.as_view(), name='DocumentTypeDetail'),
     # path('expense-item/<str:pk>', ExpenseItemDetail.as_view(), name='ExpenseItemDetail'),
+]
+
+# fixed assets
+urlpatterns += [
+    path('fixed-asset/classification-group/list', FixedAssetClassificationGroupList.as_view(),
+         name='FixedAssetClassificationGroupList'),
+    path('fixed-asset/classification/list', FixedAssetClassificationList.as_view(),
+         name='FixedAssetClassificationList'),
+    path('tool/classification/list', ToolClassificationList.as_view(),
+         name='ToolClassificationList'),
+    path('tool/classification/detail/<str:pk>', ToolClassificationDetail.as_view(),
+         name='ToolClassificationDetail'),
 ]

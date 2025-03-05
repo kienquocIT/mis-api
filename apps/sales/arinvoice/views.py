@@ -77,7 +77,7 @@ class ARInvoiceList(BaseListMixin, BaseCreateMixin):
     serializer_create = ARInvoiceCreateSerializer
     serializer_detail = ARInvoiceDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = [
+    create_hidden_field = [
         'tenant_id', 'company_id',
         'employee_created_id', 'employee_inherit_id',
     ]
@@ -99,7 +99,6 @@ class ARInvoiceList(BaseListMixin, BaseCreateMixin):
     def get(self, request, *args, **kwargs):
         if request.query_params.get('update_status'):
             update_ar_status()
-
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -209,7 +208,7 @@ class ARInvoiceSignList(BaseListMixin, BaseCreateMixin):
     serializer_create = ARInvoiceSignCreateSerializer
     serializer_detail = ARInvoiceSignDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related().select_related()

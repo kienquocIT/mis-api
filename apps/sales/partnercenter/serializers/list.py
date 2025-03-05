@@ -511,6 +511,31 @@ class ListResultListSerializer(serializers.ModelSerializer):
         return matching_account_ids
 
     @classmethod
+    def filter_num_sale_orders(cls, obj, operator, right):  # pylint: disable=W0613
+        annotated_accounts = Account.objects.annotate(
+                                order_count=Count('sale_order_customer')
+                            ).filter_current(fill__company=True)
+        match operator:
+            case 'gte':
+                filtered_accounts = annotated_accounts.filter(order_count__gte=right)
+            case 'lte':
+                filtered_accounts = annotated_accounts.filter(order_count__lte=right)
+            case 'gt':
+                filtered_accounts = annotated_accounts.filter(order_count__gt=right)
+            case 'lt':
+                filtered_accounts = annotated_accounts.filter(order_count__lt=right)
+            case 'exact':
+                filtered_accounts = annotated_accounts.filter(order_count__exact=right)
+            case 'notexact':
+                filtered_accounts = annotated_accounts.exclude(order_count__exact=right)
+            case _:
+                raise serializers.ValidationError(f"Unsupported operator for num_sale_orders: {operator}")
+
+        account_ids = filtered_accounts.values_list('id', flat=True)
+
+        return set(account_ids)
+
+    @classmethod
     def get_list_result(cls, obj):  # pylint: disable=R0912, R0915, R0914
         application = obj.data_object.application
         model_code = application.model_code
@@ -527,7 +552,8 @@ class ListResultListSerializer(serializers.ModelSerializer):
             'last_contacted_open_opp': cls.filter_last_contacted_open_opp,
             'curr_opp_stage_id': cls.filter_curr_opp_stage,
             'contact__owner__name': cls.filter_contact__owner__name,
-            'manager': cls.filter_manager__full_name
+            'manager': cls.filter_manager__full_name,
+            'num_sale_orders': cls.filter_num_sale_orders
         }
 
         # Mapping for operator handling

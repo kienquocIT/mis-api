@@ -506,6 +506,8 @@ class GoodsReceiptDetailSerializer(AbstractDetailSerializerModel):
             'total_tax',
             'total',
             'total_revenue_before_tax',
+            # is_no_warehouse
+            'is_no_warehouse',
             # system
             'system_status',
             'workflow_runtime_id',
@@ -570,6 +572,8 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
             'total_tax',
             'total',
             'total_revenue_before_tax',
+            # is_no_warehouse
+            'is_no_warehouse',
             # attachment
             'attachment',
         )
@@ -663,6 +667,8 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
             'total_tax',
             'total',
             'total_revenue_before_tax',
+            # is_no_warehouse
+            'is_no_warehouse',
             # attachment
             'attachment',
         )

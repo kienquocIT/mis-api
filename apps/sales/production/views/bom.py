@@ -102,8 +102,7 @@ class ProductToolsListForBOM(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().filter(
-            general_product_types_mapped__code='asset_tool',
-            general_product_types_mapped__is_asset_tool=True
+            general_product_types_mapped__is_tool=True
         ).select_related().prefetch_related()
 
     @swagger_auto_schema(
@@ -125,7 +124,7 @@ class BOMList(BaseListMixin, BaseCreateMixin):
     serializer_create = BOMCreateSerializer
     serializer_detail = BOMDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT = [
+    create_hidden_field = [
         'tenant_id', 'company_id',
         'employee_created_id',
     ]

@@ -118,7 +118,7 @@ class APInvoiceCreateSerializer(serializers.ModelSerializer):
 
     # @decorator_run_workflow
     def create(self, validated_data):
-        number = APInvoice.objects.filter_current(fill__tenant=True, fill__company=True, is_default=False).count() + 1
+        number = APInvoice.objects.filter_current(fill__tenant=True, fill__company=True).count() + 1
         ap_invoice = APInvoice.objects.create(
             **validated_data,
             code=f'AP-00{number}'
@@ -174,6 +174,7 @@ class APInvoiceDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_item_mapped(cls, obj):
         return [{
+            'id': item.id,
             'item_index': item.item_index,
             'product_data': {
                 'id': item.product_id,
@@ -189,6 +190,7 @@ class APInvoiceDetailSerializer(serializers.ModelSerializer):
             'product_unit_price': item.product_unit_price,
             'product_tax_value': item.product_tax_value,
             'product_subtotal_price': item.product_subtotal,
+            'increased_FA_value': item.increased_FA_value,
         } for item in obj.ap_invoice_items.all()]
 
     @classmethod

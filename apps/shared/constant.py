@@ -110,6 +110,7 @@ MAP_FIELD_TITLE = {
     'production.productionorder': 'title',
     'production.workorder': 'title',
     'leaseorder.leaseorder': 'title',
+    'inventory.goodsrecovery': 'title',
     # haind
     'cashoutflow.advancepayment': 'title',
     'apinvoice.apinvoice': 'title',
@@ -128,6 +129,10 @@ MAP_FIELD_TITLE = {
     #
     'bidding.bidding': 'title',
     'consulting.consulting': 'title',
+    'asset.fixedasset': 'title',
+    'asset.instrumenttool': 'title',
+    'asset.fixedassetwriteoff': 'title',
+    'asset.instrumenttoolwriteoff': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
