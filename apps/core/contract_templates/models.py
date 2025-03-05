@@ -1,5 +1,3 @@
-import json
-
 from django.db import models
 
 from apps.shared import MasterDataAbstractModel

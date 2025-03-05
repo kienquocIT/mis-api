@@ -3,11 +3,12 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-06-05 00:08+0700\n"
+"POT-Creation-Date: 2023-03-20 16:25+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,9 +19,13 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 
 #
-msgid "Some data is not formatted properly"
-msgstr "một số dữ liệu không được định dạng đúng cách"
+msgid "Employee has mapped, please choice another user."
+msgstr "Nhân viên đã được liên kết, vui lòng chọn người khác."
 
 #
-msgid "You are required to sign a contract"
-msgstr "Bạn có một yêu cầu ký hợp đồng"
+msgid "Contract not found please reload page"
+msgstr "Không tìm thấy hợp đồng vui lòng tải lại trang"
+
+#
+msgid "You do not permissions in this contract"
+msgstr "Bạn không có quyền trên hợp đồng này"

@@ -1,8 +1,8 @@
 from rest_framework import serializers
 
 from apps.core.contract_templates.models import ContractTemplate
-from .msg import ContractMsg
 from apps.core.process.msg import ProcessMsg
+from .msg import ContractMsg
 
 
 class ContractTemplateListSerializers(serializers.ModelSerializer):
@@ -53,7 +53,7 @@ class ContractTemplateCreateSerializers(serializers.ModelSerializer):
 
     @classmethod
     def validate_extra_data(cls, value):
-        if type(value) is dict:
+        if isinstance(value, dict):
             return value
         raise serializers.ValidationError({'detail': ContractMsg.ERROR_FIELD_DATA})
 

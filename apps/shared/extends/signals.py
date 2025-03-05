@@ -51,7 +51,6 @@ from apps.core.forms.tasks import notifications_form_with_new, notifications_for
 from apps.sales.project.extend_func import calc_rate_project, calc_update_task, re_calc_work_group
 from .models import DisperseModel
 from .. import ProjectMsg
-from apps.hrm.employeeinfo.models import EmployeeContractRuntime
 from ...sales.project.tasks import create_project_news
 
 logger = logging.getLogger(__name__)
@@ -1333,35 +1332,3 @@ def project_work_event_destroy(sender, instance, **kwargs):
         }
     )
     print('re calculator rate is Done')
-
-
-@receiver(post_save, sender=EmployeeContractRuntime)
-def contract_runtime(sender, instance, created, **kwargs):
-    contract = instance.employee_contract
-    company = contract.company
-    tenant = contract.tenant
-    created_email = contract.employee_created
-
-    if created:
-        # update contract status
-        instance.employee_contract.sign_status = 1
-        instance.employee_contract.save(update_fields=['sign_status'])
-    employee_active = list()
-    for item in instance.signatures.values():
-        if not item['stt']:
-            employee_active = item['assignee']
-            break
-    # gửi mail
-    for employee in employee_active:
-        call_task_background(
-            my_task=send_mail_new_contract_submit,
-            **{
-                'tenant_id': str(tenant.id),
-                'company_id': str(company.id),
-                'assignee_id': str(employee),
-                'employee_created_id': str(created_email.id),
-                'contract_id': str(contract.id),
-                'signature_runtime_id': str(instance.id)
-            }
-        )
-    print('contract signature runtime is activate')

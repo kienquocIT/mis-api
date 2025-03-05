@@ -582,46 +582,45 @@ def send_mail_new_contract_submit(
         tenant_id, company_id, assignee_id, employee_created_id, contract_id, signature_runtime_id
 ):
     obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=None, system_code=8)
-    if isinstance(obj_got, list) and len(obj_got) == 3:
-        [config_obj, template_obj, user_obj] = obj_got
-        print('user_obj', user_obj)
-        cls = SendMailController(mail_config=config_obj, timeout=3)
-        assignee = get_employee_obj(employee_id=assignee_id, tenant_id=tenant_id, company_id=company_id)
-        employee_created = get_employee_obj(
-            employee_id=employee_created_id, tenant_id=tenant_id, company_id=company_id
-        )
 
-        if cls.is_active is True and template_obj and assignee and employee_created:
-            if template_obj.contents and assignee.email and employee_created.email:
-                subject = template_obj.subject if template_obj.subject else 'New request signing to contract'
-                log_cls = MailLogController(
-                    tenant_id=tenant_id, company_id=company_id,
-                    system_code=8,  # NEW CONTRACT
-                    doc_id=contract_id, subject=subject,
-                )
-                if log_cls.create():
-                    state_send = mail_request_signing(
-                        cls=cls, log_cls=log_cls,
-                        **{
-                            'tenant_id': tenant_id,
-                            'subject': subject,
-                            'assignee': assignee,
-                            'employee_created': employee_created,
-                            'contract_id': contract_id,
-                            'template_obj': template_obj,
-                            'signature_runtime_id': signature_runtime_id
-                        }
-                    )
-                    if state_send is True:
-                        log_cls.update(status_code=1, status_remark=state_send)  # sent
-                        log_cls.save()
-                        return 'Success'
-                    log_cls.update(status_code=2, status_remark=state_send)  # error
-                    log_cls.save()
-                return 'SEND_FAILURE'
-            return 'TEMPLATE_HAS_NOT_CONTENTS_VALUE OR USER_EMAIL_IS_NOT_CORRECT'
+    if not (isinstance(obj_got, list) and len(obj_got) == 3):
+        return obj_got
+
+    config_obj, template_obj, _ = obj_got
+
+    cls = SendMailController(mail_config=config_obj, timeout=3)
+
+    if not cls.is_active or not template_obj:
         return 'MAIL_CONFIG_DEACTIVATE'
-    return obj_got
+
+    assignee = get_employee_obj(employee_id=assignee_id, tenant_id=tenant_id, company_id=company_id)
+    employee_created = get_employee_obj(employee_id=employee_created_id, tenant_id=tenant_id, company_id=company_id)
+
+    if not (assignee and assignee.email and employee_created and employee_created.email and template_obj.contents):
+        return 'TEMPLATE_HAS_NOT_CONTENTS_VALUE OR USER_EMAIL_IS_NOT_CORRECT'
+
+    subject = template_obj.subject or 'New request signing to contract'
+
+    log_cls = MailLogController(
+        tenant_id=tenant_id, company_id=company_id,
+        system_code=8, doc_id=contract_id, subject=subject
+    )
+
+    if not log_cls.create():
+        return 'SEND_FAILURE'
+
+    state_send = mail_request_signing(
+        cls=cls, log_cls=log_cls,
+        tenant_id=tenant_id, subject=subject,
+        assignee=assignee, employee_created=employee_created,
+        contract_id=contract_id, template_obj=template_obj,
+        signature_runtime_id=signature_runtime_id
+    )
+
+    log_cls.update(status_code=1 if state_send else 2, status_remark=state_send)
+    log_cls.save()
+
+    return 'Success' if state_send else 'SEND_FAILURE'
 
 
 def mail_request_signing(cls, log_cls, **kwargs):

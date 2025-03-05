@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.log.tasks import force_new_notify_many
+from apps.core.mailer.tasks import send_mail_new_contract_submit
 from apps.shared import MasterDataAbstractModel, CONTRACT_TYPE, call_task_background
 
 from .employee_info import EmployeeInfo
@@ -175,32 +176,59 @@ class EmployeeContractRuntime(MasterDataAbstractModel):
 
 @receiver(post_save, sender=EmployeeContractRuntime)
 def push_notify_contract_runtime(sender, instance, created, **kwargs):  # pylint: disable=W0613
+    contract = instance.employee_contract
+    company = contract.company
+    tenant = contract.tenant
+    created_email = contract.employee_created
+
     if created:
-        # check members is available
-        if instance.members:
-            employee_info = instance.employee_contract.employee_info
-            task_kwargs = []
-            sender_id = str(instance.employee_created_id)
-            for employee in instance.members:
-                if 'id' in employee:
-                    task_kwargs.append(
-                        {
-                            'tenant_id': str(employee_info.tenant_id),
-                            'company_id': str(employee_info.company_id),
-                            'title': '',
-                            'msg': _('You are required to sign a contract.'),
-                            'notify_type': 0,
-                            'date_created': instance.date_created,
-                            'doc_id': str(instance.id),
-                            'doc_app': 'employeeinfo.EmployeeContractRuntime',
-                            'employee_id': str(employee.get('id', '')),
-                            'employee_sender_id': sender_id,
-                        }
-                    )
-            if len(task_kwargs) > 0:
+        # update contract status
+        instance.employee_contract.sign_status = 1
+        instance.employee_contract.save(update_fields=['sign_status'])
+
+    # send user sign notify
+    if instance.contract_status == 0:
+        for key, employee in instance.signatures.items():
+            print(key)
+            if 'id' in employee['assignee'] and not employee['stt']:
                 call_task_background(
                     my_task=force_new_notify_many,
                     **{
-                        'data_list': task_kwargs
+                        'data_list': [
+                            {
+                                'tenant_id': str(tenant.id),
+                                'company_id': str(company.id),
+                                'title': '',
+                                'msg': _('You are required to sign a contract'),
+                                'notify_type': 0,
+                                'date_created': instance.date_created,
+                                'doc_id': str(instance.id),
+                                'doc_app': 'employeeinfo.EmployeeContractRuntime',
+                                'employee_id': employee['assignee']['id'],
+                                'employee_sender_id': str(created_email.id)
+                            }
+                        ]
                     }
                 )
+                break
+    # send mail user sign
+
+    employee_active = {}
+    for item in instance.signatures.values():
+        if not item['stt']:
+            employee_active = item['assignee']
+            break
+    # gửi mail
+    if 'id' in employee_active:
+        call_task_background(
+            my_task=send_mail_new_contract_submit,
+            **{
+                'tenant_id': str(tenant.id),
+                'company_id': str(company.id),
+                'assignee_id': str(employee_active['id']),
+                'employee_created_id': str(created_email.id),
+                'contract_id': str(contract.id),
+                'signature_runtime_id': str(instance.id)
+            }
+        )
+    print('contract signature runtime is activate')
