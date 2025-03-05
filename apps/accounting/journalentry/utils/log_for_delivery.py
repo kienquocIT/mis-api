@@ -4,44 +4,47 @@ from apps.accounting.journalentry.models import JournalEntry
 
 class JEForDeliveryHandler:
     @classmethod
-    def get_sum_delivery_cost(cls, delivery_obj):
-        """ Lấy tổng cost hiện tại của tất cả các sản phẩm trong phếu Giao hàng """
-        sum_delivery_cost = 0
+    def get_je_item_data(cls, delivery_obj):
+        debit_rows_data = []
+        credit_rows_data = []
         for deli_product in delivery_obj.delivery_product_delivery_sub.all():
             if deli_product.product:
                 for pw_data in deli_product.delivery_pw_delivery_product.all():
-                    sum_delivery_cost += deli_product.product.get_unit_cost_by_warehouse(
+                    value = deli_product.product.get_unit_cost_by_warehouse(
                         warehouse_id=pw_data.warehouse_id,
                         get_type=1
                     )
-        return sum_delivery_cost
+                    debit_rows_data.append({
+                        # (-) hàng hóa (mđ: 156)
+                        'account': deli_product.product.get_account_determination(
+                            account_deter_title='Xuất kho bán hàng hóa',
+                            warehouse_id=pw_data.warehouse_id
+                        ),
+                        'business_partner': None,
+                        'debit': value,
+                        'credit': 0,
+                        'is_fc': False,
+                        'taxable_value': 0,
+                    })
+                    credit_rows_data.append({
+                        # (+) giao hàng chưa xuất hóa đơn (mđ: 13881)
+                        'account': ChartOfAccounts.objects.filter(
+                            tenant_id=delivery_obj.tenant_id,
+                            company_id=delivery_obj.company_id,
+                            acc_code=13881
+                        ).first(),
+                        'business_partner': None,
+                        'debit': 0,
+                        'credit': value,
+                        'is_fc': False,
+                        'taxable_value': 0,
+                    })
+        return debit_rows_data, credit_rows_data
 
     @classmethod
     def push_to_journal_entry(cls, delivery_obj):
         """ Chuẩn bị data để tự động tạo Bút Toán """
-        value = cls.get_sum_delivery_cost(delivery_obj)
-        debit_rows_data = [
-            {
-                # (-) hàng hóa
-                'account': ChartOfAccounts.objects.filter(acc_code=156).first(),
-                'business_partner': None,
-                'debit': value,
-                'credit': 0,
-                'is_fc': False,
-                'taxable_value': 0,
-            }
-        ]
-        credit_rows_data = [
-            {
-                # (+) giao hàng chưa xuất hóa đơn
-                'account': ChartOfAccounts.objects.filter(acc_code=13881).first(),
-                'business_partner': None,
-                'debit': 0,
-                'credit': value,
-                'is_fc': False,
-                'taxable_value': 0,
-            }
-        ]
+        debit_rows_data, credit_rows_data = cls.get_je_item_data(delivery_obj)
         kwargs = {
             'je_transaction_app_code': delivery_obj.get_model_code(),
             'je_transaction_id': str(delivery_obj.id),

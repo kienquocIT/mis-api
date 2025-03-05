@@ -149,7 +149,7 @@ class SaleDefaultData:
         {'code': 'FACG002', 'title': 'Tài sản cố định vô hình', 'is_default': 1},
         {'code': 'FACG003', 'title': 'Tài sản cố định thuê tài chính', 'is_default': 1}
     ]
-    Fixed_Asset_data= [
+    Fixed_Asset_data = [
         {'code': 'FAC001', 'title': 'Nhà cửa, vật kiến trúc - quản lý', 'is_default': 1},
         {'code': 'FAC002', 'title': 'Máy móc thiết bị - sản xuất', 'is_default': 1},
         {'code': 'FAC003', 'title': 'Phương tiện vận tải, truyền dẫn - kinh doanh', 'is_default': 1},

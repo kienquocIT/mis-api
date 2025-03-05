@@ -1,5 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+from apps.accounting.accountingsettings.utils import AccountDeterminationForProductHandler
 from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
 from apps.sales.report.utils.inventory_log import ReportInvCommonFunc
@@ -130,7 +131,9 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'is_public_website', 'standard_price',
             'valuation_method',
             # Purchase
-            'purchase_default_uom', 'purchase_tax', 'supplied_by'
+            'purchase_default_uom', 'purchase_tax', 'supplied_by',
+            # Accounting
+            'account_deter_referenced_by'
         )
 
     @classmethod
@@ -301,27 +304,28 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         validated_data.update(
             {'sale_product_price_list': CommonCreateUpdateProduct.setup_price_list_data_in_sale(self.initial_data)}
         )
-        product = Product.objects.create(**validated_data)
+        product_obj = Product.objects.create(**validated_data)
         CommonCreateUpdateProduct.create_product_types_mapped(
-            product, self.initial_data.get('product_types_mapped_list', [])
+            product_obj, self.initial_data.get('product_types_mapped_list', [])
         )
         if 'volume' in validated_data and 'weight' in validated_data:
             measure_data = {'weight': validated_data['weight'], 'volume': validated_data['volume']}
             if measure_data:
-                CommonCreateUpdateProduct.create_measure(product, measure_data)
+                CommonCreateUpdateProduct.create_measure(product_obj, measure_data)
         if 0 in validated_data['product_choice']:
             CommonCreateUpdateProduct.create_price_list(
-                product,
+                product_obj,
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
         CommonCreateUpdateProduct.create_product_variant_attribute(
-            product, self.initial_data.get('product_variant_attribute_list', [])
+            product_obj, self.initial_data.get('product_variant_attribute_list', [])
         )
         CommonCreateUpdateProduct.create_product_variant_item(
-            product, self.initial_data.get('product_variant_item_list', [])
+            product_obj, self.initial_data.get('product_variant_item_list', [])
         )
-        return product
+        AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj)
+        return product_obj
 
 
 class ProductQuickCreateSerializer(serializers.ModelSerializer):
@@ -452,6 +456,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'product_variant_attribute_list',
             'product_variant_item_list',
             'is_public_website',
+            'account_deter_referenced_by',
             # Transaction information
             'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount'
         )
@@ -837,7 +842,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return validate_data
 
     @staticmethod
-    def check_related_model(instance):
+    def check_using_product(instance):
         related_objects = instance._meta.get_fields()
         result = {}
         for field in related_objects:
@@ -866,8 +871,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return False
 
     def update(self, instance, validated_data):
-        if validated_data['general_uom_group'].id != instance.general_uom_group_id:
-            if self.check_related_model(instance):
+        if validated_data.get('general_uom_group') != instance.general_uom_group:
+            if self.check_using_product(instance):
                 raise serializers.ValidationError(
                     {'general_uom_group': _('This product is being used. Can not update general uom group.')}
                 )
@@ -908,6 +913,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         CommonCreateUpdateProduct.update_product_variant_item(
             instance, self.initial_data.get('product_variant_item_list', [])
         )
+        AccountDeterminationForProductHandler.create_account_determination_for_product(instance)
         return instance
 
 
