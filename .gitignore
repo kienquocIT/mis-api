@@ -19,3 +19,11 @@ build/*
 *.egg-info/*
 serviceAccountKey.json
 */serviceAccountKey.json
+
+# Bỏ qua file đã biên dịch
+*.c
+*.so
+*.pyd
+build/
+dist/
+__pycache__/
