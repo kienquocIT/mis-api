@@ -1,6 +1,6 @@
 from django.db import models
 from apps.accounting.accountingsettings.models.account_masterdata_models import DEFAULT_ACCOUNT_DETERMINATION_TYPE
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
+from apps.shared import MasterDataAbstractModel
 
 __all__ = [
     'ProductTypeAccountDetermination'
