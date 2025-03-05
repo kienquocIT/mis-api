@@ -16,7 +16,8 @@ class WarehouseAccountDeterminationListSerializer(serializers.ModelSerializer):
             'title',
             'warehouse_mapped_id',
             'account_mapped_data',
-            'account_determination_type_convert'
+            'account_determination_type_convert',
+            'can_change_account'
         )
 
     @classmethod
@@ -55,6 +56,6 @@ class WarehouseAccountDeterminationUpdateSerializer(serializers.ModelSerializer)
             'acc_name': replace_account.acc_name,
             'foreign_acc_name': replace_account.foreign_acc_name,
         }
-        instance.is_change = True
-        instance.save(update_fields=['account_mapped', 'account_mapped_data', 'is_change'])
+        instance.is_changed = True
+        instance.save(update_fields=['account_mapped', 'account_mapped_data', 'is_changed'])
         return instance

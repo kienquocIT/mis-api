@@ -32,13 +32,13 @@ class JournalEntry(DataAbstractModel, AccountingAbstractModel):
     def auto_create_journal_entry(cls, **kwargs):
         """
         Required kwargs:
-        - je_transaction_app_code, je_transaction_id, je_item_data,
+        - je_transaction_app_code, je_transaction_id, je_transaction_data, je_item_data,
         tenant_id, company_id, employee_created_id
         Optional kwargs:
         - je_posting_date, je_document_date
         """
         required_fields = [
-            'je_transaction_app_code', 'je_transaction_id', 'je_item_data',
+            'je_transaction_app_code', 'je_transaction_id', 'je_transaction_data', 'je_item_data',
             'tenant_id', 'company_id', 'employee_created_id'
         ]
         missing_fields = [
