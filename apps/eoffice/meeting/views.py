@@ -226,3 +226,29 @@ class MeetingScheduleDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class MeetingScheduleDDList(BaseListMixin):
+    queryset = MeetingSchedule.objects
+    serializer_list = MeetingScheduleListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    search_fields = ['title', 'meeting_duration', 'meeting_start_date', 'meeting_start_time']
+    filterset_fields = {}
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'meeting_schedule_mapped',
+        ).select_related(
+            'meeting_room_mapped',
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Meeting Schedule DD list",
+        operation_description="Meeting Schedule dropdown list without permissions"
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=False
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
