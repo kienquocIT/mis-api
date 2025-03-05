@@ -45,6 +45,8 @@ class EmployeeInfoList(BaseListMixin, BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user,
+            'company_id': request.user.company_current_id,
+            'tenant_id': request.user.tenant_current_id,
         }
         return self.create(request, *args, **kwargs)
 
