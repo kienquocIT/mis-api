@@ -237,11 +237,12 @@ class LeaseOrderProduct(MasterDataAbstractModel):
     offset = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
-        verbose_name="product",
+        verbose_name="offset",
         related_name="lease_order_product_offset",
         null=True
     )
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
+    asset_data = models.JSONField(default=list, help_text='data json of asset')
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -338,7 +339,7 @@ class LeaseOrderProductLeased(MasterDataAbstractModel):
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
-        verbose_name="product leased",
+        verbose_name="product",
         related_name="lease_order_product_leased_product",
         null=True
     )
@@ -346,7 +347,7 @@ class LeaseOrderProductLeased(MasterDataAbstractModel):
     offset = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
-        verbose_name="product",
+        verbose_name="offset",
         related_name="lease_order_product_leased_offset",
         null=True
     )
@@ -355,6 +356,38 @@ class LeaseOrderProductLeased(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Lease Order Product Leased'
         verbose_name_plural = 'Lease Order Products Leased'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class LeaseOrderProductAsset(MasterDataAbstractModel):
+    lease_order_product = models.ForeignKey(
+        LeaseOrderProduct,
+        on_delete=models.CASCADE,
+        verbose_name="lease order product",
+        related_name="lease_order_product_asset_lo_product",
+    )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="lease_order_product_asset_product",
+        null=True
+    )
+    product_data = models.JSONField(default=dict, help_text='data json of product')
+    asset = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.CASCADE,
+        verbose_name="asset",
+        related_name="lease_order_product_asset_asset",
+        null=True
+    )
+    asset_data = models.JSONField(default=dict, help_text='data json of asset')
+
+    class Meta:
+        verbose_name = 'Lease Order Product Asset'
+        verbose_name_plural = 'Lease Order Products Asset'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
@@ -397,11 +430,19 @@ class LeaseOrderCost(MasterDataAbstractModel):
     offset = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
-        verbose_name="product",
+        verbose_name="offset",
         related_name="lease_order_cost_offset",
         null=True
     )
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
+    asset = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.CASCADE,
+        verbose_name="asset",
+        related_name="lease_order_cost_asset",
+        null=True
+    )
+    asset_data = models.JSONField(default=dict, help_text='data json of asset')
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
@@ -472,6 +513,8 @@ class LeaseOrderCost(MasterDataAbstractModel):
     product_lease_start_date = models.DateField(null=True)
     product_lease_end_date = models.DateField(null=True)
 
+    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+
     # End depreciation fields
 
     class Meta:
@@ -501,7 +544,7 @@ class LeaseOrderCostLeased(MasterDataAbstractModel):
     offset = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
-        verbose_name="product",
+        verbose_name="offset",
         related_name="lease_order_cost_leased_offset",
         null=True
     )
@@ -527,6 +570,8 @@ class LeaseOrderCostLeased(MasterDataAbstractModel):
 
     product_lease_start_date = models.DateField(null=True)
     product_lease_end_date = models.DateField(null=True)
+
+    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
 
     # End depreciation fields
 
