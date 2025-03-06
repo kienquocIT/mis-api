@@ -42,7 +42,7 @@ from .push_notify import TeleBotPushNotify
 from .tasks import call_task_background
 from apps.core.tenant.models import TenantPlan
 from apps.eoffice.assettools.models import AssetToolsConfig
-from apps.core.mailer.tasks import send_mail_otp, send_mail_new_project_member
+from apps.core.mailer.tasks import send_mail_otp, send_mail_new_project_member, send_mail_new_contract_submit
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
 from apps.sales.lead.models import LeadStage

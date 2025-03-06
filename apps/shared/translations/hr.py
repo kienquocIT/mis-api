@@ -30,3 +30,4 @@ class HRMsg:
     INVALID_SCHEMA = _("Duplicated code! Check the schema function in Company setting.")
     GROUP_LEVEL_EXIST = _("The level of the group exists")
     COMPANY_IS_REQUIRED = _("The company data is requires when validating data")
+    UPDATE_CONTRACT_DENIED = _("Contract is signing can not update")

@@ -56,7 +56,7 @@ EMPLOYEE_INFO = {
             },
         },
     },
-    "allow_import": True,
+    "allow_import": False,
 }
 
 EMPLOYEE_CONTRACT = {
