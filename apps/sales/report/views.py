@@ -8,7 +8,7 @@ from apps.sales.budgetplan.models import BudgetPlanCompanyExpense, BudgetPlanGro
 from apps.sales.cashoutflow.models import Payment
 from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.partnercenter.models import List
-from apps.sales.partnercenter.services.list import ListFilterService
+from apps.sales.partnercenter.services import ListFilterService
 from apps.sales.purchasing.models import PurchaseOrder
 from apps.sales.report.utils.inventory_log import ReportInvCommonFunc
 from apps.sales.report.models import (

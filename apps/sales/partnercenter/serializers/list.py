@@ -8,7 +8,7 @@ from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Contact, Account, Industry
 from apps.sales.opportunity.models import OpportunityConfigStage
 from apps.sales.partnercenter.models import List, DataObject
-from apps.sales.partnercenter.services.list import ListFilterService
+from apps.sales.partnercenter.services import ListFilterService
 from apps.sales.partnercenter.translation import ListMsg
 from apps.shared import BaseMsg
 

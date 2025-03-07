@@ -17,6 +17,10 @@ from apps.sales.partnercenter.models import List
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    'ListFilterService'
+]
+
 class ListFilterService:
     @classmethod
     def get_filtered_data(cls, list_instance: List) -> list:
