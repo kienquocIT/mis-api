@@ -1,7 +1,4 @@
-from sympy import false
-
 from apps.accounting.accountingsettings.models import *
-from apps.accounting.accountingsettings.models.account_masterdata_models import DefaultAccountDeterminationSub
 from apps.accounting.accountingsettings.utils import *
 from apps.core.company.models import Company
 from apps.masterdata.saledata.models import WareHouse, ProductType, Product
