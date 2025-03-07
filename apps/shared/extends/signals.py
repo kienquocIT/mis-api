@@ -65,10 +65,10 @@ __all__ = [
 
 class SaleDefaultData:
     Salutation_data = [
-        {'code': 'SA001', 'title': 'Anh'},
-        {'code': 'SA002', 'title': 'Chị'},
-        {'code': 'SA003', 'title': 'Ông'},
-        {'code': 'SA004', 'title': 'Bà'}
+        {'code': 'SA001', 'title': 'Anh', 'is_default': 1},
+        {'code': 'SA002', 'title': 'Chị', 'is_default': 1},
+        {'code': 'SA003', 'title': 'Ông', 'is_default': 1},
+        {'code': 'SA004', 'title': 'Bà', 'is_default': 1}
     ]
     Account_types_data = [
         {'title': 'Customer', 'code': 'AT001', 'is_default': 1, 'account_type_order': 0},
@@ -77,17 +77,17 @@ class SaleDefaultData:
         {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
     ]
     Account_groups_data = [
-        {'code': 'AG001', 'title': 'Khách lẻ'},
-        {'code': 'AG002', 'title': 'VIP1'},
-        {'code': 'AG003', 'title': 'VIP2'},
+        {'code': 'AG001', 'title': 'Khách lẻ', 'is_default': 1},
+        {'code': 'AG002', 'title': 'VIP1', 'is_default': 1},
+        {'code': 'AG003', 'title': 'VIP2', 'is_default': 1},
     ]
     Industries_data = [
-        {'code': 'IN001', 'title': 'Dịch vụ'},
-        {'code': 'IN002', 'title': 'Sản xuất'},
-        {'code': 'IN003', 'title': 'Phân phối'},
-        {'code': 'IN004', 'title': 'Bán lẻ'},
-        {'code': 'IN005', 'title': 'Giáo dục'},
-        {'code': 'IN006', 'title': 'Y tế'},
+        {'code': 'IN001', 'title': 'Dịch vụ', 'is_default': 1},
+        {'code': 'IN002', 'title': 'Sản xuất', 'is_default': 1},
+        {'code': 'IN003', 'title': 'Phân phối', 'is_default': 1},
+        {'code': 'IN004', 'title': 'Bán lẻ', 'is_default': 1},
+        {'code': 'IN005', 'title': 'Giáo dục', 'is_default': 1},
+        {'code': 'IN006', 'title': 'Y tế', 'is_default': 1},
     ]
     ProductType_data = [
         {'code': 'goods', 'title': 'Hàng hóa', 'is_default': 1, 'is_goods': 1},
@@ -104,11 +104,11 @@ class SaleDefaultData:
         {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
     ]
     UOM_data = [
-        {'code': 'UOM001', 'title': 'Cái', 'is_referenced_unit': 1},
-        {'code': 'UOM002', 'title': 'Con'},
-        {'code': 'UOM003', 'title': 'Thanh'},
-        {'code': 'UOM004', 'title': 'Lần'},
-        {'code': 'UOM005', 'title': 'Gói'},
+        {'code': 'UOM001', 'title': 'Cái', 'is_referenced_unit': 1, 'is_default': 1},
+        {'code': 'UOM002', 'title': 'Con', 'is_default': 1},
+        {'code': 'UOM003', 'title': 'Thanh', 'is_default': 1},
+        {'code': 'UOM004', 'title': 'Lần', 'is_default': 1},
+        {'code': 'UOM005', 'title': 'Gói', 'is_default': 1},
     ]
     TaxCategory_data = [
         {'code': 'TC001', 'title': 'Thuế GTGT', 'is_default': 1},
@@ -118,11 +118,11 @@ class SaleDefaultData:
         {'code': 'TC005', 'title': 'Thuế nhà thầu', 'is_default': 1},
     ]
     Tax_data = [
-        {'code': 'VAT_KCT', 'title': 'VAT-KCT', 'tax_type': 2, 'rate': 0},
-        {'code': 'VAT_0', 'title': 'VAT-0', 'tax_type': 2, 'rate': 0},
-        {'code': 'VAT_5', 'title': 'VAT-5', 'tax_type': 2, 'rate': 5},
-        {'code': 'VAT_8', 'title': 'VAT-8', 'tax_type': 2, 'rate': 8},
-        {'code': 'VAT_10', 'title': 'VAT-10', 'tax_type': 2, 'rate': 10},
+        {'code': 'VAT_KCT', 'title': 'VAT-KCT', 'tax_type': 2, 'rate': 0, 'is_default': 1},
+        {'code': 'VAT_0', 'title': 'VAT-0', 'tax_type': 2, 'rate': 0, 'is_default': 1},
+        {'code': 'VAT_5', 'title': 'VAT-5', 'tax_type': 2, 'rate': 5, 'is_default': 1},
+        {'code': 'VAT_8', 'title': 'VAT-8', 'tax_type': 2, 'rate': 8, 'is_default': 1},
+        {'code': 'VAT_10', 'title': 'VAT-10', 'tax_type': 2, 'rate': 10, 'is_default': 1},
     ]
     Price_general_data = [
         {'title': 'General Price List', 'price_list_type': 0, 'factor': 1.0, 'is_default': 1}
