@@ -69,7 +69,7 @@ class CashInflow(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-                ReconForCIFHandler.auto_create_recon_doc(self)  # tạo phiếu cấu trừ tự động khi làm phiếu thu
+                # ReconForCIFHandler.auto_create_recon_doc(self)  # tạo phiếu cấu trừ tự động khi làm phiếu thu
         super().save(*args, **kwargs)
 
 

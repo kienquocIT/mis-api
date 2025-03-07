@@ -15,11 +15,11 @@ class JEForARInvoiceHandler:
             ):
                 sum_delivery_cost += je_item.credit
         debit_rows_data.append({
-            # (-) giao hàng chưa xuất hóa đơn
+            # (+) giá vốn hàng bán (mđ: 632)
             'account': ChartOfAccounts.objects.filter(
                 tenant_id=ar_invoice_obj.tenant_id,
                 company_id=ar_invoice_obj.company_id,
-                acc_code=13881
+                acc_code=632
             ).first(),
             'business_partner': None,
             'debit': sum_delivery_cost,
@@ -41,11 +41,11 @@ class JEForARInvoiceHandler:
             'taxable_value': 0,
         })
         credit_rows_data.append({
-            # (+) giá vốn hàng bán (mđ: 632)
+            # (-) giao hàng chưa xuất hóa đơn (mđ: 13881)
             'account': ChartOfAccounts.objects.filter(
                 tenant_id=ar_invoice_obj.tenant_id,
                 company_id=ar_invoice_obj.company_id,
-                acc_code=632
+                acc_code=13881
             ).first(),
             'business_partner': None,
             'debit': 0,

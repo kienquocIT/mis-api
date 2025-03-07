@@ -1,4 +1,7 @@
+from sympy import false
+
 from apps.accounting.accountingsettings.models import *
+from apps.accounting.accountingsettings.models.account_masterdata_models import DefaultAccountDeterminationSub
 from apps.accounting.accountingsettings.utils import *
 from apps.core.company.models import Company
 from apps.masterdata.saledata.models import WareHouse, ProductType, Product
@@ -644,80 +647,339 @@ class AccountingMasterData:
     @staticmethod
     def generate_default_account_determination_200():
         """ Xác định các tài khoản kế toán mặc định (TT200) """
-        sale_type_data = [
-            'Phải thu của khách hàng',
-            'Thu tiền bán hàng (tiền mặt)',
-            'Thu tiền bán hàng (chuyển khoản)',
-            'Doanh thu bán hàng',
-            'Thuế GTGT đầu ra'
-        ]
-        purchasing_type_data = [
-            # 'Phải trả cho nhà cung cấp',
-            # 'Trả tiền mua hàng - tiền mặt',
-            # 'Trả tiền mua hàng - chuyển khoản',
-            # 'Thuế giá trị gia tăng đầu vào'
-        ]
-        inventory_type_data = [
-            'Xuất kho bán hàng hóa',
-            'Giá vốn hàng bán',
-            'Xuất kho giao hàng (chưa xuất hóa đơn)'
-        ]
         for company in Company.objects.all():
             account_mapped_data_sale = [
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='131').first(),
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='111').first(),
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='112').first(),
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='511').first(),
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='33311').first(),
+                {
+                    'foreign_title': 'Domestic Accounts Receivable',
+                    'title': 'Phải thu khách hàng trong nước',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='131').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Foreign Accounts Receivable',
+                    'title': 'Phải thu khách hàng nước ngoài',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='131').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Checks Received',
+                    'title': 'Séc nhận được từ khách hàng',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='131').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Cash on Hand',
+                    'title': 'Tiền mặt thu từ khách hàng',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1111').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Underpayment A/R Account',
+                    'title': 'Khách hàng thanh toán thiếu',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1388').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Overpayment A/R Account',
+                    'title': 'Khách hàng thanh toán thừa',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='3388').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Down Payment Clearing Account',
+                    'title': 'Bù trừ đặt cọc khách hàng',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='131').first(),
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='3387').first(),
+                    ]
+                },
+                {
+                    'foreign_title': 'Realized Exchange Diff. Gain',
+                    'title': 'Lãi chênh lệch tỷ giá khi thực thu',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='515').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Realized Exchange Diff. Loss',
+                    'title': 'Lỗ chênh lệch tỷ giá khi thực thu',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='635').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Revenue Account',
+                    'title': 'Doanh thu bán hàng trong nước',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='511').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Sales Credit Account',
+                    'title': 'Giảm trừ doanh thu',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='521').first()
+                    ]
+                },
             ]
             account_mapped_data_purchasing = [
-                # ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='331').first(),
-                # ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='111').first(),
-                # ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='112').first(),
-                # ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='133').first(),
+                {
+                    'foreign_title': 'Domestic Accounts Payable',
+                    'title': 'Phải trả nhà cung cấp trong nước',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='331').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Foreign Accounts Payable',
+                    'title': 'Phải trả nhà cung cấp nước ngoài',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='331').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Realized Exchange Diff. Gain',
+                    'title': 'Lãi chênh lệch tỷ giá khi thanh toán',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='515').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Realized Exchange Diff. Loss',
+                    'title': 'Lỗ chênh lệch tỷ giá khi thanh toán',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='635').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Expense Account',
+                    'title': 'Tài khoản chi phí',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='641').first(),
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='642').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Purchase Credit Account',
+                    'title': 'Giảm giá mua hàng',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='521').first()
+                    ]
+                },
             ]
             account_mapped_data_inventory = [
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='156').first(),
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='632').first(),
-                ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='13881').first(),
+                {
+                    'foreign_title': 'Inventory Account',
+                    'title': 'Tài khoản hàng tồn kho',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='152').first(),
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='153').first(),
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='156').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Cost of Goods Sold Account',
+                    'title': 'Giá vốn hàng bán',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='632').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'ALLOCATION ACCOUNT',
+                    'title': 'TÀI KHOẢN PHÂN BỔ CHI PHÍ',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='621').first(),
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='622').first(),
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='627').first(),
+                    ]
+                },
+                {
+                    'foreign_title': 'VARIANCE ACCOUNT',
+                    'title': 'TÀI KHOẢN CHÊNH LỆCH',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='3388').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'PRICE DIFFERENCE ACCOUNT',
+                    'title': 'CHÊNH LỆCH GIÁ HÀNG TỒN KHO',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='411').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'NEGATIVE INVENTORY ADJ. ACCT',
+                    'title': 'ĐIỀU CHỈNH ÂM KHO',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='632').first(),
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='138').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Inventory Offset - Decrease acct',
+                    'title': 'Điều chỉnh giảm tồn kho',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='156').first(),
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='632').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Inventory Offset - Increase acct',
+                    'title': 'Điều chỉnh tăng tồn kho',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='156').first(),
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='632').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Sales Returns Account',
+                    'title': 'Tài khoản hàng bán bị trả lại',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='521').first(),
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='156').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'EXCHANGE RATE DIFFERENCES ACCOUNT',
+                    'title': 'CHÊNH LỆCH TỶ GIÁ HÀNG TỒN KHO',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='515').first(),
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='635').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'GOODS CLEARING ACCOUNT',
+                    'title': 'TÀI KHOẢN HÀNG CHỜ XỬ LÝ',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='151').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'G/L DECREASE ACCOUNT',
+                    'title': 'GIẢM TỒN KHO GHI VÀO SỔ CÁI',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='632').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'G/L INCREASE ACCOUNT',
+                    'title': 'TĂNG TỒN KHO GHI VÀO SỔ CÁI',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='711').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Stock in Transit Account',
+                    'title': 'Hàng đang trên đường',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='151').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Expense Clearing Account',
+                    'title': 'Tài khoản dồn chi phí trước khi phân bổ',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='154').first(),
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='242').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'WIP Inventory Account',
+                    'title': 'Tài khoản hàng dở dang',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='154').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'WIP Inventory Variance Account',
+                    'title': 'Tài khoản chênh lệch sản xuất dở dang',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='3388').first()
+                    ]
+                },
             ]
-            if None in account_mapped_data_sale + account_mapped_data_purchasing + account_mapped_data_inventory:
-                print(f'Create data failed in {company.title}')
-                return False
-            else:
-                bulk_info = []
-                for i in range(len(sale_type_data)):
-                    bulk_info.append(
-                        DefaultAccountDetermination(
-                            company=company,
-                            tenant=company.tenant,
-                            title=sale_type_data[i],
-                            account_mapped=account_mapped_data_sale[i],
-                            default_account_determination_type=0
+
+            for item in account_mapped_data_sale + account_mapped_data_purchasing + account_mapped_data_inventory:
+                if None in item.get('account', []):
+                    print(f'Create data failed in {company.title}')
+                    return False
+            bulk_info = []
+            bulk_info_sub = []
+            for item in account_mapped_data_sale:
+                main_obj = DefaultAccountDetermination(
+                    company=company,
+                    tenant=company.tenant,
+                    title=item.get('title', ''),
+                    foreign_title=item.get('foreign_title', ''),
+                    default_account_determination_type=0
+                )
+                bulk_info.append(main_obj)
+                for account in item.get('account', []):
+                    bulk_info_sub.append(
+                        DefaultAccountDeterminationSub(
+                            default_acc_deter=main_obj,
+                            account_mapped=account,
+                            account_mapped_data={
+                                'id': str(account.id),
+                                'acc_code': account.acc_code,
+                                'acc_name': account.acc_name,
+                                'foreign_acc_name': account.foreign_acc_name
+                            }
                         )
                     )
-                for i in range(len(purchasing_type_data)):
-                    bulk_info.append(
-                        DefaultAccountDetermination(
-                            company=company,
-                            tenant=company.tenant,
-                            title=purchasing_type_data[i],
-                            account_mapped=account_mapped_data_purchasing[i],
-                            default_account_determination_type=1
+            for item in account_mapped_data_purchasing:
+                main_obj = DefaultAccountDetermination(
+                    company=company,
+                    tenant=company.tenant,
+                    title=item.get('title', ''),
+                    foreign_title=item.get('foreign_title', ''),
+                    default_account_determination_type=1
+                )
+                bulk_info.append(main_obj)
+                for account in item.get('account', []):
+                    bulk_info_sub.append(
+                        DefaultAccountDeterminationSub(
+                            default_acc_deter=main_obj,
+                            account_mapped=account,
+                            account_mapped_data={
+                                'id': str(account.id),
+                                'acc_code': account.acc_code,
+                                'acc_name': account.acc_name,
+                                'foreign_acc_name': account.foreign_acc_name
+                            }
                         )
                     )
-                for i in range(len(inventory_type_data)):
-                    bulk_info.append(
-                        DefaultAccountDetermination(
-                            company=company,
-                            tenant=company.tenant,
-                            title=inventory_type_data[i],
-                            account_mapped=account_mapped_data_inventory[i],
-                            default_account_determination_type=2
+            for item in account_mapped_data_inventory:
+                main_obj = DefaultAccountDetermination(
+                    company=company,
+                    tenant=company.tenant,
+                    title=item.get('title', ''),
+                    foreign_title=item.get('foreign_title', ''),
+                    default_account_determination_type=2
+                )
+                bulk_info.append(main_obj)
+                for account in item.get('account', []):
+                    bulk_info_sub.append(
+                        DefaultAccountDeterminationSub(
+                            default_acc_deter=main_obj,
+                            account_mapped=account,
+                            account_mapped_data={
+                                'id': str(account.id),
+                                'acc_code': account.acc_code,
+                                'acc_name': account.acc_name,
+                                'foreign_acc_name': account.foreign_acc_name
+                            }
                         )
                     )
             DefaultAccountDetermination.objects.filter(company=company, tenant=company.tenant).delete()
             DefaultAccountDetermination.objects.bulk_create(bulk_info)
+            DefaultAccountDeterminationSub.objects.bulk_create(bulk_info_sub)
             print(f'Done for {company.title}')
         print('Done :))')
         return True
@@ -750,19 +1012,31 @@ class AccountingScripts:
         return True
 
     @staticmethod
-    def allow_account_determination_can_change_account(account_determination_title):
+    def allow_account_determination_can_change_account(account_deter_foreign_title):
         """ Cho phép thay đổi TK xác định """
         for warehouse_obj in WareHouse.objects.all():
             warehouse_obj.wh_account_deter_warehouse_mapped.filter(
-                title=account_determination_title
+                foreign_title=account_deter_foreign_title
             ).update(can_change_account=True)
         for product_type_obj in ProductType.objects.all():
             product_type_obj.prd_type_account_deter_product_type_mapped.filter(
-                title=account_determination_title
+                foreign_title=account_deter_foreign_title
             ).update(can_change_account=True)
         for product_obj in Product.objects.all():
             product_obj.prd_account_deter_product_mapped.filter(
-                title=account_determination_title
+                foreign_title=account_deter_foreign_title
             ).update(can_change_account=True)
+        print(f'Done :))')
+        return True
+
+    @staticmethod
+    def allow_or_disallow_all(can_change):
+        """ Cho phép change tất cả | tắt tất cả: param 'can_change' """
+        for warehouse_obj in WareHouse.objects.all():
+            warehouse_obj.wh_account_deter_warehouse_mapped.all().update(can_change_account=can_change)
+        for product_type_obj in ProductType.objects.all():
+            product_type_obj.prd_type_account_deter_product_type_mapped.all().update(can_change_account=can_change)
+        for product_obj in Product.objects.all():
+            product_obj.prd_account_deter_product_mapped.all().update(can_change_account=can_change)
         print(f'Done :))')
         return True

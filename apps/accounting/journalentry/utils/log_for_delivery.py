@@ -15,11 +15,12 @@ class JEForDeliveryHandler:
                         get_type=1
                     )
                     debit_rows_data.append({
-                        # (-) hàng hóa (mđ: 156)
-                        'account': deli_product.product.get_account_determination(
-                            account_deter_title='Xuất kho bán hàng hóa',
-                            warehouse_id=pw_data.warehouse_id
-                        ),
+                        # (+) giao hàng chưa xuất hóa đơn (mđ: 13881)
+                        'account': ChartOfAccounts.objects.filter(
+                            tenant_id=delivery_obj.tenant_id,
+                            company_id=delivery_obj.company_id,
+                            acc_code=13881
+                        ).first(),
                         'business_partner': None,
                         'debit': value,
                         'credit': 0,
@@ -27,12 +28,11 @@ class JEForDeliveryHandler:
                         'taxable_value': 0,
                     })
                     credit_rows_data.append({
-                        # (+) giao hàng chưa xuất hóa đơn (mđ: 13881)
-                        'account': ChartOfAccounts.objects.filter(
-                            tenant_id=delivery_obj.tenant_id,
-                            company_id=delivery_obj.company_id,
-                            acc_code=13881
-                        ).first(),
+                        # (-) hàng hóa (mđ: 156)
+                        'account': deli_product.product.get_account_determination(
+                            account_deter_title='Xuất kho bán hàng hóa',
+                            warehouse_id=pw_data.warehouse_id
+                        ),
                         'business_partner': None,
                         'debit': 0,
                         'credit': value,

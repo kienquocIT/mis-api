@@ -59,7 +59,7 @@ class DefaultAccountDeterminationList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related('account_mapped')
+        return super().get_queryset().prefetch_related().select_related()
 
     @swagger_auto_schema(
         operation_summary="Default Account Determination List",

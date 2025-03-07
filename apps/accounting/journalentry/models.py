@@ -114,6 +114,7 @@ class JournalEntryItem(SimpleAbstractModel):
     def create_je_item_sub(cls, je_obj, order, item, je_item_type=0):
         account_obj = item.get('account')
         account_data = {
+            'id': str(account_obj.id),
             'acc_code': account_obj.acc_code,
             'acc_name': account_obj.acc_name,
             'foreign_acc_name': account_obj.foreign_acc_name
