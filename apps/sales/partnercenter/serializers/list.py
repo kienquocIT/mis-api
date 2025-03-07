@@ -1,19 +1,12 @@
 import logging
-from datetime import timedelta, datetime
-
-import unicodedata
-from django.db.models.functions import Greatest, Coalesce, Concat
-from django.utils import timezone
 from django.apps import apps
-from django.db.models import OuterRef, F, Q, Count, ExpressionWrapper, IntegerField, Subquery, Value
 
 from rest_framework import serializers
 
 from apps.core.base.models import ApplicationProperty
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Contact, Account, Industry
-from apps.sales.opportunity.models import OpportunityMeeting, OpportunityCallLog, \
-    OpportunityEmail, OpportunityConfigStage, OpportunityStage, Opportunity
+from apps.sales.opportunity.models import OpportunityConfigStage
 from apps.sales.partnercenter.models import List, DataObject
 from apps.sales.partnercenter.services.list import ListFilterService
 from apps.sales.partnercenter.translation import ListMsg

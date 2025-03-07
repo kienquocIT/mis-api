@@ -10,7 +10,6 @@ from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.partnercenter.models import List
 from apps.sales.partnercenter.services.list import ListFilterService
 from apps.sales.purchasing.models import PurchaseOrder
-from apps.sales.report.filters import filter_by_advance_filter
 from apps.sales.report.utils.inventory_log import ReportInvCommonFunc
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,

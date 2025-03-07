@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class ListFilterService:
     @classmethod
-    def get_filtered_data(cls, list_instance: List) -> list:# pylint: disable=R0912, R0915, R0914
+    def get_filtered_data(cls, list_instance: List) -> list:
         """
         Return filtered data
         Use in partner center ...
@@ -48,7 +48,7 @@ class ListFilterService:
         return filter_data_list
 
     @classmethod
-    def filter(cls, list_instance: List, queryset: QuerySet) -> QuerySet | None:
+    def filter(cls, list_instance: List, queryset: QuerySet) -> QuerySet | None:# pylint: disable=R0912, R0915, R0914
         """
         Apply filter conditions of list_instance to queryset
         Use in report ....
