@@ -523,6 +523,8 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
     product_depreciation_start_date = models.DateField(null=True)
     product_depreciation_end_date = models.DateField(null=True)
 
+    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+
     # End depreciation fields
 
     returned_quantity_default = models.FloatField(default=0)

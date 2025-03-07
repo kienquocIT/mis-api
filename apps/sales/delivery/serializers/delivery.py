@@ -441,8 +441,9 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                 'product_depreciation_time': deli_product.product_depreciation_time,
                 'product_depreciation_start_date': obj.actual_delivery_date.date(),
                 'product_depreciation_end_date': deli_product.product_depreciation_end_date,
-
                 'product_lease_start_date': obj.actual_delivery_date.date(),
+
+                'depreciation_data': deli_product.depreciation_data,
             }
             for deli_product in obj.delivery_product_delivery_sub.filter(quantity_remain_recovery__gt=0)
         ]

@@ -289,6 +289,8 @@ class Product(DataAbstractModel):
     depreciation_start_date = models.DateField(null=True)
     depreciation_end_date = models.DateField(null=True)
 
+    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+
     # End lease fields
 
     class Meta:
