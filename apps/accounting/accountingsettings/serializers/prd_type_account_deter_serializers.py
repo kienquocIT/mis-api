@@ -50,7 +50,7 @@ class ProductTypeAccountDeterminationUpdateSerializer(serializers.ModelSerialize
 
     @classmethod
     def validate_replace_account(cls, replace_account):
-        if len(replace_account) > 0:
+        if len(replace_account) == 1:
             replace_account_list = []
             for account_id in replace_account:
                 account_mapped_obj = ChartOfAccounts.objects.filter(id=account_id).first()
@@ -67,7 +67,7 @@ class ProductTypeAccountDeterminationUpdateSerializer(serializers.ModelSerialize
                 else:
                     raise serializers.ValidationError({'account_mapped': _('Replace account mapped not found')})
             return replace_account_list
-        raise serializers.ValidationError({'replace_account': _('Replace account is not null')})
+        raise serializers.ValidationError({'replace_account': _('Replace account length is not valid')})
 
     def update(self, instance, validated_data):
         replace_account = validated_data.pop('replace_account')

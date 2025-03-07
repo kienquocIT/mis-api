@@ -904,7 +904,10 @@ class AccountingMasterData:
 
             for item in account_mapped_data_sale + account_mapped_data_purchasing + account_mapped_data_inventory:
                 if None in item.get('account', []):
-                    print(f'Create data failed in {company.title}')
+                    print(f'Create data failed in {company.title}: None in account list')
+                    return False
+                if len(item.get('account', [])) != 1:
+                    print(f'Create data failed in {company.title}: Account list length is not single')
                     return False
             bulk_info = []
             bulk_info_sub = []
