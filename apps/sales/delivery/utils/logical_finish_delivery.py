@@ -178,13 +178,7 @@ class DeliFinishHandler:
 
     @classmethod
     def update_pw_lot(cls, deli_product):
-        targets = []
-        app_code = deli_product._meta.label_lower
-        if app_code == "delivery.orderdeliveryproduct":
-            targets = deli_product.delivery_lot_delivery_product.all()
-        if app_code == "delivery.orderdeliveryproductleased":
-            targets = deli_product.delivery_lot_delivery_product_leased.all()
-        for lot in targets:
+        for lot in deli_product.delivery_lot_delivery_product.all():
             final_ratio = 1
             uom_delivery_rate = deli_product.uom.ratio if deli_product.uom else 1
             if lot.product_warehouse_lot:
@@ -212,13 +206,7 @@ class DeliFinishHandler:
 
     @classmethod
     def update_pw_serial(cls, deli_product):
-        targets = []
-        app_code = deli_product._meta.label_lower
-        if app_code == "delivery.orderdeliveryproduct":
-            targets = deli_product.delivery_serial_delivery_product.all()
-        if app_code == "delivery.orderdeliveryproductleased":
-            targets = deli_product.delivery_serial_delivery_product_leased.all()
-        for serial in targets:
+        for serial in deli_product.delivery_serial_delivery_product.all():
             serial.product_warehouse_serial.is_delete = True
             serial.product_warehouse_serial.save(update_fields=['is_delete'])
         return True

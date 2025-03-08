@@ -6,8 +6,7 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel, HRMsg
 from apps.shared.translations.base import AttachmentMsg
-from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment, \
-    OrderDeliveryProductLeased
+from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 from ..utils import DeliHandler
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
@@ -61,21 +60,6 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'delivery_data',
             'picked_quantity',
             'is_not_inventory'
-        )
-
-
-class OrderDeliveryProductLeasedListSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = OrderDeliveryProductLeased
-        fields = (
-            'product_id',
-            'product_data',
-            'offset_id',
-            'offset_data',
-            'picked_quantity',
-            'delivery_data',
-            'quantity_leased_remain_recovery',
         )
 
 
@@ -273,9 +257,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                         delivery_data = target['delivery_data']  # list format
                         obj.picked_quantity = target['picked_num']
                         obj.delivery_data = delivery_data
-                        obj.product_quantity_leased_data = target['product_quantity_leased_data']
                         obj.quantity_remain_recovery = target['picked_num']
-                        obj.quantity_new_remain_recovery = target['picked_num'] - len(obj.product_quantity_leased_data)
 
                         if (config['is_picking'] and config['is_partial_ship'] and
                                 obj.picked_quantity > obj.remaining_quantity):
@@ -288,9 +270,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                         obj.picked_quantity = target['picked_num']
                     # sau khi update sẽ chạy các func trong save()
                     obj.save(update_fields=[
-                        'picked_quantity', 'delivery_data',
-                        'product_quantity_leased_data', 'quantity_remain_recovery',
-                        'quantity_new_remain_recovery',
+                        'picked_quantity', 'delivery_data', 'quantity_remain_recovery',
                     ])
         return True
 
@@ -364,7 +344,6 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             product_done[prod_key] = {}
             product_done[prod_key]['picked_num'] = item.get('done', 0)
             product_done[prod_key]['delivery_data'] = item.get('delivery_data', [])
-            product_done[prod_key]['product_quantity_leased_data'] = item.get('product_quantity_leased_data', [])
         instance.save()
 
         # update instance and product
@@ -418,19 +397,11 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                 'uom_id': deli_product.uom_id,
                 'uom_data': deli_product.uom_data,
                 'product_quantity': deli_product.product_quantity,
-                'product_quantity_new': deli_product.product_quantity_new,
-                'product_quantity_leased': deli_product.product_quantity_leased,
-                'product_quantity_leased_data': OrderDeliveryProductLeasedListSerializer(
-                    deli_product.delivery_product_leased_delivery_product.filter(
-                        quantity_leased_remain_recovery__gt=0
-                    ), many=True
-                ).data,
                 'product_quantity_time': deli_product.product_quantity_time,
                 'product_unit_price': deli_product.product_unit_price,
                 'product_subtotal_price': 0,
                 'quantity_delivered': deli_product.picked_quantity,
                 'quantity_remain_recovery': deli_product.quantity_remain_recovery,
-                'quantity_new_remain_recovery': deli_product.quantity_new_remain_recovery,
                 'quantity_recovery': 0,
                 'delivery_data': deli_product.delivery_data,
 

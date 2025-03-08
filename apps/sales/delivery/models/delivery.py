@@ -19,7 +19,6 @@ __all__ = [
     'OrderDelivery',
     'OrderDeliverySub',
     'OrderDeliveryProduct',
-    'OrderDeliveryProductLeased',
     'OrderDeliveryAttachment',
 ]
 
@@ -504,10 +503,6 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         help_text="flag to know this product is for promotion (discount, gift,...)"
     )
     product_quantity = models.FloatField(default=0)
-    product_quantity_new = models.FloatField(default=0, help_text="quantity need delivery of new products")
-    remaining_quantity_new = models.FloatField(default=0, help_text="quantity remain of new products")
-    product_quantity_leased = models.FloatField(default=0, help_text="quantity need delivery of leased products")
-    product_quantity_leased_data = models.JSONField(default=list, help_text="read data products leased")
     product_quantity_time = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
     product_tax_value = models.FloatField(default=0)
@@ -531,7 +526,6 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
 
     # fields for recovery
     quantity_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
-    quantity_new_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
 
     def put_backup_data(self):
         if self.product and not self.product_data:
@@ -581,17 +575,9 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         new_obj.delivery_quantity = delivery_quantity
         new_obj.delivered_quantity_before = delivered_quantity_before
         new_obj.remaining_quantity = remaining_quantity
-        new_obj.remaining_quantity_new = remaining_quantity_new
         new_obj.ready_quantity = ready_quantity
         new_obj.picked_quantity = 0
         new_obj.delivery_data = []
-        # Check in old delivery_data, if any delivered then update data remaining_quantity_leased for new obj
-        new_obj.product_quantity_leased_data = [
-            leased_data for leased_data in new_obj.product_quantity_leased_data
-            if leased_data.get('picked_quantity', 0) <= 0
-        ]
-        for leased_data in new_obj.product_quantity_leased_data:
-            leased_data.update({'delivery_data': []})
         new_obj.before_save()
         return new_obj
 
@@ -605,7 +591,6 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         # Save normal Delivery if not flag save_for_other
         if not save_for_other:
             self.before_save()
-            DeliHandler.create_delivery_product_leased(instance=self)
             DeliHandler.create_delivery_product_warehouse(instance=self)
             DeliHandler.create_delivery_lot_serial(instance=self)
         super().save(*args, **kwargs)
@@ -618,57 +603,12 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         permissions = ()
 
 
-class OrderDeliveryProductLeased(MasterDataAbstractModel):
-    delivery_product = models.ForeignKey(
-        'delivery.OrderDeliveryProduct',
-        on_delete=models.CASCADE,
-        verbose_name="delivery product",
-        related_name="delivery_product_leased_delivery_product",
-    )
-    product = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.CASCADE,
-        verbose_name="product leased",
-        related_name="delivery_product_leased_product",
-        null=True
-    )
-    product_data = models.JSONField(default=dict, help_text='data json of product')
-    offset = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.CASCADE,
-        verbose_name="product",
-        related_name="delivery_product_leased_offset",
-        null=True
-    )
-    offset_data = models.JSONField(default=dict, help_text='data json of offset')
-    remaining_quantity_leased = models.FloatField(default=0, help_text="quantity remain of leased products")
-    picked_quantity = models.FloatField(default=0, help_text="quantity delivery leased products")
-    delivery_data = models.JSONField(default=list, help_text="data delivery of leased products")
-
-    # fields for recovery
-    quantity_leased_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
-
-    class Meta:
-        verbose_name = 'Delivery Product Leased'
-        verbose_name_plural = 'Delivery Products Leased'
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
-
-
 class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
     delivery_product = models.ForeignKey(
         'delivery.OrderDeliveryProduct',
         on_delete=models.CASCADE,
         verbose_name="delivery product",
         related_name="delivery_pw_delivery_product",
-    )
-    delivery_product_leased = models.ForeignKey(
-        'delivery.OrderDeliveryProductLeased',
-        on_delete=models.CASCADE,
-        verbose_name="delivery product leased",
-        related_name="delivery_pw_delivery_product_leased",
-        null=True,
     )
     sale_order = models.ForeignKey(
         'saleorder.SaleOrder',
@@ -753,13 +693,6 @@ class OrderDeliveryLot(MasterDataAbstractModel):
         verbose_name="delivery product",
         related_name="delivery_lot_delivery_product",
     )
-    delivery_product_leased = models.ForeignKey(
-        'delivery.OrderDeliveryProductLeased',
-        on_delete=models.CASCADE,
-        verbose_name="delivery product leased",
-        related_name="delivery_lot_delivery_product_leased",
-        null=True,
-    )
     product_warehouse_lot = models.ForeignKey(
         'saledata.ProductWareHouseLot',
         on_delete=models.CASCADE,
@@ -815,13 +748,6 @@ class OrderDeliverySerial(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="delivery product",
         related_name="delivery_serial_delivery_product",
-    )
-    delivery_product_leased = models.ForeignKey(
-        'delivery.OrderDeliveryProductLeased',
-        on_delete=models.CASCADE,
-        verbose_name="delivery product leased",
-        related_name="delivery_serial_delivery_product_leased",
-        null=True,
     )
     product_warehouse_serial = models.ForeignKey(
         'saledata.ProductWareHouseSerial',

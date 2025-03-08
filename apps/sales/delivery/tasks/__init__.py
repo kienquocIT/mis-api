@@ -9,7 +9,7 @@ from apps.core.process.utils import ProcessRuntimeControl
 from apps.sales.delivery.models import (
     DeliveryConfig,
     OrderPicking, OrderPickingSub, OrderPickingProduct,
-    OrderDelivery, OrderDeliveryProduct, OrderDeliverySub, OrderDeliveryProductLeased
+    OrderDelivery, OrderDeliveryProduct, OrderDeliverySub
 )
 from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
@@ -403,11 +403,6 @@ class OrderActiveDeliverySerializer:
                     obj_delivery.sub = sub_obj
                     obj_delivery.save(update_fields=['sub'])
                     delivery_product_list = OrderDeliveryProduct.objects.bulk_create(_y)
-                    for delivery_product in delivery_product_list:
-                        OrderDeliveryProductLeased.objects.bulk_create([OrderDeliveryProductLeased(
-                            delivery_product=delivery_product, tenant_id=delivery_product.tenant_id,
-                            company_id=delivery_product.company_id, **product_leased,
-                        ) for product_leased in delivery_product.product_quantity_leased_data])
 
                     # update sale order delivery_status
                     self.order_obj.delivery_status = 1
