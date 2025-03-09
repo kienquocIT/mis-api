@@ -467,6 +467,14 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         null=True
     )
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
+    asset = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.CASCADE,
+        verbose_name="asset",
+        related_name="delivery_product_asset",
+        null=True
+    )
+    asset_data = models.JSONField(default=dict, help_text='data json of asset')
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -565,8 +573,7 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
             self,
             old_obj, new_sub,
             delivery_quantity, delivered_quantity_before,
-            remaining_quantity, remaining_quantity_new,
-            ready_quantity,
+            remaining_quantity, ready_quantity,
     ):
         new_obj = deepcopy(old_obj)
         # Override data

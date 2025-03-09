@@ -84,11 +84,6 @@ class DeliFinishHandler:
             for deli_product in instance.delivery_product_delivery_sub.all():
                 quantity_before = deli_product.delivered_quantity_before + deli_product.picked_quantity
                 remaining_quantity = deli_product.delivery_quantity - quantity_before
-                # SL còn lại SP mới: tổng còn lại - SL SP đã cho thuê mà chưa giao
-                remaining_quantity_new = remaining_quantity
-                for leased_data in deli_product.product_quantity_leased_data:
-                    if leased_data.get('picked_quantity', 0) == 0:
-                        remaining_quantity_new -= 1
                 ready_quantity = deli_product.ready_quantity - deli_product.picked_quantity
                 new_prod = deli_product.setup_new_obj(
                     old_obj=deli_product,
@@ -96,7 +91,6 @@ class DeliFinishHandler:
                     delivery_quantity=deli_product.delivery_quantity,
                     delivered_quantity_before=quantity_before,
                     remaining_quantity=remaining_quantity,
-                    remaining_quantity_new=remaining_quantity_new if remaining_quantity_new > 0 else 0,
                     ready_quantity=ready_quantity if ready_quantity > 0 else 0,
                 )
                 new_prod.before_save()
@@ -114,10 +108,6 @@ class DeliFinishHandler:
                 cls.update_pw(instance=instance, deli_product=deli_product, config=config)
                 cls.update_pw_lot(deli_product=deli_product)
                 cls.update_pw_serial(deli_product=deli_product)
-                for deli_product_leased in deli_product.delivery_product_leased_delivery_product.all():
-                    cls.update_pw(instance=instance, deli_product=deli_product_leased, config=config)
-                    cls.update_pw_lot(deli_product=deli_product_leased)
-                    cls.update_pw_serial(deli_product=deli_product_leased)
         return True
 
     @classmethod
@@ -224,20 +214,11 @@ class DeliFinishHandler:
                 )
                 target.save(**{
                     'update_stock_info': {
-                        'quantity_delivery_new': deli_product.picked_quantity * final_ratio,
+                        'quantity_delivery': deli_product.picked_quantity * final_ratio,
                         'system_status': 3,
                     },
                     'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
                 })
-            for deli_product_leased in deli_product.delivery_product_leased_delivery_product.all():
-                if deli_product_leased.offset:
-                    deli_product_leased.offset.save(**{
-                        'update_stock_info': {
-                            'quantity_delivery_leased': deli_product_leased.picked_quantity,
-                            'system_status': 3,
-                        },
-                        'update_fields': ['available_amount', 'stock_amount']
-                    })
         return True
 
     # SALE/ LEASE ORDER STATUS

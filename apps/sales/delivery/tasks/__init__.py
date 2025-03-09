@@ -90,10 +90,6 @@ class OrderActiveDeliverySerializer:
             'uom_time': None,
             'uom_time_data': {},
             'product_quantity': m2m_obj.product_quantity,
-            'product_quantity_new': m2m_obj.product_quantity,
-            'remaining_quantity_new': m2m_obj.product_quantity,
-            'product_quantity_leased': 0,
-            'product_quantity_leased_data': [],
             'product_quantity_time': 0,
             'product_unit_price': m2m_obj.product_unit_price,
             'product_subtotal_price': m2m_obj.product_subtotal_price,
@@ -107,21 +103,14 @@ class OrderActiveDeliverySerializer:
             'product_depreciation_end_date': None,
         }
         if all(hasattr(m2m_obj, attr) for attr in [
-            "asset_type", "offset", "offset_data",
-            "product_quantity_new", "product_quantity_leased", "product_quantity_leased_data", "product_quantity_time"
+            "asset_type", "offset", "offset_data", "product_quantity_time"
         ]):
-            for data in m2m_obj.product_quantity_leased_data:
-                data.update({'remaining_quantity_leased': 1, 'picked_quantity': 0, 'delivery_data': []})
             result.update({
                 'asset_type': m2m_obj.asset_type,
                 'offset': m2m_obj.offset,
                 'offset_data': m2m_obj.offset_data,
                 'uom_time': m2m_obj.uom_time,
                 'uom_time_data': m2m_obj.uom_time_data,
-                'product_quantity_new': m2m_obj.product_quantity_new,
-                'remaining_quantity_new': m2m_obj.product_quantity_new,
-                'product_quantity_leased': m2m_obj.product_quantity_leased,
-                'product_quantity_leased_data': m2m_obj.product_quantity_leased_data,
                 'product_quantity_time': m2m_obj.product_quantity_time,
             })
 

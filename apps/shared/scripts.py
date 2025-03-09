@@ -40,7 +40,7 @@ from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTr
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
 from ..sales.delivery.utils import DeliFinishHandler
 from ..sales.inventory.models import (
-    InventoryAdjustmentItem, GoodsReceipt, GoodsReceiptWarehouse, GoodsReturn
+    InventoryAdjustmentItem, GoodsReceipt, GoodsReceiptWarehouse, GoodsReturn, GoodsDetail
 )
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler
 from ..sales.lead.models import Lead
@@ -57,7 +57,7 @@ from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.quotation.serializers import QuotationListSerializer
 from ..sales.report.models import ReportCashflow
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
-from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrder
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrder, SaleOrderIndicator
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
 from ..sales.saleorder.utils import SOFinishHandler
 from ..sales.task.models import OpportunityTaskStatus, OpportunityTask

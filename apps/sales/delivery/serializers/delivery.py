@@ -48,10 +48,6 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'product_data',
             'offset_data',
             'product_quantity',
-            'product_quantity_new',
-            'remaining_quantity_new',
-            'product_quantity_leased',
-            'product_quantity_leased_data',
             'uom_data',
             'delivery_quantity',
             'delivered_quantity_before',
@@ -251,7 +247,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             obj_key = str(obj.product_id) + "___" + str(obj.order)
             if obj_key in product_done:
                 target = product_done[obj_key]
-                if all(key in target for key in ['delivery_data', 'picked_num', 'product_quantity_leased_data']):
+                if all(key in target for key in ['delivery_data', 'picked_num']):
                     if 1 in obj.product.product_choice or sub.lease_order_data:
                         # kiểm tra product id và order trùng với product update ko
                         delivery_data = target['delivery_data']  # list format
