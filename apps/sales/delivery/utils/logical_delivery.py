@@ -21,6 +21,17 @@ class DeliHandler:
         return True
 
     @classmethod
+    def create_delivery_product_asset(cls, instance):
+        model = DisperseModel(app_model='delivery.OrderDeliveryProductAsset').get_model()
+        if model and hasattr(model, 'objects'):
+            instance.delivery_pa_delivery_product.all().delete()
+            model.objects.bulk_create([model(
+                tenant_id=instance.tenant_id, company_id=instance.company_id,
+                delivery_product_id=instance.id, **asset_data,
+            ) for asset_data in instance.asset_data])
+        return True
+
+    @classmethod
     def create_delivery_product_warehouse(cls, instance):
         model = DisperseModel(app_model='delivery.OrderDeliveryProductWarehouse').get_model()
         if model and hasattr(model, 'create'):

@@ -9,7 +9,8 @@ from apps.core.process.utils import ProcessRuntimeControl
 from apps.sales.delivery.models import (
     DeliveryConfig,
     OrderPicking, OrderPickingSub, OrderPickingProduct,
-    OrderDelivery, OrderDeliveryProduct, OrderDeliverySub
+    OrderDelivery, OrderDeliveryProduct, OrderDeliverySub,
+    OrderDeliveryProductAsset
 )
 from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
@@ -26,7 +27,7 @@ class OrderActiveDeliverySerializer:
             order_obj,  # SaleOrder || LeaseOrder
             order_products: list,
             delivery_config_obj: DeliveryConfig,
-            process_id = None,
+            process_id=None,
     ):
         if order_obj:
             self.tenant_id = order_obj.tenant_id
@@ -82,11 +83,32 @@ class OrderActiveDeliverySerializer:
                 self.check_has_prod_services += 1
         return sub_id, pickup_quantity, m2m_obj_arr
 
+    @classmethod
+    def append_depreciation_data(cls, cost_product):
+        data_json = {}
+        if cost_product:
+            data_json.update({
+                # 'product_unit_price': cost_product.product_cost_price,
+                # 'product_subtotal_price': cost_product.product_subtotal_price,
+
+                'product_depreciation_subtotal': cost_product.product_depreciation_subtotal,
+                'product_depreciation_price': cost_product.product_depreciation_price,
+                'product_depreciation_method': cost_product.product_depreciation_method,
+                'product_depreciation_adjustment': cost_product.product_depreciation_adjustment,
+                'product_depreciation_time': cost_product.product_depreciation_time,
+                'product_depreciation_start_date': str(cost_product.product_depreciation_start_date),
+                'product_depreciation_end_date': str(cost_product.product_depreciation_end_date),
+
+                'depreciation_data': cost_product.depreciation_data,
+            })
+        return data_json
+
     def setup_product_kwargs(self, m2m_obj):
         result = {
             'asset_type': None,
             'offset': None,
             'offset_data': {},
+            'asset_data': [],
             'uom_time': None,
             'uom_time_data': {},
             'product_quantity': m2m_obj.product_quantity,
@@ -103,12 +125,13 @@ class OrderActiveDeliverySerializer:
             'product_depreciation_end_date': None,
         }
         if all(hasattr(m2m_obj, attr) for attr in [
-            "asset_type", "offset", "offset_data", "product_quantity_time"
+            "asset_type", "offset", "offset_data", "asset_data", "product_quantity_time"
         ]):
             result.update({
                 'asset_type': m2m_obj.asset_type,
                 'offset': m2m_obj.offset,
                 'offset_data': m2m_obj.offset_data,
+                'asset_data': m2m_obj.asset_data,
                 'uom_time': m2m_obj.uom_time,
                 'uom_time_data': m2m_obj.uom_time_data,
                 'product_quantity_time': m2m_obj.product_quantity_time,
@@ -119,18 +142,19 @@ class OrderActiveDeliverySerializer:
                     lease_order=self.order_obj, product=m2m_obj.product
                 ).first()
                 if cost_product:
-                    result.update({
-                        'product_unit_price': cost_product.product_cost_price,
-                        'product_subtotal_price': cost_product.product_subtotal_price,
-
-                        'product_depreciation_subtotal': cost_product.product_depreciation_subtotal,
-                        'product_depreciation_price': cost_product.product_depreciation_price,
-                        'product_depreciation_method': cost_product.product_depreciation_method,
-                        'product_depreciation_adjustment': cost_product.product_depreciation_adjustment,
-                        'product_depreciation_time': cost_product.product_depreciation_time,
-                        'product_depreciation_start_date': cost_product.product_depreciation_start_date,
-                        'product_depreciation_end_date': cost_product.product_depreciation_end_date,
-                    })
+                    result.update(OrderActiveDeliverySerializer.append_depreciation_data(cost_product=cost_product))
+            if m2m_obj.product and m2m_obj.asset_data:
+                for m2m_obj_asset in m2m_obj.lease_order_product_asset_lo_product.all():
+                    cost_product = m2m_obj_asset.asset.lease_order_cost_asset.filter(
+                        lease_order=self.order_obj, product=m2m_obj_asset.product
+                    ).first()
+                    if cost_product:
+                        for asset_data in result.get('asset_data', []):
+                            if asset_data.get('asset_id', None) == str(m2m_obj_asset.asset_id):
+                                asset_data.update(OrderActiveDeliverySerializer.append_depreciation_data(
+                                    cost_product=cost_product
+                                ))
+                                break
 
         return result
 
@@ -219,7 +243,6 @@ class OrderActiveDeliverySerializer:
             times=1,
             pickup_quantity=pickup_quantity,
             picked_quantity_before=0,
-            # remaining_quantity=0, # autofill by pickup_quantity - picked_quantity_before
             picked_quantity=0,
             pickup_data={},
             sale_order_data=obj.sale_order_data,
@@ -392,6 +415,11 @@ class OrderActiveDeliverySerializer:
                     obj_delivery.sub = sub_obj
                     obj_delivery.save(update_fields=['sub'])
                     delivery_product_list = OrderDeliveryProduct.objects.bulk_create(_y)
+                    for delivery_product in delivery_product_list:
+                        OrderDeliveryProductAsset.objects.bulk_create([OrderDeliveryProductAsset(
+                            tenant_id=delivery_product.tenant_id, company_id=delivery_product.company_id,
+                            delivery_product=delivery_product, **asset_data,
+                        ) for asset_data in delivery_product.asset_data])
 
                     # update sale order delivery_status
                     self.order_obj.delivery_status = 1

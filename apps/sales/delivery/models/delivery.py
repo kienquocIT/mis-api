@@ -20,6 +20,7 @@ __all__ = [
     'OrderDeliverySub',
     'OrderDeliveryProduct',
     'OrderDeliveryAttachment',
+    'OrderDeliveryProductAsset',
 ]
 
 
@@ -467,19 +468,13 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         null=True
     )
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
-    asset = models.ForeignKey(
-        'asset.FixedAsset',
-        on_delete=models.CASCADE,
-        verbose_name="asset",
-        related_name="delivery_product_asset",
-        null=True
-    )
-    asset_data = models.JSONField(default=dict, help_text='data json of asset')
+    asset_data = models.JSONField(default=list, help_text='data json of asset')
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         verbose_name='uom',
         related_name="delivery_product_uom",
+        null=True,
     )
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
     uom_time = models.ForeignKey(
@@ -585,6 +580,12 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         new_obj.ready_quantity = ready_quantity
         new_obj.picked_quantity = 0
         new_obj.delivery_data = []
+        # Check and store asset not delivered
+        new_obj.asset_data = [
+            asset_data for asset_data in new_obj.asset_data
+            if asset_data.get('picked_quantity', 0) <= 0
+        ]
+
         new_obj.before_save()
         return new_obj
 
@@ -598,6 +599,7 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         # Save normal Delivery if not flag save_for_other
         if not save_for_other:
             self.before_save()
+            DeliHandler.create_delivery_product_asset(instance=self)
             DeliHandler.create_delivery_product_warehouse(instance=self)
             DeliHandler.create_delivery_lot_serial(instance=self)
         super().save(*args, **kwargs)
@@ -606,6 +608,53 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         verbose_name = 'Delivery Product'
         verbose_name_plural = 'Delivery Product'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class OrderDeliveryProductAsset(MasterDataAbstractModel):
+    delivery_product = models.ForeignKey(
+        'delivery.OrderDeliveryProduct',
+        on_delete=models.CASCADE,
+        verbose_name="delivery product",
+        related_name="delivery_pa_delivery_product",
+    )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="delivery_pa_product",
+        null=True
+    )
+    product_data = models.JSONField(default=dict, help_text='data json of product')
+    asset = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.CASCADE,
+        verbose_name="asset",
+        related_name="delivery_pa_asset",
+        null=True
+    )
+    asset_data = models.JSONField(default=dict, help_text='data json of asset')
+    picked_quantity = models.FloatField(default=0, verbose_name='Quantity was delivered')
+    remaining_quantity = models.FloatField(default=0, verbose_name='Quantity need delivery')
+    # Begin depreciation fields
+
+    product_depreciation_subtotal = models.FloatField(default=0)
+    product_depreciation_price = models.FloatField(default=0)
+    product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
+    product_depreciation_adjustment = models.FloatField(default=0)
+    product_depreciation_time = models.FloatField(default=0)
+    product_depreciation_start_date = models.DateField(null=True)
+    product_depreciation_end_date = models.DateField(null=True)
+
+    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+
+    # End depreciation fields
+
+    class Meta:
+        verbose_name = 'Delivery Product Asset'
+        verbose_name_plural = 'Delivery Products Asset'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 

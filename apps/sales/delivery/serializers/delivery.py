@@ -34,8 +34,8 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
         if obj.product.product_choice:
             if 1 in obj.product.product_choice:
                 return bool(True)
-        if isinstance(obj.offset_data, dict):
-            if obj.offset_data:
+        if obj.asset_type:
+            if obj.asset_type >= 1:
                 return bool(True)
         return bool(False)
 
@@ -46,7 +46,9 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'order',
             'is_promotion',
             'product_data',
+            'asset_type',
             'offset_data',
+            'asset_data',
             'product_quantity',
             'uom_data',
             'delivery_quantity',
@@ -165,7 +167,8 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
 class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
     product_id = serializers.UUIDField()
     done = serializers.IntegerField(min_value=1)
-    delivery_data = serializers.JSONField(allow_null=True)
+    delivery_data = serializers.JSONField(default=list)
+    asset_data = serializers.JSONField(default=list)
     product_quantity_leased_data = serializers.JSONField(allow_null=True, required=False)
     order = serializers.IntegerField(min_value=1)
 
@@ -247,13 +250,13 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             obj_key = str(obj.product_id) + "___" + str(obj.order)
             if obj_key in product_done:
                 target = product_done[obj_key]
-                if all(key in target for key in ['delivery_data', 'picked_num']):
+                if all(key in target for key in ['picked_num', 'delivery_data', 'asset_data']):
                     if 1 in obj.product.product_choice or sub.lease_order_data:
                         # kiểm tra product id và order trùng với product update ko
-                        delivery_data = target['delivery_data']  # list format
-                        obj.picked_quantity = target['picked_num']
-                        obj.delivery_data = delivery_data
-                        obj.quantity_remain_recovery = target['picked_num']
+                        obj.picked_quantity = target.get('picked_num', 0)
+                        obj.delivery_data = target.get('delivery_data', [])
+                        obj.asset_data = target.get('asset_data', [])
+                        obj.quantity_remain_recovery = target.get('picked_num', 0)
 
                         if (config['is_picking'] and config['is_partial_ship'] and
                                 obj.picked_quantity > obj.remaining_quantity):
@@ -263,10 +266,10 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                                 )}
                             )
                     else:
-                        obj.picked_quantity = target['picked_num']
+                        obj.picked_quantity = target.get('picked_num', 0)
                     # sau khi update sẽ chạy các func trong save()
                     obj.save(update_fields=[
-                        'picked_quantity', 'delivery_data', 'quantity_remain_recovery',
+                        'picked_quantity', 'delivery_data', 'asset_data', 'quantity_remain_recovery',
                     ])
         return True
 
@@ -340,6 +343,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             product_done[prod_key] = {}
             product_done[prod_key]['picked_num'] = item.get('done', 0)
             product_done[prod_key]['delivery_data'] = item.get('delivery_data', [])
+            product_done[prod_key]['asset_data'] = item.get('asset_data', [])
         instance.save()
 
         # update instance and product
