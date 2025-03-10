@@ -57,7 +57,7 @@ class AccountTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
 class AccountGroupListSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = AccountGroup
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'code', 'description', 'is_default')
 
 
 class AccountGroupCreateSerializer(serializers.ModelSerializer):
@@ -86,7 +86,7 @@ class AccountGroupCreateSerializer(serializers.ModelSerializer):
 class AccountGroupDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountGroup
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'code', 'description', 'is_default')
 
 
 class AccountGroupUpdateSerializer(serializers.ModelSerializer):
@@ -106,7 +106,7 @@ class AccountGroupUpdateSerializer(serializers.ModelSerializer):
 class IndustryListSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = Industry
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'code', 'description', 'is_default')
 
 
 class IndustryCreateSerializer(serializers.ModelSerializer):
@@ -135,7 +135,7 @@ class IndustryCreateSerializer(serializers.ModelSerializer):
 class IndustryDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Industry
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'code', 'description', 'is_default')
 
 
 class IndustryUpdateSerializer(serializers.ModelSerializer):

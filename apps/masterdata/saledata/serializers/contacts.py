@@ -12,7 +12,7 @@ class SalutationListSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Salutation
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'code', 'description', 'is_default')
 
 
 class SalutationCreateSerializer(serializers.ModelSerializer):
@@ -41,7 +41,7 @@ class SalutationCreateSerializer(serializers.ModelSerializer):
 class SalutationDetailSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = Salutation
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'code', 'description', 'is_default')
 
 
 class SalutationUpdateSerializer(serializers.ModelSerializer):
