@@ -49,9 +49,9 @@ class WarehouseAccountDeterminationUpdateSerializer(serializers.ModelSerializer)
 
     @classmethod
     def validate_replace_account(cls, replace_account):
-        if len(replace_account) == 1:
+        if len([replace_account]) == 1:
             replace_account_list = []
-            for account_id in replace_account:
+            for account_id in [replace_account]:
                 account_mapped_obj = ChartOfAccounts.objects.filter(id=account_id).first()
                 if account_mapped_obj:
                     replace_account_list.append({

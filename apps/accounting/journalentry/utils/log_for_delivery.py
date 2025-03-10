@@ -10,32 +10,37 @@ class JEForDeliveryHandler:
         for deli_product in delivery_obj.delivery_product_delivery_sub.all():
             if deli_product.product:
                 for pw_data in deli_product.delivery_pw_delivery_product.all():
-                    value = deli_product.product.get_unit_cost_by_warehouse(
-                        warehouse_id=pw_data.warehouse_id,
-                        get_type=1
+                    # lấy cost hiện tại của sp
+                    cost = deli_product.product.get_current_unit_cost(
+                        get_type=1,
+                        **{
+                            'warehouse_id': pw_data.warehouse_id,
+                            'sale_order_id': delivery_obj.sale_order_data.get('id'),
+                        }
                     )
                     debit_rows_data.append({
                         # (+) giao hàng chưa xuất hóa đơn (mđ: 13881)
-                        'account': ChartOfAccounts.objects.filter(
-                            tenant_id=delivery_obj.tenant_id,
-                            company_id=delivery_obj.company_id,
-                            acc_code=13881
-                        ).first(),
+                        'account': deli_product.product.get_product_account_determination(
+                            account_deter_foreign_title='Customer underpayment',
+                            warehouse_id=pw_data.warehouse_id
+                        ),
+                        'product_mapped': deli_product.product,
                         'business_partner': None,
-                        'debit': value,
+                        'debit': cost,
                         'credit': 0,
                         'is_fc': False,
                         'taxable_value': 0,
                     })
                     credit_rows_data.append({
                         # (-) hàng hóa (mđ: 156)
-                        'account': deli_product.product.get_account_determination(
-                            account_deter_title='Xuất kho bán hàng hóa',
+                        'account': deli_product.product.get_product_account_determination(
+                            account_deter_foreign_title='Inventory account',
                             warehouse_id=pw_data.warehouse_id
                         ),
+                        'product_mapped': deli_product.product,
                         'business_partner': None,
                         'debit': 0,
-                        'credit': value,
+                        'credit': cost,
                         'is_fc': False,
                         'taxable_value': 0,
                     })

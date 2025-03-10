@@ -85,11 +85,18 @@ class JournalEntryItem(SimpleAbstractModel):
     order = models.IntegerField(default=0)
     account = models.ForeignKey(
         ChartOfAccounts,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         related_name='je_item_account'
     )
     account_data = models.JSONField(default=dict)
+    product_mapped = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='je_item_product_mapped'
+    )
+    product_mapped_data = models.JSONField(default=dict)
     business_partner = models.ForeignKey(
         Account,
         on_delete=models.CASCADE,
@@ -119,6 +126,12 @@ class JournalEntryItem(SimpleAbstractModel):
             'acc_name': account_obj.acc_name,
             'foreign_acc_name': account_obj.foreign_acc_name
         } if account_obj else {}
+        product_mapped_obj = item.get('product_mapped')
+        product_mapped_data = {
+            'id': str(product_mapped_obj.id),
+            'code': product_mapped_obj.code,
+            'title': product_mapped_obj.title,
+        } if product_mapped_obj else {}
         business_partner_obj = item.get('business_partner')
         business_partner_data = {
             'id': str(business_partner_obj.id),
@@ -131,6 +144,8 @@ class JournalEntryItem(SimpleAbstractModel):
             order=order,
             account=account_obj,
             account_data=account_data,
+            product_mapped=product_mapped_obj,
+            product_mapped_data=product_mapped_data,
             business_partner=business_partner_obj,
             business_partner_data=business_partner_data,
             debit=item.get('debit', 0) if je_item_type == 0 else 0,

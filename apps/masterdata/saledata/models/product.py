@@ -443,22 +443,22 @@ class Product(DataAbstractModel):
                         })
         return unit_cost_list
 
-    def get_account_determination(self, account_deter_title, warehouse_id=None):
+    def get_product_account_determination(self, account_deter_foreign_title, warehouse_id=None):
         """
             Lấy danh sách TK kế toán được xác định cho Sản Phẩm này:
             - Luôn luôn truyền account_deter_title: str
             - Nếu tham chiếu theo Kho (0): cần truyền 'warehouse_id'
             - Nếu tham chiếu theo Loại SP (1): không cần truyền tham số gì, tự động lấy theo product type của SP
-            - Nếu xác định theo chính SP đó (2): không cần truyền tham số gì, t động lấy theo SP
+            - Nếu xác định theo chính SP đó (2): không cần truyền tham số gì, tự động lấy theo SP
             Returns: obj hoặc None nếu không tìm thấy dữ liệu
         """
         account_deter_referenced_by = self.account_deter_referenced_by
-        if account_deter_title:
+        if account_deter_foreign_title:
             if account_deter_referenced_by == 0:
                 warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
                 if warehouse_obj:
                     return warehouse_obj.wh_account_deter_warehouse_mapped.filter(
-                        title=account_deter_title
+                        foreign_title=account_deter_foreign_title
                     ).first()
                 logger.error(msg='Get account deter by warehouse, but no warehouse found!')
             elif account_deter_referenced_by == 1:
@@ -466,12 +466,12 @@ class Product(DataAbstractModel):
                 if prd_type_list.count() == 1:
                     prd_type_obj = prd_type_list.first()
                     return prd_type_obj.prd_type_account_deter_product_type_mapped.filter(
-                        title=account_deter_title
+                        foreign_title=account_deter_foreign_title
                     ).first()
                 logger.error(msg='Get account deter by product type, but there are more than 1 product type found!')
             elif account_deter_referenced_by == 2:
                 return self.prd_account_deter_product_mapped.filter(
-                    title=account_deter_title
+                    foreign_title=account_deter_foreign_title
                 ).first()
         return None
 

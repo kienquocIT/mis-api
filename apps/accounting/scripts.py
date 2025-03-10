@@ -642,83 +642,116 @@ class AccountingMasterData:
         return True
 
     @staticmethod
+    def add_account_default():
+        # thêm 13881: Giao hàng nhưng chưa xuất hóa đơn bán hàng
+        ChartOfAccounts.add_account(
+            parent_acc_type=1,
+            parent_acc_code=1388,
+            new_acc_code=13881,
+            new_acc_name='Giao hàng nhưng chưa xuất hóa đơn bán hàng',
+            new_foreign_acc_name='Delivered but no AR Invoice yet'
+        )
+        print('Done :))')
+        return True
+
+    @staticmethod
     def generate_default_account_determination_200():
         """ Xác định các tài khoản kế toán mặc định (TT200) """
         for company in Company.objects.all():
             account_mapped_data_sale = [
                 {
-                    'foreign_title': 'Domestic Accounts Receivable',
+                    'foreign_title': 'Receivables from domestic customers',
                     'title': 'Phải thu khách hàng trong nước',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='131').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Foreign Accounts Receivable',
+                    'foreign_title': 'Receivables from foreign customers',
                     'title': 'Phải thu khách hàng nước ngoài',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='131').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Checks Received',
+                    'foreign_title': 'Checks received from customers',
                     'title': 'Séc nhận được từ khách hàng',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='131').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Cash on Hand',
+                    'foreign_title': 'Cash in hand received from customers',
                     'title': 'Tiền mặt thu từ khách hàng',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1111').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Underpayment A/R Account',
-                    'title': 'Khách hàng thanh toán thiếu',
+                    'foreign_title': 'Cash in bank received from customers',
+                    'title': 'Tiền khách hàng chuyển khoản',
                     'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1388').first()
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1121').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Overpayment A/R Account',
+                    'foreign_title': 'Sales tax',
+                    'title': 'Thuế GTGT bán hàng',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='3331').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Customer underpayment',
+                    'title': 'Khách hàng thanh toán thiếu',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='13881').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Customer overpayment',
                     'title': 'Khách hàng thanh toán thừa',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='3388').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Down Payment Clearing Account',
+                    'foreign_title': 'Customer deposit offset',
                     'title': 'Bù trừ đặt cọc khách hàng',
                     'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='131').first(),
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='3387').first(),
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='3387').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Realized Exchange Diff. Gain',
+                    'foreign_title': 'Exchange rate difference when actually collected. Gain',
                     'title': 'Lãi chênh lệch tỷ giá khi thực thu',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='515').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Realized Exchange Diff. Loss',
+                    'foreign_title': 'Exchange rate difference when actually collected. Loss',
                     'title': 'Lỗ chênh lệch tỷ giá khi thực thu',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='635').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Revenue Account',
+                    'foreign_title': 'Domestic sales revenue',
                     'title': 'Doanh thu bán hàng trong nước',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='511').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Sales Credit Account',
+                    'foreign_title': 'Foreign sales revenue',
+                    'title': 'Doanh thu bán hàng nước ngoài',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='511').first()
+                    ]
+                },
+                {
+                    'foreign_title': 'Deduction from income',
                     'title': 'Giảm trừ doanh thu',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='521').first()
@@ -727,43 +760,42 @@ class AccountingMasterData:
             ]
             account_mapped_data_purchasing = [
                 {
-                    'foreign_title': 'Domestic Accounts Payable',
+                    'foreign_title': 'Payable to domestic suppliers',
                     'title': 'Phải trả nhà cung cấp trong nước',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='331').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Foreign Accounts Payable',
+                    'foreign_title': 'Payable to foreign suppliers',
                     'title': 'Phải trả nhà cung cấp nước ngoài',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='331').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Realized Exchange Diff. Gain',
+                    'foreign_title': 'Exchange rate difference when paid. Gain',
                     'title': 'Lãi chênh lệch tỷ giá khi thanh toán',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='515').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Realized Exchange Diff. Loss',
+                    'foreign_title': 'Exchange rate difference when paid. Loss',
                     'title': 'Lỗ chênh lệch tỷ giá khi thanh toán',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='635').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Expense Account',
+                    'foreign_title': 'Expense account',
                     'title': 'Tài khoản chi phí',
                     'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='641').first(),
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='642').first()
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='641').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Purchase Credit Account',
+                    'foreign_title': 'Purchase discount',
                     'title': 'Giảm giá mua hàng',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='521').first()
@@ -772,134 +804,33 @@ class AccountingMasterData:
             ]
             account_mapped_data_inventory = [
                 {
-                    'foreign_title': 'Inventory Account',
+                    'foreign_title': 'Inventory account',
                     'title': 'Tài khoản hàng tồn kho',
                     'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='152').first(),
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='153').first(),
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='156').first()
                     ]
                 },
                 {
-                    'foreign_title': 'Cost of Goods Sold Account',
+                    'foreign_title': 'Cost of goods sold',
                     'title': 'Giá vốn hàng bán',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='632').first()
                     ]
                 },
                 {
-                    'foreign_title': 'ALLOCATION ACCOUNT',
-                    'title': 'TÀI KHOẢN PHÂN BỔ CHI PHÍ',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='621').first(),
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='622').first(),
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='627').first(),
-                    ]
-                },
-                {
-                    'foreign_title': 'VARIANCE ACCOUNT',
-                    'title': 'TÀI KHOẢN CHÊNH LỆCH',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='3388').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'PRICE DIFFERENCE ACCOUNT',
-                    'title': 'CHÊNH LỆCH GIÁ HÀNG TỒN KHO',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='411').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'NEGATIVE INVENTORY ADJ. ACCT',
-                    'title': 'ĐIỀU CHỈNH ÂM KHO',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='632').first(),
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='138').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'Inventory Offset - Decrease acct',
-                    'title': 'Điều chỉnh giảm tồn kho',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='156').first(),
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='632').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'Inventory Offset - Increase acct',
-                    'title': 'Điều chỉnh tăng tồn kho',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='156').first(),
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='632').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'Sales Returns Account',
+                    'foreign_title': 'Sales returns Aaccount',
                     'title': 'Tài khoản hàng bán bị trả lại',
                     'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='521').first(),
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='156').first()
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='521').first()
                     ]
                 },
                 {
-                    'foreign_title': 'EXCHANGE RATE DIFFERENCES ACCOUNT',
-                    'title': 'CHÊNH LỆCH TỶ GIÁ HÀNG TỒN KHO',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='515').first(),
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='635').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'GOODS CLEARING ACCOUNT',
-                    'title': 'TÀI KHOẢN HÀNG CHỜ XỬ LÝ',
+                    'foreign_title': 'Goods in transit',
+                    'title': 'Hàng mua đang trên đường',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='151').first()
                     ]
-                },
-                {
-                    'foreign_title': 'G/L DECREASE ACCOUNT',
-                    'title': 'GIẢM TỒN KHO GHI VÀO SỔ CÁI',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='632').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'G/L INCREASE ACCOUNT',
-                    'title': 'TĂNG TỒN KHO GHI VÀO SỔ CÁI',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='711').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'Stock in Transit Account',
-                    'title': 'Hàng đang trên đường',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='151').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'Expense Clearing Account',
-                    'title': 'Tài khoản dồn chi phí trước khi phân bổ',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='154').first(),
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='242').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'WIP Inventory Account',
-                    'title': 'Tài khoản hàng dở dang',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='154').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'WIP Inventory Variance Account',
-                    'title': 'Tài khoản chênh lệch sản xuất dở dang',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='3388').first()
-                    ]
-                },
+                }
             ]
 
             for item in account_mapped_data_sale + account_mapped_data_purchasing + account_mapped_data_inventory:
@@ -911,10 +842,11 @@ class AccountingMasterData:
                     return False
             bulk_info = []
             bulk_info_sub = []
-            for item in account_mapped_data_sale:
+            for order, item in enumerate(account_mapped_data_sale):
                 main_obj = DefaultAccountDetermination(
                     company=company,
                     tenant=company.tenant,
+                    order=order,
                     title=item.get('title', ''),
                     foreign_title=item.get('foreign_title', ''),
                     default_account_determination_type=0
@@ -933,10 +865,11 @@ class AccountingMasterData:
                             }
                         )
                     )
-            for item in account_mapped_data_purchasing:
+            for order, item in enumerate(account_mapped_data_purchasing):
                 main_obj = DefaultAccountDetermination(
                     company=company,
                     tenant=company.tenant,
+                    order=order,
                     title=item.get('title', ''),
                     foreign_title=item.get('foreign_title', ''),
                     default_account_determination_type=1
@@ -955,10 +888,11 @@ class AccountingMasterData:
                             }
                         )
                     )
-            for item in account_mapped_data_inventory:
+            for order, item in enumerate(account_mapped_data_inventory):
                 main_obj = DefaultAccountDetermination(
                     company=company,
                     tenant=company.tenant,
+                    order=order,
                     title=item.get('title', ''),
                     foreign_title=item.get('foreign_title', ''),
                     default_account_determination_type=2
@@ -981,19 +915,6 @@ class AccountingMasterData:
             DefaultAccountDetermination.objects.bulk_create(bulk_info)
             DefaultAccountDeterminationSub.objects.bulk_create(bulk_info_sub)
             print(f'Done for {company.title}')
-        print('Done :))')
-        return True
-
-    @staticmethod
-    def add_account_default():
-        # thêm 13881: Giao hàng nhưng chưa xuất hóa đơn bán hàng
-        ChartOfAccounts.add_account(
-            parent_acc_type=1,
-            parent_acc_code=1388,
-            new_acc_code=13881,
-            new_acc_name='Giao hàng nhưng chưa xuất hóa đơn bán hàng',
-            new_foreign_acc_name='Delivered but no AR Invoice yet'
-        )
         print('Done :))')
         return True
 

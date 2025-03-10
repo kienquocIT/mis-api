@@ -86,13 +86,14 @@ class ChartOfAccounts(MasterDataAbstractModel):
 
 
 class DefaultAccountDetermination(MasterDataAbstractModel):
+    order = models.IntegerField(default=0)
     foreign_title = models.CharField(max_length=100, blank=True)
     default_account_determination_type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DETERMINATION_TYPE, default=0)
 
     class Meta:
         verbose_name = 'Default Account Determination'
         verbose_name_plural = 'Default Account Determination'
-        ordering = ('-date_created',)
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
