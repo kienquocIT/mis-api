@@ -32,7 +32,8 @@ class LeaseOrderCommonCreate:
         for created in created_list:
             LeaseOrderProductAsset.objects.bulk_create(
                 [LeaseOrderProductAsset(
-                    lease_order_product=created, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                    lease_order=created.lease_order, lease_order_product=created,
+                    tenant_id=instance.tenant_id, company_id=instance.company_id,
                     **product_asset,
                 ) for product_asset in created.asset_data]
             )

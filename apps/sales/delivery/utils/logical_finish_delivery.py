@@ -197,8 +197,45 @@ class DeliFinishHandler:
     @classmethod
     def update_pw_serial(cls, deli_product):
         for serial in deli_product.delivery_serial_delivery_product.all():
-            serial.product_warehouse_serial.is_delete = True
-            serial.product_warehouse_serial.save(update_fields=['is_delete'])
+            if serial.product_warehouse_serial:
+                serial.product_warehouse_serial.serial_status = 1
+                serial.product_warehouse_serial.save(update_fields=['serial_status'])
+        return True
+
+    # ASSET
+    @classmethod
+    def update_asset_status(cls, instance):
+        for delivery_asset in instance.delivery_pa_delivery_sub.all():
+            if delivery_asset.asset and delivery_asset.picked_quantity > 0:
+                delivery_asset.asset.status = 2
+                delivery_asset.asset.save(update_fields=['status'])
+        return True
+
+    @classmethod
+    def create_new_asset(cls, instance):
+        model_asset = DisperseModel(app_model='asset.fixedasset').get_model()
+        if model_asset and hasattr(model_asset, 'objects'):
+            for delivery_product in instance.delivery_product_delivery_sub.all():
+                if delivery_product.asset_type == 1 and delivery_product.offset:
+                    for delivery_warehouse in delivery_product.delivery_pw_delivery_product.all():
+                        cost = DeliFinishHandler.get_cost_by_warehouse(
+                            product_obj=delivery_product.offset,
+                            warehouse_id=delivery_warehouse.warehouse_id,
+                            sale_order_id=None,
+                        )
+                        for num in range(int(delivery_warehouse.quantity_delivery)):
+                            model_asset.objects.create(
+                                product_id=delivery_product.offset_id,
+                                title=delivery_product.offset.title,
+                                asset_code=delivery_product.offset.code,
+
+                                original_cost=cost,
+                                depreciation_method=delivery_product.product_depreciation_method,
+                                depreciation_time=delivery_product.product_depreciation_time,
+                                adjustment_factor=delivery_product.product_depreciation_adjustment,
+                                depreciation_start_date=delivery_product.product_depreciation_start_date,
+                                depreciation_end_date=delivery_product.product_depreciation_end_date,
+                            )
         return True
 
     # PRODUCT INFO
@@ -291,12 +328,10 @@ class DeliFinishHandler:
         if 1 in deli_product.product.product_choice:  # case: product allow inventory
             for data_deli in deli_product.delivery_data:
                 if all(key in data_deli for key in ('warehouse_id', 'picked_quantity')):
-                    cost = deli_product.product.get_current_unit_cost(
-                        get_type=1,
-                        **{
-                            'warehouse_id': data_deli.get('warehouse_id', None),
-                            'sale_order_id': data_deli.get('sale_order_id', None),
-                        }
+                    cost = DeliFinishHandler.get_cost_by_warehouse(
+                        product_obj=deli_product.product,
+                        warehouse_id=data_deli.get('warehouse_id', None),
+                        sale_order_id=data_deli.get('sale_order_id', None),
                     )
                     actual_value += cost * data_deli['picked_quantity']
         else:  # case: product not allow inventory
@@ -304,6 +339,16 @@ class DeliFinishHandler:
             if so_cost:
                 actual_value = so_cost.product_cost_price * deli_product.picked_quantity
         return actual_value
+
+    @classmethod
+    def get_cost_by_warehouse(cls, product_obj, warehouse_id, sale_order_id):
+        return product_obj.get_current_unit_cost(
+            get_type=1,
+            **{
+                'warehouse_id': warehouse_id,
+                'sale_order_id': sale_order_id,
+            }
+        )
 
     @classmethod
     def get_delivery_config(cls, instance):

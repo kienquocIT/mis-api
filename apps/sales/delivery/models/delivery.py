@@ -411,6 +411,8 @@ class OrderDeliverySub(DataAbstractModel):
                     self.push_state(instance=self, kwargs=kwargs)  # state
                     DeliFinishHandler.create_new(instance=self)  # new sub + product
                     DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
+                    DeliFinishHandler.update_asset_status(instance=self)  # asset status => delivered
+                    DeliFinishHandler.create_new_asset(instance=self)  # create new asset
                     DeliFinishHandler.push_product_info(instance=self)  # product
                     DeliFinishHandler.push_so_lo_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
@@ -507,9 +509,9 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
     )
     product_quantity = models.FloatField(default=0)
     product_quantity_time = models.FloatField(default=0)
-    product_unit_price = models.FloatField(default=0)
+    product_cost = models.FloatField(default=0)
     product_tax_value = models.FloatField(default=0)
-    product_subtotal_price = models.FloatField(default=0)
+    product_subtotal_cost = models.FloatField(default=0)
 
     # Begin depreciation fields
 
@@ -613,6 +615,13 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
 
 
 class OrderDeliveryProductAsset(MasterDataAbstractModel):
+    delivery_sub = models.ForeignKey(
+        OrderDeliverySub,
+        on_delete=models.CASCADE,
+        verbose_name="delivery sub",
+        related_name="delivery_pa_delivery_sub",
+        null=True,
+    )
     delivery_product = models.ForeignKey(
         'delivery.OrderDeliveryProduct',
         on_delete=models.CASCADE,

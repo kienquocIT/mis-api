@@ -2,8 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.asset.models import FixedAsset
 from apps.sales.asset.serializers import FixedAssetListSerializer, FixedAssetCreateSerializer, \
-    FixedAssetDetailSerializer, FixedAssetUpdateSerializer
-from apps.sales.asset.serializers.fixed_asset import AssetForLeaseListSerializer
+    FixedAssetDetailSerializer, FixedAssetUpdateSerializer, AssetForLeaseListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 __all__ =[
@@ -83,7 +82,9 @@ class FixedAssetDetail(BaseRetrieveMixin, BaseUpdateMixin):
 class AssetForLeaseList(BaseListMixin, BaseCreateMixin):
     queryset = FixedAsset.objects
     search_fields = ['title', 'code']
-    filterset_fields = {}
+    filterset_fields = {
+        "status": ["exact"],
+    }
     serializer_list = AssetForLeaseListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 

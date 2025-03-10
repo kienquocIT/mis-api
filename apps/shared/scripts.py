@@ -1231,3 +1231,9 @@ def reset_run_indicator_fields(kwargs):
         sale_order.save(update_fields=['indicator_revenue', 'indicator_gross_profit', 'indicator_net_income'])
     print('reset_run_indicator_fields done.')
 
+
+def update_serial_status():
+    for pw_serial in ProductWareHouseSerial.objects.filter(is_delete=True):
+        pw_serial.serial_status = 1
+        pw_serial.save(update_fields=['serial_status'])
+    print('update_serial_status done.')

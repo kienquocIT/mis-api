@@ -16,7 +16,8 @@ __all__= [
     'FixedAssetListSerializer',
     'FixedAssetCreateSerializer',
     'FixedAssetDetailSerializer',
-    'FixedAssetUpdateSerializer'
+    'FixedAssetUpdateSerializer',
+    'AssetForLeaseListSerializer',
 ]
 
 

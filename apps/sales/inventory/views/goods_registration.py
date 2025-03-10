@@ -187,6 +187,7 @@ class GReItemProductWarehouseSerialList(BaseListMixin):
         'gre_item_prd_wh__gre_item__product_id': ['exact'],
         'gre_item_prd_wh__warehouse_id': ['exact'],
         'sn_registered__is_delete': ['exact'],
+        'sn_registered__serial_status': ['exact'],
     }
     serializer_list = GReItemProductWarehouseSerialSerializer
 

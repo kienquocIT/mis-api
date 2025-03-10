@@ -113,8 +113,8 @@ class OrderActiveDeliverySerializer:
             'uom_time_data': {},
             'product_quantity': m2m_obj.product_quantity,
             'product_quantity_time': 0,
-            'product_unit_price': m2m_obj.product_unit_price,
-            'product_subtotal_price': m2m_obj.product_subtotal_price,
+            'product_cost': m2m_obj.product_unit_price,
+            'product_subtotal_cost': m2m_obj.product_subtotal_price,
 
             'product_depreciation_subtotal': 0,
             'product_depreciation_price': 0,
@@ -150,6 +150,7 @@ class OrderActiveDeliverySerializer:
                     ).first()
                     if cost_product:
                         for asset_data in result.get('asset_data', []):
+                            asset_data.update({'remaining_quantity': 1})
                             if asset_data.get('asset_id', None) == str(m2m_obj_asset.asset_id):
                                 asset_data.update(OrderActiveDeliverySerializer.append_depreciation_data(
                                     cost_product=cost_product

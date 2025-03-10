@@ -204,6 +204,7 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
                 if 'date_approved' in kwargs['update_fields']:
                     self.push_code(instance=self, kwargs=kwargs)  # code
                     LOFinishHandler.push_product_info(instance=self)  # product info
+                    LOFinishHandler.update_asset_status(instance=self)  # asset status => leased
 
                     LOFinishHandler.push_final_acceptance_lo(instance=self)  # final acceptance
                     LOFinishHandler.update_recurrence_task(instance=self)  # recurrence
@@ -327,6 +328,13 @@ class LeaseOrderProduct(MasterDataAbstractModel):
 
 
 class LeaseOrderProductAsset(MasterDataAbstractModel):
+    lease_order = models.ForeignKey(
+        LeaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="lease_order_product_asset_lease_order",
+        null=True
+    )
     lease_order_product = models.ForeignKey(
         LeaseOrderProduct,
         on_delete=models.CASCADE,

@@ -27,7 +27,8 @@ class DeliHandler:
             instance.delivery_pa_delivery_product.all().delete()
             model.objects.bulk_create([model(
                 tenant_id=instance.tenant_id, company_id=instance.company_id,
-                delivery_product_id=instance.id, **asset_data,
+                delivery_sub_id=instance.delivery_sub_id, delivery_product_id=instance.id,
+                **asset_data,
             ) for asset_data in instance.asset_data])
         return True
 
@@ -128,7 +129,7 @@ class DeliHandler:
         product_obj, delivery_data = deli_product.product, deli_product.delivery_data
         if product_obj:
             if len(delivery_data) == 0:
-                return deli_product.picked_quantity * deli_product.product_unit_price
+                return deli_product.picked_quantity * deli_product.product_cost
             for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
                 quantity_deli = data_deli.get('picked_quantity', 0)
                 cost = product_obj.get_unit_cost_by_warehouse(
