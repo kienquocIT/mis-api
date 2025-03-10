@@ -48,7 +48,7 @@ class DeliHandler:
                     'uom_data': deli_data.get('uom_data', {}),
                     'lot_data': deli_data.get('lot_data', {}),
                     'serial_data': deli_data.get('serial_data', {}),
-                    'quantity_delivery': deli_data.get('stock', 0),
+                    'quantity_delivery': deli_data.get('picked_quantity', 0),
                 } for deli_data in instance.delivery_data
             ]
             instance.delivery_pw_delivery_product.all().delete()

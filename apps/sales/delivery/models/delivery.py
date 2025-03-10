@@ -417,7 +417,6 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliFinishHandler.push_so_lo_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
                     DeliHandler.push_diagram(instance=self)  # diagram
-                    DeliFinishHandler.update_cost_delivery_product(instance=self)  # update cost by warehouse
 
                     IRForDeliveryHandler.push_to_inventory_report(self)
                     JEForDeliveryHandler.push_to_journal_entry(self)
@@ -582,7 +581,7 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         new_obj.ready_quantity = ready_quantity
         new_obj.picked_quantity = 0
         new_obj.delivery_data = []
-        # Check and store asset not delivered
+        # Check and store asset not delivered to field asset_data
         new_obj.asset_data = [
             asset_data for asset_data in new_obj.asset_data
             if asset_data.get('picked_quantity', 0) <= 0
@@ -645,7 +644,6 @@ class OrderDeliveryProductAsset(MasterDataAbstractModel):
     )
     asset_data = models.JSONField(default=dict, help_text='data json of asset')
     picked_quantity = models.FloatField(default=0, verbose_name='Quantity was delivered')
-    remaining_quantity = models.FloatField(default=0, verbose_name='Quantity need delivery')
     # Begin depreciation fields
 
     product_depreciation_subtotal = models.FloatField(default=0)
