@@ -73,6 +73,7 @@ class ProductType(MasterDataAbstractModel):  # noqa
 
 class ProductCategory(MasterDataAbstractModel):
     description = models.CharField(blank=True, max_length=200)
+    is_default = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'ProductCategory'

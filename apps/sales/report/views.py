@@ -8,8 +8,8 @@ from apps.sales.budgetplan.models import BudgetPlanCompanyExpense, BudgetPlanGro
 from apps.sales.cashoutflow.models import Payment
 from apps.sales.opportunity.models import OpportunityStage
 from apps.sales.partnercenter.models import List
+from apps.sales.partnercenter.services import ListFilterService
 from apps.sales.purchasing.models import PurchaseOrder
-from apps.sales.report.filters import filter_by_advance_filter
 from apps.sales.report.utils.inventory_log import ReportInvCommonFunc
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
@@ -64,7 +64,14 @@ class ReportRevenueList(BaseListMixin):
             "employee_inherit",
         ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
         filter_item_id = self.request.query_params.get('advance_filter_id')
-        return filter_by_advance_filter(query_set, filter_item_id)
+
+        filter_item_obj = List.objects.filter(id=filter_item_id).first()
+
+        if filter_item_obj:
+            filtered_query_set =  ListFilterService.filter(filter_item_obj, query_set)
+
+            return filtered_query_set
+        return query_set
 
     @swagger_auto_schema(
         operation_summary="Report revenue List",

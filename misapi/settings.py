@@ -89,6 +89,7 @@ INSTALLED_APPS = \
         'apps.core.recurrence',  # recurrence for apps
         'apps.core.chat3rd',
         'apps.core.firebase',
+        'apps.core.contract_templates',  # contract template config
     ] + [  # application
         'apps.core.base',
         'apps.core.account',

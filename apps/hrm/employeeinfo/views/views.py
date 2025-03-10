@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.hrm.employeeinfo.models import EmployeeInfo, EmployeeHRNotMapEmployeeHRM, EmployeeContract
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseUpdateMixin, BaseRetrieveMixin
 
-from .serializers import EmployeeInfoListSerializers, EmployeeInfoCreateSerializers, \
+from ..serializers import EmployeeInfoListSerializers, EmployeeInfoCreateSerializers, \
     EmployeeInfoUpdateSerializers, EmployeeHRNotMapHRMListSerializers, EmployeeInfoDetailSerializers, \
     EmployeeContractListSerializers, EmployeeContractDetailSerializers, EmployeeSignatureAttachmentListSerializers, \
     EmployeeSignatureUpdateAttachmentSerializers
@@ -121,9 +121,6 @@ class EmployeeContractList(BaseListMixin):
     filterset_fields = {
         'employee_info': ['exact']
     }
-
-    # def get_queryset(self):
-    #     return super().get_queryset()s
 
     @swagger_auto_schema(
         operation_summary="Employee Contract list",
