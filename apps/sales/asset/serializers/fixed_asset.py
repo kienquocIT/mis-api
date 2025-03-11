@@ -500,10 +500,9 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
         return fixed_asset
 
 
-class AssetForLeaseListSerializer(AbstractListSerializerModel):
+class AssetForLeaseListSerializer(serializers.ModelSerializer):
     asset_id = serializers.SerializerMethodField()
     origin_cost = serializers.SerializerMethodField()
-    lease_time_previous = serializers.SerializerMethodField()
     net_value = serializers.SerializerMethodField()
     depreciation_time = serializers.SerializerMethodField()
 
@@ -515,7 +514,6 @@ class AssetForLeaseListSerializer(AbstractListSerializerModel):
             'code',
             'asset_id',
             'origin_cost',
-            'lease_time_previous',
             'net_value',
             'depreciation_time',
             'depreciation_start_date',
@@ -530,10 +528,6 @@ class AssetForLeaseListSerializer(AbstractListSerializerModel):
     @classmethod
     def get_origin_cost(cls, obj):
         return obj.original_cost
-
-    @classmethod
-    def get_lease_time_previous(cls, obj):
-        return 0
 
     @classmethod
     def get_net_value(cls, obj):

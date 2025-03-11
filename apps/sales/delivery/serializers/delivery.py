@@ -9,8 +9,14 @@ from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 from ..utils import DeliHandler
 
-__all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
-           'OrderDeliverySubUpdateSerializer']
+__all__ = [
+    'OrderDeliveryListSerializer',
+    'OrderDeliverySubListSerializer',
+    'OrderDeliverySubDetailSerializer',
+    'OrderDeliverySubUpdateSerializer',
+    'OrderDeliverySubMinimalListSerializer',
+    'OrderDeliverySubRecoveryListSerializer',
+]
 
 
 def handle_attach_file(instance, attachment_result):
