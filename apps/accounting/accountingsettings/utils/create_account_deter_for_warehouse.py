@@ -12,14 +12,17 @@ class AccountDeterminationForWarehouseHandler:
         tenant = warehouse_obj.tenant
         bulk_info_wh = []
         bulk_info_wh_sub = []
-        for default_account in DefaultAccountDetermination.objects.filter(company=company, tenant=tenant):
+        for default_account in DefaultAccountDetermination.objects.filter(
+            company=company, tenant=tenant, default_account_determination_type=2
+        ):
             wh_account_deter_obj = WarehouseAccountDetermination(
                 company=company,
                 tenant=tenant,
                 warehouse_mapped=warehouse_obj,
                 title=default_account.title,
                 foreign_title=default_account.foreign_title,
-                account_determination_type=default_account.default_account_determination_type
+                account_determination_type=default_account.default_account_determination_type,
+                can_change_account=True
             )
             bulk_info_wh.append(wh_account_deter_obj)
             for item in default_account.default_acc_deter_sub.all():

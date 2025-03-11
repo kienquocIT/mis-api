@@ -248,7 +248,7 @@ class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):
             try:
                 return UnitOfMeasure.objects.get(id=value)
             except UnitOfMeasure.DoesNotExist:
-                raise serializers.ValidationError({"uom_reference": ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+                raise serializers.ValidationError({"uom_reference": ProductMsg.UOM_NOT_EXIST})
         return None
 
     def validate(self, validate_data):

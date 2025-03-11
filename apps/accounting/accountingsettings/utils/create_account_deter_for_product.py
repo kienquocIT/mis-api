@@ -12,14 +12,17 @@ class AccountDeterminationForProductHandler:
             tenant = product_obj.tenant
             bulk_info_prd = []
             bulk_info_wh_sub = []
-            for default_account in DefaultAccountDetermination.objects.filter(company=company, tenant=tenant):
+            for default_account in DefaultAccountDetermination.objects.filter(
+                company=company, tenant=tenant, default_account_determination_type=2
+            ):
                 prd_account_deter_obj = ProductAccountDetermination(
                     company=company,
                     tenant=tenant,
                     foreign_title=default_account.foreign_title,
                     product_mapped=product_obj,
                     title=default_account.title,
-                    account_determination_type=default_account.default_account_determination_type
+                    account_determination_type=default_account.default_account_determination_type,
+                    can_change_account=True
                 )
                 bulk_info_prd.append(prd_account_deter_obj)
                 for item in default_account.default_acc_deter_sub.all():

@@ -1,4 +1,4 @@
-from apps.accounting.accountingsettings.models import ChartOfAccounts
+from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDetermination
 from apps.accounting.journalentry.models import JournalEntry
 
 
@@ -7,6 +7,7 @@ class JEForDeliveryHandler:
     def get_je_item_data(cls, delivery_obj):
         debit_rows_data = []
         credit_rows_data = []
+        sum_cost = 0
         for deli_product in delivery_obj.delivery_product_delivery_sub.all():
             if deli_product.product:
                 for pw_data in deli_product.delivery_pw_delivery_product.all():
@@ -18,19 +19,7 @@ class JEForDeliveryHandler:
                             'sale_order_id': delivery_obj.sale_order_data.get('id'),
                         }
                     )
-                    debit_rows_data.append({
-                        # (+) giao hàng chưa xuất hóa đơn (mđ: 13881)
-                        'account': deli_product.product.get_product_account_determination(
-                            account_deter_foreign_title='Customer underpayment',
-                            warehouse_id=pw_data.warehouse_id
-                        ),
-                        'product_mapped': deli_product.product,
-                        'business_partner': None,
-                        'debit': cost,
-                        'credit': 0,
-                        'is_fc': False,
-                        'taxable_value': 0,
-                    })
+                    sum_cost += cost
                     credit_rows_data.append({
                         # (-) hàng hóa (mđ: 156)
                         'account': deli_product.product.get_product_account_determination(
@@ -44,6 +33,21 @@ class JEForDeliveryHandler:
                         'is_fc': False,
                         'taxable_value': 0,
                     })
+        # get account
+        debit_rows_data.append({
+            # (+) giao hàng chưa xuất hóa đơn (mđ: 13881)
+            'account': DefaultAccountDetermination.objects.filter(
+                tenant=delivery_obj.tenant,
+                company=delivery_obj.company,
+                foreign_title='Customer underpayment'
+            ).first(),
+            'product_mapped': None,
+            'business_partner': None,
+            'debit': sum_cost,
+            'credit': 0,
+            'is_fc': False,
+            'taxable_value': 0,
+        })
         return debit_rows_data, credit_rows_data
 
     @classmethod

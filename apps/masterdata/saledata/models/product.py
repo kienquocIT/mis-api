@@ -232,7 +232,7 @@ class Product(DataAbstractModel):
         related_name='purchase_tax',
         default=None
     )
-    supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=1)
+    supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=0)
 
     # Stock information
     stock_amount = models.FloatField(
