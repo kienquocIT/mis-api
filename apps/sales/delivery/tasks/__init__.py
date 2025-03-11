@@ -137,6 +137,9 @@ class OrderActiveDeliverySerializer:
                     ).first()
                     if cost_product:
                         for asset_data in result.get('asset_data', []):
+                            asset_data.update({'uom_time_id': str(m2m_obj.uom_time_id)})
+                            asset_data.update({'uom_time_data': m2m_obj.uom_time_data})
+                            asset_data.update({'product_quantity_time': m2m_obj.product_quantity_time})
                             if asset_data.get('asset_id', None) == str(m2m_obj_asset.asset_id):
                                 asset_data.update(OrderActiveDeliverySerializer.append_depreciation_data(
                                     cost_product=cost_product

@@ -9,7 +9,6 @@ PRODUCT_OPTION = [(0, _('Sale')), (1, _('Inventory')), (2, _('Purchase'))]
 class ProductForSaleListSerializer(serializers.ModelSerializer):
     product_id = serializers.SerializerMethodField()
     product_data = serializers.SerializerMethodField()
-    code = serializers.SerializerMethodField()
     price_list = serializers.SerializerMethodField()
     product_choice = serializers.JSONField()
     general_information = serializers.SerializerMethodField()
@@ -36,10 +35,6 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_data(cls, obj):
         return {'id': obj.id, 'title': obj.title, 'code': obj.code,}
-
-    @classmethod
-    def get_code(cls, obj):
-        return obj.lease_source.code if obj.lease_source else obj.code
 
     @classmethod
     def check_status_price(cls, valid_time_start, valid_time_end):

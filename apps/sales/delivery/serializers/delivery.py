@@ -190,6 +190,7 @@ class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
     delivery_data = serializers.JSONField(default=list)
     asset_data = serializers.JSONField(default=list)
     product_depreciation_start_date = serializers.CharField(required=False, allow_null=True)
+    product_lease_start_date = serializers.CharField(required=False, allow_null=True)
     depreciation_data = serializers.JSONField(default=list)
     order = serializers.IntegerField(min_value=1)
 
@@ -277,6 +278,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                     obj.delivery_data = target.get('delivery_data', [])
                     obj.asset_data = target.get('asset_data', [])
                     obj.product_depreciation_start_date = target.get('product_depreciation_start_date', None)
+                    obj.product_lease_start_date = target.get('product_lease_start_date', None)
                     obj.depreciation_data = target.get('depreciation_data', [])
                     obj.quantity_remain_recovery = target.get('picked_num', 0)
 
@@ -294,7 +296,8 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                 obj.save(update_fields=[
                     'picked_quantity', 'delivery_data',
                     'asset_data', 'product_depreciation_start_date',
-                    'depreciation_data', 'quantity_remain_recovery',
+                    'product_lease_start_date', 'depreciation_data',
+                    'quantity_remain_recovery',
                 ])
         return True
 
@@ -368,7 +371,10 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             product_done[prod_key]['picked_num'] = item.get('done', 0)
             product_done[prod_key]['delivery_data'] = item.get('delivery_data', [])
             product_done[prod_key]['asset_data'] = item.get('asset_data', [])
-            product_done[prod_key]['product_depreciation_start_date'] = item.get('product_depreciation_start_date', None)
+            product_done[prod_key]['product_depreciation_start_date'] = item.get(
+                'product_depreciation_start_date', None
+            )
+            product_done[prod_key]['product_lease_start_date'] = item.get('product_lease_start_date', None)
             product_done[prod_key]['depreciation_data'] = item.get('depreciation_data', [])
         instance.save()
 

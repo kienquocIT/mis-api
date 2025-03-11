@@ -199,8 +199,7 @@ class DeliFinishHandler:
             for delivery_product in instance.delivery_product_delivery_sub.all():
                 asset_data = []
 
-                if delivery_product.delivery_sub and delivery_product.asset_type == 1 and delivery_product.offset:
-                    delivery_date = delivery_product.delivery_sub.actual_delivery_date
+                if delivery_product.asset_type == 1 and delivery_product.offset:
                     for delivery_warehouse in delivery_product.delivery_pw_delivery_product.all():
                         cost = DeliFinishHandler.get_cost_by_warehouse(
                             product_obj=delivery_product.offset,
@@ -218,7 +217,7 @@ class DeliFinishHandler:
                                 depreciation_method=delivery_product.product_depreciation_method,
                                 depreciation_time=delivery_product.product_depreciation_time,
                                 adjustment_factor=delivery_product.product_depreciation_adjustment,
-                                depreciation_start_date=delivery_date,
+                                depreciation_start_date=delivery_product.product_depreciation_start_date,
                                 depreciation_end_date=delivery_product.product_depreciation_end_date,
                                 depreciation_data=DeliFinishHandler.update_depreciation_data(
                                     depreciation_data=delivery_product.depreciation_data,
@@ -244,17 +243,18 @@ class DeliFinishHandler:
                                     "depreciation_data": asset_obj.depreciation_data,
                                 },
                                 "product_id": str(delivery_product.product_id),
-                                "product_data": {
-                                    "id": str(delivery_product.product_id),
-                                    "title": delivery_product.product.title,
-                                    "code": delivery_product.product.code
-                                } if delivery_product.product else {},
+                                "product_data": delivery_product.product_data,
+                                "uom_time_id": str(delivery_product.uom_time_id),
+                                "uom_time_data": delivery_product.uom_time_data,
+                                "product_quantity_time": delivery_product.product_quantity_time,
                                 "product_depreciation_time": delivery_product.product_depreciation_time,
                                 "product_depreciation_price": delivery_product.product_depreciation_price,
                                 "product_depreciation_method": delivery_product.product_depreciation_method,
                                 "product_depreciation_subtotal": delivery_product.product_depreciation_subtotal,
                                 "product_depreciation_adjustment": delivery_product.product_depreciation_adjustment,
-                                "product_depreciation_start_date": str(delivery_date.date()),
+                                "product_depreciation_start_date": str(
+                                    delivery_product.product_depreciation_start_date
+                                ),
                                 "product_depreciation_end_date": str(delivery_product.product_depreciation_end_date),
 
                                 "product_lease_end_date": str(delivery_product.product_lease_end_date),
