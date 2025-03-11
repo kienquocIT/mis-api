@@ -88,9 +88,6 @@ class OrderActiveDeliverySerializer:
         data_json = {}
         if cost_product:
             data_json.update({
-                # 'product_unit_price': cost_product.product_cost_price,
-                # 'product_subtotal_price': cost_product.product_subtotal_price,
-
                 'product_depreciation_subtotal': cost_product.product_depreciation_subtotal,
                 'product_depreciation_price': cost_product.product_depreciation_price,
                 'product_depreciation_method': cost_product.product_depreciation_method,
@@ -105,28 +102,12 @@ class OrderActiveDeliverySerializer:
 
     def setup_product_kwargs(self, m2m_obj):
         result = {
-            'asset_type': None,
-            'offset': None,
-            'offset_data': {},
-            'asset_data': [],
-            'uom_time': None,
-            'uom_time_data': {},
             'product_quantity': m2m_obj.product_quantity,
             'product_quantity_time': 0,
             'product_cost': m2m_obj.product_unit_price,
             'product_subtotal_cost': m2m_obj.product_subtotal_price,
-
-            'product_depreciation_subtotal': 0,
-            'product_depreciation_price': 0,
-            'product_depreciation_method': 0,
-            'product_depreciation_adjustment': 0,
-            'product_depreciation_time': 0,
-            'product_depreciation_start_date': None,
-            'product_depreciation_end_date': None,
         }
-        if all(hasattr(m2m_obj, attr) for attr in [
-            "asset_type", "offset", "offset_data", "asset_data", "product_quantity_time"
-        ]):
+        if m2m_obj._meta.label_lower == "leaseorder.leaseorderproduct":
             result.update({
                 'asset_type': m2m_obj.asset_type,
                 'offset': m2m_obj.offset,
@@ -142,6 +123,10 @@ class OrderActiveDeliverySerializer:
                     lease_order=self.order_obj, product=m2m_obj.product
                 ).first()
                 if cost_product:
+                    result.update({
+                        'product_cost': cost_product.product_cost_price,
+                        'product_subtotal_cost': cost_product.product_subtotal_price,
+                    })
                     result.update(OrderActiveDeliverySerializer.append_depreciation_data(cost_product=cost_product))
             if m2m_obj.product and m2m_obj.asset_data:
                 for m2m_obj_asset in m2m_obj.lease_order_product_asset_lo_product.all():

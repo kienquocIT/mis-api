@@ -217,8 +217,23 @@ class DeliFinishHandler:
                                 adjustment_factor=delivery_product.product_depreciation_adjustment,
                                 depreciation_start_date=delivery_product.product_depreciation_start_date,
                                 depreciation_end_date=delivery_product.product_depreciation_end_date,
+                                depreciation_data=DeliFinishHandler.update_depreciation_data(
+                                    depreciation_data=delivery_product.depreciation_data,
+                                    old_cost=delivery_product.product_cost,
+                                    new_cost=cost,
+                                )
                             )
         return True
+
+    @classmethod
+    def update_depreciation_data(cls, depreciation_data, old_cost, new_cost):
+        factor = new_cost / old_cost  # Determine the scaling factor
+        for entry in depreciation_data:
+            entry["start_value"] = round(entry["start_value"] * factor)
+            entry["end_value"] = round(entry["end_value"] * factor)
+            entry["accumulative_value"] = round(entry["accumulative_value"] * factor)
+            entry["depreciation_value"] = round(entry["depreciation_value"] * factor)
+        return depreciation_data
 
     # PRODUCT INFO
     @classmethod

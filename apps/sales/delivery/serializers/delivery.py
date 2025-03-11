@@ -57,7 +57,17 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'ready_quantity',
             'delivery_data',
             'picked_quantity',
-            'is_not_inventory'
+            'is_not_inventory',
+
+            'product_cost',
+            'product_depreciation_subtotal',
+            'product_depreciation_price',
+            'product_depreciation_method',
+            'product_depreciation_adjustment',
+            'product_depreciation_time',
+            'product_depreciation_start_date',
+            'product_depreciation_end_date',
+            'depreciation_data',
         )
 
 
@@ -169,7 +179,8 @@ class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
     done = serializers.IntegerField(min_value=1)
     delivery_data = serializers.JSONField(default=list)
     asset_data = serializers.JSONField(default=list)
-    product_quantity_leased_data = serializers.JSONField(allow_null=True, required=False)
+    product_depreciation_start_date = serializers.CharField(required=False, allow_null=True)
+    depreciation_data = serializers.JSONField(default=list)
     order = serializers.IntegerField(min_value=1)
 
 
@@ -250,14 +261,16 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             obj_key = str(obj.product_id) + "___" + str(obj.order)
             if obj_key in product_done:
                 target = product_done[obj_key]
-                if all(key in target for key in ['picked_num', 'delivery_data', 'asset_data']):
-                    if 1 in obj.product.product_choice or sub.lease_order_data:
-                        # kiểm tra product id và order trùng với product update ko
-                        obj.picked_quantity = target.get('picked_num', 0)
-                        obj.delivery_data = target.get('delivery_data', [])
-                        obj.asset_data = target.get('asset_data', [])
-                        obj.quantity_remain_recovery = target.get('picked_num', 0)
+                if 1 in obj.product.product_choice or sub.lease_order_data:
+                    # kiểm tra product id và order trùng với product update ko
+                    obj.picked_quantity = target.get('picked_num', 0)
+                    obj.delivery_data = target.get('delivery_data', [])
+                    obj.asset_data = target.get('asset_data', [])
+                    obj.product_depreciation_start_date = target.get('product_depreciation_start_date', None)
+                    obj.depreciation_data = target.get('depreciation_data', [])
+                    obj.quantity_remain_recovery = target.get('picked_num', 0)
 
+                    if 'is_picking' in config and 'is_partial_ship' in config:
                         if (config['is_picking'] and config['is_partial_ship'] and
                                 obj.picked_quantity > obj.remaining_quantity):
                             raise serializers.ValidationError(
@@ -265,12 +278,14 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                                     'Products must have picked quantity equal to or less than remaining quantity'
                                 )}
                             )
-                    else:
-                        obj.picked_quantity = target.get('picked_num', 0)
-                    # sau khi update sẽ chạy các func trong save()
-                    obj.save(update_fields=[
-                        'picked_quantity', 'delivery_data', 'asset_data', 'quantity_remain_recovery',
-                    ])
+                else:
+                    obj.picked_quantity = target.get('picked_num', 0)
+                # sau khi update sẽ chạy các func trong save()
+                obj.save(update_fields=[
+                    'picked_quantity', 'delivery_data',
+                    'asset_data', 'product_depreciation_start_date',
+                    'depreciation_data', 'quantity_remain_recovery',
+                ])
         return True
 
     # none_picking_many_delivery
@@ -279,7 +294,6 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         # cho phep giao nhieu lan and tạo sub mới
         cls.update_prod(instance, product_done, config)
         instance.date_done = timezone.now()
-        # instance.state = 2
         instance.is_updated = True
         instance.next_association_id = next_association_id
         instance.next_node_collab_id = next_node_collab_id
@@ -344,6 +358,8 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             product_done[prod_key]['picked_num'] = item.get('done', 0)
             product_done[prod_key]['delivery_data'] = item.get('delivery_data', [])
             product_done[prod_key]['asset_data'] = item.get('asset_data', [])
+            product_done[prod_key]['product_depreciation_start_date'] = item.get('product_depreciation_start_date', None)
+            product_done[prod_key]['depreciation_data'] = item.get('depreciation_data', [])
         instance.save()
 
         # update instance and product
