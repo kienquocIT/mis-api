@@ -522,6 +522,9 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
     product_depreciation_start_date = models.DateField(null=True)
     product_depreciation_end_date = models.DateField(null=True)
 
+    product_lease_start_date = models.DateField(null=True)
+    product_lease_end_date = models.DateField(null=True)
+
     depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
 
     # End depreciation fields
@@ -654,9 +657,15 @@ class OrderDeliveryProductAsset(MasterDataAbstractModel):
     product_depreciation_start_date = models.DateField(null=True)
     product_depreciation_end_date = models.DateField(null=True)
 
+    product_lease_start_date = models.DateField(null=True)
+    product_lease_end_date = models.DateField(null=True)
+
     depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
 
     # End depreciation fields
+
+    # fields for recovery
+    quantity_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
 
     class Meta:
         verbose_name = 'Delivery Product Asset'

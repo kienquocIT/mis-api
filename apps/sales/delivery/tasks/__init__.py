@@ -95,6 +95,8 @@ class OrderActiveDeliverySerializer:
                 'product_depreciation_time': cost_product.product_depreciation_time,
                 'product_depreciation_start_date': str(cost_product.product_depreciation_start_date),
                 'product_depreciation_end_date': str(cost_product.product_depreciation_end_date),
+                'product_lease_start_date': str(cost_product.product_lease_start_date),
+                'product_lease_end_date': str(cost_product.product_lease_end_date),
 
                 'depreciation_data': cost_product.depreciation_data,
             })

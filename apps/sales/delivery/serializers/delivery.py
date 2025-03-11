@@ -67,6 +67,10 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'product_depreciation_time',
             'product_depreciation_start_date',
             'product_depreciation_end_date',
+
+            'product_lease_start_date',
+            'product_lease_end_date',
+
             'depreciation_data',
         )
 

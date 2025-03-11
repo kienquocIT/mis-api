@@ -267,32 +267,6 @@ class Product(DataAbstractModel):
     available_notify = models.BooleanField(default=False)
     available_notify_quantity = models.IntegerField(null=True)
 
-    # Begin lease fields
-
-    # These fields will be created/ updated when GoodsRecovery
-    lease_source = models.ForeignKey(
-        "self",
-        null=True,
-        on_delete=models.SET_NULL,
-        related_name="product_lease_source",
-        help_text="source product which this lease product cloned from"
-    )
-    lease_code = models.CharField(max_length=100, blank=True)
-    lease_time_previous = models.FloatField(default=0)
-    origin_cost = models.FloatField(default=0, help_text="the first cost of this product before depreciation")
-    date_first_delivery = models.DateField(null=True)
-
-    depreciation_price = models.FloatField(default=0)
-    depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
-    depreciation_adjustment = models.FloatField(default=0)
-    depreciation_time = models.FloatField(default=0)
-    depreciation_start_date = models.DateField(null=True)
-    depreciation_end_date = models.DateField(null=True)
-
-    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
-
-    # End lease fields
-
     class Meta:
         verbose_name = 'Product'
         verbose_name_plural = 'Products'

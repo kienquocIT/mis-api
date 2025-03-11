@@ -197,6 +197,8 @@ class DeliFinishHandler:
         model_asset = DisperseModel(app_model='asset.fixedasset').get_model()
         if model_asset and hasattr(model_asset, 'objects'):
             for delivery_product in instance.delivery_product_delivery_sub.all():
+                asset_data = []
+
                 if delivery_product.asset_type == 1 and delivery_product.offset:
                     for delivery_warehouse in delivery_product.delivery_pw_delivery_product.all():
                         cost = DeliFinishHandler.get_cost_by_warehouse(
@@ -205,7 +207,7 @@ class DeliFinishHandler:
                             sale_order_id=None,
                         )
                         for num in range(int(delivery_warehouse.quantity_delivery)):
-                            model_asset.objects.create(
+                            asset_obj = model_asset.objects.create(
                                 tenant_id=instance.tenant_id,
                                 company_id=instance.company_id,
                                 product_id=delivery_product.offset_id,
@@ -223,6 +225,24 @@ class DeliFinishHandler:
                                     new_cost=cost,
                                 )
                             )
+
+                            asset_json = {
+                                'asset_id': asset_obj.id,
+                                'asset_data': {
+                                    "id": asset_obj.id,
+                                    "code": asset_obj.code,
+                                    "title": asset_obj.title,
+                                    "asset_id": asset_obj.id,
+                                    "is_change": asset_obj.is_change,
+                                    "net_value": asset_obj.net_value,
+                                    "origin_cost": asset_obj.origin_cost,
+                                    "depreciation_data": asset_obj.depreciation_data,
+                                    "depreciation_time": asset_obj.depreciation_time,
+                                    "lease_time_previous": asset_obj.lease_time_previous,
+                                    "depreciation_end_date": asset_obj.depreciation_end_date,
+                                    "depreciation_start_date": asset_obj.id
+                                },
+                            }
         return True
 
     @classmethod
