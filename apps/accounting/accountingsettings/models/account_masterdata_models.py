@@ -100,12 +100,7 @@ class DefaultAccountDetermination(MasterDataAbstractModel):
             foreign_title=foreign_title
         ).first()
         if account_deter:
-            return [{
-                'id': str(sub.account_mapped_id),
-                'acc_code': sub.account_mapped.acc_code,
-                'acc_name': sub.account_mapped.acc_name,
-                'foreign_acc_name': sub.account_mapped.foreign_acc_name
-            } for sub in account_deter.default_acc_deter_sub.all()]
+            return account_deter.default_acc_deter_sub.all()
         return []
 
     class Meta:

@@ -31,15 +31,19 @@ class JournalEntry(DataAbstractModel, AccountingAbstractModel):
     @classmethod
     def auto_create_journal_entry(cls, **kwargs):
         """
+        Hàm tạo JE từ data truyền vào, nếu tạo thành công return JE_obj else return None
         Required kwargs:
-        - je_transaction_app_code, je_transaction_id, je_transaction_data, je_item_data,
-        tenant_id, company_id, employee_created_id
-        Optional kwargs:
-        - je_posting_date, je_document_date
+        - je_transaction_app_code: app code của phiếu
+        - je_transaction_id: id của phiếu
+        - je_transaction_data: data json của phiếu
+        - je_item_data: dữ liệu để tạo JE items
+        - tenant_id, company_id, employee_created_id: dữ liệu mặc định để tạo JE
+        - je_posting_date: posting_date của phiếu
+        - je_document_date: document_date của phiếu
         """
         required_fields = [
             'je_transaction_app_code', 'je_transaction_id', 'je_transaction_data', 'je_item_data',
-            'tenant_id', 'company_id', 'employee_created_id'
+            'tenant_id', 'company_id', 'employee_created_id', 'je_posting_date', 'je_document_date'
         ]
         missing_fields = [
             field for field in required_fields if field not in kwargs or kwargs[field] is None
@@ -48,33 +52,28 @@ class JournalEntry(DataAbstractModel, AccountingAbstractModel):
             print(f'[JE] Missing required fields: {missing_fields}')
             logger.error(msg=f'[JE] Missing required fields: {missing_fields}')
             return None
-        try:
-            with transaction.atomic():
-                je_item_data = kwargs.pop('je_item_data', {})
-                je_obj = cls.objects.create(
-                    **kwargs,
-                    code='JE00' + str(
-                        JournalEntry.objects.filter(
-                            tenant_id=kwargs.get('tenant_id'),
-                            company_id=kwargs.get('company_id'),
-                            system_status=1
-                        ).count() + 1
-                    ),
-                    je_posting_date=timezone.now(),
-                    je_document_date=timezone.now(),
-                    system_status=1,
-                    system_auto_create=True
-                )
-                state = JournalEntryItem.create_je_item_mapped(je_obj, je_item_data)
-                if not state:
-                    logger.error(msg='[JE] Failed to create Journal Entry Items.')
-                    transaction.set_rollback(True) # rollback thủ công vì không raise lỗi
-                    return None
-                print('# Journal Entry created successfully!')
-                return je_obj
-        except Exception as err:
-            logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')
+
+        je_item_data = kwargs.pop('je_item_data', {})
+        je_obj = cls.objects.create(
+            **kwargs,
+            code='JE00' + str(
+                JournalEntry.objects.filter(
+                    tenant_id=kwargs.get('tenant_id'),
+                    company_id=kwargs.get('company_id'),
+                    system_status=1
+                ).count() + 1
+            ),
+            je_posting_date=timezone.now(),
+            je_document_date=timezone.now(),
+            system_status=1,
+            system_auto_create=True
+        )
+        state = JournalEntryItem.create_je_item_mapped(je_obj, je_item_data)
+        if not state:
+            logger.error(msg='[JE] Failed to create Journal Entry Items.')
             return None
+        print('# Journal Entry created successfully!')
+        return je_obj
 
 
 class JournalEntryItem(SimpleAbstractModel):
@@ -84,7 +83,13 @@ class JournalEntryItem(SimpleAbstractModel):
         related_name='je_items'
     )
     order = models.IntegerField(default=0)
-    account_data = models.JSONField(default=list)
+    account = models.ForeignKey(
+        'accountingsettings.ChartOfAccounts',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='je_item_account'
+    )
+    account_data = models.JSONField(default=dict)
     product_mapped = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
@@ -104,6 +109,8 @@ class JournalEntryItem(SimpleAbstractModel):
     is_fc = models.BooleanField(default=False)
     je_item_type = models.SmallIntegerField(choices=[(0, 'Debit'), (1, 'Credit')], default=0)
     taxable_value = models.FloatField(default=0)
+    use_for_recon = models.BooleanField(default=False)
+    use_for_recon_order = models.IntegerField(null=True)
 
     class Meta:
         verbose_name = 'Journal Entry Item'
@@ -117,7 +124,13 @@ class JournalEntryItem(SimpleAbstractModel):
         je_item_obj = cls(
             journal_entry=je_obj,
             order=order,
-            account_data=item.get('account_data', []),
+            account=item.get('account'),
+            account_data={
+                'id': str(item.get('account').id),
+                'acc_code': item.get('account').acc_code,
+                'acc_name': item.get('account').acc_name,
+                'foreign_acc_name': item.get('account').foreign_acc_name
+            } if item.get('account') else {},
             product_mapped=item.get('product_mapped'),
             product_mapped_data={
                 'id': str(item.get('product_mapped').id),
@@ -135,6 +148,8 @@ class JournalEntryItem(SimpleAbstractModel):
             is_fc=item.get('is_fc', False),
             je_item_type=je_item_type,
             taxable_value=item.get('taxable_value', 0),
+            use_for_recon=item.get('use_for_recon', False),
+            use_for_recon_order=item.get('use_for_recon_order', None)
         )
         return je_item_obj
 

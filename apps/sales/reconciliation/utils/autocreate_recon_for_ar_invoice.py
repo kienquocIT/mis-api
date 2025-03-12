@@ -1,4 +1,4 @@
-from apps.accounting.accountingsettings.models import ChartOfAccounts
+from apps.accounting.journalentry.models import JournalEntry
 from apps.sales.reconciliation.models import Reconciliation, ReconciliationItem
 
 
@@ -12,73 +12,94 @@ class ReconForARInvoiceHandler:
             business_partner_data={
                 'id': str(ar_invoice_obj.customer_mapped_id),
                 'code': ar_invoice_obj.customer_mapped.code,
-                'title': ar_invoice_obj.customer_mapped.title,
+                'name': ar_invoice_obj.customer_mapped.name,
             },
-            posting_date=ar_invoice_obj.posting_date,
-            document_date=ar_invoice_obj.document_date,
+            posting_date=str(ar_invoice_obj.posting_date),
+            document_date=str(ar_invoice_obj.document_date),
             system_status=1,
-            company_id=ar_invoice_obj.company_id,
-            tenant_id=ar_invoice_obj.tenant_id,
+            company_id=str(ar_invoice_obj.company_id),
+            tenant_id=str(ar_invoice_obj.tenant_id),
             system_auto_create=True
         )
-
-        for item in ar_invoice_obj.ar_invoice_deliveries.all():
-            for je_item in item.delivery_mapped.je_items.filter(je_item_type=1):
-                ReconciliationItem.objects.create(
-                    recon=recon_obj,
-                    recon_data={
-                        'id': str(recon_obj.id),
-                        'code': recon_obj.code,
-                        'title': recon_obj.title,
-                    },
-                    order=1,
-                    credit_app_code='delivery.orderdeliverysub',
-                    credit_doc_id=str(item.delivery_mapped_id),
-                    credit_doc_data={
-                        'id': str(item.delivery_mapped_id),
-                        'code': item.delivery_mapped.code,
-                        'title': item.delivery_mapped.title,
-                        'document_date': '',
-                        'posting_date': '',
-                    },
-                    credit_account=je_item.account,
-                    credit_account_data={
-                        'id': str(je_item.account_id),
-                        'acc_code': je_item.account.acc_code,
-                        'acc_name': je_item.account.acc_name,
-                        'foreign_acc_name': je_item.account.foreign_acc_name
-                    } if je_item.account else {},
-                    recon_total=je_item.credit,
-                    recon_balance=je_item.credit,
-                    recon_amount=je_item.credit
+        bulk_info = []
+        ar_invoice_je = JournalEntry.objects.filter(
+            je_transaction_app_code=ar_invoice_obj.get_model_code(),
+            je_transaction_id=str(ar_invoice_obj.id)
+        ).first()
+        if ar_invoice_je:
+            for ar_je_item in ar_invoice_je.je_items.filter(use_for_recon=True):
+                # tạo recon item cho hóa đơn
+                bulk_info.append(
+                    ReconciliationItem(
+                        recon=recon_obj,
+                        recon_data={
+                            'id': str(recon_obj.id),
+                            'code': recon_obj.code,
+                            'title': recon_obj.title,
+                        } if recon_obj else {},
+                        order=ar_je_item.use_for_recon_order,
+                        credit_app_code=ar_invoice_obj.get_model_code(),
+                        credit_doc_id=str(ar_invoice_obj.id),
+                        credit_doc_data={
+                            'id': str(ar_invoice_obj.id),
+                            'code': ar_invoice_obj.code,
+                            'title': ar_invoice_obj.title,
+                            'document_date': str(ar_invoice_obj.document_date),
+                            'posting_date': str(ar_invoice_obj.posting_date),
+                        } if ar_invoice_obj else {},
+                        credit_account=ar_je_item.account,
+                        credit_account_data={
+                            'id': str(ar_je_item.account_id),
+                            'acc_code': ar_je_item.account.acc_code,
+                            'acc_name': ar_je_item.account.acc_name,
+                            'foreign_acc_name': ar_je_item.account.foreign_acc_name
+                        } if ar_je_item.account else {},
+                        recon_total=ar_je_item.credit,
+                        recon_balance=ar_je_item.credit,
+                        recon_amount=ar_je_item.credit
+                    )
                 )
-
-        ReconciliationItem.objects.create(
-            recon=recon_obj,
-            recon_data={
-                'id': str(recon_obj.id),
-                'code': recon_obj.code,
-                'title': recon_obj.title,
-            },
-            order=1,
-            debit_app_code='arinvoice.arinvoice',
-            debit_doc_id=str(ar_invoice_obj.id),
-            debit_doc_data={
-                'id': str(ar_invoice_obj.id),
-                'code': ar_invoice_obj.code,
-                'title': ar_invoice_obj.title,
-                'document_date': ar_invoice_obj.document_date,
-                'posting_date': ar_invoice_obj.posting_date,
-            },
-            debit_account=je_item.account,
-            debit_account_data={
-                'id': str(je_item.account_id),
-                'acc_code': je_item.account.acc_code,
-                'acc_name': je_item.account.acc_name,
-                'foreign_acc_name': je_item.account.foreign_acc_name
-            } if je_item.account else {},
-            recon_total=je_item.credit,
-            recon_balance=je_item.credit,
-            recon_amount=je_item.credit
-        )
+                # tạo recon item cho (các) phiếu giao hàng
+                for item in ar_invoice_obj.ar_invoice_deliveries.all():
+                    delivery_obj = item.delivery_mapped
+                    delivery_je = JournalEntry.objects.filter(
+                        je_transaction_app_code=delivery_obj.get_model_code(),
+                        je_transaction_id=str(delivery_obj.id)
+                    ).first()
+                    if delivery_je:
+                        for deli_je_item in delivery_je.je_items.filter(
+                            use_for_recon=True,
+                            use_for_recon_order=ar_je_item.use_for_recon_order
+                        ):
+                            # tạo recon item cho delivery
+                            bulk_info.append(
+                                ReconciliationItem(
+                                    recon=recon_obj,
+                                    recon_data={
+                                        'id': str(recon_obj.id),
+                                        'code': recon_obj.code,
+                                        'title': recon_obj.title,
+                                    } if recon_obj else {},
+                                    order=deli_je_item.use_for_recon_order,
+                                    debit_app_code=delivery_obj.get_model_code(),
+                                    debit_doc_id=str(delivery_obj.id),
+                                    debit_doc_data={
+                                        'id': str(delivery_obj.id),
+                                        'code': delivery_obj.code,
+                                        'title': delivery_obj.title,
+                                        'document_date': str(delivery_obj.date_approved),
+                                        'posting_date': str(delivery_obj.date_approved),
+                                    } if delivery_obj else {},
+                                    debit_account=deli_je_item.account,
+                                    debit_account_data={
+                                        'id': str(deli_je_item.account_id),
+                                        'acc_code': deli_je_item.account.acc_code,
+                                        'acc_name': deli_je_item.account.acc_name,
+                                        'foreign_acc_name': deli_je_item.account.foreign_acc_name
+                                    } if deli_je_item.account else {},
+                                    recon_total=deli_je_item.debit,
+                                    recon_balance=deli_je_item.debit,
+                                    recon_amount=deli_je_item.debit
+                                )
+                            )
         return True
