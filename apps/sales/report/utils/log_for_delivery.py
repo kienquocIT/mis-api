@@ -116,5 +116,4 @@ class IRForDeliveryHandler:
                                 lease_order_obj
                             )
         ReportInvLog.log(instance, instance.date_done, doc_data)
-        print('Write to Inventory Report successfully!')
         return True

@@ -1,6 +1,5 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
 from apps.accounting.journalentry.utils.log_for_ar_invoice import JEForARInvoiceHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.sales.acceptance.models import FinalAcceptance

@@ -58,6 +58,7 @@ class DefaultAccountDeterminationListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'title',
+            'foreign_title',
             'account_mapped',
             'default_account_determination_type',
             'default_account_determination_type_convert'

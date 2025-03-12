@@ -1,6 +1,5 @@
 from django.db import models
-from apps.sales.reconciliation.models import Reconciliation, ReconciliationItem
-from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
+from apps.accounting.journalentry.utils.log_for_cash_inflow import JEForCIFHandler
 from apps.shared import DataAbstractModel
 
 __all__ = ['CashInflow', 'CashInflowItem', 'CashInflowItemDetail']
@@ -32,9 +31,6 @@ class CashInflow(DataAbstractModel):
     # payment method
     cash_value = models.FloatField(default=0)
     bank_value = models.FloatField(default=0)
-    # sau này sẽ thay thế bằng 2 obj tài khoản kế toán, hiện tại chỉ lưu text
-    accounting_cash_account = models.CharField(default='1111', max_length=50)
-    accounting_bank_account = models.FloatField(default='1121', max_length=50)
     company_bank_account = models.ForeignKey(
         'company.CompanyBankAccount',
         on_delete=models.CASCADE,
@@ -69,6 +65,7 @@ class CashInflow(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
+                JEForCIFHandler.push_to_journal_entry(self)
                 # ReconForCIFHandler.auto_create_recon_doc(self)  # tạo phiếu cấu trừ tự động khi làm phiếu thu
         super().save(*args, **kwargs)
 

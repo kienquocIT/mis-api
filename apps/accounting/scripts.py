@@ -660,15 +660,8 @@ class AccountingMasterData:
         for company in Company.objects.all():
             account_mapped_data_sale = [
                 {
-                    'foreign_title': 'Receivables from domestic customers',
-                    'title': 'Phải thu khách hàng trong nước',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='131').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'Receivables from foreign customers',
-                    'title': 'Phải thu khách hàng nước ngoài',
+                    'foreign_title': 'Receivables from customers',
+                    'title': 'Phải thu khách hàng',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='131').first()
                     ]
@@ -737,15 +730,8 @@ class AccountingMasterData:
                     ]
                 },
                 {
-                    'foreign_title': 'Domestic sales revenue',
+                    'foreign_title': 'Sales revenue',
                     'title': 'Doanh thu bán hàng trong nước',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='511').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'Foreign sales revenue',
-                    'title': 'Doanh thu bán hàng nước ngoài',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='511').first()
                     ]
@@ -760,15 +746,8 @@ class AccountingMasterData:
             ]
             account_mapped_data_purchasing = [
                 {
-                    'foreign_title': 'Payable to domestic suppliers',
+                    'foreign_title': 'Payable to suppliers',
                     'title': 'Phải trả nhà cung cấp trong nước',
-                    'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='331').first()
-                    ]
-                },
-                {
-                    'foreign_title': 'Payable to foreign suppliers',
-                    'title': 'Phải trả nhà cung cấp nước ngoài',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='331').first()
                     ]
@@ -818,7 +797,7 @@ class AccountingMasterData:
                     ]
                 },
                 {
-                    'foreign_title': 'Sales returns Aaccount',
+                    'foreign_title': 'Sales returns account',
                     'title': 'Tài khoản hàng bán bị trả lại',
                     'account': [
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='521').first()

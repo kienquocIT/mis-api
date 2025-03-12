@@ -90,6 +90,22 @@ class DefaultAccountDetermination(MasterDataAbstractModel):
     foreign_title = models.CharField(max_length=100, blank=True)
     default_account_determination_type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DETERMINATION_TYPE, default=0)
 
+    @classmethod
+    def get_default_account_deter_sub_data(cls, tenant_id, company_id, foreign_title):
+        account_deter = DefaultAccountDetermination.objects.filter(
+            tenant_id=tenant_id,
+            company_id=company_id,
+            foreign_title=foreign_title
+        ).first()
+        if account_deter:
+            return [{
+                'id': str(sub.account_mapped_id),
+                'acc_code': sub.account_mapped.acc_code,
+                'acc_name': sub.account_mapped.acc_name,
+                'foreign_acc_name': sub.account_mapped.foreign_acc_name
+            } for sub in account_deter.default_acc_deter_sub.all()]
+        return []
+
     class Meta:
         verbose_name = 'Default Account Determination'
         verbose_name_plural = 'Default Account Determination'

@@ -1,7 +1,6 @@
-from django.db.models import Sum
-
-from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDetermination
-from apps.accounting.journalentry.models import JournalEntry, JournalEntryItem
+from apps.accounting.accountingsettings.models import DefaultAccountDetermination
+from apps.accounting.journalentry.models import JournalEntry
+from apps.sales.report.utils import ReportInvCommonFunc
 
 
 class JEForARInvoiceHandler:
@@ -16,17 +15,21 @@ class JEForARInvoiceHandler:
                 if deli_product.product:
                     for pw_data in deli_product.delivery_pw_delivery_product.all():
                         # lấy cost lúc giao của sp
+                        casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
+                            pw_data.uom,
+                            pw_data.quantity_delivery
+                        )
                         cost = deli_product.product.get_current_unit_cost(
                             get_type=1,
                             **{
                                 'warehouse_id': pw_data.warehouse_id,
                                 'sale_order_id': delivery_obj.sale_order_data.get('id'),
                             }
-                        )
+                        ) * casted_quantity
                         sum_cost += cost
                         debit_rows_data.append({
                             # (+) giá vốn hàng bán (mđ: 632)
-                            'account': item.product.get_product_account_determination(
+                            'account_data': deli_product.product.get_product_account_deter_sub_data(
                                 account_deter_foreign_title = 'Cost of goods sold',
                                 warehouse_id=pw_data.warehouse_id
                             ),
@@ -39,11 +42,11 @@ class JEForARInvoiceHandler:
                         })
         credit_rows_data.append({
             # (-) giao hàng chưa xuất hóa đơn (mđ: 13881)
-            'account': DefaultAccountDetermination.objects.filter(
-                tenant=ar_invoice_obj.tenant,
-                company=ar_invoice_obj.company,
+            'account_data': DefaultAccountDetermination.get_default_account_deter_sub_data(
+                tenant_id=ar_invoice_obj.tenant_id,
+                company_id=ar_invoice_obj.company_id,
                 foreign_title='Customer underpayment'
-            ).first(),
+            ),
             'product_mapped': None,
             'business_partner': None,
             'debit': 0,
@@ -53,45 +56,45 @@ class JEForARInvoiceHandler:
         })
         debit_rows_data.append({
             # (-) phải thu của khách hàng - trong nước (mđ: 131)
-            'account': DefaultAccountDetermination.objects.filter(
-                tenant=ar_invoice_obj.tenant,
-                company=ar_invoice_obj.company,
-                foreign_title='Receivables from domestic customers'
-            ).first(),
+            'account_data': DefaultAccountDetermination.get_default_account_deter_sub_data(
+                tenant_id=ar_invoice_obj.tenant_id,
+                company_id=ar_invoice_obj.company_id,
+                foreign_title='Receivables from customers'
+            ),
             'product_mapped': None,
             'business_partner': ar_invoice_obj.customer_mapped,
-            'debit': ar_invoice_obj.product_subtotal_final,
+            'debit': ar_invoice_obj.sum_after_tax_value,
             'credit': 0,
             'is_fc': False,
             'taxable_value': 0,
         })
         credit_rows_data.append({
             # (+) doanh thu bán hàng hóa - trong nước (mđ: 511)
-            'account': DefaultAccountDetermination.objects.filter(
-                tenant=ar_invoice_obj.tenant,
-                company=ar_invoice_obj.company,
-                foreign_title='Domestic sales revenue'
-            ).first(),
+            'account_data': DefaultAccountDetermination.get_default_account_deter_sub_data(
+                tenant_id=ar_invoice_obj.tenant_id,
+                company_id=ar_invoice_obj.company_id,
+                foreign_title='Sales revenue'
+            ),
             'product_mapped': None,
             'business_partner': None,
             'debit': 0,
-            'credit': ar_invoice_obj.product_subtotal_final - ar_invoice_obj.product_tax_value,
+            'credit': ar_invoice_obj.sum_after_tax_value - ar_invoice_obj.sum_tax_value,
             'is_fc': False,
             'taxable_value': 0,
         })
         credit_rows_data.append({
             # (+) thuế GTGT đầu ra (mđ: 3331)
-            'account': DefaultAccountDetermination.objects.filter(
-                tenant=ar_invoice_obj.tenant,
-                company=ar_invoice_obj.company,
+            'account_data': DefaultAccountDetermination.get_default_account_deter_sub_data(
+                tenant_id=ar_invoice_obj.tenant_id,
+                company_id=ar_invoice_obj.company_id,
                 foreign_title='Sales tax'
-            ).first(),
+            ),
             'product_mapped': None,
             'business_partner': None,
             'debit': 0,
-            'credit': ar_invoice_obj.product_tax_value,
+            'credit': ar_invoice_obj.sum_tax_value,
             'is_fc': False,
-            'taxable_value': ar_invoice_obj.product_tax_value,
+            'taxable_value': ar_invoice_obj.sum_tax_value,
         })
         return debit_rows_data, credit_rows_data
 
@@ -118,5 +121,4 @@ class JEForARInvoiceHandler:
             }
         }
         JournalEntry.auto_create_journal_entry(**kwargs)
-        print('Write to Journal Entry successfully!')
         return True

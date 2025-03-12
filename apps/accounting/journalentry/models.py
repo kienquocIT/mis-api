@@ -45,7 +45,8 @@ class JournalEntry(DataAbstractModel, AccountingAbstractModel):
             field for field in required_fields if field not in kwargs or kwargs[field] is None
         ]
         if missing_fields:
-            logger.error(msg=f'Missing required fields: {missing_fields}')
+            print(f'[JE] Missing required fields: {missing_fields}')
+            logger.error(msg=f'[JE] Missing required fields: {missing_fields}')
             return None
         try:
             with transaction.atomic():
@@ -66,13 +67,13 @@ class JournalEntry(DataAbstractModel, AccountingAbstractModel):
                 )
                 state = JournalEntryItem.create_je_item_mapped(je_obj, je_item_data)
                 if not state:
-                    logger.error(msg='Failed to create Journal Entry Items.')
+                    logger.error(msg='[JE] Failed to create Journal Entry Items.')
                     transaction.set_rollback(True) # rollback thủ công vì không raise lỗi
                     return None
-                print('Journal Entry created successfully!')
+                print('# Journal Entry created successfully!')
                 return je_obj
         except Exception as err:
-            logger.error(msg=f'Error while creating Journal Entry: {err}')
+            logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')
             return None
 
 
@@ -83,13 +84,7 @@ class JournalEntryItem(SimpleAbstractModel):
         related_name='je_items'
     )
     order = models.IntegerField(default=0)
-    account = models.ForeignKey(
-        ChartOfAccounts,
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='je_item_account'
-    )
-    account_data = models.JSONField(default=dict)
+    account_data = models.JSONField(default=list)
     product_mapped = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
@@ -118,36 +113,23 @@ class JournalEntryItem(SimpleAbstractModel):
         permissions = ()
 
     @classmethod
-    def create_je_item_sub(cls, je_obj, order, item, je_item_type=0):
-        account_obj = item.get('account')
-        account_data = {
-            'id': str(account_obj.id),
-            'acc_code': account_obj.acc_code,
-            'acc_name': account_obj.acc_name,
-            'foreign_acc_name': account_obj.foreign_acc_name
-        } if account_obj else {}
-        product_mapped_obj = item.get('product_mapped')
-        product_mapped_data = {
-            'id': str(product_mapped_obj.id),
-            'code': product_mapped_obj.code,
-            'title': product_mapped_obj.title,
-        } if product_mapped_obj else {}
-        business_partner_obj = item.get('business_partner')
-        business_partner_data = {
-            'id': str(business_partner_obj.id),
-            'code': business_partner_obj.code,
-            'name': business_partner_obj.name,
-        } if business_partner_obj else {}
-
+    def create_je_item_mapped_sub(cls, je_obj, order, item, je_item_type=0):
         je_item_obj = cls(
             journal_entry=je_obj,
             order=order,
-            account=account_obj,
-            account_data=account_data,
-            product_mapped=product_mapped_obj,
-            product_mapped_data=product_mapped_data,
-            business_partner=business_partner_obj,
-            business_partner_data=business_partner_data,
+            account_data=item.get('account_data', []),
+            product_mapped=item.get('product_mapped'),
+            product_mapped_data={
+                'id': str(item.get('product_mapped').id),
+                'code': item.get('product_mapped').code,
+                'title': item.get('product_mapped').title,
+            } if item.get('product_mapped') else {},
+            business_partner=item.get('business_partner'),
+            business_partner_data={
+                'id': str(item.get('business_partner').id),
+                'code': item.get('business_partner').code,
+                'name': item.get('business_partner').name,
+            } if item.get('business_partner') else {},
             debit=item.get('debit', 0) if je_item_type == 0 else 0,
             credit=item.get('credit', 0) if je_item_type == 1 else 0,
             is_fc=item.get('is_fc', False),
@@ -186,20 +168,21 @@ class JournalEntryItem(SimpleAbstractModel):
         debit_rows = je_item_data.get('debit_rows', [])
         credit_rows = je_item_data.get('credit_rows', [])
         if len(debit_rows) == 0 or len(credit_rows) == 0:
-            logger.error(msg='Invalid Journal entry item data => can not create.')
+            logger.error(msg='[JE] Debit list length != Credit list length => can not create.')
             return False
 
         je_item_info = []
         # get debit row
         debit_value = 0
         for order, item in enumerate(debit_rows):
-            je_item_info.append(cls.create_je_item_sub(je_obj, order, item, 0))
+            je_item_info.append(cls.create_je_item_mapped_sub(je_obj, order, item, 0))
             debit_value += item.get('debit', 0)
         # get credit row
         credit_value = 0
         for order, item in enumerate(credit_rows):
-            je_item_info.append(cls.create_je_item_sub(je_obj, order, item, 1))
+            je_item_info.append(cls.create_je_item_mapped_sub(je_obj, order, item, 1))
             credit_value += item.get('credit', 0)
 
         cls.objects.bulk_create(je_item_info)
+        print('# Journal Entry item created successfully!')
         return True

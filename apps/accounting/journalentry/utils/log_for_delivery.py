@@ -1,5 +1,6 @@
-from apps.accounting.accountingsettings.models import ChartOfAccounts, DefaultAccountDetermination
+from apps.accounting.accountingsettings.models import DefaultAccountDetermination
 from apps.accounting.journalentry.models import JournalEntry
+from apps.sales.report.utils import ReportInvCommonFunc
 
 
 class JEForDeliveryHandler:
@@ -12,17 +13,21 @@ class JEForDeliveryHandler:
             if deli_product.product:
                 for pw_data in deli_product.delivery_pw_delivery_product.all():
                     # lấy cost hiện tại của sp
+                    casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
+                        pw_data.uom,
+                        pw_data.quantity_delivery
+                    )
                     cost = deli_product.product.get_current_unit_cost(
                         get_type=1,
                         **{
                             'warehouse_id': pw_data.warehouse_id,
                             'sale_order_id': delivery_obj.sale_order_data.get('id'),
                         }
-                    )
+                    ) * casted_quantity
                     sum_cost += cost
                     credit_rows_data.append({
                         # (-) hàng hóa (mđ: 156)
-                        'account': deli_product.product.get_product_account_determination(
+                        'account_data': deli_product.product.get_product_account_deter_sub_data(
                             account_deter_foreign_title='Inventory account',
                             warehouse_id=pw_data.warehouse_id
                         ),
@@ -36,11 +41,11 @@ class JEForDeliveryHandler:
         # get account
         debit_rows_data.append({
             # (+) giao hàng chưa xuất hóa đơn (mđ: 13881)
-            'account': DefaultAccountDetermination.objects.filter(
-                tenant=delivery_obj.tenant,
-                company=delivery_obj.company,
+            'account_data': DefaultAccountDetermination.get_default_account_deter_sub_data(
+                tenant_id=delivery_obj.tenant_id,
+                company_id=delivery_obj.company_id,
                 foreign_title='Customer underpayment'
-            ).first(),
+            ),
             'product_mapped': None,
             'business_partner': None,
             'debit': sum_cost,
@@ -66,12 +71,11 @@ class JEForDeliveryHandler:
             },
             'tenant_id': delivery_obj.tenant_id,
             'company_id': delivery_obj.company_id,
-            'employee_created_id': delivery_obj.employee_created_id,
+            'employee_created_id': delivery_obj.employee_created_id or delivery_obj.employee_inherit_id,
             'je_item_data': {
                 'debit_rows': debit_rows_data,
                 'credit_rows': credit_rows_data
             }
         }
         JournalEntry.auto_create_journal_entry(**kwargs)
-        print('Write to Journal Entry successfully!')
         return True
