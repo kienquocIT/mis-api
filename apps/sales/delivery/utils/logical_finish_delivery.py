@@ -206,7 +206,7 @@ class DeliFinishHandler:
                             warehouse_id=delivery_warehouse.warehouse_id,
                             sale_order_id=None,
                         )
-                        for num in range(int(delivery_warehouse.quantity_delivery)):
+                        for _ in range(int(delivery_warehouse.quantity_delivery)):
                             asset_obj = model_asset.objects.create(
                                 tenant_id=instance.tenant_id,
                                 company_id=instance.company_id,

@@ -531,7 +531,7 @@ class AssetForLeaseListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_net_value(cls, obj):
-        return 0
+        return 0 if obj else 0
 
     @classmethod
     def get_depreciation_time(cls, obj):

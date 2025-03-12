@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 from django.utils import timezone
 
 from apps.shared import DisperseModel
