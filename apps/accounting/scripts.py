@@ -828,7 +828,8 @@ class AccountingMasterData:
                     order=order,
                     title=item.get('title', ''),
                     foreign_title=item.get('foreign_title', ''),
-                    default_account_determination_type=0
+                    default_account_determination_type=0,
+                    can_change_account=True
                 )
                 bulk_info.append(main_obj)
                 for account in item.get('account', []):
@@ -851,7 +852,8 @@ class AccountingMasterData:
                     order=order,
                     title=item.get('title', ''),
                     foreign_title=item.get('foreign_title', ''),
-                    default_account_determination_type=1
+                    default_account_determination_type=1,
+                    can_change_account=True
                 )
                 bulk_info.append(main_obj)
                 for account in item.get('account', []):
@@ -874,7 +876,8 @@ class AccountingMasterData:
                     order=order,
                     title=item.get('title', ''),
                     foreign_title=item.get('foreign_title', ''),
-                    default_account_determination_type=2
+                    default_account_determination_type=2,
+                    can_change_account=True
                 )
                 bulk_info.append(main_obj)
                 for account in item.get('account', []):

@@ -89,6 +89,8 @@ class DefaultAccountDetermination(MasterDataAbstractModel):
     order = models.IntegerField(default=0)
     foreign_title = models.CharField(max_length=100, blank=True)
     default_account_determination_type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DETERMINATION_TYPE, default=0)
+    can_change_account = models.BooleanField(default=False)
+    is_changed = models.BooleanField(default=False, help_text='True if user has change default account determination')
 
     @classmethod
     def get_default_account_deter_sub_data(cls, tenant_id, company_id, foreign_title):
