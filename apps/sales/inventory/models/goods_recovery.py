@@ -1,7 +1,6 @@
 from django.db import models
 
 from apps.sales.inventory.utils.logical_finish_recovery import RecoveryFinishHandler
-# from apps.sales.inventory.utils.logical_finish_recovery import RecoveryFinishHandler
 from apps.shared import DataAbstractModel, STATUS_RECOVERY, MasterDataAbstractModel, ASSET_TYPE
 
 
@@ -140,11 +139,13 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
         null=True
     )
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
+    asset_data = models.JSONField(default=list, help_text='data json of asset')
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         verbose_name='uom',
         related_name="recovery_product_uom",
+        null=True
     )
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
     uom_time = models.ForeignKey(
@@ -161,7 +162,6 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
     product_subtotal_cost = models.FloatField(default=0)
     quantity_recovery = models.FloatField(default=0)
     delivery_data = models.JSONField(default=list, help_text='data json of product delivery')
-    product_warehouse_data = models.JSONField(default=list, help_text='data json of product warehouses')
 
     # Begin depreciation fields
 
@@ -176,6 +176,9 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
     product_lease_start_date = models.DateField(null=True)
     product_lease_end_date = models.DateField(null=True)
 
+    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+    depreciation_lease_data = models.JSONField(default=list, help_text='data json of depreciation lease')
+
     # End depreciation fields
 
     class Meta:
@@ -186,64 +189,69 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
         permissions = ()
 
 
-class RecoveryWarehouse(MasterDataAbstractModel):  # relation: 1RecoveryProduct-*RecoveryWarehouse
+class RecoveryProductAsset(MasterDataAbstractModel):
     goods_recovery = models.ForeignKey(
         GoodsRecovery,
         on_delete=models.CASCADE,
         verbose_name="goods recovery",
-        related_name="recovery_warehouse_recovery",
+        related_name="recovery_product_asset_recovery",
     )
     recovery_product = models.ForeignKey(
         RecoveryProduct,
         on_delete=models.CASCADE,
         verbose_name="recovery product",
-        related_name="recovery_warehouse_rp",
+        related_name="recovery_product_asset_recovery_product",
     )
-    warehouse = models.ForeignKey(
-        'saledata.WareHouse',
+    product = models.ForeignKey(
+        'saledata.Product',
         on_delete=models.CASCADE,
         verbose_name="product",
-        related_name="recovery_warehouse_warehouse",
+        related_name="recovery_product_asset_product",
+        null=True
     )
-    warehouse_data = models.JSONField(default=dict, help_text='data json of warehouse')
+    product_data = models.JSONField(default=dict, help_text='data json of product')
+    asset = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.CASCADE,
+        verbose_name="asset",
+        related_name="recovery_product_asset_asset",
+        null=True
+    )
+    asset_data = models.JSONField(default=dict, help_text='data json of asset')
+    uom_time = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="uom time",
+        related_name="recovery_product_asset_uom_time",
+        null=True
+    )
+    uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
+    product_quantity_time = models.FloatField(default=0)
     quantity_recovery = models.FloatField(default=0)
+    # Begin depreciation fields
 
-    lease_generate_data = models.JSONField(default=list, help_text='data json of product warehouses')
+    product_depreciation_subtotal = models.FloatField(default=0)
+    product_depreciation_price = models.FloatField(default=0)
+    product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
+    product_depreciation_adjustment = models.FloatField(default=0)
+    product_depreciation_time = models.FloatField(default=0)
+    product_depreciation_start_date = models.DateField(null=True)
+    product_depreciation_end_date = models.DateField(null=True)
 
-    class Meta:
-        verbose_name = 'Recovery warehouse'
-        verbose_name_plural = 'Recovery warehouses'
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
+    product_lease_start_date = models.DateField(null=True)
+    product_lease_end_date = models.DateField(null=True)
 
+    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+    depreciation_lease_data = models.JSONField(default=list, help_text='data json of depreciation lease')
 
-class RecoveryLeaseGenerate(MasterDataAbstractModel):  # relation: 1RecoveryProduct-*RecoveryWarehouse
-    goods_recovery = models.ForeignKey(
-        GoodsRecovery,
-        on_delete=models.CASCADE,
-        verbose_name="goods recovery",
-        related_name="recovery_lease_generate_recovery",
-    )
-    recovery_warehouse = models.ForeignKey(
-        RecoveryWarehouse,
-        on_delete=models.CASCADE,
-        verbose_name="recovery warehouse",
-        related_name="recovery_lease_generate_rw",
-    )
-    serial = models.ForeignKey(
-        'saledata.ProductWareHouseSerial',
-        on_delete=models.CASCADE,
-        verbose_name="serial",
-        related_name="recovery_lease_generate_serial",
-        null=True,
-    )
-    serial_data = models.JSONField(default=dict, help_text='data json of serial')
-    remark = models.TextField(verbose_name='remark', blank=True, null=True)
+    # End depreciation fields
+
+    # fields for recovery
+    quantity_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
 
     class Meta:
-        verbose_name = 'Recovery lease generate'
-        verbose_name_plural = 'Recovery lease generates'
+        verbose_name = 'Recovery Product Asset'
+        verbose_name_plural = 'Recovery Products Asset'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
