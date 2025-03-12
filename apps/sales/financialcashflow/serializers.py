@@ -466,6 +466,7 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_payment_value(cls, obj):
+        print(obj)
         return 0
 
     @classmethod

@@ -1,7 +1,8 @@
-from apps.accounting.accountingsettings.models.account_masterdata_models import DefaultAccountDetermination, \
-    DefaultAccountDeterminationSub
-from apps.accounting.accountingsettings.models.wh_account_deter import WarehouseAccountDetermination, \
+from apps.accounting.accountingsettings.models.account_masterdata_models import DefaultAccountDetermination
+from apps.accounting.accountingsettings.models.wh_account_deter import (
+    WarehouseAccountDetermination,
     WarehouseAccountDeterminationSub
+)
 
 
 class AccountDeterminationForWarehouseHandler:

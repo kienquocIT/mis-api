@@ -1,7 +1,6 @@
 import logging
-from django.db import models, transaction
+from django.db import models
 from django.utils import timezone
-from apps.accounting.accountingsettings.models import ChartOfAccounts
 from apps.masterdata.saledata.models import Account
 from apps.shared import DataAbstractModel, SimpleAbstractModel, AccountingAbstractModel
 

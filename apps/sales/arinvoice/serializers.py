@@ -162,25 +162,24 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                     float(item.get('product_subtotal_final', 0)) <= 0,
                 ]):
                     raise serializers.ValidationError({'data_item_list': "Data items are not valid."})
-                else:
-                    item['product_data'] = {
-                        'id': str(product_obj.id),
-                        'code': product_obj.code,
-                        'title': product_obj.title,
-                        'des': product_obj.description,
-                    }
-                    item['product_uom_data'] = {
-                        'id': str(uom_obj.id),
-                        'code': uom_obj.code,
-                        'title': uom_obj.title,
-                        'group_id': str(uom_obj.group_id)
-                    }
-                    item['product_tax_data'] = {
-                        'id': str(tax_obj.id),
-                        'code': tax_obj.code,
-                        'title': tax_obj.title,
-                        'rate': tax_obj.rate,
-                    }
+                item['product_data'] = {
+                    'id': str(product_obj.id),
+                    'code': product_obj.code,
+                    'title': product_obj.title,
+                    'des': product_obj.description,
+                }
+                item['product_uom_data'] = {
+                    'id': str(uom_obj.id),
+                    'code': uom_obj.code,
+                    'title': uom_obj.title,
+                    'group_id': str(uom_obj.group_id)
+                }
+                item['product_tax_data'] = {
+                    'id': str(tax_obj.id),
+                    'code': tax_obj.code,
+                    'title': tax_obj.title,
+                    'rate': tax_obj.rate,
+                }
         return validate_data
 
     @decorator_run_workflow

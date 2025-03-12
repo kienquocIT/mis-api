@@ -197,10 +197,12 @@ class ARInvoiceListForReconSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_recon_total(cls, obj):
+        print(obj)
         return 0
 
     @classmethod
     def get_cash_inflow_data(cls, obj):
+        print(obj)
         cash_inflow_data = []
         return cash_inflow_data
 
@@ -233,4 +235,5 @@ class CashInflowListForReconSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_recon_balance(cls, obj):
+        print(obj)
         return 0

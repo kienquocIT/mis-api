@@ -3,12 +3,12 @@ from django.db import transaction
 from rest_framework import serializers
 from apps.masterdata.saledata.models import (
     UnitOfMeasureGroup, ProductType, ProductCategory,
-    Product, ProductProductType, ProductMeasurements, UnitOfMeasure, Tax, Currency, Price, ProductPriceList
+    Product, ProductProductType, ProductMeasurements, UnitOfMeasure, Currency, Price, ProductPriceList
 )
 from apps.masterdata.saledata.serializers import (
     CommonCreateUpdateProduct, ProductCreateSerializer
 )
-from apps.shared import ProductMsg, BaseMsg
+from apps.shared import ProductMsg
 from apps.core.base.models import BaseItemUnit
 
 
