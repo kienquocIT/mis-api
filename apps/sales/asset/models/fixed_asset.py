@@ -14,6 +14,9 @@ __all__ = [
 FIXED_ASSET_STATUS = [
     (0, _('Using')),
     (1, _('Leased')),
+    (2, _('Delivered')),
+    (3, _('Under Maintenance')),
+    (4, _('Fully Depreciated')),
 ]
 
 SOURCE_TYPE_CHOICES = [
@@ -99,7 +102,7 @@ class FixedAsset(DataAbstractModel):
         related_name="write_off_fixed_assets",
     )
 
-    depreciation_data = models.JSONField(default=dict, help_text='data for depreciation')
+    depreciation_data = models.JSONField(default=list, help_text='data for depreciation')
 
     class Meta:
         verbose_name = 'Fixed Asset'

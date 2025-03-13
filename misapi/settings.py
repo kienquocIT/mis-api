@@ -89,6 +89,7 @@ INSTALLED_APPS = \
         'apps.core.recurrence',  # recurrence for apps
         'apps.core.chat3rd',
         'apps.core.firebase',
+        'apps.core.contract_templates',  # contract template config
     ] + [  # application
         'apps.core.base',
         'apps.core.account',
@@ -264,6 +265,7 @@ UI_DOMAIN_SUFFIX = os.environ.get('UI_DOMAIN_SUFFIX', None)
 UI_DOMAIN_PROTOCOL = os.environ.get('UI_DOMAIN_PROTOCOL', 'https')
 UI_DOMAIN_PATH_REVERSE = os.environ.get('UI_DOMAIN_PATH_REVERSE', '/form/r/g/rs-get')
 UI_DOMAIN_PATH_REVERSE_PAGE = os.environ.get('UI_DOMAIN_PATH_REVERSE', '/form/r/g/rs')
+UI_FIXED_DOMAIN = os.environ.get('UI_FIXED_DOMAIN', 'http://{sub_domain}.local.test:8001')
 
 # Mail config
 MAIL_CONFIG_OBJ_PK = os.environ.get('MAIL_CONFIG_OBJ_PK', '6db50f86-055d-4fc6-9235-208b0fbc0ef9')

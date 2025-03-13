@@ -1,13 +1,15 @@
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.asset.models import FixedAsset
 from apps.sales.asset.serializers import FixedAssetListSerializer, FixedAssetCreateSerializer, \
-    FixedAssetDetailSerializer, FixedAssetUpdateSerializer
+    FixedAssetDetailSerializer, FixedAssetUpdateSerializer, AssetForLeaseListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 __all__ =[
     'FixedAssetList',
-    'FixedAssetDetail'
+    'FixedAssetDetail',
+    'AssetForLeaseList',
 ]
 
 class FixedAssetList(BaseListMixin, BaseCreateMixin):
@@ -19,6 +21,13 @@ class FixedAssetList(BaseListMixin, BaseCreateMixin):
     serializer_detail = FixedAssetDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        # get fixed assets that haven't been written off
+        return super().get_queryset().filter(
+            Q(fixed_asset_write_off__isnull=True) |
+            Q(fixed_asset_write_off__isnull=False, fixed_asset_write_off__system_status=0)
+        )
 
     @swagger_auto_schema(
         operation_summary="Fixed Asset List",
@@ -76,3 +85,24 @@ class FixedAssetDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {'user': request.user}
         return self.update(request, *args, pk, **kwargs)
+
+
+class AssetForLeaseList(BaseListMixin, BaseCreateMixin):
+    queryset = FixedAsset.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        "status": ["exact"],
+    }
+    serializer_list = AssetForLeaseListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Fixed Asset For Lease List",
+        operation_description="Get Fixed Asset For Lease List",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='asset', model_code='fixedasset', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

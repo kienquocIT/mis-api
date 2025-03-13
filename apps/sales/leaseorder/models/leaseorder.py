@@ -204,6 +204,7 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
                 if 'date_approved' in kwargs['update_fields']:
                     self.push_code(instance=self, kwargs=kwargs)  # code
                     LOFinishHandler.push_product_info(instance=self)  # product info
+                    LOFinishHandler.update_asset_status(instance=self)  # asset status => leased
 
                     LOFinishHandler.push_final_acceptance_lo(instance=self)  # final acceptance
                     LOFinishHandler.update_recurrence_task(instance=self)  # recurrence
@@ -237,11 +238,12 @@ class LeaseOrderProduct(MasterDataAbstractModel):
     offset = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
-        verbose_name="product",
+        verbose_name="offset",
         related_name="lease_order_product_offset",
         null=True
     )
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
+    asset_data = models.JSONField(default=list, help_text='data json of asset')
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -273,9 +275,6 @@ class LeaseOrderProduct(MasterDataAbstractModel):
     product_uom_title = models.CharField(max_length=100, blank=True, null=True)
     product_uom_code = models.CharField(max_length=100, blank=True, null=True)
     product_quantity = models.FloatField(default=0)
-    product_quantity_new = models.FloatField(default=0)
-    product_quantity_leased = models.FloatField(default=0)
-    product_quantity_leased_data = models.JSONField(default=list, help_text="read data products leased")
     product_quantity_time = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
     product_discount_value = models.FloatField(default=0)
@@ -328,25 +327,40 @@ class LeaseOrderProduct(MasterDataAbstractModel):
         permissions = ()
 
 
-class LeaseOrderProductLeased(MasterDataAbstractModel):
+class LeaseOrderProductAsset(MasterDataAbstractModel):
+    lease_order = models.ForeignKey(
+        LeaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="lease_order_product_asset_lease_order",
+        null=True
+    )
     lease_order_product = models.ForeignKey(
         LeaseOrderProduct,
         on_delete=models.CASCADE,
         verbose_name="lease order product",
-        related_name="lease_order_product_leased_lo_product",
+        related_name="lease_order_product_asset_lo_product",
     )
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
-        verbose_name="product leased",
-        related_name="lease_order_product_leased_product",
+        verbose_name="product",
+        related_name="lease_order_product_asset_product",
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
+    asset = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.CASCADE,
+        verbose_name="asset",
+        related_name="lease_order_product_asset_asset",
+        null=True
+    )
+    asset_data = models.JSONField(default=dict, help_text='data json of asset')
 
     class Meta:
-        verbose_name = 'Lease Order Product Leased'
-        verbose_name_plural = 'Lease Order Products Leased'
+        verbose_name = 'Lease Order Product Asset'
+        verbose_name_plural = 'Lease Order Products Asset'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
@@ -385,6 +399,23 @@ class LeaseOrderCost(MasterDataAbstractModel):
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
+    asset_type = models.SmallIntegerField(null=True, help_text='choices= ' + str(ASSET_TYPE))
+    offset = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="offset",
+        related_name="lease_order_cost_offset",
+        null=True
+    )
+    offset_data = models.JSONField(default=dict, help_text='data json of offset')
+    asset = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.CASCADE,
+        verbose_name="asset",
+        related_name="lease_order_cost_asset",
+        null=True
+    )
+    asset_data = models.JSONField(default=dict, help_text='data json of asset')
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
@@ -455,59 +486,14 @@ class LeaseOrderCost(MasterDataAbstractModel):
     product_lease_start_date = models.DateField(null=True)
     product_lease_end_date = models.DateField(null=True)
 
+    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+    depreciation_lease_data = models.JSONField(default=list, help_text='data json of depreciation lease')
+
     # End depreciation fields
 
     class Meta:
         verbose_name = 'Lease Order Cost'
         verbose_name_plural = 'Lease Order Costs'
-        ordering = ('order',)
-        default_permissions = ()
-        permissions = ()
-
-
-class LeaseOrderCostLeased(MasterDataAbstractModel):
-    lease_order = models.ForeignKey(
-        LeaseOrder,
-        on_delete=models.CASCADE,
-        verbose_name="lease order",
-        related_name="lease_order_cost_leased_lease_order",
-        null=True
-    )
-    product = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.CASCADE,
-        verbose_name="product",
-        related_name="lease_order_cost_leased_product",
-        null=True
-    )
-    product_data = models.JSONField(default=dict, help_text='data json of product')
-    uom_time = models.ForeignKey(
-        'saledata.UnitOfMeasure',
-        on_delete=models.CASCADE,
-        verbose_name="uom time",
-        related_name="lease_order_cost_leased_uom_time",
-        null=True
-    )
-    uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
-    product_quantity_time = models.FloatField(default=0)
-    net_value = models.FloatField(default=0)
-    product_subtotal_price = models.FloatField(default=0)
-    order = models.IntegerField(default=1)
-
-    # Begin depreciation fields
-
-    product_depreciation_subtotal = models.FloatField(default=0)
-    product_depreciation_price = models.FloatField(default=0)
-    product_depreciation_time = models.FloatField(default=0)
-
-    product_lease_start_date = models.DateField(null=True)
-    product_lease_end_date = models.DateField(null=True)
-
-    # End depreciation fields
-
-    class Meta:
-        verbose_name = 'Lease Order Cost Leased'
-        verbose_name_plural = 'Lease Order Costs Leased'
         ordering = ('order',)
         default_permissions = ()
         permissions = ()

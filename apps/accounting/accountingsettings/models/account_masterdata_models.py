@@ -44,6 +44,7 @@ class ChartOfAccounts(MasterDataAbstractModel):
     is_all_currency = models.BooleanField(default=True)
     currency_mapped = models.ForeignKey('saledata.Currency', on_delete=models.CASCADE, null=True)
     is_default = models.BooleanField(default=False)
+    is_added = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Chart Of Accounts'
@@ -75,7 +76,8 @@ class ChartOfAccounts(MasterDataAbstractModel):
                     company=company,
                     tenant=company.tenant,
                     level=parent_account_obj.level + 1,
-                    is_default=False
+                    is_default=False,
+                    is_added=True
                 )
                 print('Done :))')
             else:

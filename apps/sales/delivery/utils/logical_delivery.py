@@ -21,17 +21,15 @@ class DeliHandler:
         return True
 
     @classmethod
-    def create_delivery_product_leased(cls, instance):
-        model = DisperseModel(app_model='delivery.OrderDeliveryProductLeased').get_model()
+    def create_delivery_product_asset(cls, instance):
+        model = DisperseModel(app_model='delivery.OrderDeliveryProductAsset').get_model()
         if model and hasattr(model, 'objects'):
-            instance.delivery_product_leased_delivery_product.all().delete()
-            created_list = model.objects.bulk_create([model(
-                delivery_product_id=instance.id, tenant_id=instance.tenant_id,
-                company_id=instance.company_id, **product_leased,
-            ) for product_leased in instance.product_quantity_leased_data])
-            for created in created_list:
-                DeliHandler.create_delivery_product_warehouse(instance=created)
-                DeliHandler.create_delivery_lot_serial(instance=created)
+            instance.delivery_pa_delivery_product.all().delete()
+            model.objects.bulk_create([model(
+                tenant_id=instance.tenant_id, company_id=instance.company_id,
+                delivery_sub_id=instance.delivery_sub_id, delivery_product_id=instance.id,
+                **asset_data,
+            ) for asset_data in instance.asset_data])
         return True
 
     @classmethod
@@ -50,28 +48,12 @@ class DeliHandler:
                     'uom_data': deli_data.get('uom_data', {}),
                     'lot_data': deli_data.get('lot_data', {}),
                     'serial_data': deli_data.get('serial_data', {}),
-                    'quantity_delivery': deli_data.get('stock', 0),
+                    'quantity_delivery': deli_data.get('picked_quantity', 0),
                 } for deli_data in instance.delivery_data
             ]
-            app_code = instance._meta.label_lower
-            common = {}
-            if app_code == "delivery.orderdeliveryproduct":
-                common = {
-                    'delivery_product_id': instance.id,
-                    'delivery_product_leased_id': None,
-                }
-                instance.delivery_pw_delivery_product.filter(
-                    delivery_product_leased__isnull=True
-                ).delete()
-            if app_code == "delivery.orderdeliveryproductleased":
-                if instance.delivery_product:
-                    common = {
-                        'delivery_product_id': instance.delivery_product_id,
-                        'delivery_product_leased_id': instance.id,
-                    }
-                    instance.delivery_pw_delivery_product_leased.all().delete()
+            instance.delivery_pw_delivery_product.all().delete()
             model.create(
-                **common,
+                delivery_product_id=instance.id,
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
                 pw_data=pw_data
@@ -83,31 +65,13 @@ class DeliHandler:
         model1 = DisperseModel(app_model='delivery.OrderDeliveryLot').get_model()
         model2 = DisperseModel(app_model='delivery.OrderDeliverySerial').get_model()
         if model1 and hasattr(model1, 'create') and model2 and hasattr(model2, 'create'):
-            app_code = instance._meta.label_lower
-            common = {}
-            if app_code == "delivery.orderdeliveryproduct":
-                common = {
-                    'delivery_product_id': instance.id,
-                    'delivery_product_leased_id': None,
-                    'delivery_sub_id': instance.delivery_sub_id,
-                    'delivery_id': instance.delivery_sub.order_delivery_id,
-                }
-                instance.delivery_lot_delivery_product.filter(
-                    delivery_product_leased__isnull=True
-                ).delete()
-                instance.delivery_serial_delivery_product.filter(
-                    delivery_product_leased__isnull=True
-                ).delete()
-            if app_code == "delivery.orderdeliveryproductleased":
-                if instance.delivery_product:
-                    common = {
-                        'delivery_product_id': instance.delivery_product_id,
-                        'delivery_product_leased_id': instance.id,
-                        'delivery_sub_id': instance.delivery_product.delivery_sub_id,
-                        'delivery_id': instance.delivery_product.delivery_sub.order_delivery_id,
-                    }
-                    instance.delivery_lot_delivery_product_leased.all().delete()
-                    instance.delivery_serial_delivery_product_leased.all().delete()
+            common = {
+                'delivery_product_id': instance.id,
+                'delivery_sub_id': instance.delivery_sub_id,
+                'delivery_id': instance.delivery_sub.order_delivery_id,
+            }
+            instance.delivery_lot_delivery_product.all().delete()
+            instance.delivery_serial_delivery_product.all().delete()
             for delivery in instance.delivery_data:
                 model1.create(
                     **common,
@@ -165,7 +129,7 @@ class DeliHandler:
         product_obj, delivery_data = deli_product.product, deli_product.delivery_data
         if product_obj:
             if len(delivery_data) == 0:
-                return deli_product.picked_quantity * deli_product.product_unit_price
+                return deli_product.picked_quantity * deli_product.product_cost
             for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
                 quantity_deli = data_deli.get('picked_quantity', 0)
                 cost = product_obj.get_unit_cost_by_warehouse(

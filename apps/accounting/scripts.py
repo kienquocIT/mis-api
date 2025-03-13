@@ -723,6 +723,21 @@ class AccountingMasterData:
         return True
 
     @staticmethod
+    def add_account_default():
+        # thêm 13881: Giao hàng nhưng chưa xuất hóa đơn bán hàng
+        ChartOfAccounts.add_account(
+            parent_acc_type=1,
+            parent_acc_code=1388,
+            new_acc_code=13881,
+            new_acc_name='Giao hàng nhưng chưa xuất hóa đơn bán hàng',
+            new_foreign_acc_name='Delivered but no AR Invoice yet'
+        )
+        print('Done :))')
+        return True
+
+
+class AccountingScripts:
+    @staticmethod
     def push_default_account_determination_200():
         """ Đẩy các tài khoản kế toán xác định mặc định (TT200) vào KHO - PRODUCT TYPE - PRODUCT """
         for warehouse_obj in WareHouse.objects.all():
@@ -735,14 +750,19 @@ class AccountingMasterData:
         return True
 
     @staticmethod
-    def add_account_default():
-        # thêm 13881: Giao hàng nhưng chưa xuất hóa đơn bán hàng
-        ChartOfAccounts.add_account(
-            parent_acc_type=1,
-            parent_acc_code=1388,
-            new_acc_code=13881,
-            new_acc_name='Giao hàng nhưng chưa xuất hóa đơn bán hàng',
-            new_foreign_acc_name='Delivered but no AR Invoice yet'
-        )
-        print('Done :))')
+    def allow_account_determination_can_change_account(account_determination_title):
+        """ Cho phép thay đổi TK xác định """
+        for warehouse_obj in WareHouse.objects.all():
+            warehouse_obj.wh_account_deter_warehouse_mapped.filter(
+                title=account_determination_title
+            ).update(can_change_account=True)
+        for product_type_obj in ProductType.objects.all():
+            product_type_obj.prd_type_account_deter_product_type_mapped.filter(
+                title=account_determination_title
+            ).update(can_change_account=True)
+        for product_obj in Product.objects.all():
+            product_obj.prd_account_deter_product_mapped.filter(
+                title=account_determination_title
+            ).update(can_change_account=True)
+        print(f'Done :))')
         return True

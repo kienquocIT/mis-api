@@ -34,6 +34,15 @@ class LOFinishHandler:
                 })
         return True
 
+    # ASSET
+    @classmethod
+    def update_asset_status(cls, instance):
+        for lease_asset in instance.lease_order_product_asset_lease_order.all():
+            if lease_asset.asset:
+                lease_asset.asset.status = 1
+                lease_asset.asset.save(update_fields=['status'])
+        return True
+
     # REPORT
     @classmethod
     def push_to_report_revenue(cls, instance):

@@ -481,3 +481,9 @@ ASSET_TYPE = (
 STATUS_RECOVERY = (
     (0, 'Open'),
 )
+
+# Serial
+SERIAL_STATUS = (
+    (0, _('Available')),
+    (1, _('Delivered')),
+)
