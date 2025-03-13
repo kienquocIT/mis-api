@@ -135,7 +135,7 @@ class IndustryCreateSerializer(serializers.ModelSerializer):
 class IndustryDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Industry
-        fields = ('id', 'title', 'code', 'description', 'is_default')
+        fields = ('id', 'title', 'code', 'description')
 
 
 class IndustryUpdateSerializer(serializers.ModelSerializer):

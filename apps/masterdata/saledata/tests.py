@@ -1864,7 +1864,7 @@ class IndustryTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'description'],
+            ['id', 'title', 'code', 'description', 'is_default'],
             check_sum_second=True,
         )
         if not data_id:
