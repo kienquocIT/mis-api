@@ -558,7 +558,7 @@ class SalutationTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'code', 'title', 'description'],
+            ['id', 'code', 'title', 'description', 'is_default'],
             check_sum_second=True,
         )
         return response
@@ -1146,7 +1146,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'code', 'title', 'rate', 'category', 'tax_type'],
+            ['id', 'code', 'title', 'rate', 'category', 'tax_type', 'is_default'],
             check_sum_second=True,
         )
         return response
@@ -1841,7 +1841,7 @@ class IndustryTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'title', 'code', 'description'],
+            ['id', 'title', 'code', 'description', 'is_default'],
             check_sum_second=True,
         )
         return response
