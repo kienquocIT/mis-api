@@ -252,7 +252,7 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'rate', 'category', 'tax_type'],
+            ['id', 'title', 'code', 'rate', 'category', 'tax_type', 'is_default'],
             check_sum_second=True,
         )
         return response
