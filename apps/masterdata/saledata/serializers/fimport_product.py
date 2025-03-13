@@ -14,6 +14,7 @@ from apps.core.base.models import BaseItemUnit
 
 logger = logging.getLogger(__name__)
 
+
 class ProductImportListSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
