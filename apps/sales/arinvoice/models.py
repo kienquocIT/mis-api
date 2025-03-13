@@ -97,7 +97,7 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
                     kwargs.update({'update_fields': ['code']})
 
                 JEForARInvoiceHandler.push_to_journal_entry(self)
-                ReconForARInvoiceHandler.auto_create_recon_doc(self)
+                # ReconForARInvoiceHandler.auto_create_recon_doc(self)
 
         if self.invoice_status == 1:  # published
             self.push_final_acceptance_invoice(instance=self)
