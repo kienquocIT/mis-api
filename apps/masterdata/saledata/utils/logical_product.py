@@ -14,8 +14,7 @@ class ProductHandler:
             cls.by_receipt_ia(instance=instance, update_info=update_info)
             cls.by_receipt_production(instance=instance, update_info=update_info)
             cls.by_order(instance=instance, update_info=update_info)
-            cls.by_delivery_new(instance=instance, update_info=update_info)
-            cls.by_delivery_leased(instance=instance, update_info=update_info)
+            cls.by_delivery(instance=instance, update_info=update_info)
             cls.by_return(instance=instance, update_info=update_info)
             cls.by_return_redelivery(instance=instance, update_info=update_info)
             # update product
@@ -81,18 +80,11 @@ class ProductHandler:
         return True
 
     @classmethod
-    def by_delivery_new(cls, instance, update_info):
-        if 'quantity_delivery_new' in update_info:
+    def by_delivery(cls, instance, update_info):
+        if 'quantity_delivery' in update_info:
             if update_info['system_status'] == 3:
-                instance.wait_delivery_amount -= update_info['quantity_delivery_new']
-                instance.stock_amount -= update_info['quantity_delivery_new']
-        return True
-
-    @classmethod
-    def by_delivery_leased(cls, instance, update_info):
-        if 'quantity_delivery_leased' in update_info:
-            if update_info['system_status'] == 3:
-                instance.stock_amount -= update_info['quantity_delivery_leased']
+                instance.wait_delivery_amount -= update_info['quantity_delivery']
+                instance.stock_amount -= update_info['quantity_delivery']
         return True
 
     @classmethod

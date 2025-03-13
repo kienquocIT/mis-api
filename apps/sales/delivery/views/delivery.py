@@ -1,12 +1,11 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.delivery.serializers.delivery import OrderDeliverySubMinimalListSerializer, \
-    OrderDeliverySubRecoveryListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
 from apps.sales.delivery.models import OrderDeliverySub, OrderDeliveryProduct
 from apps.sales.delivery.serializers import OrderDeliverySubDetailSerializer, \
-    OrderDeliverySubUpdateSerializer, OrderDeliverySubListSerializer
+    OrderDeliverySubUpdateSerializer, OrderDeliverySubListSerializer, OrderDeliverySubMinimalListSerializer, \
+    OrderDeliverySubRecoveryListSerializer
 
 __all__ = ['OrderDeliverySubList', 'OrderDeliverySubDetail', 'OrderDeliverySubRecoveryList']
 

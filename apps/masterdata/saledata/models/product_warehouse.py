@@ -5,7 +5,7 @@ __all__ = [
 ]
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel, TYPE_LOT_TRANSACTION
+from apps.shared import MasterDataAbstractModel, SimpleAbstractModel, TYPE_LOT_TRANSACTION, SERIAL_STATUS
 from .product import UnitOfMeasure
 
 
@@ -448,6 +448,8 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
         related_name="pw_serial_purchase_request",
         help_text="To know this serial was receipted by which PurchaseRequest"
     )
+    # Status of serial
+    serial_status = models.SmallIntegerField(choices=SERIAL_STATUS, default=0, help_text="Flag to know current status")
 
     class Meta:
         verbose_name = 'Product Warehouse Serial'

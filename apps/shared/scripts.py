@@ -41,7 +41,7 @@ from ..sales.arinvoice.models import ARInvoice, ARInvoiceItems, ARInvoiceDeliver
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
 from ..sales.delivery.utils import DeliFinishHandler
 from ..sales.inventory.models import (
-    InventoryAdjustmentItem, GoodsReceipt, GoodsReceiptWarehouse, GoodsReturn
+    InventoryAdjustmentItem, GoodsReceipt, GoodsReceiptWarehouse, GoodsReturn, GoodsDetail
 )
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler
 from ..sales.lead.models import Lead
@@ -58,7 +58,7 @@ from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.quotation.serializers import QuotationListSerializer
 from ..sales.report.models import ReportCashflow
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
-from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrder
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrder, SaleOrderIndicator
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
 from ..sales.saleorder.utils import SOFinishHandler
 from ..sales.task.models import OpportunityTaskStatus, OpportunityTask
@@ -1287,3 +1287,9 @@ def reset_run_indicator_fields(kwargs):
         sale_order.save(update_fields=['indicator_revenue', 'indicator_gross_profit', 'indicator_net_income'])
     print('reset_run_indicator_fields done.')
 
+
+def update_serial_status():
+    for pw_serial in ProductWareHouseSerial.objects.filter(is_delete=True):
+        pw_serial.serial_status = 1
+        pw_serial.save(update_fields=['serial_status'])
+    print('update_serial_status done.')
