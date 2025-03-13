@@ -42,7 +42,7 @@ class Bank(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Bank'
         verbose_name_plural = 'Bank'
-        ordering = ('code',)
+        ordering = ('abbreviation',)
 
 class BankAccount(MasterDataAbstractModel):
     bank_abbreviation = models.ForeignKey(
@@ -56,6 +56,12 @@ class BankAccount(MasterDataAbstractModel):
     is_brand = models.BooleanField(default=False)
     brand_name = models.CharField(max_length=150, null=True)
     is_default = models.BooleanField(default=False)
+    currency = models.ForeignKey(
+        'saledata.Currency',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='currency_bank_accounts'
+    )
 
     brand_country = models.ForeignKey(
         'base.Country',
@@ -83,9 +89,8 @@ class BankAccount(MasterDataAbstractModel):
     )
     brand_address = models.TextField(null=True)
     brand_full_address = models.TextField(null=True)
-    head_address = models.TextField(null=True)
 
     class Meta:
         verbose_name = 'BankAccount'
         verbose_name_plural = 'BankAccountS'
-        ordering = ('code',)
+        ordering = ('bank_account_number',)

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.base.models import Country, District, City, Ward
-from apps.masterdata.saledata.models import Bank, BankAccount
+from apps.masterdata.saledata.models import Bank, BankAccount, Currency
 from apps.shared import BaseMsg
 
 __all__ = [
@@ -247,6 +247,12 @@ class BankAccountListSerializer(serializers.ModelSerializer):
 
 class BankAccountCreateSerializer(serializers.ModelSerializer):
     bank_abbreviation = serializers.UUIDField(required=False)
+    currency = serializers.UUIDField(required=False)
+    brand_name = serializers.CharField(required=False, allow_blank=True)
+    brand_country = serializers.UUIDField(required=False)
+    brand_district = serializers.UUIDField(required=False)
+    brand_city = serializers.UUIDField(required=False)
+    brand_ward = serializers.UUIDField(required=False)
 
     class Meta:
         model = BankAccount
@@ -263,8 +269,17 @@ class BankAccountCreateSerializer(serializers.ModelSerializer):
             'brand_ward',
             'brand_address',
             'brand_full_address',
-            'head_address'
+            'currency'
         )
+
+    @classmethod
+    def validate_currency(cls, value):
+        if value:
+            try:
+                return Currency.objects.get(id=value)
+            except Currency.DoesNotExist:
+                raise serializers.ValidationError({"currency": BaseMsg.NOT_EXIST})
+        raise serializers.ValidationError({"currency": BaseMsg.REQUIRED})
 
     @classmethod
     def validate_bank_abbreviation(cls, value):
@@ -275,35 +290,58 @@ class BankAccountCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"bank_abbreviation": BaseMsg.NOT_EXIST})
         raise serializers.ValidationError({"bank_abbreviation": BaseMsg.REQUIRED})
 
-    def validate(self, validate_data):
-        if validate_data['is_brand']:
+    @classmethod
+    def validate_brand_country(cls, value):
+        if value:
             try:
-                country = Country.objects.get(id = validate_data['brand_country'])
-                validate_data['brand_country'] = country
+                return Country.objects.get(id=value)
             except Country.DoesNotExist:
                 raise serializers.ValidationError({"brand_country": BaseMsg.NOT_EXIST})
+        return value
 
+    @classmethod
+    def validate_brand_district(cls, value):
+        if value:
             try:
-                city = City.objects.get(id = validate_data['brand_city'])
-                validate_data['brand_city'] = city
-            except City.DoesNotExist:
-                raise serializers.ValidationError({"brand_city": BaseMsg.NOT_EXIST})
-
-            try:
-                district = District.objects.get(id = validate_data['brand_district'])
-                validate_data['brand_district'] = district
+                return District.objects.get(id=value)
             except District.DoesNotExist:
                 raise serializers.ValidationError({"brand_district": BaseMsg.NOT_EXIST})
+        return value
 
+    @classmethod
+    def validate_brand_city(cls, value):
+        if value:
             try:
-                ward = Ward.objects.get(id = validate_data['brand_ward'])
-                validate_data['brand_ward'] = ward
+                return City.objects.get(id=value)
+            except City.DoesNotExist:
+                raise serializers.ValidationError({"brand_city": BaseMsg.NOT_EXIST})
+        return value
+
+    @classmethod
+    def validate_brand_ward(cls, value):
+        if value:
+            try:
+                return Ward.objects.get(id=value)
             except Ward.DoesNotExist:
                 raise serializers.ValidationError({"brand_ward": BaseMsg.NOT_EXIST})
+        return value
 
+    def validate(self, validate_data):
+        if validate_data.get('is_brand', False):
+            if not validate_data.get('brand_name', None):
+                raise serializers.ValidationError({"brand_name": BaseMsg.REQUIRED})
+            if not validate_data.get('brand_full_address', None):
+                raise serializers.ValidationError({"brand_full_address": BaseMsg.REQUIRED})
+        return validate_data
 
 class BankAccountUpdateSerializer(serializers.ModelSerializer):
     bank_abbreviation = serializers.UUIDField(required=False)
+    currency = serializers.UUIDField(required=False)
+    brand_name = serializers.CharField(required=False, allow_blank=True)
+    brand_country = serializers.UUIDField(required=False)
+    brand_district = serializers.UUIDField(required=False)
+    brand_city = serializers.UUIDField(required=False)
+    brand_ward = serializers.UUIDField(required=False)
 
     class Meta:
         model = BankAccount
@@ -320,8 +358,17 @@ class BankAccountUpdateSerializer(serializers.ModelSerializer):
             'brand_ward',
             'brand_address',
             'brand_full_address',
-            'head_address'
+            'currency'
         )
+
+    @classmethod
+    def validate_currency(cls, value):
+        if value:
+            try:
+                return Currency.objects.get(id=value)
+            except Currency.DoesNotExist:
+                raise serializers.ValidationError({"currency": BaseMsg.NOT_EXIST})
+        raise serializers.ValidationError({"currency": BaseMsg.REQUIRED})
 
     @classmethod
     def validate_bank_abbreviation(cls, value):
@@ -332,31 +379,49 @@ class BankAccountUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"bank_abbreviation": BaseMsg.NOT_EXIST})
         raise serializers.ValidationError({"bank_abbreviation": BaseMsg.REQUIRED})
 
-    def validate(self, validate_data):
-        if validate_data['is_brand']:
+    @classmethod
+    def validate_brand_country(cls, value):
+        if value:
             try:
-                country = Country.objects.get(id=validate_data['brand_country'])
-                validate_data['brand_country'] = country
+                return Country.objects.get(id=value)
             except Country.DoesNotExist:
                 raise serializers.ValidationError({"brand_country": BaseMsg.NOT_EXIST})
+        return value
 
+    @classmethod
+    def validate_brand_district(cls, value):
+        if value:
             try:
-                city = City.objects.get(id=validate_data['brand_city'])
-                validate_data['brand_city'] = city
-            except City.DoesNotExist:
-                raise serializers.ValidationError({"brand_city": BaseMsg.NOT_EXIST})
-
-            try:
-                district = District.objects.get(id=validate_data['brand_district'])
-                validate_data['brand_district'] = district
+                return District.objects.get(id=value)
             except District.DoesNotExist:
                 raise serializers.ValidationError({"brand_district": BaseMsg.NOT_EXIST})
+        return value
 
+    @classmethod
+    def validate_brand_city(cls, value):
+        if value:
             try:
-                ward = Ward.objects.get(id=validate_data['brand_ward'])
-                validate_data['brand_ward'] = ward
+                return City.objects.get(id=value)
+            except City.DoesNotExist:
+                raise serializers.ValidationError({"brand_city": BaseMsg.NOT_EXIST})
+        return value
+
+    @classmethod
+    def validate_brand_ward(cls, value):
+        if value:
+            try:
+                return Ward.objects.get(id=value)
             except Ward.DoesNotExist:
                 raise serializers.ValidationError({"brand_ward": BaseMsg.NOT_EXIST})
+        return value
+
+    def validate(self, validate_data):
+        if validate_data.get('is_brand', False):
+            if not validate_data.get('brand_name', None):
+                raise serializers.ValidationError({"brand_name": BaseMsg.REQUIRED})
+            if not validate_data.get('brand_full_address', None):
+                raise serializers.ValidationError({"brand_full_address": BaseMsg.REQUIRED})
+        return validate_data
 
 
 class BankAccountDetailSerializer(serializers.ModelSerializer):
@@ -365,6 +430,7 @@ class BankAccountDetailSerializer(serializers.ModelSerializer):
     brand_city = serializers.SerializerMethodField()
     brand_district = serializers.SerializerMethodField()
     brand_ward = serializers.SerializerMethodField()
+    currency = serializers.SerializerMethodField()
 
     class Meta:
         model = BankAccount
@@ -382,15 +448,14 @@ class BankAccountDetailSerializer(serializers.ModelSerializer):
             'brand_ward',
             'brand_address',
             'brand_full_address',
-            'head_address'
+            'currency'
         )
 
     @classmethod
     def get_bank_abbreviation(cls, obj):
         return {
             'id': obj.bank_abbreviation.id,
-            'vietnamese_name': obj.bank_abbreviation.vietnamese_name,
-            'english_name': obj.bank_abbreviation.english_name,
+            'abbreviation': obj.bank_abbreviation.abbreviation
         }
 
     @classmethod
@@ -420,3 +485,10 @@ class BankAccountDetailSerializer(serializers.ModelSerializer):
             'id': obj.brand_ward.id,
             'title': obj.brand_ward.title,
         } if obj.brand_ward else {}
+
+    @classmethod
+    def get_currency(cls, obj):
+        return {
+            'id': obj.currency.id,
+            'title': obj.currency.title,
+        } if obj.currency else {}
