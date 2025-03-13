@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models.product import (
     ProductType, Product, UnitOfMeasure
 )
 from apps.masterdata.saledata.models.price import (
-    UnitOfMeasureGroup
+    UnitOfMeasureGroup, Tax, TaxCategory
 )
 from apps.masterdata.saledata.models.accounts import (
     Account, AccountCreditCards, AccountActivity
@@ -21,7 +21,7 @@ from apps.core.workflow.models import (
 )
 from apps.masterdata.saledata.models import (
     ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, DocumentType,
-    FixedAssetClassificationGroup, FixedAssetClassification,
+    FixedAssetClassificationGroup, FixedAssetClassification, Salutation, AccountGroup, Industry,
 )
 from . import MediaForceAPI, DisperseModel
 
@@ -1293,3 +1293,189 @@ def update_serial_status():
         pw_serial.serial_status = 1
         pw_serial.save(update_fields=['serial_status'])
     print('update_serial_status done.')
+class DefaultSaleDataHandler:
+    Salutation_data = [
+        {'code': 'SA001', 'title': 'Anh', 'is_default': 1},
+        {'code': 'SA002', 'title': 'Chị', 'is_default': 1},
+        {'code': 'SA003', 'title': 'Ông', 'is_default': 1},
+        {'code': 'SA004', 'title': 'Bà', 'is_default': 1}
+    ]
+    Account_groups_data = [
+        {'code': 'AG001', 'title': 'Khách lẻ', 'is_default': 1},
+        {'code': 'AG002', 'title': 'VIP1', 'is_default': 1},
+        {'code': 'AG003', 'title': 'VIP2', 'is_default': 1},
+    ]
+    Industries_data = [
+        {'code': 'IN001', 'title': 'Dịch vụ', 'is_default': 1},
+        {'code': 'IN002', 'title': 'Sản xuất', 'is_default': 1},
+        {'code': 'IN003', 'title': 'Phân phối', 'is_default': 1},
+        {'code': 'IN004', 'title': 'Bán lẻ', 'is_default': 1},
+        {'code': 'IN005', 'title': 'Giáo dục', 'is_default': 1},
+        {'code': 'IN006', 'title': 'Y tế', 'is_default': 1},
+    ]
+    UOM_data = [
+        {'code': 'UOM001', 'title': 'Cái', 'is_referenced_unit': 1, 'is_default': 1},
+        {'code': 'UOM002', 'title': 'Con', 'is_default': 1},
+        {'code': 'UOM003', 'title': 'Thanh', 'is_default': 1},
+        {'code': 'UOM004', 'title': 'Lần', 'is_default': 1},
+        {'code': 'UOM005', 'title': 'Gói', 'is_default': 1},
+    ]
+    Tax_data = [
+        {'code': 'VAT_KCT', 'title': 'VAT-KCT', 'tax_type': 2, 'rate': 0, 'is_default': 1},
+        {'code': 'VAT_0', 'title': 'VAT-0', 'tax_type': 2, 'rate': 0, 'is_default': 1},
+        {'code': 'VAT_5', 'title': 'VAT-5', 'tax_type': 2, 'rate': 5, 'is_default': 1},
+        {'code': 'VAT_8', 'title': 'VAT-8', 'tax_type': 2, 'rate': 8, 'is_default': 1},
+        {'code': 'VAT_10', 'title': 'VAT-10', 'tax_type': 2, 'rate': 10, 'is_default': 1},
+    ]
+
+    def __init__(self):
+        company_list = Company.objects.all()
+        self.company_list = company_list
+
+    def create_default_master_data(self):
+        import logging
+        from django.db import transaction
+        logger = logging.getLogger(__name__)
+
+        try:
+            with transaction.atomic():
+                self.create_salutation()
+                self.create_account_groups()
+                self.create_industry()
+                self.create_uom()
+                self.create_tax()
+            return True
+        except Exception as err:
+            logger.error('Error create default data', err)
+        return False
+
+    def create_salutation(self):
+        for company_obj in self.company_list:
+            objs = []
+            for item in self.Salutation_data:
+                if not Salutation.objects.filter(
+                        tenant=company_obj.tenant,
+                        company=company_obj,
+                        code=item['code']
+                ).exists():
+                    objs.append(Salutation(tenant=company_obj.tenant, company=company_obj, **item))
+
+            if objs:
+                Salutation.objects.bulk_create(objs)
+            print(f'Default salutation created for company {company_obj.title}')
+        print('Create default salutation finished')
+
+    def create_account_groups(self):
+        for company_obj in self.company_list:
+            objs = []
+            for item in self.Account_groups_data:
+                if not AccountGroup.objects.filter(
+                        tenant=company_obj.tenant,
+                        company=company_obj,
+                        code=item['code']
+                ).exists():
+                    objs.append(AccountGroup(tenant=company_obj.tenant, company=company_obj, **item))
+
+            if objs:
+                AccountGroup.objects.bulk_create(objs)
+            print(f'Default account group created for company {company_obj.title}')
+        print('Create default account group finished')
+
+    def create_industry(self):
+        for company_obj in self.company_list:
+            objs = []
+            for item in self.Industries_data:
+                if not Industry.objects.filter(
+                        tenant=company_obj.tenant,
+                        company=company_obj,
+                        code=item['code']
+                ).exists():
+                    objs.append(Industry(tenant=company_obj.tenant, company=company_obj, **item))
+
+            if objs:
+                Industry.objects.bulk_create(objs)
+            print(f'Default industry created for company {company_obj.title}')
+        print('Create default industry finished')
+
+    def create_uom(self):
+        for company_obj in self.company_list:
+            unit_uom_group = UnitOfMeasureGroup.objects.filter(
+                tenant=company_obj.tenant,
+                company=company_obj,
+                code='Unit'
+            ).first()
+            if unit_uom_group:
+                objs = []
+                for item in self.UOM_data:
+                    if not UnitOfMeasure.objects.filter(
+                            tenant=company_obj.tenant,
+                            company=company_obj,
+                            code=item['code']
+                    ).exists():
+                        objs.append(
+                            UnitOfMeasure(
+                                tenant=company_obj.tenant,
+                                company=company_obj,
+                                group=unit_uom_group,
+                                **item
+                            )
+                        )
+
+                if objs:
+                    UnitOfMeasure.objects.bulk_create(objs)
+                print(f'Default uom created for company {company_obj.title}')
+        print('Create default uom finished')
+
+    def create_tax(self):
+        for company_obj in self.company_list:
+            vat_tax_category = TaxCategory.objects.filter(
+                tenant=company_obj.tenant,
+                company=company_obj,
+                code='TC001'
+            ).first()
+            if vat_tax_category:
+                objs = []
+                for item in self.Tax_data:
+                    if not Tax.objects.filter(
+                            tenant=company_obj.tenant,
+                            company=company_obj,
+                            code=item['code']
+                    ).exists():
+                        objs.append(Tax(tenant=company_obj.tenant, company=company_obj, category=vat_tax_category, **item))
+
+                if objs:
+                    Tax.objects.bulk_create(objs)
+                print(f'Default tax created for company {company_obj.title}')
+        print('Create default tax finished')
+
+    def update_code_document_type(self):
+        code_mapping = {
+            "DOCTYPE01": "BDT001",
+            "DOCTYPE02": "BDT002",
+            "DOCTYPE03": "BDT003",
+            "DOCTYPE04": "BDT004",
+            "DOCTYPE05": "BDT005",
+            "DOCTYPE06": "BDT006",
+            "DOCTYPE07": "BDT007",
+            "DOCTYPE08": "BDT008",
+            "DOCTYPE09": "CDT001",
+            "DOCTYPE10": "CDT002",
+            "DOCTYPE11": "CDT003",
+            "DOCTYPE12": "CDT004",
+            "DOCTYPE13": "CDT005",
+            "DOCTYPE14": "CDT006",
+            "DOCTYPE15": "CDT007",
+        }
+
+        document_types = DocumentType.objects.filter(code__in=code_mapping.keys())
+
+        updated_objects = []
+        for doc in document_types:
+            if doc.code in code_mapping:
+                doc.code = code_mapping[doc.code]
+                updated_objects.append(doc)
+
+        if updated_objects:
+            DocumentType.objects.bulk_update(updated_objects, ["code"])
+
+        print('Document type code updated')

@@ -10,7 +10,8 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 __all__ = [
     'FixedAssetClassificationGroupList',
     'FixedAssetClassificationList',
-    'ToolClassificationList'
+    'ToolClassificationList',
+    'ToolClassificationDetail'
 ]
 
 class FixedAssetClassificationGroupList(BaseListMixin):
