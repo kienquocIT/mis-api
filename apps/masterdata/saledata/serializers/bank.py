@@ -342,6 +342,8 @@ class BankAccountUpdateSerializer(serializers.ModelSerializer):
     brand_district = serializers.UUIDField(required=False)
     brand_city = serializers.UUIDField(required=False)
     brand_ward = serializers.UUIDField(required=False)
+    brand_full_address = serializers.CharField(required=False, allow_blank=True)
+    brand_address = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = BankAccount
