@@ -1582,7 +1582,7 @@ class AccountGroupTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'code', 'title', 'description', 'is_default'],
+            ['id', 'code', 'title', 'description'],
             check_sum_second=True,
         )
         return response
@@ -1755,7 +1755,7 @@ class IndustryTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'description', 'is_default'],
+            ['id', 'title', 'code', 'description'],
             check_sum_second=True,
         )
         return response
@@ -1864,7 +1864,7 @@ class IndustryTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'description', 'is_default'],
+            ['id', 'title', 'code', 'description'],
             check_sum_second=True,
         )
         if not data_id:
