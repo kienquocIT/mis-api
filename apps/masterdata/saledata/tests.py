@@ -1695,7 +1695,7 @@ class AccountGroupTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'title', 'code', 'description'],
+            ['id', 'title', 'code', 'description', 'is_default'],
             check_sum_second=True,
         )
         return response
