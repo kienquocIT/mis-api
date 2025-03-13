@@ -1,3 +1,4 @@
+import logging
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -38,6 +39,9 @@ VALUATION_METHOD = [
     (2, _('Specific identification method'))
 ]
 
+logger = logging.getLogger(__name__)
+
+
 # Create your models here.
 class ProductType(MasterDataAbstractModel):  # noqa
     description = models.CharField(blank=True, max_length=200)
@@ -69,6 +73,7 @@ class ProductType(MasterDataAbstractModel):  # noqa
 
 class ProductCategory(MasterDataAbstractModel):
     description = models.CharField(blank=True, max_length=200)
+    is_default = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'ProductCategory'
@@ -266,6 +271,10 @@ class Product(DataAbstractModel):
     )
     available_notify = models.BooleanField(default=False)
     available_notify_quantity = models.IntegerField(null=True)
+    account_deter_referenced_by = models.SmallIntegerField(
+        choices=[(0, _('Warehouse')), (1, _('Product type')), (2, _('This product'))],
+        default=0
+    )
 
     class Meta:
         verbose_name = 'Product'
@@ -410,6 +419,38 @@ class Product(DataAbstractModel):
                             'value': opening_value_list_obj.opening_balance_value,
                         })
         return unit_cost_list
+
+    def get_account_determination(self, account_deter_title, warehouse_id=None):
+        """
+            Lấy danh sách TK kế toán được xác định cho Sản Phẩm này:
+            - Luôn luôn truyền account_deter_title: str
+            - Nếu tham chiếu theo Kho (0): cần truyền 'warehouse_id'
+            - Nếu tham chiếu theo Loại SP (1): không cần truyền tham số gì, tự động lấy theo product type của SP
+            - Nếu xác định theo chính SP đó (2): không cần truyền tham số gì, t động lấy theo SP
+            Returns: obj hoặc None nếu không tìm thấy dữ liệu
+        """
+        account_deter_referenced_by = self.account_deter_referenced_by
+        if account_deter_title:
+            if account_deter_referenced_by == 0:
+                warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
+                if warehouse_obj:
+                    return warehouse_obj.wh_account_deter_warehouse_mapped.filter(
+                        title=account_deter_title
+                    ).first()
+                logger.error(msg='Get account deter by warehouse, but no warehouse found!')
+            elif account_deter_referenced_by == 1:
+                prd_type_list = self.general_product_types_mapped.all()
+                if prd_type_list.count() == 1:
+                    prd_type_obj = prd_type_list.first()
+                    return prd_type_obj.prd_type_account_deter_product_type_mapped.filter(
+                        title=account_deter_title
+                    ).first()
+                logger.error(msg='Get account deter by product type, but there are more than 1 product type found!')
+            elif account_deter_referenced_by == 2:
+                return self.prd_account_deter_product_mapped.filter(
+                    title=account_deter_title
+                ).first()
+        return None
 
     def save(self, *args, **kwargs):
         if 'update_stock_info' in kwargs:

@@ -1,0 +1,9 @@
+*.py
+!manage.py
+*.pyc
+__pycache__/
+*.pyo
+*.so
+*.c
+.env
+venv

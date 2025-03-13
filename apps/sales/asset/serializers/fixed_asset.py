@@ -110,6 +110,9 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
     asset_sources = AssetSourcesCreateSerializer(many=True)
     increase_fa_list = serializers.JSONField(required=False)
     asset_code = serializers.CharField(required=False)
+    original_cost = serializers.FloatField()
+    net_book_value = serializers.FloatField()
+    depreciation_value = serializers.FloatField()
 
     class Meta:
         model = FixedAsset
@@ -173,6 +176,24 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
                 raise serializers.ValidationError({"asset_code": FixedAssetMsg.CODE_EXIST})
             return value
         raise serializers.ValidationError({"asset_code": BaseMsg.REQUIRED})
+
+    @classmethod
+    def validate_original_cost(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({"original_cost": FixedAssetMsg.VALUE_MUST_BE_POSITIVE})
+        return value
+
+    @classmethod
+    def validate_net_book_value(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({"net_book_value": FixedAssetMsg.VALUE_MUST_BE_POSITIVE})
+        return value
+
+    @classmethod
+    def validate_depreciation_value(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({"depreciation_value": FixedAssetMsg.VALUE_MUST_BE_POSITIVE})
+        return value
 
     def validate(self, validate_data):
         depreciation_value = validate_data.get('depreciation_value')
@@ -342,6 +363,7 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
     def get_fa_status(cls, obj):
         return obj.get_status_display()
 
+
 class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
     classification = serializers.UUIDField()
     product = serializers.UUIDField()
@@ -352,6 +374,9 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
     asset_sources = AssetSourcesCreateSerializer(many=True)
     increase_fa_list = serializers.JSONField(required=False)
     asset_code = serializers.CharField(required=False)
+    original_cost = serializers.FloatField()
+    net_book_value = serializers.FloatField()
+    depreciation_value = serializers.FloatField()
 
     class Meta:
         model = FixedAsset
@@ -415,6 +440,24 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
                 raise serializers.ValidationError({"asset_code": FixedAssetMsg.CODE_EXIST})
             return value
         raise serializers.ValidationError({"asset_code": BaseMsg.REQUIRED})
+
+    @classmethod
+    def validate_original_cost(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({"original_cost": FixedAssetMsg.VALUE_MUST_BE_POSITIVE})
+        return value
+
+    @classmethod
+    def validate_net_book_value(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({"net_book_value": FixedAssetMsg.VALUE_MUST_BE_POSITIVE})
+        return value
+
+    @classmethod
+    def validate_depreciation_value(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({"depreciation_value": FixedAssetMsg.VALUE_MUST_BE_POSITIVE})
+        return value
 
     def validate(self, validate_data):
         depreciation_value = validate_data.get('depreciation_value')

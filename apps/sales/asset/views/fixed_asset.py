@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.asset.models import FixedAsset
@@ -20,6 +21,13 @@ class FixedAssetList(BaseListMixin, BaseCreateMixin):
     serializer_detail = FixedAssetDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        # get fixed assets that haven't been written off
+        return super().get_queryset().filter(
+            Q(fixed_asset_write_off__isnull=True) |
+            Q(fixed_asset_write_off__isnull=False, fixed_asset_write_off__system_status=0)
+        )
 
     @swagger_auto_schema(
         operation_summary="Fixed Asset List",

@@ -20,6 +20,9 @@ class InstrumentToolWriteOffList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('quantities')
+
     @swagger_auto_schema(
         operation_summary="Instrument Tool Writeoff List",
         operation_description="Get Instrument Tool Writeoff List",

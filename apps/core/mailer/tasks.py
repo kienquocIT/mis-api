@@ -642,3 +642,94 @@ def send_mail_new_project_member(tenant_id, company_id, prj_owner, prj_member, p
             return 'TEMPLATE_HAS_NOT_CONTENTS_VALUE OR USER_EMAIL_IS_NOT_CORRECT'
         return 'MAIL_CONFIG_DEACTIVATE'
     return obj_got
+
+
+@shared_task
+def send_mail_new_contract_submit(
+        tenant_id, company_id, assignee_id, employee_created_id, contract_id, signature_runtime_id
+):
+    obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=None, system_code=8)
+
+    if not (isinstance(obj_got, list) and len(obj_got) == 3):
+        return obj_got
+
+    config_obj, template_obj, _ = obj_got
+
+    cls = SendMailController(mail_config=config_obj, timeout=3)
+
+    if not cls.is_active or not template_obj:
+        return 'MAIL_CONFIG_DEACTIVATE'
+
+    assignee = get_employee_obj(employee_id=assignee_id, tenant_id=tenant_id, company_id=company_id)
+    employee_created = get_employee_obj(employee_id=employee_created_id, tenant_id=tenant_id, company_id=company_id)
+
+    if not (assignee and assignee.email and employee_created and employee_created.email and template_obj.contents):
+        return 'TEMPLATE_HAS_NOT_CONTENTS_VALUE OR USER_EMAIL_IS_NOT_CORRECT'
+
+    subject = template_obj.subject or 'New request signing to contract'
+
+    log_cls = MailLogController(
+        tenant_id=tenant_id, company_id=company_id,
+        system_code=8, doc_id=contract_id, subject=subject
+    )
+
+    if not log_cls.create():
+        return 'SEND_FAILURE'
+
+    state_send = mail_request_signing(
+        cls=cls, log_cls=log_cls,
+        tenant_id=tenant_id, subject=subject,
+        assignee=assignee, employee_created=employee_created,
+        contract_id=contract_id, template_obj=template_obj,
+        signature_runtime_id=signature_runtime_id
+    )
+
+    log_cls.update(status_code=1 if state_send else 2, status_remark=state_send)
+    log_cls.save()
+
+    return 'Success' if state_send else 'SEND_FAILURE'
+
+
+def mail_request_signing(cls, log_cls, **kwargs):
+    tenant_id = kwargs.get('tenant_id', None)
+    subject = kwargs.get('subject', None)
+    assignee = kwargs.get('assignee', None)
+    employee_created = kwargs.get('employee_created', None)
+    contract = kwargs.get('contract_id', None)
+    template_obj = kwargs.get('template_obj', None)
+    signature_runtime_id = kwargs.get('signature_runtime_id', None)
+
+    tenant_obj = DisperseModel(app_model='tenant.Tenant').get_model().objects.filter(pk=tenant_id).first()
+    contract_obj = DisperseModel(app_model='employeeinfo.EmployeeContract').get_model().objects.filter(
+        pk=contract
+    ).first()
+    log_cls.update(
+        address_sender=cls.from_email if cls.from_email else '',
+    )
+    log_cls.update_employee_to(employee_to=[], address_to_init=[assignee.email])
+    log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
+    log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
+    log_cls.update_log_data(host=cls.host, port=cls.port)
+    try:
+        state_send = cls.setup(
+            subject=subject,
+            from_email=cls.kwargs['from_email'],
+            mail_cc=cls.kwargs['cc_email'],
+            bcc=cls.kwargs['bcc_email'],
+            header={},
+            reply_to=cls.kwargs['reply_email'],
+        ).send(
+            as_name='No Reply',
+            mail_to=[assignee.email],
+            mail_cc=[],
+            mail_bcc=[],
+            template=template_obj.contents,
+            data=MailDataResolver.new_contract(
+                tenant_obj=tenant_obj, assignee=assignee, employee_created=employee_created, contract=contract_obj,
+                signature_runtime=signature_runtime_id
+            ),
+        )
+    except Exception as err:
+        state_send = False
+        log_cls.update(errors_data=str(err))
+    return state_send

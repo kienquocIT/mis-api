@@ -13,7 +13,7 @@ from apps.shared import BaseListMixin, BaseCreateMixin, mask_view
 # Create your views here.
 class ChartOfAccountsList(BaseListMixin, BaseCreateMixin):
     queryset = ChartOfAccounts.objects
-    search_fields = ['title', 'code']
+    search_fields = ['acc_code', 'acc_name', 'foreign_acc_name']
     serializer_list = ChartOfAccountsListSerializer
     serializer_create = ChartOfAccountsCreateSerializer
     serializer_detail = ChartOfAccountsDetailSerializer

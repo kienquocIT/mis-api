@@ -19,7 +19,7 @@ __all__= [
 
 class InstrumentToolWriteOffListSerializer(AbstractListSerializerModel):
     type = serializers.SerializerMethodField()
-
+    quantity = serializers.SerializerMethodField()
     class Meta:
         model = InstrumentToolWriteOff
         fields = (
@@ -28,13 +28,20 @@ class InstrumentToolWriteOffListSerializer(AbstractListSerializerModel):
             'title',
             'document_date',
             'posting_date',
-            'type'
+            'type',
+            'quantity'
         )
 
     @classmethod
     def get_type(cls, obj):
         return obj.get_type_display()
 
+    @classmethod
+    def get_quantity(cls, obj):
+        total_quantity = 0
+        for quantity in obj.quantities.all():
+            total_quantity += quantity.write_off_quantity
+        return total_quantity
 
 class InstrumentToolListCreateSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(required=False)

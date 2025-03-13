@@ -332,6 +332,7 @@ class ProductTestCase(AdvanceTestCase):
                 'purchase_information',
                 'product_choice',
                 'product_warehouse_detail',
+                'account_deter_referenced_by',
                 # Transaction information
                 'stock_amount',
                 'wait_delivery_amount',
@@ -420,6 +421,7 @@ class ProductTestCase(AdvanceTestCase):
                 'purchase_information',
                 'product_choice',
                 'product_warehouse_detail',
+                'account_deter_referenced_by',
                 # Transaction information
                 'stock_amount',
                 'wait_delivery_amount',
@@ -550,8 +552,9 @@ class SalutationTestCase(AdvanceTestCase):
             all_key_from=response.data,
             type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
         )
+        # 1 from test_create_new, 4 from signal
         self.assertEqual(
-            len(response.data['result']), 1
+            len(response.data['result']), 5
         )
         self.assertCountEqual(
             response.data['result'][0],
@@ -791,8 +794,9 @@ class UoMTestCase(AdvanceTestCase):
             all_key_from=response.data,
             type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
         )
+        # 1 form test_create_new, 8 from signal
         self.assertEqual(
-            len(response.data['result']), 4
+            len(response.data['result']), 9
         )
         self.assertCountEqual(
             response.data['result'][0],
@@ -1136,8 +1140,9 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             all_key_from=response.data,
             type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
         )
+        # 1 from test_create_new, 5 from signal
         self.assertEqual(
-            len(response.data['result']), 1
+            len(response.data['result']), 6
         )
         self.assertCountEqual(
             response.data['result'][0],
@@ -1684,8 +1689,9 @@ class AccountGroupTestCase(AdvanceTestCase):
             all_key_from=response.data,
             type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
         )
+        # 1 from test_create_new, 3 from signal
         self.assertEqual(
-            len(response.data['result']), 1
+            len(response.data['result']), 4
         )
         self.assertCountEqual(
             response.data['result'][0],
@@ -1829,8 +1835,9 @@ class IndustryTestCase(AdvanceTestCase):
             all_key_from=response.data,
             type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
         )
+        # 1 from test_create_new, 6 from signal
         self.assertEqual(
-            len(response.data['result']), 1
+            len(response.data['result']), 7
         )
         self.assertCountEqual(
             response.data['result'][0],

@@ -3,7 +3,7 @@ from apps.accounting.accountingsettings.models.account_masterdata_models import 
 from apps.shared import MasterDataAbstractModel
 
 __all__ = [
-    'WarehouseAccountDetermination',
+    'WarehouseAccountDetermination'
 ]
 
 
@@ -18,8 +18,11 @@ class WarehouseAccountDetermination(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='wh_account_deter_account_mapped'
     )
+    account_mapped_data = models.JSONField(default=dict)
+    # {'id', 'acc_code', 'acc_name', 'foreign_acc_name'}
     account_determination_type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DETERMINATION_TYPE, default=0)
-    is_change = models.BooleanField(default=False, help_text='True if user has change default account determination')
+    can_change_account = models.BooleanField(default=False)
+    is_changed = models.BooleanField(default=False, help_text='True if user has change default account determination')
 
     class Meta:
         verbose_name = 'Warehouse Account Determination'
