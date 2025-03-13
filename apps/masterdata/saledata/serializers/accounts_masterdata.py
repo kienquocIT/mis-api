@@ -86,7 +86,7 @@ class AccountGroupCreateSerializer(serializers.ModelSerializer):
 class AccountGroupDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountGroup
-        fields = ('id', 'title', 'code', 'description', 'is_default')
+        fields = ('id', 'title', 'code', 'description')
 
 
 class AccountGroupUpdateSerializer(serializers.ModelSerializer):

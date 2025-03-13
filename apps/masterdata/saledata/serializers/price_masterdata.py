@@ -118,7 +118,7 @@ class TaxDetailSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Tax
-        fields = ('id', 'code', 'title', 'rate', 'category', 'tax_type', 'is_default')
+        fields = ('id', 'code', 'title', 'rate', 'category', 'tax_type')
 
     @classmethod
     def get_category(cls, obj):
