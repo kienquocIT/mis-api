@@ -1,6 +1,5 @@
 from django.urls import path
 
-from apps.masterdata.saledata.views.asset import ToolClassificationDetail
 from apps.masterdata.saledata.views.contacts import (
     SalutationList, SalutationDetail, InterestsList, InterestsDetail, ContactList, ContactDetail,
     ContactListNotMapAccount,
@@ -29,7 +28,8 @@ from apps.masterdata.saledata.views import (
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
     WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail,
     RevenuePlanConfigList, PriceListItemListImportDB, DocumentTypeList, DocumentTypeDetail,
-    FixedAssetClassificationList, FixedAssetClassificationGroupList, ToolClassificationList
+    FixedAssetClassificationList, FixedAssetClassificationGroupList, ToolClassificationList, BankList, BankDetail,
+    BankAccountDetail, BankAccountList, ToolClassificationDetail
 )
 from apps.masterdata.saledata.views.warehouse import (
     ProductWareHouseLotList, ProductWareHouseSerialList,
@@ -212,4 +212,12 @@ urlpatterns += [
          name='ToolClassificationList'),
     path('tool/classification/detail/<str:pk>', ToolClassificationDetail.as_view(),
          name='ToolClassificationDetail'),
+]
+
+# bank
+urlpatterns += [
+    path('bank/list', BankList.as_view(), name='BankList'),
+    path('bank/detail/<str:pk>', BankDetail.as_view(), name='BankDetail'),
+    path('bank-account/list', BankAccountList.as_view(), name='BankAccountList'),
+    path('bank-account/detail/<str:pk>', BankAccountDetail.as_view(), name='BankAccountDetail'),
 ]
