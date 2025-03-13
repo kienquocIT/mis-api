@@ -165,46 +165,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'general_product_uom_group': ProductMsg.UOM_GROUP_NOT_EXIST})
 
     @classmethod
-    def validate_width(cls, value):
-        if value:
-            if float(value) <= 0:
-                raise serializers.ValidationError({'width': ProductMsg.W_IS_WRONG})
-            return value
-        return None
-
-    @classmethod
-    def validate_height(cls, value):
-        if value:
-            if float(value) <= 0:
-                raise serializers.ValidationError({'height': ProductMsg.H_IS_WRONG})
-            return value
-        return None
-
-    @classmethod
-    def validate_length(cls, value):
-        if value:
-            if float(value) <= 0:
-                raise serializers.ValidationError({'length': ProductMsg.L_IS_WRONG})
-            return value
-        return None
-
-    @classmethod
-    def validate_volume(cls, value):
-        if value:
-            if float(value) <= 0:
-                raise serializers.ValidationError({'volume': ProductMsg.VLM_IS_WRONG})
-            return value
-        return None
-
-    @classmethod
-    def validate_weight(cls, value):
-        if value:
-            if float(value) <= 0:
-                raise serializers.ValidationError({'weight': ProductMsg.WGT_IS_WRONG})
-            return value
-        return None
-
-    @classmethod
     def validate_available_notify_quantity(cls, value):
         if value:
             if float(value) <= 0:
@@ -293,7 +253,37 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'purchase_tax': ProductMsg.TAX_NOT_EXIST})
         return None
 
+    @classmethod
+    def validate_dimension(cls, value, field_name, error_msg):
+        if value:
+            try:
+                value = float(value)
+                if value <= 0:
+                    raise serializers.ValidationError({field_name: error_msg})
+            except ValueError:
+                raise serializers.ValidationError({field_name: error_msg})
+        else:
+            value = None
+        return value
+
     def validate(self, validate_data):
+        # validate dimension
+        validate_data['width'] = self.validate_dimension(
+            validate_data.get('width'), 'width', ProductMsg.W_IS_WRONG
+        )
+        validate_data['height'] = self.validate_dimension(
+            validate_data.get('height'), 'height', ProductMsg.H_IS_WRONG
+        )
+        validate_data['length'] = self.validate_dimension(
+            validate_data.get('length'), 'length', ProductMsg.L_IS_WRONG
+        )
+        validate_data['volume'] = self.validate_dimension(
+            validate_data.get('volume'), 'volume', ProductMsg.VLM_IS_WRONG
+        )
+        validate_data['weight'] = self.validate_dimension(
+            validate_data.get('weight'), 'weight', ProductMsg.WGT_IS_WRONG
+        )
+        # add sale_currency_using
         primary_crc = Currency.objects.filter_current(fill__tenant=True, fill__company=True, is_primary=True).first()
         if not primary_crc:
             raise serializers.ValidationError({'sale_currency_using': ProductMsg.CURRENCY_NOT_EXIST})
@@ -664,26 +654,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return ProductCreateSerializer.validate_general_uom_group(value)
 
     @classmethod
-    def validate_width(cls, value):
-        return ProductCreateSerializer.validate_width(value)
-
-    @classmethod
-    def validate_height(cls, value):
-        return ProductCreateSerializer.validate_height(value)
-
-    @classmethod
-    def validate_length(cls, value):
-        return ProductCreateSerializer.validate_length(value)
-
-    @classmethod
-    def validate_volume(cls, value):
-        return ProductCreateSerializer.validate_volume(value)
-
-    @classmethod
-    def validate_weight(cls, value):
-        return ProductCreateSerializer.validate_weight(value)
-
-    @classmethod
     def validate_available_notify_quantity(cls, value):
         return ProductCreateSerializer.validate_available_notify_quantity(value)
 
@@ -720,6 +690,22 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return ProductCreateSerializer.validate_purchase_tax(value)
 
     def validate(self, validate_data):
+        # validate dimension
+        validate_data['width'] = ProductCreateSerializer.validate_dimension(
+            validate_data.get('width'), 'width', ProductMsg.W_IS_WRONG
+        )
+        validate_data['height'] = ProductCreateSerializer.validate_dimension(
+            validate_data.get('height'), 'height', ProductMsg.H_IS_WRONG
+        )
+        validate_data['length'] = ProductCreateSerializer.validate_dimension(
+            validate_data.get('length'), 'length', ProductMsg.L_IS_WRONG
+        )
+        validate_data['volume'] = ProductCreateSerializer.validate_dimension(
+            validate_data.get('volume'), 'volume', ProductMsg.VLM_IS_WRONG
+        )
+        validate_data['weight'] = ProductCreateSerializer.validate_dimension(
+            validate_data.get('weight'), 'weight', ProductMsg.WGT_IS_WRONG
+        )
         instance = self.instance
         # kiểm tra trước khi cho phép thay đổi UOM group
         if (str(validate_data.get('general_uom_group').id) != str(instance.general_uom_group_id) and

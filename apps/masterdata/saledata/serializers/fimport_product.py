@@ -95,27 +95,7 @@ class ProductImportListSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'general_uom_group': ProductMsg.UOM_GROUP_NOT_NULL})
 
     @classmethod
-    def validate_width(cls, value):
-        return ProductCreateSerializer.validate_width(value)
-
-    @classmethod
-    def validate_height(cls, value):
-        return ProductCreateSerializer.validate_height(value)
-
-    @classmethod
-    def validate_length(cls, value):
-        return ProductCreateSerializer.validate_length(value)
-
-    @classmethod
-    def validate_volume(cls, value):
-        return ProductCreateSerializer.validate_volume(value)
-
-    @classmethod
-    def validate_weight(cls, value):
-        return ProductCreateSerializer.validate_weight(value)
-
-    def validate(self, validate_data):
-        product_choice = validate_data.get('product_choice', [])
+    def validate_sale_tab_data(cls, product_choice, validate_data):
         if 0 in product_choice:
             # valid sale_default_uom
             if not validate_data.get('sale_default_uom'):
@@ -157,7 +137,10 @@ class ProductImportListSerializer(serializers.ModelSerializer):
             validate_data['sale_default_uom'] = None
             validate_data['sale_tax'] = None
             validate_data['sale_general_price'] = 0
+        return validate_data
 
+    @classmethod
+    def validate_inventory_tab_data(cls, product_choice, validate_data):
         if 1 in product_choice:
             # valid inventory_uom
             if not validate_data.get('inventory_uom'):
@@ -188,7 +171,10 @@ class ProductImportListSerializer(serializers.ModelSerializer):
             validate_data['inventory_uom'] = None
             validate_data['valuation_method'] = 1
             validate_data['standard_price'] = 0
+        return validate_data
 
+    @classmethod
+    def validate_purchase_tab_data(cls, product_choice, validate_data):
         if 2 in product_choice:
             # valid purchase_default_uom
             if not validate_data.get('purchase_default_uom'):
@@ -221,6 +207,30 @@ class ProductImportListSerializer(serializers.ModelSerializer):
             validate_data['purchase_default_uom'] = None
             validate_data['purchase_tax'] = None
             validate_data['supplied_by'] = 0
+        return validate_data
+
+    def validate(self, validate_data):
+        # validate dimension
+        validate_data['width'] = ProductCreateSerializer.validate_dimension(
+            validate_data.get('width'), 'width', ProductMsg.W_IS_WRONG
+        )
+        validate_data['height'] = ProductCreateSerializer.validate_dimension(
+            validate_data.get('height'), 'height', ProductMsg.H_IS_WRONG
+        )
+        validate_data['length'] = ProductCreateSerializer.validate_dimension(
+            validate_data.get('length'), 'length', ProductMsg.L_IS_WRONG
+        )
+        validate_data['volume'] = ProductCreateSerializer.validate_dimension(
+            validate_data.get('volume'), 'volume', ProductMsg.VLM_IS_WRONG
+        )
+        validate_data['weight'] = ProductCreateSerializer.validate_dimension(
+            validate_data.get('weight'), 'weight', ProductMsg.WGT_IS_WRONG
+        )
+
+        product_choice = validate_data.get('product_choice', [])
+        validate_data = self.validate_sale_tab_data(product_choice, validate_data)
+        validate_data = self.validate_inventory_tab_data(product_choice, validate_data)
+        validate_data = self.validate_purchase_tab_data(product_choice, validate_data)
 
         return validate_data
 
