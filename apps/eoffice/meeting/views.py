@@ -233,14 +233,13 @@ class MeetingScheduleDDList(BaseListMixin):
     serializer_list = MeetingScheduleListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     search_fields = ['title', 'meeting_duration', 'meeting_start_date', 'meeting_start_time']
-    filterset_fields = {}
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related(
-            'meeting_schedule_mapped',
-        ).select_related(
+        params = self.request.query_params
+        queryset = super().get_queryset().select_related(
             'meeting_room_mapped',
         )
+        return queryset.filter(meeting_start_date=params.get('start_date'), meeting_room_mapped=params.get('room'))
 
     @swagger_auto_schema(
         operation_summary="Meeting Schedule DD list",

@@ -72,7 +72,10 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return self.queryset.select_related('parent_n', 'employee_inherit', 'employee_created')
+        return self.queryset.select_related(
+            'parent_n', 'employee_inherit', 'employee_created', 'process', 'process_stage_app', 'task_status',
+            'opportunity', 'project'
+        )
 
     @swagger_auto_schema(
         operation_summary="Opportunity Task Detail",

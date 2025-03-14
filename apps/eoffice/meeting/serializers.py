@@ -514,6 +514,16 @@ class MeetingScheduleUpdateSerializer(serializers.ModelSerializer):
 
 
 class MeetingScheduleCheckSerializer(serializers.ModelSerializer):
+    room_info = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_room_info(cls, obj):
+        return {
+            'id': obj.id,
+            'title': obj.meeting_room_mapped.title,
+            'location': obj.meeting_room_mapped.location
+        } if obj.meeting_room_mapped else None
+
     class Meta:
         model = MeetingSchedule
         fields = (
