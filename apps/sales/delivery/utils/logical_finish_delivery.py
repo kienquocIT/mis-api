@@ -226,43 +226,47 @@ class DeliFinishHandler:
                                 ),
                                 status=2,
                             )
+                            if asset_obj:
+                                asset_obj.system_status = 3
+                                asset_obj.save(update_fields=['system_status'])
+                                asset_json = {
+                                    'asset_id': str(asset_obj.id),
+                                    'asset_data': {
+                                        "id": str(asset_obj.id),
+                                        "code": asset_obj.code,
+                                        "title": asset_obj.title,
+                                        "asset_id": str(asset_obj.id),
+                                        "is_change": asset_obj.is_change,
+                                        "net_value": 0,
+                                        "origin_cost": asset_obj.original_cost,
+                                        "depreciation_time": asset_obj.depreciation_time,
+                                        "depreciation_start_date": str(asset_obj.depreciation_start_date),
+                                        "depreciation_end_date": str(asset_obj.depreciation_end_date),
+                                        "depreciation_data": asset_obj.depreciation_data,
+                                    },
+                                    "product_id": str(delivery_product.product_id),
+                                    "product_data": delivery_product.product_data,
+                                    "uom_time_id": str(delivery_product.uom_time_id),
+                                    "uom_time_data": delivery_product.uom_time_data,
+                                    "product_quantity_time": delivery_product.product_quantity_time,
+                                    "product_depreciation_time": delivery_product.product_depreciation_time,
+                                    "product_depreciation_price": delivery_product.product_depreciation_price,
+                                    "product_depreciation_method": delivery_product.product_depreciation_method,
+                                    "product_depreciation_subtotal": delivery_product.product_depreciation_subtotal,
+                                    "product_depreciation_adjustment": delivery_product.product_depreciation_adjustment,
+                                    "product_depreciation_start_date": str(
+                                        delivery_product.product_depreciation_start_date
+                                    ),
+                                    "product_depreciation_end_date": str(
+                                        delivery_product.product_depreciation_end_date
+                                    ),
 
-                            asset_json = {
-                                'asset_id': str(asset_obj.id),
-                                'asset_data': {
-                                    "id": str(asset_obj.id),
-                                    "code": asset_obj.code,
-                                    "title": asset_obj.title,
-                                    "asset_id": str(asset_obj.id),
-                                    "is_change": asset_obj.is_change,
-                                    "net_value": 0,
-                                    "origin_cost": asset_obj.original_cost,
-                                    "depreciation_time": asset_obj.depreciation_time,
-                                    "depreciation_start_date": str(asset_obj.depreciation_start_date),
-                                    "depreciation_end_date": str(asset_obj.depreciation_end_date),
-                                    "depreciation_data": asset_obj.depreciation_data,
-                                },
-                                "product_id": str(delivery_product.product_id),
-                                "product_data": delivery_product.product_data,
-                                "uom_time_id": str(delivery_product.uom_time_id),
-                                "uom_time_data": delivery_product.uom_time_data,
-                                "product_quantity_time": delivery_product.product_quantity_time,
-                                "product_depreciation_time": delivery_product.product_depreciation_time,
-                                "product_depreciation_price": delivery_product.product_depreciation_price,
-                                "product_depreciation_method": delivery_product.product_depreciation_method,
-                                "product_depreciation_subtotal": delivery_product.product_depreciation_subtotal,
-                                "product_depreciation_adjustment": delivery_product.product_depreciation_adjustment,
-                                "product_depreciation_start_date": str(
-                                    delivery_product.product_depreciation_start_date
-                                ),
-                                "product_depreciation_end_date": str(delivery_product.product_depreciation_end_date),
+                                    "product_lease_end_date": str(delivery_product.product_lease_end_date),
+                                    "product_lease_start_date": str(delivery_product.product_lease_start_date),
 
-                                "product_lease_end_date": str(delivery_product.product_lease_end_date),
-                                "product_lease_start_date": str(delivery_product.product_lease_start_date),
-
-                                "depreciation_data": delivery_product.depreciation_data,
-                            }
-                            asset_data.append(asset_json)
+                                    "depreciation_data": delivery_product.depreciation_data,
+                                }
+                                asset_data.append(asset_json)
                     delivery_product.asset_data = asset_data
                     delivery_product.save(update_fields=['asset_data'])
         return True

@@ -180,6 +180,26 @@ class NormalManager(models.Manager):
             **kwargs
         )
 
+    # Filter data with tenant_id
+    def filter_on_tenant(self, *args, **kwargs):
+        if hasattr(self.model, "is_delete"):
+            kwargs.setdefault("is_delete", False)
+        return EntryQuerySet(self.model, using=self._db).filter_current(
+            *args,
+            fill__tenant=True, fill__company=False,
+            **kwargs
+        )
+
+    # Filter data with tenant_id + company_id
+    def filter_on_company(self, *args, **kwargs):
+        if hasattr(self.model, "is_delete"):
+            kwargs.setdefault("is_delete", False)
+        return EntryQuerySet(self.model, using=self._db).filter_current(
+            *args,
+            fill__tenant=True, fill__company=True,
+            **kwargs
+        )
+
     def get_current(self, *args, **kwargs):
         """
         Support call append currently user data from QuerySet then call self.get()
@@ -198,5 +218,25 @@ class NormalManager(models.Manager):
             *args,
             fill__tenant=fill__tenant, fill__company=fill__company, fill__space=fill__space,
             fill__map_key=fill__map_key,
+            **kwargs
+        )
+
+    # Get data with tenant_id
+    def get_on_tenant(self, *args, **kwargs):
+        if hasattr(self.model, "is_delete"):
+            kwargs.setdefault("is_delete", False)
+        return EntryQuerySet(self.model, using=self._db).get_current(
+            *args,
+            fill__tenant=True, fill__company=False,
+            **kwargs
+        )
+
+    # Get data with tenant_id + company_id
+    def get_on_company(self, *args, **kwargs):
+        if hasattr(self.model, "is_delete"):
+            kwargs.setdefault("is_delete", False)
+        return EntryQuerySet(self.model, using=self._db).get_current(
+            *args,
+            fill__tenant=True, fill__company=True,
             **kwargs
         )
