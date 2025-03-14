@@ -7,7 +7,8 @@ from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = [
     'ChartOfAccounts',
-    'DefaultAccountDetermination'
+    'DefaultAccountDetermination',
+    'DefaultAccountDeterminationSub'
 ]
 
 CHART_OF_ACCOUNT_TYPE = [
