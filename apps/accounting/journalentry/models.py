@@ -2,13 +2,13 @@ import logging
 from django.db import models
 from django.utils import timezone
 from apps.masterdata.saledata.models import Account
-from apps.shared import DataAbstractModel, SimpleAbstractModel, AccountingAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, AutoDocumentAbstractModel
 
 
 logger = logging.getLogger(__name__)
 
 
-class JournalEntry(DataAbstractModel, AccountingAbstractModel):
+class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
     je_transaction_app_code = models.CharField(
         max_length=100,
         verbose_name='Code of application',
