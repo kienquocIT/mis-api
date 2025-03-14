@@ -439,7 +439,7 @@ class Product(DataAbstractModel):
                         foreign_title=account_deter_foreign_title
                     ).first()
                     if account_deter:
-                        return account_deter.wh_account_deter_sub.all()
+                        return [item.account_mapped for item in account_deter.wh_account_deter_sub.all()]
                 logger.error(msg='Get account deter by warehouse, but no warehouse found!')
             elif account_deter_referenced_by == 1:
                 prd_type_list = self.general_product_types_mapped.all()
@@ -449,14 +449,14 @@ class Product(DataAbstractModel):
                         foreign_title=account_deter_foreign_title
                     ).first()
                     if account_deter:
-                        return account_deter.prd_type_account_deter_sub.all()
+                        return [item.account_mapped for item in account_deter.prd_type_account_deter_sub.all()]
                 logger.error(msg='Get account deter by product type, but there are more than 1 product type found!')
             elif account_deter_referenced_by == 2:
                 account_deter = self.prd_account_deter_product_mapped.filter(
                     foreign_title=account_deter_foreign_title
                 ).first()
                 if account_deter:
-                    return account_deter.prd_account_deter_sub.all()
+                    return [item.account_mapped for item in account_deter.prd_account_deter_sub.all()]
         return []
 
     def save(self, *args, **kwargs):

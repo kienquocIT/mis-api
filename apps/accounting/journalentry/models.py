@@ -37,12 +37,10 @@ class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
         - je_transaction_data: data json của phiếu
         - je_item_data: dữ liệu để tạo JE items
         - tenant_id, company_id, employee_created_id: dữ liệu mặc định để tạo JE
-        - je_posting_date: posting_date của phiếu
-        - je_document_date: document_date của phiếu
         """
         required_fields = [
             'je_transaction_app_code', 'je_transaction_id', 'je_transaction_data', 'je_item_data',
-            'tenant_id', 'company_id', 'employee_created_id', 'je_posting_date', 'je_document_date'
+            'tenant_id', 'company_id', 'employee_created_id'
         ]
         missing_fields = [
             field for field in required_fields if field not in kwargs or kwargs[field] is None
@@ -110,8 +108,8 @@ class JournalEntryItem(SimpleAbstractModel):
     taxable_value = models.FloatField(default=0)
     use_for_recon = models.BooleanField(default=False)
     # 'use_for_recon' để biết đc là dòng bút toán này dùng để cấn trừ
-    use_for_recon_order = models.IntegerField(null=True)
-    # 'use_for_recon_order' để biết đc thứ tự làm cấn trừ. VD: bút toán 1 của Hóa đơn >< bút toán 1 của Giao hàng
+    use_for_recon_type = models.CharField(max_length=100, blank=True)
+    # 'use_for_recon_type' để biết đc cặp bút toán làm cấn trừ.
 
     class Meta:
         verbose_name = 'Journal Entry Item'
@@ -150,7 +148,7 @@ class JournalEntryItem(SimpleAbstractModel):
             je_item_type=je_item_type,
             taxable_value=item.get('taxable_value', 0),
             use_for_recon=item.get('use_for_recon', False),
-            use_for_recon_order=item.get('use_for_recon_order', None)
+            use_for_recon_type=item.get('use_for_recon_type', '')
         )
         return je_item_obj
 
