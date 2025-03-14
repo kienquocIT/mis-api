@@ -109,7 +109,9 @@ class JournalEntryItem(SimpleAbstractModel):
     je_item_type = models.SmallIntegerField(choices=[(0, 'Debit'), (1, 'Credit')], default=0)
     taxable_value = models.FloatField(default=0)
     use_for_recon = models.BooleanField(default=False)
+    # 'use_for_recon' để biết đc là dòng bút toán này dùng để cấn trừ
     use_for_recon_order = models.IntegerField(null=True)
+    # 'use_for_recon_order' để biết đc thứ tự làm cấn trừ. VD: bút toán 1 của Hóa đơn >< bút toán 1 của Giao hàng
 
     class Meta:
         verbose_name = 'Journal Entry Item'

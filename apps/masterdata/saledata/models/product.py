@@ -127,6 +127,7 @@ class Product(DataAbstractModel):
     create_from_import = models.BooleanField(default=False)
     import_data_row = models.JSONField(default=dict)
     has_bom = models.BooleanField(default=False)
+    bom_sum_price = models.FloatField(default=0)
     part_number = models.CharField(max_length=150, null=True, blank=True)
     product_choice = models.JSONField(
         default=list,
