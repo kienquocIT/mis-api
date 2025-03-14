@@ -17,15 +17,15 @@ RECON_TYPE = [
 
 
 class Reconciliation(DataAbstractModel, AccountingAbstractModel):
-    type = models.SmallIntegerField(choices=RECON_TYPE, default=0)
-    customer = models.ForeignKey(
+    recon_type = models.SmallIntegerField(choices=RECON_TYPE, default=0)
+    business_partner = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
-        related_name="recon_customer",
+        related_name="recon_business_partner",
         null=True
     )
-    customer_data = models.JSONField(default=dict)
-    # customer_data = {
+    business_partner_data = models.JSONField(default=dict)
+    # business_partner_data = {
     #     'id': uuid,
     #     'code': str,
     #     'title': str
@@ -55,43 +55,54 @@ class ReconciliationItem(SimpleAbstractModel):
     #     'title': str
     # }
     order = models.IntegerField(default=0)
-    ar_invoice = models.ForeignKey(
-        'arinvoice.ARInvoice',
-        on_delete=models.CASCADE,
-        related_name="recon_item_ar_invoice",
-        null=True
+    debit_app_code = models.CharField(
+        max_length=100,
+        verbose_name='Code of debit application',
+        help_text='{app_label}.{model}',
+        null = True
     )
-    ar_invoice_data = models.JSONField(default=dict)
-    # ar_invoice_data = {
+    debit_doc_id = models.UUIDField(verbose_name='Debit document id', null=True)
+    debit_doc_data = models.JSONField(default=dict)
+    # debit_doc_data = {
     #     'id': uuid,
     #     'code': str,
     #     'title': str,
-    #     'type_doc': str,
     #     'document_date': str,
     #     'posting_date': str,
-    #     'sum_total_value': number
     # }
-    cash_inflow = models.ForeignKey(
-        'financialcashflow.CashInflow',
+    debit_account = models.ForeignKey(
+        'accountingsettings.ChartOfAccounts',
         on_delete=models.CASCADE,
-        related_name="recon_item_cash_inflow",
+        related_name='recon_item_debit_account',
         null=True
     )
-    cash_inflow_data = models.JSONField(default=dict)
-    # cash_inflow_data = {
+    debit_account_data = models.JSONField(default=dict)
+    credit_app_code = models.CharField(
+        max_length=100,
+        verbose_name='Code of credit application',
+        help_text='{app_label}.{model}',
+        null=True
+    )
+    credit_doc_id = models.UUIDField(verbose_name='Credit document id', null=True)
+    credit_doc_data = models.JSONField(default=dict)
+    # credit_doc_data = {
     #     'id': uuid,
     #     'code': str,
     #     'title': str,
-    #     'type_doc': str,
     #     'document_date': str,
     #     'posting_date': str,
-    #     'sum_total_value': number
     # }
+    credit_account = models.ForeignKey(
+        'accountingsettings.ChartOfAccounts',
+        on_delete=models.CASCADE,
+        related_name='recon_item_credit_account',
+        null=True
+    )
+    credit_account_data = models.JSONField(default=dict)
+    recon_total = models.FloatField(default=0)
     recon_balance = models.FloatField(default=0)
     recon_amount = models.FloatField(default=0)
     note = models.TextField(blank=True, null=True)
-    # sau này sẽ thay thế bằng obj tài khoản kế toán, hiện tại chỉ lưu text
-    accounting_account = models.CharField(default='1311', max_length=50)
 
     class Meta:
         verbose_name = 'Reconciliation item'

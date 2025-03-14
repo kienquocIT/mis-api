@@ -366,10 +366,6 @@ class CashInflowCommonFunction:
             if validate_data['cash_value'] + validate_data['bank_value'] != validate_data['total_value']:
                 raise serializers.ValidationError({'payment_method': CashInflowMsg.CIF_TOTAL_VALUE_NOT_MATCH})
 
-            # check accounting obj (only text-field in this version)
-            validate_data['accounting_cash_account'] = '1111'
-            validate_data['accounting_bank_account'] = '1121'
-
             if validate_data['bank_value'] > 0:
                 if 'company_bank_account_id' in payment_method_data:
                     try:
@@ -470,8 +466,8 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_payment_value(cls, obj):
-        payment_value = sum(item.recon_amount for item in obj.recon_item_ar_invoice.filter(recon__system_status=1))
-        return payment_value
+        print(obj)
+        return 0
 
     @classmethod
     def get_sale_order_data(cls, obj):

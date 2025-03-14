@@ -3,7 +3,7 @@ from django.db.models import F
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.company.models import Company
-from apps.shared import MasterDataAbstractModel
+from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = [
     'ChartOfAccounts',
@@ -26,6 +26,7 @@ DEFAULT_ACCOUNT_DETERMINATION_TYPE = [
     (0, _('Sale')),
     (1, _('Purchasing')),
     (2, _('Inventory')),
+    (3, _('Fixed, Assets')),
 ]
 
 
@@ -85,16 +86,48 @@ class ChartOfAccounts(MasterDataAbstractModel):
 
 
 class DefaultAccountDetermination(MasterDataAbstractModel):
-    account_mapped = models.ForeignKey(
-        ChartOfAccounts,
-        on_delete=models.CASCADE,
-        related_name='default_account_deter_account'
-    )
+    order = models.IntegerField(default=0)
+    foreign_title = models.CharField(max_length=100, blank=True)
     default_account_determination_type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DETERMINATION_TYPE, default=0)
+    can_change_account = models.BooleanField(default=False)
+    is_changed = models.BooleanField(default=False, help_text='True if user has change default account determination')
+
+    @classmethod
+    def get_default_account_deter_sub_data(cls, tenant_id, company_id, foreign_title):
+        account_deter = DefaultAccountDetermination.objects.filter(
+            tenant_id=tenant_id,
+            company_id=company_id,
+            foreign_title=foreign_title
+        ).first()
+        if account_deter:
+            return account_deter.default_acc_deter_sub.all()
+        return []
 
     class Meta:
         verbose_name = 'Default Account Determination'
         verbose_name_plural = 'Default Account Determination'
-        ordering = ('-date_created',)
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class DefaultAccountDeterminationSub(SimpleAbstractModel):
+    default_acc_deter = models.ForeignKey(
+        DefaultAccountDetermination,
+        on_delete=models.CASCADE,
+        related_name='default_acc_deter_sub'
+    )
+    account_mapped = models.ForeignKey(
+        ChartOfAccounts,
+        on_delete=models.CASCADE,
+        related_name='default_acc_deter_account_mapped'
+    )
+    account_mapped_data = models.JSONField(default=dict)
+    # {'id', 'acc_code', 'acc_name', 'foreign_acc_name'}
+
+    class Meta:
+        verbose_name = 'Default Account Determination Sub'
+        verbose_name_plural = 'Default Account Determination Sub'
+        ordering = ()
         default_permissions = ()
         permissions = ()

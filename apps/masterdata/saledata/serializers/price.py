@@ -450,11 +450,11 @@ class PriceListUpdateItemSerializer(serializers.ModelSerializer):  # noqa
                 if not item_obj:
                     raise serializers.ValidationError({'expense_obj': ProductMsg.EXPENSE_DOES_NOT_EXIST})
             if not uom_obj:
-                raise serializers.ValidationError({'uom_obj': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+                raise serializers.ValidationError({'uom_obj': ProductMsg.UOM_NOT_EXIST})
             if not currency_obj:
-                raise serializers.ValidationError({'currency_obj': ProductMsg.CURRENCY_DOES_NOT_EXIST})
+                raise serializers.ValidationError({'currency_obj': ProductMsg.CURRENCY_NOT_EXIST})
             if not uom_group_obj:
-                raise serializers.ValidationError({'uom_group_obj': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST})
+                raise serializers.ValidationError({'uom_group_obj': ProductMsg.UOM_GROUP_NOT_EXIST})
             if not isinstance(float(item.get('price')), (int, float)):
                 price = 0
             else:
@@ -553,7 +553,7 @@ class PriceListDeleteItemSerializer(serializers.ModelSerializer):  # noqa
         if uom_obj:
             validate_data['uom_obj'] = uom_obj
         else:
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_NOT_EXIST)
+            raise serializers.ValidationError(ProductMsg.UOM_NOT_EXIST)
         return validate_data
 
     def update(self, instance, validated_data):
@@ -593,7 +593,7 @@ class PriceListCreateItemSerializer(serializers.ModelSerializer):
 
         uom_obj = UnitOfMeasure.objects.filter(id=product_data.get('uom')).first()
         if not uom_obj:
-            raise serializers.ValidationError({'uom_obj': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+            raise serializers.ValidationError({'uom_obj': ProductMsg.UOM_NOT_EXIST})
         validate_data['uom_obj'] = uom_obj
 
         return validate_data
@@ -723,14 +723,14 @@ class PriceListItemCreateSerializerImportDB(serializers.ModelSerializer):
             code=product_data.get('uom'), tenant=tenant_current, company=company_current
         ).first()
         if not uom_obj:
-            raise serializers.ValidationError({'uom_obj': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+            raise serializers.ValidationError({'uom_obj': ProductMsg.UOM_NOT_EXIST})
         validate_data['uom_obj'] = uom_obj
 
         currency_obj = Currency.objects.filter(
             abbreviation=product_data.get('currency', '').upper(), tenant=tenant_current, company=company_current
         ).first()
         if not currency_obj:
-            raise serializers.ValidationError({'currency_obj': ProductMsg.CURRENCY_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'currency_obj': ProductMsg.CURRENCY_NOT_EXIST})
         validate_data['currency_obj'] = currency_obj
 
         if prd_obj.general_uom_group_id != uom_obj.group_id:

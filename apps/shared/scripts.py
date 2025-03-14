@@ -37,6 +37,7 @@ from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHol
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
+from ..sales.arinvoice.models import ARInvoice, ARInvoiceItems, ARInvoiceDelivery
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
 from ..sales.delivery.utils import DeliFinishHandler
 from ..sales.inventory.models import (
@@ -1214,6 +1215,61 @@ class SubScripts:
         cls.update_period_cfg_for_all_company()
         cls.update_opp_stage_is_delete_is_default()
         cls.update_product_type_tool_import()
+        return True
+
+    @classmethod
+    def create_data_json_for_ar_invoice(cls):
+        for ar_invoice_obj in ARInvoice.objects.all():
+            customer_mapped = ar_invoice_obj.customer_mapped
+            billing_address = customer_mapped.account_mapped_billing_address.all()
+            bank_account = customer_mapped.account_banks_mapped.all()
+            ar_invoice_obj.customer_mapped_data = {
+                'id': str(customer_mapped.id),
+                'code': customer_mapped.code,
+                'name': customer_mapped.name,
+                'tax_code': customer_mapped.tax_code,
+                'billing_address_id': str(billing_address.first().id) if billing_address.count() > 0 else '',
+                'bank_account_id': str(bank_account.first().id) if bank_account.count() > 0 else '',
+            } if customer_mapped else {}
+            sale_order_mapped = ar_invoice_obj.sale_order_mapped
+            ar_invoice_obj.sale_order_mapped_data = {
+                'id': str(sale_order_mapped.id),
+                'code': sale_order_mapped.code,
+                'title': sale_order_mapped.title,
+                'sale_order_payment_stage': sale_order_mapped.sale_order_payment_stage
+            } if sale_order_mapped else {}
+            ar_invoice_obj.save(update_fields=['customer_mapped_data', 'sale_order_mapped_data'])
+        for item in ARInvoiceItems.objects.all():
+            product_obj = item.product
+            item.product_data = {
+                'id': str(product_obj.id),
+                'code': product_obj.code,
+                'title': product_obj.title,
+                'des': product_obj.description,
+            } if product_obj else {}
+            uom_obj = item.product_uom
+            item.product_uom_data = {
+                'id': str(uom_obj.id),
+                'code': uom_obj.code,
+                'title': uom_obj.title,
+                'group_id': str(uom_obj.group_id)
+            } if uom_obj else {}
+            tax_obj = item.product_tax
+            item.product_tax_data = {
+                'id': str(tax_obj.id),
+                'code': tax_obj.code,
+                'title': tax_obj.title,
+                'rate': tax_obj.rate,
+            } if tax_obj else {}
+            item.save(update_fields=['product_data', 'product_uom_data', 'product_tax_data'])
+        for item in ARInvoiceDelivery.objects.all():
+            delivery_obj = item.delivery_mapped
+            item.delivery_mapped_data = {
+                'id': str(delivery_obj.id),
+                'code': delivery_obj.code
+            } if delivery_obj else {}
+            item.save(update_fields=['delivery_mapped_data'])
+        print('Done :))')
         return True
 
 

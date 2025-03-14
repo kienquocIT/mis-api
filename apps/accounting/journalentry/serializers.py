@@ -64,7 +64,7 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
                 'id': item.id,
                 'order': item.order,
                 'account_data': item.account_data,
-                'business_partner_data' : item.business_partner_data,
+                'business_partner_data': item.business_partner_data,
                 'debit': item.debit,
                 'credit': item.credit,
                 'is_fc': item.is_fc,

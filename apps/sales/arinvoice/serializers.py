@@ -8,6 +8,7 @@ import requests
 from rest_framework import serializers
 from apps.core.recurrence.models import Recurrence
 from apps.core.workflow.tasks import decorator_run_workflow
+from apps.masterdata.saledata.models import Account, Product, UnitOfMeasure, Tax, AccountBillingAddress, AccountBanks
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import (
     ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile, ARInvoiceSign
@@ -33,18 +34,15 @@ __all__ = [
 
 
 class ARInvoiceListSerializer(AbstractListSerializerModel):
-    customer_mapped = serializers.SerializerMethodField()
-    sale_order_mapped = serializers.SerializerMethodField()
-
     class Meta:
         model = ARInvoice
         fields = (
             'id',
             'title',
             'code',
-            'customer_mapped',
+            'customer_mapped_data',
             'buyer_name',
-            'sale_order_mapped',
+            'sale_order_mapped_data',
             'posting_date',
             'document_date',
             'invoice_date',
@@ -54,29 +52,25 @@ class ARInvoiceListSerializer(AbstractListSerializerModel):
             'invoice_status',
         )
 
-    @classmethod
-    def get_customer_mapped(cls, obj):
-        return {
-            'id': obj.customer_mapped_id,
-            'code': obj.customer_mapped.code,
-            'name': obj.customer_mapped.name
-        } if obj.customer_mapped else {}
-
-    @classmethod
-    def get_sale_order_mapped(cls, obj):
-        return {
-            'id': obj.sale_order_mapped_id,
-            'code': obj.sale_order_mapped.code,
-            'title': obj.sale_order_mapped.title
-        } if obj.sale_order_mapped else {}
-
 
 class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=100)
+    customer_mapped = serializers.UUIDField()
+    billing_address_id = serializers.UUIDField()
+    bank_account_id = serializers.UUIDField(allow_null=True)
+    sale_order_mapped = serializers.UUIDField(allow_null=True)
+    delivery_mapped_list = serializers.JSONField(default=list)
+    data_item_list = serializers.JSONField(default=list)
+
     class Meta:
         model = ARInvoice
         fields = (
             'title',
             'customer_mapped',
+            'billing_address_id',
+            'bank_account_id',
+            'buyer_name',
+            'invoice_method',
             'sale_order_mapped',
             'posting_date',
             'document_date',
@@ -84,39 +78,131 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
-            'buyer_name',
+            'delivery_mapped_list',
+            'data_item_list',
             # recurrence
             'is_recurrence_template',
             'is_recurring',
             'recurrence_task_id',
         )
 
+    @classmethod
+    def validate_customer_mapped(cls, value):
+        try:
+            return Account.objects.get(id=value)
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'customer_mapped': "Account does not exist."})
+
+    @classmethod
+    def validate_sale_order_mapped(cls, value):
+        try:
+            return SaleOrder.objects.get(id=value)
+        except SaleOrder.DoesNotExist:
+            raise serializers.ValidationError({'sale_order_mapped': "Sale order does not exist."})
+
+    @classmethod
+    def validate_delivery_mapped_list(cls, delivery_mapped_list):
+        try:
+            parse_data_delivery_mapped_list = []
+            for delivery_id in delivery_mapped_list:
+                delivery_obj = OrderDeliverySub.objects.get(id=delivery_id)
+                parse_data_delivery_mapped_list.append({
+                    'delivery_mapped': delivery_obj,
+                    'delivery_mapped_data': {
+                        'id': str(delivery_obj.id),
+                        'code': delivery_obj.code
+                    }
+                })
+            return parse_data_delivery_mapped_list
+        except OrderDeliverySub.DoesNotExist:
+            raise serializers.ValidationError({'delivery_mapped': "Delivery does not exist."})
+
     def validate(self, validate_data):
+        billing_address_id = validate_data.pop('billing_address_id')
+        bank_account_id = validate_data.pop('bank_account_id')
+        # parse data customer_mapped
+        customer_mapped = validate_data.get('customer_mapped')
+        if customer_mapped:
+            if not AccountBillingAddress.objects.filter(id=billing_address_id).exists():
+                raise serializers.ValidationError({'billing_address_id': "Billing address does not exist."})
+            if not AccountBanks.objects.filter(id=bank_account_id).exists():
+                raise serializers.ValidationError({'bank_account_id': "Bank account does not exist."})
+            validate_data['customer_mapped_data'] = {
+                'id': str(customer_mapped.id),
+                'code': customer_mapped.code,
+                'name': customer_mapped.name,
+                'tax_code': customer_mapped.tax_code,
+                'billing_address_id': str(billing_address_id),
+                'bank_account_id': str(bank_account_id),
+            }
+        # parse data sale_order_mapped
+        sale_order_mapped = validate_data.get('sale_order_mapped')
+        if sale_order_mapped:
+            validate_data['sale_order_mapped_data'] = {
+                'id': str(sale_order_mapped.id),
+                'code': sale_order_mapped.code,
+                'title': sale_order_mapped.title,
+                'sale_order_payment_stage': sale_order_mapped.sale_order_payment_stage
+            }
+        # check valid data bank number
+        if validate_data.get('invoice_method') == 2 and not bank_account_id:
+            raise serializers.ValidationError({'bank_account_id': "Bank account is not null."})
+        # check valid data data_item_list
+        if len(validate_data.get('delivery_mapped_list', [])) > 0 or not sale_order_mapped:
+            for item in validate_data.get('data_item_list', []):
+                product_obj = Product.objects.filter(id=item.get('product_id')).first()
+                uom_obj = UnitOfMeasure.objects.filter(id=item.get('product_uom_id')).first()
+                tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
+                if any([
+                    product_obj is None,
+                    uom_obj is None,
+                    float(item.get('product_quantity', 0)) <= 0,
+                    float(item.get('product_unit_price', 0)) <= 0,
+                    float(item.get('product_subtotal', 0)) <= 0,
+                    float(item.get('product_subtotal_final', 0)) <= 0,
+                ]):
+                    raise serializers.ValidationError({'data_item_list': "Data items are not valid."})
+                item['product_data'] = {
+                    'id': str(product_obj.id),
+                    'code': product_obj.code,
+                    'title': product_obj.title,
+                    'des': product_obj.description,
+                }
+                item['product_uom_data'] = {
+                    'id': str(uom_obj.id),
+                    'code': uom_obj.code,
+                    'title': uom_obj.title,
+                    'group_id': str(uom_obj.group_id)
+                }
+                item['product_tax_data'] = {
+                    'id': str(tax_obj.id),
+                    'code': tax_obj.code,
+                    'title': tax_obj.title,
+                    'rate': tax_obj.rate,
+                }
         return validate_data
 
     @decorator_run_workflow
     def create(self, validated_data):
-        ar_invoice = ARInvoice.objects.create(**validated_data)
+        delivery_mapped_list = validated_data.pop('delivery_mapped_list', [])
+        data_item_list = validated_data.pop('data_item_list', [])
 
-        ARInvoiceCommonFunc.create_delivery_mapped(
-            ar_invoice,
-            self.initial_data.get('delivery_mapped_list', [])
-        )
-        ARInvoiceCommonFunc.create_items_mapped(
-            ar_invoice,
-            self.initial_data.get('data_item_list', [])
-        )
+        ar_invoice_obj = ARInvoice.objects.create(**validated_data)
+
+        ARInvoiceCommonFunc.create_delivery_mapped(ar_invoice_obj, delivery_mapped_list)
+        ARInvoiceCommonFunc.create_items_mapped(ar_invoice_obj, data_item_list)
+
         attachment = self.initial_data.get('attachment', '')
         if attachment:
-            ARInvoiceCommonFunc.create_files_mapped(ar_invoice, attachment.strip().split(','))
+            ARInvoiceCommonFunc.create_files_mapped(ar_invoice_obj, attachment.strip().split(','))
 
-        return ar_invoice
+        return ar_invoice_obj
 
 
 class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
+    customer_mapped_data = serializers.SerializerMethodField()
     delivery_mapped = serializers.SerializerMethodField()
     item_mapped = serializers.SerializerMethodField()
-    sale_order_mapped = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
     invoice_info = serializers.SerializerMethodField()
 
@@ -124,10 +210,12 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
         model = ARInvoice
         fields = (
             'id',
-            'title',
             'code',
-            'customer_mapped',
-            'sale_order_mapped',
+            'title',
+            'customer_mapped_data',
+            'buyer_name',
+            'invoice_method',
+            'sale_order_mapped_data',
             'posting_date',
             'document_date',
             'invoice_date',
@@ -139,56 +227,52 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
             'item_mapped',
             'attachment',
             'invoice_status',
-            'buyer_name',
         )
 
     @classmethod
+    def get_customer_mapped_data(cls, obj):
+        if obj.customer_mapped:
+            obj.customer_mapped_data['bank_account_list'] = [{
+                'id': str(item.id),
+                'bank_country_id': str(item.country_id),
+                'bank_name': item.bank_name,
+                'bank_code': item.bank_code,
+                'bank_account_name': item.bank_account_name,
+                'bank_account_number': item.bank_account_number,
+                'bic_swift_code': item.bic_swift_code,
+                'is_default': item.is_default
+            } for item in obj.customer_mapped.account_banks_mapped.all()]
+            obj.customer_mapped_data['billing_address_list'] = [{
+                'id': str(item.id),
+                'account_name': item.account_name,
+                'email': item.email,
+                'tax_code': item.tax_code,
+                'account_address': item.account_address,
+                'full_address': item.full_address,
+                'is_default': item.is_default
+            } for item in obj.customer_mapped.account_mapped_billing_address.all()]
+        return obj.customer_mapped_data
+
+    @classmethod
     def get_delivery_mapped(cls, obj):
-        return [{
-            'id': item.delivery_mapped_id,
-            'title': item.delivery_mapped.title,
-        } if item.delivery_mapped else {} for item in obj.ar_invoice_deliveries.all()]
+        return [item.delivery_mapped_data for item in obj.ar_invoice_deliveries.all()]
 
     @classmethod
     def get_item_mapped(cls, obj):
         return [{
             'item_index': item.item_index,
-            'product': {
-                'id': item.product_id,
-                'code': item.product.code,
-                'title': item.product.title,
-                'des': item.product.description,
-            } if item.product else {},
+            'product_data': item.product_data,
             'ar_product_des': item.ar_product_des,
-            'product_uom': {
-                'id': item.product_uom_id,
-                'code': item.product_uom.code,
-                'title': item.product_uom.title,
-                'group_id': item.product_uom.group_id
-            } if item.product_uom else {},
+            'product_uom_data': item.product_uom_data,
             'product_quantity': item.product_quantity,
             'product_unit_price': item.product_unit_price,
             'product_subtotal': item.product_subtotal,
             'product_discount_rate': item.product_discount_rate,
             'product_discount_value': item.product_discount_value,
-            'product_tax': {
-                'id': item.product_tax_id,
-                'code': item.product_tax.code,
-                'title': item.product_tax.title,
-                'rate': item.product_tax.rate,
-            } if item.product_tax else {},
+            'product_tax_data': item.product_tax_data,
             'product_tax_value': item.product_tax_value,
             'product_subtotal_final': item.product_subtotal_final
         } for item in obj.ar_invoice_items.all()]
-
-    @classmethod
-    def get_sale_order_mapped(cls, obj):
-        return {
-            'id': obj.sale_order_mapped_id,
-            'code': obj.sale_order_mapped.code,
-            'title': obj.sale_order_mapped.title,
-            'sale_order_payment_stage': obj.sale_order_mapped.sale_order_payment_stage
-        } if obj.sale_order_mapped else {}
 
     @classmethod
     def get_attachment(cls, obj):
@@ -215,23 +299,140 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
             if response.status_code == 200:
                 invoice_info = json.loads(response.text).get('Data', {})['Invoices']
                 return invoice_info[0] if invoice_info else {}
-
         return {}
 
 
 class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=100)
+    customer_mapped = serializers.UUIDField()
+    billing_address_id = serializers.UUIDField()
+    bank_account_id = serializers.UUIDField(allow_null=True)
+    sale_order_mapped = serializers.UUIDField(allow_null=True)
+    delivery_mapped_list = serializers.JSONField(default=list)
+    data_item_list = serializers.JSONField(default=list)
+
     class Meta:
         model = ARInvoice
         fields = (
             'title',
+            'customer_mapped',
+            'billing_address_id',
+            'bank_account_id',
+            'buyer_name',
+            'invoice_method',
+            'sale_order_mapped',
             'posting_date',
             'document_date',
             'invoice_date',
             'invoice_sign',
             'invoice_number',
             'invoice_example',
-            'buyer_name',
+            'delivery_mapped_list',
+            'data_item_list',
         )
+
+    @classmethod
+    def validate_customer_mapped(cls, value):
+        return ARInvoiceCreateSerializer.validate_customer_mapped(value)
+
+    @classmethod
+    def validate_sale_order_mapped(cls, value):
+        return ARInvoiceCreateSerializer.validate_sale_order_mapped(value)
+
+    @classmethod
+    def validate_delivery_mapped_list(cls, delivery_mapped_list):
+        return ARInvoiceCreateSerializer.validate_delivery_mapped_list(delivery_mapped_list)
+
+    def validate(self, validate_data):
+        return ARInvoiceCreateSerializer().validate(validate_data)
+
+    @decorator_run_workflow
+    def update(self, instance, validated_data):
+        delivery_mapped_list = validated_data.pop('delivery_mapped_list', [])
+        data_item_list = validated_data.pop('data_item_list', [])
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        ARInvoiceCommonFunc.create_delivery_mapped(instance, delivery_mapped_list)
+        ARInvoiceCommonFunc.create_items_mapped(instance, data_item_list)
+
+        # item_mapped = ARInvoiceCommonFunc.create_items_mapped(
+        #     instance,
+        #     self.initial_data.get('data_item_list', [])
+        # )
+        # ARInvoiceCommonFunc.create_update_invoice(instance, item_mapped)
+
+        attachment = self.initial_data.get('attachment', '')
+        if attachment:
+            ARInvoiceCommonFunc.create_files_mapped(instance, attachment.strip().split(','))
+
+        return instance
+
+
+class ARInvoiceCommonFunc:
+    @staticmethod
+    def create_delivery_mapped(ar_invoice, delivery_mapped_list):
+        bulk_data = []
+        for item in delivery_mapped_list:
+            bulk_data.append(ARInvoiceDelivery(ar_invoice=ar_invoice, **item))
+        ARInvoiceDelivery.objects.filter(ar_invoice=ar_invoice).delete()
+        ARInvoiceDelivery.objects.bulk_create(bulk_data)
+        return True
+
+    @staticmethod
+    def create_items_mapped(ar_invoice, data_item_list):
+        bulk_data = []
+        sum_pretax_value = 0
+        sum_discount_value = 0
+        sum_tax_value = 0
+        sum_after_tax_value = 0
+        for item in data_item_list:
+            bulk_data.append(ARInvoiceItems(ar_invoice=ar_invoice, **item))
+            sum_pretax_value += float(item.get('product_subtotal', 0))
+            sum_discount_value += float(item.get('product_discount_value', 0))
+            sum_tax_value += float(item.get('product_tax_value', 0))
+            sum_after_tax_value += float(item.get('product_subtotal_final', 0))
+        ARInvoiceItems.objects.filter(ar_invoice=ar_invoice).delete()
+        items_mapped = ARInvoiceItems.objects.bulk_create(bulk_data)
+        ar_invoice.sum_pretax_value = sum_pretax_value
+        ar_invoice.sum_discount_value = sum_discount_value
+        ar_invoice.sum_tax_value = sum_tax_value
+        ar_invoice.sum_after_tax_value = sum_after_tax_value
+        ar_invoice.save(
+            update_fields=['sum_pretax_value', 'sum_discount_value', 'sum_tax_value', 'sum_after_tax_value']
+        )
+        return items_mapped
+
+    @staticmethod
+    def create_files_mapped(ar_invoice, file_id_list):
+        try:
+            bulk_data_file = []
+            for index, file_id in enumerate(file_id_list):
+                bulk_data_file.append(ARInvoiceAttachmentFile(
+                    ar_invoice=ar_invoice,
+                    attachment_id=file_id,
+                    order=index
+                ))
+            ARInvoiceAttachmentFile.objects.filter(ar_invoice=ar_invoice).delete()
+            ARInvoiceAttachmentFile.objects.bulk_create(bulk_data_file)
+            return True
+        except Exception as err:
+            raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
+
+    @staticmethod
+    def generate_token(http_method, username, password):
+        epoch_start = 0
+        timestamp = str(int(time.time() - epoch_start))
+        nonce = uuid.uuid4().hex
+        signature_raw_data = http_method.upper() + timestamp + nonce
+
+        md5 = hashlib.md5()
+        md5.update(signature_raw_data.encode('utf-8'))
+        signature = base64.b64encode(md5.digest()).decode('utf-8')
+
+        return f"{signature}:{nonce}:{timestamp}:{username}:{password}"
 
     @classmethod
     def process_value_xml(cls, instance, amount):
@@ -399,99 +600,6 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
         instance.is_created_einvoice = True
         instance.save(update_fields=['is_created_einvoice'])
         return response.status_code
-
-    def validate(self, validate_data):
-        return validate_data
-
-    @decorator_run_workflow
-    def update(self, instance, validated_data):
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.save()
-
-        ARInvoiceCommonFunc.create_delivery_mapped(
-            instance,
-            self.initial_data.get('delivery_mapped_list', [])
-        )
-        ARInvoiceCommonFunc.create_items_mapped(
-            instance,
-            self.initial_data.get('data_item_list', [])
-        )
-        # item_mapped = ARInvoiceCommonFunc.create_items_mapped(
-        #     instance,
-        #     self.initial_data.get('data_item_list', [])
-        # )
-        attachment = self.initial_data.get('attachment', '')
-        if attachment:
-            ARInvoiceCommonFunc.create_files_mapped(instance, attachment.strip().split(','))
-
-        # self.create_update_invoice(instance, item_mapped)
-
-        return instance
-
-
-class ARInvoiceCommonFunc:
-    @staticmethod
-    def create_delivery_mapped(ar_invoice, delivery_mapped_list):
-        bulk_data = []
-        for item in delivery_mapped_list:
-            bulk_data.append(ARInvoiceDelivery(ar_invoice=ar_invoice, delivery_mapped_id=item))
-        ARInvoiceDelivery.objects.filter(ar_invoice=ar_invoice).delete()
-        ARInvoiceDelivery.objects.bulk_create(bulk_data)
-        return True
-
-    @staticmethod
-    def create_items_mapped(ar_invoice, data_item_list):
-        bulk_data = []
-        sum_pretax_value = 0
-        sum_discount_value = 0
-        sum_tax_value = 0
-        sum_after_tax_value = 0
-        for item in data_item_list:
-            bulk_data.append(ARInvoiceItems(ar_invoice=ar_invoice, **item))
-            sum_pretax_value += float(item.get('product_subtotal', 0))
-            sum_discount_value += float(item.get('product_discount_value', 0))
-            sum_tax_value += float(item.get('product_tax_value', 0))
-            sum_after_tax_value += float(item.get('product_subtotal_final', 0))
-        ARInvoiceItems.objects.filter(ar_invoice=ar_invoice).delete()
-        items_mapped = ARInvoiceItems.objects.bulk_create(bulk_data)
-        ar_invoice.sum_pretax_value = sum_pretax_value
-        ar_invoice.sum_discount_value = sum_discount_value
-        ar_invoice.sum_tax_value = sum_tax_value
-        ar_invoice.sum_after_tax_value = sum_after_tax_value
-        ar_invoice.save(
-            update_fields=['sum_pretax_value', 'sum_discount_value', 'sum_tax_value', 'sum_after_tax_value']
-        )
-        return items_mapped
-
-    @staticmethod
-    def create_files_mapped(ar_invoice, file_id_list):
-        try:
-            bulk_data_file = []
-            for index, file_id in enumerate(file_id_list):
-                bulk_data_file.append(ARInvoiceAttachmentFile(
-                    ar_invoice=ar_invoice,
-                    attachment_id=file_id,
-                    order=index
-                ))
-            ARInvoiceAttachmentFile.objects.filter(ar_invoice=ar_invoice).delete()
-            ARInvoiceAttachmentFile.objects.bulk_create(bulk_data_file)
-            return True
-        except Exception as err:
-            raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
-
-    @staticmethod
-    def generate_token(http_method, username, password):
-        epoch_start = 0
-        timestamp = str(int(time.time() - epoch_start))
-        nonce = uuid.uuid4().hex
-        signature_raw_data = http_method.upper() + timestamp + nonce
-
-        md5 = hashlib.md5()
-        md5.update(signature_raw_data.encode('utf-8'))
-        signature = base64.b64encode(md5.digest()).decode('utf-8')
-
-        return f"{signature}:{nonce}:{timestamp}:{username}:{password}"
 
     @staticmethod
     def read_money_vnd(num):

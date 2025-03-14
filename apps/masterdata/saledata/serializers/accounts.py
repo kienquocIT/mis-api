@@ -62,7 +62,8 @@ class AccountListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_bank_accounts_mapped(cls, obj):
         return [{
-            'bank_country_id': item.country_id,
+            'id': str(item.id),
+            'bank_country_id': str(item.country_id),
             'bank_name': item.bank_name,
             'bank_code': item.bank_code,
             'bank_account_name': item.bank_account_name,
@@ -98,7 +99,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_billing_address(cls, obj):
         return [{
-            'id': item.id,
+            'id': str(item.id),
             'account_name': item.account_name,
             'email': item.email,
             'tax_code': item.tax_code,
