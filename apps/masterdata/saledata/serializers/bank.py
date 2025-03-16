@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from django.utils.translation import gettext_lazy as _
 from apps.core.base.models import Country, District, City, Ward
 from apps.masterdata.saledata.models import Bank, BankAccount, Currency
 from apps.shared import BaseMsg
@@ -8,7 +8,6 @@ __all__ = [
     'BankListSerializer',
     'BankCreateSerializer',
     'BankDetailSerializer',
-    'BankUpdateSerializer',
     'BankAccountListSerializer',
     'BankAccountCreateSerializer',
     'BankAccountUpdateSerializer',
@@ -16,223 +15,97 @@ __all__ = [
 ]
 
 
+# Bank
 class BankListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bank
         fields = (
             'id',
-            'abbreviation',
-            'vietnamese_name',
-            'english_name',
-            'is_default'
+            'bank_abbreviation',
+            'bank_name',
+            'bank_foreign_name',
+            'is_default',
+            'head_office_address',
+            'vietqr_json_data'
         )
 
 
 class BankCreateSerializer(serializers.ModelSerializer):
-    abbreviation = serializers.CharField(max_length=150, allow_blank=True)
-    vietnamese_name = serializers.CharField(max_length=150, allow_blank=True)
-    english_name = serializers.CharField(max_length=150, allow_blank=True)
-    country = serializers.UUIDField()
-    district = serializers.UUIDField()
-    city = serializers.UUIDField()
-    ward = serializers.UUIDField()
+    bank_abbreviation = serializers.CharField(max_length=150, allow_blank=True)
+    bank_name = serializers.CharField(max_length=150, allow_blank=True)
+    bank_foreign_name = serializers.CharField(max_length=150, allow_blank=True, allow_null=True)
+    head_office_address_data = serializers.JSONField(default=dict)
 
     class Meta:
         model = Bank
         fields = (
-            'abbreviation',
-            'vietnamese_name',
-            'english_name',
-            'country',
-            'city',
-            'district',
-            'ward',
-            'address',
-            'full_address'
+            'bank_abbreviation',
+            'bank_name',
+            'bank_foreign_name',
+            'head_office_address_data',
+            'vietqr_json_data'
         )
 
     @classmethod
-    def validate_abbreviation(cls, value):
+    def validate_bank_abbreviation(cls, value):
         if value:
             return value
-        raise serializers.ValidationError({"abbreviation": BaseMsg.REQUIRED})
+        raise serializers.ValidationError({"bank_abbreviation": _('Bank abbreviation must not null')})
 
     @classmethod
-    def validate_vietnamese_name(cls, value):
+    def validate_bank_name(cls, value):
         if value:
             return value
-        raise serializers.ValidationError({"vietnamese_name": BaseMsg.REQUIRED})
+        raise serializers.ValidationError({"bank_name": _('Bank name must not null')})
 
     @classmethod
-    def validate_english_name(cls, value):
+    def validate_bank_foreign_name(cls, value):
         if value:
             return value
-        raise serializers.ValidationError({"english_name": BaseMsg.REQUIRED})
+        return ''
 
     @classmethod
-    def validate_country(cls, value):
-        if value:
-            try:
-                return Country.objects.get(id = value)
-            except Country.DoesNotExist:
-                raise serializers.ValidationError({"country": BaseMsg.NOT_EXIST})
-        return value
+    def validate_head_office_address_data(cls, head_office_address_data):
+        country_obj = Country.objects.filter(id=head_office_address_data.get('country_id')).first()
+        city_obj = City.objects.filter(id=head_office_address_data.get('city_id')).first()
+        district_obj = District.objects.filter(id=head_office_address_data.get('district_id')).first()
+        ward_obj = Ward.objects.filter(id=head_office_address_data.get('ward_id')).first()
+        return {
+            'country_data': {'id': str(country_obj.id), 'title': country_obj.title} if country_obj else {},
+            'city_data': {'id': str(city_obj.id), 'title': city_obj.title} if city_obj else {},
+            'district_data': {'id': str(district_obj.id), 'title': district_obj.title} if district_obj else {},
+            'ward_data': {'id': str(ward_obj.id), 'title': ward_obj.title} if ward_obj else {},
+            'address': head_office_address_data.get('address', '')
+        }
 
-    @classmethod
-    def validate_district(cls, value):
-        if value:
-            try:
-                return District.objects.get(id=value)
-            except District.DoesNotExist:
-                raise serializers.ValidationError({"district": BaseMsg.NOT_EXIST})
-        return value
-
-    @classmethod
-    def validate_city(cls, value):
-        if value:
-            try:
-                return City.objects.get(id=value)
-            except City.DoesNotExist:
-                raise serializers.ValidationError({"city": BaseMsg.NOT_EXIST})
-        return value
-
-    @classmethod
-    def validate_ward(cls, value):
-        if value:
-            try:
-                return Ward.objects.get(id=value)
-            except Ward.DoesNotExist:
-                raise serializers.ValidationError({"ward": BaseMsg.NOT_EXIST})
-        return value
+    def validate(self, validate_data):
+        head_office_address_data = validate_data.get('head_office_address_data', {})
+        validate_data['head_office_address'] = ', '.join(
+            filter(None, [
+                head_office_address_data.get('address', ''),
+                head_office_address_data.get('ward_data', {}).get('title'),
+                head_office_address_data.get('district_data', {}).get('title'),
+                head_office_address_data.get('city_data', {}).get('title'),
+                head_office_address_data.get('country_data', {}).get('title'),
+            ])
+        )
+        return validate_data
 
 
 class BankDetailSerializer(serializers.ModelSerializer):
-    country = serializers.SerializerMethodField()
-    district = serializers.SerializerMethodField()
-    city = serializers.SerializerMethodField()
-    ward = serializers.SerializerMethodField()
-
     class Meta:
         model = Bank
         fields = (
             'id',
-            'abbreviation',
-            'vietnamese_name',
-            'english_name',
-            'country',
-            'city',
-            'district',
-            'ward',
-            'address',
-            'full_address'
+            'bank_abbreviation',
+            'bank_name',
+            'bank_foreign_name',
+            'head_office_address',
+            'head_office_address_data'
         )
 
-    @classmethod
-    def get_country(cls, obj):
-        return {
-            'id': obj.country.id,
-            'title': obj.country.title,
-        }
-    @classmethod
-    def get_district(cls, obj):
-        return {
-            'id': obj.district.id,
-            'title': obj.district.title,
-        }
 
-    @classmethod
-    def get_city(cls, obj):
-        return {
-            'id': obj.city.id,
-            'title': obj.city.title,
-        }
-
-    @classmethod
-    def get_ward(cls, obj):
-        return {
-            'id': obj.ward.id,
-            'title': obj.ward.title,
-        }
-
-
-class BankUpdateSerializer(serializers.ModelSerializer):
-    abbreviation = serializers.CharField(max_length=150, allow_blank=True)
-    vietnamese_name = serializers.CharField(max_length=150, allow_blank=True)
-    english_name = serializers.CharField(max_length=150, allow_blank=True)
-    country = serializers.UUIDField()
-    district = serializers.UUIDField()
-    city = serializers.UUIDField()
-    ward = serializers.UUIDField()
-
-    class Meta:
-        model = Bank
-        fields = (
-            'abbreviation',
-            'vietnamese_name',
-            'english_name',
-            'country',
-            'city',
-            'district',
-            'ward',
-            'address',
-            'full_address'
-        )
-
-    @classmethod
-    def validate_abbreviation(cls, value):
-        if value:
-            return value
-        raise serializers.ValidationError({"abbreviation": BaseMsg.REQUIRED})
-
-    @classmethod
-    def validate_vietnamese_name(cls, value):
-        if value:
-            return value
-        raise serializers.ValidationError({"vietnamese_name": BaseMsg.REQUIRED})
-
-    @classmethod
-    def validate_english_name(cls, value):
-        if value:
-            return value
-        raise serializers.ValidationError({"english_name": BaseMsg.REQUIRED})
-
-    @classmethod
-    def validate_country(cls, value):
-        if value:
-            try:
-                return Country.objects.get(id=value)
-            except Country.DoesNotExist:
-                raise serializers.ValidationError({"country": BaseMsg.REQUIRED})
-        return value
-
-    @classmethod
-    def validate_district(cls, value):
-        if value:
-            try:
-                return District.objects.get(id=value)
-            except District.DoesNotExist:
-                raise serializers.ValidationError({"district": BaseMsg.REQUIRED})
-        return value
-
-    @classmethod
-    def validate_city(cls, value):
-        if value:
-            try:
-                return City.objects.get(id=value)
-            except City.DoesNotExist:
-                raise serializers.ValidationError({"city": BaseMsg.REQUIRED})
-        return value
-
-    @classmethod
-    def validate_ward(cls, value):
-        if value:
-            try:
-                return Ward.objects.get(id=value)
-            except Ward.DoesNotExist:
-                raise serializers.ValidationError({"ward": BaseMsg.REQUIRED})
-        return value
-
-
+# Bank Account
 class BankAccountListSerializer(serializers.ModelSerializer):
     class Meta:
         model = BankAccount
@@ -333,6 +206,7 @@ class BankAccountCreateSerializer(serializers.ModelSerializer):
             if not validate_data.get('brand_full_address', None):
                 raise serializers.ValidationError({"brand_full_address": BaseMsg.REQUIRED})
         return validate_data
+
 
 class BankAccountUpdateSerializer(serializers.ModelSerializer):
     bank_abbreviation = serializers.UUIDField(required=False)

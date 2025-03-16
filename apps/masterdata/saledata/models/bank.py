@@ -1,60 +1,49 @@
 from django.db import models
 from apps.shared import MasterDataAbstractModel
 
+
 __all__ = [
     'Bank',
     'BankAccount'
 ]
 
-class Bank(MasterDataAbstractModel):
-    abbreviation = models.CharField(max_length=150)
-    vietnamese_name = models.CharField(max_length=150)
-    english_name = models.CharField(max_length=150)
-    is_default = models.BooleanField(default=False)
 
-    country = models.ForeignKey(
-        'base.Country',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='country_banks'
-    )
-    city = models.ForeignKey(
-        'base.City',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='city_banks'
-    )
-    district = models.ForeignKey(
-        'base.District',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='district_banks'
-    )
-    ward = models.ForeignKey(
-        'base.Ward',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='ward_banks'
-    )
-    address = models.TextField(null=True)
-    full_address = models.TextField(null=True)
+class Bank(MasterDataAbstractModel):
+    bank_abbreviation = models.CharField(max_length=150)
+    bank_name = models.CharField(max_length=150, blank=True)
+    bank_foreign_name = models.CharField(max_length=150, blank=True)
+    is_default = models.BooleanField(default=False)
+    vietqr_json_data = models.JSONField(default=dict)
+    head_office_address = models.TextField(null=True, blank=True)
+    head_office_address_data = models.JSONField(default=dict)
+    # head_office_full_address_json_data = {
+    #   country_data: {id, title},
+    #   city_data: {id, title},
+    #   district_data: {id, title},
+    #   ward_data: {id, title},
+    #   address: str
+    # }
 
     class Meta:
         verbose_name = 'Bank'
-        verbose_name_plural = 'Bank'
-        ordering = ('abbreviation',)
+        verbose_name_plural = 'Banks'
+        ordering = ('-date_created',)
+
 
 class BankAccount(MasterDataAbstractModel):
-    bank_abbreviation = models.ForeignKey(
-        'Bank',
+    bank_mapped = models.ForeignKey(
+        Bank,
         on_delete=models.CASCADE,
         related_name='bank_accounts'
     )
-    bank_name = models.CharField(max_length=150)
-    bank_account_number = models.CharField(max_length=150)
-    bank_owner = models.CharField(max_length=150)
-    is_brand = models.BooleanField(default=False)
-    brand_name = models.CharField(max_length=150, null=True)
+    bank_mapped_data = models.JSONField(default=dict)
+    # bank_mapped_data = {
+    #   abbreviation: str
+    #   bank_name: str
+    #   bank_foreign_name: str
+    # }
+    account_number = models.CharField(max_length=150)
+    account_owner = models.CharField(max_length=150)
     is_default = models.BooleanField(default=False)
     currency = models.ForeignKey(
         'saledata.Currency',
@@ -62,35 +51,19 @@ class BankAccount(MasterDataAbstractModel):
         null=True,
         related_name='currency_bank_accounts'
     )
-
-    brand_country = models.ForeignKey(
-        'base.Country',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='country_bank_accounts'
-    )
-    brand_city = models.ForeignKey(
-        'base.City',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='city_bank_accounts'
-    )
-    brand_district = models.ForeignKey(
-        'base.District',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='district_bank_accounts'
-    )
-    brand_ward = models.ForeignKey(
-        'base.Ward',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='ward_bank_accounts'
-    )
-    brand_address = models.TextField(null=True)
-    brand_full_address = models.TextField(null=True)
+    is_brand = models.BooleanField(default=False)
+    brand_name = models.CharField(max_length=150, blank=True, null=True)
+    brand_address = models.TextField(null=True, blank=True)
+    brand_address_data = models.JSONField(default=dict)
+    # brand_address_data = {
+    #   country_data: {id, title},
+    #   city_data: {id, title},
+    #   district_data: {id, title},
+    #   ward_data: {id, title},
+    #   address: str
+    # }
 
     class Meta:
-        verbose_name = 'BankAccount'
-        verbose_name_plural = 'BankAccountS'
-        ordering = ('bank_account_number',)
+        verbose_name = 'Bank Account'
+        verbose_name_plural = 'Bank Accounts'
+        ordering = ('-date_created',)
