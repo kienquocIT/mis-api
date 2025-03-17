@@ -18,7 +18,7 @@ class JEForCIFHandler:
                 company_id=cif_obj.company_id,
                 foreign_title='Cash in hand received from customers'
             ):
-                credit_rows_data.append({
+                debit_rows_data.append({
                     # (-) Tiền mặt thu từ khách hàng (mđ: 1111)
                     'account': account,
                     'product_mapped': None,
@@ -34,7 +34,7 @@ class JEForCIFHandler:
                 company_id=cif_obj.company_id,
                 foreign_title='Cash in bank received from customers'
             ):
-                credit_rows_data.append({
+                debit_rows_data.append({
                     # (-) Tiền mặt thu từ khách hàng (mđ: 1121)
                     'account': account,
                     'product_mapped': None,
@@ -49,7 +49,7 @@ class JEForCIFHandler:
             company_id=cif_obj.company_id,
             foreign_title='Receivables from customers'
         ):
-            debit_rows_data.append({
+            credit_rows_data.append({
                 # (+) Phải thu khách hàng (mđ: 131)
                 'account': account,
                 'product_mapped': None,

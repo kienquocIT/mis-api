@@ -21,7 +21,7 @@ class ReconForARInvoiceHandler:
                         'id': str(ar_invoice_obj.customer_mapped_id),
                         'code': ar_invoice_obj.customer_mapped.code,
                         'name': ar_invoice_obj.customer_mapped.name,
-                    },
+                    } if ar_invoice_obj.customer_mapped else {},
                     posting_date=str(ar_invoice_obj.posting_date),
                     document_date=str(ar_invoice_obj.document_date),
                     system_status=1,

@@ -21,8 +21,8 @@ class ReconForCIFHandler:
                         business_partner_data={
                             'id': str(cif_obj.customer_id),
                             'code': cif_obj.customer.code,
-                            'title': cif_obj.customer.title,
-                        },
+                            'name': cif_obj.customer.name,
+                        } if cif_obj.customer else {},
                         posting_date=str(cif_obj.posting_date),
                         document_date=str(cif_obj.document_date),
                         system_status=1,
@@ -71,7 +71,7 @@ class ReconForCIFHandler:
                             )
                         )
                         # đối với từng bút toán của phiếu thu, tìm các bút toán của hóa đơn gắn với phiếu thu đó
-                        for item in cif_obj.cash_inflow_item_ar_invoice.all():
+                        for item in cif_obj.cash_inflow_item_cash_inflow.all():
                             ar_invoice_obj = item.ar_invoice
                             for ar_je_item in JournalEntryItem.objects.filter(
                                 journal_entry__je_transaction_app_code=ar_invoice_obj.get_model_code(),

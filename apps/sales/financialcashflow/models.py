@@ -1,7 +1,8 @@
 from django.db import models
 from apps.accounting.journalentry.utils.log_for_cash_inflow import JEForCIFHandler
 from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
-from apps.shared import DataAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel
+
 
 __all__ = ['CashInflow', 'CashInflowItem', 'CashInflowItemDetail']
 
@@ -69,7 +70,7 @@ class CashInflow(DataAbstractModel):
         super().save(*args, **kwargs)
 
 
-class CashInflowItem(DataAbstractModel):
+class CashInflowItem(SimpleAbstractModel):
     cash_inflow = models.ForeignKey(
         CashInflow,
         on_delete=models.CASCADE,
@@ -113,8 +114,15 @@ class CashInflowItem(DataAbstractModel):
     discount_payment = models.FloatField(default=0, help_text='%')
     discount_value = models.FloatField(default=0)
 
+    class Meta:
+        verbose_name = 'Cash Inflow Item'
+        verbose_name_plural = 'Cash Inflow Items'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
 
-class CashInflowItemDetail(DataAbstractModel):
+
+class CashInflowItemDetail(SimpleAbstractModel):
     cash_inflow_item = models.ForeignKey(
         CashInflowItem,
         on_delete=models.CASCADE,
@@ -143,3 +151,10 @@ class CashInflowItemDetail(DataAbstractModel):
     # }
     balance_value = models.FloatField(default=0)
     payment_value = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Cash Inflow Item Details'
+        verbose_name_plural = 'Cash Inflow Items Detail'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
