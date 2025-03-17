@@ -7,7 +7,8 @@ from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = [
     'ChartOfAccounts',
-    'DefaultAccountDetermination'
+    'DefaultAccountDetermination',
+    'DefaultAccountDeterminationSub'
 ]
 
 CHART_OF_ACCOUNT_TYPE = [
@@ -100,7 +101,7 @@ class DefaultAccountDetermination(MasterDataAbstractModel):
             foreign_title=foreign_title
         ).first()
         if account_deter:
-            return account_deter.default_acc_deter_sub.all()
+            return [item.account_mapped for item in account_deter.default_acc_deter_sub.all()]
         return []
 
     class Meta:

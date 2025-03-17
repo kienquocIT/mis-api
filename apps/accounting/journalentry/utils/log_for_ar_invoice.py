@@ -61,7 +61,7 @@ class JEForARInvoiceHandler:
                 'is_fc': False,
                 'taxable_value': 0,
                 'use_for_recon': True,
-                'use_for_recon_order': 1
+                'use_for_recon_type': 'ar-deli'
             })
         for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
@@ -77,6 +77,8 @@ class JEForARInvoiceHandler:
                 'credit': 0,
                 'is_fc': False,
                 'taxable_value': 0,
+                'use_for_recon': True,
+                'use_for_recon_type': 'ar-cif'
             })
         for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
@@ -132,15 +134,10 @@ class JEForARInvoiceHandler:
                     'je_item_data': {
                         'debit_rows': debit_rows_data,
                         'credit_rows': credit_rows_data
-                    },
-                    'je_posting_date': str(ar_invoice_obj.posting_date),
-                    'je_document_date': str(ar_invoice_obj.document_date),
+                    }
                 }
-                je_obj = JournalEntry.auto_create_journal_entry(**kwargs)
-                if je_obj:
-                    return True
-                transaction.set_rollback(True)  # rollback thủ công
-                return None
+                JournalEntry.auto_create_journal_entry(**kwargs)
+                return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')
             return None

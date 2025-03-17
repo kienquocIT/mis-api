@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.accounting.journalentry.utils.log_for_ar_invoice import JEForARInvoiceHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.sales.acceptance.models import FinalAcceptance
-# from apps.sales.reconciliation.utils.autocreate_recon_for_ar_invoice import ReconForARInvoiceHandler
+from apps.sales.reconciliation.utils.autocreate_recon_for_ar_invoice import ReconForARInvoiceHandler
 from apps.shared import SimpleAbstractModel, DataAbstractModel, RecurrenceAbstractModel
 
 # Create your models here.
@@ -97,7 +97,7 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
                     kwargs.update({'update_fields': ['code']})
 
                 JEForARInvoiceHandler.push_to_journal_entry(self)
-                # ReconForARInvoiceHandler.auto_create_recon_doc(self)
+                ReconForARInvoiceHandler.auto_create_recon_doc(self)
 
         if self.invoice_status == 1:  # published
             self.push_final_acceptance_invoice(instance=self)

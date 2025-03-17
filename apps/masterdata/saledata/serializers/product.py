@@ -121,12 +121,12 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         fields = (
             'code', 'title', 'description', 'product_choice', 'part_number',
             # General
-            'general_product_category', 'general_uom_group', 'general_traceability_method',
+            'general_product_category', 'general_uom_group', 'general_traceability_method', 'standard_price',
             'width', 'height', 'length', 'volume', 'weight',
             # Sale
             'sale_default_uom', 'sale_tax', 'online_price_list', 'available_notify', 'available_notify_quantity',
             # Inventory
-            'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'is_public_website', 'standard_price',
+            'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'is_public_website',
             'valuation_method',
             # Purchase
             'purchase_default_uom', 'purchase_tax', 'supplied_by',
@@ -462,7 +462,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                     "measure": obj.weight['measure'],
                     "value": obj.weight['value']
                 } if 'id' in obj.weight else {}
-            }
+            },
+            'standard_price': obj.standard_price
         }
         return result
 
@@ -510,8 +511,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             } if obj.inventory_uom else {},
             'inventory_level_min': obj.inventory_level_min,
             'inventory_level_max': obj.inventory_level_max,
-            'valuation_method': obj.valuation_method,
-            'standard_price': obj.standard_price
+            'valuation_method': obj.valuation_method
         }
         return result
 
@@ -634,9 +634,10 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'description',
             'part_number',
             'product_choice',
-            'general_product_category', 'general_uom_group', 'width', 'height', 'length', 'volume', 'weight',
+            'general_product_category', 'general_uom_group', 'standard_price',
+            'width', 'height', 'length', 'volume', 'weight',
             'sale_default_uom', 'sale_tax', 'online_price_list', 'available_notify', 'available_notify_quantity',
-            'inventory_uom', 'inventory_level_min', 'inventory_level_max', 'standard_price',
+            'inventory_uom', 'inventory_level_min', 'inventory_level_max',
             'valuation_method',
             'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by'
         )

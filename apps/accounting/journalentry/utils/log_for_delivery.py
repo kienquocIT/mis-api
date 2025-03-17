@@ -59,7 +59,7 @@ class JEForDeliveryHandler:
                 'is_fc': False,
                 'taxable_value': 0,
                 'use_for_recon': True,
-                'use_for_recon_order': 1
+                'use_for_recon_type': 'deli-ar'
             })
         return debit_rows_data, credit_rows_data
 
@@ -85,15 +85,10 @@ class JEForDeliveryHandler:
                     'je_item_data': {
                         'debit_rows': debit_rows_data,
                         'credit_rows': credit_rows_data
-                    },
-                    'je_posting_date': str(delivery_obj.date_approved),
-                    'je_document_date': str(delivery_obj.date_approved),
+                    }
                 }
-                je_obj = JournalEntry.auto_create_journal_entry(**kwargs)
-                if je_obj:
-                    return True
-                transaction.set_rollback(True)  # rollback thủ công
-                return None
+                JournalEntry.auto_create_journal_entry(**kwargs)
+                return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')
             return None

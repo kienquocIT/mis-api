@@ -1301,6 +1301,8 @@ def update_serial_status():
         pw_serial.serial_status = 1
         pw_serial.save(update_fields=['serial_status'])
     print('update_serial_status done.')
+
+
 class DefaultSaleDataHandler:
     Salutation_data = [
         {'code': 'SA001', 'title': 'Anh', 'is_default': 1},
