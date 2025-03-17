@@ -956,7 +956,15 @@ def reset_remain_gr_for_ia():
 
 
 def re_runtime_again(doc_id):
-    runtime = Runtime.objects.filter(doc_id=doc_id)
+    runtime = Runtime.objects.filter(doc_id=doc_id).first()
+    if runtime:
+        if runtime.app_code:
+            model_app = DisperseModel(app_model=runtime.app_code).get_model()
+            if model_app and hasattr(model_app, 'objects'):
+                doc_obj = model_app.objects.filter(id=doc_id).first()
+                if doc_obj:
+                    doc_obj.system_status = 0
+                    doc_obj.save(update_fields=['system_status'])
     runtime.delete()
     print("re_runtime_again successfully.")
     return True
