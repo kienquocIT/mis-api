@@ -2,7 +2,6 @@ from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.core.base.models import Country, District, City, Ward
 from apps.masterdata.saledata.models import Bank, BankAccount, Currency
-from apps.shared import BaseMsg
 
 __all__ = [
     'BankListSerializer',
@@ -183,8 +182,7 @@ class BankAccountCreateSerializer(serializers.ModelSerializer):
             )
             if not brand_address_data_concat:
                 raise serializers.ValidationError({"brand_address_data": _('Brand address must not null')})
-            else:
-                validate_data['brand_address'] = brand_address_data_concat
+            validate_data['brand_address'] = brand_address_data_concat
 
         bank_mapped = validate_data.get('bank_mapped')
         validate_data['bank_mapped_data'] = {

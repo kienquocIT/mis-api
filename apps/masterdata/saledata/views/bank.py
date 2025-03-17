@@ -4,7 +4,7 @@ from apps.masterdata.saledata.serializers import (
     BankListSerializer, BankCreateSerializer, BankDetailSerializer,
     BankAccountListSerializer, BankAccountDetailSerializer, BankAccountCreateSerializer
 )
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
+from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseDestroyMixin
 
 
 __all__ = [
