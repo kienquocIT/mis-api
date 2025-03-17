@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-from apps.core.company.models import CompanyBankAccount
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import Account
+from apps.masterdata.saledata.models import Account, BankAccount
 from apps.sales.arinvoice.models import ARInvoice
 from apps.sales.financialcashflow.models import CashInflow, CashInflowItem, CashInflowItemDetail
 from apps.sales.saleorder.models import SaleOrder, SaleOrderPaymentStage
@@ -369,25 +368,19 @@ class CashInflowCommonFunction:
             if validate_data['bank_value'] > 0:
                 if 'company_bank_account_id' in payment_method_data:
                     try:
-                        company_bank_account = CompanyBankAccount.objects.get(
+                        company_bank_account = BankAccount.objects.get(
                             id=payment_method_data.get('company_bank_account_id')
                         )
-                        if not company_bank_account.is_active:
-                            raise serializers.ValidationError(
-                                {'company_bank_account_id': CashInflowMsg.BANK_NOT_ACTIVE}
-                            )
                         validate_data['company_bank_account_id'] = str(company_bank_account.id)
                         validate_data['company_bank_account_data'] = {
                             'id': str(company_bank_account.id),
-                            'country_id': str(company_bank_account.country_id),
-                            'bank_name': company_bank_account.bank_name,
-                            'bank_code': company_bank_account.bank_code,
-                            'bank_account_name': company_bank_account.bank_account_name,
+                            'bank_mapped_data': company_bank_account.bank_mapped_data,
+                            'bank_account_owner': company_bank_account.bank_account_owner,
                             'bank_account_number': company_bank_account.bank_account_number,
-                            'bic_swift_code': company_bank_account.bic_swift_code,
-                            'is_default': company_bank_account.is_default
+                            'brand_name': company_bank_account.brand_name,
+                            'brand_address': company_bank_account.brand_address
                         }
-                    except CompanyBankAccount.DoesNotExist:
+                    except BankAccount.DoesNotExist:
                         raise serializers.ValidationError({'company_bank_account_id': CashInflowMsg.BANK_NOT_EXIST})
                 else:
                     raise serializers.ValidationError({'company_bank_account_id': CashInflowMsg.BANK_NOT_NULL})

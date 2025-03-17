@@ -62,12 +62,12 @@ class IRForDeliveryHandler:
     def push_to_inventory_report(cls, instance):
         """ Chuẩn bị data để ghi vào báo cáo tồn kho và tính giá Cost """
         doc_data = []
+        sale_order_obj = instance.order_delivery.sale_order if instance.order_delivery else None
+        lease_order_obj = instance.order_delivery.lease_order if instance.order_delivery else None
         for deli_product in instance.delivery_product_delivery_sub.all():
             if deli_product.product:
                 product_obj = deli_product.product
                 for pw_data in deli_product.delivery_pw_delivery_product.all():
-                    sale_order_obj = pw_data.sale_order
-                    lease_order_obj = pw_data.lease_order
                     warehouse_obj = pw_data.warehouse
                     uom_obj = pw_data.uom
                     quantity = pw_data.quantity_delivery

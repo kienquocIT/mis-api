@@ -56,6 +56,7 @@ class ReconForCIFHandler:
                                     'title': cif_obj.title,
                                     'document_date': str(cif_obj.document_date),
                                     'posting_date': str(cif_obj.posting_date),
+                                    'app_code': cif_obj.get_model_code()
                                 } if cif_obj else {},
                                 credit_account=cif_je_item.account,
                                 credit_account_data={
@@ -95,6 +96,7 @@ class ReconForCIFHandler:
                                             'title': ar_invoice_obj.title,
                                             'document_date': str(ar_invoice_obj.date_approved),
                                             'posting_date': str(ar_invoice_obj.date_approved),
+                                            'app_code': ar_invoice_obj.get_model_code()
                                         } if ar_invoice_obj else {},
                                         debit_account=ar_je_item.account,
                                         debit_account_data={

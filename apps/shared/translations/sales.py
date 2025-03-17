@@ -111,7 +111,6 @@ class CashInflowMsg:
     PAYMENT_VALUE_NOT_VALID = _('Payment value can not > Balance value')
     AR_INVOICE_NOT_EXIST = _('AR invoice does not exist')
     SALE_ORDER_NOT_EXIST = _('Sale order does not exist')
-    BANK_NOT_ACTIVE = _('This company bank account is not active')
     BANK_NOT_EXIST = _('This company bank account does not exist')
     BANK_NOT_NULL = _('This company bank account is not null')
     ACCOUNT_NOT_CUSTOMER = _('This account is not a Customer account')

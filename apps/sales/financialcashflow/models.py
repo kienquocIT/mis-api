@@ -33,7 +33,7 @@ class CashInflow(DataAbstractModel):
     cash_value = models.FloatField(default=0)
     bank_value = models.FloatField(default=0)
     company_bank_account = models.ForeignKey(
-        'company.CompanyBankAccount',
+        'saledata.BankAccount',
         on_delete=models.CASCADE,
         related_name="cash_inflow_company_bank_account",
         null=True
@@ -41,13 +41,11 @@ class CashInflow(DataAbstractModel):
     company_bank_account_data = models.JSONField(default=dict)
     # company_bank_account_data = {
     #     'id': uuid,
-    #     'country_id': uuid,
-    #     'bank_name': str,
-    #     'bank_code': str,
-    #     'bank_account_name': str,
+    #     'bank_mapped_data': dict,
+    #     'bank_account_owner': str,
     #     'bank_account_number': str,
-    #     'bic_swift_code': str,
-    #     'is_default': bool
+    #     'brand_name': str,
+    #     'brand_address': str,
     # }
 
     class Meta:

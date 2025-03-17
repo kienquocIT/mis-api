@@ -198,5 +198,4 @@ class JournalEntryItem(SimpleAbstractModel):
             credit_value += item.get('credit', 0)
 
         cls.objects.bulk_create(je_item_info)
-        print('# Journal Entry item created successfully!')
         return True
