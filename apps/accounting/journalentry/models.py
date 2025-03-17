@@ -23,7 +23,7 @@ class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
     class Meta:
         verbose_name = 'Journal Entry'
         verbose_name_plural = 'Journal Entries'
-        ordering = ('date_created',)
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
