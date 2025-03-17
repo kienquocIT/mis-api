@@ -89,9 +89,6 @@ class ARInvoiceListForRecon(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().filter(system_status=3).prefetch_related(
             'ar_invoice_items',
-            'recon_item_ar_invoice',
-            'customer_mapped__cash_inflow_customer',
-            'customer_mapped__cash_inflow_customer__recon_item_cash_inflow',
         ).select_related(
             'customer_mapped',
         ).order_by('date_created')
@@ -120,7 +117,7 @@ class CashInflowListForRecon(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().filter(
             no_ar_invoice_value__gt=0
-        ).prefetch_related('recon_item_cash_inflow').select_related().order_by('date_created')
+        ).prefetch_related().select_related().order_by('date_created')
 
     @swagger_auto_schema(
         operation_summary="Cash Inflow list",

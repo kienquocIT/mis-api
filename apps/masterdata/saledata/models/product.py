@@ -127,6 +127,7 @@ class Product(DataAbstractModel):
     create_from_import = models.BooleanField(default=False)
     import_data_row = models.JSONField(default=dict)
     has_bom = models.BooleanField(default=False)
+    bom_sum_price = models.FloatField(default=0)
     part_number = models.CharField(max_length=150, null=True, blank=True)
     product_choice = models.JSONField(
         default=list,
@@ -232,7 +233,7 @@ class Product(DataAbstractModel):
         related_name='purchase_tax',
         default=None
     )
-    supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=1)
+    supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=0)
 
     # Stock information
     stock_amount = models.FloatField(
@@ -420,37 +421,43 @@ class Product(DataAbstractModel):
                         })
         return unit_cost_list
 
-    def get_account_determination(self, account_deter_title, warehouse_id=None):
+    def get_product_account_deter_sub_data(self, account_deter_foreign_title, warehouse_id=None):
         """
             Lấy danh sách TK kế toán được xác định cho Sản Phẩm này:
             - Luôn luôn truyền account_deter_title: str
             - Nếu tham chiếu theo Kho (0): cần truyền 'warehouse_id'
             - Nếu tham chiếu theo Loại SP (1): không cần truyền tham số gì, tự động lấy theo product type của SP
-            - Nếu xác định theo chính SP đó (2): không cần truyền tham số gì, t động lấy theo SP
+            - Nếu xác định theo chính SP đó (2): không cần truyền tham số gì, tự động lấy theo SP
             Returns: obj hoặc None nếu không tìm thấy dữ liệu
         """
         account_deter_referenced_by = self.account_deter_referenced_by
-        if account_deter_title:
+        if account_deter_foreign_title:
             if account_deter_referenced_by == 0:
                 warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
                 if warehouse_obj:
-                    return warehouse_obj.wh_account_deter_warehouse_mapped.filter(
-                        title=account_deter_title
+                    account_deter = warehouse_obj.wh_account_deter_warehouse_mapped.filter(
+                        foreign_title=account_deter_foreign_title
                     ).first()
+                    if account_deter:
+                        return [item.account_mapped for item in account_deter.wh_account_deter_sub.all()]
                 logger.error(msg='Get account deter by warehouse, but no warehouse found!')
             elif account_deter_referenced_by == 1:
                 prd_type_list = self.general_product_types_mapped.all()
                 if prd_type_list.count() == 1:
                     prd_type_obj = prd_type_list.first()
-                    return prd_type_obj.prd_type_account_deter_product_type_mapped.filter(
-                        title=account_deter_title
+                    account_deter = prd_type_obj.prd_type_account_deter_product_type_mapped.filter(
+                        foreign_title=account_deter_foreign_title
                     ).first()
+                    if account_deter:
+                        return [item.account_mapped for item in account_deter.prd_type_account_deter_sub.all()]
                 logger.error(msg='Get account deter by product type, but there are more than 1 product type found!')
             elif account_deter_referenced_by == 2:
-                return self.prd_account_deter_product_mapped.filter(
-                    title=account_deter_title
+                account_deter = self.prd_account_deter_product_mapped.filter(
+                    foreign_title=account_deter_foreign_title
                 ).first()
-        return None
+                if account_deter:
+                    return [item.account_mapped for item in account_deter.prd_account_deter_sub.all()]
+        return []
 
     def save(self, *args, **kwargs):
         if 'update_stock_info' in kwargs:

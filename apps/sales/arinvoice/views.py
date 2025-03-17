@@ -83,10 +83,7 @@ class ARInvoiceList(BaseListMixin, BaseCreateMixin):
     ]
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related(
-            'customer_mapped',
-            'sale_order_mapped'
-        )
+        return super().get_queryset().prefetch_related().select_related()
 
     @swagger_auto_schema(
         operation_summary="ARInvoice list",
@@ -127,10 +124,11 @@ class ARInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return super().get_queryset().prefetch_related(
             'ar_invoice_items__product',
             'ar_invoice_items__product_uom',
-            'ar_invoice_deliveries__delivery_mapped'
+            'ar_invoice_deliveries__delivery_mapped',
+            'customer_mapped__account_banks_mapped',
+            'customer_mapped__account_mapped_billing_address'
         ).select_related(
             'customer_mapped',
-            'sale_order_mapped'
         )
 
     @swagger_auto_schema(operation_summary='Detail ARInvoice')
@@ -147,7 +145,6 @@ class ARInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='arinvoice', model_code='arinvoice', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
-        self.serializer_class = ARInvoiceUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 

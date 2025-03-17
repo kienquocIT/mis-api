@@ -16,9 +16,10 @@ from apps.sales.report.models import (
     ReportStock, ReportInventoryCost, ReportStockLog, ReportInventorySubFunction, BalanceInitialization
 )
 from apps.sales.report.serializers import (
-    ReportStockListSerializer, ReportInventoryCostListSerializer, ReportInventoryCostWarehouseDetailSerializer,
+    ReportStockListSerializer, ReportInventoryCostListSerializer, WarehouseAvailableProductListSerializer,
     BalanceInitializationListSerializer, BalanceInitializationDetailSerializer,
-    BalanceInitializationCreateSerializer, BalanceInitializationCreateSerializerImportDB
+    BalanceInitializationCreateSerializer, BalanceInitializationCreateSerializerImportDB,
+    WarehouseAvailableProductDetailSerializer
 )
 from apps.sales.report.serializers.advance_filter import AdvanceFilterListSerializer, AdvanceFilterCreateSerializer, \
     AdvanceFilterDetailSerializer, AdvanceFilterUpdateSerializer
@@ -483,26 +484,60 @@ class BalanceInitializationListImportDB(BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class ReportInventoryCostWarehouseDetail(BaseListMixin):
+class WarehouseAvailableProductList(BaseListMixin):
     queryset = ProductWareHouse.objects
-    serializer_list = ReportInventoryCostWarehouseDetailSerializer
+    serializer_list = WarehouseAvailableProductListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         try:
-            warehouse_id = self.request.query_params['warehouse_id']
-            return super().get_queryset().select_related(
-                'product__inventory_uom'
-            ).prefetch_related(
-                'product_warehouse_lot_product_warehouse',
-                'product_warehouse_serial_product_warehouse'
-            ).filter(
-                warehouse_id=warehouse_id, stock_amount__gt=0
-            ).order_by('product__code')
+            warehouse_id = self.request.query_params.get('warehouse_id')
+            if warehouse_id:
+                return super().get_queryset().select_related(
+                    'product__inventory_uom'
+                ).prefetch_related(
+                    'product_warehouse_lot_product_warehouse',
+                    'product_warehouse_serial_product_warehouse'
+                ).filter(
+                    warehouse_id=warehouse_id, stock_amount__gt=0
+                ).order_by('product__code')
+            return super().get_queryset().none()
         except KeyError:
             return super().get_queryset().none()
 
-    @swagger_auto_schema(operation_summary='Report Inventory Cost Warehouse Detail')
+    @swagger_auto_schema(operation_summary='Warehouse Available Product List')
+    @mask_view(
+        login_require=True, auth_require=False
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class WarehouseAvailableProductDetail(BaseListMixin):
+    queryset = ProductWareHouse.objects
+    serializer_list = WarehouseAvailableProductDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        try:
+            warehouse_id = self.request.query_params.get('warehouse_id')
+            product_id = self.request.query_params.get('product_id')
+            if warehouse_id and product_id:
+                return super().get_queryset().select_related(
+                    'product__inventory_uom'
+                ).prefetch_related(
+                    'product_warehouse_lot_product_warehouse',
+                    'product_warehouse_serial_product_warehouse'
+                ).filter(
+                    warehouse_id=warehouse_id,
+                    product_id=product_id,
+                    stock_amount__gt=0
+                )
+            return super().get_queryset().none()
+        except KeyError:
+            return super().get_queryset().none()
+
+    @swagger_auto_schema(operation_summary='Warehouse Available Product Detail')
     @mask_view(
         login_require=True, auth_require=False
     )

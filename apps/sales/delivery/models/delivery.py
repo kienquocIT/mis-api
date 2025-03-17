@@ -1,10 +1,8 @@
 import json
 from copy import deepcopy
-
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
-from apps.accounting.journalentry.utils import JEForDeliveryHandler
+from apps.accounting.journalentry.utils.log_for_delivery import JEForDeliveryHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods
@@ -412,7 +410,7 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliFinishHandler.create_new(instance=self)  # new sub + product
                     DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
                     DeliFinishHandler.update_asset_status(instance=self)  # asset status => delivered
-                    DeliFinishHandler.create_new_asset(instance=self)  # create new asset
+                    DeliFinishHandler.force_create_new_asset(instance=self)  # create new asset
                     DeliFinishHandler.push_product_info(instance=self)  # product
                     DeliFinishHandler.push_so_lo_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance

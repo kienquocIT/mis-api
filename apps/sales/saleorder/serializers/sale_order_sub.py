@@ -184,7 +184,7 @@ class SaleOrderCommonValidate:
             UnitOfMeasure.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             return str(value)
         except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'unit_of_measure': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+            raise serializers.ValidationError({'unit_of_measure': ProductMsg.UOM_NOT_EXIST})
 
     @classmethod
     def validate_tax(cls, value):
@@ -192,7 +192,7 @@ class SaleOrderCommonValidate:
             Tax.objects.get_current(fill__tenant=True, fill__company=True, id=value)
             return str(value)
         except Tax.DoesNotExist:
-            raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'tax': ProductMsg.TAX_NOT_EXIST})
 
     @classmethod
     def validate_expense(cls, value):

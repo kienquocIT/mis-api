@@ -37,6 +37,7 @@ from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHol
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
+from ..sales.arinvoice.models import ARInvoice, ARInvoiceItems, ARInvoiceDelivery
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
 from ..sales.delivery.utils import DeliFinishHandler
 from ..sales.inventory.models import (
@@ -955,7 +956,15 @@ def reset_remain_gr_for_ia():
 
 
 def re_runtime_again(doc_id):
-    runtime = Runtime.objects.filter(doc_id=doc_id)
+    runtime = Runtime.objects.filter(doc_id=doc_id).first()
+    if runtime:
+        if runtime.app_code:
+            model_app = DisperseModel(app_model=runtime.app_code).get_model()
+            if model_app and hasattr(model_app, 'objects'):
+                doc_obj = model_app.objects.filter(id=doc_id).first()
+                if doc_obj:
+                    doc_obj.system_status = 0
+                    doc_obj.save(update_fields=['system_status'])
     runtime.delete()
     print("re_runtime_again successfully.")
     return True
@@ -1216,6 +1225,61 @@ class SubScripts:
         cls.update_product_type_tool_import()
         return True
 
+    @classmethod
+    def create_data_json_for_ar_invoice(cls):
+        for ar_invoice_obj in ARInvoice.objects.all():
+            customer_mapped = ar_invoice_obj.customer_mapped
+            billing_address = customer_mapped.account_mapped_billing_address.all()
+            bank_account = customer_mapped.account_banks_mapped.all()
+            ar_invoice_obj.customer_mapped_data = {
+                'id': str(customer_mapped.id),
+                'code': customer_mapped.code,
+                'name': customer_mapped.name,
+                'tax_code': customer_mapped.tax_code,
+                'billing_address_id': str(billing_address.first().id) if billing_address.count() > 0 else '',
+                'bank_account_id': str(bank_account.first().id) if bank_account.count() > 0 else '',
+            } if customer_mapped else {}
+            sale_order_mapped = ar_invoice_obj.sale_order_mapped
+            ar_invoice_obj.sale_order_mapped_data = {
+                'id': str(sale_order_mapped.id),
+                'code': sale_order_mapped.code,
+                'title': sale_order_mapped.title,
+                'sale_order_payment_stage': sale_order_mapped.sale_order_payment_stage
+            } if sale_order_mapped else {}
+            ar_invoice_obj.save(update_fields=['customer_mapped_data', 'sale_order_mapped_data'])
+        for item in ARInvoiceItems.objects.all():
+            product_obj = item.product
+            item.product_data = {
+                'id': str(product_obj.id),
+                'code': product_obj.code,
+                'title': product_obj.title,
+                'des': product_obj.description,
+            } if product_obj else {}
+            uom_obj = item.product_uom
+            item.product_uom_data = {
+                'id': str(uom_obj.id),
+                'code': uom_obj.code,
+                'title': uom_obj.title,
+                'group_id': str(uom_obj.group_id)
+            } if uom_obj else {}
+            tax_obj = item.product_tax
+            item.product_tax_data = {
+                'id': str(tax_obj.id),
+                'code': tax_obj.code,
+                'title': tax_obj.title,
+                'rate': tax_obj.rate,
+            } if tax_obj else {}
+            item.save(update_fields=['product_data', 'product_uom_data', 'product_tax_data'])
+        for item in ARInvoiceDelivery.objects.all():
+            delivery_obj = item.delivery_mapped
+            item.delivery_mapped_data = {
+                'id': str(delivery_obj.id),
+                'code': delivery_obj.code
+            } if delivery_obj else {}
+            item.save(update_fields=['delivery_mapped_data'])
+        print('Done :))')
+        return True
+
 
 def reset_run_indicator_fields(kwargs):
     for sale_order in SaleOrder.objects.filter(**kwargs):
@@ -1237,6 +1301,8 @@ def update_serial_status():
         pw_serial.serial_status = 1
         pw_serial.save(update_fields=['serial_status'])
     print('update_serial_status done.')
+
+
 class DefaultSaleDataHandler:
     Salutation_data = [
         {'code': 'SA001', 'title': 'Anh', 'is_default': 1},

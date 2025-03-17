@@ -443,9 +443,8 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
         return self.for_none_project(obj, date_range, div, cost_cfg)
 
 
-class ReportInventoryCostWarehouseDetailSerializer(serializers.ModelSerializer):
+class WarehouseAvailableProductListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
-    detail = serializers.SerializerMethodField()
     stock_amount = serializers.SerializerMethodField()
 
     class Meta:
@@ -453,8 +452,7 @@ class ReportInventoryCostWarehouseDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'product',
-            'stock_amount',
-            'detail'
+            'stock_amount'
         )
 
     @classmethod
@@ -464,6 +462,7 @@ class ReportInventoryCostWarehouseDetailSerializer(serializers.ModelSerializer):
             'title': obj.product.title,
             'code': obj.product.code,
             'description': obj.product.description,
+            'general_traceability_method': obj.product.general_traceability_method,
             'uom': {
                 "id": obj.product.inventory_uom_id,
                 "code": obj.product.inventory_uom.code,
@@ -474,6 +473,34 @@ class ReportInventoryCostWarehouseDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_stock_amount(cls, obj):
         return cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.stock_amount)
+
+
+class WarehouseAvailableProductDetailSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    detail = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductWareHouse
+        fields = (
+            'id',
+            'product',
+            'detail'
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+            'description': obj.product.description,
+            'general_traceability_method': obj.product.general_traceability_method,
+            'uom': {
+                "id": obj.product.inventory_uom_id,
+                "code": obj.product.inventory_uom.code,
+                "title": obj.product.inventory_uom.title
+            } if obj.product.inventory_uom else {}
+        } if obj.product else {}
 
     @classmethod
     def get_detail(cls, obj):
@@ -499,6 +526,7 @@ class ReportInventoryCostWarehouseDetailSerializer(serializers.ModelSerializer):
                 'goods_receipt_date': item.goods_receipt.date_received if item.goods_receipt else None
             })
         return {'lot_data': lot_data, 'sn_data': sn_data}
+
 
 # balance init
 class BalanceInitializationListSerializer(serializers.ModelSerializer):
