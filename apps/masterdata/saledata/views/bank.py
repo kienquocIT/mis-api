@@ -2,10 +2,10 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import Bank, BankAccount
 from apps.masterdata.saledata.serializers import (
     BankListSerializer, BankCreateSerializer, BankDetailSerializer,
-    BankAccountListSerializer, BankAccountUpdateSerializer,
-    BankAccountDetailSerializer, BankAccountCreateSerializer
+    BankAccountListSerializer, BankAccountDetailSerializer, BankAccountCreateSerializer
 )
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
+
 
 __all__ = [
     'BankList',
@@ -82,6 +82,9 @@ class BankAccountList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().filter(is_delete=False)
+
     @swagger_auto_schema(
         operation_summary="BankAccount list",
         operation_description="BankAccount list",
@@ -104,14 +107,12 @@ class BankAccountList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class BankAccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
+class BankAccountDetail(BaseRetrieveMixin, BaseDestroyMixin):
     queryset = BankAccount.objects
     search_fields = ['title']
     filterset_fields = {}
-    serializer_update = BankAccountUpdateSerializer
     serializer_detail = BankAccountDetailSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
-    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail BankAccount')
     @mask_view(
@@ -120,11 +121,12 @@ class BankAccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
 
-    @swagger_auto_schema(operation_summary="Update BankAccount",
-                         request_body=BankAccountUpdateSerializer)
+    @swagger_auto_schema(
+        operation_summary="Delete Bank Account", operation_description="Delete Bank Account",
+    )
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
     )
-    def put(self, request, *args, pk, **kwargs):
-        return self.update(request, *args, pk, **kwargs)
+    def delete(self, request, *args, pk, **kwargs):
+        return self.destroy(request, *args, pk, **kwargs)

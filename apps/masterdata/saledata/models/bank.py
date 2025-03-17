@@ -42,8 +42,8 @@ class BankAccount(MasterDataAbstractModel):
     #   bank_name: str
     #   bank_foreign_name: str
     # }
-    account_number = models.CharField(max_length=150)
-    account_owner = models.CharField(max_length=150)
+    bank_account_number = models.CharField(max_length=150)
+    bank_account_owner = models.CharField(max_length=150)
     is_default = models.BooleanField(default=False)
     currency = models.ForeignKey(
         'saledata.Currency',
@@ -51,6 +51,7 @@ class BankAccount(MasterDataAbstractModel):
         null=True,
         related_name='currency_bank_accounts'
     )
+    currency_data = models.JSONField(default=dict)
     is_brand = models.BooleanField(default=False)
     brand_name = models.CharField(max_length=150, blank=True, null=True)
     brand_address = models.TextField(null=True, blank=True)
