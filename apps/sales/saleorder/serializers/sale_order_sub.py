@@ -150,7 +150,7 @@ class SaleOrderCommonValidate:
     @classmethod
     def validate_customer_id(cls, value):
         try:
-            return Account.objects.get_on_company(id=value).id
+            return str(Account.objects.get_on_company(id=value).id)
         except Account.DoesNotExist:
             raise serializers.ValidationError({'customer': AccountsMsg.ACCOUNT_NOT_EXIST})
 
@@ -159,14 +159,14 @@ class SaleOrderCommonValidate:
         try:
             if value is None:
                 return value
-            return Opportunity.objects.get_on_company(id=value).id
+            return str(Opportunity.objects.get_on_company(id=value).id)
         except Opportunity.DoesNotExist:
             raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
 
     @classmethod
     def validate_contact_id(cls, value):
         try:
-            return Contact.objects.get_on_company(id=value).id
+            return str(Contact.objects.get_on_company(id=value).id)
         except Contact.DoesNotExist:
             raise serializers.ValidationError({'contact': AccountsMsg.CONTACT_NOT_EXIST})
 
@@ -175,7 +175,7 @@ class SaleOrderCommonValidate:
         try:
             if value is None:
                 return None
-            return PaymentTerm.objects.get_on_company(id=value).id
+            return str(PaymentTerm.objects.get_on_company(id=value).id)
         except PaymentTerm.DoesNotExist:
             raise serializers.ValidationError({'payment_term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
 
@@ -184,7 +184,7 @@ class SaleOrderCommonValidate:
         try:
             if value is None:
                 return None
-            return Quotation.objects.get_on_company(id=value).id
+            return str(Quotation.objects.get_on_company(id=value).id)
         except Quotation.DoesNotExist:
             raise serializers.ValidationError({'quotation': SaleMsg.QUOTATION_NOT_EXIST})
 
