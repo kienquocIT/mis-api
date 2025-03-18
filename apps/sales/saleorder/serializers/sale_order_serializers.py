@@ -6,7 +6,7 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
     SaleOrderProductSerializer, SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, \
-    SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer, SaleOrderRuleValidate
+    SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer, SaleOrderRuleValidate, SaleOrderInvoiceSerializer
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
@@ -156,6 +156,7 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'sale_order_payment_stage',
+            'sale_order_invoice',
             # system
             'workflow_runtime_id',
             'is_active',
@@ -227,6 +228,10 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    sale_order_invoice = SaleOrderInvoiceSerializer(
+        many=True,
+        required=False
+    )
     # recurrence
     recurrence_task_id = serializers.UUIDField(allow_null=True, required=False)
 
@@ -292,6 +297,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'sale_order_payment_stage',
+            'sale_order_invoice',
             # recurrence
             'is_recurrence_template',
             'is_recurring',
@@ -426,6 +432,10 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    sale_order_invoice = SaleOrderInvoiceSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = SaleOrder
@@ -471,6 +481,7 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'sale_order_payment_stage',
+            'sale_order_invoice',
         )
 
     @classmethod
@@ -508,11 +519,7 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
     def validate_opportunity_rules(self, validate_data):
         if 'opportunity_id' in validate_data:
             if validate_data['opportunity_id'] is not None:
-                opportunity = Opportunity.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=validate_data['opportunity_id']
-                ).first()
+                opportunity = Opportunity.objects.filter_on_company(id=validate_data['opportunity_id']).first()
                 if opportunity:
                     if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
