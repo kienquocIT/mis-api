@@ -88,7 +88,7 @@ class SaleOrderCommonCreate:
 
     @classmethod
     def create_payment_stage(cls, validated_data, instance):
-        instance.payment_stage_sale_order.all().delete()
+        instance.sale_order_payment_stage_sale_order.all().delete()
         SaleOrderPaymentStage.objects.bulk_create(
             [SaleOrderPaymentStage(
                 sale_order=instance,
@@ -236,18 +236,16 @@ class SaleOrderCommonValidate:
         raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_NOT_EXIST})
 
     @classmethod
-    def validate_promotion(cls, value):
+    def validate_promotion_id(cls, value):
         try:
-            Promotion.objects.get_on_company(id=value)
-            return str(value)
+            return str(Promotion.objects.get_on_company(id=value).id)
         except Promotion.DoesNotExist:
             raise serializers.ValidationError({'promotion': PromoMsg.PROMOTION_NOT_EXIST})
 
     @classmethod
-    def validate_shipping(cls, value):
+    def validate_shipping_id(cls, value):
         try:
-            Shipping.objects.get_on_company(id=value)
-            return str(value)
+            return str(Shipping.objects.get_on_company(id=value).id)
         except Shipping.DoesNotExist:
             raise serializers.ValidationError({'shipping': ShippingMsg.SHIPPING_NOT_EXIST})
 
@@ -339,10 +337,8 @@ class SaleOrderRuleValidate:
     def validate_payment_stage(cls, validate_data):
         if 'sale_order_payment_stage' in validate_data and 'total_product' in validate_data:
             if len(validate_data['sale_order_payment_stage']) > 0:
-                total_ratio = 0
                 total_payment = 0
                 for payment_stage in validate_data['sale_order_payment_stage']:
-                    total_ratio += payment_stage.get('ratio', 0)
                     total_payment += payment_stage.get('value_total', 0)
                     # check required field
                     date = payment_stage.get('date', '')
@@ -351,8 +347,6 @@ class SaleOrderRuleValidate:
                         raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DATE_REQUIRED})
                     if not due_date:
                         raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
-                if total_ratio != 100:
-                    raise serializers.ValidationError({'detail': SaleMsg.TOTAL_RATIO_PAYMENT})
                 if total_payment != validate_data.get('total_product', 0):
                     raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
             else:
@@ -439,11 +433,11 @@ class SaleOrderProductSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_promotion_id(cls, value):
-        return SaleOrderCommonValidate().validate_promotion(value=value)
+        return SaleOrderCommonValidate().validate_promotion_id(value=value)
 
     @classmethod
     def validate_shipping_id(cls, value):
-        return SaleOrderCommonValidate().validate_shipping(value=value)
+        return SaleOrderCommonValidate().validate_shipping_id(value=value)
 
     @classmethod
     def validate_product_quantity(cls, value):
@@ -587,7 +581,7 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_shipping_id(cls, value):
-        return SaleOrderCommonValidate().validate_shipping(value=value)
+        return SaleOrderCommonValidate().validate_shipping_id(value=value)
 
     @classmethod
     def validate_warehouse_id(cls, value):

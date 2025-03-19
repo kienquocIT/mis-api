@@ -94,8 +94,8 @@ class ARInvoiceListForCashInflow(BaseListMixin):
         return super().get_queryset().filter(system_status=3).prefetch_related(
             'ar_invoice_items',
             'recon_item_ar_invoice',
-            'sale_order_mapped__payment_stage_sale_order',
-            'sale_order_mapped__payment_stage_sale_order__cash_inflow_item_detail_so_pm_stage',
+            'sale_order_mapped__sale_order_payment_stage_sale_order',
+            'sale_order_mapped__sale_order_payment_stage_sale_order__cash_inflow_item_detail_so_pm_stage',
         ).select_related(
             'customer_mapped',
             'sale_order_mapped',

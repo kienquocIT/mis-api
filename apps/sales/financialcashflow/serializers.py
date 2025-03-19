@@ -500,5 +500,5 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
                 'due_date': item.due_date,
                 'is_ar_invoice': item.is_ar_invoice,
                 'order': item.order
-            } for item in obj.sale_order_mapped.payment_stage_sale_order.all()],
+            } for item in obj.sale_order_mapped.sale_order_payment_stage_sale_order.all()],
         } if obj.sale_order_mapped else {}

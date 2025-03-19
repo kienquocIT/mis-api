@@ -589,21 +589,21 @@ class SaleOrderPaymentStage(MasterDataAbstractModel):
         SaleOrder,
         on_delete=models.CASCADE,
         verbose_name="sale order",
-        related_name="payment_stage_sale_order",
+        related_name="sale_order_payment_stage_sale_order",
     )
     remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
     term = models.ForeignKey(
         'saledata.Term',
         on_delete=models.SET_NULL,
         verbose_name="payment term",
-        related_name="so_payment_stage_term",
+        related_name="sale_order_payment_stage_term",
         null=True
     )
     term_data = models.JSONField(default=dict)
     date = models.DateTimeField(null=True)
     due_date = models.DateTimeField(null=True)
     date_type = models.CharField(max_length=200, blank=True)
-    ratio = models.FloatField(default=0)
+    ratio = models.FloatField(null=True)
     invoice = models.IntegerField(null=True)
     invoice_data = models.JSONField(default=dict, help_text='data json of invoice')
     value_before_tax = models.FloatField(default=0)
@@ -640,7 +640,7 @@ class SaleOrderInvoice(MasterDataAbstractModel):
     remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
     date = models.DateTimeField(null=True)
     term_data = models.JSONField(default=list, help_text='data json of terms')
-    ratio = models.FloatField(default=0)
+    ratio = models.FloatField(null=True)
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
