@@ -52,6 +52,7 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
     sum_discount_value = models.FloatField(default=0)
     sum_tax_value = models.FloatField(default=0)
     sum_after_tax_value = models.FloatField(default=0)
+    cash_inflow_done = models.BooleanField(default=False)
 
     @classmethod
     def push_final_acceptance_invoice(cls, instance):

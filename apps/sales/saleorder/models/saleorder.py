@@ -606,6 +606,7 @@ class SaleOrderPaymentStage(MasterDataAbstractModel):
     due_date = models.DateTimeField(null=True)
     is_ar_invoice = models.BooleanField(default=False)
     order = models.IntegerField(default=1)
+    cash_inflow_done = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Sale Order Payment Stage'

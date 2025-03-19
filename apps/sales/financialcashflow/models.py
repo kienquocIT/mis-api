@@ -56,6 +56,38 @@ class CashInflow(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    def update_ar_invoice_cash_inflow_done(self):
+        """
+        Cập nhập lại field 'cash_inflow_done' = True trong ar_invoice để biết Hóa đơn đã làm xong phiếu thu
+        """
+        for item in self.cash_inflow_item_cash_inflow.all():
+            ar_invoice_obj = item.ar_invoice
+            if ar_invoice_obj:
+                if sum(
+                        CashInflowItem.objects.filter(
+                            ar_invoice=ar_invoice_obj
+                        ).values_list('sum_payment_value', flat=True)
+                ) == ar_invoice_obj.sum_after_tax_value:
+                    ar_invoice_obj.cash_inflow_done = True
+                    ar_invoice_obj.save(update_fields=['cash_inflow_done'])
+        return True
+
+    def update_so_stage_cash_inflow_done(self):
+        """
+        Cập nhập lại field 'cash_inflow_done' = True trong so stage để biết Tạm ứng đã làm xong phiếu thu
+        """
+        for item in self.cash_inflow_item_cash_inflow.all():
+            sale_order_stage_obj = item.sale_order_stage
+            if sale_order_stage_obj:
+                if sum(
+                        CashInflowItem.objects.filter(
+                            sale_order_stage=sale_order_stage_obj
+                        ).values_list('sum_payment_value', flat=True)
+                ) == sale_order_stage_obj.value_total:
+                    sale_order_stage_obj.cash_inflow_done = True
+                    sale_order_stage_obj.save(update_fields=['cash_inflow_done'])
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -67,6 +99,8 @@ class CashInflow(DataAbstractModel):
                     kwargs.update({'update_fields': ['code']})
                 JEForCIFHandler.push_to_journal_entry(self)
                 ReconForCIFHandler.auto_create_recon_doc(self)
+                self.update_ar_invoice_cash_inflow_done()
+                self.update_so_stage_cash_inflow_done()
         super().save(*args, **kwargs)
 
 
@@ -97,6 +131,28 @@ class CashInflowItem(SimpleAbstractModel):
     #     'type_doc': str,
     #     'document_date': str,
     #     'sum_total_value': number
+    # }
+    sale_order_stage = models.ForeignKey(
+        'saleorder.SaleOrderPaymentStage',
+        on_delete=models.CASCADE,
+        related_name="cash_inflow_item_so_stage",
+        null=True
+    )
+    sale_order_stage_data = models.JSONField(default=dict)
+    # sale_order_stage_data = {
+    #     'id': uuid,
+    #     'remark': str,
+    #     'term_data': dict,
+    #     'date': str,
+    #     'date_type': str,
+    #     'payment_ratio': str,
+    #     'value_before_tax': number,
+    #     'issue_invoice': number,
+    #     'value_after_tax': number,
+    #     'value_total': number,
+    #     'due_date': str,
+    #     'is_ar_invoice': bool,
+    #     'order': number,
     # }
     sale_order = models.ForeignKey(
         'saleorder.SaleOrder',
