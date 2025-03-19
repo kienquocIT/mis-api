@@ -85,7 +85,8 @@ class CustomerAdvanceListForCashInflow(BaseListMixin):
     queryset = SaleOrderPaymentStage.objects
     filterset_fields = {
         'id': ['in'],
-        'sale_order__customer_id': ['exact']
+        'sale_order__customer_id': ['exact'],
+        'cash_inflow_done': ['exact']
     }
     serializer_list = CustomerAdvanceForCashInflowSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -93,7 +94,6 @@ class CustomerAdvanceListForCashInflow(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().filter(
             sale_order__system_status=3,
-            cash_inflow_done=False,
             is_ar_invoice=False
         ).prefetch_related(
             'sale_order__customer',
@@ -118,15 +118,15 @@ class ARInvoiceListForCashInflow(BaseListMixin):
     ]
     filterset_fields = {
         'id': ['in'],
-        'customer_mapped_id': ['exact']
+        'customer_mapped_id': ['exact'],
+        'cash_inflow_done': ['exact']
     }
     serializer_list = ARInvoiceListForCashInflowSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().filter(
-            system_status=3,
-            cash_inflow_done=False
+            system_status=3
         ).prefetch_related(
             'ar_invoice_items',
             'sale_order_mapped__payment_stage_sale_order',

@@ -3,7 +3,6 @@ from django.db import transaction
 from apps.accounting.accountingsettings.models import DefaultAccountDetermination
 from apps.accounting.journalentry.models import JournalEntry
 from apps.sales.report.models import ReportStockLog
-from apps.sales.report.utils import ReportInvCommonFunc
 
 
 logger = logging.getLogger(__name__)

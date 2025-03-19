@@ -4,7 +4,7 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, BankAccount
 from apps.sales.arinvoice.models import ARInvoice
 from apps.sales.financialcashflow.models import CashInflow, CashInflowItem, CashInflowItemDetail
-from apps.sales.saleorder.models import SaleOrder, SaleOrderPaymentStage
+from apps.sales.saleorder.models import SaleOrderPaymentStage
 from apps.shared import (
     AbstractListSerializerModel,
     AbstractCreateSerializerModel,
@@ -109,7 +109,9 @@ class CashInflowCreateSerializer(AbstractCreateSerializerModel):
             validated_data['has_ar_invoice_value'] = validated_data.get('total_value', 0)
 
         cash_inflow_obj = CashInflow.objects.create(**validated_data)
-        CashInflowCommonFunction.create_cif_item(cash_inflow_obj, cash_in_customer_advance_data, cash_in_ar_invoice_data)
+        CashInflowCommonFunction.create_cif_item(
+            cash_inflow_obj, cash_in_customer_advance_data, cash_in_ar_invoice_data
+        )
 
         return cash_inflow_obj
 
