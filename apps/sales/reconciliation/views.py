@@ -21,7 +21,7 @@ __all__ = [
 # main views
 class ReconList(BaseListMixin, BaseCreateMixin):
     queryset = Reconciliation.objects
-    search_fields = ['title', 'customer__name']
+    search_fields = ['title', 'business_partner__name']
     serializer_list = ReconListSerializer
     serializer_create = ReconCreateSerializer
     serializer_detail = ReconDetailSerializer

@@ -125,8 +125,9 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
         if customer_mapped:
             if not AccountBillingAddress.objects.filter(id=billing_address_id).exists():
                 raise serializers.ValidationError({'billing_address_id': "Billing address does not exist."})
-            if not AccountBanks.objects.filter(id=bank_account_id).exists():
-                raise serializers.ValidationError({'bank_account_id': "Bank account does not exist."})
+            if bank_account_id is not None:
+                if not AccountBanks.objects.filter(id=bank_account_id).exists():
+                    raise serializers.ValidationError({'bank_account_id': "Bank account does not exist."})
             validate_data['customer_mapped_data'] = {
                 'id': str(customer_mapped.id),
                 'code': customer_mapped.code,

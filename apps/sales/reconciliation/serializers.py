@@ -24,7 +24,7 @@ class ReconListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            'customer_data',
+            'business_partner_data',
             'system_status'
         )
 
@@ -91,7 +91,7 @@ class ReconDetailSerializer(serializers.ModelSerializer):
             'title',
             'posting_date',
             'document_date',
-            'customer_data',
+            'business_partner_data',
             'recon_items_data'
         )
 
@@ -101,12 +101,14 @@ class ReconDetailSerializer(serializers.ModelSerializer):
             'id': item.id,
             'recon_data': item.recon_data,
             'order': item.order,
-            'ar_invoice_data': item.ar_invoice_data,
-            'cash_inflow_data': item.cash_inflow_data,
+            'debit_doc_data': item.debit_doc_data,
+            'credit_doc_data': item.credit_doc_data,
+            'recon_total': item.recon_total,
             'recon_balance': item.recon_balance,
             'recon_amount': item.recon_amount,
             'note': item.note,
-            'accounting_account': item.accounting_account
+            'debit_account_data': item.debit_account_data,
+            'credit_account_data': item.credit_account_data
         } for item in obj.recon_items.all()]
 
 

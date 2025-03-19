@@ -21,7 +21,7 @@ class ReconForARInvoiceHandler:
                         'id': str(ar_invoice_obj.customer_mapped_id),
                         'code': ar_invoice_obj.customer_mapped.code,
                         'name': ar_invoice_obj.customer_mapped.name,
-                    },
+                    } if ar_invoice_obj.customer_mapped else {},
                     posting_date=str(ar_invoice_obj.posting_date),
                     document_date=str(ar_invoice_obj.document_date),
                     system_status=1,
@@ -56,6 +56,7 @@ class ReconForARInvoiceHandler:
                                 'title': ar_invoice_obj.title,
                                 'document_date': str(ar_invoice_obj.document_date),
                                 'posting_date': str(ar_invoice_obj.posting_date),
+                                'app_code': ar_invoice_obj.get_model_code()
                             } if ar_invoice_obj else {},
                             credit_account=ar_je_item.account,
                             credit_account_data={
@@ -95,6 +96,7 @@ class ReconForARInvoiceHandler:
                                         'title': delivery_obj.title,
                                         'document_date': str(delivery_obj.date_approved),
                                         'posting_date': str(delivery_obj.date_approved),
+                                        'app_code': delivery_obj.get_model_code()
                                     } if delivery_obj else {},
                                     debit_account=deli_je_item.account,
                                     debit_account_data={

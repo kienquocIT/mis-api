@@ -2,7 +2,7 @@ import logging
 from django.db import transaction
 from apps.accounting.accountingsettings.models import DefaultAccountDetermination
 from apps.accounting.journalentry.models import JournalEntry
-from apps.sales.report.utils import ReportInvCommonFunc
+from apps.sales.report.models import ReportStockLog
 
 
 logger = logging.getLogger(__name__)
@@ -18,17 +18,10 @@ class JEForDeliveryHandler:
             if deli_product.product:
                 for pw_data in deli_product.delivery_pw_delivery_product.all():
                     # lấy cost hiện tại của sp
-                    casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
-                        pw_data.uom,
-                        pw_data.quantity_delivery
-                    )
-                    cost = deli_product.product.get_current_unit_cost(
-                        get_type=1,
-                        **{
-                            'warehouse_id': pw_data.warehouse_id,
-                            'sale_order_id': delivery_obj.sale_order_data.get('id'),
-                        }
-                    ) * casted_quantity
+                    stock_log_item = ReportStockLog.objects.filter(
+                        trans_code=delivery_obj.code, trans_id=str(delivery_obj.id)
+                    ).first()
+                    cost = stock_log_item.value if stock_log_item else 0
                     sum_cost += cost
                     for account in deli_product.product.get_product_account_deter_sub_data(
                         account_deter_foreign_title='Inventory account',
