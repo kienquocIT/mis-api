@@ -30,7 +30,7 @@ ATTRIBUTE_CONFIG = [
     (1, _('Radio Select')),
     (2, _('Select (Fill by text)')),
     (3, _('Select (Fill by color)')),
-    (4, _('Select (Fill bu photo)'))
+    (4, _('Select (Fill by photo)'))
 ]
 
 VALUATION_METHOD = [
@@ -173,6 +173,7 @@ class Product(DataAbstractModel):
         related_name='uom_group'
     )
     general_traceability_method = models.SmallIntegerField(choices=TRACEABILITY_METHOD_SELECTION, default=0)
+    standard_price = models.FloatField(default=0, help_text="Standard price for BOM")
 
     width = models.FloatField(null=True)
     height = models.FloatField(null=True)
@@ -216,7 +217,6 @@ class Product(DataAbstractModel):
     inventory_level_min = models.IntegerField(null=True, default=None)
     inventory_level_max = models.IntegerField(null=True, default=None)
     valuation_method = models.SmallIntegerField(choices=VALUATION_METHOD, default=1)
-    standard_price = models.FloatField(default=0, help_text="Standard price for BOM")
 
     # Purchase
     purchase_default_uom = models.ForeignKey(
@@ -276,6 +276,8 @@ class Product(DataAbstractModel):
         choices=[(0, _('Warehouse')), (1, _('Product type')), (2, _('This product'))],
         default=0
     )
+
+    # for Variants
 
     class Meta:
         verbose_name = 'Product'
