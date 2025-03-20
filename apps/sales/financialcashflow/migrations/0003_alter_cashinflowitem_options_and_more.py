@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('saledata', '0062_alter_bank_options_alter_bankaccount_options_and_more'),
         ('saleorder', '0029_saleorderpaymentstage_cash_inflow_done'),
-        ('financialcashflow', '0003_remove_cashinflowitem_sale_order_stage_and_more'),
+        ('financialcashflow', '0002_remove_cashinflow_accounting_bank_account_and_more'),
     ]
 
     operations = [
