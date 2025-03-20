@@ -193,79 +193,93 @@ class DeliFinishHandler:
         return True
 
     @classmethod
-    def create_new_asset(cls, instance):
+    def force_create_new_asset(cls, instance):
         model_asset = DisperseModel(app_model='asset.fixedasset').get_model()
         if model_asset and hasattr(model_asset, 'objects'):
             for delivery_product in instance.delivery_product_delivery_sub.all():
                 asset_data = []
-
                 if delivery_product.asset_type == 1 and delivery_product.offset:
                     for delivery_warehouse in delivery_product.delivery_pw_delivery_product.all():
-                        cost = DeliFinishHandler.get_cost_by_warehouse(
-                            product_obj=delivery_product.offset,
-                            warehouse_id=delivery_warehouse.warehouse_id,
-                            sale_order_id=None,
+                        asset_data += DeliFinishHandler.create_obj_and_set_asset_data(
+                            model_asset=model_asset,
+                            instance=instance,
+                            delivery_product=delivery_product,
+                            delivery_warehouse=delivery_warehouse
                         )
-                        for _ in range(int(delivery_warehouse.quantity_delivery)):
-                            asset_obj = model_asset.objects.create(
-                                tenant_id=instance.tenant_id,
-                                company_id=instance.company_id,
-                                product_id=delivery_product.offset_id,
-                                title=delivery_product.offset.title,
-                                asset_code=delivery_product.offset.code,
-                                original_cost=cost,
-                                depreciation_method=delivery_product.product_depreciation_method,
-                                depreciation_time=delivery_product.product_depreciation_time,
-                                adjustment_factor=delivery_product.product_depreciation_adjustment,
-                                depreciation_start_date=delivery_product.product_depreciation_start_date,
-                                depreciation_end_date=delivery_product.product_depreciation_end_date,
-                                depreciation_data=DeliFinishHandler.update_depreciation_data(
-                                    depreciation_data=delivery_product.depreciation_data,
-                                    old_cost=delivery_product.product_cost,
-                                    new_cost=cost,
-                                ),
-                                status=2,
-                            )
-
-                            asset_json = {
-                                'asset_id': str(asset_obj.id),
-                                'asset_data': {
-                                    "id": str(asset_obj.id),
-                                    "code": asset_obj.code,
-                                    "title": asset_obj.title,
-                                    "asset_id": str(asset_obj.id),
-                                    "is_change": asset_obj.is_change,
-                                    "net_value": 0,
-                                    "origin_cost": asset_obj.original_cost,
-                                    "depreciation_time": asset_obj.depreciation_time,
-                                    "depreciation_start_date": str(asset_obj.depreciation_start_date),
-                                    "depreciation_end_date": str(asset_obj.depreciation_end_date),
-                                    "depreciation_data": asset_obj.depreciation_data,
-                                },
-                                "product_id": str(delivery_product.product_id),
-                                "product_data": delivery_product.product_data,
-                                "uom_time_id": str(delivery_product.uom_time_id),
-                                "uom_time_data": delivery_product.uom_time_data,
-                                "product_quantity_time": delivery_product.product_quantity_time,
-                                "product_depreciation_time": delivery_product.product_depreciation_time,
-                                "product_depreciation_price": delivery_product.product_depreciation_price,
-                                "product_depreciation_method": delivery_product.product_depreciation_method,
-                                "product_depreciation_subtotal": delivery_product.product_depreciation_subtotal,
-                                "product_depreciation_adjustment": delivery_product.product_depreciation_adjustment,
-                                "product_depreciation_start_date": str(
-                                    delivery_product.product_depreciation_start_date
-                                ),
-                                "product_depreciation_end_date": str(delivery_product.product_depreciation_end_date),
-
-                                "product_lease_end_date": str(delivery_product.product_lease_end_date),
-                                "product_lease_start_date": str(delivery_product.product_lease_start_date),
-
-                                "depreciation_data": delivery_product.depreciation_data,
-                            }
-                            asset_data.append(asset_json)
                     delivery_product.asset_data = asset_data
                     delivery_product.save(update_fields=['asset_data'])
         return True
+
+    @classmethod
+    def create_obj_and_set_asset_data(cls, model_asset, instance, delivery_product, delivery_warehouse):
+        asset_data = []
+        cost = DeliFinishHandler.get_cost_by_warehouse(
+            product_obj=delivery_product.offset,
+            warehouse_id=delivery_warehouse.warehouse_id,
+            sale_order_id=None,
+        )
+        for _ in range(int(delivery_warehouse.quantity_delivery)):
+            asset_obj = model_asset.objects.create(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                product_id=delivery_product.offset_id,
+                title=delivery_product.offset.title,
+                asset_code=delivery_product.offset.code,
+                original_cost=cost,
+                depreciation_method=delivery_product.product_depreciation_method,
+                depreciation_time=delivery_product.product_depreciation_time,
+                adjustment_factor=delivery_product.product_depreciation_adjustment,
+                depreciation_start_date=delivery_product.product_depreciation_start_date,
+                depreciation_end_date=delivery_product.product_depreciation_end_date,
+                depreciation_data=DeliFinishHandler.update_depreciation_data(
+                    depreciation_data=delivery_product.depreciation_data,
+                    old_cost=delivery_product.product_cost,
+                    new_cost=cost,
+                ),
+                status=2,
+            )
+            if asset_obj:
+                asset_obj.system_status = 3
+                asset_obj.save(update_fields=['system_status'])
+                asset_json = {
+                    'asset_id': str(asset_obj.id),
+                    'asset_data': {
+                        "id": str(asset_obj.id),
+                        "code": asset_obj.code,
+                        "title": asset_obj.title,
+                        "asset_id": str(asset_obj.id),
+                        "is_change": asset_obj.is_change,
+                        "net_value": 0,
+                        "origin_cost": asset_obj.original_cost,
+                        "depreciation_time": asset_obj.depreciation_time,
+                        "depreciation_start_date": str(asset_obj.depreciation_start_date),
+                        "depreciation_end_date": str(asset_obj.depreciation_end_date),
+                        "depreciation_data": asset_obj.depreciation_data,
+                    },
+                    "product_id": str(delivery_product.product_id),
+                    "product_data": delivery_product.product_data,
+                    "uom_time_id": str(delivery_product.uom_time_id),
+                    "uom_time_data": delivery_product.uom_time_data,
+                    "product_quantity_time": delivery_product.product_quantity_time,
+                    "product_depreciation_time": delivery_product.product_depreciation_time,
+                    "product_depreciation_price": delivery_product.product_depreciation_price,
+                    "product_depreciation_method": delivery_product.product_depreciation_method,
+                    "product_depreciation_subtotal": delivery_product.product_depreciation_subtotal,
+                    "product_depreciation_adjustment": delivery_product.product_depreciation_adjustment,
+                    "product_depreciation_start_date": str(
+                        delivery_product.product_depreciation_start_date
+                    ),
+                    "product_depreciation_end_date": str(
+                        delivery_product.product_depreciation_end_date
+                    ),
+
+                    "product_lease_end_date": str(delivery_product.product_lease_end_date),
+                    "product_lease_start_date": str(delivery_product.product_lease_start_date),
+
+                    "depreciation_data": delivery_product.depreciation_data,
+                }
+                asset_data.append(asset_json)
+        return asset_data
 
     @classmethod
     def update_depreciation_data(cls, depreciation_data, old_cost, new_cost):
