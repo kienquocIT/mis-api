@@ -423,7 +423,6 @@ class MeetingScheduleCreateSerializer(serializers.ModelSerializer):
             if len(response_data) > 0:
                 MeetingScheduleCommonFunc.combine_data_send_email_online_meeting(user_id, meeting_obj, response_data)
 
-
         attachment = self.initial_data.get('attachment', '')
         if attachment:
             MeetingScheduleCommonFunc.create_files_mapped(meeting_obj, attachment.strip().split(','))
@@ -512,3 +511,27 @@ class MeetingScheduleUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = MeetingSchedule
         fields = '__all__'
+
+
+class MeetingScheduleCheckSerializer(serializers.ModelSerializer):
+    room_info = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_room_info(cls, obj):
+        return {
+            'id': obj.id,
+            'title': obj.meeting_room_mapped.title,
+            'location': obj.meeting_room_mapped.location
+        } if obj.meeting_room_mapped else None
+
+    class Meta:
+        model = MeetingSchedule
+        fields = (
+            'title',
+            'meeting_type',
+            'meeting_start_date',
+            'meeting_start_time',
+            'meeting_duration',
+            'date_occur',
+            'room_info',
+        )

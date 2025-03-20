@@ -215,14 +215,14 @@ class LeaseOrderCommonValidate:
         try:
             return str(UnitOfMeasure.objects.get_on_company(id=value).id)
         except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'unit_of_measure': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+            raise serializers.ValidationError({'unit_of_measure': ProductMsg.UOM_NOT_EXIST})
 
     @classmethod
     def validate_tax_id(cls, value):
         try:
             return str(Tax.objects.get_on_company(id=value).id)
         except Tax.DoesNotExist:
-            raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'tax': ProductMsg.TAX_NOT_EXIST})
 
     @classmethod
     def validate_expense_id(cls, value):

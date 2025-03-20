@@ -19,7 +19,7 @@ __all__ = [
     'RecurrenceAbstractModel',
     'DisperseModel',
     'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass',
-    'AccountingAbstractModel'
+    'AutoDocumentAbstractModel'
 ]
 
 
@@ -415,7 +415,7 @@ class RecurrenceAbstractModel(SimpleAbstractModel):  # use for applications need
         verbose_name_plural = 'Recurrence Abstract'
 
 
-class AccountingAbstractModel(SimpleAbstractModel):  # use for applications in accounting
+class AutoDocumentAbstractModel(SimpleAbstractModel):  # use for applications in accounting
     system_auto_create = models.BooleanField(
         default=False, help_text="flag to know this record is created by system"
     )

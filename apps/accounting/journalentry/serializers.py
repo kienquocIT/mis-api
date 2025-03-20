@@ -22,6 +22,8 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
             return _('Delivery')
         if obj.je_transaction_app_code == 'arinvoice.arinvoice':
             return _('AR Invoice')
+        if obj.je_transaction_app_code == 'financialcashflow.cashinflow':
+            return _('Cash Inflow')
         return ''
 
 
@@ -54,6 +56,8 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
             return 0
         if obj.je_transaction_app_code == 'arinvoice.arinvoice':
             return 1
+        if obj.je_transaction_app_code == 'financialcashflow.cashinflow':
+            return 2
         return None
 
     @classmethod
@@ -64,7 +68,7 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
                 'id': item.id,
                 'order': item.order,
                 'account_data': item.account_data,
-                'business_partner_data' : item.business_partner_data,
+                'business_partner_data': item.business_partner_data,
                 'debit': item.debit,
                 'credit': item.credit,
                 'is_fc': item.is_fc,

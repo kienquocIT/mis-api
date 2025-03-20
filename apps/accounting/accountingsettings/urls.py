@@ -1,6 +1,6 @@
 from django.urls import path
 from apps.accounting.accountingsettings.views.account_masterdata_views import (
-    ChartOfAccountsList, DefaultAccountDeterminationList
+    ChartOfAccountsList, DefaultAccountDeterminationList, DefaultAccountDeterminationDetail
 )
 from apps.accounting.accountingsettings.views.prd_account_deter_views import ProductAccountDeterminationList, \
     ProductAccountDeterminationDetail
@@ -15,6 +15,11 @@ urlpatterns = [
         'default-account-determination/list',
         DefaultAccountDeterminationList.as_view(),
         name='DefaultAccountDeterminationList'
+    ),
+    path(
+        'default-account-determination/detail/<str:pk>',
+        DefaultAccountDeterminationDetail.as_view(),
+        name='DefaultAccountDeterminationDetail'
     ),
     path(
         'warehouse-account-determination/list',

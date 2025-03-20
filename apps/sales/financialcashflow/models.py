@@ -1,6 +1,8 @@
 from django.db import models
-from apps.sales.reconciliation.models import Reconciliation, ReconciliationItem
-from apps.shared import DataAbstractModel
+from apps.accounting.journalentry.utils.log_for_cash_inflow import JEForCIFHandler
+from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
+from apps.shared import DataAbstractModel, SimpleAbstractModel
+
 
 __all__ = ['CashInflow', 'CashInflowItem', 'CashInflowItemDetail']
 
@@ -31,11 +33,8 @@ class CashInflow(DataAbstractModel):
     # payment method
     cash_value = models.FloatField(default=0)
     bank_value = models.FloatField(default=0)
-    # sau này sẽ thay thế bằng 2 obj tài khoản kế toán, hiện tại chỉ lưu text
-    accounting_cash_account = models.CharField(default='1111', max_length=50)
-    accounting_bank_account = models.FloatField(default='1121', max_length=50)
     company_bank_account = models.ForeignKey(
-        'company.CompanyBankAccount',
+        'saledata.BankAccount',
         on_delete=models.CASCADE,
         related_name="cash_inflow_company_bank_account",
         null=True
@@ -43,13 +42,11 @@ class CashInflow(DataAbstractModel):
     company_bank_account_data = models.JSONField(default=dict)
     # company_bank_account_data = {
     #     'id': uuid,
-    #     'country_id': uuid,
-    #     'bank_name': str,
-    #     'bank_code': str,
-    #     'bank_account_name': str,
+    #     'bank_mapped_data': dict,
+    #     'bank_account_owner': str,
     #     'bank_account_number': str,
-    #     'bic_swift_code': str,
-    #     'is_default': bool
+    #     'brand_name': str,
+    #     'brand_address': str,
     # }
 
     class Meta:
@@ -59,67 +56,37 @@ class CashInflow(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    @classmethod
-    def auto_create_recon_doc(cls, cif):
-        if cif.has_ar_invoice_value > 0:
-            # crete recon for each cash inflow doc
-            recon_obj = Reconciliation.objects.create(
-                type=0,
-                code=f"RECON000{Reconciliation.objects.filter(company_id=cif.company_id).count()}",
-                title=f"Reconciliation for {cif.code}",
-                customer=cif.customer,
-                customer_data=cif.customer_data,
-                posting_date=cif.posting_date,
-                document_date=cif.document_date,
-                system_status=1,
-                company_id=cif.company_id,
-                tenant_id=cif.tenant_id,
-                system_auto_create=True
-            )
-            order = 0
-            for cif_item in cif.cash_inflow_item_cash_inflow.all():
-                if cif_item.ar_invoice:
-                    ReconciliationItem.objects.create(
-                        recon=recon_obj,
-                        recon_data={
-                            'id': str(recon_obj.id),
-                            'code': recon_obj.code,
-                            'title': recon_obj.title
-                        },
-                        order=order,
-                        ar_invoice=cif_item.ar_invoice,
-                        ar_invoice_data=cif_item.ar_invoice_data,
-                        recon_balance=cif_item.sum_balance_value,
-                        recon_amount=cif_item.sum_payment_value,
-                        note='',
-                        accounting_account='1311'
-                    )
-                    ReconciliationItem.objects.create(
-                        recon=recon_obj,
-                        recon_data={
-                            'id': str(recon_obj.id),
-                            'code': recon_obj.code,
-                            'title': recon_obj.title
-                        },
-                        order=order+1,
-                        cash_inflow=cif,
-                        cash_inflow_data={
-                            'id': str(cif.id),
-                            'code': cif.code,
-                            'title': cif.title,
-                            'type_doc': 'Cash inflow',
-                            'document_date': str(cif.document_date),
-                            'posting_date': str(cif.posting_date),
-                            'sum_total_value': cif.total_value
-                        },
-                        recon_balance=cif_item.sum_balance_value,
-                        recon_amount=cif_item.sum_payment_value,
-                        note='',
-                        accounting_account='1311'
-                    )
-                    order += 2
-            return True
-        return False
+    def update_ar_invoice_cash_inflow_done(self):
+        """
+        Cập nhập lại field 'cash_inflow_done' = True trong ar_invoice để biết Hóa đơn đã làm xong phiếu thu
+        """
+        for item in self.cash_inflow_item_cash_inflow.all():
+            ar_invoice_obj = item.ar_invoice
+            if ar_invoice_obj:
+                if sum(
+                        CashInflowItem.objects.filter(
+                            ar_invoice=ar_invoice_obj
+                        ).values_list('sum_payment_value', flat=True)
+                ) == ar_invoice_obj.sum_after_tax_value:
+                    ar_invoice_obj.cash_inflow_done = True
+                    ar_invoice_obj.save(update_fields=['cash_inflow_done'])
+        return True
+
+    def update_so_stage_cash_inflow_done(self):
+        """
+        Cập nhập lại field 'cash_inflow_done' = True trong so stage để biết Tạm ứng đã làm xong phiếu thu
+        """
+        for item in self.cash_inflow_item_cash_inflow.all():
+            sale_order_stage_obj = item.sale_order_stage
+            if sale_order_stage_obj:
+                if sum(
+                        CashInflowItem.objects.filter(
+                            sale_order_stage=sale_order_stage_obj
+                        ).values_list('sum_payment_value', flat=True)
+                ) == sale_order_stage_obj.value_total:
+                    sale_order_stage_obj.cash_inflow_done = True
+                    sale_order_stage_obj.save(update_fields=['cash_inflow_done'])
+        return True
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
@@ -130,12 +97,14 @@ class CashInflow(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-                self.auto_create_recon_doc(self)
-        # hit DB
+                JEForCIFHandler.push_to_journal_entry(self)
+                ReconForCIFHandler.auto_create_recon_doc(self)
+                self.update_ar_invoice_cash_inflow_done()
+                self.update_so_stage_cash_inflow_done()
         super().save(*args, **kwargs)
 
 
-class CashInflowItem(DataAbstractModel):
+class CashInflowItem(SimpleAbstractModel):
     cash_inflow = models.ForeignKey(
         CashInflow,
         on_delete=models.CASCADE,
@@ -163,6 +132,28 @@ class CashInflowItem(DataAbstractModel):
     #     'document_date': str,
     #     'sum_total_value': number
     # }
+    sale_order_stage = models.ForeignKey(
+        'saleorder.SaleOrderPaymentStage',
+        on_delete=models.CASCADE,
+        related_name="cash_inflow_item_so_stage",
+        null=True
+    )
+    sale_order_stage_data = models.JSONField(default=dict)
+    # sale_order_stage_data = {
+    #     'id': uuid,
+    #     'remark': str,
+    #     'term_data': dict,
+    #     'date': str,
+    #     'date_type': str,
+    #     'payment_ratio': str,
+    #     'value_before_tax': number,
+    #     'issue_invoice': number,
+    #     'value_after_tax': number,
+    #     'value_total': number,
+    #     'due_date': str,
+    #     'is_ar_invoice': bool,
+    #     'order': number,
+    # }
     sale_order = models.ForeignKey(
         'saleorder.SaleOrder',
         on_delete=models.CASCADE,
@@ -179,8 +170,15 @@ class CashInflowItem(DataAbstractModel):
     discount_payment = models.FloatField(default=0, help_text='%')
     discount_value = models.FloatField(default=0)
 
+    class Meta:
+        verbose_name = 'Cash Inflow Item'
+        verbose_name_plural = 'Cash Inflow Items'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
 
-class CashInflowItemDetail(DataAbstractModel):
+
+class CashInflowItemDetail(SimpleAbstractModel):
     cash_inflow_item = models.ForeignKey(
         CashInflowItem,
         on_delete=models.CASCADE,
@@ -209,3 +207,10 @@ class CashInflowItemDetail(DataAbstractModel):
     # }
     balance_value = models.FloatField(default=0)
     payment_value = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Cash Inflow Item Details'
+        verbose_name_plural = 'Cash Inflow Items Detail'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()

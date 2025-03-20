@@ -853,7 +853,7 @@ class ProductUOMImportSerializer(serializers.ModelSerializer):
             try:
                 return UnitOfMeasureGroup.objects.get_current(fill__company=True, code=value)
             except UnitOfMeasureGroup.DoesNotExist:
-                raise serializers.ValidationError({'group': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST})
+                raise serializers.ValidationError({'group': ProductMsg.UOM_GROUP_NOT_EXIST})
         raise serializers.ValidationError({'group': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_NULL})
 
     @classmethod
