@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('financialcashflow', '0003_alter_cashinflowitem_options_and_more'),
+        ('financialcashflow', '0004_alter_cashinflowitem_options_and_more'),
         ('company', '0017_remove_companybankaccount_company_and_more'),
     ]
 
