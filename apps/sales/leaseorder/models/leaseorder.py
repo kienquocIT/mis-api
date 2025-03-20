@@ -104,6 +104,10 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
         default=list,
         help_text="read data payment stage, use for get list or detail lease order"
     )
+    lease_invoice = models.JSONField(
+        default=list,
+        help_text="read data invoice, use for get list or detail lease order"
+    )
     # total amount of products
     total_product_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab product")
     total_product_discount_rate = models.FloatField(default=0, help_text="total discount rate (%) of tab product")

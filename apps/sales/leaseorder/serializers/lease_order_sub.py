@@ -111,7 +111,7 @@ class LeaseOrderCommonCreate:
         instance.lease_order_invoice_lease_order.all().delete()
         LeaseOrderInvoice.objects.bulk_create(
             [LeaseOrderInvoice(
-                sale_order=instance,
+                lease_order=instance,
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
                 **lease_invoice,
@@ -686,6 +686,7 @@ class LeaseOrderPaymentStageSerializer(serializers.ModelSerializer):
     term_id = serializers.UUIDField(required=False, allow_null=True)
     date = serializers.CharField(required=False, allow_null=True)
     due_date = serializers.CharField(required=False, allow_null=True)
+    tax_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = LeaseOrderPaymentStage
@@ -694,13 +695,17 @@ class LeaseOrderPaymentStageSerializer(serializers.ModelSerializer):
             'term_id',
             'term_data',
             'date',
-            'date_type',
-            'payment_ratio',
-            'value_before_tax',
-            'issue_invoice',
-            'value_after_tax',
-            'value_total',
             'due_date',
+            'ratio',
+            'invoice',
+            'invoice_data',
+            'value_before_tax',
+            'value_reconcile',
+            'reconcile_data',
+            'tax_id',
+            'tax_data',
+            'value_tax',
+            'value_total',
             'is_ar_invoice',
             'order',
         )
@@ -708,6 +713,10 @@ class LeaseOrderPaymentStageSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_term_id(cls, value):
         return LeaseOrderCommonValidate().validate_term_id(value=value)
+
+    @classmethod
+    def validate_tax_id(cls, value):
+        return LeaseOrderCommonValidate().validate_tax_id(value=value)
 
 
 class LeaseOrderInvoiceSerializer(serializers.ModelSerializer):

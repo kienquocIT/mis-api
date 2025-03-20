@@ -159,6 +159,7 @@ class LeaseOrderDetailSerializer(AbstractDetailSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'lease_payment_stage',
+            'lease_invoice',
             # system
             'workflow_runtime_id',
             'is_active',
