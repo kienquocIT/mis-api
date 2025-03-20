@@ -341,6 +341,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 'indicator_net_income',
                 # payment stage tab
                 'sale_order_payment_stage',
+                'sale_order_invoice',
                 # system
                 'workflow_runtime_id',
                 'is_active',
