@@ -200,8 +200,7 @@ class Product(DataAbstractModel):
         Manufacturer,
         null=True,
         on_delete=models.CASCADE,
-        related_name='manufacturer',
-        default=None
+        related_name='manufacturer'
     )
     general_manufacturer_data = models.JSONField(default=dict)
     general_traceability_method = models.SmallIntegerField(choices=TRACEABILITY_METHOD_SELECTION, default=0)
@@ -218,24 +217,21 @@ class Product(DataAbstractModel):
         UnitOfMeasure,
         null=True,
         on_delete=models.CASCADE,
-        related_name='sale_default_uom',
-        default=None
+        related_name='sale_default_uom'
     )
     sale_default_uom_data = models.JSONField(default=dict)
     sale_tax = models.ForeignKey(
         'saledata.Tax',
         null=True,
         on_delete=models.CASCADE,
-        related_name='sale_tax',
-        default=None
+        related_name='sale_tax'
     )
     sale_tax_data = models.JSONField(default=dict)
     sale_currency_using = models.ForeignKey(
         'saledata.Currency',
         null=True,
         on_delete=models.CASCADE,
-        related_name='sale_currency_using_for_cost',
-        default=None
+        related_name='sale_currency_using_for_cost'
     )
     sale_currency_using_data = models.JSONField(default=dict)
     sale_price = models.FloatField(default=0, help_text="General price in General price list")
@@ -246,12 +242,11 @@ class Product(DataAbstractModel):
         UnitOfMeasure,
         null=True,
         on_delete=models.CASCADE,
-        related_name='inventory_uom',
-        default=None
+        related_name='inventory_uom'
     )
     inventory_uom_data = models.JSONField(default=dict)
-    inventory_level_min = models.IntegerField(null=True, default=None)
-    inventory_level_max = models.IntegerField(null=True, default=None)
+    inventory_level_min = models.IntegerField(null=True)
+    inventory_level_max = models.IntegerField(null=True)
     valuation_method = models.SmallIntegerField(choices=VALUATION_METHOD, default=1)
 
     # Purchase
@@ -259,16 +254,14 @@ class Product(DataAbstractModel):
         UnitOfMeasure,
         null=True,
         on_delete=models.CASCADE,
-        related_name='purchase_default_uom',
-        default=None
+        related_name='purchase_default_uom'
     )
     purchase_default_uom_data = models.JSONField(default=dict)
     purchase_tax = models.ForeignKey(
         'saledata.Tax',
         null=True,
         on_delete=models.CASCADE,
-        related_name='purchase_tax',
-        default=None
+        related_name='purchase_tax'
     )
     purchase_tax_data = models.JSONField(default=dict)
     supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=0)
@@ -305,8 +298,7 @@ class Product(DataAbstractModel):
         'saledata.Price',
         null=True,
         on_delete=models.CASCADE,
-        related_name='online_price_list',
-        default=None
+        related_name='online_price_list'
     )
     online_price_list_data = models.JSONField(default=dict)
     available_notify = models.BooleanField(default=False)
@@ -514,16 +506,14 @@ class Expense(MasterDataAbstractModel):  # Internal Labor Item
         verbose_name='Unit of Measure Group apply for expense',
         on_delete=models.CASCADE,
         null=True,
-        related_name='expense_uom_group',
-        default=None,
+        related_name='expense_uom_group'
     )
     uom = models.ForeignKey(
         UnitOfMeasure,
         verbose_name='Unit of Measure apply for expense',
         on_delete=models.CASCADE,
         null=True,
-        related_name='expense_uom',
-        default=None,
+        related_name='expense_uom'
     )
     price_list = models.ManyToManyField(
         'saledata.Price',
@@ -632,15 +622,13 @@ class ExpenseRole(SimpleAbstractModel):
         Expense,
         on_delete=models.CASCADE,
         null=True,
-        related_name='expense_role_expense',
-        default=None,
+        related_name='expense_role_expense'
     )
     role = models.ForeignKey(
         'hr.Role',
         on_delete=models.CASCADE,
         null=True,
-        related_name='expense_role_role',
-        default=None,
+        related_name='expense_role_role'
     )
 
     class Meta:
