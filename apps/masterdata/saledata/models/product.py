@@ -123,6 +123,18 @@ class UnitOfMeasure(MasterDataAbstractModel):
         permissions = ()
 
 
+class Manufacturer(MasterDataAbstractModel):
+    description = models.CharField(blank=True, max_length=200)
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Manufacturer'
+        verbose_name_plural = 'Manufacturers'
+        ordering = ('date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
 class Product(DataAbstractModel):
     create_from_import = models.BooleanField(default=False)
     import_data_row = models.JSONField(default=dict)
@@ -181,6 +193,13 @@ class Product(DataAbstractModel):
         null=True,
         on_delete=models.CASCADE,
         related_name='uom_group'
+    )
+    general_manufacturer = models.ForeignKey(
+        Manufacturer,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='manufacturer',
+        default=None
     )
     general_traceability_method = models.SmallIntegerField(choices=TRACEABILITY_METHOD_SELECTION, default=0)
     standard_price = models.FloatField(default=0, help_text="Standard price for BOM")

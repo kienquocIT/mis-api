@@ -8,6 +8,7 @@ class ProductMsg:
     PRODUCT_TYPE_NOT_NULL = _('Product type must not null.')
     PRODUCT_DOES_NOT_EXIST = _('Product does not exist.')
     PRODUCT_CATEGORY_EXIST = _('Product category is already exist.')
+    MANUFACTURER_DOES_NOT_EXIST = _('Manufacturer does not exist.')
     PRODUCT_CATEGORY_NOT_EXIST = _('Product category does not exist.')
     PRODUCT_CATEGORY_NOT_NULL = _('Product category must not null.')
     CURRENCY_NOT_EXIST = _('Currency does not exist.')

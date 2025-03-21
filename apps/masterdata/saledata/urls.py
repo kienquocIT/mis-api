@@ -17,7 +17,7 @@ from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail, UnitOfMeasureList, UnitOfMeasureDetail, ProductList,
     ProductDetail, ProductForSaleList, UnitOfMeasureOfGroupLaborList, ProductForSaleDetail, ProductQuickCreateList,
-    ProductQuotationListLoadDB,
+    ProductQuotationListLoadDB, ManufacturerList, ManufacturerDetail,
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
@@ -74,7 +74,8 @@ urlpatterns += [
     path('product-type/<str:pk>', ProductTypeDetail.as_view(), name='ProductTypeDetail'),
     path('product-categories', ProductCategoryList.as_view(), name='ProductCategoryList'),
     path('product-category/<str:pk>', ProductCategoryDetail.as_view(), name='ProductCategoryDetail'),
-
+    path('manufacturers', ManufacturerList.as_view(), name='ManufacturerList'),
+    path('manufacturer/<str:pk>', ManufacturerDetail.as_view(), name='ManufacturerDetail'),
     path('units-of-measure-group', UnitOfMeasureGroupList.as_view(), name='UnitOfMeasureGroupList'),
     path('unit-of-measure-group/<str:pk>', UnitOfMeasureGroupDetail.as_view(), name='UnitOfMeasureGroupDetail'),
     path('units-of-measure', UnitOfMeasureList.as_view(), name='UnitOfMeasureList'),
