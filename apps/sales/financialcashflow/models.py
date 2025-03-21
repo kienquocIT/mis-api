@@ -179,6 +179,9 @@ class CashInflowItem(SimpleAbstractModel):
 
 
 class CashInflowItemDetail(SimpleAbstractModel):
+    """
+    Map với các Stage thanh toán (trong Sale Order) cho trường hợp thu tiền hóa đơn
+    """
     cash_inflow_item = models.ForeignKey(
         CashInflowItem,
         on_delete=models.CASCADE,
