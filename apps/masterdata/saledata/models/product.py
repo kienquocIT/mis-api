@@ -188,12 +188,14 @@ class Product(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name='product_category'
     )
+    general_product_category_data = models.JSONField(default=dict)
     general_uom_group = models.ForeignKey(
         UnitOfMeasureGroup,
         null=True,
         on_delete=models.CASCADE,
         related_name='uom_group'
     )
+    general_uom_group_data = models.JSONField(default=dict)
     general_manufacturer = models.ForeignKey(
         Manufacturer,
         null=True,
@@ -201,6 +203,7 @@ class Product(DataAbstractModel):
         related_name='manufacturer',
         default=None
     )
+    general_manufacturer_data = models.JSONField(default=dict)
     general_traceability_method = models.SmallIntegerField(choices=TRACEABILITY_METHOD_SELECTION, default=0)
     standard_price = models.FloatField(default=0, help_text="Standard price for BOM")
 
@@ -218,6 +221,7 @@ class Product(DataAbstractModel):
         related_name='sale_default_uom',
         default=None
     )
+    sale_default_uom_data = models.JSONField(default=dict)
     sale_tax = models.ForeignKey(
         'saledata.Tax',
         null=True,
@@ -225,6 +229,7 @@ class Product(DataAbstractModel):
         related_name='sale_tax',
         default=None
     )
+    sale_tax_data = models.JSONField(default=dict)
     sale_currency_using = models.ForeignKey(
         'saledata.Currency',
         null=True,
@@ -232,6 +237,7 @@ class Product(DataAbstractModel):
         related_name='sale_currency_using_for_cost',
         default=None
     )
+    sale_currency_using_data = models.JSONField(default=dict)
     sale_price = models.FloatField(default=0, help_text="General price in General price list")
     sale_product_price_list = models.JSONField(default=list)
 
@@ -243,6 +249,7 @@ class Product(DataAbstractModel):
         related_name='inventory_uom',
         default=None
     )
+    inventory_uom_data = models.JSONField(default=dict)
     inventory_level_min = models.IntegerField(null=True, default=None)
     inventory_level_max = models.IntegerField(null=True, default=None)
     valuation_method = models.SmallIntegerField(choices=VALUATION_METHOD, default=1)
@@ -255,6 +262,7 @@ class Product(DataAbstractModel):
         related_name='purchase_default_uom',
         default=None
     )
+    purchase_default_uom_data = models.JSONField(default=dict)
     purchase_tax = models.ForeignKey(
         'saledata.Tax',
         null=True,
@@ -262,6 +270,7 @@ class Product(DataAbstractModel):
         related_name='purchase_tax',
         default=None
     )
+    purchase_tax_data = models.JSONField(default=dict)
     supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=0)
 
     # Stock information
@@ -299,6 +308,7 @@ class Product(DataAbstractModel):
         related_name='online_price_list',
         default=None
     )
+    online_price_list_data = models.JSONField(default=dict)
     available_notify = models.BooleanField(default=False)
     available_notify_quantity = models.IntegerField(null=True)
     account_deter_referenced_by = models.SmallIntegerField(
