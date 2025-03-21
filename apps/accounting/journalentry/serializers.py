@@ -13,6 +13,7 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
             'code',
             'je_transaction_data',
             'original_transaction',
+            'date_created',
             'system_auto_create'
         )
 
