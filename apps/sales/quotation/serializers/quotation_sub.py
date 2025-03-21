@@ -106,7 +106,7 @@ class QuotationCommonValidate:
     @classmethod
     def validate_customer_id(cls, value):
         try:
-            return Account.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+            return str(Account.objects.get_on_company(id=value).id)
         except Account.DoesNotExist:
             raise serializers.ValidationError({'customer': AccountsMsg.ACCOUNT_NOT_EXIST})
 
@@ -115,14 +115,14 @@ class QuotationCommonValidate:
         try:
             if value is None:
                 return value
-            return Opportunity.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+            return str(Opportunity.objects.get_on_company(id=value).id)
         except Opportunity.DoesNotExist:
             raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
 
     @classmethod
     def validate_contact_id(cls, value):
         try:
-            return Contact.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+            return str(Contact.objects.get_on_company(id=value).id)
         except Contact.DoesNotExist:
             raise serializers.ValidationError({'contact': AccountsMsg.CONTACT_NOT_EXIST})
 
@@ -131,54 +131,49 @@ class QuotationCommonValidate:
         try:
             if value is None:
                 return None
-            return PaymentTerm.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+            return str(PaymentTerm.objects.get_on_company(id=value).id)
         except PaymentTerm.DoesNotExist:
             raise serializers.ValidationError({'payment_term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
 
     @classmethod
-    def validate_product(cls, value):
+    def validate_product_id(cls, value):
         try:
-            Product.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(Product.objects.get_on_company(id=value).id)
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
 
     @classmethod
-    def validate_unit_of_measure(cls, value):
+    def validate_unit_of_measure_id(cls, value):
         try:
-            UnitOfMeasure.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(UnitOfMeasure.objects.get_on_company(id=value).id)
         except UnitOfMeasure.DoesNotExist:
             raise serializers.ValidationError({'unit_of_measure': ProductMsg.UOM_NOT_EXIST})
 
     @classmethod
-    def validate_tax(cls, value):
+    def validate_tax_id(cls, value):
         try:
-            Tax.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(Tax.objects.get_on_company(id=value).id)
         except Tax.DoesNotExist:
             raise serializers.ValidationError({'tax': ProductMsg.TAX_NOT_EXIST})
 
     @classmethod
-    def validate_expense(cls, value):
+    def validate_expense_id(cls, value):
         try:
-            Expense.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(Expense.objects.get_on_company(id=value).id)
         except Expense.DoesNotExist:
             raise serializers.ValidationError({'expense': ProductMsg.EXPENSE_DOES_NOT_EXIST})
 
     @classmethod
-    def validate_expense_item(cls, value):
+    def validate_expense_item_id(cls, value):
         try:
-            ExpenseItem.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(ExpenseItem.objects.get_on_company(id=value).id)
         except ExpenseItem.DoesNotExist:
             raise serializers.ValidationError({'expense_item': ExpenseMsg.EXPENSE_ITEM_NOT_EXIST})
 
     @classmethod
     def validate_price_list(cls, value):
         if isinstance(value, list):
-            price_list = Price.objects.filter_current(fill__tenant=True, fill__company=True, id__in=value)
+            price_list = Price.objects.filter_on_company(id__in=value)
             if price_list.count() == len(value):
                 return [
                     {'id': str(price.id), 'title': price.title, 'code': price.code}
@@ -188,25 +183,23 @@ class QuotationCommonValidate:
         raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_NOT_EXIST})
 
     @classmethod
-    def validate_promotion(cls, value):
+    def validate_promotion_id(cls, value):
         try:
-            Promotion.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(Promotion.objects.get_on_company(id=value).id)
         except Promotion.DoesNotExist:
             raise serializers.ValidationError({'promotion': PromoMsg.PROMOTION_NOT_EXIST})
 
     @classmethod
-    def validate_shipping(cls, value):
+    def validate_shipping_id(cls, value):
         try:
-            Shipping.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(Shipping.objects.get_on_company(id=value).id)
         except Shipping.DoesNotExist:
             raise serializers.ValidationError({'shipping': ShippingMsg.SHIPPING_NOT_EXIST})
 
     @classmethod
     def validate_indicator(cls, value):
         try:
-            indicator = QuotationIndicatorConfig.objects.get_current(fill__company=True, id=value)
+            indicator = QuotationIndicatorConfig.objects.get_on_company(id=value)
             return {
                 'id': str(indicator.id),
                 'title': indicator.title,
@@ -233,21 +226,21 @@ class QuotationCommonValidate:
     @classmethod
     def validate_employee_inherit_id(cls, value):
         try:
-            return Employee.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+            return Employee.objects.get_on_company(id=value).id
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
 
     @classmethod
     def validate_next_node_collab_id(cls, value):
         try:
-            return Employee.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+            return Employee.objects.get_on_company(id=value).id
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'next_node_collab': HRMsg.EMPLOYEES_NOT_EXIST})
 
     @classmethod
     def validate_warehouse(cls, value):
         try:
-            WareHouse.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            WareHouse.objects.get_on_company(id=value)
             return str(value)
         except WareHouse.DoesNotExist:
             raise serializers.ValidationError({'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST})
@@ -276,7 +269,7 @@ class QuotationRuleValidate:
             opportunity_id = validate_data.get('opportunity_id', None)
             model_cls = DisperseModel(app_model="hr.employee").get_model()
             if model_cls and hasattr(model_cls, 'objects'):
-                so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+                so_config = QuotationAppConfig.objects.filter_on_company().first()
                 employee = model_cls.objects.filter(id=validate_data['employee_inherit_id']).first()
                 if so_config and employee:
                     ss_role = [role.id for role in so_config.ss_role.all()]
@@ -349,23 +342,23 @@ class QuotationProductSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_product_id(cls, value):
-        return QuotationCommonValidate().validate_product(value=value)
+        return QuotationCommonValidate().validate_product_id(value=value)
 
     @classmethod
     def validate_unit_of_measure_id(cls, value):
-        return QuotationCommonValidate().validate_unit_of_measure(value=value)
+        return QuotationCommonValidate().validate_unit_of_measure_id(value=value)
 
     @classmethod
     def validate_tax_id(cls, value):
-        return QuotationCommonValidate().validate_tax(value=value)
+        return QuotationCommonValidate().validate_tax_id(value=value)
 
     @classmethod
     def validate_promotion_id(cls, value):
-        return QuotationCommonValidate().validate_promotion(value=value)
+        return QuotationCommonValidate().validate_promotion_id(value=value)
 
     @classmethod
     def validate_shipping_id(cls, value):
-        return QuotationCommonValidate().validate_shipping(value=value)
+        return QuotationCommonValidate().validate_shipping_id(value=value)
 
     @classmethod
     def validate_product_quantity(cls, value):
@@ -424,19 +417,19 @@ class QuotationCostSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_product_id(cls, value):
-        return QuotationCommonValidate().validate_product(value=value)
+        return QuotationCommonValidate().validate_product_id(value=value)
 
     @classmethod
     def validate_unit_of_measure_id(cls, value):
-        return QuotationCommonValidate().validate_unit_of_measure(value=value)
+        return QuotationCommonValidate().validate_unit_of_measure_id(value=value)
 
     @classmethod
     def validate_tax_id(cls, value):
-        return QuotationCommonValidate().validate_tax(value=value)
+        return QuotationCommonValidate().validate_tax_id(value=value)
 
     @classmethod
     def validate_shipping_id(cls, value):
-        return QuotationCommonValidate().validate_shipping(value=value)
+        return QuotationCommonValidate().validate_shipping_id(value=value)
 
     @classmethod
     def validate_warehouse_id(cls, value):
@@ -486,19 +479,19 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_expense_id(cls, value):
-        return QuotationCommonValidate().validate_expense(value=value)
+        return QuotationCommonValidate().validate_expense_id(value=value)
 
     @classmethod
     def validate_expense_item_id(cls, value):
-        return QuotationCommonValidate().validate_expense_item(value=value)
+        return QuotationCommonValidate().validate_expense_item_id(value=value)
 
     @classmethod
     def validate_unit_of_measure_id(cls, value):
-        return QuotationCommonValidate().validate_unit_of_measure(value=value)
+        return QuotationCommonValidate().validate_unit_of_measure_id(value=value)
 
     @classmethod
     def validate_tax_id(cls, value):
-        return QuotationCommonValidate().validate_tax(value=value)
+        return QuotationCommonValidate().validate_tax_id(value=value)
 
 
 class QuotationIndicatorSerializer(serializers.ModelSerializer):

@@ -179,6 +179,10 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
         default=list,
         help_text="read data payment stage, use for get list or detail sale order"
     )
+    sale_order_invoice = models.JSONField(
+        default=list,
+        help_text="read data invoice, use for get list or detail sale order"
+    )
     # total amount of products
     total_product_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab product")
     total_product_discount_rate = models.FloatField(default=0, help_text="total discount rate (%) of tab product")
@@ -585,25 +589,36 @@ class SaleOrderPaymentStage(MasterDataAbstractModel):
         SaleOrder,
         on_delete=models.CASCADE,
         verbose_name="sale order",
-        related_name="payment_stage_sale_order",
+        related_name="sale_order_payment_stage_sale_order",
     )
     remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
     term = models.ForeignKey(
         'saledata.Term',
         on_delete=models.SET_NULL,
         verbose_name="payment term",
-        related_name="so_payment_stage_term",
+        related_name="sale_order_payment_stage_term",
         null=True
     )
     term_data = models.JSONField(default=dict)
     date = models.DateTimeField(null=True)
-    date_type = models.CharField(max_length=200, blank=True)
-    payment_ratio = models.FloatField(default=0)
-    value_before_tax = models.FloatField(default=0)
-    issue_invoice = models.IntegerField(null=True)
-    value_after_tax = models.FloatField(default=0)
-    value_total = models.FloatField(default=0)
     due_date = models.DateTimeField(null=True)
+    date_type = models.CharField(max_length=200, blank=True)
+    ratio = models.FloatField(null=True)
+    invoice = models.IntegerField(null=True)
+    invoice_data = models.JSONField(default=dict, help_text='data json of invoice')
+    value_before_tax = models.FloatField(default=0)
+    value_reconcile = models.FloatField(default=0)
+    reconcile_data = models.JSONField(default=list, help_text='data json of reconcile')
+    tax = models.ForeignKey(
+        'saledata.Tax',
+        on_delete=models.CASCADE,
+        verbose_name="tax",
+        related_name="sale_order_payment_stage_tax",
+        null=True
+    )
+    tax_data = models.JSONField(default=dict, help_text='data json of tax')
+    value_tax = models.FloatField(default=0)
+    value_total = models.FloatField(default=0)
     is_ar_invoice = models.BooleanField(default=False)
     order = models.IntegerField(default=1)
     cash_inflow_done = models.BooleanField(default=False)
@@ -611,6 +626,37 @@ class SaleOrderPaymentStage(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Sale Order Payment Stage'
         verbose_name_plural = 'Sale Order Payment Stages'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class SaleOrderInvoice(MasterDataAbstractModel):
+    sale_order = models.ForeignKey(
+        SaleOrder,
+        on_delete=models.CASCADE,
+        verbose_name="sale order",
+        related_name="sale_order_invoice_sale_order",
+    )
+    remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+    date = models.DateTimeField(null=True)
+    term_data = models.JSONField(default=list, help_text='data json of terms')
+    ratio = models.FloatField(null=True)
+    tax = models.ForeignKey(
+        'saledata.Tax',
+        on_delete=models.CASCADE,
+        verbose_name="tax",
+        related_name="sale_order_invoice_tax",
+        null=True
+    )
+    tax_data = models.JSONField(default=dict, help_text='data json of tax')
+    total = models.FloatField(default=0)
+    balance = models.FloatField(default=0)
+    order = models.IntegerField(default=1)
+
+    class Meta:
+        verbose_name = 'Sale Order Invoice'
+        verbose_name_plural = 'Sale Order Invoices'
         ordering = ('order',)
         default_permissions = ()
         permissions = ()
