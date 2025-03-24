@@ -11,7 +11,7 @@ from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin,
 )
 from apps.masterdata.saledata.models.product import (
-    ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product,
+    ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer,
 )
 from apps.masterdata.saledata.serializers.product import (
     ProductListSerializer, ProductCreateSerializer,
@@ -26,7 +26,8 @@ from apps.masterdata.saledata.serializers.product_masterdata import (
     UnitOfMeasureGroupListSerializer, UnitOfMeasureGroupCreateSerializer,
     UnitOfMeasureGroupDetailSerializer, UnitOfMeasureUpdateSerializer,
     UnitOfMeasureListSerializer, UnitOfMeasureCreateSerializer,
-    UnitOfMeasureGroupUpdateSerializer, UnitOfMeasureDetailSerializer
+    UnitOfMeasureGroupUpdateSerializer, UnitOfMeasureDetailSerializer, ManufacturerListSerializer,
+    ManufacturerCreateSerializer, ManufacturerDetailSerializer, ManufacturerUpdateSerializer
 )
 from apps.masterdata.saledata.serializers.product_custom import (
     ProductForSaleListSerializer, ProductForSaleDetailSerializer
@@ -178,12 +179,6 @@ class ProductCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
-        # instance = self.get_object()
-        # if self.has_related_records(instance):
-        #     return ResponseController.bad_request_400(msg="This ProductCategory is referenced by some records.")
-        # instance.is_delete = True
-        # instance.save(update_fields=['is_delete'])
-        # return ResponseController.success_200({}, key_data='result')
 
 
 class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
@@ -337,6 +332,74 @@ class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         return ResponseController.success_200({}, key_data='result')
 
 
+class ManufacturerList(BaseListMixin, BaseCreateMixin):
+    queryset = Manufacturer.objects
+    search_fields = ['title']
+    serializer_list = ManufacturerListSerializer
+    serializer_create = ManufacturerCreateSerializer
+    serializer_detail = ManufacturerDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_delete=False)
+
+    @swagger_auto_schema(
+        operation_summary="Manufacturer list",
+        operation_description="Manufacturer list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Manufacturer",
+        operation_description="Create new Manufacturer",
+        request_body=ManufacturerCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class ManufacturerDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
+    queryset = Manufacturer.objects
+    serializer_detail = ManufacturerDetailSerializer
+    serializer_update = ManufacturerUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    @swagger_auto_schema(operation_summary='Detail Manufacturer')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(operation_summary="Update Manufacturer", request_body=ManufacturerUpdateSerializer)
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary='Remove Manufacturer'
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
 class ProductList(BaseListMixin, BaseCreateMixin):
     queryset = Product.objects
     serializer_list = ProductListSerializer
@@ -481,7 +544,6 @@ class ProductForSaleList(BaseListMixin):
         'general_product_types_mapped__is_service': ['exact'],
         'bom_product__opportunity_id': ['exact', 'isnull'],
         'bom_product': ['isnull'],
-        'lease_source_id': ['exact', 'isnull'],
     }
     serializer_list = ProductForSaleListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

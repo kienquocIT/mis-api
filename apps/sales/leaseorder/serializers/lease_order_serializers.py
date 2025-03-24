@@ -6,8 +6,7 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.leaseorder.serializers.lease_order_sub import LeaseOrderCommonCreate, LeaseOrderCommonValidate, \
     LeaseOrderProductSerializer, LeaseOrderCostSerializer, LeaseOrderExpenseSerializer, LeaseOrderIndicatorSerializer, \
-    LeaseOrderPaymentStageSerializer, LeaseOrderRuleValidate, LeaseOrderLogisticSerializer, \
-    LeaseOrderCostLeasedSerializer
+    LeaseOrderPaymentStageSerializer, LeaseOrderRuleValidate, LeaseOrderLogisticSerializer, LeaseOrderInvoiceSerializer
 from apps.sales.leaseorder.models import LeaseOrder
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
@@ -160,6 +159,7 @@ class LeaseOrderDetailSerializer(AbstractDetailSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'lease_payment_stage',
+            'lease_invoice',
             # system
             'workflow_runtime_id',
             'is_active',
@@ -217,10 +217,6 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
-    lease_costs_leased_data = LeaseOrderCostLeasedSerializer(
-        many=True,
-        required=False
-    )
     lease_expenses_data = LeaseOrderExpenseSerializer(
         many=True,
         required=False
@@ -232,6 +228,10 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
     )
     # payment stage tab
     lease_payment_stage = LeaseOrderPaymentStageSerializer(
+        many=True,
+        required=False
+    )
+    lease_invoice = LeaseOrderInvoiceSerializer(
         many=True,
         required=False
     )
@@ -293,7 +293,6 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
             'customer_shipping',
             'customer_billing',
             'lease_costs_data',
-            'lease_costs_leased_data',
             'lease_expenses_data',
             # indicator tab
             'lease_indicators_data',
@@ -303,6 +302,7 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'lease_payment_stage',
+            'lease_invoice',
             # recurrence
             'is_recurrence_template',
             'is_recurring',
@@ -423,10 +423,6 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
-    lease_costs_leased_data = LeaseOrderCostLeasedSerializer(
-        many=True,
-        required=False
-    )
     lease_expenses_data = LeaseOrderExpenseSerializer(
         many=True,
         required=False
@@ -438,6 +434,10 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
     )
     # payment stage tab
     lease_payment_stage = LeaseOrderPaymentStageSerializer(
+        many=True,
+        required=False
+    )
+    lease_invoice = LeaseOrderInvoiceSerializer(
         many=True,
         required=False
     )
@@ -479,7 +479,6 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
             'customer_shipping',
             'customer_billing',
             'lease_costs_data',
-            'lease_costs_leased_data',
             'lease_expenses_data',
             # indicator tab
             'lease_indicators_data',
@@ -489,6 +488,7 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'lease_payment_stage',
+            'lease_invoice',
         )
 
     @classmethod
@@ -526,11 +526,7 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
     def validate_opportunity_rules(self, validate_data):
         if 'opportunity_id' in validate_data:
             if validate_data['opportunity_id'] is not None:
-                opportunity = Opportunity.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=validate_data['opportunity_id']
-                ).first()
+                opportunity = Opportunity.objects.filter_on_company(id=validate_data['opportunity_id']).first()
                 if opportunity:
                     if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})

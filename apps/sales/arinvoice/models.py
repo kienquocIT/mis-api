@@ -1,9 +1,9 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
 from apps.accounting.journalentry.utils.log_for_ar_invoice import JEForARInvoiceHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.sales.acceptance.models import FinalAcceptance
+from apps.sales.reconciliation.utils.autocreate_recon_for_ar_invoice import ReconForARInvoiceHandler
 from apps.shared import SimpleAbstractModel, DataAbstractModel, RecurrenceAbstractModel
 
 # Create your models here.
@@ -35,7 +35,9 @@ INVOICE_STATUS = (
 
 class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
     customer_mapped = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
+    customer_mapped_data = models.JSONField(default=dict)
     sale_order_mapped = models.ForeignKey('saleorder.SaleOrder', on_delete=models.CASCADE, null=True)
+    sale_order_mapped_data = models.JSONField(default=dict)
     posting_date = models.DateTimeField(null=True)
     document_date = models.DateTimeField(null=True)
     invoice_date = models.DateTimeField(null=True)
@@ -50,6 +52,7 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
     sum_discount_value = models.FloatField(default=0)
     sum_tax_value = models.FloatField(default=0)
     sum_after_tax_value = models.FloatField(default=0)
+    cash_inflow_done = models.BooleanField(default=False)
 
     @classmethod
     def push_final_acceptance_invoice(cls, instance):
@@ -95,6 +98,7 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
                     kwargs.update({'update_fields': ['code']})
 
                 JEForARInvoiceHandler.push_to_journal_entry(self)
+                ReconForARInvoiceHandler.auto_create_recon_doc(self)
 
         if self.invoice_status == 1:  # published
             self.push_final_acceptance_invoice(instance=self)
@@ -114,14 +118,17 @@ class ARInvoiceItems(SimpleAbstractModel):
     item_index = models.IntegerField(default=0)
 
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
+    product_data = models.JSONField(default=dict)
     ar_product_des = models.TextField(null=True, blank=True, default='')
     product_uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE, null=True)
+    product_uom_data = models.JSONField(default=dict)
     product_quantity = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
     product_subtotal = models.FloatField(default=0)
     product_discount_rate = models.FloatField(default=0)
     product_discount_value = models.FloatField(default=0)
     product_tax = models.ForeignKey('saledata.Tax', on_delete=models.CASCADE, null=True)
+    product_tax_data = models.JSONField(default=dict)
     product_tax_value = models.FloatField(default=0)
 
     product_subtotal_final = models.FloatField(default=0)
@@ -137,6 +144,7 @@ class ARInvoiceItems(SimpleAbstractModel):
 class ARInvoiceDelivery(SimpleAbstractModel):
     ar_invoice = models.ForeignKey('ARInvoice', on_delete=models.CASCADE, related_name='ar_invoice_deliveries')
     delivery_mapped = models.ForeignKey('delivery.OrderDeliverySub', on_delete=models.CASCADE)
+    delivery_mapped_data = models.JSONField(default=dict)
 
     class Meta:
         verbose_name = 'AR Invoice Delivery'

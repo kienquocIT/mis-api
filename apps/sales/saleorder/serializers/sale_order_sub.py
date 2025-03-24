@@ -10,7 +10,7 @@ from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expe
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation, QuotationAppConfig
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, \
-    SaleOrderIndicatorConfig, SaleOrderIndicator, SaleOrderPaymentStage
+    SaleOrderIndicatorConfig, SaleOrderIndicator, SaleOrderPaymentStage, SaleOrderInvoice
 from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, \
@@ -88,7 +88,7 @@ class SaleOrderCommonCreate:
 
     @classmethod
     def create_payment_stage(cls, validated_data, instance):
-        instance.payment_stage_sale_order.all().delete()
+        instance.sale_order_payment_stage_sale_order.all().delete()
         SaleOrderPaymentStage.objects.bulk_create(
             [SaleOrderPaymentStage(
                 sale_order=instance,
@@ -96,6 +96,19 @@ class SaleOrderCommonCreate:
                 company_id=instance.company_id,
                 **sale_order_payment_stage,
             ) for sale_order_payment_stage in validated_data['sale_order_payment_stage']]
+        )
+        return True
+
+    @classmethod
+    def create_invoice(cls, validated_data, instance):
+        instance.sale_order_invoice_sale_order.all().delete()
+        SaleOrderInvoice.objects.bulk_create(
+            [SaleOrderInvoice(
+                sale_order=instance,
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                **sale_order_invoice,
+            ) for sale_order_invoice in validated_data['sale_order_invoice']]
         )
         return True
 
@@ -124,6 +137,11 @@ class SaleOrderCommonCreate:
                 validated_data=validated_data,
                 instance=instance
             )
+        if 'sale_order_invoice' in validated_data:
+            cls.create_invoice(
+                validated_data=validated_data,
+                instance=instance
+            )
         return True
 
 
@@ -132,7 +150,7 @@ class SaleOrderCommonValidate:
     @classmethod
     def validate_customer_id(cls, value):
         try:
-            return Account.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+            return str(Account.objects.get_on_company(id=value).id)
         except Account.DoesNotExist:
             raise serializers.ValidationError({'customer': AccountsMsg.ACCOUNT_NOT_EXIST})
 
@@ -141,14 +159,14 @@ class SaleOrderCommonValidate:
         try:
             if value is None:
                 return value
-            return Opportunity.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+            return str(Opportunity.objects.get_on_company(id=value).id)
         except Opportunity.DoesNotExist:
             raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
 
     @classmethod
     def validate_contact_id(cls, value):
         try:
-            return Contact.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+            return str(Contact.objects.get_on_company(id=value).id)
         except Contact.DoesNotExist:
             raise serializers.ValidationError({'contact': AccountsMsg.CONTACT_NOT_EXIST})
 
@@ -157,7 +175,7 @@ class SaleOrderCommonValidate:
         try:
             if value is None:
                 return None
-            return PaymentTerm.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+            return str(PaymentTerm.objects.get_on_company(id=value).id)
         except PaymentTerm.DoesNotExist:
             raise serializers.ValidationError({'payment_term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
 
@@ -166,54 +184,49 @@ class SaleOrderCommonValidate:
         try:
             if value is None:
                 return None
-            return Quotation.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+            return str(Quotation.objects.get_on_company(id=value).id)
         except Quotation.DoesNotExist:
             raise serializers.ValidationError({'quotation': SaleMsg.QUOTATION_NOT_EXIST})
 
     @classmethod
-    def validate_product(cls, value):
+    def validate_product_id(cls, value):
         try:
-            Product.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(Product.objects.get_on_company(id=value).id)
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
 
     @classmethod
-    def validate_unit_of_measure(cls, value):
+    def validate_unit_of_measure_id(cls, value):
         try:
-            UnitOfMeasure.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(UnitOfMeasure.objects.get_on_company(id=value).id)
         except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'unit_of_measure': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+            raise serializers.ValidationError({'unit_of_measure': ProductMsg.UOM_NOT_EXIST})
 
     @classmethod
-    def validate_tax(cls, value):
+    def validate_tax_id(cls, value):
         try:
-            Tax.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(Tax.objects.get_on_company(id=value).id)
         except Tax.DoesNotExist:
-            raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'tax': ProductMsg.TAX_NOT_EXIST})
 
     @classmethod
-    def validate_expense(cls, value):
+    def validate_expense_id(cls, value):
         try:
-            Expense.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(Expense.objects.get_on_company(id=value).id)
         except Expense.DoesNotExist:
             raise serializers.ValidationError({'expense': ProductMsg.EXPENSE_DOES_NOT_EXIST})
 
     @classmethod
-    def validate_expense_item(cls, value):
+    def validate_expense_item_id(cls, value):
         try:
-            ExpenseItem.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(ExpenseItem.objects.get_on_company(id=value).id)
         except ExpenseItem.DoesNotExist:
             raise serializers.ValidationError({'expense_item': ExpenseMsg.EXPENSE_ITEM_NOT_EXIST})
 
     @classmethod
     def validate_price_list(cls, value):
         if isinstance(value, list):
-            price_list = Price.objects.filter_current(fill__tenant=True, fill__company=True, id__in=value)
+            price_list = Price.objects.filter_on_company(id__in=value)
             if price_list.count() == len(value):
                 return [
                     {'id': str(price.id), 'title': price.title, 'code': price.code}
@@ -223,25 +236,23 @@ class SaleOrderCommonValidate:
         raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_NOT_EXIST})
 
     @classmethod
-    def validate_promotion(cls, value):
+    def validate_promotion_id(cls, value):
         try:
-            Promotion.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(Promotion.objects.get_on_company(id=value).id)
         except Promotion.DoesNotExist:
             raise serializers.ValidationError({'promotion': PromoMsg.PROMOTION_NOT_EXIST})
 
     @classmethod
-    def validate_shipping(cls, value):
+    def validate_shipping_id(cls, value):
         try:
-            Shipping.objects.get_current(fill__tenant=True, fill__company=True, id=value)
-            return str(value)
+            return str(Shipping.objects.get_on_company(id=value).id)
         except Shipping.DoesNotExist:
             raise serializers.ValidationError({'shipping': ShippingMsg.SHIPPING_NOT_EXIST})
 
     @classmethod
     def validate_indicator(cls, value):
         try:
-            indicator = SaleOrderIndicatorConfig.objects.get_current(fill__company=True, id=value)
+            indicator = SaleOrderIndicatorConfig.objects.get_on_company(id=value)
             return {
                 'id': str(indicator.id),
                 'title': indicator.title,
@@ -267,7 +278,7 @@ class SaleOrderCommonValidate:
     @classmethod
     def validate_employee_inherit_id(cls, value):
         try:
-            return Employee.objects.get_current(fill__tenant=True, fill__company=True, id=value).id
+            return Employee.objects.get_on_company(id=value).id
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
 
@@ -281,7 +292,7 @@ class SaleOrderCommonValidate:
     @classmethod
     def validate_warehouse(cls, value):
         try:
-            WareHouse.objects.get_current(fill__tenant=True, fill__company=True, id=value)
+            WareHouse.objects.get_on_company(id=value)
             return str(value)
         except WareHouse.DoesNotExist:
             raise serializers.ValidationError({'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST})
@@ -310,7 +321,7 @@ class SaleOrderRuleValidate:
             opportunity_id = validate_data.get('opportunity_id', None)
             model_cls = DisperseModel(app_model="hr.employee").get_model()
             if model_cls and hasattr(model_cls, 'objects'):
-                so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+                so_config = QuotationAppConfig.objects.filter_on_company().first()
                 employee = model_cls.objects.filter(id=validate_data['employee_inherit_id']).first()
                 if so_config and employee:
                     ss_role = [role.id for role in so_config.ss_role.all()]
@@ -326,10 +337,8 @@ class SaleOrderRuleValidate:
     def validate_payment_stage(cls, validate_data):
         if 'sale_order_payment_stage' in validate_data and 'total_product' in validate_data:
             if len(validate_data['sale_order_payment_stage']) > 0:
-                total_ratio = 0
                 total_payment = 0
                 for payment_stage in validate_data['sale_order_payment_stage']:
-                    total_ratio += payment_stage.get('payment_ratio', 0)
                     total_payment += payment_stage.get('value_total', 0)
                     # check required field
                     date = payment_stage.get('date', '')
@@ -338,13 +347,11 @@ class SaleOrderRuleValidate:
                         raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DATE_REQUIRED})
                     if not due_date:
                         raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
-                if total_ratio != 100:
-                    raise serializers.ValidationError({'detail': SaleMsg.TOTAL_RATIO_PAYMENT})
                 if total_payment != validate_data.get('total_product', 0):
                     raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
             else:
                 # check required by config
-                so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
+                so_config = QuotationAppConfig.objects.filter_on_company().first()
                 if so_config:
                     if so_config.is_require_payment is True:
                         raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
@@ -414,23 +421,23 @@ class SaleOrderProductSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_product_id(cls, value):
-        return SaleOrderCommonValidate().validate_product(value=value)
+        return SaleOrderCommonValidate().validate_product_id(value=value)
 
     @classmethod
     def validate_unit_of_measure_id(cls, value):
-        return SaleOrderCommonValidate().validate_unit_of_measure(value=value)
+        return SaleOrderCommonValidate().validate_unit_of_measure_id(value=value)
 
     @classmethod
     def validate_tax_id(cls, value):
-        return SaleOrderCommonValidate().validate_tax(value=value)
+        return SaleOrderCommonValidate().validate_tax_id(value=value)
 
     @classmethod
     def validate_promotion_id(cls, value):
-        return SaleOrderCommonValidate().validate_promotion(value=value)
+        return SaleOrderCommonValidate().validate_promotion_id(value=value)
 
     @classmethod
     def validate_shipping_id(cls, value):
-        return SaleOrderCommonValidate().validate_shipping(value=value)
+        return SaleOrderCommonValidate().validate_shipping_id(value=value)
 
     @classmethod
     def validate_product_quantity(cls, value):
@@ -562,19 +569,19 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_product_id(cls, value):
-        return SaleOrderCommonValidate().validate_product(value=value)
+        return SaleOrderCommonValidate().validate_product_id(value=value)
 
     @classmethod
     def validate_unit_of_measure_id(cls, value):
-        return SaleOrderCommonValidate().validate_unit_of_measure(value=value)
+        return SaleOrderCommonValidate().validate_unit_of_measure_id(value=value)
 
     @classmethod
     def validate_tax_id(cls, value):
-        return SaleOrderCommonValidate().validate_tax(value=value)
+        return SaleOrderCommonValidate().validate_tax_id(value=value)
 
     @classmethod
     def validate_shipping_id(cls, value):
-        return SaleOrderCommonValidate().validate_shipping(value=value)
+        return SaleOrderCommonValidate().validate_shipping_id(value=value)
 
     @classmethod
     def validate_warehouse_id(cls, value):
@@ -623,19 +630,19 @@ class SaleOrderExpenseSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_expense_id(cls, value):
-        return SaleOrderCommonValidate().validate_expense(value=value)
+        return SaleOrderCommonValidate().validate_expense_id(value=value)
 
     @classmethod
     def validate_expense_item_id(cls, value):
-        return SaleOrderCommonValidate().validate_expense_item(value=value)
+        return SaleOrderCommonValidate().validate_expense_item_id(value=value)
 
     @classmethod
     def validate_unit_of_measure_id(cls, value):
-        return SaleOrderCommonValidate().validate_unit_of_measure(value=value)
+        return SaleOrderCommonValidate().validate_unit_of_measure_id(value=value)
 
     @classmethod
     def validate_tax_id(cls, value):
-        return SaleOrderCommonValidate().validate_tax(value=value)
+        return SaleOrderCommonValidate().validate_tax_id(value=value)
 
 
 class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
@@ -663,6 +670,7 @@ class SaleOrderPaymentStageSerializer(serializers.ModelSerializer):
     term_id = serializers.UUIDField(required=False, allow_null=True)
     date = serializers.CharField(required=False, allow_null=True)
     due_date = serializers.CharField(required=False, allow_null=True)
+    tax_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = SaleOrderPaymentStage
@@ -671,23 +679,48 @@ class SaleOrderPaymentStageSerializer(serializers.ModelSerializer):
             'term_id',
             'term_data',
             'date',
-            'date_type',
-            'payment_ratio',
-            'value_before_tax',
-            'issue_invoice',
-            'value_after_tax',
-            'value_total',
             'due_date',
+            'ratio',
+            'invoice',
+            'invoice_data',
+            'value_before_tax',
+            'value_reconcile',
+            'reconcile_data',
+            'tax_id',
+            'tax_data',
+            'value_tax',
+            'value_total',
             'is_ar_invoice',
             'order',
         )
 
-    # @classmethod
-    # def validate_remark(cls, value):
-    #     if not value:
-    #         raise serializers.ValidationError({'remark': APIMsg.FIELD_REQUIRED})
-    #     return value
-
     @classmethod
     def validate_term_id(cls, value):
         return SaleOrderCommonValidate().validate_term_id(value=value)
+
+    @classmethod
+    def validate_tax_id(cls, value):
+        return SaleOrderCommonValidate().validate_tax_id(value=value)
+
+
+class SaleOrderInvoiceSerializer(serializers.ModelSerializer):
+    date = serializers.CharField(required=False, allow_null=True)
+    tax_id = serializers.UUIDField(required=False, allow_null=True)
+
+    class Meta:
+        model = SaleOrderInvoice
+        fields = (
+            'remark',
+            'date',
+            'term_data',
+            'ratio',
+            'tax_id',
+            'tax_data',
+            'total',
+            'balance',
+            'order',
+        )
+
+    @classmethod
+    def validate_tax_id(cls, value):
+        return SaleOrderCommonValidate().validate_tax_id(value=value)

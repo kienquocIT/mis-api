@@ -179,7 +179,7 @@ class GoodsReceipt(DataAbstractModel):
 
     @classmethod
     def push_goods_receipt_data_to_goods_detail(cls, goods_receipt_obj):
-        print(f'* Push goods receipt data ({goods_receipt_obj.code}) to_goods detail.')
+        print(f'* Push goods receipt data ({goods_receipt_obj.code}) to goods detail.')
         bulk_info = []
         for gr_prd_obj in goods_receipt_obj.goods_receipt_product_goods_receipt.all():
             for gr_wh_obj in gr_prd_obj.goods_receipt_warehouse_gr_product.all():

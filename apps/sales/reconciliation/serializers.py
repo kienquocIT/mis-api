@@ -24,7 +24,8 @@ class ReconListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            'customer_data',
+            'business_partner_data',
+            'date_created',
             'system_status'
         )
 
@@ -91,7 +92,7 @@ class ReconDetailSerializer(serializers.ModelSerializer):
             'title',
             'posting_date',
             'document_date',
-            'customer_data',
+            'business_partner_data',
             'recon_items_data'
         )
 
@@ -101,12 +102,14 @@ class ReconDetailSerializer(serializers.ModelSerializer):
             'id': item.id,
             'recon_data': item.recon_data,
             'order': item.order,
-            'ar_invoice_data': item.ar_invoice_data,
-            'cash_inflow_data': item.cash_inflow_data,
+            'debit_doc_data': item.debit_doc_data,
+            'credit_doc_data': item.credit_doc_data,
+            'recon_total': item.recon_total,
             'recon_balance': item.recon_balance,
             'recon_amount': item.recon_amount,
             'note': item.note,
-            'accounting_account': item.accounting_account
+            'debit_account_data': item.debit_account_data,
+            'credit_account_data': item.credit_account_data
         } for item in obj.recon_items.all()]
 
 
@@ -197,26 +200,13 @@ class ARInvoiceListForReconSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_recon_total(cls, obj):
-        recon_total = sum(item.recon_amount for item in obj.recon_item_ar_invoice.all())
-        return recon_total
+        print(obj)
+        return 0
 
     @classmethod
     def get_cash_inflow_data(cls, obj):
+        print(obj)
         cash_inflow_data = []
-        all_cif = obj.customer_mapped.cash_inflow_customer.all()
-        for cif in all_cif:
-            if cif.no_ar_invoice_value != 0:
-                recon_value = sum(item.recon_amount for item in cif.recon_item_cash_inflow.all())
-                cash_inflow_data.append({
-                    'id': str(cif.id),
-                    'code': cif.code,
-                    'title': cif.title,
-                    'type_doc': 'Cash inflow',
-                    'document_date': str(cif.document_date),
-                    'posting_date': str(cif.posting_date),
-                    'sum_total_value': cif.total_value,
-                    'recon_balance': cif.total_value - recon_value,
-                })
         return cash_inflow_data
 
 
@@ -248,5 +238,5 @@ class CashInflowListForReconSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_recon_balance(cls, obj):
-        sum_recon_amount = sum(item.recon_amount for item in obj.recon_item_cash_inflow.all())
-        return obj.total_value - sum_recon_amount
+        print(obj)
+        return 0

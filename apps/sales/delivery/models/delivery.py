@@ -1,10 +1,8 @@
 import json
 from copy import deepcopy
-
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
-from apps.accounting.journalentry.utils import JEForDeliveryHandler
+from apps.accounting.journalentry.utils.log_for_delivery import JEForDeliveryHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods
@@ -19,8 +17,8 @@ __all__ = [
     'OrderDelivery',
     'OrderDeliverySub',
     'OrderDeliveryProduct',
-    'OrderDeliveryProductLeased',
     'OrderDeliveryAttachment',
+    'OrderDeliveryProductAsset',
 ]
 
 
@@ -411,11 +409,12 @@ class OrderDeliverySub(DataAbstractModel):
                     self.push_state(instance=self, kwargs=kwargs)  # state
                     DeliFinishHandler.create_new(instance=self)  # new sub + product
                     DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
+                    DeliFinishHandler.update_asset_status(instance=self)  # asset status => delivered
+                    DeliFinishHandler.force_create_new_asset(instance=self)  # create new asset
                     DeliFinishHandler.push_product_info(instance=self)  # product
                     DeliFinishHandler.push_so_lo_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
                     DeliHandler.push_diagram(instance=self)  # diagram
-                    DeliFinishHandler.update_cost_delivery_product(instance=self)  # update cost by warehouse
 
                     IRForDeliveryHandler.push_to_inventory_report(self)
                     JEForDeliveryHandler.push_to_journal_entry(self)
@@ -468,11 +467,13 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         null=True
     )
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
+    asset_data = models.JSONField(default=list, help_text='data json of asset')
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         verbose_name='uom',
         related_name="delivery_product_uom",
+        null=True,
     )
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
     uom_time = models.ForeignKey(
@@ -504,14 +505,10 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         help_text="flag to know this product is for promotion (discount, gift,...)"
     )
     product_quantity = models.FloatField(default=0)
-    product_quantity_new = models.FloatField(default=0, help_text="quantity need delivery of new products")
-    remaining_quantity_new = models.FloatField(default=0, help_text="quantity remain of new products")
-    product_quantity_leased = models.FloatField(default=0, help_text="quantity need delivery of leased products")
-    product_quantity_leased_data = models.JSONField(default=list, help_text="read data products leased")
     product_quantity_time = models.FloatField(default=0)
-    product_unit_price = models.FloatField(default=0)
+    product_cost = models.FloatField(default=0)
     product_tax_value = models.FloatField(default=0)
-    product_subtotal_price = models.FloatField(default=0)
+    product_subtotal_cost = models.FloatField(default=0)
 
     # Begin depreciation fields
 
@@ -523,13 +520,17 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
     product_depreciation_start_date = models.DateField(null=True)
     product_depreciation_end_date = models.DateField(null=True)
 
+    product_lease_start_date = models.DateField(null=True)
+    product_lease_end_date = models.DateField(null=True)
+
+    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+
     # End depreciation fields
 
     returned_quantity_default = models.FloatField(default=0)
 
     # fields for recovery
     quantity_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
-    quantity_new_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
 
     def put_backup_data(self):
         if self.product and not self.product_data:
@@ -569,8 +570,7 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
             self,
             old_obj, new_sub,
             delivery_quantity, delivered_quantity_before,
-            remaining_quantity, remaining_quantity_new,
-            ready_quantity,
+            remaining_quantity, ready_quantity,
     ):
         new_obj = deepcopy(old_obj)
         # Override data
@@ -579,17 +579,15 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         new_obj.delivery_quantity = delivery_quantity
         new_obj.delivered_quantity_before = delivered_quantity_before
         new_obj.remaining_quantity = remaining_quantity
-        new_obj.remaining_quantity_new = remaining_quantity_new
         new_obj.ready_quantity = ready_quantity
         new_obj.picked_quantity = 0
         new_obj.delivery_data = []
-        # Check in old delivery_data, if any delivered then update data remaining_quantity_leased for new obj
-        new_obj.product_quantity_leased_data = [
-            leased_data for leased_data in new_obj.product_quantity_leased_data
-            if leased_data.get('picked_quantity', 0) <= 0
+        # Check and store asset not delivered to field asset_data
+        new_obj.asset_data = [
+            asset_data for asset_data in new_obj.asset_data
+            if asset_data.get('picked_quantity', 0) <= 0
         ]
-        for leased_data in new_obj.product_quantity_leased_data:
-            leased_data.update({'delivery_data': []})
+
         new_obj.before_save()
         return new_obj
 
@@ -603,7 +601,7 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         # Save normal Delivery if not flag save_for_other
         if not save_for_other:
             self.before_save()
-            DeliHandler.create_delivery_product_leased(instance=self)
+            DeliHandler.create_delivery_product_asset(instance=self)
             DeliHandler.create_delivery_product_warehouse(instance=self)
             DeliHandler.create_delivery_lot_serial(instance=self)
         super().save(*args, **kwargs)
@@ -616,31 +614,69 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         permissions = ()
 
 
-class OrderDeliveryProductLeased(MasterDataAbstractModel):
+class OrderDeliveryProductAsset(MasterDataAbstractModel):
+    delivery_sub = models.ForeignKey(
+        OrderDeliverySub,
+        on_delete=models.CASCADE,
+        verbose_name="delivery sub",
+        related_name="delivery_pa_delivery_sub",
+        null=True,
+    )
     delivery_product = models.ForeignKey(
         'delivery.OrderDeliveryProduct',
         on_delete=models.CASCADE,
         verbose_name="delivery product",
-        related_name="delivery_product_leased_delivery_product",
+        related_name="delivery_pa_delivery_product",
     )
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
-        verbose_name="product leased",
-        related_name="delivery_product_leased_product",
+        verbose_name="product",
+        related_name="delivery_pa_product",
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
-    remaining_quantity_leased = models.FloatField(default=0, help_text="quantity remain of leased products")
-    picked_quantity = models.FloatField(default=0, help_text="quantity delivery leased products")
-    delivery_data = models.JSONField(default=list, help_text="data delivery of leased products")
+    asset = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.CASCADE,
+        verbose_name="asset",
+        related_name="delivery_pa_asset",
+        null=True
+    )
+    asset_data = models.JSONField(default=dict, help_text='data json of asset')
+    uom_time = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="uom time",
+        related_name="delivery_pa_uom_time",
+        null=True
+    )
+    uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
+    product_quantity_time = models.FloatField(default=0)
+    picked_quantity = models.FloatField(default=0, verbose_name='Quantity was delivered')
+    # Begin depreciation fields
+
+    product_depreciation_subtotal = models.FloatField(default=0)
+    product_depreciation_price = models.FloatField(default=0)
+    product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
+    product_depreciation_adjustment = models.FloatField(default=0)
+    product_depreciation_time = models.FloatField(default=0)
+    product_depreciation_start_date = models.DateField(null=True)
+    product_depreciation_end_date = models.DateField(null=True)
+
+    product_lease_start_date = models.DateField(null=True)
+    product_lease_end_date = models.DateField(null=True)
+
+    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+
+    # End depreciation fields
 
     # fields for recovery
-    quantity_leased_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
+    quantity_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
 
     class Meta:
-        verbose_name = 'Delivery Product Leased'
-        verbose_name_plural = 'Delivery Products Leased'
+        verbose_name = 'Delivery Product Asset'
+        verbose_name_plural = 'Delivery Products Asset'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
@@ -652,13 +688,6 @@ class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="delivery product",
         related_name="delivery_pw_delivery_product",
-    )
-    delivery_product_leased = models.ForeignKey(
-        'delivery.OrderDeliveryProductLeased',
-        on_delete=models.CASCADE,
-        verbose_name="delivery product leased",
-        related_name="delivery_pw_delivery_product_leased",
-        null=True,
     )
     sale_order = models.ForeignKey(
         'saleorder.SaleOrder',
@@ -743,13 +772,6 @@ class OrderDeliveryLot(MasterDataAbstractModel):
         verbose_name="delivery product",
         related_name="delivery_lot_delivery_product",
     )
-    delivery_product_leased = models.ForeignKey(
-        'delivery.OrderDeliveryProductLeased',
-        on_delete=models.CASCADE,
-        verbose_name="delivery product leased",
-        related_name="delivery_lot_delivery_product_leased",
-        null=True,
-    )
     product_warehouse_lot = models.ForeignKey(
         'saledata.ProductWareHouseLot',
         on_delete=models.CASCADE,
@@ -805,13 +827,6 @@ class OrderDeliverySerial(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="delivery product",
         related_name="delivery_serial_delivery_product",
-    )
-    delivery_product_leased = models.ForeignKey(
-        'delivery.OrderDeliveryProductLeased',
-        on_delete=models.CASCADE,
-        verbose_name="delivery product leased",
-        related_name="delivery_serial_delivery_product_leased",
-        null=True,
     )
     product_warehouse_serial = models.ForeignKey(
         'saledata.ProductWareHouseSerial',

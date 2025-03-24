@@ -313,7 +313,7 @@ class PurchasingCommonValidate:
                 'code': uom.code
             }
         except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'unit_of_measure': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+            raise serializers.ValidationError({'unit_of_measure': ProductMsg.UOM_NOT_EXIST})
 
     @classmethod
     def validate_tax(cls, value):
@@ -330,7 +330,7 @@ class PurchasingCommonValidate:
                 'value': tax.rate
             }
         except Tax.DoesNotExist:
-            raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'tax': ProductMsg.TAX_NOT_EXIST})
 
     @classmethod
     def validate_quantity(cls, value):

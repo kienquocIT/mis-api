@@ -51,6 +51,7 @@ class EmployeeInfoListSerializers(serializers.ModelSerializer):
     def get_user(cls, obj):
         return {
             'id': str(obj.employee.user.id),
+            'username': obj.employee.user.username,
             'first_name': obj.employee.user.first_name,
             'last_name': obj.employee.user.last_name
         } if obj.employee.user else {}

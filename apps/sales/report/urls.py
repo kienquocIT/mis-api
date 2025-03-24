@@ -2,9 +2,9 @@ from django.urls import path
 from .views import (
     ReportRevenueList, ReportProductList, ReportCustomerList, ReportPipelineList, ReportCashflowList,
     ReportStockList, BalanceInitializationList, ReportInventoryCostList, ReportGeneralList,
-    PurchaseOrderListReport, ReportInventoryCostWarehouseDetail, BudgetReportCompanyList, PaymentListForBudgetReport,
+    PurchaseOrderListReport, WarehouseAvailableProductList, BudgetReportCompanyList, PaymentListForBudgetReport,
     BudgetReportGroupList, BalanceInitializationListImportDB, ReportProductListForDashBoard, AdvanceFilterList,
-    AdvanceFilterDetail
+    AdvanceFilterDetail, WarehouseAvailableProductDetail
 )
 
 urlpatterns = [
@@ -31,9 +31,14 @@ urlpatterns = [
     path('inventory-cost-report/list', ReportInventoryCostList.as_view(), name='ReportInventoryCostList'),
     path('inventory-stock-report/list', ReportStockList.as_view(), name='ReportStockList'),
     path(
-        'inventory-cost-warehouse-detail',
-        ReportInventoryCostWarehouseDetail.as_view(),
-        name='ReportInventoryCostWarehouseDetail'
+        'warehouse-available-product-list',
+        WarehouseAvailableProductList.as_view(),
+        name='WarehouseAvailableProductList'
+    ),
+    path(
+        'warehouse-available-product-detail',
+        WarehouseAvailableProductDetail.as_view(),
+        name='WarehouseAvailableProductDetail'
     ),
 
     # Report purchasing

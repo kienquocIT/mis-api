@@ -4,25 +4,6 @@ from apps.shared import DisperseModel
 
 
 class DeliFinishHandler:
-    # UPDATE COST DELIVERY PRODUCT
-    @classmethod
-    def update_cost_delivery_product(cls, instance):
-        for deli_product in instance.delivery_product_delivery_sub.all():  # for in product
-            cls.update_cost_by_wh(deli_product=deli_product)
-        return True
-
-    @classmethod
-    def update_cost_by_wh(cls, deli_product):
-        product_obj, delivery_data = deli_product.product, deli_product.delivery_data
-        if product_obj:
-            for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
-                cost = product_obj.get_unit_cost_by_warehouse(
-                    warehouse_id=data_deli.get('warehouse_id', None), get_type=1
-                )
-                data_deli.update({'cost': cost})
-            deli_product.save(update_fields=['delivery_data'])
-
-        return True
 
     # NEW DELIVERY SUB + PRODUCT
     @classmethod
@@ -84,11 +65,6 @@ class DeliFinishHandler:
             for deli_product in instance.delivery_product_delivery_sub.all():
                 quantity_before = deli_product.delivered_quantity_before + deli_product.picked_quantity
                 remaining_quantity = deli_product.delivery_quantity - quantity_before
-                # SL còn lại SP mới: tổng còn lại - SL SP đã cho thuê mà chưa giao
-                remaining_quantity_new = remaining_quantity
-                for leased_data in deli_product.product_quantity_leased_data:
-                    if leased_data.get('picked_quantity', 0) == 0:
-                        remaining_quantity_new -= 1
                 ready_quantity = deli_product.ready_quantity - deli_product.picked_quantity
                 new_prod = deli_product.setup_new_obj(
                     old_obj=deli_product,
@@ -96,7 +72,6 @@ class DeliFinishHandler:
                     delivery_quantity=deli_product.delivery_quantity,
                     delivered_quantity_before=quantity_before,
                     remaining_quantity=remaining_quantity,
-                    remaining_quantity_new=remaining_quantity_new if remaining_quantity_new > 0 else 0,
                     ready_quantity=ready_quantity if ready_quantity > 0 else 0,
                 )
                 new_prod.before_save()
@@ -114,17 +89,12 @@ class DeliFinishHandler:
                 cls.update_pw(instance=instance, deli_product=deli_product, config=config)
                 cls.update_pw_lot(deli_product=deli_product)
                 cls.update_pw_serial(deli_product=deli_product)
-                for deli_product_leased in deli_product.delivery_product_leased_delivery_product.all():
-                    cls.update_pw(instance=instance, deli_product=deli_product_leased, config=config)
-                    cls.update_pw_lot(deli_product=deli_product_leased)
-                    cls.update_pw_serial(deli_product=deli_product_leased)
         return True
 
     @classmethod
     def update_pw(cls, instance, deli_product, config):
         target = deli_product.product
-        app_code = deli_product._meta.label_lower
-        if app_code == "delivery.orderdeliveryproduct" and deli_product.offset:
+        if deli_product.offset:
             target = deli_product.offset
         if target and deli_product.delivery_data:
             for data_deli in deli_product.delivery_data:
@@ -179,13 +149,7 @@ class DeliFinishHandler:
 
     @classmethod
     def update_pw_lot(cls, deli_product):
-        targets = []
-        app_code = deli_product._meta.label_lower
-        if app_code == "delivery.orderdeliveryproduct":
-            targets = deli_product.delivery_lot_delivery_product.all()
-        if app_code == "delivery.orderdeliveryproductleased":
-            targets = deli_product.delivery_lot_delivery_product_leased.all()
-        for lot in targets:
+        for lot in deli_product.delivery_lot_delivery_product.all():
             final_ratio = 1
             uom_delivery_rate = deli_product.uom.ratio if deli_product.uom else 1
             if lot.product_warehouse_lot:
@@ -213,41 +177,138 @@ class DeliFinishHandler:
 
     @classmethod
     def update_pw_serial(cls, deli_product):
-        targets = []
-        app_code = deli_product._meta.label_lower
-        if app_code == "delivery.orderdeliveryproduct":
-            targets = deli_product.delivery_serial_delivery_product.all()
-        if app_code == "delivery.orderdeliveryproductleased":
-            targets = deli_product.delivery_serial_delivery_product_leased.all()
-        for serial in targets:
-            serial.product_warehouse_serial.is_delete = True
-            serial.product_warehouse_serial.save(update_fields=['is_delete'])
+        for serial in deli_product.delivery_serial_delivery_product.all():
+            if serial.product_warehouse_serial:
+                serial.product_warehouse_serial.serial_status = 1
+                serial.product_warehouse_serial.save(update_fields=['serial_status'])
         return True
+
+    # ASSET
+    @classmethod
+    def update_asset_status(cls, instance):
+        for delivery_asset in instance.delivery_pa_delivery_sub.all():
+            if delivery_asset.asset and delivery_asset.picked_quantity > 0:
+                delivery_asset.asset.status = 2
+                delivery_asset.asset.save(update_fields=['status'])
+        return True
+
+    @classmethod
+    def force_create_new_asset(cls, instance):
+        model_asset = DisperseModel(app_model='asset.fixedasset').get_model()
+        if model_asset and hasattr(model_asset, 'objects'):
+            for delivery_product in instance.delivery_product_delivery_sub.all():
+                asset_data = []
+                if delivery_product.asset_type == 1 and delivery_product.offset:
+                    for delivery_warehouse in delivery_product.delivery_pw_delivery_product.all():
+                        asset_data += DeliFinishHandler.create_obj_and_set_asset_data(
+                            model_asset=model_asset,
+                            instance=instance,
+                            delivery_product=delivery_product,
+                            delivery_warehouse=delivery_warehouse
+                        )
+                    delivery_product.asset_data = asset_data
+                    delivery_product.save(update_fields=['asset_data'])
+        return True
+
+    @classmethod
+    def create_obj_and_set_asset_data(cls, model_asset, instance, delivery_product, delivery_warehouse):
+        asset_data = []
+        cost = DeliFinishHandler.get_cost_by_warehouse(
+            product_obj=delivery_product.offset,
+            warehouse_id=delivery_warehouse.warehouse_id,
+            sale_order_id=None,
+        )
+        for _ in range(int(delivery_warehouse.quantity_delivery)):
+            asset_obj = model_asset.objects.create(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                product_id=delivery_product.offset_id,
+                title=delivery_product.offset.title,
+                asset_code=delivery_product.offset.code,
+                original_cost=cost,
+                depreciation_method=delivery_product.product_depreciation_method,
+                depreciation_time=delivery_product.product_depreciation_time,
+                adjustment_factor=delivery_product.product_depreciation_adjustment,
+                depreciation_start_date=delivery_product.product_depreciation_start_date,
+                depreciation_end_date=delivery_product.product_depreciation_end_date,
+                depreciation_data=DeliFinishHandler.update_depreciation_data(
+                    depreciation_data=delivery_product.depreciation_data,
+                    old_cost=delivery_product.product_cost,
+                    new_cost=cost,
+                ),
+                status=2,
+            )
+            if asset_obj:
+                asset_obj.system_status = 3
+                asset_obj.save(update_fields=['system_status'])
+                asset_json = {
+                    'asset_id': str(asset_obj.id),
+                    'asset_data': {
+                        "id": str(asset_obj.id),
+                        "code": asset_obj.code,
+                        "title": asset_obj.title,
+                        "asset_id": str(asset_obj.id),
+                        "is_change": asset_obj.is_change,
+                        "net_value": 0,
+                        "origin_cost": asset_obj.original_cost,
+                        "depreciation_time": asset_obj.depreciation_time,
+                        "depreciation_start_date": str(asset_obj.depreciation_start_date),
+                        "depreciation_end_date": str(asset_obj.depreciation_end_date),
+                        "depreciation_data": asset_obj.depreciation_data,
+                    },
+                    "product_id": str(delivery_product.product_id),
+                    "product_data": delivery_product.product_data,
+                    "uom_time_id": str(delivery_product.uom_time_id),
+                    "uom_time_data": delivery_product.uom_time_data,
+                    "product_quantity_time": delivery_product.product_quantity_time,
+                    "product_depreciation_time": delivery_product.product_depreciation_time,
+                    "product_depreciation_price": delivery_product.product_depreciation_price,
+                    "product_depreciation_method": delivery_product.product_depreciation_method,
+                    "product_depreciation_subtotal": delivery_product.product_depreciation_subtotal,
+                    "product_depreciation_adjustment": delivery_product.product_depreciation_adjustment,
+                    "product_depreciation_start_date": str(
+                        delivery_product.product_depreciation_start_date
+                    ),
+                    "product_depreciation_end_date": str(
+                        delivery_product.product_depreciation_end_date
+                    ),
+
+                    "product_lease_end_date": str(delivery_product.product_lease_end_date),
+                    "product_lease_start_date": str(delivery_product.product_lease_start_date),
+
+                    "depreciation_data": delivery_product.depreciation_data,
+                }
+                asset_data.append(asset_json)
+        return asset_data
+
+    @classmethod
+    def update_depreciation_data(cls, depreciation_data, old_cost, new_cost):
+        factor = new_cost / old_cost  # Determine the scaling factor
+        for entry in depreciation_data:
+            entry["start_value"] = round(entry["start_value"] * factor)
+            entry["end_value"] = round(entry["end_value"] * factor)
+            entry["accumulative_value"] = round(entry["accumulative_value"] * factor)
+            entry["depreciation_value"] = round(entry["depreciation_value"] * factor)
+        return depreciation_data
 
     # PRODUCT INFO
     @classmethod
     def push_product_info(cls, instance):
         for deli_product in instance.delivery_product_delivery_sub.all():
             if deli_product.product and deli_product.uom:
+                target = deli_product.product
+                if deli_product.offset:
+                    target = deli_product.offset
                 final_ratio = cls.get_final_uom_ratio(
-                    product_obj=deli_product.product, uom_transaction=deli_product.uom
+                    product_obj=target, uom_transaction=deli_product.uom
                 )
-                deli_product.product.save(**{
+                target.save(**{
                     'update_stock_info': {
-                        'quantity_delivery_new': deli_product.picked_quantity * final_ratio,
+                        'quantity_delivery': deli_product.picked_quantity * final_ratio,
                         'system_status': 3,
                     },
                     'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
                 })
-            for deli_product_leased in deli_product.delivery_product_leased_delivery_product.all():
-                if deli_product_leased.product:
-                    deli_product_leased.product.save(**{
-                        'update_stock_info': {
-                            'quantity_delivery_leased': deli_product_leased.picked_quantity,
-                            'system_status': 3,
-                        },
-                        'update_fields': ['available_amount', 'stock_amount']
-                    })
         return True
 
     # SALE/ LEASE ORDER STATUS
@@ -320,12 +381,10 @@ class DeliFinishHandler:
         if 1 in deli_product.product.product_choice:  # case: product allow inventory
             for data_deli in deli_product.delivery_data:
                 if all(key in data_deli for key in ('warehouse_id', 'picked_quantity')):
-                    cost = deli_product.product.get_current_unit_cost(
-                        get_type=1,
-                        **{
-                            'warehouse_id': data_deli.get('warehouse_id', None),
-                            'sale_order_id': data_deli.get('sale_order_id', None),
-                        }
+                    cost = DeliFinishHandler.get_cost_by_warehouse(
+                        product_obj=deli_product.product,
+                        warehouse_id=data_deli.get('warehouse_id', None),
+                        sale_order_id=data_deli.get('sale_order_id', None),
                     )
                     actual_value += cost * data_deli['picked_quantity']
         else:  # case: product not allow inventory
@@ -333,6 +392,16 @@ class DeliFinishHandler:
             if so_cost:
                 actual_value = so_cost.product_cost_price * deli_product.picked_quantity
         return actual_value
+
+    @classmethod
+    def get_cost_by_warehouse(cls, product_obj, warehouse_id, sale_order_id):
+        return product_obj.get_current_unit_cost(
+            get_type=1,
+            **{
+                'warehouse_id': warehouse_id,
+                'sale_order_id': sale_order_id,
+            }
+        )
 
     @classmethod
     def get_delivery_config(cls, instance):

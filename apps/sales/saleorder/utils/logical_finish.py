@@ -113,7 +113,7 @@ class SOFinishHandler:
             group_inherit_id=instance.employee_inherit.group_id if instance.employee_inherit else None,
             due_date=payment_stage.due_date,
             value_estimate_sale=payment_stage.value_before_tax,
-        ) for payment_stage in instance.payment_stage_sale_order.all()]
+        ) for payment_stage in instance.sale_order_payment_stage_sale_order.all()]
         ReportCashflow.push_from_so_po(bulk_data)
         return True
 

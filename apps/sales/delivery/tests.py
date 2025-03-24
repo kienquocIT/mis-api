@@ -341,6 +341,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 'indicator_net_income',
                 # payment stage tab
                 'sale_order_payment_stage',
+                'sale_order_invoice',
                 # system
                 'workflow_runtime_id',
                 'is_active',
@@ -496,9 +497,9 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 picked_quantity=0,
                 order=1,
                 is_promotion=False,
-                product_unit_price=item.product_unit_price,
+                product_cost=item.product_unit_price,
                 product_tax_value=item.product_tax_value,
-                product_subtotal_price=item.product_subtotal_price,
+                product_subtotal_cost=item.product_subtotal_price,
             )
             prod_create_list.append(temp)
         OrderDeliveryProduct.objects.bulk_create(prod_create_list)
