@@ -633,6 +633,17 @@ class CustomerListSerializer(serializers.ModelSerializer):
         )
 
 
+class SupplierListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = (
+            "id",
+            'code',
+            "name",
+            "tax_code"
+        )
+
+
 class AccountsMapEmployeesListSerializer(serializers.ModelSerializer):
     account = serializers.SerializerMethodField()
 
