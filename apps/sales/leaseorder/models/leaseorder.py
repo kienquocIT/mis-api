@@ -4,7 +4,110 @@ from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.leaseorder.utils.logical import LOHandler
 from apps.sales.leaseorder.utils.logical_finish import LOFinishHandler
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS, \
-    BastionFieldAbstractModel, RecurrenceAbstractModel, ASSET_TYPE, PRODUCT_CONVERT_INTO
+    BastionFieldAbstractModel, RecurrenceAbstractModel, ASSET_TYPE, PRODUCT_CONVERT_INTO, SimpleAbstractModel
+
+
+# CONFIG
+class LeaseOrderAppConfig(MasterDataAbstractModel):
+    company = models.OneToOneField(
+        'company.Company',
+        on_delete=models.CASCADE,
+        related_name='lease_order_app_config',
+    )
+    asset_type = models.ForeignKey(
+        'saledata.FixedAssetClassification',
+        on_delete=models.CASCADE,
+        related_name="lease_config_asset_type",
+        null=True
+    )
+    asset_type_data = models.JSONField(default=dict, help_text="data json of asset_type")
+    asset_group_manage = models.ForeignKey(
+        'hr.Group',
+        on_delete=models.CASCADE,
+        related_name="lease_config_asset_group_manage",
+        null=True
+    )
+    asset_group_manage_data = models.JSONField(default=dict, help_text="data json of asset_group_manage")
+    asset_group_using = models.ManyToManyField(
+        'hr.Group',
+        through="LeaseOrderConfigAssetGroupUsing",
+        symmetrical=False,
+        blank=True,
+        related_name='lo_config_map_asset_group_using'
+    )
+    asset_group_using_data = models.JSONField(default=dict, help_text="data json of asset_group_using")
+    tool_type = models.ForeignKey(
+        'saledata.ToolClassification',
+        on_delete=models.CASCADE,
+        related_name="lease_config_tool_type",
+        null=True
+    )
+    tool_type_data = models.JSONField(default=dict, help_text="data json of tool_type")
+    tool_group_manage = models.ForeignKey(
+        'hr.Group',
+        on_delete=models.CASCADE,
+        related_name="lease_config_tool_group_manage",
+        null=True
+    )
+    tool_group_manage_data = models.JSONField(default=dict, help_text="data json of tool_group_manage")
+    tool_group_using = models.ManyToManyField(
+        'hr.Group',
+        through="LeaseOrderConfigToolGroupUsing",
+        symmetrical=False,
+        blank=True,
+        related_name='lo_config_map_tool_group_using'
+    )
+    tool_group_using_data = models.JSONField(default=list, help_text="data json of tool_group_using")
+
+    class Meta:
+        verbose_name = 'Lease order Config'
+        verbose_name_plural = 'Lease order Configs'
+        default_permissions = ()
+        permissions = ()
+
+
+class LeaseOrderConfigAssetGroupUsing(SimpleAbstractModel):
+    lease_order_config = models.ForeignKey(
+        LeaseOrderAppConfig,
+        on_delete=models.CASCADE,
+        verbose_name="lease order config",
+        related_name="lo_config_asset_group_using_lo_config",
+    )
+    group_using = models.ForeignKey(
+        'hr.Group',
+        on_delete=models.CASCADE,
+        verbose_name="group",
+        related_name="lo_config_asset_group_using_group",
+    )
+
+    class Meta:
+        verbose_name = 'Lease Order Config Asset Group Using'
+        verbose_name_plural = 'Lease Order Config Asset Groups Using'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class LeaseOrderConfigToolGroupUsing(SimpleAbstractModel):
+    lease_order_config = models.ForeignKey(
+        LeaseOrderAppConfig,
+        on_delete=models.CASCADE,
+        verbose_name="lease order config",
+        related_name="lo_config_tool_group_using_lo_config",
+    )
+    group_using = models.ForeignKey(
+        'hr.Group',
+        on_delete=models.CASCADE,
+        verbose_name="group",
+        related_name="lo_config_tool_group_using_group",
+    )
+
+    class Meta:
+        verbose_name = 'Lease Order Config Tool Group Using'
+        verbose_name_plural = 'Lease Order Config Tool Groups Using'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
 
 
 # BEGIN LEASE ORDER
