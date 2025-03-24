@@ -149,8 +149,16 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
         if validate_data.get('invoice_method') == 2 and not bank_account_id:
             raise serializers.ValidationError({'bank_account_id': "Bank account is not null."})
         # check valid data data_item_list
-        if len(validate_data.get('delivery_mapped_list', [])) > 0 or not sale_order_mapped:
-            for item in validate_data.get('data_item_list', []):
+        for item in validate_data.get('data_item_list', []):
+            if float(item.get('product_subtotal_final', 0)) > 0:
+                tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
+                item['product_tax_data'] = {
+                    'id': str(tax_obj.id),
+                    'code': tax_obj.code,
+                    'title': tax_obj.title,
+                    'rate': tax_obj.rate,
+                }
+            else:
                 product_obj = Product.objects.filter(id=item.get('product_id')).first()
                 uom_obj = UnitOfMeasure.objects.filter(id=item.get('product_uom_id')).first()
                 tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
@@ -160,7 +168,6 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                     float(item.get('product_quantity', 0)) <= 0,
                     float(item.get('product_unit_price', 0)) <= 0,
                     float(item.get('product_subtotal', 0)) <= 0,
-                    float(item.get('product_subtotal_final', 0)) <= 0,
                 ]):
                     raise serializers.ValidationError({'data_item_list': "Data items are not valid."})
                 item['product_data'] = {
