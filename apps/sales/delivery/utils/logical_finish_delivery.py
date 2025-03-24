@@ -197,8 +197,10 @@ class DeliFinishHandler:
         model_asset = DisperseModel(app_model='asset.fixedasset').get_model()
         if model_asset and hasattr(model_asset, 'objects'):
             for delivery_product in instance.delivery_product_delivery_sub.all():
-                asset_data = []
-                if delivery_product.asset_type == 1 and delivery_product.offset:
+                asset_type = delivery_product.asset_type
+                product_convert_into = delivery_product.product_convert_into
+                if asset_type == 1 and product_convert_into == 2 and delivery_product.offset:
+                    asset_data = []
                     for delivery_warehouse in delivery_product.delivery_pw_delivery_product.all():
                         asset_data += DeliFinishHandler.create_obj_and_set_asset_data(
                             model_asset=model_asset,

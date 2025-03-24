@@ -464,6 +464,7 @@ RECURRENCE_ACTION = (
     (1, 'Done'),
     (2, 'Skip'),
 )
+
 CONTRACT_TYPE = (
     (0, 'Probationary contract'),
     (1, 'Labor contract'),
@@ -475,6 +476,11 @@ ASSET_TYPE = (
     (1, 'Product'),
     (2, 'Tool'),
     (3, 'Fixed asset'),
+)
+
+PRODUCT_CONVERT_INTO = (
+    (1, _('Tool')),
+    (2, _('Fixed asset')),
 )
 
 # goods recovery

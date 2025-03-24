@@ -4,7 +4,7 @@ from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.leaseorder.utils.logical import LOHandler
 from apps.sales.leaseorder.utils.logical_finish import LOFinishHandler
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS, \
-    BastionFieldAbstractModel, RecurrenceAbstractModel, ASSET_TYPE
+    BastionFieldAbstractModel, RecurrenceAbstractModel, ASSET_TYPE, PRODUCT_CONVERT_INTO
 
 
 # BEGIN LEASE ORDER
@@ -492,6 +492,8 @@ class LeaseOrderCost(MasterDataAbstractModel):
 
     depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
     depreciation_lease_data = models.JSONField(default=list, help_text='data json of depreciation lease')
+
+    product_convert_into = models.SmallIntegerField(choices=PRODUCT_CONVERT_INTO, null=True)
 
     # End depreciation fields
 

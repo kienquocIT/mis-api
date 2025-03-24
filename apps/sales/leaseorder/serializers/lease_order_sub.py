@@ -569,6 +569,8 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
 
             'depreciation_data',
             'depreciation_lease_data',
+
+            'product_convert_into',
         )
 
     @classmethod
