@@ -74,17 +74,18 @@ class LeaseOrderConfigUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        instance.lo_config_asset_group_using_lo_config.delete()
+        instance.lo_config_asset_group_using_lo_config.all().delete()
         LeaseOrderConfigAssetGroupUsing.objects.bulk_create([
             LeaseOrderConfigAssetGroupUsing(
                 lease_order_config=instance,
                 group_using_id=asset_gs_data.get('id', None)
-            )
-        ] for asset_gs_data in instance.asset_group_using_data)
-        instance.lo_config_tool_group_using_lo_config.delete()
+            ) for asset_gs_data in instance.asset_group_using_data
+        ])
+        instance.lo_config_tool_group_using_lo_config.all().delete()
         LeaseOrderConfigToolGroupUsing.objects.bulk_create([
             LeaseOrderConfigToolGroupUsing(
                 lease_order_config=instance,
-                group_using_id=tool_gs_data.get('id', None))
-        ] for tool_gs_data in instance.tool_group_using_data)
+                group_using_id=tool_gs_data.get('id', None)
+            ) for tool_gs_data in instance.tool_group_using_data
+        ])
         return instance

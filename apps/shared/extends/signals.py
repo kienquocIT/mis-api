@@ -52,6 +52,7 @@ from apps.core.forms.tasks import notifications_form_with_new, notifications_for
 from apps.sales.project.extend_func import calc_rate_project, calc_update_task, re_calc_work_group
 from .models import DisperseModel
 from .. import ProjectMsg
+from ...sales.leaseorder.models import LeaseOrderAppConfig
 from ...sales.project.tasks import create_project_news
 
 logger = logging.getLogger(__name__)
@@ -1128,6 +1129,12 @@ class ConfigDefaultData:
             tenant=self.company_obj.tenant
         )
 
+    def lease_order_config(self):
+        LeaseOrderAppConfig.objects.create(
+            company=self.company_obj,
+            tenant=self.company_obj.tenant
+        )
+
     def call_new(self):
         config = self.company_config()
         self.delivery_config()
@@ -1147,6 +1154,7 @@ class ConfigDefaultData:
         self.asset_tools_config()
         self.make_sure_workflow_apps()
         self.project_config()
+        self.lease_order_config()
         return True
 
 
