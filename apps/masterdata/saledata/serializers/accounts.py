@@ -214,7 +214,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                 return Industry.objects.get(id=value)
             except Industry.DoesNotExist:
                 raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_EXIST})
-        raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_NULL})
+        return None
 
     def validate(self, validate_data):
         if validate_data.get('account_type_selection', None):
@@ -562,7 +562,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                 return Industry.objects.get(id=value)
             except Industry.DoesNotExist:
                 raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_EXIST})
-        raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_NULL})
+        return None
 
     @classmethod
     def validate_currency(cls, value):

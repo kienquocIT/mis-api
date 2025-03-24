@@ -3,6 +3,7 @@ import datetime
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django_extensions.db.fields.json import JSONField
 
 from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.price import Price, Currency
@@ -137,11 +138,13 @@ class Account(DataAbstractModel):
         on_delete=models.CASCADE,
         null=True
     )
+    account_group_data = models.JSONField(default=dict)
     owner = models.ForeignKey(
         Contact,
         on_delete=models.CASCADE,
         null=True
     )
+    owner_data = models.JSONField(default=dict)
     manager = models.JSONField(
         default=list
     )
@@ -152,6 +155,7 @@ class Account(DataAbstractModel):
         blank=True,
         related_name='account_map_employee'
     )
+    employee_data = models.JSONField(default=list)
     account_types_mapped = models.ManyToManyField(
         AccountType,
         through='AccountAccountTypes',
@@ -159,16 +163,13 @@ class Account(DataAbstractModel):
         blank=True,
         related_name='account_map_account_types'
     )
-    parent_account = models.CharField(
-        verbose_name='parent account',
-        null=True,
-        max_length=150
-    )
+    account_types_mapped_data = models.JSONField(default=list)
     parent_account_mapped = models.ForeignKey(
         'self',
         on_delete=models.CASCADE,
         null=True
     )
+    parent_account_mapped_data = models.JSONField(default=dict)
     tax_code = models.CharField(
         verbose_name='tax code',
         blank=True,
@@ -178,8 +179,9 @@ class Account(DataAbstractModel):
     industry = models.ForeignKey(
         'saledata.Industry',
         on_delete=models.CASCADE,
-        null=False
+        null=True
     )
+    industry_data = models.JSONField(default=dict)
     # annual_revenue = models.SmallIntegerField(choices=ANNUAL_REVENUE_SELECTION, null=True)
     # total_employees = models.SmallIntegerField(choices=TOTAL_EMPLOYEES_SELECTION, default=1)
     annual_revenue = models.CharField(
@@ -213,9 +215,8 @@ class Account(DataAbstractModel):
         null=True,
         related_name='payment_term_customer_mapped'
     )
-    price_list_mapped = models.ForeignKey(Price, on_delete=models.CASCADE, null=True)
+    payment_term_customer_mapped_data = models.JSONField(default=dict)
     credit_limit_customer = models.FloatField(null=True)
-    currency = models.ForeignKey(Currency, on_delete=models.CASCADE, null=True)
 
     payment_term_supplier_mapped = models.ForeignKey(
         PaymentTerm,
@@ -223,7 +224,15 @@ class Account(DataAbstractModel):
         null=True,
         related_name='payment_term_supplier_mapped'
     )
+    payment_term_supplier_mapped_data = models.JSONField(default=dict)
     credit_limit_supplier = models.FloatField(null=True)
+
+    price_list_mapped = models.ForeignKey(Price, on_delete=models.CASCADE, null=True)
+    price_list_mapped_data = models.JSONField(default=dict)
+
+    currency = models.ForeignKey(Currency, on_delete=models.CASCADE, null=True)
+    currency_data = models.JSONField(default=dict)
+
     is_customer_account = models.BooleanField(default=False)
     is_supplier_account = models.BooleanField(default=False)
     is_partner_account = models.BooleanField(default=False)
@@ -260,6 +269,7 @@ class Account(DataAbstractModel):
             'order_number': order_number,
             'revenue_average': round(revenue_ytd / order_number) if order_number > 0 else 0,
         }
+
 
 # AccountEmployee
 class AccountEmployee(SimpleAbstractModel):
