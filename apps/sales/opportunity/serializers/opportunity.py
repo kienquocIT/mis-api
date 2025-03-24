@@ -272,7 +272,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         self.validate_config_role(validate_data=validate_data)
         stage = OpportunityConfigStage.objects.filter_current(
-            fill__tenant=True, fill__company=True, indicator='Qualification', is_delete=False
+            fill__company=True, indicator='Qualification', is_delete=False
         ).first()
         if stage:
             validate_data['stage'] = stage
