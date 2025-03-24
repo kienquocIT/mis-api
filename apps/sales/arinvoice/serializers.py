@@ -95,10 +95,12 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_sale_order_mapped(cls, value):
-        try:
-            return SaleOrder.objects.get(id=value)
-        except SaleOrder.DoesNotExist:
-            raise serializers.ValidationError({'sale_order_mapped': "Sale order does not exist."})
+        if value:
+            try:
+                return SaleOrder.objects.get(id=value)
+            except SaleOrder.DoesNotExist:
+                raise serializers.ValidationError({'sale_order_mapped': "Sale order does not exist."})
+        return None
 
     @classmethod
     def validate_delivery_mapped_list(cls, delivery_mapped_list):
@@ -150,14 +152,14 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'bank_account_id': "Bank account is not null."})
         # check valid data data_item_list
         for item in validate_data.get('data_item_list', []):
-            if float(item.get('product_subtotal_final', 0)) > 0:
+            if item.get('ar_product_des'):
                 tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
                 item['product_tax_data'] = {
                     'id': str(tax_obj.id),
                     'code': tax_obj.code,
                     'title': tax_obj.title,
                     'rate': tax_obj.rate,
-                }
+                } if tax_obj else {}
             else:
                 product_obj = Product.objects.filter(id=item.get('product_id')).first()
                 uom_obj = UnitOfMeasure.objects.filter(id=item.get('product_uom_id')).first()
@@ -175,19 +177,19 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                     'code': product_obj.code,
                     'title': product_obj.title,
                     'des': product_obj.description,
-                }
+                } if product_obj else {}
                 item['product_uom_data'] = {
                     'id': str(uom_obj.id),
                     'code': uom_obj.code,
                     'title': uom_obj.title,
                     'group_id': str(uom_obj.group_id)
-                }
+                } if uom_obj else {}
                 item['product_tax_data'] = {
                     'id': str(tax_obj.id),
                     'code': tax_obj.code,
                     'title': tax_obj.title,
                     'rate': tax_obj.rate,
-                }
+                } if tax_obj else {}
         return validate_data
 
     @decorator_run_workflow
