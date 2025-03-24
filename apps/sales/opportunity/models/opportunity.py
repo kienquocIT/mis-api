@@ -408,7 +408,9 @@ class Opportunity(DataAbstractModel):
 
     @classmethod
     def update_stage(cls, obj):
-        stages = OpportunityConfigStage.objects.filter(company_id=obj.company_id).order_by('win_rate')
+        stages = OpportunityConfigStage.objects.filter(
+            company_id=obj.company_id, is_delete=False
+        ).order_by('win_rate')
         stage_lost = None
         stage_delivery = None
         stage_close = None

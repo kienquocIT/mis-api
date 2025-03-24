@@ -677,12 +677,12 @@ class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
             'delivery_quantity',
             'state',
             'is_active',
-            'times',
             'already',
             'details',
             'sum_tax',
             'sum_discount',
-            'sum_discount_rate'
+            'sum_discount_rate',
+            'actual_delivery_date'
         )
 
     @classmethod
