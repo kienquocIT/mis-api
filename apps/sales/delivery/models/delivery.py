@@ -18,6 +18,7 @@ __all__ = [
     'OrderDeliverySub',
     'OrderDeliveryProduct',
     'OrderDeliveryAttachment',
+    'OrderDeliveryProductTool',
     'OrderDeliveryProductAsset',
 ]
 
@@ -662,7 +663,9 @@ class OrderDeliveryProductTool(MasterDataAbstractModel):
         null=True
     )
     uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
+    product_quantity = models.FloatField(default=0)
     product_quantity_time = models.FloatField(default=0)
+    remaining_quantity = models.FloatField(default=0, verbose_name='Quantity remain delivery')
     picked_quantity = models.FloatField(default=0, verbose_name='Quantity was delivered')
     # Begin depreciation fields
 

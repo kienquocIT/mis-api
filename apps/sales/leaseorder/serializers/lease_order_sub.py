@@ -28,12 +28,19 @@ class LeaseOrderCommonCreate:
             ) for sale_order_product in validated_data['lease_products_data']]
         )
         for created in created_list:
+            LeaseOrderProductTool.objects.bulk_create(
+                [LeaseOrderProductTool(
+                    lease_order=created.lease_order, lease_order_product=created,
+                    tenant_id=instance.tenant_id, company_id=instance.company_id,
+                    **tool_data,
+                ) for tool_data in created.tool_data]
+            )
             LeaseOrderProductAsset.objects.bulk_create(
                 [LeaseOrderProductAsset(
                     lease_order=created.lease_order, lease_order_product=created,
                     tenant_id=instance.tenant_id, company_id=instance.company_id,
-                    **product_asset,
-                ) for product_asset in created.asset_data]
+                    **asset_data,
+                ) for asset_data in created.asset_data]
             )
         return True
 
