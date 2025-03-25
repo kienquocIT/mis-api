@@ -4,7 +4,7 @@ from apps.core.hr.models import Group
 from apps.masterdata.saledata.models import FixedAssetClassification, ToolClassification
 from apps.sales.leaseorder.models import LeaseOrderAppConfig, LeaseOrderConfigAssetGroupUsing, \
     LeaseOrderConfigToolGroupUsing
-from apps.shared import HRMsg, BaseMsg
+from apps.shared import BaseMsg
 
 
 class LeaseOrderConfigDetailSerializer(serializers.ModelSerializer):
