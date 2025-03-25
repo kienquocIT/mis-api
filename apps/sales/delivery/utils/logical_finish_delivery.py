@@ -125,7 +125,9 @@ class DeliFinishHandler:
             final_ratio = 1
             uom_delivery = UnitOfMeasure.objects.filter(id=source['uom_id']).first()
             if item.product and uom_delivery:
-                final_ratio = cls.get_final_uom_ratio(product_obj=item.product, uom_transaction=uom_delivery)
+                final_ratio = DeliFinishSubHandler.get_final_uom_ratio(
+                    product_obj=item.product, uom_transaction=uom_delivery
+                )
             delivery_quantity = source['quantity'] * final_ratio
             if item.stock_amount > 0:
                 # số lượng trong kho đã quy đổi
@@ -263,7 +265,6 @@ class DeliFinishHandler:
                             "code": asset_obj.code,
                             "title": asset_obj.title,
                             "asset_id": str(asset_obj.id),
-                            "is_change": asset_obj.is_change,
                             "net_value": 0,
                             "origin_cost": asset_obj.original_cost,
                             "depreciation_time": asset_obj.depreciation_time,
@@ -298,36 +299,36 @@ class DeliFinishHandler:
 
     @classmethod
     def force_create_new_tool(cls, instance):
-        model_asset = DisperseModel(app_model='asset.fixedasset').get_model()
+        model_tool = DisperseModel(app_model='asset.instrumenttool').get_model()
         model_lo_config = DisperseModel(app_model='leaseorder.leaseorderappConfig').get_model()
-        if model_asset and hasattr(model_asset, 'objects') and model_lo_config and hasattr(model_lo_config, 'objects'):
+        if model_tool and hasattr(model_tool, 'objects') and model_lo_config and hasattr(model_lo_config, 'objects'):
             for delivery_product in instance.delivery_product_delivery_sub.all():
                 asset_type = delivery_product.asset_type
                 product_convert_into = delivery_product.product_convert_into
-                if asset_type == 1 and product_convert_into == 2 and delivery_product.offset:
-                    asset_data = []
+                if asset_type == 1 and product_convert_into == 1 and delivery_product.offset:
+                    tool_data = []
                     for delivery_warehouse in delivery_product.delivery_pw_delivery_product.all():
-                        asset_data += DeliFinishHandler.create_obj_and_set_asset_data(
-                            model_asset=model_asset,
+                        tool_data += DeliFinishHandler.create_obj_and_set_tool_data(
+                            model_tool=model_tool,
                             model_lo_config=model_lo_config,
                             instance=instance,
                             delivery_product=delivery_product,
                             delivery_warehouse=delivery_warehouse
                         )
-                    delivery_product.asset_data = asset_data
-                    delivery_product.save(update_fields=['asset_data'])
+                    delivery_product.tool_data = tool_data
+                    delivery_product.save(update_fields=['tool_data'])
         return True
 
     @classmethod
     def create_obj_and_set_tool_data(
             cls,
-            model_asset,
+            model_tool,
             model_lo_config,
             instance,
             delivery_product,
             delivery_warehouse
     ):
-        asset_data = []
+        tool_data = []
         cost = DeliFinishHandler.get_cost_by_warehouse(
             product_obj=delivery_product.offset,
             warehouse_id=delivery_warehouse.warehouse_id,
@@ -336,18 +337,15 @@ class DeliFinishHandler:
         lo_config = model_lo_config.objects.filter_on_company().first()
         if lo_config:
             for _ in range(int(delivery_warehouse.quantity_delivery)):
-                asset_obj = model_asset.objects.create(
+                tool_obj = model_tool.objects.create(
                     tenant_id=instance.tenant_id,
                     company_id=instance.company_id,
-                    classification_id=lo_config.asset_type_id,
-                    manage_department_id=lo_config.asset_group_manage_id,
+                    classification_id=lo_config.tool_type_id,
+                    manage_department_id=lo_config.tool_group_manage_id,
                     product_id=delivery_product.offset_id,
                     title=delivery_product.offset.title,
-                    asset_code=delivery_product.offset.code,
-                    original_cost=cost,
-                    depreciation_method=delivery_product.product_depreciation_method,
+                    unit_price=cost,
                     depreciation_time=delivery_product.product_depreciation_time,
-                    adjustment_factor=delivery_product.product_depreciation_adjustment,
                     depreciation_start_date=delivery_product.product_depreciation_start_date,
                     depreciation_end_date=delivery_product.product_depreciation_end_date,
                     depreciation_data=DeliFinishHandler.update_depreciation_data(
@@ -357,23 +355,22 @@ class DeliFinishHandler:
                     ),
                     status=2,
                 )
-                if asset_obj:
-                    asset_obj.system_status = 3
-                    asset_obj.save(update_fields=['system_status'])
-                    asset_json = {
-                        'asset_id': str(asset_obj.id),
-                        'asset_data': {
-                            "id": str(asset_obj.id),
-                            "code": asset_obj.code,
-                            "title": asset_obj.title,
-                            "asset_id": str(asset_obj.id),
-                            "is_change": asset_obj.is_change,
+                if tool_obj:
+                    tool_obj.system_status = 3
+                    tool_obj.save(update_fields=['system_status'])
+                    tool_json = {
+                        'tool_id': str(tool_obj.id),
+                        'tool_data': {
+                            "id": str(tool_obj.id),
+                            "code": tool_obj.code,
+                            "title": tool_obj.title,
+                            "tool_id": str(tool_obj.id),
                             "net_value": 0,
-                            "origin_cost": asset_obj.original_cost,
-                            "depreciation_time": asset_obj.depreciation_time,
-                            "depreciation_start_date": str(asset_obj.depreciation_start_date),
-                            "depreciation_end_date": str(asset_obj.depreciation_end_date),
-                            "depreciation_data": asset_obj.depreciation_data,
+                            "unit_price": tool_obj.original_cost,
+                            "depreciation_time": tool_obj.depreciation_time,
+                            "depreciation_start_date": str(tool_obj.depreciation_start_date),
+                            "depreciation_end_date": str(tool_obj.depreciation_end_date),
+                            "depreciation_data": tool_obj.depreciation_data,
                         },
                         "product_id": str(delivery_product.product_id),
                         "product_data": delivery_product.product_data,
@@ -397,9 +394,8 @@ class DeliFinishHandler:
 
                         "depreciation_data": delivery_product.depreciation_data,
                     }
-                    asset_data.append(asset_json)
-        return asset_data
-
+                    tool_data.append(tool_json)
+        return tool_data
 
     @classmethod
     def update_depreciation_data(cls, depreciation_data, old_cost, new_cost):
@@ -419,7 +415,7 @@ class DeliFinishHandler:
                 target = deli_product.product
                 if deli_product.offset:
                     target = deli_product.offset
-                final_ratio = cls.get_final_uom_ratio(
+                final_ratio = DeliFinishSubHandler.get_final_uom_ratio(
                     product_obj=target, uom_transaction=deli_product.uom
                 )
                 target.save(**{
@@ -532,6 +528,9 @@ class DeliFinishHandler:
                 if get_config:
                     return {"is_picking": get_config.is_picking, "is_partial_ship": get_config.is_partial_ship}
         return config
+
+
+class DeliFinishSubHandler:
 
     @classmethod
     def get_final_uom_ratio(cls, product_obj, uom_transaction):
