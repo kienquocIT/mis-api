@@ -17,7 +17,8 @@ __all__= [
     'InstrumentToolListSerializer',
     'InstrumentToolCreateSerializer',
     'InstrumentToolDetailSerializer',
-    'InstrumentToolUpdateSerializer'
+    'InstrumentToolUpdateSerializer',
+    'ToolForLeaseListSerializer',
 ]
 
 
@@ -510,3 +511,41 @@ class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'asset': FixedAssetMsg.ERROR_CREATE})
 
         return instrument_tool
+
+
+class ToolForLeaseListSerializer(serializers.ModelSerializer):
+    tool_id = serializers.SerializerMethodField()
+    origin_cost = serializers.SerializerMethodField()
+    net_value = serializers.SerializerMethodField()
+    depreciation_time = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InstrumentTool
+        fields = (
+            'id',
+            'title',
+            'code',
+            'tool_id',
+            'origin_cost',
+            'net_value',
+            'depreciation_time',
+            'depreciation_start_date',
+            'depreciation_end_date',
+            'depreciation_data',
+        )
+
+    @classmethod
+    def get_tool_id(cls, obj):
+        return str(obj.id)
+
+    @classmethod
+    def get_origin_cost(cls, obj):
+        return obj.unit_price
+
+    @classmethod
+    def get_net_value(cls, obj):
+        return 0 if obj else 0
+
+    @classmethod
+    def get_depreciation_time(cls, obj):
+        return obj.depreciation_time

@@ -411,6 +411,7 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
                     DeliFinishHandler.update_asset_status(instance=self)  # asset status => delivered
                     DeliFinishHandler.force_create_new_asset(instance=self)  # create new asset
+                    DeliFinishHandler.force_create_new_tool(instance=self)  # create new tool
                     DeliFinishHandler.push_product_info(instance=self)  # product
                     DeliFinishHandler.push_so_lo_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
@@ -468,6 +469,7 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
     )
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
     asset_data = models.JSONField(default=list, help_text='data json of asset')
+    tool_data = models.JSONField(default=list, help_text='data json of tool')
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -589,6 +591,11 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
             asset_data for asset_data in new_obj.asset_data
             if asset_data.get('picked_quantity', 0) <= 0
         ]
+        # Check and store tool not delivered to field tool_data
+        new_obj.tool_data = [
+            tool_data for tool_data in new_obj.tool_data
+            if tool_data.get('picked_quantity', 0) <= 0
+        ]
 
         new_obj.before_save()
         return new_obj
@@ -604,14 +611,83 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         if not save_for_other:
             self.before_save()
             DeliHandler.create_delivery_product_asset(instance=self)
+            DeliHandler.create_delivery_product_tool(instance=self)
             DeliHandler.create_delivery_product_warehouse(instance=self)
             DeliHandler.create_delivery_lot_serial(instance=self)
         super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Delivery Product'
-        verbose_name_plural = 'Delivery Product'
+        verbose_name_plural = 'Delivery Products'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class OrderDeliveryProductTool(MasterDataAbstractModel):
+    delivery_sub = models.ForeignKey(
+        OrderDeliverySub,
+        on_delete=models.CASCADE,
+        verbose_name="delivery sub",
+        related_name="delivery_pt_delivery_sub",
+        null=True,
+    )
+    delivery_product = models.ForeignKey(
+        'delivery.OrderDeliveryProduct',
+        on_delete=models.CASCADE,
+        verbose_name="delivery product",
+        related_name="delivery_pt_delivery_product",
+    )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="delivery_pt_product",
+        null=True
+    )
+    product_data = models.JSONField(default=dict, help_text='data json of product')
+    tool = models.ForeignKey(
+        'asset.InstrumentTool',
+        on_delete=models.CASCADE,
+        verbose_name="tool",
+        related_name="delivery_pt_tool",
+        null=True
+    )
+    tool_data = models.JSONField(default=dict, help_text='data json of tool')
+    uom_time = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="uom time",
+        related_name="delivery_pt_uom_time",
+        null=True
+    )
+    uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
+    product_quantity_time = models.FloatField(default=0)
+    picked_quantity = models.FloatField(default=0, verbose_name='Quantity was delivered')
+    # Begin depreciation fields
+
+    product_depreciation_subtotal = models.FloatField(default=0)
+    product_depreciation_price = models.FloatField(default=0)
+    product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
+    product_depreciation_adjustment = models.FloatField(default=0)
+    product_depreciation_time = models.FloatField(default=0)
+    product_depreciation_start_date = models.DateField(null=True)
+    product_depreciation_end_date = models.DateField(null=True)
+
+    product_lease_start_date = models.DateField(null=True)
+    product_lease_end_date = models.DateField(null=True)
+
+    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+
+    # End depreciation fields
+
+    # fields for recovery
+    quantity_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
+
+    class Meta:
+        verbose_name = 'Delivery Product Tool'
+        verbose_name_plural = 'Delivery Products Tools'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
@@ -678,7 +754,7 @@ class OrderDeliveryProductAsset(MasterDataAbstractModel):
 
     class Meta:
         verbose_name = 'Delivery Product Asset'
-        verbose_name_plural = 'Delivery Products Asset'
+        verbose_name_plural = 'Delivery Products Assets'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

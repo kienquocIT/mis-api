@@ -33,6 +33,18 @@ class DeliHandler:
         return True
 
     @classmethod
+    def create_delivery_product_tool(cls, instance):
+        model = DisperseModel(app_model='delivery.OrderDeliveryProductTool').get_model()
+        if model and hasattr(model, 'objects'):
+            instance.delivery_pt_delivery_product.all().delete()
+            model.objects.bulk_create([model(
+                tenant_id=instance.tenant_id, company_id=instance.company_id,
+                delivery_sub_id=instance.delivery_sub_id, delivery_product_id=instance.id,
+                **tool_data,
+            ) for tool_data in instance.tool_data])
+        return True
+
+    @classmethod
     def create_delivery_product_warehouse(cls, instance):
         model = DisperseModel(app_model='delivery.OrderDeliveryProductWarehouse').get_model()
         if model and hasattr(model, 'create'):

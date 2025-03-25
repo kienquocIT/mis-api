@@ -116,6 +116,24 @@ class OrderActiveDeliverySerializer:
                 result.update(OrderActiveDeliverySerializer.append_depreciation_data(cost_product=cost_product))
         return result
 
+    def setup_lease_tool_kwargs(self, m2m_obj, result):
+        if m2m_obj.product and m2m_obj.tool_data:
+            for m2m_obj_tool in m2m_obj.lease_order_product_tool_lo_product.all():
+                cost_product = m2m_obj_tool.tool.lease_order_cost_tool.filter(
+                    lease_order=self.order_obj, product=m2m_obj_tool.product
+                ).first()
+                if cost_product:
+                    for tool_data in result.get('tool_data', []):
+                        tool_data.update({'uom_time_id': str(m2m_obj.uom_time_id)})
+                        tool_data.update({'uom_time_data': m2m_obj.uom_time_data})
+                        tool_data.update({'product_quantity_time': m2m_obj.product_quantity_time})
+                        if tool_data.get('tool_id', None) == str(m2m_obj_tool.tool_id):
+                            tool_data.update(OrderActiveDeliverySerializer.append_depreciation_data(
+                                cost_product=cost_product
+                            ))
+                            break
+        return result
+
     def setup_lease_asset_kwargs(self, m2m_obj, result):
         if m2m_obj.product and m2m_obj.asset_data:
             for m2m_obj_asset in m2m_obj.lease_order_product_asset_lo_product.all():
@@ -152,6 +170,7 @@ class OrderActiveDeliverySerializer:
                 'product_quantity_time': m2m_obj.product_quantity_time,
             })
             result = self.setup_lease_offset_kwargs(m2m_obj=m2m_obj, result=result)
+            result = self.setup_lease_tool_kwargs(m2m_obj=m2m_obj, result=result)
             result = self.setup_lease_asset_kwargs(m2m_obj=m2m_obj, result=result)
 
         return result

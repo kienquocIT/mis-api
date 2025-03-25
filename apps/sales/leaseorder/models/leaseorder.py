@@ -350,6 +350,7 @@ class LeaseOrderProduct(MasterDataAbstractModel):
         null=True
     )
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
+    tool_data = models.JSONField(default=list, help_text='data json of tool')
     asset_data = models.JSONField(default=list, help_text='data json of asset')
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
@@ -434,6 +435,46 @@ class LeaseOrderProduct(MasterDataAbstractModel):
         permissions = ()
 
 
+class LeaseOrderProductTool(MasterDataAbstractModel):
+    lease_order = models.ForeignKey(
+        LeaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="lease_order_product_tool_lease_order",
+        null=True
+    )
+    lease_order_product = models.ForeignKey(
+        LeaseOrderProduct,
+        on_delete=models.CASCADE,
+        verbose_name="lease order product",
+        related_name="lease_order_product_tool_lo_product",
+    )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="lease_order_product_tool_product",
+        null=True
+    )
+    product_data = models.JSONField(default=dict, help_text='data json of product')
+    tool = models.ForeignKey(
+        'asset.InstrumentTool',
+        on_delete=models.CASCADE,
+        verbose_name="tool",
+        related_name="lease_order_product_tool_tool",
+        null=True
+    )
+    tool_data = models.JSONField(default=dict, help_text='data json of tool')
+    product_quantity = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Lease Order Product Tool'
+        verbose_name_plural = 'Lease Order Products Tools'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
 class LeaseOrderProductAsset(MasterDataAbstractModel):
     lease_order = models.ForeignKey(
         LeaseOrder,
@@ -464,10 +505,11 @@ class LeaseOrderProductAsset(MasterDataAbstractModel):
         null=True
     )
     asset_data = models.JSONField(default=dict, help_text='data json of asset')
+    product_quantity = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Lease Order Product Asset'
-        verbose_name_plural = 'Lease Order Products Asset'
+        verbose_name_plural = 'Lease Order Products Assets'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
@@ -515,6 +557,14 @@ class LeaseOrderCost(MasterDataAbstractModel):
         null=True
     )
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
+    tool = models.ForeignKey(
+        'asset.InstrumentTool',
+        on_delete=models.CASCADE,
+        verbose_name="tool",
+        related_name="lease_order_cost_tool",
+        null=True
+    )
+    tool_data = models.JSONField(default=dict, help_text='data json of tool')
     asset = models.ForeignKey(
         'asset.FixedAsset',
         on_delete=models.CASCADE,
