@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models.accounts import (
 )
 from apps.masterdata.saledata.serializers.accounts import (
     AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer, AccountUpdateSerializer,
-    AccountsMapEmployeesListSerializer, AccountForSaleListSerializer, CustomerListSerializer,
+    AccountsMapEmployeesListSerializer, AccountForSaleListSerializer, CustomerListSerializer, SupplierListSerializer,
 )
 from apps.masterdata.saledata.serializers.accounts_masterdata import (
     AccountTypeListSerializer, AccountTypeCreateSerializer, AccountTypeDetailsSerializer, AccountTypeUpdateSerializer,
@@ -239,6 +239,27 @@ class CustomerList(BaseListMixin):  # noqa
 
     def get_queryset(self):
         return super().get_queryset().filter(is_customer_account=True).select_related().prefetch_related()
+
+    @swagger_auto_schema(
+        operation_summary="Customer list",
+        operation_description="Customer list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='saledata', model_code='account', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class SupplierList(BaseListMixin):  # noqa
+    queryset = Account.objects
+    serializer_list = SupplierListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    search_fields = ['name', 'code', 'tax_code']
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_supplier_account=True).select_related().prefetch_related()
 
     @swagger_auto_schema(
         operation_summary="Customer list",

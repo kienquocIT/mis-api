@@ -2,6 +2,7 @@
 import datetime
 from uuid import uuid4
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from apps.core.hr.models import Employee, DistributionApplication
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
@@ -270,6 +271,13 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         self.validate_config_role(validate_data=validate_data)
+        stage = OpportunityConfigStage.objects.filter_current(
+            fill__company=True, indicator='Qualification', is_delete=False
+        ).first()
+        if stage:
+            validate_data['stage'] = stage
+        else:
+            raise serializers.ValidationError({'stage': _('Can not found the init Stage')})
         return validate_data
 
     @classmethod
@@ -310,7 +318,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         product_categories = validated_data.pop('product_category', [])
 
         # get stage Qualification (auto assign stage Qualification when create Opportunity)
-        stage = OpportunityConfigStage.objects.get_current(fill__company=True, indicator='Qualification')
+        stage = validated_data.pop('stage')
         win_rate = stage.win_rate
 
         employee_inherit = Employee.objects.get(id=validated_data['employee_inherit_id'])
@@ -499,7 +507,9 @@ class OpportunityProductCreateSerializer(serializers.ModelSerializer):
 
 def get_opp_config_stage(instance):
     opp_config_stage = []
-    for item in OpportunityConfigStage.objects.filter_current(company=instance.company):
+    for item in OpportunityConfigStage.objects.filter_current(
+        company=instance.company, is_delete=False
+    ):
         condition_datas = []
         for data in item.condition_datas:
             condition_datas.append(
@@ -645,7 +655,8 @@ def get_instance_current_stage(opp_config_stage, instance_stage, instance):
 
         stages = OpportunityConfigStage.objects.filter(
             company_id=instance.company_id,
-            win_rate__lte=instance_current_stage[0]['win_rate']
+            win_rate__lte=instance_current_stage[0]['win_rate'],
+            is_delete=False
         ).order_by('-win_rate')
         new_instance_current_stage = get_instance_current_stage_range(
             stages,
@@ -849,7 +860,7 @@ class OpportunityStageUpdateSerializer(serializers.ModelSerializer):
         try:  # noqa
             if value is not None:
                 obj = OpportunityConfigStage.objects.get(
-                    id=value
+                    id=value, is_delete=False
                 )
                 return obj.id
         except OpportunityConfigStage.DoesNotExist:
@@ -927,9 +938,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     def validate_stage(cls, value):
         try:
             return OpportunityConfigStage.objects.get_current(
-                fill__tenant=False,
-                fill__company=True,
-                id=value
+                id=value, is_delete=False
             )
         except OpportunityConfigStage.DoesNotExist:
             raise serializers.ValidationError({'stage': OpportunityMsg.NOT_EXIST})
