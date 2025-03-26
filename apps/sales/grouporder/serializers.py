@@ -1,14 +1,27 @@
 import logging
+
 from django.db import transaction
 from django.utils import timezone
-from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
+from rest_framework import serializers
+
 from apps.core.hr.models import Employee
-from apps.masterdata.saledata.models import ProductPriceList, Account, Tax, UnitOfMeasure, ExpenseItem
+from apps.masterdata.saledata.models import (
+    ProductPriceList,
+    Account,
+    Tax,
+    UnitOfMeasure,
+    ExpenseItem,
+)
 from apps.masterdata.saledata.models.product import Product
-from apps.sales.grouporder.models import GroupOrder, GroupOrderCustomer, GroupOrderCost, \
-    GroupOrderCustomerSelectedPriceList, GroupOrderExpense
+from apps.sales.grouporder.models import (
+    GroupOrder,
+    GroupOrderCustomer,
+    GroupOrderCost,
+    GroupOrderCustomerSelectedPriceList,
+    GroupOrderExpense,
+)
 
 logger = logging.getLogger(__name__)
 
