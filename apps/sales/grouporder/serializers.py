@@ -118,7 +118,8 @@ class GroupOrderCustomerSerializer(serializers.ModelSerializer):
             'note',
             'order',
             'price_list_select',
-            'register_date'
+            'register_date',
+            'is_individual'
         )
 
     @classmethod
@@ -154,7 +155,8 @@ class GroupOrderCostSerializer(serializers.ModelSerializer):
             'is_using_guest_quantity',
             'unit_cost',
             'sub_total',
-            'order'
+            'order',
+            'note'
         )
 
     @classmethod
@@ -295,6 +297,7 @@ class GroupOrderCreateSerializer(serializers.ModelSerializer):
                         sub_total=customer.get('sub_total', None),
                         order=customer.get('order', None),
                         note=customer.get('note', None),
+                        is_individual=customer.get('is_individual', None),
                         tenant=instance.tenant,
                         company=instance.company,
                         employee_created= instance.employee_created,
@@ -322,6 +325,7 @@ class GroupOrderCreateSerializer(serializers.ModelSerializer):
                             unit_cost = cost.get('unit_cost', None),
                             sub_total = cost.get('sub_total', None),
                             order = cost.get('order', None),
+                            note = cost.get('note', None),
                             tenant=instance.tenant,
                             company=instance.company,
                             employee_created=instance.employee_created,
@@ -452,7 +456,8 @@ class GroupOrderDetailSerializer(serializers.ModelSerializer):
                 'sub_total': group_order_customer.sub_total,
                 'payment_status': group_order_customer.payment_status,
                 'note': group_order_customer.note,
-                'register_date': group_order_customer.register_date
+                'register_date': group_order_customer.register_date,
+                'is_individual': group_order_customer.is_individual,
             })
         return data
 
@@ -466,6 +471,7 @@ class GroupOrderDetailSerializer(serializers.ModelSerializer):
                 'quantity': group_order_cost.quantity,
                 'guest_quantity': group_order_cost.guest_quantity,
                 'is_using_guest_quantity': group_order_cost.is_using_guest_quantity,
+                'note': group_order_cost.note,
                 'unit_cost': group_order_cost.unit_cost,
                 'sub_total': group_order_cost.sub_total,
                 'title': group_order_cost.product.title,
@@ -595,6 +601,7 @@ class GroupOrderUpdateSerializer(serializers.ModelSerializer):
                         sub_total=customer.get('sub_total', None),
                         order=customer.get('order', None),
                         note=customer.get('note', None),
+                        is_individual=customer.get('is_individual', None),
                         tenant=instance.tenant,
                         company=instance.company,
                         employee_created=instance.employee_created,
@@ -622,6 +629,7 @@ class GroupOrderUpdateSerializer(serializers.ModelSerializer):
                             unit_cost = cost.get('unit_cost', None),
                             sub_total = cost.get('sub_total', None),
                             order = cost.get('order', None),
+                            note=cost.get('note', None),
                             tenant=instance.tenant,
                             company=instance.company,
                             employee_created=instance.employee_created,

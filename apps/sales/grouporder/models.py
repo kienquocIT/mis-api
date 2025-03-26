@@ -147,6 +147,7 @@ class GroupOrderCustomer(MasterDataAbstractModel):
         default=1,
         choices=PAYMENT_STATUS_TYPE_CHOICES
     )
+    is_individual = models.BooleanField(default=True)
     note = models.TextField(blank=True)
     order = models.SmallIntegerField(default=0, help_text='Order of each row of the table on UI')
 
@@ -191,6 +192,7 @@ class GroupOrderCost(MasterDataAbstractModel):
     is_using_guest_quantity = models.BooleanField(default=False)
     unit_cost = models.FloatField(default=0)
     sub_total = models.FloatField(default=0)
+    note = models.TextField(blank=True)
     order = models.SmallIntegerField(default=0, help_text='Order of each row of the table on UI')
 
     class Meta:
