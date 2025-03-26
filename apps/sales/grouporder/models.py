@@ -170,6 +170,10 @@ class GroupOrderCustomerSelectedPriceList(SimpleAbstractModel):
     )
     value = models.FloatField(default=0)
 
+    class Meta:
+        verbose_name = _('Group Order Customer Select Price List')
+        verbose_name_plural = _('Group Order Customer Select Price Lists')
+
 class GroupOrderCost(MasterDataAbstractModel):
     group_order = models.ForeignKey(
         'GroupOrder',
