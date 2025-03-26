@@ -595,8 +595,14 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         # Check and store tool not delivered to field tool_data
         new_obj.tool_data = [
             tool_data for tool_data in new_obj.tool_data
-            if tool_data.get('picked_quantity', 0) <= 0
+            if (tool_data.get('remaining_quantity', 0) - tool_data.get('picked_quantity', 0)) > 0
         ]
+        # Update remaining quantity and reset picked quantity
+        for tool_data in new_obj.tool_data:
+            tool_data.update({
+                'remaining_quantity': tool_data.get('remaining_quantity', 0) - tool_data.get('picked_quantity', 0),
+                'picked_quantity': 0,
+            })
 
         new_obj.before_save()
         return new_obj
@@ -733,7 +739,9 @@ class OrderDeliveryProductAsset(MasterDataAbstractModel):
         null=True
     )
     uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
+    product_quantity = models.FloatField(default=0)
     product_quantity_time = models.FloatField(default=0)
+    remaining_quantity = models.FloatField(default=0, verbose_name='Quantity remain delivery')
     picked_quantity = models.FloatField(default=0, verbose_name='Quantity was delivered')
     # Begin depreciation fields
 

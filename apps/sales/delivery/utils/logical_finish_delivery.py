@@ -294,6 +294,8 @@ class DeliFinishHandler:
                         "product_lease_start_date": str(delivery_product.product_lease_start_date),
 
                         "depreciation_data": delivery_product.depreciation_data,
+
+                        "quantity_remain_recovery": delivery_product.quantity_remain_recovery,
                     }
                     asset_data.append(asset_json)
         return asset_data
@@ -396,6 +398,8 @@ class DeliFinishHandler:
                         "product_lease_start_date": str(delivery_product.product_lease_start_date),
 
                         "depreciation_data": delivery_product.depreciation_data,
+
+                        "quantity_remain_recovery": delivery_product.quantity_remain_recovery,
                     }
                     tool_data.append(tool_json)
         return tool_data
