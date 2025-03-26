@@ -1525,3 +1525,9 @@ class DefaultSaleDataHandler:
             DocumentType.objects.bulk_update(updated_objects, ["code"])
 
         print('Document type code updated')
+
+
+def make_sure_lease_order_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).lease_order_config()
+    print('Make sure lease order config is done!')

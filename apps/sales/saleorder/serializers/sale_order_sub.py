@@ -13,9 +13,7 @@ from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, Sal
     SaleOrderIndicatorConfig, SaleOrderIndicator, SaleOrderPaymentStage, SaleOrderInvoice
 from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
-from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg, \
-    DisperseModel, WarehouseMsg
-from apps.shared.translations.expense import ExpenseMsg
+from apps.shared import PriceMsg, SaleMsg, DisperseModel, BaseMsg
 
 
 class SaleOrderCommonCreate:
@@ -152,7 +150,7 @@ class SaleOrderCommonValidate:
         try:
             return str(Account.objects.get_on_company(id=value).id)
         except Account.DoesNotExist:
-            raise serializers.ValidationError({'customer': AccountsMsg.ACCOUNT_NOT_EXIST})
+            raise serializers.ValidationError({'customer': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_opportunity_id(cls, value):
@@ -161,14 +159,14 @@ class SaleOrderCommonValidate:
                 return value
             return str(Opportunity.objects.get_on_company(id=value).id)
         except Opportunity.DoesNotExist:
-            raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
+            raise serializers.ValidationError({'opportunity': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_contact_id(cls, value):
         try:
             return str(Contact.objects.get_on_company(id=value).id)
         except Contact.DoesNotExist:
-            raise serializers.ValidationError({'contact': AccountsMsg.CONTACT_NOT_EXIST})
+            raise serializers.ValidationError({'contact': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_payment_term_id(cls, value):
@@ -177,7 +175,7 @@ class SaleOrderCommonValidate:
                 return None
             return str(PaymentTerm.objects.get_on_company(id=value).id)
         except PaymentTerm.DoesNotExist:
-            raise serializers.ValidationError({'payment_term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
+            raise serializers.ValidationError({'payment_term': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_quotation_id(cls, value):
@@ -186,42 +184,42 @@ class SaleOrderCommonValidate:
                 return None
             return str(Quotation.objects.get_on_company(id=value).id)
         except Quotation.DoesNotExist:
-            raise serializers.ValidationError({'quotation': SaleMsg.QUOTATION_NOT_EXIST})
+            raise serializers.ValidationError({'quotation': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_product_id(cls, value):
         try:
             return str(Product.objects.get_on_company(id=value).id)
         except Product.DoesNotExist:
-            raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'product': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_unit_of_measure_id(cls, value):
         try:
             return str(UnitOfMeasure.objects.get_on_company(id=value).id)
         except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'unit_of_measure': ProductMsg.UOM_NOT_EXIST})
+            raise serializers.ValidationError({'unit_of_measure': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_tax_id(cls, value):
         try:
             return str(Tax.objects.get_on_company(id=value).id)
         except Tax.DoesNotExist:
-            raise serializers.ValidationError({'tax': ProductMsg.TAX_NOT_EXIST})
+            raise serializers.ValidationError({'tax': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_expense_id(cls, value):
         try:
             return str(Expense.objects.get_on_company(id=value).id)
         except Expense.DoesNotExist:
-            raise serializers.ValidationError({'expense': ProductMsg.EXPENSE_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'expense': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_expense_item_id(cls, value):
         try:
             return str(ExpenseItem.objects.get_on_company(id=value).id)
         except ExpenseItem.DoesNotExist:
-            raise serializers.ValidationError({'expense_item': ExpenseMsg.EXPENSE_ITEM_NOT_EXIST})
+            raise serializers.ValidationError({'expense_item': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_price_list(cls, value):
@@ -233,21 +231,21 @@ class SaleOrderCommonValidate:
                     for price in price_list
                 ]
             raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_IS_ARRAY})
-        raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_NOT_EXIST})
+        raise serializers.ValidationError({'price_list': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_promotion_id(cls, value):
         try:
             return str(Promotion.objects.get_on_company(id=value).id)
         except Promotion.DoesNotExist:
-            raise serializers.ValidationError({'promotion': PromoMsg.PROMOTION_NOT_EXIST})
+            raise serializers.ValidationError({'promotion': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_shipping_id(cls, value):
         try:
             return str(Shipping.objects.get_on_company(id=value).id)
         except Shipping.DoesNotExist:
-            raise serializers.ValidationError({'shipping': ShippingMsg.SHIPPING_NOT_EXIST})
+            raise serializers.ValidationError({'shipping': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_indicator(cls, value):
@@ -259,35 +257,35 @@ class SaleOrderCommonValidate:
                 'remark': indicator.remark
             }
         except SaleOrderIndicatorConfig.DoesNotExist:
-            raise serializers.ValidationError({'indicator': ProductMsg.INDICATOR_NOT_EXIST})
+            raise serializers.ValidationError({'indicator': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_customer_shipping(cls, value):
         try:
             return AccountShippingAddress.objects.get(id=value)
         except Account.DoesNotExist:
-            raise serializers.ValidationError({'customer_shipping': AccountsMsg.ACCOUNT_SHIPPING_NOT_EXIST})
+            raise serializers.ValidationError({'customer_shipping': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_customer_billing(cls, value):
         try:
             return AccountBillingAddress.objects.get(id=value)
         except Account.DoesNotExist:
-            raise serializers.ValidationError({'customer_billing': AccountsMsg.ACCOUNT_BILLING_NOT_EXIST})
+            raise serializers.ValidationError({'customer_billing': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_employee_inherit_id(cls, value):
         try:
             return Employee.objects.get_on_company(id=value).id
         except Employee.DoesNotExist:
-            raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
+            raise serializers.ValidationError({'employee_inherit': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_term_id(cls, value):
         try:
             return str(Term.objects.get(id=value).id)
         except Term.DoesNotExist:
-            raise serializers.ValidationError({'term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
+            raise serializers.ValidationError({'term': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_warehouse(cls, value):
@@ -295,7 +293,7 @@ class SaleOrderCommonValidate:
             WareHouse.objects.get_on_company(id=value)
             return str(value)
         except WareHouse.DoesNotExist:
-            raise serializers.ValidationError({'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST})
+            raise serializers.ValidationError({'warehouse': BaseMsg.NOT_EXIST})
 
 
 class SaleOrderValueValidate:

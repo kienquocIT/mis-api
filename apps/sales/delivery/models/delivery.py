@@ -10,7 +10,7 @@ from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
 from apps.sales.report.utils.log_for_delivery import IRForDeliveryHandler
 from apps.shared import (
     DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
-    MasterDataAbstractModel, ASSET_TYPE,
+    MasterDataAbstractModel, ASSET_TYPE, PRODUCT_CONVERT_INTO,
 )
 
 __all__ = [
@@ -524,6 +524,8 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
     product_lease_end_date = models.DateField(null=True)
 
     depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+
+    product_convert_into = models.SmallIntegerField(choices=PRODUCT_CONVERT_INTO, null=True)
 
     # End depreciation fields
 
