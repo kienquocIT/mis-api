@@ -66,7 +66,7 @@ class IRForDeliveryHandler:
         lease_order_obj = instance.order_delivery.lease_order if instance.order_delivery else None
         for deli_product in instance.delivery_product_delivery_sub.all():
             if deli_product.product:
-                product_obj = deli_product.product
+                product_obj = deli_product.product if sale_order_obj else deli_product.offset
                 for pw_data in deli_product.delivery_pw_delivery_product.all():
                     warehouse_obj = pw_data.warehouse
                     uom_obj = pw_data.uom
