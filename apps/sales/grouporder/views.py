@@ -1,4 +1,3 @@
-from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import Product, ProductPriceList
@@ -40,9 +39,6 @@ class GroupOrderProductPriceListList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         'product__id': ['exact'],
     }
-
-    def get_queryset(self):
-        return super().get_queryset()
 
     @swagger_auto_schema(
         operation_summary="GroupOrder ProductPriceList list",

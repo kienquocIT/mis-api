@@ -2,7 +2,6 @@ import logging
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
-
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.hr.models import Employee
@@ -126,7 +125,7 @@ class GroupOrderCustomerSerializer(serializers.ModelSerializer):
                 product_price_list = ProductPriceList.objects.get(id=product_price_list_uuid)
                 item['product_price_list'] = product_price_list.id
             except ProductPriceList.DoesNotExist:
-                raise serializers.ValidationError({"price_list_select": _(f"Product Price List does not exist")})
+                raise serializers.ValidationError({"price_list_select": _("Product Price List does not exist")})
         return value
 
 
@@ -256,7 +255,7 @@ class GroupOrderCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"employee_inherit_id": _('Employee is required')})
 
 
-    def create(self, validated_data):
+    def create(self, validated_data):# pylint: disable=R0914
         customer_detail_list = validated_data.pop('customer_detail_list',[])
         cost_list = validated_data.pop('cost_list', [])
         expense_list = validated_data.pop('expense_list', [])
@@ -542,7 +541,7 @@ class GroupOrderUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"employee_inherit_id": _('Employee does not exist')})
         raise serializers.ValidationError({"employee_inherit_id": _('Employee is required')})
 
-    def update(self, instance, validated_data):
+    def update(self, instance, validated_data):# pylint: disable=R0914
         customer_detail_list = validated_data.pop('customer_detail_list', [])
         cost_list = validated_data.pop('cost_list', [])
         expense_list = validated_data.pop('expense_list', [])
@@ -556,7 +555,6 @@ class GroupOrderUpdateSerializer(serializers.ModelSerializer):
                 instance.group_order_costs.all().delete()
                 instance.group_order_expenses.all().delete()
 
-                customer_list_bulk_data = []
                 for customer in customer_detail_list:
                     selected_price_list = customer.pop('price_list_select', [])
                     selected_price_list_bulk_data = []
