@@ -295,7 +295,7 @@ class DeliFinishHandler:
 
                         "depreciation_data": delivery_product.depreciation_data,
 
-                        "quantity_remain_recovery": delivery_product.quantity_remain_recovery,
+                        "quantity_remain_recovery": 1,
                     }
                     asset_data.append(asset_json)
         return asset_data
