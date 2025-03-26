@@ -158,7 +158,10 @@ class SaleOrderListForARInvoice(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('opportunity').filter(system_status=3)
+        return super().get_queryset().select_related('opportunity').filter(
+            delivery_status=3,
+            system_status=3
+        )
 
     @swagger_auto_schema(
         operation_summary="Sale Order List",

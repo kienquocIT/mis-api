@@ -30,6 +30,7 @@ class Opportunity(DataAbstractModel):
         related_name="opportunity_customer",
         null=True
     )
+    customer_data = models.JSONField(default=dict)
 
     sale_person = models.ForeignKey(
         'hr.Employee',
@@ -38,6 +39,7 @@ class Opportunity(DataAbstractModel):
         related_name='opportunity_sale_person',
         null=True,
     )
+    sale_person_data = models.JSONField(default=dict)
 
     end_customer = models.ForeignKey(
         'saledata.Account',
@@ -46,6 +48,7 @@ class Opportunity(DataAbstractModel):
         related_name="opportunity_end_customer",
         null=True
     )
+    end_customer_data = models.JSONField(default=dict)
 
     product_category = models.ManyToManyField(
         'saledata.ProductCategory',
@@ -76,9 +79,9 @@ class Opportunity(DataAbstractModel):
         'saledata.Contact',
         on_delete=models.CASCADE,
         related_name="opportunity_decision_maker",
-        null=True,
-        default=None,
+        null=True
     )
+    decision_maker_data = models.JSONField(default=dict)
 
     opportunity_product_datas = models.JSONField(
         default=list,
@@ -139,6 +142,8 @@ class Opportunity(DataAbstractModel):
         help_text="quotation use this opportunity",
         related_name="opportunity_map_quotation"
     )
+    quotation_data = models.JSONField(default=dict)
+
     sale_order = models.OneToOneField(
         'saleorder.SaleOrder',
         on_delete=models.CASCADE,
@@ -146,6 +151,7 @@ class Opportunity(DataAbstractModel):
         help_text="sale order use this opportunity",
         related_name="opportunity_map_sale_order"
     )
+    sale_order_data = models.JSONField(default=dict)
 
     stage = models.ManyToManyField(
         'opportunity.OpportunityConfigStage',
@@ -154,6 +160,14 @@ class Opportunity(DataAbstractModel):
         blank=True,
         related_name='opportunity_map_stage'
     )
+
+    current_stage = models.ForeignKey(
+        'opportunity.OpportunityConfigStage',
+        on_delete=models.CASCADE,
+        related_name="opportunity_current_stage",
+        null=True,
+    )
+    current_stage_data = models.JSONField(default=dict)
 
     lost_by_other_reason = models.BooleanField(
         default=False,
@@ -174,6 +188,8 @@ class Opportunity(DataAbstractModel):
         help_text="Delivery use this opportunity",
         related_name="opportunity_map_delivery"
     )
+    delivery_data = models.JSONField(default=dict)
+
     members = models.ManyToManyField(
         'hr.Employee',
         through='OpportunitySaleTeamMember',
@@ -377,12 +393,12 @@ class Opportunity(DataAbstractModel):
     def get_comparison_operators(cls, quotation, sale_order):
         check_quotation = '≠'
         check_so = '≠'
-        check_delivery = '='
+        check_delivery = '≠'
         if quotation:
-            check_quotation = '=' if quotation.is_customer_confirm and quotation.system_status == 3 else '≠'
+            check_quotation = '=' if quotation.system_status == 3 else '≠'
         if sale_order:
             check_so = '=' if sale_order.system_status == 3 else '≠'
-            check_delivery = '≠' if hasattr(sale_order, 'delivery_of_sale_order') else '='
+            check_delivery = '=' if sale_order.delivery_status in [2, 3] else '≠'
         return check_quotation, check_so, check_delivery
 
     @classmethod
@@ -450,7 +466,7 @@ class Opportunity(DataAbstractModel):
         bulk_data[-1].is_current = True
         obj.opportunity_stage_opportunity.all().delete()
         OpportunityStage.objects.bulk_create(bulk_data)
-        return win_rate
+        return win_rate, bulk_data[-1]
 
     @classmethod
     def check_config_auto_update_stage(cls):
@@ -462,8 +478,14 @@ class Opportunity(DataAbstractModel):
     @classmethod
     def handle_stage_win_rate(cls, obj):
         if obj.check_config_auto_update_stage():
-            obj.win_rate = obj.update_stage(obj=obj)
-            obj.save(update_fields=['win_rate'])
+            obj.win_rate, opp_stage_obj = obj.update_stage(obj=obj)
+            obj.current_stage = opp_stage_obj.stage
+            obj.current_stage_data = {
+                'id': str(obj.current_stage.id),
+                'indicator': obj.current_stage.indicator,
+                'win_rate': obj.current_stage.win_rate
+            } if obj.current_stage else {}
+            obj.save(update_fields=['win_rate', 'current_stage', 'current_stage_data'])
         return True
 
     def save(self, *args, **kwargs):
@@ -489,6 +511,7 @@ class OpportunityProductCategory(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name="opportunity_product_category_product_category",
     )
+    product_category_data = models.JSONField(default=dict)
 
     class Meta:
         verbose_name = 'OpportunityProductCategory'
@@ -511,6 +534,7 @@ class OpportunityProduct(SimpleAbstractModel):
         related_name="opportunity_product_product",
         null=True
     )
+    product_data = models.JSONField(default=dict)
 
     product_category = models.ForeignKey(
         'saledata.ProductCategory',
@@ -518,6 +542,7 @@ class OpportunityProduct(SimpleAbstractModel):
         related_name="opportunity_product_product_category",
         null=True
     )
+    product_category_data = models.JSONField(default=dict)
 
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
@@ -525,6 +550,7 @@ class OpportunityProduct(SimpleAbstractModel):
         related_name="opportunity_product_uom",
         null=True
     )
+    uom_data = models.JSONField(default=dict)
 
     tax = models.ForeignKey(
         'saledata.Tax',
@@ -532,6 +558,7 @@ class OpportunityProduct(SimpleAbstractModel):
         related_name="opportunity_product_tax",
         null=True
     )
+    tax_data = models.JSONField(default=dict)
 
     product_name = models.CharField(
         max_length=100,
@@ -570,6 +597,7 @@ class OpportunityCompetitor(SimpleAbstractModel):
         verbose_name="competitor with customer",
         related_name="opportunity_competitor_competitor",
     )
+    competitor_data = models.JSONField(default=dict)
 
     strength = models.CharField(
         max_length=100,
@@ -615,6 +643,7 @@ class OpportunityContactRole(SimpleAbstractModel):
         verbose_name='Contact of customer or end customer',
         related_name="opportunity_contact_role_contact",
     )
+    contact_data = models.JSONField(default=dict)
 
     job_title = models.CharField(
         default='',
@@ -649,6 +678,7 @@ class OpportunityCustomerDecisionFactor(SimpleAbstractModel):
         verbose_name='reason why customer buy product',
         related_name='opportunity_customer_decision_factor_factor',
     )
+    factor_data = models.JSONField(default=dict)
 
     class Meta:
         verbose_name = 'Opportunity Customer Decision Factor'
@@ -664,12 +694,15 @@ class OpportunitySaleTeamMember(MasterDataAbstractModel, PermissionAbstractModel
         on_delete=models.CASCADE,
         related_name="opportunity_sale_team_member_opportunity",
     )
+
     member = models.ForeignKey(
         'hr.Employee',
         on_delete=models.CASCADE,
         verbose_name='Member of Sale Team of Opportunity',
         related_name='opportunity_sale_team_member_member',
     )
+    member_data = models.JSONField(default=dict)
+
     date_modified = models.DateTimeField(
         help_text='Date modified this record in last',
         default=timezone.now,
@@ -729,10 +762,13 @@ class PlanMemberOpportunity(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='member_opp_plan'
     )
+
     plan = models.ForeignKey(
         'base.SubscriptionPlan',
         on_delete=models.CASCADE
     )
+    plan_data = models.JSONField(default=dict)
+
     application = models.JSONField(default=list)
 
     class Meta:
@@ -756,6 +792,7 @@ class OpportunityStage(SimpleAbstractModel):
         null=True,
         default=None,
     )
+    stage_data = models.JSONField(default=dict)
 
     is_current = models.BooleanField(
         default=False,
