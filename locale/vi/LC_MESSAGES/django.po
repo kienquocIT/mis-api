@@ -1593,3 +1593,7 @@ msgstr "Tổng chi phí trước thuế"
 #
 msgid "Total expense after tax"
 msgstr "Tổng chi phí sau thuế"
+
+#
+msgid "Group order"
+msgstr "Đơn hàng nhóm"

@@ -3,12 +3,10 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import Product, ProductPriceList
 from apps.sales.grouporder.models import GroupOrder
-from apps.sales.grouporder.serializers import GroupOrderProductListSerializer, GroupOrderProductPriceListListSerializer, \
-    GroupOrderCreateSerializer, GroupOrderListSerializer, GroupOrderDetailSerializer, GroupOrderUpdateSerializer
-from apps.shared import (
-    mask_view, ResponseController,
-    BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin,
-)
+from apps.sales.grouporder.serializers import (GroupOrderProductListSerializer, GroupOrderListSerializer,
+    GroupOrderProductPriceListListSerializer, GroupOrderCreateSerializer, GroupOrderDetailSerializer,
+    GroupOrderUpdateSerializer)
+from apps.shared import (mask_view,BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin)
 
 # Create your views here.
 class GroupOrderProductList(BaseListMixin, BaseCreateMixin):
@@ -75,7 +73,7 @@ class GroupOrderList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Group Order List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='grouporder', model_code='grouporder', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -87,7 +85,7 @@ class GroupOrderList(BaseListMixin, BaseCreateMixin):
         request_body=GroupOrderCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='grouporder', model_code='grouporder', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
@@ -107,7 +105,7 @@ class GroupOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Get Group Order Detail",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='grouporder', model_code='grouporder', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
@@ -119,7 +117,7 @@ class GroupOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=GroupOrderUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='grouporder', model_code='grouporder', perm_code='edit',
     )
     def put(self, request, *args, pk, **kwargs):

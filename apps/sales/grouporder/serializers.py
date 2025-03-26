@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import ProductPriceList, Account, Tax, UnitOfMeasure, ExpenseItem
-from apps.masterdata.saledata.models.product import Product, Expense
+from apps.masterdata.saledata.models.product import Product
 from apps.sales.grouporder.models import GroupOrder, GroupOrderCustomer, GroupOrderCost, \
     GroupOrderCustomerSelectedPriceList, GroupOrderExpense
 
@@ -56,7 +56,7 @@ class GroupOrderProductListSerializer(serializers.ModelSerializer):
                 sale_product_price_list.append({
                     'id': item.id,
                     'price': item.price,
-                    'title': item.price_list.title,
+                    'title': _(item.price_list.title),
                     'is_default': item.price_list.is_default,
                 })
         return sale_product_price_list
@@ -77,7 +77,7 @@ class GroupOrderProductPriceListListSerializer(serializers.ModelSerializer):
     def get_price_data(cls, obj):
         return {
             'id': obj.price_list.id,
-            'title': obj.price_list.title
+            'title': _(obj.price_list.title)
         } if obj.price_list else {}
 
 
@@ -199,6 +199,7 @@ class GroupOrderExpenseSerializer(serializers.ModelSerializer):
             except Tax.DoesNotExist:
                 raise serializers.ValidationError({"expense_tax": _('Tax does not exist')})
         raise serializers.ValidationError({"expense_tax": _('Tax is required')})
+
 
 class GroupOrderCreateSerializer(serializers.ModelSerializer):
     customer_detail_list = GroupOrderCustomerSerializer(many=True)
