@@ -267,7 +267,6 @@ class GroupOrderCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"employee_inherit_id": _('Employee does not exist')})
         raise serializers.ValidationError({"employee_inherit_id": _('Employee is required')})
 
-
     def create(self, validated_data):# pylint: disable=R0914
         customer_detail_list = validated_data.pop('customer_detail_list',[])
         cost_list = validated_data.pop('cost_list', [])
@@ -296,6 +295,9 @@ class GroupOrderCreateSerializer(serializers.ModelSerializer):
                         sub_total=customer.get('sub_total', None),
                         order=customer.get('order', None),
                         note=customer.get('note', None),
+                        tenant=instance.tenant,
+                        company=instance.company,
+                        employee_created= instance.employee_created,
                     )
                     for price_list in selected_price_list:
                         selected_price_list_bulk_data.append(
@@ -320,6 +322,9 @@ class GroupOrderCreateSerializer(serializers.ModelSerializer):
                             unit_cost = cost.get('unit_cost', None),
                             sub_total = cost.get('sub_total', None),
                             order = cost.get('order', None),
+                            tenant=instance.tenant,
+                            company=instance.company,
+                            employee_created=instance.employee_created,
                         )
                     )
                 if len(cost_list_bulk_data) > 0:
@@ -338,6 +343,9 @@ class GroupOrderCreateSerializer(serializers.ModelSerializer):
                             expense_tax = expense.get('expense_tax', None),
                             sub_total = expense.get('sub_total', None),
                             order = expense.get('order', None),
+                            tenant=instance.tenant,
+                            company=instance.company,
+                            employee_created=instance.employee_created,
                         )
                     )
                 if len(expense_list_bulk_data) > 0:
@@ -587,6 +595,9 @@ class GroupOrderUpdateSerializer(serializers.ModelSerializer):
                         sub_total=customer.get('sub_total', None),
                         order=customer.get('order', None),
                         note=customer.get('note', None),
+                        tenant=instance.tenant,
+                        company=instance.company,
+                        employee_created=instance.employee_created,
                     )
                     for price_list in selected_price_list:
                         selected_price_list_bulk_data.append(
@@ -611,6 +622,9 @@ class GroupOrderUpdateSerializer(serializers.ModelSerializer):
                             unit_cost = cost.get('unit_cost', None),
                             sub_total = cost.get('sub_total', None),
                             order = cost.get('order', None),
+                            tenant=instance.tenant,
+                            company=instance.company,
+                            employee_created=instance.employee_created,
                         )
                     )
                 if len(cost_list_bulk_data) > 0:
@@ -629,6 +643,9 @@ class GroupOrderUpdateSerializer(serializers.ModelSerializer):
                             expense_tax=expense.get('expense_tax', None),
                             sub_total=expense.get('sub_total', None),
                             order=expense.get('order', None),
+                            tenant=instance.tenant,
+                            company=instance.company,
+                            employee_created=instance.employee_created,
                         )
                     )
                 if len(expense_list_bulk_data) > 0:

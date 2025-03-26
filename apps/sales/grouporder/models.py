@@ -2,7 +2,7 @@ from django.db import models
 
 from django.utils.translation import gettext_lazy as _
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 ORDER_STATUS_TYPE_CHOICES = [
     (1, _('Open')),
@@ -121,7 +121,7 @@ class GroupOrder(DataAbstractModel):
         # hit DB
         super().save(*args, **kwargs)
 
-class GroupOrderCustomer(SimpleAbstractModel):
+class GroupOrderCustomer(MasterDataAbstractModel):
     group_order = models.ForeignKey(
         'GroupOrder',
         on_delete=models.CASCADE,
@@ -170,7 +170,7 @@ class GroupOrderCustomerSelectedPriceList(SimpleAbstractModel):
     )
     value = models.FloatField(default=0)
 
-class GroupOrderCost(SimpleAbstractModel):
+class GroupOrderCost(MasterDataAbstractModel):
     group_order = models.ForeignKey(
         'GroupOrder',
         on_delete=models.CASCADE,
@@ -196,8 +196,7 @@ class GroupOrderCost(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
-
-class GroupOrderExpense(SimpleAbstractModel):
+class GroupOrderExpense(MasterDataAbstractModel):
     group_order =  models.ForeignKey(
         'GroupOrder',
         on_delete=models.CASCADE,
