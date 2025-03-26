@@ -1280,6 +1280,24 @@ class SubScripts:
         print('Done :))')
         return True
 
+    @classmethod
+    def update_opp_stage_title(cls):
+        for item in OpportunityConfigStage.objects.all():
+            for data in item.condition_datas:
+                if data['condition_property']['title'] == 'SaleOrder.status':
+                    data['condition_property']['title'] = 'SaleOrder Status'
+                elif data['condition_property']['title'] == 'Competitor.Win':
+                    data['condition_property']['title'] = 'Competitor Win'
+                elif data['condition_property']['title'] == 'SaleOrder.Delivery.Status':
+                    data['condition_property']['title'] = 'SaleOrder Delivery Status'
+                elif data['condition_property']['title'] == 'Quotation.confirm':
+                    data['condition_property']['title'] = 'Quotation Status'
+                elif data['condition_property']['title'] == 'Product.Line.Detail':
+                    data['condition_property']['title'] = 'Product Line Detail'
+            item.save(update_fields=['condition_datas'])
+        print('Done :))')
+        return True
+
 
 def reset_run_indicator_fields(kwargs):
     for sale_order in SaleOrder.objects.filter(**kwargs):
