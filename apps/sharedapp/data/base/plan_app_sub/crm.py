@@ -2839,6 +2839,46 @@ INSTRUMENT_TOOL_WRITEOFF_APP_CONFIG = {
     "allow_permit": True,
 }
 
+GROUP_ORDER_APP_CONFIG = {
+    "id": "14662696-261f-4878-8765-56f17d738b66",
+    "title": "Group Order",
+    "code": "grouporder",
+    "model_code": "grouporder",
+    "app_label": "grouporder",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_opportunity": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -3161,6 +3201,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "5db2cba4-564f-4386-8b89-86e2457d60e0": ApplicationConfigFrame(**INSTRUMENT_TOOL_WRITEOFF_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "14662696-261f-4878-8765-56f17d738b66": ApplicationConfigFrame(**GROUP_ORDER_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),
