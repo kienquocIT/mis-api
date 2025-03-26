@@ -105,9 +105,9 @@ class ReconForCIFHandler:
                                             'acc_name': ar_je_item.account.acc_name,
                                             'foreign_acc_name': ar_je_item.account.foreign_acc_name
                                         } if ar_je_item.account else {},
-                                        recon_total=ar_je_item.debit,
-                                        recon_balance=ar_je_item.debit,
-                                        recon_amount=ar_je_item.debit
+                                        recon_total=cif_je_item.credit,
+                                        recon_balance=cif_je_item.credit,
+                                        recon_amount=cif_je_item.credit,
                                     )
                                 )
                     ReconciliationItem.objects.bulk_create(bulk_info)
