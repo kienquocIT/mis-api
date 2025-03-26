@@ -2876,6 +2876,7 @@ GROUP_ORDER_APP_CONFIG = {
         },
     },
     "allow_permit": True,
+    "allow_opportunity": True,
 }
 
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
