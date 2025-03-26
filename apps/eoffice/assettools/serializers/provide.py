@@ -1,10 +1,12 @@
 __all__ = ['AssetToolsProvideCreateSerializer', 'AssetToolsProvideListSerializer', 'AssetToolsProvideDetailSerializer',
            'AssetToolsProvideUpdateSerializer', 'AssetToolsProductListByProvideIDSerializer']
 
+from django.db import transaction
 from rest_framework import serializers
 
 from apps.core.base.models import Application
-from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel, SYSTEM_STATUS, AbstractCreateSerializerModel
+from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel, SYSTEM_STATUS, \
+    AbstractCreateSerializerModel, AssetToolsMsg
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.shared.translations.base import AttachmentMsg
 from ..models import AssetToolsProvide, AssetToolsProvideProduct, AssetToolsProvideAttachmentFile
@@ -12,9 +14,9 @@ from ..models import AssetToolsProvide, AssetToolsProvideProduct, AssetToolsProv
 
 class AssetToolsProvideMapProductSerializer(serializers.Serializer):  # noqa
     order = serializers.IntegerField()
-    product = serializers.UUIDField()
+    product = serializers.UUIDField(allow_null=True)
     product_remark = serializers.CharField(allow_null=True, required=False, allow_blank=True)
-    uom = serializers.UUIDField()
+    uom = serializers.CharField()
     tax = serializers.UUIDField(allow_null=True, required=False)
     quantity = serializers.FloatField(allow_null=True, required=False)
     price = serializers.FloatField(allow_null=True, required=False)
@@ -22,7 +24,7 @@ class AssetToolsProvideMapProductSerializer(serializers.Serializer):  # noqa
 
 
 def create_products(instance, prod_list):
-    AssetToolsProvideProduct.objects.filter(asset_tools_provide=instance).delete()
+    # AssetToolsProvideProduct.objects.filter(asset_tools_provide=instance).delete()
     create_lst = []
     for item in prod_list:
         temp = AssetToolsProvideProduct(
@@ -31,9 +33,9 @@ def create_products(instance, prod_list):
             employee_inherit=instance.employee_inherit,
             asset_tools_provide=instance,
             order=item['order'],
-            product_id=item['product'],
+            product_id=item['product'] if 'product' in item else None,
             product_remark=item['product_remark'],
-            uom_id=item['uom'],
+            uom=item['uom'],
             quantity=item['quantity'],
             tax_id=item['tax'] if 'tax' in item else None,
             price=item['price'] if 'price' in item else 0,
@@ -60,6 +62,7 @@ class AssetToolsProvideCreateSerializer(AbstractCreateSerializerModel):
     employee_inherit_id = serializers.UUIDField()
     products = AssetToolsProvideMapProductSerializer(many=True)
     attachments = serializers.ListSerializer(allow_null=True, required=False, child=serializers.UUIDField())
+    taxes = serializers.FloatField(required=False, allow_null=True)
 
     @classmethod
     def validate_employee_inherit_id(cls, value):
@@ -89,10 +92,14 @@ class AssetToolsProvideCreateSerializer(AbstractCreateSerializerModel):
         prod_list = validated_data['products']
         del validated_data['products']
         attachments = validated_data.pop('attachments', None)
-        asset_tools_provide = AssetToolsProvide.objects.create(**validated_data)
-        create_products(asset_tools_provide, prod_list)
-        handle_attach_file(asset_tools_provide, attachments)
-        return asset_tools_provide
+        try:
+            with transaction.atomic():
+                asset_tools_provide = AssetToolsProvide.objects.create(**validated_data)
+                create_products(asset_tools_provide, prod_list)
+                handle_attach_file(asset_tools_provide, attachments)
+                return asset_tools_provide
+        except ValueError:
+            raise serializers.ValidationError({'products': AssetToolsMsg.ERROR_CREATE_ASSET_REQUEST})
 
     class Meta:
         model = AssetToolsProvide

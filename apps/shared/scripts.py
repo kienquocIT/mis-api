@@ -32,6 +32,7 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, RolePermission,
 )
 from ..core.mailer.models import MailTemplateSystem
+from ..eoffice.assettools.models import AssetToolsProvideProduct
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
@@ -1489,3 +1490,9 @@ class DefaultSaleDataHandler:
             DocumentType.objects.bulk_update(updated_objects, ["code"])
 
         print('Document type code updated')
+
+
+def clear_old_data_asset():
+    # script chạy 1 lần
+    AssetToolsProvideProduct.objects.all().update(product=None, uom=None)
+    print('update reset table is DONE !')

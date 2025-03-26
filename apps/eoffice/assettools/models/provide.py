@@ -15,7 +15,7 @@ class AssetToolsProvide(DataAbstractModel):
         blank=True
     )
     products = models.ManyToManyField(
-        'saledata.Product',
+        'asset.InstrumentTool',
         through='AssetToolsProvideProduct',
         symmetrical=False,
         related_name='products_of_asset_provide',
@@ -92,10 +92,11 @@ class AssetToolsProvideProduct(DataAbstractModel):
         related_name='asset_provide_map_product',
     )
     product = models.ForeignKey(
-        'saledata.Product',
+        'asset.InstrumentTool',
         on_delete=models.CASCADE,
         verbose_name='Product need provide',
         related_name='product_map_asset_provide',
+        null=True
     )
     order = models.IntegerField(
         default=1
@@ -115,10 +116,8 @@ class AssetToolsProvideProduct(DataAbstractModel):
             ]
         )
     )
-    uom = models.ForeignKey(
-        'saledata.UnitOfMeasure',
-        on_delete=models.CASCADE,
-        verbose_name='',
+    uom = models.CharField(
+        max_length=100, blank=True, default=None
     )
     uom_data = models.JSONField(
         default=dict,
@@ -159,17 +158,11 @@ class AssetToolsProvideProduct(DataAbstractModel):
                 "code": str(self.tax.code),
                 "rate": str(self.tax.rate),
             }
-        if self.uom and not self.uom_data:
-            self.uom_data = {
-                "id": str(self.uom_id),
-                "title": str(self.uom.title)
-            }
         if self.product and not self.product_data:
             self.product_data = {
                 "id": str(self.product_id),
                 "title": str(self.product.title),
                 "code": self.product.code,
-                "is_inventory": 1 in self.product.product_choice,
             }
 
     def before_save(self):

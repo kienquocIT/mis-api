@@ -105,6 +105,7 @@ class InstrumentTool(DataAbstractModel):
         # hit DB
         super().save(*args, **kwargs)
 
+
 class InstrumentToolUseDepartment(SimpleAbstractModel):
     instrument_tool = models.ForeignKey(
         'asset.InstrumentTool',

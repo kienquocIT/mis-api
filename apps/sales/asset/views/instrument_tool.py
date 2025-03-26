@@ -10,6 +10,7 @@ __all__ =[
     'InstrumentToolDetail'
 ]
 
+
 class InstrumentToolList(BaseListMixin, BaseCreateMixin):
     queryset = InstrumentTool.objects
     search_fields = ['title', 'code']
@@ -41,7 +42,6 @@ class InstrumentToolList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        employee_require=True,
         label_code='asset', model_code='instrumenttool', perm_code='create',
     )
     def post(self, request, *args, **kwargs):

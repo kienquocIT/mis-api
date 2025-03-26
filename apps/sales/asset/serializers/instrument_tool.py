@@ -47,6 +47,7 @@ class InstrumentToolListSerializer(AbstractListSerializerModel):
     use_department = serializers.SerializerMethodField()
     use_customer = serializers.SerializerMethodField()
     write_off_quantity = serializers.SerializerMethodField()
+
     class Meta:
         model = InstrumentTool
         fields = (
@@ -71,6 +72,9 @@ class InstrumentToolListSerializer(AbstractListSerializerModel):
             'id': obj.product.id,
             'code': obj.product.code,
             'title': obj.product.title,
+            'unit_price': obj.unit_price,
+            'quantity': obj.quantity,
+            'measure_unit': obj.measure_unit,
         } if obj.product else {}
 
     @classmethod
@@ -106,6 +110,7 @@ class InstrumentToolListSerializer(AbstractListSerializerModel):
         for quantity_item in obj.write_off_quantities.filter(instrument_tool_write_off__system_status=3):
             write_off_quantity += quantity_item.write_off_quantity
         return write_off_quantity
+
 
 class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
     classification = serializers.UUIDField()
