@@ -105,9 +105,9 @@ class ReconForARInvoiceHandler:
                                         'acc_name': deli_je_item.account.acc_name,
                                         'foreign_acc_name': deli_je_item.account.foreign_acc_name
                                     } if deli_je_item.account else {},
-                                    recon_total=deli_je_item.debit,
-                                    recon_balance=deli_je_item.debit,
-                                    recon_amount=deli_je_item.debit
+                                    recon_total=ar_je_item.credit,
+                                    recon_balance=ar_je_item.credit,
+                                    recon_amount=ar_je_item.credit,
                                 )
                             )
                 ReconciliationItem.objects.bulk_create(bulk_info)

@@ -97,7 +97,7 @@ class CustomerAdvanceListForCashInflow(BaseListMixin):
             is_ar_invoice=False
         ).prefetch_related(
             'sale_order__customer',
-        ).select_related('sale_order')
+        ).select_related('sale_order').order_by('due_date')
 
     @swagger_auto_schema(
         operation_summary="Customer Advance list",
