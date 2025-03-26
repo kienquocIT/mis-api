@@ -19,7 +19,9 @@ class JEForDeliveryHandler:
                 for pw_data in deli_product.delivery_pw_delivery_product.all():
                     # lấy cost hiện tại của sp
                     stock_log_item = ReportStockLog.objects.filter(
-                        trans_code=delivery_obj.code, trans_id=str(delivery_obj.id)
+                        product=deli_product.product,
+                        trans_code=delivery_obj.code,
+                        trans_id=str(delivery_obj.id)
                     ).first()
                     cost = stock_log_item.value if stock_log_item else 0
                     sum_cost += cost

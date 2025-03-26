@@ -730,7 +730,7 @@ class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
 
     @classmethod
     def get_already(cls, obj):
-        return ARInvoiceDelivery.objects.filter(delivery_mapped=obj).exists()
+        return ARInvoiceDelivery.objects.filter(ar_invoice__system_status=3, delivery_mapped=obj).exists()
 
 
 class ARInvoiceSignCreateSerializer(serializers.ModelSerializer):
