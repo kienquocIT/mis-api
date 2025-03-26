@@ -1,7 +1,8 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.accounting.accountingsettings.utils import AccountDeterminationForProductHandler
-from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product
+from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, \
+    Manufacturer
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
 from apps.sales.report.utils.inventory_log import ReportInvCommonFunc
 from apps.shared import ProductMsg, PriceMsg
@@ -105,6 +106,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
+    general_manufacturer = serializers.UUIDField(required=False, allow_null=True)
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
@@ -121,8 +123,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         fields = (
             'code', 'title', 'description', 'product_choice', 'part_number',
             # General
-            'general_product_category', 'general_uom_group', 'general_traceability_method', 'standard_price',
-            'width', 'height', 'length', 'volume', 'weight',
+            'general_product_category', 'general_uom_group', 'general_traceability_method', 'general_manufacturer',
+            'standard_price', 'width', 'height', 'length', 'volume', 'weight',
             # Sale
             'sale_default_uom', 'sale_tax', 'online_price_list', 'available_notify', 'available_notify_quantity',
             # Inventory
@@ -163,6 +165,15 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             return UnitOfMeasureGroup.objects.get(id=value)
         except UnitOfMeasureGroup.DoesNotExist:
             raise serializers.ValidationError({'general_product_uom_group': ProductMsg.UOM_GROUP_NOT_EXIST})
+
+    @classmethod
+    def validate_general_manufacturer(cls, value):
+        if value:
+            try:
+                return Manufacturer.objects.get(id=value)
+            except Manufacturer.DoesNotExist:
+                raise serializers.ValidationError({'general_manufacturer': ProductMsg.MANUFACTURER_DOES_NOT_EXIST})
+        return None
 
     @classmethod
     def validate_available_notify_quantity(cls, value):
@@ -436,17 +447,22 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         result = {
             'general_product_types_mapped': [{
                 'id': str(product_type.id), 'title': product_type.title, 'code': product_type.code
-            } for product_type in obj.general_product_types_mapped.all()],
+            } if product_type else {} for product_type in obj.general_product_types_mapped.all()],
             'product_category': {
                 'id': obj.general_product_category_id,
                 'title': obj.general_product_category.title,
                 'code': obj.general_product_category.code
-            },
+            } if obj.general_product_category else {},
             'uom_group': {
                 'id': obj.general_uom_group_id,
                 'title': obj.general_uom_group.title,
                 'code': obj.general_uom_group.code
-            },
+            } if obj.general_uom_group else {},
+            'general_manufacturer': {
+                'id': obj.general_manufacturer_id,
+                'title': obj.general_manufacturer.title,
+                'code': obj.general_manufacturer.code
+            } if obj.general_manufacturer else {},
             'traceability_method': obj.general_traceability_method,
             'product_size': {
                 "width": obj.width, "height": obj.height, "length": obj.length,
@@ -616,6 +632,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
+    general_manufacturer = serializers.UUIDField(required=False, allow_null=True)
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
@@ -634,7 +651,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'description',
             'part_number',
             'product_choice',
-            'general_product_category', 'general_uom_group', 'standard_price',
+            'general_product_category', 'general_uom_group', 'general_manufacturer', 'standard_price',
             'width', 'height', 'length', 'volume', 'weight',
             'sale_default_uom', 'sale_tax', 'online_price_list', 'available_notify', 'available_notify_quantity',
             'inventory_uom', 'inventory_level_min', 'inventory_level_max',
@@ -653,6 +670,15 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_general_uom_group(cls, value):
         return ProductCreateSerializer.validate_general_uom_group(value)
+
+    @classmethod
+    def validate_general_manufacturer(cls, value):
+        if value:
+            try:
+                return Manufacturer.objects.get(id=value)
+            except Manufacturer.DoesNotExist:
+                raise serializers.ValidationError({'general_manufacturer': ProductMsg.MANUFACTURER_DOES_NOT_EXIST})
+        return None
 
     @classmethod
     def validate_available_notify_quantity(cls, value):

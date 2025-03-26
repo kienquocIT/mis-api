@@ -95,10 +95,12 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_sale_order_mapped(cls, value):
-        try:
-            return SaleOrder.objects.get(id=value)
-        except SaleOrder.DoesNotExist:
-            raise serializers.ValidationError({'sale_order_mapped': "Sale order does not exist."})
+        if value:
+            try:
+                return SaleOrder.objects.get(id=value)
+            except SaleOrder.DoesNotExist:
+                raise serializers.ValidationError({'sale_order_mapped': "Sale order does not exist."})
+        return None
 
     @classmethod
     def validate_delivery_mapped_list(cls, delivery_mapped_list):
@@ -149,8 +151,16 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
         if validate_data.get('invoice_method') == 2 and not bank_account_id:
             raise serializers.ValidationError({'bank_account_id': "Bank account is not null."})
         # check valid data data_item_list
-        if len(validate_data.get('delivery_mapped_list', [])) > 0 or not sale_order_mapped:
-            for item in validate_data.get('data_item_list', []):
+        for item in validate_data.get('data_item_list', []):
+            if item.get('ar_product_des'):
+                tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
+                item['product_tax_data'] = {
+                    'id': str(tax_obj.id),
+                    'code': tax_obj.code,
+                    'title': tax_obj.title,
+                    'rate': tax_obj.rate,
+                } if tax_obj else {}
+            else:
                 product_obj = Product.objects.filter(id=item.get('product_id')).first()
                 uom_obj = UnitOfMeasure.objects.filter(id=item.get('product_uom_id')).first()
                 tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
@@ -160,7 +170,6 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                     float(item.get('product_quantity', 0)) <= 0,
                     float(item.get('product_unit_price', 0)) <= 0,
                     float(item.get('product_subtotal', 0)) <= 0,
-                    float(item.get('product_subtotal_final', 0)) <= 0,
                 ]):
                     raise serializers.ValidationError({'data_item_list': "Data items are not valid."})
                 item['product_data'] = {
@@ -168,19 +177,19 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                     'code': product_obj.code,
                     'title': product_obj.title,
                     'des': product_obj.description,
-                }
+                } if product_obj else {}
                 item['product_uom_data'] = {
                     'id': str(uom_obj.id),
                     'code': uom_obj.code,
                     'title': uom_obj.title,
                     'group_id': str(uom_obj.group_id)
-                }
+                } if uom_obj else {}
                 item['product_tax_data'] = {
                     'id': str(tax_obj.id),
                     'code': tax_obj.code,
                     'title': tax_obj.title,
                     'rate': tax_obj.rate,
-                }
+                } if tax_obj else {}
         return validate_data
 
     @decorator_run_workflow
@@ -677,12 +686,12 @@ class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
             'delivery_quantity',
             'state',
             'is_active',
-            'times',
             'already',
             'details',
             'sum_tax',
             'sum_discount',
-            'sum_discount_rate'
+            'sum_discount_rate',
+            'actual_delivery_date'
         )
 
     @classmethod
@@ -721,7 +730,10 @@ class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
 
     @classmethod
     def get_already(cls, obj):
-        return ARInvoiceDelivery.objects.filter(delivery_mapped=obj).exists()
+        return ARInvoiceDelivery.objects.filter_on_company(
+            ar_invoice__system_status=3,
+            delivery_mapped=obj
+        ).exists()
 
 
 class ARInvoiceSignCreateSerializer(serializers.ModelSerializer):

@@ -111,6 +111,7 @@ class OrderActiveDeliverySerializer:
                 result.update({
                     'product_cost': cost_product.product_cost_price,
                     'product_subtotal_cost': cost_product.product_subtotal_price,
+                    'product_convert_into': cost_product.product_convert_into,
                 })
                 result.update(OrderActiveDeliverySerializer.append_depreciation_data(cost_product=cost_product))
         return result

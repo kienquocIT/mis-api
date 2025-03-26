@@ -25,6 +25,7 @@ class ReconListSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'business_partner_data',
+            'date_created',
             'system_status'
         )
 

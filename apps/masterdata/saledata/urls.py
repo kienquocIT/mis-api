@@ -7,7 +7,7 @@ from apps.masterdata.saledata.views.contacts import (
 from apps.masterdata.saledata.views.accounts import (
     AccountTypeList, AccountTypeDetail, IndustryList, IndustryDetail,
     AccountList, AccountDetail, AccountGroupList, AccountGroupDetail, AccountsMapEmployeesList, AccountForSaleList,
-    CustomerList,
+    CustomerList, SupplierList,
 )
 from apps.masterdata.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
 from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail, ExpenseForSaleList
@@ -17,7 +17,7 @@ from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail, UnitOfMeasureList, UnitOfMeasureDetail, ProductList,
     ProductDetail, ProductForSaleList, UnitOfMeasureOfGroupLaborList, ProductForSaleDetail, ProductQuickCreateList,
-    ProductQuotationListLoadDB,
+    ProductQuotationListLoadDB, ManufacturerList, ManufacturerDetail,
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
@@ -57,6 +57,7 @@ urlpatterns = [
     # account
     path('accounts', AccountList.as_view(), name='AccountList'),
     path('customer/list', CustomerList.as_view(), name='CustomerList'),
+    path('supplier/list', SupplierList.as_view(), name='SupplierList'),
     path('account/<str:pk>', AccountDetail.as_view(), name='AccountDetail'),
     path('accounts-map-employees', AccountsMapEmployeesList.as_view(), name='AccountsMapEmployeesList'),
     path('accounts-sale', AccountForSaleList.as_view(), name='AccountForSaleList'),
@@ -74,7 +75,8 @@ urlpatterns += [
     path('product-type/<str:pk>', ProductTypeDetail.as_view(), name='ProductTypeDetail'),
     path('product-categories', ProductCategoryList.as_view(), name='ProductCategoryList'),
     path('product-category/<str:pk>', ProductCategoryDetail.as_view(), name='ProductCategoryDetail'),
-
+    path('manufacturers', ManufacturerList.as_view(), name='ManufacturerList'),
+    path('manufacturer/<str:pk>', ManufacturerDetail.as_view(), name='ManufacturerDetail'),
     path('units-of-measure-group', UnitOfMeasureGroupList.as_view(), name='UnitOfMeasureGroupList'),
     path('unit-of-measure-group/<str:pk>', UnitOfMeasureGroupDetail.as_view(), name='UnitOfMeasureGroupDetail'),
     path('units-of-measure', UnitOfMeasureList.as_view(), name='UnitOfMeasureList'),

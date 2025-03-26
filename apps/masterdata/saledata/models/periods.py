@@ -122,15 +122,15 @@ class SubPeriods(SimpleAbstractModel):
 
         this_period = Periods.get_current_period(tenant_id, company_id)
         if not this_period:
-            raise serializers.ValidationError({"Error": "[check_period] This period is not found."})
+            raise serializers.ValidationError({"Error": "[check_period] Current period is not found."})
 
         this_sub_period = Periods.get_current_sub_period(this_period)
         if not this_sub_period:
-            raise serializers.ValidationError({"Error": "[check_period] This sub period is not found."})
+            raise serializers.ValidationError({"Error": "[check_period] Current sub period is not found."})
 
         if this_sub_period.locked:
             raise serializers.ValidationError({
-                "Error": "[check_period] Cannot create an inventory activity now. This sub period has been Locked."
+                "Error": "[check_period] Cannot create an inventory activity now. Current sub period has been Locked."
             })
 
         return True

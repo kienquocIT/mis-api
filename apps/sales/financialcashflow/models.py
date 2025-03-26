@@ -147,8 +147,8 @@ class CashInflowItem(SimpleAbstractModel):
     #     'date_type': str,
     #     'payment_ratio': str,
     #     'value_before_tax': number,
-    #     'issue_invoice': number,
-    #     'value_after_tax': number,
+    #     'invoice': number,
+    #     'invoice_data': dict,
     #     'value_total': number,
     #     'due_date': str,
     #     'is_ar_invoice': bool,
@@ -179,6 +179,9 @@ class CashInflowItem(SimpleAbstractModel):
 
 
 class CashInflowItemDetail(SimpleAbstractModel):
+    """
+    Map với các Stage thanh toán (trong Sale Order) cho trường hợp thu tiền hóa đơn
+    """
     cash_inflow_item = models.ForeignKey(
         CashInflowItem,
         on_delete=models.CASCADE,
@@ -198,8 +201,8 @@ class CashInflowItemDetail(SimpleAbstractModel):
     #     'date_type': str,
     #     'payment_ratio': str,
     #     'value_before_tax': number,
-    #     'issue_invoice': number,
-    #     'value_after_tax': number,
+    #     'invoice': number,
+    #     'invoice_data': dict,
     #     'value_total': number,
     #     'due_date': str,
     #     'is_ar_invoice': bool,

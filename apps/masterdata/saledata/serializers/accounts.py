@@ -1,5 +1,6 @@
 import datetime
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Term, Periods
@@ -120,7 +121,7 @@ class AccountListSerializer(serializers.ModelSerializer):
 class AccountCreateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     code = serializers.CharField(max_length=150)
-    tax_code = serializers.CharField(max_length=150, required=False, allow_null=True)
+    tax_code = serializers.CharField(max_length=150, required=False, allow_null=True, allow_blank=True)
     account_group = serializers.UUIDField(required=False, allow_null=True)
     industry = serializers.UUIDField(required=False, allow_null=True)
     account_type = serializers.ListField(child=serializers.UUIDField(required=True))
@@ -171,6 +172,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_account_type(cls, value):
         if isinstance(value, list):
+            if len(value) == 0:
+                raise serializers.ValidationError({'account_type': _('Account type is required')})
             account_type = AccountType.objects.filter(id__in=value)
             if account_type.count() == len(value):
                 return [{'id': str(item.id), 'code': item.code, 'title': item.title} for item in account_type]
@@ -189,6 +192,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_manager(cls, value):
         if isinstance(value, list):
+            if len(value) == 0:
+                raise serializers.ValidationError({'manager': _('Manager is required')})
             employee_list = Employee.objects.filter(id__in=value)
             if employee_list.count() == len(value):
                 return [
@@ -214,7 +219,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                 return Industry.objects.get(id=value)
             except Industry.DoesNotExist:
                 raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_EXIST})
-        raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_NULL})
+        return None
 
     def validate(self, validate_data):
         if validate_data.get('account_type_selection', None):
@@ -355,6 +360,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
                 list_contact_mapped.insert(
                     0, ({
                         'id': item.id,
+                        'code': item.code,
                         'fullname': item.fullname,
                         'job_title': item.job_title,
                         'email': item.email,
@@ -369,6 +375,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             else:
                 list_contact_mapped.append({
                     'id': item.id,
+                    'code': item.code,
                     'fullname': item.fullname,
                     'job_title': item.job_title,
                     'email': item.email,
@@ -466,7 +473,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
 
 class AccountUpdateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
-    tax_code = serializers.CharField(max_length=150, required=False, allow_null=True)
+    tax_code = serializers.CharField(max_length=150, required=False, allow_null=True, allow_blank=True)
     account_group = serializers.UUIDField(required=False, allow_null=True)
     industry = serializers.UUIDField(required=False, allow_null=True)
     account_type = serializers.ListField(child=serializers.UUIDField(required=True))
@@ -519,6 +526,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_account_type(cls, value):
         if isinstance(value, list):
+            if len(value) == 0:
+                raise serializers.ValidationError({'account_type': _('Account type is required')})
             account_type = AccountType.objects.filter(id__in=value)
             if account_type.count() == len(value):
                 return [{'id': str(item.id), 'code': item.code, 'title': item.title} for item in account_type]
@@ -537,6 +546,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_manager(cls, value):
         if isinstance(value, list):
+            if len(value) == 0:
+                raise serializers.ValidationError({'manager': _('Manager is required')})
             employee_list = Employee.objects.filter(id__in=value)
             if employee_list.count() == len(value):
                 return [
@@ -562,7 +573,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                 return Industry.objects.get(id=value)
             except Industry.DoesNotExist:
                 raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_EXIST})
-        raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_NULL})
+        return None
 
     @classmethod
     def validate_currency(cls, value):
@@ -623,6 +634,17 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
 
 
 class CustomerListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = (
+            "id",
+            'code',
+            "name",
+            "tax_code"
+        )
+
+
+class SupplierListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = (
