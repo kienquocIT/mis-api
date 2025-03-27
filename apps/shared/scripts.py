@@ -32,6 +32,7 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, RolePermission,
 )
 from ..core.mailer.models import MailTemplateSystem
+from ..eoffice.assettools.models import AssetToolsProvideProduct
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
@@ -1531,3 +1532,9 @@ def make_sure_lease_order_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).lease_order_config()
     print('Make sure lease order config is done!')
+
+
+def clear_old_data_asset():
+    # script chạy 1 lần
+    AssetToolsProvideProduct.objects.all().update(product=None)
+    print('update reset table is DONE !')
