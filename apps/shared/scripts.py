@@ -38,6 +38,7 @@ from ..core.hr.models import (
     PlanRole, PlanRoleApp,
 )
 from ..core.mailer.models import MailTemplateSystem
+from ..eoffice.assettools.models import AssetToolsProvideProduct
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..eoffice.meeting.models import MeetingSchedule
@@ -2928,3 +2929,9 @@ def update_end_date():
         item.end_date = item.start_date + relativedelta(months=12) - relativedelta(days=1)
         item.save(update_fields=['end_date'])
     print('Done')
+
+
+def clear_old_data_asset():
+    # script chạy 1 lần
+    AssetToolsProvideProduct.objects.all().update(product=None)
+    print('update reset table is DONE !')
