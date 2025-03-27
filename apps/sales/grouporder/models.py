@@ -37,6 +37,7 @@ class GroupOrder(DataAbstractModel):
     planned_revenue = models.FloatField(default=0)
     actual_revenue = models.FloatField(default=0)
     total_amount = models.FloatField(default=0)
+    markup_percentage = models.FloatField(default=0)
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.SET_NULL,
@@ -143,6 +144,7 @@ class GroupOrderCustomer(MasterDataAbstractModel):
     quantity = models.PositiveIntegerField(default=0)
     unit_price = models.FloatField(default=0)
     sub_total = models.FloatField(default=0)
+    discount=models.FloatField(default=0)
     payment_status = models.SmallIntegerField(
         default=1,
         choices=PAYMENT_STATUS_TYPE_CHOICES
