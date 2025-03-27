@@ -31,6 +31,7 @@ class AssetToolsReturn(DataAbstractModel):
         through='AssetToolsReturnMapProduct',
         symmetrical=False,
         related_name='products_asset_return',
+        blank=True,
     )
     return_info_list = models.JSONField(
         default=dict,
@@ -151,6 +152,7 @@ class AssetToolsReturnMapProduct(DataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name='Product map asset return',
         related_name='product_map_asset_return',
+        null=True
     )
     product_data = models.JSONField(
         default=dict,
@@ -166,6 +168,7 @@ class AssetToolsReturnMapProduct(DataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name='Warehouse stored product',
         related_name='warehouse_stored_product',
+        null=True
     )
     warehouse_sp_data = models.JSONField(
         default=dict,

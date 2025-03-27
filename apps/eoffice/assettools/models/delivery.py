@@ -37,7 +37,9 @@ class AssetToolsDelivery(DataAbstractModel):
         )
     )
     provide_inheritor = models.ForeignKey(
-        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        'hr.Employee',
+        null=True,
+        on_delete=models.SET_NULL,
         help_text='Provide inheritor',
         related_name='%(app_label)s_%(class)s_employee_inheritor',
     )
@@ -52,6 +54,7 @@ class AssetToolsDelivery(DataAbstractModel):
         through='ProductDeliveredMapProvide',
         symmetrical=False,
         related_name='products_asset_tools_delivery',
+        blank=True,
     )
     attachments = models.ManyToManyField(
         'attachments.Files',
@@ -173,6 +176,7 @@ class ProductDeliveredMapProvide(DataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name='Product provide map with request delivery',
         related_name='product_map_asset_tools_delivery',
+        null=True
     )
     product_data = models.JSONField(
         default=dict,
@@ -188,6 +192,7 @@ class ProductDeliveredMapProvide(DataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name='Product had provided at warehouse',
         related_name='product_provided_at_warehouse',
+        null=True
     )
     warehouse_data = models.JSONField(
         default=dict,
