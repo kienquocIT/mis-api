@@ -32,6 +32,7 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, RolePermission,
 )
 from ..core.mailer.models import MailTemplateSystem
+from ..eoffice.assettools.models import AssetToolsProvideProduct
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
@@ -1280,6 +1281,42 @@ class SubScripts:
         print('Done :))')
         return True
 
+    @classmethod
+    def update_opp_stage_title(cls):
+        for item in OpportunityConfigStage.objects.all():
+            for data in item.condition_datas:
+                if data['condition_property']['title'] == 'SaleOrder.status':
+                    data['condition_property']['title'] = 'SaleOrder Status'
+                elif data['condition_property']['title'] == 'Competitor.Win':
+                    data['condition_property']['title'] = 'Competitor Win'
+                elif data['condition_property']['title'] == 'SaleOrder.Delivery.Status':
+                    data['condition_property']['title'] = 'SaleOrder Delivery Status'
+                elif data['condition_property']['title'] == 'Quotation.confirm':
+                    data['condition_property']['title'] = 'Quotation Status'
+                elif data['condition_property']['title'] == 'Product.Line.Detail':
+                    data['condition_property']['title'] = 'Product Line Detail'
+
+                if data['condition_property']['title'] in ['SaleOrder.Delivery.Status', 'SaleOrder Delivery Status']:
+                    data['comparison_operator'] = '='
+            item.save(update_fields=['condition_datas'])
+        print('Done :))')
+        return True
+
+    @classmethod
+    def update_opp_current_stage(cls):
+        for obj in Opportunity.objects.all():
+            if obj.check_config_auto_update_stage():
+                obj.win_rate, opp_stage_obj = obj.update_stage(obj=obj)
+                obj.current_stage = opp_stage_obj.stage
+                obj.current_stage_data = {
+                    'id': str(obj.current_stage.id),
+                    'indicator': obj.current_stage.indicator,
+                    'win_rate': obj.current_stage.win_rate
+                } if obj.current_stage else {}
+                obj.save(update_fields=['win_rate', 'current_stage', 'current_stage_data'])
+        print('Done :))')
+        return True
+
 
 def reset_run_indicator_fields(kwargs):
     for sale_order in SaleOrder.objects.filter(**kwargs):
@@ -1495,3 +1532,9 @@ def make_sure_lease_order_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).lease_order_config()
     print('Make sure lease order config is done!')
+
+
+def clear_old_data_asset():
+    # script chạy 1 lần
+    AssetToolsProvideProduct.objects.all().update(product=None)
+    print('update reset table is DONE !')

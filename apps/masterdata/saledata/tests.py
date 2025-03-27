@@ -58,7 +58,7 @@ class AccountTestCase(AdvanceTestCase):
             'industry': self.industry['id'],
             'manager': [AccountTestCase.get_employee(self).data['result'][0]['id']],
             'account_type': [str(self.account_type['id'])],
-            'account_type_selection': 0
+            'account_type_selection': 1
         }
         url = reverse('AccountList')
         response = self.client.post(url, data, format='json')

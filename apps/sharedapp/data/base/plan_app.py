@@ -397,6 +397,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "5db2cba4-564f-4386-8b89-86e2457d60e0",  # Instrument tool write off
     },
+    "14662696-261f-4878-8765-56f17d738b66": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "14662696-261f-4878-8765-56f17d738b66",  # Group Order
+    },
 }
 
 _PlanApplication_eOffice_data = {
