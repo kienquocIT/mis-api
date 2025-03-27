@@ -239,8 +239,9 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                     validate_data['email'] = contact_mapped_obj.email
                 else:
                     raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
-        if validate_data.get('account_type_selection') == 1 and not validate_data.get('tax_code'):
-            raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
+        else:
+            if not validate_data.get('tax_code'):
+                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         try:
             validate_data['price_list_mapped'] = Price.objects.get_current(
                 fill__tenant=True, fill__company=True, is_default=True
@@ -643,8 +644,9 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                     validate_data['email'] = contact_mapped_obj.email
                 else:
                     raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
-        if validate_data.get('account_type_selection') == 1 and not validate_data.get('tax_code'):
-            raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
+        else:
+            if not validate_data.get('tax_code'):
+                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         return validate_data
 
     def update(self, instance, validated_data):
