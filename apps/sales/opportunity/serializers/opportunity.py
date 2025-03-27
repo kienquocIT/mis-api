@@ -264,11 +264,17 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         self.validate_config_role(validate_data=validate_data)
-        stage = OpportunityConfigStage.objects.filter_current(
+        init_stage = OpportunityConfigStage.objects.filter_current(
             fill__company=True, indicator='Qualification', is_delete=False
         ).first()
-        if stage:
-            validate_data['stage'] = stage
+        if init_stage:
+            validate_data['current_stage'] = init_stage
+            validate_data['current_stage_data'] = {
+                'id': str(init_stage.id),
+                'indicator': init_stage.indicator,
+                'win_rate': init_stage.win_rate
+            } if init_stage else {}
+            validate_data['win_rate'] = init_stage.win_rate
         else:
             raise serializers.ValidationError({'stage': _('Can not found the init Stage')})
         return validate_data
@@ -311,8 +317,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         product_categories = validated_data.pop('product_category', [])
 
         # get stage Qualification (auto assign stage Qualification when create Opportunity)
-        stage = validated_data.pop('stage')
-        win_rate = stage.win_rate
+        init_stage = validated_data.pop('current_stage')
 
         employee_inherit = Employee.objects.get(id=validated_data['employee_inherit_id'])
         sale_team_data = [
@@ -329,7 +334,6 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         opportunity = Opportunity.objects.create(
             **validated_data,
             opportunity_sale_team_datas=sale_team_data,
-            win_rate=win_rate,
             open_date=datetime.datetime.now(),
             system_status=1
         )
@@ -340,7 +344,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         # create M2M Opportunity and Product Category
         CommonOpportunityUpdate.create_product_category(product_categories, opportunity)
         # create stage default for Opportunity
-        OpportunityStage.objects.create(stage=stage, opportunity=opportunity, is_current=True)
+        OpportunityStage.objects.create(stage=init_stage, opportunity=opportunity, is_current=True)
         # set sale_person in sale team
         OpportunitySaleTeamMember.objects.create(
             tenant_id=opportunity.tenant_id,

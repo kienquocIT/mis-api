@@ -1536,5 +1536,5 @@ def make_sure_lease_order_config():
 
 def clear_old_data_asset():
     # script chạy 1 lần
-    AssetToolsProvideProduct.objects.all().update(product=None, uom=None)
+    AssetToolsProvideProduct.objects.all().update(product=None)
     print('update reset table is DONE !')

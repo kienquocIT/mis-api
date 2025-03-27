@@ -165,9 +165,11 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_tax_code(cls, value):
-        if Account.objects.filter_current(fill__tenant=True, fill__company=True, tax_code=value).exists():
-            raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
-        return value
+        if value:
+            if Account.objects.filter_on_company(tax_code=value).exists():
+                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
+            return value
+        return ''
 
     @classmethod
     def validate_account_type(cls, value):
@@ -222,8 +224,22 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validate_data):
-        if validate_data.get('account_type_selection', None):
-            if 'tax_code' not in validate_data:
+        if validate_data.get('account_type_selection') == 0:
+            if len(self.initial_data.get('contact_mapped', [])) != 1:
+                raise serializers.ValidationError(
+                    {"contact_mapped": _('Contact is required (only 1) for individual account')}
+                )
+            contact_mapped_obj = Contact.objects.filter_on_company(
+                id__in=validate_data.get('contact_mapped', [])
+            ).first()
+            if contact_mapped_obj:
+                validate_data['name'] = contact_mapped_obj.title
+                validate_data['phone'] = contact_mapped_obj.mobile
+                validate_data['email'] = contact_mapped_obj.email
+            else:
+                raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
+        else:
+            if not validate_data.get('tax_code'):
                 raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         try:
             validate_data['price_list_mapped'] = Price.objects.get_current(
@@ -517,11 +533,11 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"name": AccountsMsg.NAME_NOT_NULL})
 
     def validate_tax_code(self, value):
-        if Account.objects.filter_current(
-                fill__tenant=True, fill__company=True, tax_code=value
-        ).exclude(id=self.instance.id).count() > 0:
-            raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
-        return value
+        if value:
+            if Account.objects.filter_on_company(tax_code=value).exclude(id=self.instance.id).count() > 0:
+                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
+            return value
+        return ''
 
     @classmethod
     def validate_account_type(cls, value):
@@ -612,8 +628,22 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validate_data):
-        if validate_data.get('account_type_selection', None):
-            if 'tax_code' not in validate_data:
+        if validate_data.get('account_type_selection') == 0:
+            if len(self.initial_data.get('contact_mapped', [])) != 1:
+                raise serializers.ValidationError(
+                    {"contact_mapped": _('Contact is required (only 1) for individual account')}
+                )
+            contact_mapped_obj = Contact.objects.filter_on_company(
+                id__in=validate_data.get('contact_mapped', [])
+            ).first()
+            if contact_mapped_obj:
+                validate_data['name'] = contact_mapped_obj.title
+                validate_data['phone'] = contact_mapped_obj.mobile
+                validate_data['email'] = contact_mapped_obj.email
+            else:
+                raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
+        else:
+            if not validate_data.get('tax_code'):
                 raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         return validate_data
 
