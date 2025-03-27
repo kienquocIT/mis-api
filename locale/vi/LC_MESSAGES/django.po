@@ -52,7 +52,7 @@ msgstr "Hóa đơn bán hàng"
 
 # 41abd4e9-da89-450b-a44a-da1d6f8a5cd2
 msgid "Asset, Tools Delivery"
-msgstr "Yêu cầu bàn giao"
+msgstr "Phiếu bàn giao"
 
 # 55ba3005-6ccc-4807-af27-7cc45e99e3f6
 msgid "Asset, Tools Provide"
