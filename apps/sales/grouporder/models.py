@@ -37,6 +37,7 @@ class GroupOrder(DataAbstractModel):
     planned_revenue = models.FloatField(default=0)
     actual_revenue = models.FloatField(default=0)
     total_amount = models.FloatField(default=0)
+    markup_percentage = models.FloatField(default=0)
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.SET_NULL,
@@ -143,10 +144,12 @@ class GroupOrderCustomer(MasterDataAbstractModel):
     quantity = models.PositiveIntegerField(default=0)
     unit_price = models.FloatField(default=0)
     sub_total = models.FloatField(default=0)
+    discount=models.FloatField(default=0)
     payment_status = models.SmallIntegerField(
         default=1,
         choices=PAYMENT_STATUS_TYPE_CHOICES
     )
+    is_individual = models.BooleanField(default=True)
     note = models.TextField(blank=True)
     order = models.SmallIntegerField(default=0, help_text='Order of each row of the table on UI')
 
@@ -170,6 +173,10 @@ class GroupOrderCustomerSelectedPriceList(SimpleAbstractModel):
     )
     value = models.FloatField(default=0)
 
+    class Meta:
+        verbose_name = _('Group Order Customer Select Price List')
+        verbose_name_plural = _('Group Order Customer Select Price Lists')
+
 class GroupOrderCost(MasterDataAbstractModel):
     group_order = models.ForeignKey(
         'GroupOrder',
@@ -187,6 +194,7 @@ class GroupOrderCost(MasterDataAbstractModel):
     is_using_guest_quantity = models.BooleanField(default=False)
     unit_cost = models.FloatField(default=0)
     sub_total = models.FloatField(default=0)
+    note = models.TextField(blank=True)
     order = models.SmallIntegerField(default=0, help_text='Order of each row of the table on UI')
 
     class Meta:

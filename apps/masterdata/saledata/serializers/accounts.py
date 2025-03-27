@@ -224,8 +224,23 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validate_data):
-        if validate_data.get('account_type_selection') == 1 and not validate_data.get('tax_code'):
-            raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
+        if validate_data.get('account_type_selection') == 0:
+            if len(self.initial_data.get('contact_mapped', [])) != 1:
+                raise serializers.ValidationError(
+                    {"contact_mapped": _('Contact is required (only 1) for individual account')}
+                )
+            contact_mapped_obj = Contact.objects.filter_on_company(
+                id__in=validate_data.get('contact_mapped', [])
+            ).first()
+            if contact_mapped_obj:
+                validate_data['name'] = contact_mapped_obj.title
+                validate_data['phone'] = contact_mapped_obj.mobile
+                validate_data['email'] = contact_mapped_obj.email
+            else:
+                raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
+        else:
+            if not validate_data.get('tax_code'):
+                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         try:
             validate_data['price_list_mapped'] = Price.objects.get_current(
                 fill__tenant=True, fill__company=True, is_default=True
@@ -613,8 +628,23 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validate_data):
-        if validate_data.get('account_type_selection') == 1 and not validate_data.get('tax_code'):
-            raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
+        if validate_data.get('account_type_selection') == 0:
+            if len(self.initial_data.get('contact_mapped', [])) != 1:
+                raise serializers.ValidationError(
+                    {"contact_mapped": _('Contact is required (only 1) for individual account')}
+                )
+            contact_mapped_obj = Contact.objects.filter_on_company(
+                id__in=validate_data.get('contact_mapped', [])
+            ).first()
+            if contact_mapped_obj:
+                validate_data['name'] = contact_mapped_obj.title
+                validate_data['phone'] = contact_mapped_obj.mobile
+                validate_data['email'] = contact_mapped_obj.email
+            else:
+                raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
+        else:
+            if not validate_data.get('tax_code'):
+                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         return validate_data
 
     def update(self, instance, validated_data):

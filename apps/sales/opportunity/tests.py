@@ -193,7 +193,7 @@ class TestCaseOpportunity(AdvanceTestCase):
             "total_employees": 1,
             "phone": "string",
             "email": "string",
-            "account_type_selection": 0,
+            "account_type_selection": 1,
             "system_status": 0
         }
         url = reverse("AccountList")

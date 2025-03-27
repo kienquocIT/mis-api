@@ -114,11 +114,13 @@ class GroupOrderCustomerSerializer(serializers.ModelSerializer):
             'quantity',
             'unit_price',
             'sub_total',
+            'discount',
             'payment_status',
             'note',
             'order',
             'price_list_select',
-            'register_date'
+            'register_date',
+            'is_individual'
         )
 
     @classmethod
@@ -154,7 +156,8 @@ class GroupOrderCostSerializer(serializers.ModelSerializer):
             'is_using_guest_quantity',
             'unit_cost',
             'sub_total',
-            'order'
+            'order',
+            'note'
         )
 
     @classmethod
@@ -237,6 +240,7 @@ class GroupOrderCreateSerializer(serializers.ModelSerializer):
             'cost_per_registered_guest',
             'planned_revenue',
             'actual_revenue',
+            'markup_percentage',
             'total_amount',
             'tax',
             'total_amount_including_VAT',
@@ -293,8 +297,10 @@ class GroupOrderCreateSerializer(serializers.ModelSerializer):
                         payment_status=customer.get('payment_status'),
                         unit_price=customer.get('unit_price', None),
                         sub_total=customer.get('sub_total', None),
+                        discount = customer.get('discount', None),
                         order=customer.get('order', None),
                         note=customer.get('note', None),
+                        is_individual=customer.get('is_individual', None),
                         tenant=instance.tenant,
                         company=instance.company,
                         employee_created= instance.employee_created,
@@ -322,6 +328,7 @@ class GroupOrderCreateSerializer(serializers.ModelSerializer):
                             unit_cost = cost.get('unit_cost', None),
                             sub_total = cost.get('sub_total', None),
                             order = cost.get('order', None),
+                            note = cost.get('note', None),
                             tenant=instance.tenant,
                             company=instance.company,
                             employee_created=instance.employee_created,
@@ -403,6 +410,7 @@ class GroupOrderDetailSerializer(serializers.ModelSerializer):
             'cost_per_registered_guest',
             'planned_revenue',
             'actual_revenue',
+            'markup_percentage',
             'total_amount',
             'tax',
             'total_amount_including_VAT',
@@ -452,7 +460,9 @@ class GroupOrderDetailSerializer(serializers.ModelSerializer):
                 'sub_total': group_order_customer.sub_total,
                 'payment_status': group_order_customer.payment_status,
                 'note': group_order_customer.note,
-                'register_date': group_order_customer.register_date
+                'register_date': group_order_customer.register_date,
+                'is_individual': group_order_customer.is_individual,
+                'discount': group_order_customer.discount,
             })
         return data
 
@@ -466,6 +476,7 @@ class GroupOrderDetailSerializer(serializers.ModelSerializer):
                 'quantity': group_order_cost.quantity,
                 'guest_quantity': group_order_cost.guest_quantity,
                 'is_using_guest_quantity': group_order_cost.is_using_guest_quantity,
+                'note': group_order_cost.note,
                 'unit_cost': group_order_cost.unit_cost,
                 'sub_total': group_order_cost.sub_total,
                 'title': group_order_cost.product.title,
@@ -532,6 +543,7 @@ class GroupOrderUpdateSerializer(serializers.ModelSerializer):
             'cost_per_registered_guest',
             'planned_revenue',
             'actual_revenue',
+            'markup_percentage',
             'total_amount',
             'tax',
             'total_amount_including_VAT',
@@ -593,8 +605,10 @@ class GroupOrderUpdateSerializer(serializers.ModelSerializer):
                         payment_status=customer.get('payment_status'),
                         unit_price=customer.get('unit_price', None),
                         sub_total=customer.get('sub_total', None),
+                        discount=customer.get('discount', None),
                         order=customer.get('order', None),
                         note=customer.get('note', None),
+                        is_individual=customer.get('is_individual', None),
                         tenant=instance.tenant,
                         company=instance.company,
                         employee_created=instance.employee_created,
@@ -622,6 +636,7 @@ class GroupOrderUpdateSerializer(serializers.ModelSerializer):
                             unit_cost = cost.get('unit_cost', None),
                             sub_total = cost.get('sub_total', None),
                             order = cost.get('order', None),
+                            note=cost.get('note', None),
                             tenant=instance.tenant,
                             company=instance.company,
                             employee_created=instance.employee_created,
