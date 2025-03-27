@@ -446,7 +446,10 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_general_information(cls, obj):
         result = {
             'general_product_types_mapped': [{
-                'id': str(product_type.id), 'title': product_type.title, 'code': product_type.code
+                'id': str(product_type.id),
+                'title': product_type.title,
+                'code': product_type.code,
+                'is_service': product_type.is_service
             } if product_type else {} for product_type in obj.general_product_types_mapped.all()],
             'product_category': {
                 'id': obj.general_product_category_id,
@@ -734,9 +737,17 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             validate_data.get('weight'), 'weight', ProductMsg.WGT_IS_WRONG
         )
         instance = self.instance
+        # kiểm tra trước khi cho phép thay đổi Product Type
+
+        being_used = CommonCreateUpdateProduct.check_being_used_product(instance)
+
+        if sorted(self.initial_data.get('product_types_mapped_list', [])) != sorted(
+                instance.product_product_types.values_list('id', flat=True)) and being_used:
+            raise serializers.ValidationError(
+                {'product_types_mapped_list': _('This product is being used. Can not update product type.')}
+            )
         # kiểm tra trước khi cho phép thay đổi UOM group
-        if (str(validate_data.get('general_uom_group').id) != str(instance.general_uom_group_id) and
-                CommonCreateUpdateProduct.check_being_used_product(instance)):
+        if str(validate_data.get('general_uom_group').id) != str(instance.general_uom_group_id) and being_used:
             raise serializers.ValidationError(
                 {'general_uom_group': _('This product is being used. Can not update general uom group.')}
             )

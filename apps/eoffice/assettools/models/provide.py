@@ -96,6 +96,7 @@ class AssetToolsProvideProduct(DataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name='Product need provide',
         related_name='product_map_asset_provide',
+        null=True
     )
     order = models.IntegerField(
         default=1
