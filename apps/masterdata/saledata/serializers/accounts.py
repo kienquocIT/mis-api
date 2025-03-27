@@ -165,9 +165,11 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_tax_code(cls, value):
-        if Account.objects.filter_current(fill__tenant=True, fill__company=True, tax_code=value).exists():
-            raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
-        return value
+        if value:
+            if Account.objects.filter_on_company(tax_code=value).exists():
+                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
+            return value
+        return ''
 
     @classmethod
     def validate_account_type(cls, value):
@@ -222,9 +224,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validate_data):
-        if validate_data.get('account_type_selection', None):
-            if 'tax_code' not in validate_data:
-                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
+        if validate_data.get('account_type_selection') == 1 and not validate_data.get('tax_code'):
+            raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         try:
             validate_data['price_list_mapped'] = Price.objects.get_current(
                 fill__tenant=True, fill__company=True, is_default=True
@@ -517,11 +518,11 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"name": AccountsMsg.NAME_NOT_NULL})
 
     def validate_tax_code(self, value):
-        if Account.objects.filter_current(
-                fill__tenant=True, fill__company=True, tax_code=value
-        ).exclude(id=self.instance.id).count() > 0:
-            raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
-        return value
+        if value:
+            if Account.objects.filter_on_company(tax_code=value).exclude(id=self.instance.id).count() > 0:
+                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
+            return value
+        return ''
 
     @classmethod
     def validate_account_type(cls, value):
@@ -612,9 +613,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validate_data):
-        if validate_data.get('account_type_selection', None):
-            if 'tax_code' not in validate_data:
-                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
+        if validate_data.get('account_type_selection') == 1 and not validate_data.get('tax_code'):
+            raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         return validate_data
 
     def update(self, instance, validated_data):
