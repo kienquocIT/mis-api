@@ -229,16 +229,15 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"contact_mapped": _('Contact is required (only 1) for individual account')}
                 )
+            contact_mapped_obj = Contact.objects.filter_on_company(
+                id__in=validate_data.get('contact_mapped', [])
+            ).first()
+            if contact_mapped_obj:
+                validate_data['name'] = contact_mapped_obj.title
+                validate_data['phone'] = contact_mapped_obj.mobile
+                validate_data['email'] = contact_mapped_obj.email
             else:
-                contact_mapped_obj = Contact.objects.filter_on_company(
-                    id__in=validate_data.get('contact_mapped', [])
-                ).first()
-                if contact_mapped_obj:
-                    validate_data['name'] = contact_mapped_obj.title
-                    validate_data['phone'] = contact_mapped_obj.mobile
-                    validate_data['email'] = contact_mapped_obj.email
-                else:
-                    raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
+                raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
         else:
             if not validate_data.get('tax_code'):
                 raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
@@ -634,16 +633,15 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"contact_mapped": _('Contact is required (only 1) for individual account')}
                 )
+            contact_mapped_obj = Contact.objects.filter_on_company(
+                id__in=validate_data.get('contact_mapped', [])
+            ).first()
+            if contact_mapped_obj:
+                validate_data['name'] = contact_mapped_obj.title
+                validate_data['phone'] = contact_mapped_obj.mobile
+                validate_data['email'] = contact_mapped_obj.email
             else:
-                contact_mapped_obj = Contact.objects.filter_on_company(
-                    id__in=validate_data.get('contact_mapped', [])
-                ).first()
-                if contact_mapped_obj:
-                    validate_data['name'] = contact_mapped_obj.title
-                    validate_data['phone'] = contact_mapped_obj.mobile
-                    validate_data['email'] = contact_mapped_obj.email
-                else:
-                    raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
+                raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
         else:
             if not validate_data.get('tax_code'):
                 raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
