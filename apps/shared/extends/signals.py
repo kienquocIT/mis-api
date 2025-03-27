@@ -1143,7 +1143,6 @@ class ConfigDefaultData:
         self.leave_config(config)
         self.purchase_request_config()
         self.working_calendar_config()
-        self.asset_tools_config()
         self.make_sure_workflow_apps()
         self.project_config()
         self.lease_order_config()
