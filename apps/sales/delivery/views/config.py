@@ -94,27 +94,19 @@ class SaleOrderActiveDelivery(APIView):
                 obj = cls_model.objects.get_current(pk=pk, fill__company=True)
                 is_not_picking = False
                 prod_so = cls_m2m_product_model.objects.filter(sale_order=obj, product__isnull=False)
-                if prod_so.count() > 0:
-                    is_services = 0
-                    for item in prod_so:
-                        if 1 not in item.product.product_choice:
-                            is_services += 1
-                    if prod_so.count() == is_services:
-                        is_not_picking = True
-
-                else:
+                if prod_so.count() <= 0:
                     raise serializers.ValidationError(
-                        {
-                            'detail': 'Need at least once product for delivery process run'
-                        }
+                        {'detail': 'Need at least once product for delivery process run'}
                     )
+                is_services = 0
+                for item in prod_so:
+                    is_services += 1 if 1 not in item.product.product_choice else 0
+                if prod_so.count() == is_services:
+                    is_not_picking = True
+
                 config = DeliveryConfig.objects.get(company_id=str(obj.company_id))
                 if not self.check_config(config):
-                    raise serializers.ValidationError(
-                        {
-                            'detail': DeliverMsg.ERROR_CONFIG
-                        }
-                    )
+                    raise serializers.ValidationError({'detail': DeliverMsg.ERROR_CONFIG})
 
                 body_data = request.data
                 process_id = None
@@ -122,9 +114,7 @@ class SaleOrderActiveDelivery(APIView):
                     process_id = request.data['process']
                     stage_app_id = request.data.get('process_stage_app', None)
                     if not stage_app_id or not TypeCheck.check_uuid(stage_app_id):
-                        raise serializers.ValidationError({
-                            'process': ProcessMsg.PROCESS_STAGE_APP_NOT_FOUND
-                        })
+                        raise serializers.ValidationError({'process': ProcessMsg.PROCESS_STAGE_APP_NOT_FOUND})
 
                     process_obj = ProcessRuntimeControl.get_process_obj(process_id=process_id)
                     process_stage_app_obj = ProcessRuntimeControl.get_process_stage_app(
@@ -180,27 +170,19 @@ class LeaseOrderActiveDelivery(APIView):
                 obj = cls_model.objects.get_current(pk=pk, fill__company=True)
                 is_not_picking = False
                 prod_lo = cls_m2m_product_model.objects.filter(lease_order=obj, product__isnull=False)
-                if prod_lo.count() > 0:
-                    is_services = 0
-                    for item in prod_lo:
-                        if 1 not in item.product.product_choice:
-                            is_services += 1
-                    if prod_lo.count() == is_services:
-                        is_not_picking = True
-
-                else:
+                if prod_lo.count() <= 0:
                     raise serializers.ValidationError(
-                        {
-                            'detail': 'Need at least once product for delivery process run'
-                        }
+                        {'detail': 'Need at least once product for delivery process run'}
                     )
+                is_services = 0
+                for item in prod_lo:
+                    is_services += 1 if 1 not in item.product.product_choice else 0
+                if prod_lo.count() == is_services:
+                    is_not_picking = True
+
                 config = DeliveryConfig.objects.get(company_id=str(obj.company_id))
                 if not self.check_config(config):
-                    raise serializers.ValidationError(
-                        {
-                            'detail': DeliverMsg.ERROR_CONFIG
-                        }
-                    )
+                    raise serializers.ValidationError({'detail': DeliverMsg.ERROR_CONFIG})
 
                 body_data = request.data
                 process_id = None
@@ -208,9 +190,7 @@ class LeaseOrderActiveDelivery(APIView):
                     process_id = request.data['process']
                     stage_app_id = request.data.get('process_stage_app', None)
                     if not stage_app_id or not TypeCheck.check_uuid(stage_app_id):
-                        raise serializers.ValidationError({
-                            'process': ProcessMsg.PROCESS_STAGE_APP_NOT_FOUND
-                        })
+                        raise serializers.ValidationError({'process': ProcessMsg.PROCESS_STAGE_APP_NOT_FOUND})
 
                     process_obj = ProcessRuntimeControl.get_process_obj(process_id=process_id)
                     process_stage_app_obj = ProcessRuntimeControl.get_process_stage_app(
