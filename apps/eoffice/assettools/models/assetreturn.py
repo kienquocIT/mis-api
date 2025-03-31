@@ -26,11 +26,11 @@ class AssetToolsReturn(DataAbstractModel):
         null=True,
         blank=True
     )
-    products = models.ManyToManyField(
-        'saledata.Product',
+    prod_in_tools = models.ManyToManyField(
+        'asset.InstrumentTool',
         through='AssetToolsReturnMapProduct',
         symmetrical=False,
-        related_name='products_asset_return',
+        related_name='prod_in_tools_asset_return',
     )
     return_info_list = models.JSONField(
         default=dict,
@@ -146,11 +146,12 @@ class AssetToolsReturnMapProduct(DataAbstractModel):
         verbose_name='Asset return map product',
         related_name='asset_return_map_product',
     )
-    product = models.ForeignKey(
-        'saledata.Product',
+    prod_in_tools = models.ForeignKey(
+        'asset.InstrumentTool',
         on_delete=models.CASCADE,
         verbose_name='Product map asset return',
         related_name='product_map_asset_return',
+        null=True,
     )
     product_data = models.JSONField(
         default=dict,
@@ -158,21 +159,6 @@ class AssetToolsReturnMapProduct(DataAbstractModel):
         help_text=json.dumps(
             [
                 {'id': '', 'title': '', 'code': '', 'uom': {'id': '', 'code': ''}}
-            ]
-        )
-    )
-    warehouse_stored_product = models.ForeignKey(
-        'saledata.WareHouse',
-        on_delete=models.CASCADE,
-        verbose_name='Warehouse stored product',
-        related_name='warehouse_stored_product',
-    )
-    warehouse_sp_data = models.JSONField(
-        default=dict,
-        verbose_name='warehouse info backup',
-        help_text=json.dumps(
-            [
-                {'id': '', 'title': '', 'code': ''}
             ]
         )
     )
@@ -193,27 +179,17 @@ class AssetToolsReturnMapProduct(DataAbstractModel):
     )
 
     def create_backup_data(self):
-        if self.product:
+        if self.prod_in_tools:
             self.product_data = {
-                "id": str(self.product_id),
-                "title": self.product.title,
-                "code": self.product.code,
-                "uom_data": {
-                    "id": str(self.product.inventory_uom_id),
-                    "title": self.product.inventory_uom.title,
-                }
+                "id": str(self.prod_in_tools_id),
+                "title": self.prod_in_tools.title,
+                "code": self.prod_in_tools.code
             }
         if self.employee_inherit:
             self.employee_inherit_data = {
                 "id": str(self.employee_inherit_id),
                 "full_name": self.employee_inherit.get_full_name(),
                 "code": self.employee_inherit.code
-            }
-        if self.warehouse_stored_product:
-            self.warehouse_sp_data = {
-                "id": str(self.warehouse_stored_product_id),
-                "title": self.warehouse_stored_product.title,
-                "code": self.warehouse_stored_product.code
             }
 
     def before_save(self):

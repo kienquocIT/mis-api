@@ -13,7 +13,6 @@ from apps.shared.translations.base import AttachmentMsg
 
 class AssetToolsProductsMapReturnSerializer(serializers.Serializer):  # noqa
     product = serializers.UUIDField()
-    warehouse_stored_product = serializers.UUIDField()
     order = serializers.IntegerField()
     return_number = serializers.FloatField()
 
@@ -29,8 +28,7 @@ def create_products(instance, prod_list):
             company=instance.company,
             asset_return=instance,
             order=item['order'],
-            product_id=item['product'],
-            warehouse_stored_product_id=item['warehouse_stored_product'],
+            prod_in_tools_id=item['product'],
             employee_inherit=instance.employee_inherit,
             return_number=item['return_number'],
         )
@@ -96,7 +94,7 @@ class AssetToolsReturnCreateSerializer(AbstractCreateSerializerModel):
             'remark',
             'employee_inherit_id',
             'attachments',
-            'products',
+            'prod_in_tools',
             'date_return',
             'system_status',
         )
@@ -111,8 +109,8 @@ class AssetToolsReturnDetailSerializer(AbstractDetailSerializerModel):
         if obj.products:
             products_list = []
             for item in list(obj.asset_return_map_product.all()):
-                current_stock = item.product.stock_amount - \
-                                item.product.product_warehouse_product.all().first().used_amount
+                current_stock = item.prod_in_tools.stock_amount - \
+                                item.prod_in_tools.product_warehouse_product.all().first().used_amount
                 products_list.append(
                     {
                         'order': item.order,
@@ -137,7 +135,7 @@ class AssetToolsReturnDetailSerializer(AbstractDetailSerializerModel):
             'id',
             'title',
             'code',
-            'products',
+            'prod_in_tools',
             'employee_inherit',
             'remark',
             'attachments',

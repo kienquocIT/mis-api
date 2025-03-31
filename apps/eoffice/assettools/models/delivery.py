@@ -47,11 +47,11 @@ class AssetToolsDelivery(DataAbstractModel):
         null=True,
         blank=True
     )
-    products = models.ManyToManyField(
-        'saledata.Product',
+    prod_in_tools = models.ManyToManyField(
+        'asset.InstrumentTool',
         through='ProductDeliveredMapProvide',
         symmetrical=False,
-        related_name='products_asset_tools_delivery',
+        related_name='prod_asset_tools_delivery',
     )
     attachments = models.ManyToManyField(
         'attachments.Files',
@@ -168,11 +168,12 @@ class ProductDeliveredMapProvide(DataAbstractModel):
         verbose_name='Product map delivery',
         related_name='provide_map_delivery',
     )
-    product = models.ForeignKey(
-        'saledata.Product',
+    prod_in_tools = models.ForeignKey(
+        'asset.InstrumentTool',
         on_delete=models.CASCADE,
         verbose_name='Product provide map with request delivery',
         related_name='product_map_asset_tools_delivery',
+        null=True
     )
     product_data = models.JSONField(
         default=dict,
@@ -180,21 +181,6 @@ class ProductDeliveredMapProvide(DataAbstractModel):
         help_text=json.dumps(
             [
                 {'id': '', 'title': '', 'code': '', 'uom': {'id': '', 'code': ''}}
-            ]
-        )
-    )
-    warehouse = models.ForeignKey(
-        'saledata.WareHouse',
-        on_delete=models.CASCADE,
-        verbose_name='Product had provided at warehouse',
-        related_name='product_provided_at_warehouse',
-    )
-    warehouse_data = models.JSONField(
-        default=dict,
-        verbose_name='Warehouse info backup',
-        help_text=json.dumps(
-            [
-                {'id': '', 'title': '', 'code': ''}
             ]
         )
     )
@@ -228,22 +214,11 @@ class ProductDeliveredMapProvide(DataAbstractModel):
     )
 
     def create_backup_data(self):
-        if self.product:
+        if self.prod_in_tools:
             self.product_data = {
-                "id": str(self.product_id),
-                "title": self.product.title,
-                "code": self.product.code,
-                "uom": {
-                    "id": str(self.product.inventory_uom.id),
-                    "title": self.product.inventory_uom.title,
-                    "code": self.product.inventory_uom.code
-                } if hasattr(self.product.inventory_uom, 'id') else {}
-            }
-        if self.warehouse:
-            self.warehouse_data = {
-                "id": str(self.warehouse_id),
-                "title": self.warehouse.title,
-                "code": self.warehouse.code,
+                "id": str(self.prod_in_tools_id),
+                "title": self.prod_in_tools.title,
+                "code": self.prod_in_tools.code,
             }
         if self.employee_inherit:
             self.employee_inherit_data = {
