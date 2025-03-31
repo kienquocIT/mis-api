@@ -26,7 +26,8 @@ class GoodsReturn(DataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        SubPeriods.check_period(self.tenant_id, self.company_id)
+        if not kwargs.get('skip_check_period', True):
+            SubPeriods.check_period(self.tenant_id, self.company_id)
 
         if self.system_status in [2, 3]:
             if not self.code:

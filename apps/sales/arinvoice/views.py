@@ -159,7 +159,6 @@ class SaleOrderListForARInvoice(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related('opportunity').filter(
-            delivery_status=3,
             system_status=3
         )
 
@@ -182,8 +181,8 @@ class DeliveryListForARInvoice(BaseListMixin):
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('employee_inherit').prefetch_related(
-            'delivery_product_delivery_sub'
+        return super().get_queryset().select_related('order_delivery').prefetch_related(
+            'delivery_product_delivery_sub', 'order_delivery__sale_order__sale_order_product_sale_order'
         ).order_by('date_created')
 
     @swagger_auto_schema(

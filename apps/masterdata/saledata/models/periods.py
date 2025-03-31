@@ -106,6 +106,10 @@ class SubPeriods(SimpleAbstractModel):
 
     @classmethod
     def check_period(cls, tenant_id, company_id):
+        """
+        Kiểm tra thử năm tài chính hiện tại có hay chưa?
+        Lưu ý: chỉ sử dụng tham số 'skip_check_period' để bỏ qua hàm này khi chạy các script để tránh sai dữ liệu
+        """
         company_obj = Company.objects.filter(id=company_id).first()
         if not company_obj:
             raise serializers.ValidationError({"Error": "[check_period] Company is not found."})
