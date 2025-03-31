@@ -101,8 +101,8 @@ class AssetForLeaseList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Fixed Asset For Lease List",
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        label_code='asset', model_code='fixedasset', perm_code='view',
+        login_require=True, auth_require=False,
+        # label_code='asset', model_code='fixedasset', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
