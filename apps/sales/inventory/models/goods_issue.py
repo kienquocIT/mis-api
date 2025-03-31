@@ -104,6 +104,33 @@ class GoodsIssue(DataAbstractModel):
         wo_item_obj.save(update_fields=['issued_quantity'])
         return True
 
+    @classmethod
+    def update_related_app_after_issue(cls, instance):
+        try:
+            with transaction.atomic():
+                if instance.inventory_adjustment:
+                    for item in instance.goods_issue_product.all():
+                        cls.update_product_warehouse_data(item)
+                        cls.update_status_inventory_adjustment_item(
+                            item.inventory_adjustment_item, item.issued_quantity
+                        )
+                elif instance.production_order:
+                    for item in instance.goods_issue_product.all():
+                        cls.update_product_warehouse_data(item)
+                        cls.update_issued_quantity_production_order_item(
+                            item.production_order_item, item.issued_quantity
+                        )
+                elif instance.work_order:
+                    for item in instance.goods_issue_product.all():
+                        cls.update_product_warehouse_data(item)
+                        cls.update_issued_quantity_work_order_item(
+                            item.work_order_item, item.issued_quantity
+                        )
+                return True
+        except Exception as err:
+            print(err)
+            raise err
+
     def save(self, *args, **kwargs):
         if not kwargs.pop('skip_check_period', False):
             SubPeriods.check_period(self.tenant_id, self.company_id)
@@ -118,29 +145,7 @@ class GoodsIssue(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
-                try:
-                    with transaction.atomic():
-                        if self.inventory_adjustment:
-                            for item in self.goods_issue_product.all():
-                                self.update_product_warehouse_data(item)
-                                self.update_status_inventory_adjustment_item(
-                                    item.inventory_adjustment_item, item.issued_quantity
-                                )
-                        elif self.production_order:
-                            for item in self.goods_issue_product.all():
-                                self.update_product_warehouse_data(item)
-                                self.update_issued_quantity_production_order_item(
-                                    item.production_order_item, item.issued_quantity
-                                )
-                        elif self.work_order:
-                            for item in self.goods_issue_product.all():
-                                self.update_product_warehouse_data(item)
-                                self.update_issued_quantity_work_order_item(
-                                    item.work_order_item, item.issued_quantity
-                                )
-                except Exception as err:
-                    print(err)
-                    raise err
+                self.update_related_app_after_issue(self)
 
                 IRForGoodsIssueHandler.push_to_inventory_report(self)
 
