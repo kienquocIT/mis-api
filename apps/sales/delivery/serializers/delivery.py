@@ -54,6 +54,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'product_data',
             'asset_type',
             'offset_data',
+            'tool_data',
             'asset_data',
             'product_quantity',
             'uom_data',
@@ -188,6 +189,7 @@ class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
     product_id = serializers.UUIDField()
     done = serializers.IntegerField(min_value=1)
     delivery_data = serializers.JSONField(default=list)
+    tool_data = serializers.JSONField(default=list)
     asset_data = serializers.JSONField(default=list)
     product_depreciation_start_date = serializers.CharField(required=False, allow_null=True)
     product_lease_start_date = serializers.CharField(required=False, allow_null=True)
@@ -273,9 +275,10 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             if obj_key in product_done:
                 target = product_done[obj_key]
                 if 1 in obj.product.product_choice or sub.lease_order_data:
-                    # kiểm tra product id và order trùng với product update ko
+                    # Kiểm tra product id và order trùng với product update ko
                     obj.picked_quantity = target.get('picked_num', 0)
                     obj.delivery_data = target.get('delivery_data', [])
+                    obj.tool_data = target.get('tool_data', [])
                     obj.asset_data = target.get('asset_data', [])
                     obj.product_depreciation_start_date = target.get('product_depreciation_start_date', None)
                     obj.product_lease_start_date = target.get('product_lease_start_date', None)
@@ -292,12 +295,12 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                             )
                 else:
                     obj.picked_quantity = target.get('picked_num', 0)
-                # sau khi update sẽ chạy các func trong save()
+                # Sau khi update sẽ chạy các func trong save()
                 obj.save(update_fields=[
                     'picked_quantity', 'delivery_data',
-                    'asset_data', 'product_depreciation_start_date',
-                    'product_lease_start_date', 'depreciation_data',
-                    'quantity_remain_recovery',
+                    'tool_data', 'asset_data',
+                    'product_depreciation_start_date', 'product_lease_start_date',
+                    'depreciation_data', 'quantity_remain_recovery',
                 ])
         return True
 
@@ -370,6 +373,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             product_done[prod_key] = {}
             product_done[prod_key]['picked_num'] = item.get('done', 0)
             product_done[prod_key]['delivery_data'] = item.get('delivery_data', [])
+            product_done[prod_key]['tool_data'] = item.get('tool_data', [])
             product_done[prod_key]['asset_data'] = item.get('asset_data', [])
             product_done[prod_key]['product_depreciation_start_date'] = item.get(
                 'product_depreciation_start_date', None
@@ -426,7 +430,29 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                 'asset_type': deli_product.asset_type,
                 'offset_id': deli_product.offset_id,
                 'offset_data': deli_product.offset_data,
-                # 'asset_data': deli_product.asset_data,
+                'tool_data': [{
+                    "product_id": delivery_tool.product_id,
+                    "product_data": delivery_tool.product_data,
+                    "tool_id": delivery_tool.tool_id,
+                    "tool_data": delivery_tool.tool_data,
+                    "uom_time_id": delivery_tool.uom_time_id,
+                    "uom_time_data": delivery_tool.uom_time_data,
+                    "product_quantity": delivery_tool.product_quantity,
+                    "product_quantity_time": delivery_tool.product_quantity_time,
+                    "product_depreciation_subtotal": delivery_tool.product_depreciation_subtotal,
+                    "product_depreciation_price": delivery_tool.product_depreciation_price,
+                    "product_depreciation_method": delivery_tool.product_depreciation_method,
+                    "product_depreciation_adjustment": delivery_tool.product_depreciation_adjustment,
+                    "product_depreciation_time": delivery_tool.product_depreciation_time,
+                    "product_depreciation_start_date": delivery_tool.product_depreciation_start_date,
+                    "product_depreciation_end_date": delivery_tool.product_depreciation_end_date,
+                    "product_lease_start_date": delivery_tool.product_lease_start_date,
+                    "product_lease_end_date": delivery_tool.product_lease_end_date,
+                    "depreciation_data": delivery_tool.depreciation_data,
+                    "quantity_remain_recovery": delivery_tool.quantity_remain_recovery,
+                } for delivery_tool in deli_product.delivery_pt_delivery_product.filter(
+                    quantity_remain_recovery__gt=0
+                )],
                 'asset_data': [{
                     "product_id": delivery_asset.product_id,
                     "product_data": delivery_asset.product_data,
@@ -434,6 +460,7 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                     "asset_data": delivery_asset.asset_data,
                     "uom_time_id": delivery_asset.uom_time_id,
                     "uom_time_data": delivery_asset.uom_time_data,
+                    "product_quantity": delivery_asset.product_quantity,
                     "product_quantity_time": delivery_asset.product_quantity_time,
                     "product_depreciation_subtotal": delivery_asset.product_depreciation_subtotal,
                     "product_depreciation_price": delivery_asset.product_depreciation_price,
@@ -445,7 +472,10 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                     "product_lease_start_date": delivery_asset.product_lease_start_date,
                     "product_lease_end_date": delivery_asset.product_lease_end_date,
                     "depreciation_data": delivery_asset.depreciation_data,
-                } for delivery_asset in deli_product.delivery_pa_delivery_product.filter(asset__status=2)],
+                    "quantity_remain_recovery": delivery_asset.quantity_remain_recovery,
+                } for delivery_asset in deli_product.delivery_pa_delivery_product.filter(
+                    quantity_remain_recovery__gt=0
+                )],
                 'uom_id': deli_product.uom_id,
                 'uom_data': deli_product.uom_data,
                 'product_quantity': deli_product.product_quantity,

@@ -87,6 +87,12 @@ class InstrumentTool(DataAbstractModel):
 
     depreciation_data = models.JSONField(default=list, help_text='data for depreciation')
 
+    # công cụ dụng cụ đã cấp phát
+    allocated_quantity = models.PositiveIntegerField(
+        default=0,
+        help_text='quantity of allocated instruments and tools'
+    )
+
     class Meta:
         verbose_name = 'Instrument Tool'
         verbose_name_plural = 'Instrument Tools'

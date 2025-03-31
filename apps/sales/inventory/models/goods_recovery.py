@@ -140,6 +140,7 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
     )
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
     asset_data = models.JSONField(default=list, help_text='data json of asset')
+    tool_data = models.JSONField(default=list, help_text='data json of tool')
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -189,6 +190,75 @@ class RecoveryProduct(MasterDataAbstractModel):  # relation: 1RecoveryDelivery-*
         permissions = ()
 
 
+class RecoveryProductTool(MasterDataAbstractModel):
+    goods_recovery = models.ForeignKey(
+        GoodsRecovery,
+        on_delete=models.CASCADE,
+        verbose_name="goods recovery",
+        related_name="recovery_product_tool_recovery",
+    )
+    recovery_product = models.ForeignKey(
+        RecoveryProduct,
+        on_delete=models.CASCADE,
+        verbose_name="recovery product",
+        related_name="recovery_product_tool_recovery_product",
+    )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="recovery_product_tool_product",
+        null=True
+    )
+    product_data = models.JSONField(default=dict, help_text='data json of product')
+    tool = models.ForeignKey(
+        'asset.InstrumentTool',
+        on_delete=models.CASCADE,
+        verbose_name="tool",
+        related_name="recovery_product_tool_tool",
+        null=True
+    )
+    tool_data = models.JSONField(default=dict, help_text='data json of tool')
+    uom_time = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="uom time",
+        related_name="recovery_product_tool_uom_time",
+        null=True
+    )
+    uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
+    product_quantity = models.FloatField(default=0)
+    product_quantity_time = models.FloatField(default=0)
+    quantity_recovery = models.FloatField(default=0)
+    # Begin depreciation fields
+
+    product_depreciation_subtotal = models.FloatField(default=0)
+    product_depreciation_price = models.FloatField(default=0)
+    product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
+    product_depreciation_adjustment = models.FloatField(default=0)
+    product_depreciation_time = models.FloatField(default=0)
+    product_depreciation_start_date = models.DateField(null=True)
+    product_depreciation_end_date = models.DateField(null=True)
+
+    product_lease_start_date = models.DateField(null=True)
+    product_lease_end_date = models.DateField(null=True)
+
+    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+    depreciation_lease_data = models.JSONField(default=list, help_text='data json of depreciation lease')
+
+    # End depreciation fields
+
+    # fields for recovery
+    quantity_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
+
+    class Meta:
+        verbose_name = 'Recovery Product Tool'
+        verbose_name_plural = 'Recovery Products Tools'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
 class RecoveryProductAsset(MasterDataAbstractModel):
     goods_recovery = models.ForeignKey(
         GoodsRecovery,
@@ -226,6 +296,7 @@ class RecoveryProductAsset(MasterDataAbstractModel):
         null=True
     )
     uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
+    product_quantity = models.FloatField(default=0)
     product_quantity_time = models.FloatField(default=0)
     quantity_recovery = models.FloatField(default=0)
     # Begin depreciation fields

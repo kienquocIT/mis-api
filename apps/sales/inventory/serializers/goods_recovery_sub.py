@@ -5,7 +5,7 @@ from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.delivery.models import OrderDeliverySub
-from apps.sales.inventory.models import RecoveryDelivery, RecoveryProduct, RecoveryProductAsset
+from apps.sales.inventory.models import RecoveryDelivery, RecoveryProduct, RecoveryProductAsset, RecoveryProductTool
 from apps.sales.leaseorder.models import LeaseOrder
 from apps.shared import AccountsMsg, ProductMsg, WarehouseMsg, SaleMsg
 
@@ -43,6 +43,11 @@ class RecoveryCommonCreate:
                 ) for recovery_product in sub_delivery_obj.delivery_product_data]
             )
             for recovery_product_obj in recovery_products_objs:
+                RecoveryProductTool.objects.bulk_create([RecoveryProductTool(
+                    goods_recovery=instance, recovery_product=recovery_product_obj,
+                    tenant_id=instance.tenant_id, company_id=instance.company_id,
+                    **tool_data,
+                ) for tool_data in recovery_product_obj.tool_data])
                 RecoveryProductAsset.objects.bulk_create([RecoveryProductAsset(
                     goods_recovery=instance, recovery_product=recovery_product_obj,
                     tenant_id=instance.tenant_id, company_id=instance.company_id,
@@ -138,6 +143,7 @@ class RecoveryProductSerializer(serializers.ModelSerializer):
             'offset_id',
             'offset_data',
             'asset_data',
+            'tool_data',
             'uom_id',
             'uom_data',
             'uom_time_id',

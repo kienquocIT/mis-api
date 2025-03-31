@@ -10,7 +10,7 @@ from apps.sales.delivery.models import (
     DeliveryConfig,
     OrderPicking, OrderPickingSub, OrderPickingProduct,
     OrderDelivery, OrderDeliveryProduct, OrderDeliverySub,
-    OrderDeliveryProductAsset
+    OrderDeliveryProductAsset, OrderDeliveryProductTool
 )
 from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
@@ -116,6 +116,25 @@ class OrderActiveDeliverySerializer:
                 result.update(OrderActiveDeliverySerializer.append_depreciation_data(cost_product=cost_product))
         return result
 
+    def setup_lease_tool_kwargs(self, m2m_obj, result):
+        if m2m_obj.product and m2m_obj.tool_data:
+            for m2m_obj_tool in m2m_obj.lease_order_product_tool_lo_product.all():
+                cost_product = m2m_obj_tool.tool.lease_order_cost_tool.filter(
+                    lease_order=self.order_obj, product=m2m_obj_tool.product
+                ).first()
+                if cost_product:
+                    for tool_data in result.get('tool_data', []):
+                        tool_data.update({'uom_time_id': str(m2m_obj.uom_time_id)})
+                        tool_data.update({'uom_time_data': m2m_obj.uom_time_data})
+                        tool_data.update({'product_quantity_time': m2m_obj.product_quantity_time})
+                        tool_data.update({'remaining_quantity': tool_data.get("product_quantity", 0)})
+                        if tool_data.get('tool_id', None) == str(m2m_obj_tool.tool_id):
+                            tool_data.update(OrderActiveDeliverySerializer.append_depreciation_data(
+                                cost_product=cost_product
+                            ))
+                            break
+        return result
+
     def setup_lease_asset_kwargs(self, m2m_obj, result):
         if m2m_obj.product and m2m_obj.asset_data:
             for m2m_obj_asset in m2m_obj.lease_order_product_asset_lo_product.all():
@@ -127,6 +146,7 @@ class OrderActiveDeliverySerializer:
                         asset_data.update({'uom_time_id': str(m2m_obj.uom_time_id)})
                         asset_data.update({'uom_time_data': m2m_obj.uom_time_data})
                         asset_data.update({'product_quantity_time': m2m_obj.product_quantity_time})
+                        asset_data.update({'remaining_quantity': asset_data.get("product_quantity", 0)})
                         if asset_data.get('asset_id', None) == str(m2m_obj_asset.asset_id):
                             asset_data.update(OrderActiveDeliverySerializer.append_depreciation_data(
                                 cost_product=cost_product
@@ -146,12 +166,14 @@ class OrderActiveDeliverySerializer:
                 'asset_type': m2m_obj.asset_type,
                 'offset': m2m_obj.offset,
                 'offset_data': m2m_obj.offset_data,
+                'tool_data': m2m_obj.tool_data,
                 'asset_data': m2m_obj.asset_data,
                 'uom_time': m2m_obj.uom_time,
                 'uom_time_data': m2m_obj.uom_time_data,
                 'product_quantity_time': m2m_obj.product_quantity_time,
             })
             result = self.setup_lease_offset_kwargs(m2m_obj=m2m_obj, result=result)
+            result = self.setup_lease_tool_kwargs(m2m_obj=m2m_obj, result=result)
             result = self.setup_lease_asset_kwargs(m2m_obj=m2m_obj, result=result)
 
         return result
@@ -414,6 +436,10 @@ class OrderActiveDeliverySerializer:
                     obj_delivery.save(update_fields=['sub'])
                     delivery_product_list = OrderDeliveryProduct.objects.bulk_create(_y)
                     for delivery_product in delivery_product_list:
+                        OrderDeliveryProductTool.objects.bulk_create([OrderDeliveryProductTool(
+                            tenant_id=delivery_product.tenant_id, company_id=delivery_product.company_id,
+                            delivery_product=delivery_product, **tool_data,
+                        ) for tool_data in delivery_product.tool_data])
                         OrderDeliveryProductAsset.objects.bulk_create([OrderDeliveryProductAsset(
                             tenant_id=delivery_product.tenant_id, company_id=delivery_product.company_id,
                             delivery_product=delivery_product, **asset_data,
