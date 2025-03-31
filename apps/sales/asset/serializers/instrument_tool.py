@@ -108,6 +108,7 @@ class InstrumentToolListSerializer(AbstractListSerializerModel):
             write_off_quantity += quantity_item.write_off_quantity
         return write_off_quantity
 
+
 class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
     classification = serializers.UUIDField()
     product = serializers.UUIDField()
@@ -352,6 +353,7 @@ class InstrumentToolDetailSerializer(AbstractDetailSerializerModel):
         for write_off_quantity in obj.write_off_quantities.all():
             using_quantity = using_quantity - write_off_quantity.write_off_quantity
         return using_quantity
+
 
 class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
     classification = serializers.UUIDField()
