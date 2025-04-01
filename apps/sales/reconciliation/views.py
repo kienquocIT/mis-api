@@ -21,7 +21,7 @@ __all__ = [
 # main views
 class ReconList(BaseListMixin, BaseCreateMixin):
     queryset = Reconciliation.objects
-    search_fields = ['title', 'customer__name']
+    search_fields = ['title', 'business_partner__name']
     serializer_list = ReconListSerializer
     serializer_create = ReconCreateSerializer
     serializer_detail = ReconDetailSerializer
@@ -87,7 +87,9 @@ class ARInvoiceListForRecon(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related(
+        return super().get_queryset().filter(system_status=3).prefetch_related(
+            'ar_invoice_items',
+        ).select_related(
             'customer_mapped',
         ).order_by('date_created')
 
@@ -115,7 +117,7 @@ class CashInflowListForRecon(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().filter(
             no_ar_invoice_value__gt=0
-        ).prefetch_related('recon_item_cash_inflow').select_related().order_by('date_created')
+        ).prefetch_related().select_related().order_by('date_created')
 
     @swagger_auto_schema(
         operation_summary="Cash Inflow list",

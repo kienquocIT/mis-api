@@ -95,8 +95,7 @@ class MeetingZoomConfigList(BaseListMixin, BaseCreateMixin):
         operation_description="Meeting Zoom Config list"
     )
     @mask_view(
-        login_require=True,
-        auth_require=False,
+        login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -107,10 +106,7 @@ class MeetingZoomConfigList(BaseListMixin, BaseCreateMixin):
         request_body=MeetingZoomConfigCreateSerializer
     )
     @mask_view(
-        login_require=True,
-        auth_require=True,
-        allow_admin_tenant=True,
-        allow_admin_company=True
+        login_require=True, auth_require=False,
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -129,8 +125,7 @@ class MeetingZoomConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Detail Meeting Zoom Config"
     )
     @mask_view(
-        login_require=True,
-        auth_require=False
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -179,6 +174,9 @@ class MeetingScheduleList(BaseListMixin, BaseCreateMixin):
         perm_code='create'
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user_current': request.user,
+        }
         return self.create(request, *args, **kwargs)
 
 
@@ -197,6 +195,7 @@ class MeetingScheduleDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'meeting_online_schedule_mapped'
         ).select_related(
             'meeting_room_mapped',
+            'account_external'
         )
 
     @swagger_auto_schema(
@@ -227,3 +226,28 @@ class MeetingScheduleDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class MeetingScheduleDDList(BaseListMixin):
+    queryset = MeetingSchedule.objects
+    serializer_list = MeetingScheduleListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    search_fields = ['title', 'meeting_duration', 'meeting_start_date', 'meeting_start_time']
+
+    def get_queryset(self):
+        params = self.request.query_params
+        queryset = super().get_queryset().select_related(
+            'meeting_room_mapped',
+        )
+        return queryset.filter(meeting_start_date=params.get('start_date'), meeting_room_mapped=params.get('room'))
+
+    @swagger_auto_schema(
+        operation_summary="Meeting Schedule DD list",
+        operation_description="Meeting Schedule dropdown list without permissions"
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=False
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

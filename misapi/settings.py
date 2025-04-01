@@ -19,6 +19,9 @@ from colorama import Fore
 from datetime import timedelta
 from pathlib import Path
 
+import firebase_admin
+from firebase_admin import credentials
+
 from .load_env import load_env
 
 # override recursion limit
@@ -84,6 +87,9 @@ INSTALLED_APPS = \
         'apps.core.forms',  # form
         'apps.core.chatbot',  # chatbot AI
         'apps.core.recurrence',  # recurrence for apps
+        'apps.core.chat3rd',
+        'apps.core.firebase',
+        'apps.core.contract_templates',  # contract template config
     ] + [  # application
         'apps.core.base',
         'apps.core.account',
@@ -123,6 +129,8 @@ INSTALLED_APPS = \
         'apps.sales.bidding',
         'apps.sales.leaseorder',
         'apps.sales.consulting',
+        'apps.sales.partnercenter',
+        'apps.sales.grouporder'
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ] + [
@@ -133,6 +141,10 @@ INSTALLED_APPS = \
     ] + [
         'apps.sales.financialcashflow',
         'apps.sales.reconciliation',
+        'apps.sales.asset',
+    ] + [
+        'apps.accounting.accountingsettings',
+        'apps.accounting.journalentry'
     ]
 
 MIDDLEWARE = [
@@ -254,6 +266,7 @@ UI_DOMAIN_SUFFIX = os.environ.get('UI_DOMAIN_SUFFIX', None)
 UI_DOMAIN_PROTOCOL = os.environ.get('UI_DOMAIN_PROTOCOL', 'https')
 UI_DOMAIN_PATH_REVERSE = os.environ.get('UI_DOMAIN_PATH_REVERSE', '/form/r/g/rs-get')
 UI_DOMAIN_PATH_REVERSE_PAGE = os.environ.get('UI_DOMAIN_PATH_REVERSE', '/form/r/g/rs')
+UI_FIXED_DOMAIN = os.environ.get('UI_FIXED_DOMAIN', 'http://{sub_domain}.local.test:8001')
 
 # Mail config
 MAIL_CONFIG_OBJ_PK = os.environ.get('MAIL_CONFIG_OBJ_PK', '6db50f86-055d-4fc6-9235-208b0fbc0ef9')
@@ -673,6 +686,7 @@ if ENABLE_PROD is True:
                 'OPTIONS': {
                     'charset': 'utf8mb4',
                 },
+                'CONN_MAX_AGE': 600,  # 60 * 10
             }
         }
     )
@@ -761,6 +775,14 @@ def display_wraptext(text, length=80):
     return "\n |  ".join(textwrap.wrap(text, length))
 
 
+# Firebase
+FIREBASE_FILE_CONFIG = os.path.join(BASE_DIR, 'serviceAccountKey.json')
+FIREBASE_ENABLE = os.path.isfile(FIREBASE_FILE_CONFIG)
+if FIREBASE_ENABLE is True:
+    cred = credentials.Certificate(FIREBASE_FILE_CONFIG)
+    firebase_admin.initialize_app(cred)
+
+
 DEBUG = os.environ.get('DEBUG', '1') in [1, '1']
 if DEBUG is True:
     # debug toolbar IP Internal
@@ -776,3 +798,5 @@ if DEBUG is True:
     # print(Fore.LIGHTMAGENTA_EX, display_wraptext(f'#  6. CACHE [MEMCACHED]: {CACHE_ENABLED}'), '\033[0m')
     # print(Fore.CYAN, '--------------------------------------------------------------------------------#', '\033[0m')
 # -- Display config about DB, Cache, CELERY,...
+
+print(Fore.BLUE, f'#  DATABASES: {DATABASES["default"]["NAME"]}', '\033[0m')

@@ -18,7 +18,6 @@ class SalutationList(BaseListMixin, BaseCreateMixin):
     queryset = Salutation.objects
     serializer_list = SalutationListSerializer
     serializer_create = SalutationCreateSerializer
-
     serializer_detail = SalutationDetailSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -48,8 +47,6 @@ class SalutationList(BaseListMixin, BaseCreateMixin):
 
 class SalutationDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Salutation.objects
-    serializer_list = SalutationListSerializer
-    serializer_create = SalutationCreateSerializer
     serializer_detail = SalutationDetailSerializer
     serializer_update = SalutationUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -104,8 +101,6 @@ class InterestsList(BaseListMixin, BaseCreateMixin):
 
 class InterestsDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Interest.objects
-    serializer_list = InterestsListSerializer
-    serializer_create = InterestsCreateSerializer
     serializer_detail = InterestsDetailsSerializer
     serializer_update = InterestsUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -179,15 +174,11 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Contact.objects
     serializer_detail = ContactDetailSerializer
     serializer_update = ContactUpdateSerializer
-    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
-    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            'salutation', 'account_name', 'owner', 'report_to',
-            'work_country', 'work_city', 'work_district', 'work_ward',
-            'home_country', 'home_city', 'home_district', 'home_ward',
-        )
+        return super().get_queryset().select_related('salutation', 'account_name', 'owner', 'report_to')
 
     @swagger_auto_schema(operation_summary='Detail Contact')
     @mask_view(

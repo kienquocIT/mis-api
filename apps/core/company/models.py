@@ -25,6 +25,16 @@ DEFAULT_INVENTORY_VALUE_METHOD_CHOICES = [
     (2, _('Specific identification method')),
 ]
 
+ACCOUNTING_POLICIES_CHOICES = [
+    (0, _('VAS')),
+    (1, _('IAS')),
+]
+
+APPLICABLE_CIRCULAR_CHOICES = [
+    (0, '200/2014/TT-BTC'),
+    (1, '133/2015/TT-BTC'),
+]
+
 NUMBERING_BY_CHOICES = [
     (0, _('System')),
     (1, _('User defined')),
@@ -203,6 +213,8 @@ class CompanyConfig(SimpleAbstractModel):
     cost_per_warehouse = models.BooleanField(default=True)
     cost_per_lot = models.BooleanField(default=False)
     cost_per_project = models.BooleanField(default=False)
+    accounting_policies = models.SmallIntegerField(choices=ACCOUNTING_POLICIES_CHOICES, default=0)
+    applicable_circular = models.SmallIntegerField(choices=APPLICABLE_CIRCULAR_CHOICES, default=0)
 
     class Meta:
         verbose_name = 'Company Config'
@@ -490,51 +502,3 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                 result = result.replace(match, str(schema_item_list[int(match[1:-1])]))
             return result
         return None
-
-
-class CompanyBankAccount(SimpleAbstractModel):
-    company = models.ForeignKey(
-        Company,
-        on_delete=models.CASCADE,
-        related_name='company_bank_account_company'
-    )
-    country = models.ForeignKey('base.Country', on_delete=models.CASCADE)
-    bank_name = models.CharField(
-        verbose_name='Name of bank',
-        blank=True,
-        null=True,
-        max_length=150
-    )
-    bank_code = models.CharField(
-        verbose_name='Code of bank',
-        blank=True,
-        null=True,
-        max_length=50
-    )
-    bank_account_name = models.CharField(
-        verbose_name='Bank account name',
-        blank=True,
-        null=True,
-        max_length=150
-    )
-    bank_account_number = models.CharField(
-        verbose_name='Bank account number',
-        blank=True,
-        null=True,
-        max_length=150
-    )
-    bic_swift_code = models.CharField(
-        verbose_name='BIC/SWIFT code',
-        blank=True,
-        null=True,
-        max_length=150
-    )
-    is_default = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        verbose_name = 'Company bank account'
-        verbose_name_plural = 'Company bank accounts'
-        ordering = ('bank_code',)
-        default_permissions = ()
-        permissions = ()

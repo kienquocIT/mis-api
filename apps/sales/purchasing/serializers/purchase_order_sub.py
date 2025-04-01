@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseOrderRequest, \
     PurchaseRequest, PurchaseOrderRequestProduct, PurchaseQuotation, PurchaseOrderQuotation, PurchaseOrderPaymentStage
 from apps.sales.saleorder.models import SaleOrderProduct
-from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg, SaleMsg, PurchasingMsg
+from apps.shared import PurchaseRequestMsg, SaleMsg, BaseMsg
 
 
 class PurchaseOrderCommonCreate:
@@ -229,7 +229,7 @@ class PurchasingCommonValidate:
                 id=value
             )
         except Account.DoesNotExist:
-            raise serializers.ValidationError({'supplier': AccountsMsg.ACCOUNT_NOT_EXIST})
+            raise serializers.ValidationError({'supplier': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_contact(cls, value):
@@ -240,7 +240,7 @@ class PurchasingCommonValidate:
                 id=value
             )
         except Contact.DoesNotExist:
-            raise serializers.ValidationError({'contact': AccountsMsg.CONTACT_NOT_EXIST})
+            raise serializers.ValidationError({'contact': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_product(cls, value):
@@ -259,14 +259,14 @@ class PurchasingCommonValidate:
                 'product_choice': product.product_choice,
             }
         except Product.DoesNotExist:
-            raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'product': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_purchase_request_product(cls, value):
         if PurchaseRequestProduct.objects.filter(id=value).exists():
             return str(value)
         raise serializers.ValidationError({
-            'purchase_request_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
+            'purchase_request_product': BaseMsg.NOT_EXIST
         })
 
     @classmethod
@@ -284,7 +284,7 @@ class PurchasingCommonValidate:
             }
         except PurchaseQuotation.DoesNotExist:
             raise serializers.ValidationError({
-                'purchase_quotation': PurchasingMsg.PURCHASE_QUOTATION_NOT_EXIST
+                'purchase_quotation': BaseMsg.NOT_EXIST
             })
 
     @classmethod
@@ -294,7 +294,7 @@ class PurchasingCommonValidate:
         if SaleOrderProduct.objects.filter(id=value).exists():
             return str(value)
         raise serializers.ValidationError({
-            'sale_order_product': SaleMsg.SALE_ORDER_PRODUCT_NOT_EXIST
+            'sale_order_product': BaseMsg.NOT_EXIST
         })
 
     @classmethod
@@ -313,7 +313,7 @@ class PurchasingCommonValidate:
                 'code': uom.code
             }
         except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'unit_of_measure': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+            raise serializers.ValidationError({'unit_of_measure': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_tax(cls, value):
@@ -330,7 +330,7 @@ class PurchasingCommonValidate:
                 'value': tax.rate
             }
         except Tax.DoesNotExist:
-            raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'tax': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_quantity(cls, value):

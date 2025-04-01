@@ -1,4 +1,5 @@
 import logging
+from operator import truediv
 
 from django.db import transaction
 from django.db.models import Q
@@ -27,7 +28,7 @@ from apps.core.base.models import Currency as BaseCurrency, PlanApplication, Bas
 from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency, UnitOfMeasure,
-    DocumentType,
+    DocumentType, FixedAssetClassificationGroup, FixedAssetClassification, Tax, Salutation, Industry, AccountGroup,
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import (
@@ -41,7 +42,7 @@ from .push_notify import TeleBotPushNotify
 from .tasks import call_task_background
 from apps.core.tenant.models import TenantPlan
 from apps.eoffice.assettools.models import AssetToolsConfig
-from apps.core.mailer.tasks import send_mail_otp, send_mail_new_project_member
+from apps.core.mailer.tasks import send_mail_otp, send_mail_new_project_member, send_mail_new_contract_submit
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
 from apps.sales.lead.models import LeadStage
@@ -51,6 +52,7 @@ from apps.core.forms.tasks import notifications_form_with_new, notifications_for
 from apps.sales.project.extend_func import calc_rate_project, calc_update_task, re_calc_work_group
 from .models import DisperseModel
 from .. import ProjectMsg
+from ...sales.leaseorder.models import LeaseOrderAppConfig
 from ...sales.project.tasks import create_project_news
 
 logger = logging.getLogger(__name__)
@@ -63,11 +65,51 @@ __all__ = [
 
 
 class SaleDefaultData:
+    Salutation_data = [
+        {'code': 'SA001', 'title': 'Anh', 'is_default': 1},
+        {'code': 'SA002', 'title': 'Chị', 'is_default': 1},
+        {'code': 'SA003', 'title': 'Ông', 'is_default': 1},
+        {'code': 'SA004', 'title': 'Bà', 'is_default': 1}
+    ]
+    Account_types_data = [
+        {'title': 'Customer', 'code': 'AT001', 'is_default': 1, 'account_type_order': 0},
+        {'title': 'Supplier', 'code': 'AT002', 'is_default': 1, 'account_type_order': 1},
+        {'title': 'Partner', 'code': 'AT003', 'is_default': 1, 'account_type_order': 2},
+        {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
+    ]
+    Account_groups_data = [
+        {'code': 'AG001', 'title': 'Khách lẻ', 'is_default': 1},
+        {'code': 'AG002', 'title': 'VIP1', 'is_default': 1},
+        {'code': 'AG003', 'title': 'VIP2', 'is_default': 1},
+    ]
+    Industries_data = [
+        {'code': 'IN001', 'title': 'Dịch vụ', 'is_default': 1},
+        {'code': 'IN002', 'title': 'Sản xuất', 'is_default': 1},
+        {'code': 'IN003', 'title': 'Phân phối', 'is_default': 1},
+        {'code': 'IN004', 'title': 'Bán lẻ', 'is_default': 1},
+        {'code': 'IN005', 'title': 'Giáo dục', 'is_default': 1},
+        {'code': 'IN006', 'title': 'Y tế', 'is_default': 1},
+    ]
     ProductType_data = [
         {'code': 'goods', 'title': 'Hàng hóa', 'is_default': 1, 'is_goods': 1},
         {'code': 'material', 'title': 'Nguyên vật liệu', 'is_default': 1, 'is_material': 1},
         {'code': 'finished_goods', 'title': 'Thành phẩm', 'is_default': 1, 'is_finished_goods': 1},
-        {'code': 'asset_tool', 'title': 'Tài sản - Công cụ dụng cụ', 'is_default': 1, 'is_asset_tool': 1},
+        {'code': 'tool', 'title': 'Công cụ - Dụng cụ', 'is_default': 1, 'is_tool': 1},
+        {'code': 'service', 'title': 'Dịch vụ', 'is_default': 1, 'is_service': 1},
+    ]
+    UoM_Group_data = [
+        {'code': 'Import', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
+        {'code': 'Labor', 'title': 'Nhân công', 'is_default': 1},
+        {'code': 'Size', 'title': 'Kích thước', 'is_default': 1},
+        {'code': 'Time', 'title': 'Thời gian', 'is_default': 1},
+        {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
+    ]
+    UOM_data = [
+        {'code': 'UOM001', 'title': 'Cái', 'is_referenced_unit': 1, 'is_default': 1},
+        {'code': 'UOM002', 'title': 'Con', 'is_default': 1},
+        {'code': 'UOM003', 'title': 'Thanh', 'is_default': 1},
+        {'code': 'UOM004', 'title': 'Lần', 'is_default': 1},
+        {'code': 'UOM005', 'title': 'Gói', 'is_default': 1},
     ]
     TaxCategory_data = [
         {'code': 'TC001', 'title': 'Thuế GTGT', 'is_default': 1},
@@ -76,27 +118,15 @@ class SaleDefaultData:
         {'code': 'TC004', 'title': 'Thuế tiêu thụ đặc biệt', 'is_default': 1},
         {'code': 'TC005', 'title': 'Thuế nhà thầu', 'is_default': 1},
     ]
-    Currency_data = [
-        {'title': 'VIETNAM DONG', 'abbreviation': 'VND', 'is_default': 1, 'is_primary': 1, 'rate': 1.0},
-        {'title': 'US DOLLAR', 'abbreviation': 'USD', 'is_default': 1, 'is_primary': 0, 'rate': None},
-        {'title': 'YEN', 'abbreviation': 'JPY', 'is_default': 1, 'is_primary': 0, 'rate': None},
-        {'title': 'EURO', 'abbreviation': 'EUR', 'is_default': 1, 'is_primary': 0, 'rate': None},
+    Tax_data = [
+        {'code': 'VAT_KCT', 'title': 'VAT-KCT', 'tax_type': 2, 'rate': 0, 'is_default': 1},
+        {'code': 'VAT_0', 'title': 'VAT-0', 'tax_type': 2, 'rate': 0, 'is_default': 1},
+        {'code': 'VAT_5', 'title': 'VAT-5', 'tax_type': 2, 'rate': 5, 'is_default': 1},
+        {'code': 'VAT_8', 'title': 'VAT-8', 'tax_type': 2, 'rate': 8, 'is_default': 1},
+        {'code': 'VAT_10', 'title': 'VAT-10', 'tax_type': 2, 'rate': 10, 'is_default': 1},
     ]
     Price_general_data = [
         {'title': 'General Price List', 'price_list_type': 0, 'factor': 1.0, 'is_default': 1}
-    ]
-    Account_types_data = [
-        {'title': 'Customer', 'code': 'AT001', 'is_default': 1, 'account_type_order': 0},
-        {'title': 'Supplier', 'code': 'AT002', 'is_default': 1, 'account_type_order': 1},
-        {'title': 'Partner', 'code': 'AT003', 'is_default': 1, 'account_type_order': 2},
-        {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
-    ]
-    UoM_Group_data = [
-        {'code': 'ImportGroup', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
-        {'code': 'Labor', 'title': 'Nhân công', 'is_default': 1},
-        {'code': 'Size', 'title': 'Kích thước', 'is_default': 1},
-        {'code': 'Time', 'title': 'Thời gian', 'is_default': 1},
-        {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
     ]
     Document_Type_data = [
         {'code': 'BDT001', 'title': 'Đơn dự thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
@@ -108,16 +138,27 @@ class SaleDefaultData:
         {'code': 'BDT007', 'title': 'Đề xuất kĩ thuật', 'is_default': 1, 'doc_type_category': 'bidding'},
         {'code': 'BDT008', 'title': 'Đề xuất giá', 'is_default': 1, 'doc_type_category': 'bidding'},
         {'code': 'CDT001', 'title': 'Tài liệu xác định yêu cầu', 'is_default': 0, 'doc_type_category': 'consulting'},
-        {'code': 'CDT002', 'title': 'Tài liệu giới thiệu sản phẩm', 'is_default': 0,
-         'doc_type_category': 'consulting'},
+        {'code': 'CDT002', 'title': 'Tài liệu giới thiệu sản phẩm', 'is_default': 0, 'doc_type_category': 'consulting'},
         {'code': 'CDT003', 'title': 'Thuyết minh kĩ thuật', 'is_default': 0, 'doc_type_category': 'consulting'},
-        {'code': 'CDT004', 'title': 'Tài liệu đề xuất giải pháp', 'is_default': 0,
-         'doc_type_category': 'consulting'},
+        {'code': 'CDT004', 'title': 'Tài liệu đề xuất giải pháp', 'is_default': 0, 'doc_type_category': 'consulting'},
         {'code': 'CDT005', 'title': 'BOM', 'is_default': 0, 'doc_type_category': 'consulting'},
-        {'code': 'CDT006', 'title': 'Giới thiệu dịch vụ hỗ trợ vận hành', 'is_default': 0,
-         'doc_type_category': 'consulting'},
-        {'code': 'CDT007', 'title': 'Thuyết trình phạm vi dự án', 'is_default': 0,
-         'doc_type_category': 'consulting'},
+        {'code': 'CDT006', 'title': 'Giới thiệu dịch vụ hỗ trợ vận hành', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'CDT007', 'title': 'Thuyết trình phạm vi dự án', 'is_default': 0, 'doc_type_category': 'consulting'},
+    ]
+    Fixed_Asset_Group_data = [
+        {'code': 'FACG001', 'title': 'Tài sản cố định hữu hình', 'is_default': 1},
+        {'code': 'FACG002', 'title': 'Tài sản cố định vô hình', 'is_default': 1},
+        {'code': 'FACG003', 'title': 'Tài sản cố định thuê tài chính', 'is_default': 1}
+    ]
+    Fixed_Asset_data = [
+        {'code': 'FAC001', 'title': 'Nhà cửa, vật kiến trúc - quản lý', 'is_default': 1},
+        {'code': 'FAC002', 'title': 'Máy móc thiết bị - sản xuất', 'is_default': 1},
+        {'code': 'FAC003', 'title': 'Phương tiện vận tải, truyền dẫn - kinh doanh', 'is_default': 1},
+        {'code': 'FAC004', 'title': 'Quyền sử dụng đất', 'is_default': 1},
+        {'code': 'FAC005', 'title': 'Quyền phát hành', 'is_default': 1},
+        {'code': 'FAC006', 'title': 'Bản quyền, bằng sáng chế', 'is_default': 1},
+        {'code': 'FAC007', 'title': 'TSCD hữu hình thuê tài chính', 'is_default': 1},
+        {'code': 'FAC008', 'title': 'TSCD vô hình thuê tài chính', 'is_default': 1},
     ]
 
     def __init__(self, company_obj):
@@ -126,14 +167,20 @@ class SaleDefaultData:
     def __call__(self, *args, **kwargs):
         try:
             with transaction.atomic():
+                self.create_company_function_number()
+                self.create_salutation()
+                self.create_account_types()
+                self.create_account_group()
+                self.create_industry()
                 self.create_product_type()
+                self.create_uom_group()
+                self.create_uom()
                 self.create_tax_category()
+                self.create_tax()
                 self.create_currency()
                 self.create_price_default()
-                self.create_account_types()
-                self.create_uom_group()
-                self.create_company_function_number()
                 self.create_document_types()
+                self.create_fixed_asset_masterdata()
             return True
         except Exception as err:
             logger.error(
@@ -142,12 +189,25 @@ class SaleDefaultData:
             )
         return False
 
-    def create_product_type(self):
+    def create_company_function_number(self):
+        objs = []
+        for cf_item in range(0, 10):
+            objs.append(
+                CompanyFunctionNumber(
+                    company=self.company_obj,
+                    function=cf_item,
+                    numbering_by=0
+                )
+            )
+        CompanyFunctionNumber.objects.bulk_create(objs)
+        return True
+
+    def create_salutation(self):
         objs = [
-            ProductType(tenant=self.company_obj.tenant, company=self.company_obj, **pt_item)
-            for pt_item in self.ProductType_data
+            Salutation(tenant=self.company_obj.tenant, company=self.company_obj, **item)
+            for item in self.Salutation_data
         ]
-        ProductType.objects.bulk_create(objs)
+        Salutation.objects.bulk_create(objs)
         return True
 
     def create_account_types(self):
@@ -158,12 +218,115 @@ class SaleDefaultData:
         AccountType.objects.bulk_create(objs)
         return True
 
+    def create_account_group(self):
+        objs = [
+            AccountGroup(tenant=self.company_obj.tenant, company=self.company_obj, **item)
+            for item in self.Account_groups_data
+        ]
+        AccountGroup.objects.bulk_create(objs)
+        return True
+
+    def create_industry(self):
+        objs = [
+            Industry(tenant=self.company_obj.tenant, company=self.company_obj, **item)
+            for item in self.Industries_data
+        ]
+        Industry.objects.bulk_create(objs)
+        return True
+
+    def create_product_type(self):
+        objs = [
+            ProductType(tenant=self.company_obj.tenant, company=self.company_obj, **pt_item)
+            for pt_item in self.ProductType_data
+        ]
+        ProductType.objects.bulk_create(objs)
+        return True
+
+    def create_uom_group(self):
+        objs = [
+            UnitOfMeasureGroup(tenant=self.company_obj.tenant, company=self.company_obj, **uom_group_item)
+            for uom_group_item in self.UoM_Group_data
+        ]
+        UnitOfMeasureGroup.objects.bulk_create(objs)
+
+        # add default uom for group time
+        labor_group = UnitOfMeasureGroup.objects.filter(
+            tenant=self.company_obj.tenant, company=self.company_obj, code='Labor', is_default=1
+        ).first()
+        if labor_group:
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='Manhour',
+                title='Man hour',
+                is_referenced_unit=1,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=labor_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='Manday',
+                title='Man day',
+                is_referenced_unit=1,
+                ratio=8,
+                rounding=4,
+                is_default=1,
+                group=labor_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='Manmonth',
+                title='Man month',
+                is_referenced_unit=1,
+                ratio=176,
+                rounding=4,
+                is_default=1,
+                group=labor_group
+            )
+        return True
+
+    def create_uom(self):
+        # get group unit
+        unit_uom_group = UnitOfMeasureGroup.objects.filter(
+            tenant=self.company_obj.tenant,
+            company=self.company_obj,
+            code='Unit'
+        ).first()
+
+        if unit_uom_group:
+            objs = [
+                UnitOfMeasure(tenant=self.company_obj.tenant, company=self.company_obj, group=unit_uom_group, **item)
+                for item in self.UOM_data
+            ]
+            UnitOfMeasure.objects.bulk_create(objs)
+        return True
+
     def create_tax_category(self):
         objs = [
             TaxCategory(tenant=self.company_obj.tenant, company=self.company_obj, **tc_item)
             for tc_item in self.TaxCategory_data
         ]
         TaxCategory.objects.bulk_create(objs)
+        return True
+
+    def create_tax(self):
+        # get tax category
+        vat_tax_category = TaxCategory.objects.filter(
+            tenant=self.company_obj.tenant,
+            company=self.company_obj,
+            code='TC001'
+        ).first()
+
+        if vat_tax_category:
+            objs = [
+                Tax(tenant=self.company_obj.tenant, company=self.company_obj, category=vat_tax_category, **item)
+                for item in self.Tax_data
+            ]
+            Tax.objects.bulk_create(objs)
         return True
 
     def create_currency(self):
@@ -208,71 +371,55 @@ class SaleDefaultData:
             return True
         return False
 
-    def create_uom_group(self):
-        objs = [
-            UnitOfMeasureGroup(tenant=self.company_obj.tenant, company=self.company_obj, **uom_group_item)
-            for uom_group_item in self.UoM_Group_data
-        ]
-        UnitOfMeasureGroup.objects.bulk_create(objs)
-
-        group = UnitOfMeasureGroup.objects.filter(
-            tenant=self.company_obj.tenant, company=self.company_obj, code='Labor', is_default=1
-        ).first()
-        if group:
-            UnitOfMeasure.objects.create(
-                tenant=self.company_obj.tenant,
-                company=self.company_obj,
-                code='Manhour',
-                title='Man hour',
-                is_referenced_unit=1,
-                ratio=1,
-                rounding=4,
-                is_default=1,
-                group=group
-            )
-            UnitOfMeasure.objects.create(
-                tenant=self.company_obj.tenant,
-                company=self.company_obj,
-                code='Manday',
-                title='Man day',
-                is_referenced_unit=1,
-                ratio=8,
-                rounding=4,
-                is_default=1,
-                group=group
-            )
-            UnitOfMeasure.objects.create(
-                tenant=self.company_obj.tenant,
-                company=self.company_obj,
-                code='Manmonth',
-                title='Man month',
-                is_referenced_unit=1,
-                ratio=176,
-                rounding=4,
-                is_default=1,
-                group=group
-            )
-        return True
-
-    def create_company_function_number(self):
-        objs = []
-        for cf_item in range(0, 10):
-            objs.append(
-                CompanyFunctionNumber(
-                    company=self.company_obj,
-                    function=cf_item,
-                    numbering_by=0
-                )
-            )
-        CompanyFunctionNumber.objects.bulk_create(objs)
-        return True
-
     def create_document_types(self):
         objs = [
-            DocumentType(tenant=self.company_obj.tenant, company=self.company_obj, **at_item)
-            for at_item in self.Document_Type_data
+            DocumentType(tenant=self.company_obj.tenant, company=self.company_obj, **item)
+            for item in self.Document_Type_data
         ]
         DocumentType.objects.bulk_create(objs)
+        return True
+
+    def create_fixed_asset_masterdata(self):
+        # tai san co dinh huu hinh
+        tangible_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
+            tenant=self.company_obj.tenant,
+            company=self.company_obj,
+            **self.Fixed_Asset_Group_data[0]
+        )
+
+        # tai san co dinh vo hinh
+        intangible_fixed_asset_group_instance =  FixedAssetClassificationGroup.objects.create(
+            tenant=self.company_obj.tenant,
+            company=self.company_obj,
+            **self.Fixed_Asset_Group_data[1]
+        )
+
+        # tai san co dinh thue tai chinh
+        finance_leasing_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
+            tenant=self.company_obj.tenant,
+            company=self.company_obj,
+            **self.Fixed_Asset_Group_data[2]
+        )
+
+        #create asset classification
+        for index, data in enumerate(self.Fixed_Asset_data):
+            if index < 3:
+                # First 3 items belong to tangible_fixed_asset_group_instance
+                group_instance = tangible_fixed_asset_group_instance
+            elif index < 6:
+                # Next 3 items belong to intangible_fixed_asset_group_instance
+                group_instance = intangible_fixed_asset_group_instance
+            else:
+                # Last 2 items belong to finance_leasing_fixed_asset_group_instance
+                group_instance = finance_leasing_fixed_asset_group_instance
+
+            # Create FixedAssetClassification instance
+            FixedAssetClassification.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                group=group_instance,  # Assign the group
+                **data
+            )
         return True
 
 class ConfigDefaultData:
@@ -310,7 +457,7 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': False,
             'is_closed_lost': False,
-            'is_delete': True,
+            'is_delete': False,
             'condition_datas': [
                 {
                     'condition_property': {
@@ -347,7 +494,7 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': False,
             'is_closed_lost': False,
-            'is_delete': True,
+            'is_delete': False,
             'condition_datas': [
                 {
                     'condition_property': {
@@ -376,16 +523,16 @@ class ConfigDefaultData:
                 {
                     'condition_property': {
                         'id': '35dbf6f2-78a8-4286-8cf3-b95de5c78873',
-                        'title': 'Decision maker'
-                    },  # application property Decision maker
+                        'title': 'Decision Maker'
+                    },  # application property Decision Maker
                     'comparison_operator': '≠',
                     'compare_data': 0,
                 },
                 {
                     'condition_property': {
                         'id': '39b50254-e32d-473b-8380-f3b7765af434',
-                        'title': 'Product.Line.Detail'
-                    },  # application property Product.Line.Detail
+                        'title': 'Product Line Detail'
+                    },  # application property Product Line Detail
                     'comparison_operator': '≠',
                     'compare_data': 0,
                 },
@@ -400,13 +547,13 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': False,
             'is_closed_lost': False,
-            'is_delete': True,
+            'is_delete': False,
             'condition_datas': [
                 {
                     'condition_property': {
                         'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
-                        'title': 'Quotation.confirm'
-                    },  # application property Quotation.confirm
+                        'title': 'Quotation Status'
+                    },  # application property Quotation Status
                     'comparison_operator': '=',
                     'compare_data': 0,
                 },
@@ -427,8 +574,8 @@ class ConfigDefaultData:
                 {
                     'condition_property': {
                         'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
-                        'title': 'SaleOrder.status'
-                    },  # application property SaleOrder.status
+                        'title': 'SaleOrder Status'
+                    },  # application property SaleOrder Status
                     'comparison_operator': '=',
                     'compare_data': 0,
                 },
@@ -457,8 +604,8 @@ class ConfigDefaultData:
                 {
                     'condition_property': {
                         'id': 'c8fa79ae-2490-4286-af25-3407e129fedb',
-                        'title': 'Competitor.Win'
-                    },  # application property Competitor.Win
+                        'title': 'Competitor Win'
+                    },  # application property Competitor Win
                     'comparison_operator': '=',
                     'compare_data': 0,
                 },
@@ -473,14 +620,14 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': True,
             'is_closed_lost': False,
-            'is_delete': True,
+            'is_delete': False,
             'condition_datas': [
                 {
                     'condition_property': {
                         'id': 'b5aa8550-7fc5-4cb8-a952-b6904b2599e5',
-                        'title': 'SaleOrder.Delivery.Status'
-                    },  # application property SaleOrder.Delivery.Status
-                    'comparison_operator': '≠',
+                        'title': 'SaleOrder Delivery Status'
+                    },  # application property SaleOrder Delivery Status
+                    'comparison_operator': '=',
                     'compare_data': 0,
                 },
             ]
@@ -955,9 +1102,11 @@ class ConfigDefaultData:
             x.application for x in
             PlanApplication.objects.select_related('application').filter(plan_id__in=plan_ids)
         ]
+        # Xóa WF config của app tắt is_workflow trong data config application
         for obj in WorkflowConfigOfApp.objects.filter(application__is_workflow=False):
             print('delete Workflow Config App: ', obj.application, obj.company)
             obj.delete()
+        # Tạo mới WF config cho app bật is_workflow trong data config application
         for app in app_objs:
             if app.is_workflow is True:
                 WorkflowConfigOfApp.objects.get_or_create(
@@ -976,6 +1125,12 @@ class ConfigDefaultData:
 
     def project_config(self):
         ProjectConfig.objects.create(
+            company=self.company_obj,
+            tenant=self.company_obj.tenant
+        )
+
+    def lease_order_config(self):
+        LeaseOrderAppConfig.objects.create(
             company=self.company_obj,
             tenant=self.company_obj.tenant
         )
@@ -999,6 +1154,7 @@ class ConfigDefaultData:
         self.asset_tools_config()
         self.make_sure_workflow_apps()
         self.project_config()
+        self.lease_order_config()
         return True
 
 

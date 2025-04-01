@@ -4,12 +4,13 @@ from apps.core.company.views import (
     CompanyDetail, CompanyUploadLogo,
     CompanyListOverview,
     CompanyUserNotMapEmployeeList, CompanyOverviewDetail,
-    CompanyConfigDetail, RestoreDefaultOpportunityConfigStage, CompanyBankAccountList,
+    CompanyConfigDetail, AccountingPoliciesDetail,
 )
 
 
 urlpatterns = [
     path('config', CompanyConfigDetail.as_view(), name='CompanyConfigDetail'),
+    path('accounting-policies-config', AccountingPoliciesDetail.as_view(), name='AccountingPoliciesDetail'),
     path('list', CompanyList.as_view(), name='CompanyList'),
     path('<str:pk>', CompanyDetail.as_view(), name='CompanyDetail'),
     path('<str:pk>/logo', CompanyUploadLogo.as_view(), name='CompanyUploadLogo'),
@@ -18,10 +19,4 @@ urlpatterns = [
     path('overview/list', CompanyListOverview.as_view(), name='CompanyListOverview'),
     path('overview/<str:pk>/<int:option>', CompanyOverviewDetail.as_view(), name='CompanyOverviewDetail'),
     path('user/available', CompanyUserNotMapEmployeeList.as_view(), name='CompanyUserNotMapEmployeeList'),
-    path(
-        'default-opportunity-stage/<str:pk>',
-        RestoreDefaultOpportunityConfigStage.as_view(),
-        name='RestoreDefaultOpportunityConfigStage'
-    ),
-    path('company-bank-account/list', CompanyBankAccountList.as_view(), name='CompanyBankAccountList'),
 ]

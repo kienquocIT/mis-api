@@ -52,7 +52,6 @@ class TaxCategoryList(BaseListMixin, BaseCreateMixin):
 
 class TaxCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = TaxCategory.objects
-    serializer_list = TaxCategoryListSerializer
     serializer_detail = TaxCategoryDetailSerializer
     serializer_update = TaxCategoryUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -111,7 +110,6 @@ class TaxList(BaseListMixin, BaseCreateMixin):
 
 class TaxDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Tax.objects
-    serializer_list = TaxListSerializer
     serializer_detail = TaxDetailSerializer
     serializer_update = TaxUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -173,7 +171,6 @@ class CurrencyList(BaseListMixin, BaseCreateMixin):
 
 class CurrencyDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Currency.objects
-    serializer_list = CurrencyListSerializer
     serializer_detail = CurrencyDetailSerializer
     serializer_update = CurrencyUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -197,7 +194,6 @@ class CurrencyDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class SyncWithVCB(BaseUpdateMixin):
     queryset = Currency.objects
-    serializer_list = CurrencyListSerializer
     serializer_detail = CurrencySyncWithVCBSerializer
     serializer_update = CurrencySyncWithVCBSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -246,7 +242,6 @@ class PriceList(BaseListMixin, BaseCreateMixin):
 
 class PriceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects
-    serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
     serializer_update = PriceUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
@@ -286,7 +281,6 @@ class PriceDelete(BaseUpdateMixin):
 
 class UpdateItemForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects  # noqa
-    serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
     serializer_update = PriceListUpdateItemSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
@@ -313,7 +307,6 @@ class UpdateItemForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
 
 class DeleteItemForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects  # noqa
-    serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
     serializer_update = PriceListDeleteItemSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
@@ -340,7 +333,6 @@ class DeleteItemForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
 
 class AddItemToPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects
-    serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
     serializer_update = PriceListCreateItemSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT

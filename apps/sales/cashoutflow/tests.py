@@ -235,7 +235,7 @@ class PaymentTestCase(AdvanceTestCase):
             'industry': industry['id'],
             'manager': [self.get_employee().data['result'][0]['id']],
             'account_type': [account_type['id']],
-            'account_type_selection': 0
+            'account_type_selection': 1
         }
         url = reverse('AccountList')
         response = self.client.post(url, data, format='json')
@@ -336,7 +336,7 @@ class PaymentTestCase(AdvanceTestCase):
             "total_employees": 1,
             "phone": "string",
             "email": "string",
-            "account_type_selection": 0,
+            "account_type_selection": 1,
             "system_status": 0
         }
         url = reverse("AccountList")
@@ -409,6 +409,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'indicator_net_income',
                 # payment stage tab
                 'sale_order_payment_stage',
+                'sale_order_invoice',
                 # system
                 'workflow_runtime_id',
                 'is_active',

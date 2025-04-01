@@ -43,6 +43,9 @@ class SaleMsg:
     PRODUCTION_REPORT_NOT_EXIST = _('Production report does not exist.')
     EMPLOYEE_INHERIT_NOT_EXIST = _('Employee inherit does not exist.')
     WORK_ORDER_NOT_EXIST = _('Work order does not exist.')
+    LEASE_ORDER_NOT_EXIST = _('Lease order does not exist.')
+    FROM_EMAIL_NOT_EXIST = _('From email does not exist.')
+    DELIVERY_NOT_EXIST = _('Delivery does not exist.')
 
 
 class SaleTask:
@@ -108,7 +111,7 @@ class CashInflowMsg:
     PAYMENT_VALUE_NOT_VALID = _('Payment value can not > Balance value')
     AR_INVOICE_NOT_EXIST = _('AR invoice does not exist')
     SALE_ORDER_NOT_EXIST = _('Sale order does not exist')
-    BANK_NOT_ACTIVE = _('This company bank account is not active')
+    SALE_ORDER_STAGE_NOT_EXIST = _('Sale order stage does not exist')
     BANK_NOT_EXIST = _('This company bank account does not exist')
     BANK_NOT_NULL = _('This company bank account is not null')
     ACCOUNT_NOT_CUSTOMER = _('This account is not a Customer account')

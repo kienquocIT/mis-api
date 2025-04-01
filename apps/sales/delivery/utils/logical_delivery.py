@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.diagram.models import DiagramSuffix
+from apps.shared import DisperseModel
 from apps.shared.translations.sales import DeliverMsg
 
 
@@ -20,17 +21,93 @@ class DeliHandler:
         return True
 
     @classmethod
+    def create_delivery_product_asset(cls, instance):
+        model = DisperseModel(app_model='delivery.OrderDeliveryProductAsset').get_model()
+        if model and hasattr(model, 'objects'):
+            instance.delivery_pa_delivery_product.all().delete()
+            model.objects.bulk_create([model(
+                tenant_id=instance.tenant_id, company_id=instance.company_id,
+                delivery_sub_id=instance.delivery_sub_id, delivery_product_id=instance.id,
+                **asset_data,
+            ) for asset_data in instance.asset_data])
+        return True
+
+    @classmethod
+    def create_delivery_product_tool(cls, instance):
+        model = DisperseModel(app_model='delivery.OrderDeliveryProductTool').get_model()
+        if model and hasattr(model, 'objects'):
+            instance.delivery_pt_delivery_product.all().delete()
+            model.objects.bulk_create([model(
+                tenant_id=instance.tenant_id, company_id=instance.company_id,
+                delivery_sub_id=instance.delivery_sub_id, delivery_product_id=instance.id,
+                **tool_data,
+            ) for tool_data in instance.tool_data])
+        return True
+
+    @classmethod
+    def create_delivery_product_warehouse(cls, instance):
+        model = DisperseModel(app_model='delivery.OrderDeliveryProductWarehouse').get_model()
+        if model and hasattr(model, 'create'):
+            pw_data = [
+                {
+                    'sale_order_id': deli_data.get('sale_order_id', None),
+                    'sale_order_data': deli_data.get('sale_order_data', {}),
+                    'lease_order_id': deli_data.get('lease_order_id', None),
+                    'lease_order_data': deli_data.get('lease_order_data', {}),
+                    'warehouse_id': deli_data.get('warehouse_id', None),
+                    'warehouse_data': deli_data.get('warehouse_data', {}),
+                    'uom_id': deli_data.get('uom_id', None),
+                    'uom_data': deli_data.get('uom_data', {}),
+                    'lot_data': deli_data.get('lot_data', {}),
+                    'serial_data': deli_data.get('serial_data', {}),
+                    'quantity_delivery': deli_data.get('picked_quantity', 0),
+                } for deli_data in instance.delivery_data
+            ]
+            instance.delivery_pw_delivery_product.all().delete()
+            model.create(
+                delivery_product_id=instance.id,
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                pw_data=pw_data
+            )
+        return True
+
+    @classmethod
+    def create_delivery_lot_serial(cls, instance):
+        model1 = DisperseModel(app_model='delivery.OrderDeliveryLot').get_model()
+        model2 = DisperseModel(app_model='delivery.OrderDeliverySerial').get_model()
+        if model1 and hasattr(model1, 'create') and model2 and hasattr(model2, 'create'):
+            common = {
+                'delivery_product_id': instance.id,
+                'delivery_sub_id': instance.delivery_sub_id,
+                'delivery_id': instance.delivery_sub.order_delivery_id,
+            }
+            instance.delivery_lot_delivery_product.all().delete()
+            instance.delivery_serial_delivery_product.all().delete()
+            for delivery in instance.delivery_data:
+                model1.create(
+                    **common,
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
+                    lot_data=delivery.get('lot_data', [])
+                )
+                model2.create(
+                    **common,
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
+                    serial_data=delivery.get('serial_data', [])
+                )
+        return True
+
+    @classmethod
     def push_diagram(cls, instance):
         quantity = 0
         total = 0
         list_reference = []
         for deli_product in instance.delivery_product_delivery_sub.all():  # for in product
-            if deli_product.product and deli_product.delivery_data:
-                quantity += deli_product.picked_quantity
-                total_all_wh = cls.diagram_get_total_cost_by_wh(
-                    product_obj=deli_product.product, delivery_data=deli_product.delivery_data
-                )
-                total += total_all_wh
+            quantity += deli_product.picked_quantity
+            total_all_wh = cls.diagram_get_total_cost_by_wh(deli_product=deli_product)
+            total += total_all_wh
         if instance.order_delivery:
             if hasattr(instance.order_delivery, 'sale_order'):
                 if instance.order_delivery.sale_order:
@@ -59,19 +136,19 @@ class DeliHandler:
         return True
 
     @classmethod
-    def diagram_get_total_cost_by_wh(cls, product_obj, delivery_data):
+    def diagram_get_total_cost_by_wh(cls, deli_product):
         total_all_wh = 0
-        for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
-            lot_data = data_deli.get('lot_data', [])
-            serial_data = data_deli.get('serial_data', [])
-            quantity_deli = 0
-            if lot_data:
-                for lot in lot_data:
-                    quantity_deli += lot.get('quantity_delivery')
-            if serial_data:
-                quantity_deli = len(serial_data)
-            cost = product_obj.get_unit_cost_by_warehouse(warehouse_id=data_deli.get('warehouse', None), get_type=1)
-            total_all_wh += cost * quantity_deli
+        product_obj, delivery_data = deli_product.product, deli_product.delivery_data
+        if product_obj:
+            if len(delivery_data) == 0:
+                return deli_product.picked_quantity * deli_product.product_cost
+            for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
+                quantity_deli = data_deli.get('picked_quantity', 0)
+                cost = product_obj.get_unit_cost_by_warehouse(
+                    warehouse_id=data_deli.get('warehouse_id', None), get_type=1
+                )
+                total_all_wh += cost * quantity_deli
+
         return total_all_wh
 
     @classmethod

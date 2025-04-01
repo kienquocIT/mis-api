@@ -344,6 +344,10 @@ class ApplicationProperty(CoreAbstractModel):
         default=False,
         help_text="property which is only used for config WF condition"
     )
+    is_filter_condition = models.BooleanField(
+        default=False,
+        help_text="property which is only used for config filter condition"
+    )
     # system
     title_slug = models.SlugField(blank=True)
     system_code = models.CharField(null=True, max_length=5, verbose_name='Split Data System')

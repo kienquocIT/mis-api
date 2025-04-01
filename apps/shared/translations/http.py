@@ -13,3 +13,4 @@ class HttpMsg:
     OBJ_DONE_NO_EDIT = _("This record has been finalized and is not allow to any further modifications or destroy.")
     PLAN_DENY_PERMIT = _("The plan doesn't exist or is out of date")
     APP_DENY_PERMIT = _("The application doesn't exist or is out of date")
+    RELATION_EXISTS_ERR = _("This record cannot be deleted because it is associated with other records.")

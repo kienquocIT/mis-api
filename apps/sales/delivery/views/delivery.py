@@ -1,12 +1,11 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.delivery.serializers.delivery import OrderDeliverySubMinimalListSerializer, \
-    OrderDeliverySubRecoveryListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
 from apps.sales.delivery.models import OrderDeliverySub, OrderDeliveryProduct
 from apps.sales.delivery.serializers import OrderDeliverySubDetailSerializer, \
-    OrderDeliverySubUpdateSerializer, OrderDeliverySubListSerializer
+    OrderDeliverySubUpdateSerializer, OrderDeliverySubListSerializer, OrderDeliverySubMinimalListSerializer, \
+    OrderDeliverySubRecoveryListSerializer
 
 __all__ = ['OrderDeliverySubList', 'OrderDeliverySubDetail', 'OrderDeliverySubRecoveryList']
 
@@ -35,7 +34,7 @@ class OrderDeliverySubList(BaseListMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='delivery', model_code='orderDeliverySub', perm_code='view',
+        label_code='delivery', model_code='orderdeliverysub', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
@@ -71,7 +70,7 @@ class OrderDeliverySubDetail(
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='delivery', model_code='orderDeliverySub', perm_code='view',
+        label_code='delivery', model_code='orderdeliverysub', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
@@ -83,7 +82,7 @@ class OrderDeliverySubDetail(
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='delivery', model_code='orderDeliverySub', perm_code='edit', )
+        label_code='delivery', model_code='orderdeliverysub', perm_code='edit', )
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {
             'user': request.user

@@ -340,13 +340,8 @@ QUOTATION_APP_CONFIG = {
         "296a1410-8d72-46a8-a0a1-1821f196e66c",  # Opportunity
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
         "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
-        "50348927-2c4f-4023-b638-445469c66953",  # Employee
         "3407d35d-27ce-407e-8260-264574a216e3",  # Payment Term
-        "a8badb2e-54ff-4654-b3fd-0d2d3c777538",  # Product
         "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c",  # Promotion
-        "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a",  # Shipping
-        "245e9f47-df59-4d4a-b355-7eff2859247f",  # Expense Term
-        "022375ce-c99c-4f11-8841-0a26c85f2fc2",  # Expense
     ],
     "permit_mapping": {
         "view": {
@@ -360,13 +355,8 @@ QUOTATION_APP_CONFIG = {
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
+                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -376,13 +366,8 @@ QUOTATION_APP_CONFIG = {
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
+                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -411,12 +396,8 @@ SALEORDER_APP_CONFIG = {
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
         "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
         "b9650500-aba7-44e3-b6e0-2542622702a3",  # Quotation
-        "50348927-2c4f-4023-b638-445469c66953",  # Employee
         "3407d35d-27ce-407e-8260-264574a216e3",  # Payment Term
         "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c",  # Promotion
-        "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a",  # Shipping
-        "245e9f47-df59-4d4a-b355-7eff2859247f",  # Expense Item
-        "022375ce-c99c-4f11-8841-0a26c85f2fc2",  # Expense
     ],
     "permit_mapping": {
         "view": {
@@ -431,12 +412,8 @@ SALEORDER_APP_CONFIG = {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
+                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -449,12 +426,8 @@ SALEORDER_APP_CONFIG = {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
+                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -462,18 +435,7 @@ SALEORDER_APP_CONFIG = {
         },
         "delete": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
-                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
-            },
+            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
@@ -574,7 +536,6 @@ DELIVERY_APP_CONFIG = {
     "app_label": "delivery",
     "is_workflow": True,
     "app_depend_on": [
-        "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd",  # WareHouse
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # SaleData.Account
     ],
     "permit_mapping": {
@@ -586,16 +547,14 @@ DELIVERY_APP_CONFIG = {
         "create": {
             "range": ["1", "3", "4"],
             "app_depends_on": {
-                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "4", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
         "edit": {
             "range": ["1", "3", "4"],
             "app_depends_on": {
-                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "4", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -784,10 +743,10 @@ PAYMENT_APP_CONFIG = {
         "create": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
             },
@@ -798,10 +757,10 @@ PAYMENT_APP_CONFIG = {
         "edit": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
             },
@@ -855,7 +814,7 @@ RETURN_ADVANCE_APP_CONFIG = {
         "create": {
             "range": ["1", "4"],
             "app_depends_on": {
-                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "4", },
+                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
             },
             "local_depends_on": {
@@ -865,7 +824,7 @@ RETURN_ADVANCE_APP_CONFIG = {
         "edit": {
             "range": ["1", "4"],
             "app_depends_on": {
-                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "4", },
+                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
             },
             "local_depends_on": {
@@ -1129,9 +1088,7 @@ PURCHASE_ORDER_APP_CONFIG = {
     "app_depend_on": [
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
         "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
-        "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf",  # Purchase Request
         "f52a966a-2eb2-4851-852d-eff61efeb896",  # Purchase Quotation
-        "a8badb2e-54ff-4654-b3fd-0d2d3c777538",  # Product
     ],
     "permit_mapping": {
         "view": {
@@ -1144,9 +1101,7 @@ PURCHASE_ORDER_APP_CONFIG = {
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf": {"view": "4", },
-                "f52a966a-2eb2-4851-852d-eff61efeb896": {"view": "4", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "f52a966a-2eb2-4851-852d-eff61efeb896": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1157,9 +1112,7 @@ PURCHASE_ORDER_APP_CONFIG = {
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf": {"view": "4", },
-                "f52a966a-2eb2-4851-852d-eff61efeb896": {"view": "4", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "f52a966a-2eb2-4851-852d-eff61efeb896": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1185,6 +1138,7 @@ PURCHASE_REQUEST_APP_CONFIG = {
     "is_workflow": True,
     "app_depend_on": [
         "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
+        "57a32d5a-3580-43b7-bf31-953a1afc68f4",  # Distribution plan
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # SaleData.Account
         "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
         "a8badb2e-54ff-4654-b3fd-0d2d3c777538",  # Product
@@ -1198,9 +1152,10 @@ PURCHASE_REQUEST_APP_CONFIG = {
         "create": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+                "57a32d5a-3580-43b7-bf31-953a1afc68f4": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "4", },
                 "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
             },
             "local_depends_on": {"view": "==", },
@@ -1208,9 +1163,10 @@ PURCHASE_REQUEST_APP_CONFIG = {
         "edit": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+                "57a32d5a-3580-43b7-bf31-953a1afc68f4": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "4", },
                 "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
             },
             "local_depends_on": {"view": "==", },
@@ -1704,8 +1660,8 @@ AR_INVOICE_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
-                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "4", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1715,8 +1671,8 @@ AR_INVOICE_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
-                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "4", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
+                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1756,8 +1712,8 @@ AP_INVOICE_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "4", },
-                "dd16a86c-4aef-46ec-9302-19f30b101cf5": {"view": "4", },
+                "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "==", },
+                "dd16a86c-4aef-46ec-9302-19f30b101cf5": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1767,8 +1723,8 @@ AP_INVOICE_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "4", },
-                "dd16a86c-4aef-46ec-9302-19f30b101cf5": {"view": "4", },
+                "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "==", },
+                "dd16a86c-4aef-46ec-9302-19f30b101cf5": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -2492,12 +2448,8 @@ LEASEORDER_APP_CONFIG = {
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
         "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
         "b9650500-aba7-44e3-b6e0-2542622702a3",  # Quotation
-        "50348927-2c4f-4023-b638-445469c66953",  # Employee
         "3407d35d-27ce-407e-8260-264574a216e3",  # Payment Term
         "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c",  # Promotion
-        "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a",  # Shipping
-        "245e9f47-df59-4d4a-b355-7eff2859247f",  # Expense Item
-        "022375ce-c99c-4f11-8841-0a26c85f2fc2",  # Expense
     ],
     "permit_mapping": {
         "view": {
@@ -2512,12 +2464,8 @@ LEASEORDER_APP_CONFIG = {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
+                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -2530,12 +2478,8 @@ LEASEORDER_APP_CONFIG = {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
                 "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
+                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -2543,18 +2487,7 @@ LEASEORDER_APP_CONFIG = {
         },
         "delete": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
-                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
-                "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "4", },
-                "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": {"view": "4", },
-                "245e9f47-df59-4d4a-b355-7eff2859247f": {"view": "4", },
-                "022375ce-c99c-4f11-8841-0a26c85f2fc2": {"view": "4", },
-            },
+            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
@@ -2669,6 +2602,281 @@ FINANCIAL_RECON_APP_CONFIG = {
     "allow_print": True,
     "allow_process": False,
     "allow_opportunity": False,
+}
+
+PARTNERCENTER_LISTS_APP_CONFIG = {
+    "id": "488a6284-6341-4c51-b837-fb6964e51d82",
+    "title": "PartnerCenter/ Lists",
+    "code": "list",
+    "model_code": "list",
+    "app_label": "partnercenter",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_print": True,
+}
+
+FIXED_ASSET_APP_CONFIG = {
+    "id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",
+    "title": "Fixed Asset",
+    "code": "fixedasset",
+    "model_code": "fixedasset",
+    "app_label": "asset",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
+INSTRUMENT_TOOL_APP_CONFIG = {
+    "id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",
+    "title": "Instrument & Tool",
+    "code": "instrumenttool",
+    "model_code": "instrumenttool",
+    "app_label": "asset",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
+GOODS_RECOVERY_APP_CONFIG = {
+    "id": "a196c182-01d4-4450-a4ef-86c16b536daa",
+    "title": "Goods Recovery",
+    "code": "goodsrecovery",
+    "model_code": "goodsrecovery",
+    "app_label": "inventory",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
+FIXED_ASSET_WRITEOFF_APP_CONFIG = {
+    "id": "bf724e39-fdd0-45ab-a343-d19c9c559e28",
+    "title": "Fixed Asset Write-off",
+    "code": "fixedassetwriteoff",
+    "model_code": "fixedassetwriteoff",
+    "app_label": "asset",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
+INSTRUMENT_TOOL_WRITEOFF_APP_CONFIG = {
+    "id": "5db2cba4-564f-4386-8b89-86e2457d60e0",
+    "title": "Instrument Tool Write-off",
+    "code": "instrumenttoolwriteoff",
+    "model_code": "instrumenttoolwriteoff",
+    "app_label": "asset",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
+GROUP_ORDER_APP_CONFIG = {
+    "id": "14662696-261f-4878-8765-56f17d738b66",
+    "title": "Group Order",
+    "code": "grouporder",
+    "model_code": "grouporder",
+    "app_label": "grouporder",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_opportunity": True,
 }
 
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
@@ -2969,6 +3177,34 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "3a369ba5-82a0-4c4d-a447-3794b67d1d02": ApplicationConfigFrame(**CONSULTING_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "488a6284-6341-4c51-b837-fb6964e51d82": ApplicationConfigFrame(**PARTNERCENTER_LISTS_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "fc552ebb-eb98-4d7b-81cd-e4b5813b7815": ApplicationConfigFrame(**FIXED_ASSET_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1": ApplicationConfigFrame(**INSTRUMENT_TOOL_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "a196c182-01d4-4450-a4ef-86c16b536daa": ApplicationConfigFrame(**GOODS_RECOVERY_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "bf724e39-fdd0-45ab-a343-d19c9c559e28": ApplicationConfigFrame(**FIXED_ASSET_WRITEOFF_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "5db2cba4-564f-4386-8b89-86e2457d60e0": ApplicationConfigFrame(**INSTRUMENT_TOOL_WRITEOFF_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "14662696-261f-4878-8765-56f17d738b66": ApplicationConfigFrame(**GROUP_ORDER_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

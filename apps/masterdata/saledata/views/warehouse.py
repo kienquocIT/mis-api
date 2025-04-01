@@ -4,7 +4,7 @@ from apps.masterdata.saledata.serializers.warehouse import (
     ProductWarehouseLotListSerializer,
     ProductWarehouseSerialListSerializer,
     ProductWarehouseAssetToolsListSerializer,
-    ProductWareHouseListSerializerForGoodsTransfer
+    ProductWareHouseListSerializerForGoodsTransfer, WareHouseForInventoryListSerializer
 )
 from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view,
@@ -227,6 +227,7 @@ class ProductWareHouseSerialList(BaseListMixin):
         "serial_number": ["exact"],
         "is_delete": ["exact"],
         "gre_item_prd_wh_serial_registered": ["exact", "isnull"],
+        "serial_status": ["exact"],
     }
     serializer_list = ProductWarehouseSerialListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -307,3 +308,26 @@ class WarehouseEmployeeConfigDetail(BaseRetrieveMixin, BaseDestroyMixin):
     )
     def delete(self, request, *args, pk, **kwargs):
         return self.destroy(request, *args, pk, **kwargs)
+
+
+class WareHouseForInventoryList(BaseListMixin, BaseCreateMixin):
+    queryset = WareHouse.objects
+    serializer_list = WareHouseForInventoryListSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    search_fields = ("title", "code",)
+    filterset_fields = {
+        "is_active": ['exact'],
+        "is_dropship": ['exact'],
+    }
+
+    def get_queryset(self):
+        if 'interact' in self.request.query_params:
+            if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
+                interact = self.request.user.employee_current.warehouse_employees_emp
+                return super().get_queryset().filter(id__in=interact.warehouse_list).order_by('code')
+        return super().get_queryset().order_by('code')
+
+    @swagger_auto_schema(operation_summary='WareHouse List Use For Inventory Apps')
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

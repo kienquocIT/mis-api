@@ -8,7 +8,7 @@ from apps.sales.production.models import (
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel
 
 
-class FinishProductForBOMSerializer(serializers.ModelSerializer):
+class ProductListForBOMSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (

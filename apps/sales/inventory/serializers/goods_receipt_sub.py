@@ -10,7 +10,7 @@ from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceip
 from apps.sales.production.models import ProductionOrder, ProductionReport, WorkOrder
 from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder, \
     PurchaseOrderRequestProduct
-from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg, PurchasingMsg, WarehouseMsg
+from apps.shared import PurchaseRequestMsg, BaseMsg
 from apps.shared.translations.sales import InventoryMsg, SaleMsg
 
 
@@ -168,7 +168,7 @@ class GoodsReceiptCommonValidate:
                 id=value
             ).id)
         except PurchaseOrder.DoesNotExist:
-            raise serializers.ValidationError({'purchase_order': PurchasingMsg.PURCHASE_ORDER_NOT_EXIST})
+            raise serializers.ValidationError({'purchase_order': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_inventory_adjustment_id(cls, value):
@@ -181,7 +181,7 @@ class GoodsReceiptCommonValidate:
                 id=value
             ).id)
         except InventoryAdjustment.DoesNotExist:
-            raise serializers.ValidationError({'inventory_adjustment': InventoryMsg.INVENTORY_ADJUSTMENT_NOT_EXIST})
+            raise serializers.ValidationError({'inventory_adjustment': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_supplier_id(cls, value):
@@ -194,7 +194,7 @@ class GoodsReceiptCommonValidate:
                 id=value
             ).id)
         except Account.DoesNotExist:
-            raise serializers.ValidationError({'supplier': AccountsMsg.ACCOUNT_NOT_EXIST})
+            raise serializers.ValidationError({'supplier': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_purchase_requests(cls, value):
@@ -214,7 +214,7 @@ class GoodsReceiptCommonValidate:
             return str(PurchaseOrderProduct.objects.get(id=value).id)
         except PurchaseOrderProduct.DoesNotExist:
             raise serializers.ValidationError({
-                'purchase_order_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
+                'purchase_order_product': BaseMsg.NOT_EXIST
             })
 
     @classmethod
@@ -223,7 +223,7 @@ class GoodsReceiptCommonValidate:
             return str(InventoryAdjustmentItem.objects.get(id=value).id)
         except InventoryAdjustmentItem.DoesNotExist:
             raise serializers.ValidationError({
-                'ia_item': SaleMsg.IA_NOT_EXIST
+                'ia_item': BaseMsg.NOT_EXIST
             })
 
     @classmethod
@@ -234,7 +234,7 @@ class GoodsReceiptCommonValidate:
             return str(ProductionOrder.objects.get(id=value).id)
         except ProductionOrder.DoesNotExist:
             raise serializers.ValidationError({
-                'production_order_id': SaleMsg.PRODUCTION_ORDER_NOT_EXIST
+                'production_order_id': BaseMsg.NOT_EXIST
             })
 
     @classmethod
@@ -245,7 +245,7 @@ class GoodsReceiptCommonValidate:
             return str(WorkOrder.objects.get(id=value).id)
         except WorkOrder.DoesNotExist:
             raise serializers.ValidationError({
-                'work_order_id': SaleMsg.WORK_ORDER_NOT_EXIST
+                'work_order_id': BaseMsg.NOT_EXIST
             })
 
     @classmethod
@@ -256,7 +256,7 @@ class GoodsReceiptCommonValidate:
             return str(PurchaseOrderRequestProduct.objects.get(id=value).id)
         except PurchaseOrderRequestProduct.DoesNotExist:
             raise serializers.ValidationError({
-                'purchase_order_request_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
+                'purchase_order_request_product': BaseMsg.NOT_EXIST
             })
 
     @classmethod
@@ -267,7 +267,7 @@ class GoodsReceiptCommonValidate:
             return str(PurchaseRequestProduct.objects.get(id=value).id)
         except PurchaseRequestProduct.DoesNotExist:
             raise serializers.ValidationError({
-                'purchase_request_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
+                'purchase_request_product': BaseMsg.NOT_EXIST
             })
 
     @classmethod
@@ -278,7 +278,7 @@ class GoodsReceiptCommonValidate:
             return str(ProductionReport.objects.get(id=value).id)
         except ProductionReport.DoesNotExist:
             raise serializers.ValidationError({
-                'production_report_id': SaleMsg.PRODUCTION_REPORT_NOT_EXIST
+                'production_report_id': BaseMsg.NOT_EXIST
             })
 
     @classmethod
@@ -288,7 +288,7 @@ class GoodsReceiptCommonValidate:
                 return None
             return str(Product.objects.get(id=value).id)
         except Product.DoesNotExist:
-            raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'product': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_uom_id(cls, value):
@@ -297,21 +297,21 @@ class GoodsReceiptCommonValidate:
                 return None
             return str(UnitOfMeasure.objects.get(id=value).id)
         except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'unit_of_measure': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+            raise serializers.ValidationError({'unit_of_measure': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_tax_id(cls, value):
         try:
             return str(Tax.objects.get(id=value).id)
         except Tax.DoesNotExist:
-            raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'tax': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_warehouse_id(cls, value):
         try:
             return str(WareHouse.objects.get(id=value).id)
         except WareHouse.DoesNotExist:
-            raise serializers.ValidationError({'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST})
+            raise serializers.ValidationError({'warehouse': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_lot(cls, value):
@@ -320,7 +320,7 @@ class GoodsReceiptCommonValidate:
                 return None
             return str(ProductWareHouseLot.objects.get(id=value).id)
         except ProductWareHouseLot.DoesNotExist:
-            raise serializers.ValidationError({'lot': WarehouseMsg.LOT_NOT_EXIST})
+            raise serializers.ValidationError({'lot': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_quantity_import(cls, value):

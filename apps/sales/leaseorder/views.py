@@ -1,10 +1,12 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.leaseorder.models import LeaseOrder
+from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderAppConfig
 from apps.sales.leaseorder.serializers import (
     LeaseOrderListSerializer, LeaseOrderCreateSerializer, LeaseOrderDetailSerializer, LeaseOrderUpdateSerializer,
     LeaseOrderMinimalListSerializer, LORecurrenceListSerializer,
 )
+from apps.sales.leaseorder.serializers.lease_order_config import LeaseOrderConfigDetailSerializer, \
+    LeaseOrderConfigUpdateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -40,13 +42,12 @@ class LeaseOrderList(BaseListMixin, BaseCreateMixin):
         if is_minimal:
             return super().get_queryset()
 
-        main_queryset = super().get_queryset().select_related(
+        return super().get_queryset().select_related(
             "customer",
             "opportunity",
             "quotation",
             "employee_inherit",
         )
-        return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Lease Order List",
@@ -110,6 +111,38 @@ class LeaseOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+
+# Config
+class LeaseOrderConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = LeaseOrderAppConfig.objects
+    serializer_detail = LeaseOrderConfigDetailSerializer
+    serializer_update = LeaseOrderConfigUpdateSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Lease order Config Detail",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def get(self, request, *args, **kwargs):
+        self.lookup_field = 'company_id'
+        self.kwargs['company_id'] = request.user.company_current_id
+        return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Lease order Config Update",
+        request_body=LeaseOrderConfigUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def put(self, request, *args, **kwargs):
+        self.lookup_field = 'company_id'
+        self.kwargs['company_id'] = request.user.company_current_id
+        return self.update(request, *args, **kwargs)
 
 
 class LORecurrenceList(BaseListMixin, BaseCreateMixin):

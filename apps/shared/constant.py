@@ -53,29 +53,31 @@ WORKFLOW_IN_WF_OPTION = (
     (2, 'Employee'),
 )
 WORKFLOW_IN_WF_POSITION = (
-    (1, '1st manager'),
-    (2, '2nd manager'),
-    (3, 'Beneficiary'),
+    (1, 'Beneficiary'),
+    (2, '1st manager'),
+    (3, '2nd manager'),
+    (4, 'Upper manager'),
+    (5, 'Manager of x group level'),
 )
 
 
 # translate attribute value of above class
 class WorkflowMsgNotify:
-    new_task = 'New Task'
-    was_return_begin = 'Was return owner'
+    new_task = 'New task'
     create_document = 'Create document'
     receive_document = 'Receive document'
     approved = 'Approved'
     rejected = 'Rejected'
     edit_by_zone = 'Edit data by zones'
     return_creator = 'Return to creator'
+    document_returned = 'Document was returned'
     rerun_workflow = 'Rerun workflow'
     end_workflow = 'Workflow ended'
-    document_returned = 'Document was returned'
 
     @classmethod
     def translate_msg(cls, msg):
-        return _(msg)
+        # return _(msg)
+        return msg
 
 
 OPTION_COLLABORATOR = (
@@ -108,6 +110,7 @@ MAP_FIELD_TITLE = {
     'production.productionorder': 'title',
     'production.workorder': 'title',
     'leaseorder.leaseorder': 'title',
+    'inventory.goodsrecovery': 'title',
     # haind
     'cashoutflow.advancepayment': 'title',
     'apinvoice.apinvoice': 'title',
@@ -126,6 +129,10 @@ MAP_FIELD_TITLE = {
     #
     'bidding.bidding': 'title',
     'consulting.consulting': 'title',
+    'asset.fixedasset': 'title',
+    'asset.instrumenttool': 'title',
+    'asset.fixedassetwriteoff': 'title',
+    'asset.instrumenttoolwriteoff': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -457,6 +464,7 @@ RECURRENCE_ACTION = (
     (1, 'Done'),
     (2, 'Skip'),
 )
+
 CONTRACT_TYPE = (
     (0, 'Probationary contract'),
     (1, 'Labor contract'),
@@ -468,4 +476,20 @@ ASSET_TYPE = (
     (1, 'Product'),
     (2, 'Tool'),
     (3, 'Fixed asset'),
+)
+
+PRODUCT_CONVERT_INTO = (
+    (1, _('Tool')),
+    (2, _('Fixed asset')),
+)
+
+# goods recovery
+STATUS_RECOVERY = (
+    (0, 'Open'),
+)
+
+# Serial
+SERIAL_STATUS = (
+    (0, _('Available')),
+    (1, _('Delivered')),
 )

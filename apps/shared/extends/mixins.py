@@ -700,7 +700,9 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     @classmethod
     def check_obj_change_or_delete(cls, instance):
         if isinstance(instance, Model):
-            if instance and hasattr(instance, 'system_status') and getattr(instance, 'system_status', None) == 3:
+            # if instance and hasattr(instance, 'system_status') and getattr(instance, 'system_status', None) == 3:
+            check = [2, 3, 4]
+            if instance and hasattr(instance, 'system_status') and getattr(instance, 'system_status', None) in check:
                 return False
             return True
         return False
@@ -1057,10 +1059,8 @@ class BaseUpdateMixin(BaseMixin):
                 if state is True:
                     if is_edit_all_zone is True:
                         return request_data, True, task_id
-                    new_body_data = {}
-                    for key, value in request_data.items():
-                        if key in code_field_arr:
-                            new_body_data[key] = value
+                    new_body_data = {key: value for key, value in request_data.items() if key in code_field_arr}
+
                     return new_body_data, True, task_id
                 # check permission default | wait implement so it is True
         return request_data, False, None
@@ -1136,31 +1136,31 @@ class BaseDestroyMixin(BaseMixin):
     def destroy(self, request, *args, **kwargs):
         is_purge = kwargs.pop('is_purge', False)
         instance = self.get_object()
-        if self.check_obj_change_or_delete(instance):
+        if self.check_obj_change_or_delete(instance):  # check doc not have system_status == 3 (finished)
             state_check = self.manual_check_obj_destroy(instance=instance)
             if state_check is None:
                 state_check = self.check_perm_by_obj_or_body_data(
                     obj=instance,
                     hidden_field=self.retrieve_hidden_field,
-                )
+                )  # check permission
             if state_check is True:
-                self.perform_destroy(instance, is_purge, self.get_state_transaction())
-                return ResponseController.no_content_204()
+                return self.perform_destroy(instance, is_purge, self.get_state_transaction())
             return ResponseController.forbidden_403()
         return ResponseController.forbidden_403(msg=HttpMsg.OBJ_DONE_NO_EDIT)
 
     @staticmethod
     def perform_destroy(instance, is_purge, state_transaction):
+        # is_purge: False -> instance.is_delete() = True | True -> instance.delete()
         try:
             if state_transaction:
                 with transaction.atomic():
-                    if is_purge is True:
-                        ...
-                    return instance.delete()
+                    if BaseDestroyMixin.has_related_records(instance):  # check relation
+                        return ResponseController.bad_request_400(msg=HttpMsg.RELATION_EXISTS_ERR)
+                    if is_purge:
+                        return BaseDestroyMixin.perform_purge(instance)
+                    return BaseDestroyMixin.perform_soft_delete(instance)
             else:
-                if is_purge is True:
-                    ...
-                return instance.delete()
+                pass
         except serializers.ValidationError as err:
             raise err
         except Exception as err:
@@ -1168,24 +1168,48 @@ class BaseDestroyMixin(BaseMixin):
         raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
 
     @staticmethod
+    def perform_soft_delete(instance):
+        """
+        Marks the instance as soft deleted by field is_delete.
+        """
+        if hasattr(instance, "is_delete"):
+            instance.is_delete = True
+            instance.save(update_fields=["is_delete"])
+            return ResponseController.no_content_204()
+        else:
+            raise serializers.ValidationError({'detail': "Soft delete not supported for this model."})
+
+    @staticmethod
+    def perform_purge(instance):
+        """
+        Permanently deletes the instance and handles cascading deletions.
+        """
+        instance.delete()
+        return ResponseController.no_content_204()
+
+    @staticmethod
     def has_related_records(instance):
-        related_objects = instance._meta.get_fields()
-        result = {}
-        for field in related_objects:
+        """
+        Checks if the instance has related records.
+
+        Args:
+            instance (Model): The Django model instance.
+
+        Returns:
+            bool: True if there are related records, False otherwise.
+        """
+        for field in instance._meta.get_fields():
             if field.is_relation and field.auto_created and not field.concrete:
-                related_name = field.get_accessor_name()
-                related_manager = getattr(instance, related_name)
-                related_records = list(related_manager.all())
-                if related_records:
-                    result[related_name] = related_records
-        for related_name, record_list in result.items():
-            for record in record_list:
-                if not record.is_delete:
-                    return True
+                related_manager = getattr(instance, field.get_accessor_name(), None)
+                if related_manager:
+                    model_class = related_manager.model  # Get the related model class
+                    if hasattr(model_class, 'is_delete'):  # Check if the related model has 'is_delete'
+                        if related_manager.all().exclude(is_delete=True).exists():
+                            return True
         return False
 
     @staticmethod
-    def list_related_records(instance):
+    def list_related_records(instance, verbose=False):
         related_objects = instance._meta.get_fields()
         result = {}
         for field in related_objects:
@@ -1195,8 +1219,7 @@ class BaseDestroyMixin(BaseMixin):
                 related_records = list(related_manager.all())
                 if related_records:
                     result[related_name] = related_records
-        for related_name, record_list in result.items():
-            for record in record_list:
-                if not record.is_delete:
-                    print(record)
+        if verbose:
+            for related_name, records in result.items():
+                print(f"{related_name}: {[str(record) for record in records]}")
         return result

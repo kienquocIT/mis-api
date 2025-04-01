@@ -9,8 +9,14 @@ from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 from ..utils import DeliHandler
 
-__all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
-           'OrderDeliverySubUpdateSerializer']
+__all__ = [
+    'OrderDeliveryListSerializer',
+    'OrderDeliverySubListSerializer',
+    'OrderDeliverySubDetailSerializer',
+    'OrderDeliverySubUpdateSerializer',
+    'OrderDeliverySubMinimalListSerializer',
+    'OrderDeliverySubRecoveryListSerializer',
+]
 
 
 def handle_attach_file(instance, attachment_result):
@@ -34,8 +40,8 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
         if obj.product.product_choice:
             if 1 in obj.product.product_choice:
                 return bool(True)
-        if isinstance(obj.offset_data, dict):
-            if obj.offset_data:
+        if obj.asset_type:
+            if obj.asset_type >= 1:
                 return bool(True)
         return bool(False)
 
@@ -46,7 +52,11 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'order',
             'is_promotion',
             'product_data',
+            'asset_type',
             'offset_data',
+            'tool_data',
+            'asset_data',
+            'product_quantity',
             'uom_data',
             'delivery_quantity',
             'delivered_quantity_before',
@@ -54,7 +64,21 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'ready_quantity',
             'delivery_data',
             'picked_quantity',
-            'is_not_inventory'
+            'is_not_inventory',
+
+            'product_cost',
+            'product_depreciation_subtotal',
+            'product_depreciation_price',
+            'product_depreciation_method',
+            'product_depreciation_adjustment',
+            'product_depreciation_time',
+            'product_depreciation_start_date',
+            'product_depreciation_end_date',
+
+            'product_lease_start_date',
+            'product_lease_end_date',
+
+            'depreciation_data',
         )
 
 
@@ -157,14 +181,19 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
             'attachments',
             'delivery_logistic',
             'workflow_runtime_id',
-            'employee_inherit'
+            'employee_inherit',
         )
 
 
 class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
     product_id = serializers.UUIDField()
     done = serializers.IntegerField(min_value=1)
-    delivery_data = serializers.JSONField(allow_null=True)
+    delivery_data = serializers.JSONField(default=list)
+    tool_data = serializers.JSONField(default=list)
+    asset_data = serializers.JSONField(default=list)
+    product_depreciation_start_date = serializers.CharField(required=False, allow_null=True)
+    product_lease_start_date = serializers.CharField(required=False, allow_null=True)
+    depreciation_data = serializers.JSONField(default=list)
     order = serializers.IntegerField(min_value=1)
 
 
@@ -244,20 +273,35 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         ):
             obj_key = str(obj.product_id) + "___" + str(obj.order)
             if obj_key in product_done:
+                target = product_done[obj_key]
                 if 1 in obj.product.product_choice or sub.lease_order_data:
-                    # kiểm tra product id và order trùng với product update ko
-                    delivery_data = product_done[obj_key]['delivery_data']  # list format
-                    obj.picked_quantity = product_done[obj_key]['picked_num']
-                    obj.delivery_data = delivery_data
+                    # Kiểm tra product id và order trùng với product update ko
+                    obj.picked_quantity = target.get('picked_num', 0)
+                    obj.delivery_data = target.get('delivery_data', [])
+                    obj.tool_data = target.get('tool_data', [])
+                    obj.asset_data = target.get('asset_data', [])
+                    obj.product_depreciation_start_date = target.get('product_depreciation_start_date', None)
+                    obj.product_lease_start_date = target.get('product_lease_start_date', None)
+                    obj.depreciation_data = target.get('depreciation_data', [])
+                    obj.quantity_remain_recovery = target.get('picked_num', 0)
 
-                    if (config['is_picking'] and config['is_partial_ship'] and
-                            obj.picked_quantity > obj.remaining_quantity):
-                        raise serializers.ValidationError(
-                            {'detail': _('Products must have picked quantity equal to or less than remaining quantity')}
-                        )
+                    if 'is_picking' in config and 'is_partial_ship' in config:
+                        if (config['is_picking'] and config['is_partial_ship'] and
+                                obj.picked_quantity > obj.remaining_quantity):
+                            raise serializers.ValidationError(
+                                {'detail': _(
+                                    'Products must have picked quantity equal to or less than remaining quantity'
+                                )}
+                            )
                 else:
-                    obj.picked_quantity = product_done[obj_key]['picked_num']
-                obj.save(update_fields=['picked_quantity', 'delivery_data'])
+                    obj.picked_quantity = target.get('picked_num', 0)
+                # Sau khi update sẽ chạy các func trong save()
+                obj.save(update_fields=[
+                    'picked_quantity', 'delivery_data',
+                    'tool_data', 'asset_data',
+                    'product_depreciation_start_date', 'product_lease_start_date',
+                    'depreciation_data', 'quantity_remain_recovery',
+                ])
         return True
 
     # none_picking_many_delivery
@@ -266,7 +310,6 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         # cho phep giao nhieu lan and tạo sub mới
         cls.update_prod(instance, product_done, config)
         instance.date_done = timezone.now()
-        # instance.state = 2
         instance.is_updated = True
         instance.next_association_id = next_association_id
         instance.next_node_collab_id = next_node_collab_id
@@ -328,8 +371,15 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             prod_key = str(item['product_id']) + "___" + str(item['order'])
             total_done += item['done']
             product_done[prod_key] = {}
-            product_done[prod_key]['picked_num'] = item['done']
-            product_done[prod_key]['delivery_data'] = item['delivery_data']
+            product_done[prod_key]['picked_num'] = item.get('done', 0)
+            product_done[prod_key]['delivery_data'] = item.get('delivery_data', [])
+            product_done[prod_key]['tool_data'] = item.get('tool_data', [])
+            product_done[prod_key]['asset_data'] = item.get('asset_data', [])
+            product_done[prod_key]['product_depreciation_start_date'] = item.get(
+                'product_depreciation_start_date', None
+            )
+            product_done[prod_key]['product_lease_start_date'] = item.get('product_lease_start_date', None)
+            product_done[prod_key]['depreciation_data'] = item.get('depreciation_data', [])
         instance.save()
 
         # update instance and product
@@ -347,16 +397,29 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
 
 
 class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
+    delivery_id = serializers.SerializerMethodField()
+    delivery_data = serializers.SerializerMethodField()
     delivery_product_data = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderDeliverySub
         fields = (
-            'id',
-            'code',
-            'date_created',
+            'delivery_id',
+            'delivery_data',
             'delivery_product_data',
         )
+
+    @classmethod
+    def get_delivery_id(cls, obj):
+        return obj.id
+
+    @classmethod
+    def get_delivery_data(cls, obj):
+        return {
+            'id': obj.id,
+            'code': obj.code,
+            'actual_delivery_date': obj.actual_delivery_date.date(),
+        }
 
     @classmethod
     def get_delivery_product_data(cls, obj):
@@ -367,13 +430,62 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                 'asset_type': deli_product.asset_type,
                 'offset_id': deli_product.offset_id,
                 'offset_data': deli_product.offset_data,
+                'tool_data': [{
+                    "product_id": delivery_tool.product_id,
+                    "product_data": delivery_tool.product_data,
+                    "tool_id": delivery_tool.tool_id,
+                    "tool_data": delivery_tool.tool_data,
+                    "uom_time_id": delivery_tool.uom_time_id,
+                    "uom_time_data": delivery_tool.uom_time_data,
+                    "product_quantity": delivery_tool.product_quantity,
+                    "product_quantity_time": delivery_tool.product_quantity_time,
+                    "product_depreciation_subtotal": delivery_tool.product_depreciation_subtotal,
+                    "product_depreciation_price": delivery_tool.product_depreciation_price,
+                    "product_depreciation_method": delivery_tool.product_depreciation_method,
+                    "product_depreciation_adjustment": delivery_tool.product_depreciation_adjustment,
+                    "product_depreciation_time": delivery_tool.product_depreciation_time,
+                    "product_depreciation_start_date": delivery_tool.product_depreciation_start_date,
+                    "product_depreciation_end_date": delivery_tool.product_depreciation_end_date,
+                    "product_lease_start_date": delivery_tool.product_lease_start_date,
+                    "product_lease_end_date": delivery_tool.product_lease_end_date,
+                    "depreciation_data": delivery_tool.depreciation_data,
+                    "quantity_remain_recovery": delivery_tool.quantity_remain_recovery,
+                } for delivery_tool in deli_product.delivery_pt_delivery_product.filter(
+                    quantity_remain_recovery__gt=0
+                )],
+                'asset_data': [{
+                    "product_id": delivery_asset.product_id,
+                    "product_data": delivery_asset.product_data,
+                    "asset_id": delivery_asset.asset_id,
+                    "asset_data": delivery_asset.asset_data,
+                    "uom_time_id": delivery_asset.uom_time_id,
+                    "uom_time_data": delivery_asset.uom_time_data,
+                    "product_quantity": delivery_asset.product_quantity,
+                    "product_quantity_time": delivery_asset.product_quantity_time,
+                    "product_depreciation_subtotal": delivery_asset.product_depreciation_subtotal,
+                    "product_depreciation_price": delivery_asset.product_depreciation_price,
+                    "product_depreciation_method": delivery_asset.product_depreciation_method,
+                    "product_depreciation_adjustment": delivery_asset.product_depreciation_adjustment,
+                    "product_depreciation_time": delivery_asset.product_depreciation_time,
+                    "product_depreciation_start_date": delivery_asset.product_depreciation_start_date,
+                    "product_depreciation_end_date": delivery_asset.product_depreciation_end_date,
+                    "product_lease_start_date": delivery_asset.product_lease_start_date,
+                    "product_lease_end_date": delivery_asset.product_lease_end_date,
+                    "depreciation_data": delivery_asset.depreciation_data,
+                    "quantity_remain_recovery": delivery_asset.quantity_remain_recovery,
+                } for delivery_asset in deli_product.delivery_pa_delivery_product.filter(
+                    quantity_remain_recovery__gt=0
+                )],
                 'uom_id': deli_product.uom_id,
                 'uom_data': deli_product.uom_data,
-                'quantity_ordered': deli_product.delivery_quantity,
+                'product_quantity': deli_product.product_quantity,
+                'product_quantity_time': deli_product.product_quantity_time,
+                'product_cost': deli_product.product_cost,
+                'product_subtotal_cost': 0,
                 'quantity_delivered': deli_product.picked_quantity,
-                'quantity_recovered': 0,
+                'quantity_remain_recovery': deli_product.quantity_remain_recovery,
                 'quantity_recovery': 0,
                 'delivery_data': deli_product.delivery_data,
             }
-            for deli_product in obj.delivery_product_delivery_sub.all()
+            for deli_product in obj.delivery_product_delivery_sub.filter(quantity_remain_recovery__gt=0)
         ]

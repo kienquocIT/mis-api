@@ -5,7 +5,7 @@ from apps.sales.production.models import BOM
 from apps.sales.production.serializers.bom import (
     BOMProductMaterialListSerializer, LaborListForBOMSerializer,
     BOMUpdateSerializer, BOMDetailSerializer, BOMCreateSerializer, BOMListSerializer, BOMOrderListSerializer,
-    FinishProductForBOMSerializer
+    ProductListForBOMSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -18,7 +18,7 @@ class ProductListForBOM(BaseListMixin):
         'general_product_types_mapped__is_service': ['exact'],
         'general_product_types_mapped__is_goods': ['exact'],
     }
-    serializer_list = FinishProductForBOMSerializer
+    serializer_list = ProductListForBOMSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
@@ -39,8 +39,8 @@ class ProductListForBOM(BaseListMixin):
         return super().get_queryset().filter(has_bom=False)
 
     @swagger_auto_schema(
-        operation_summary="Finish Product List For BOM",
-        operation_description="Finish Product List For BOM",
+        operation_summary="Product List For BOM",
+        operation_description="Product List For BOM",
     )
     @mask_view(
         login_require=True, auth_require=False,
@@ -102,8 +102,7 @@ class ProductToolsListForBOM(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().filter(
-            general_product_types_mapped__code='asset_tool',
-            general_product_types_mapped__is_asset_tool=True
+            general_product_types_mapped__is_tool=True
         ).select_related().prefetch_related()
 
     @swagger_auto_schema(
@@ -125,7 +124,10 @@ class BOMList(BaseListMixin, BaseCreateMixin):
     serializer_create = BOMCreateSerializer
     serializer_detail = BOMDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = [
+        'tenant_id', 'company_id',
+        'employee_created_id',
+    ]
     filterset_fields = {
         'system_status': ['exact'],
     }

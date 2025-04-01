@@ -20,6 +20,7 @@ class MemberOfProjectDetailSerializer(serializers.ModelSerializer):
             'permit_view_this_project',
             'permit_add_member',
             'permit_add_gaw',
+            'permit_lock_fd',
             'permission_by_configured',
         )
 
@@ -50,6 +51,7 @@ class MemberOfProjectUpdateSerializer(serializers.ModelSerializer):
             'permit_view_this_project',
             'permit_add_member',
             'permit_add_gaw',
+            'permit_lock_fd',
             'permission_by_configured',
         )
 

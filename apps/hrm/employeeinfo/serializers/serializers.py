@@ -51,6 +51,7 @@ class EmployeeInfoListSerializers(serializers.ModelSerializer):
     def get_user(cls, obj):
         return {
             'id': str(obj.employee.user.id),
+            'username': obj.employee.user.username,
             'first_name': obj.employee.user.first_name,
             'last_name': obj.employee.user.last_name
         } if obj.employee.user else {}
@@ -151,29 +152,26 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
                 limit_time=contract.get('limit_time'),
                 represent=contract.get('represent'),
                 signing_date=contract.get('signing_date'),
+                content_info=contract.get('content_info'),
             )
         if attachment is not None and obj:
             handle_attach_file_contract(obj, attachment)
         return True
 
     def create(self, validated_data):
-        try:
-            with transaction.atomic():
-                obj_employee = self.check_is_map(validated_data)
-                validated_data.pop('employee_create', None)
-                contract = validated_data.pop('contract', None)
-                validated_data['employee'] = obj_employee
-                info = EmployeeInfo.objects.create(**validated_data)
-                if info:
-                    emp_map = info.employee.employee_hr.all()
-                    for emp in emp_map:
-                        emp.is_mapped = True
-                        emp.save(update_fields=['is_mapped'])
-                    if contract:
-                        self.create_contract(contract, info)
-                return info
-        except Exception as err:
-            return err
+        obj_employee = self.check_is_map(validated_data)
+        validated_data.pop('employee_create', None)
+        contract = validated_data.pop('contract', None)
+        validated_data['employee'] = obj_employee
+        info = EmployeeInfo.objects.create(**validated_data)
+        if info:
+            emp_map = info.employee.employee_hr.all()
+            for emp in emp_map:
+                emp.is_mapped = True
+                emp.save(update_fields=['is_mapped'])
+            if contract:
+                self.create_contract(contract, info)
+        return info
 
     class Meta:
         model = EmployeeInfo
@@ -365,7 +363,10 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
         obj = None
         if contract:
             contract_id = contract.get('id', None)
-            if contract_id:
+            sign = contract.get('sign_status', None)
+            if sign == 1:
+                raise serializers.ValidationError({'contract': HRMsg.UPDATE_CONTRACT_DENIED})
+            if contract_id and (sign == 0 or sign is None):
                 try:
                     obj = EmployeeContract.objects.get(id=contract_id)
                     obj.effected_date = contract.get('effected_date')
@@ -376,10 +377,10 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
                     obj.limit_time = contract.get('limit_time')
                     obj.represent = contract.get('represent')
                     obj.signing_date = contract.get('signing_date')
-                    obj.sign_status = contract.get('sign_status')
+                    obj.content_info = contract.get('content_info')
                     obj.save(
                         update_fields=['effected_date', 'content', 'contract_type', 'expired_date', 'file_type',
-                                       'limit_time', 'represent', 'signing_date', 'sign_status', 'date_modified']
+                                       'limit_time', 'represent', 'signing_date', 'date_modified', 'content_info']
                     )
                 except EmployeeContract.DoesNotExist:
                     raise exceptions.NotFound
@@ -397,6 +398,7 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
                     limit_time=contract.get('limit_time'),
                     represent=contract.get('represent'),
                     signing_date=contract.get('signing_date'),
+                    content_info=contract.get('content_info')
                 )
         if attachment is not None and obj:
             handle_attach_file_contract(obj, attachment)

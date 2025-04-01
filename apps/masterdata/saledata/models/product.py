@@ -1,3 +1,4 @@
+import logging
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -29,7 +30,7 @@ ATTRIBUTE_CONFIG = [
     (1, _('Radio Select')),
     (2, _('Select (Fill by text)')),
     (3, _('Select (Fill by color)')),
-    (4, _('Select (Fill bu photo)'))
+    (4, _('Select (Fill by photo)'))
 ]
 
 VALUATION_METHOD = [
@@ -37,6 +38,9 @@ VALUATION_METHOD = [
     (1, _('Weighted average')),
     (2, _('Specific identification method'))
 ]
+
+logger = logging.getLogger(__name__)
+
 
 # Create your models here.
 class ProductType(MasterDataAbstractModel):  # noqa
@@ -52,8 +56,8 @@ class ProductType(MasterDataAbstractModel):  # noqa
     is_material = models.BooleanField(
         default=False, help_text='flag to know this type is material of company'
     )
-    is_asset_tool = models.BooleanField(
-        default=False, help_text='flag to know this type is asset tool of company'
+    is_tool = models.BooleanField(
+        default=False, help_text='flag to know this type is tool of company'
     )
     is_service = models.BooleanField(
         default=False, help_text='flag to know this type is service of company'
@@ -69,6 +73,7 @@ class ProductType(MasterDataAbstractModel):  # noqa
 
 class ProductCategory(MasterDataAbstractModel):
     description = models.CharField(blank=True, max_length=200)
+    is_default = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'ProductCategory'
@@ -118,10 +123,33 @@ class UnitOfMeasure(MasterDataAbstractModel):
         permissions = ()
 
 
+class Manufacturer(MasterDataAbstractModel):
+    description = models.CharField(blank=True, max_length=200)
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Manufacturer'
+        verbose_name_plural = 'Manufacturers'
+        ordering = ('date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
 class Product(DataAbstractModel):
     create_from_import = models.BooleanField(default=False)
     import_data_row = models.JSONField(default=dict)
     has_bom = models.BooleanField(default=False)
+    bom_data = models.JSONField(default=dict)
+    # bom_data = {
+    #     id: uuid,
+    #     code: str,
+    #     title: str,
+    #     bom_type: int,
+    #     for_outsourcing: bool,
+    #     sum_price: float,
+    #     sum_time: float,
+    #     opp_data: dict
+    # }
     part_number = models.CharField(max_length=150, null=True, blank=True)
     product_choice = models.JSONField(
         default=list,
@@ -160,13 +188,23 @@ class Product(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name='product_category'
     )
+    general_product_category_data = models.JSONField(default=dict)
     general_uom_group = models.ForeignKey(
         UnitOfMeasureGroup,
         null=True,
         on_delete=models.CASCADE,
         related_name='uom_group'
     )
+    general_uom_group_data = models.JSONField(default=dict)
+    general_manufacturer = models.ForeignKey(
+        Manufacturer,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='manufacturer'
+    )
+    general_manufacturer_data = models.JSONField(default=dict)
     general_traceability_method = models.SmallIntegerField(choices=TRACEABILITY_METHOD_SELECTION, default=0)
+    standard_price = models.FloatField(default=0, help_text="Standard price for BOM")
 
     width = models.FloatField(null=True)
     height = models.FloatField(null=True)
@@ -179,23 +217,23 @@ class Product(DataAbstractModel):
         UnitOfMeasure,
         null=True,
         on_delete=models.CASCADE,
-        related_name='sale_default_uom',
-        default=None
+        related_name='sale_default_uom'
     )
+    sale_default_uom_data = models.JSONField(default=dict)
     sale_tax = models.ForeignKey(
         'saledata.Tax',
         null=True,
         on_delete=models.CASCADE,
-        related_name='sale_tax',
-        default=None
+        related_name='sale_tax'
     )
+    sale_tax_data = models.JSONField(default=dict)
     sale_currency_using = models.ForeignKey(
         'saledata.Currency',
         null=True,
         on_delete=models.CASCADE,
-        related_name='sale_currency_using_for_cost',
-        default=None
+        related_name='sale_currency_using_for_cost'
     )
+    sale_currency_using_data = models.JSONField(default=dict)
     sale_price = models.FloatField(default=0, help_text="General price in General price list")
     sale_product_price_list = models.JSONField(default=list)
 
@@ -204,30 +242,29 @@ class Product(DataAbstractModel):
         UnitOfMeasure,
         null=True,
         on_delete=models.CASCADE,
-        related_name='inventory_uom',
-        default=None
+        related_name='inventory_uom'
     )
-    inventory_level_min = models.IntegerField(null=True, default=None)
-    inventory_level_max = models.IntegerField(null=True, default=None)
+    inventory_uom_data = models.JSONField(default=dict)
+    inventory_level_min = models.IntegerField(null=True)
+    inventory_level_max = models.IntegerField(null=True)
     valuation_method = models.SmallIntegerField(choices=VALUATION_METHOD, default=1)
-    standard_price = models.FloatField(default=0, help_text="Standard price for BOM")
 
     # Purchase
     purchase_default_uom = models.ForeignKey(
         UnitOfMeasure,
         null=True,
         on_delete=models.CASCADE,
-        related_name='purchase_default_uom',
-        default=None
+        related_name='purchase_default_uom'
     )
+    purchase_default_uom_data = models.JSONField(default=dict)
     purchase_tax = models.ForeignKey(
         'saledata.Tax',
         null=True,
         on_delete=models.CASCADE,
-        related_name='purchase_tax',
-        default=None
+        related_name='purchase_tax'
     )
-    supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=1)
+    purchase_tax_data = models.JSONField(default=dict)
+    supplied_by = models.SmallIntegerField(choices=SUPPLIED_BY, default=0)
 
     # Stock information
     stock_amount = models.FloatField(
@@ -261,11 +298,17 @@ class Product(DataAbstractModel):
         'saledata.Price',
         null=True,
         on_delete=models.CASCADE,
-        related_name='online_price_list',
-        default=None
+        related_name='online_price_list'
     )
+    online_price_list_data = models.JSONField(default=dict)
     available_notify = models.BooleanField(default=False)
     available_notify_quantity = models.IntegerField(null=True)
+    account_deter_referenced_by = models.SmallIntegerField(
+        choices=[(0, _('Warehouse')), (1, _('Product type')), (2, _('This product'))],
+        default=0
+    )
+
+    # for Variants
 
     class Meta:
         verbose_name = 'Product'
@@ -411,6 +454,44 @@ class Product(DataAbstractModel):
                         })
         return unit_cost_list
 
+    def get_product_account_deter_sub_data(self, account_deter_foreign_title, warehouse_id=None):
+        """
+            Lấy danh sách TK kế toán được xác định cho Sản Phẩm này:
+            - Luôn luôn truyền account_deter_title: str
+            - Nếu tham chiếu theo Kho (0): cần truyền 'warehouse_id'
+            - Nếu tham chiếu theo Loại SP (1): không cần truyền tham số gì, tự động lấy theo product type của SP
+            - Nếu xác định theo chính SP đó (2): không cần truyền tham số gì, tự động lấy theo SP
+            Returns: obj hoặc None nếu không tìm thấy dữ liệu
+        """
+        account_deter_referenced_by = self.account_deter_referenced_by
+        if account_deter_foreign_title:
+            if account_deter_referenced_by == 0:
+                warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
+                if warehouse_obj:
+                    account_deter = warehouse_obj.wh_account_deter_warehouse_mapped.filter(
+                        foreign_title=account_deter_foreign_title
+                    ).first()
+                    if account_deter:
+                        return [item.account_mapped for item in account_deter.wh_account_deter_sub.all()]
+                logger.error(msg='Get account deter by warehouse, but no warehouse found!')
+            elif account_deter_referenced_by == 1:
+                prd_type_list = self.general_product_types_mapped.all()
+                if prd_type_list.count() == 1:
+                    prd_type_obj = prd_type_list.first()
+                    account_deter = prd_type_obj.prd_type_account_deter_product_type_mapped.filter(
+                        foreign_title=account_deter_foreign_title
+                    ).first()
+                    if account_deter:
+                        return [item.account_mapped for item in account_deter.prd_type_account_deter_sub.all()]
+                logger.error(msg='Get account deter by product type, but there are more than 1 product type found!')
+            elif account_deter_referenced_by == 2:
+                account_deter = self.prd_account_deter_product_mapped.filter(
+                    foreign_title=account_deter_foreign_title
+                ).first()
+                if account_deter:
+                    return [item.account_mapped for item in account_deter.prd_account_deter_sub.all()]
+        return []
+
     def save(self, *args, **kwargs):
         if 'update_stock_info' in kwargs:
             result = ProductHandler.update_stock_info(self, **kwargs)
@@ -425,16 +506,14 @@ class Expense(MasterDataAbstractModel):  # Internal Labor Item
         verbose_name='Unit of Measure Group apply for expense',
         on_delete=models.CASCADE,
         null=True,
-        related_name='expense_uom_group',
-        default=None,
+        related_name='expense_uom_group'
     )
     uom = models.ForeignKey(
         UnitOfMeasure,
         verbose_name='Unit of Measure apply for expense',
         on_delete=models.CASCADE,
         null=True,
-        related_name='expense_uom',
-        default=None,
+        related_name='expense_uom'
     )
     price_list = models.ManyToManyField(
         'saledata.Price',
@@ -543,15 +622,13 @@ class ExpenseRole(SimpleAbstractModel):
         Expense,
         on_delete=models.CASCADE,
         null=True,
-        related_name='expense_role_expense',
-        default=None,
+        related_name='expense_role_expense'
     )
     role = models.ForeignKey(
         'hr.Role',
         on_delete=models.CASCADE,
         null=True,
-        related_name='expense_role_role',
-        default=None,
+        related_name='expense_role_role'
     )
 
     class Meta:

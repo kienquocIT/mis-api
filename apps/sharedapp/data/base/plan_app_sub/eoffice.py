@@ -149,7 +149,7 @@ MEETING_SCHEDULE = {
     "code": "meetingschedule",
     "model_code": "meetingschedule",
     "app_label": "meetingschedule",
-    "is_workflow": True,
+    "is_workflow": False,
     "app_depend_on": [
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
         "50348927-2c4f-4023-b638-445469c66953",  # Employee

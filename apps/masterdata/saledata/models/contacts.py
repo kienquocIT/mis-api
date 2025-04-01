@@ -11,6 +11,7 @@ __all__ = [
 class Salutation(MasterDataAbstractModel):  # noqa
     code = models.CharField(max_length=100)
     description = models.CharField(blank=True, max_length=200)
+    is_default = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Salutation'
@@ -23,6 +24,7 @@ class Salutation(MasterDataAbstractModel):  # noqa
 
 class Interest(MasterDataAbstractModel):
     description = models.CharField(blank=True, max_length=200)
+    is_default = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Interest'
@@ -34,22 +36,13 @@ class Interest(MasterDataAbstractModel):
 
 # Contact
 class Contact(DataAbstractModel):
-    code = models.CharField(max_length=100)
     owner = models.ForeignKey(
         'hr.Employee',
         verbose_name='Contact owner mapped',
         on_delete=models.CASCADE,
         null=True
     )
-    biography = models.CharField(
-        blank=True,
-        null=True,
-        max_length=150
-    )
-    avatar = models.TextField(
-        null=True,
-        verbose_name='avatar path'
-    )
+    biography = models.TextField(blank=True, null=True)
     fullname = models.CharField(
         verbose_name='contact fullname',
         null=False,
@@ -79,13 +72,12 @@ class Contact(DataAbstractModel):
         null=True,
         related_name='contact_account_name'
     )
-    email = models.CharField(
+    email = models.TextField(
         verbose_name='contact email',
         blank=True,
         null=True,
-        max_length=150
     )
-    job_title = models.CharField(
+    job_title = models.TextField(
         verbose_name='contact job title',
         blank=True,
         null=True,
@@ -129,11 +121,10 @@ class Contact(DataAbstractModel):
         null=True,
         related_name='home_country'
     )
-    home_detail_address = models.CharField(
+    home_detail_address = models.TextField(
         verbose_name='Detail home address',
         blank=True,
         null=True,
-        max_length=150
     )
     home_city = models.ForeignKey(
         'base.City',
@@ -153,6 +144,9 @@ class Contact(DataAbstractModel):
         null=True,
         related_name='home_ward'
     )
+    home_address_data = models.JSONField(
+        default=dict,
+    )
 
     # work address fields
     work_country = models.ForeignKey(
@@ -161,11 +155,10 @@ class Contact(DataAbstractModel):
         null=True,
         related_name='work_country'
     )
-    work_detail_address = models.CharField(
+    work_detail_address = models.TextField(
         verbose_name='Detail work address',
         blank=True,
         null=True,
-        max_length=150
     )
     work_city = models.ForeignKey(
         'base.City',
@@ -184,6 +177,9 @@ class Contact(DataAbstractModel):
         on_delete=models.CASCADE,
         null=True,
         related_name='work_ward'
+    )
+    work_address_data = models.JSONField(
+        default=dict,
     )
 
     class Meta:

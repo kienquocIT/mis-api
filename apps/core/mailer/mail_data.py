@@ -30,6 +30,9 @@ APP_MAP_DATA = {
     'assettools.assettoolsprovide': {'title': 'Asset, Tools Provide', 'url': 'asset-tools/provide/detail/'},
     'assettools.assettoolsdelivery': {'title': 'Asset, Tools Delivery', 'url': 'asset-tools/delivery/detail/'},
     'assettools.assettoolsreturn': {'title': 'Asset, Tools Return', 'url': 'asset-tools/return/detail/'},
+    'employeeinfo.EmployeeContractRuntime': {
+        'title': 'Contract signature detail', 'url': 'hrm/employee-data/runtime-signature/detail/'
+    },
 }
 
 WORKFLOW_TYPE_MAP_TXT = {
@@ -126,5 +129,18 @@ class MailDataResolver:
                 'prj_member': prj_member.get_full_name(),
                 'prj_owner': prj_owner.get_full_name(),
                 'prj_url': f'{full_domain}/{prj_app_url}{prj_obj.id}'
+            },
+        }
+
+    @classmethod
+    def new_contract(cls, tenant_obj, assignee, employee_created, contract, signature_runtime):
+        full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{tenant_obj.code.lower()}{settings.UI_DOMAIN_SUFFIX}'
+        app_url = APP_MAP_DATA.get('employeeinfo.EmployeeContractRuntime', {}).get('url', '')
+        return {
+            '_contract': {
+                'title': contract.title,
+                'member': assignee.get_full_name(),
+                'created_email': employee_created.get_full_name(),
+                'url': f'{full_domain}/{app_url}{signature_runtime}'
             },
         }

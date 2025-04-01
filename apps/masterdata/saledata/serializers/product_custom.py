@@ -7,6 +7,8 @@ PRODUCT_OPTION = [(0, _('Sale')), (1, _('Inventory')), (2, _('Purchase'))]
 
 
 class ProductForSaleListSerializer(serializers.ModelSerializer):
+    product_id = serializers.SerializerMethodField()
+    product_data = serializers.SerializerMethodField()
     price_list = serializers.SerializerMethodField()
     product_choice = serializers.JSONField()
     general_information = serializers.SerializerMethodField()
@@ -20,10 +22,19 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
         model = Product
         fields = (
             'id', 'code', 'title', 'description',
-            'general_information', 'purchase_information', 'sale_information', 'purchase_information',
+            'product_id', 'product_data',
+            'general_information', 'sale_information', 'purchase_information',
             'price_list', 'product_choice', 'supplied_by', 'inventory_information',
             'general_traceability_method', 'bom_check_data', 'bom_data', 'standard_price',
         )
+
+    @classmethod
+    def get_product_id(cls, obj):
+        return obj.id
+
+    @classmethod
+    def get_product_data(cls, obj):
+        return {'id': obj.id, 'title': obj.title, 'code': obj.code,}
 
     @classmethod
     def check_status_price(cls, valid_time_start, valid_time_end):
@@ -58,7 +69,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'product_type': [{
                 'id': str(product_type.id), 'title': product_type.title, 'code': product_type.code,
                 'is_goods': product_type.is_goods, 'is_finished_goods': product_type.is_finished_goods,
-                'is_material': product_type.is_material, 'is_asset_tool': product_type.is_asset_tool,
+                'is_material': product_type.is_material, 'is_tool': product_type.is_tool,
                 'is_service': product_type.is_service,
             } for product_type in obj.general_product_types_mapped.all()],
             'product_category': {

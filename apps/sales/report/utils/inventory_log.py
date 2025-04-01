@@ -30,7 +30,9 @@ class ReportInvLog:
 
                     # kiểm tra và chạy tổng kết (các) tháng trước đó, sau đó đẩy số dư qua đầu kì tháng tiếp theo
                     for order in range(1, sub_period_order + 1):
-                        run_state = ReportInvCommonFunc.sum_up_sub_period(tenant, company, employee, period_obj, order)
+                        run_state = ReportInvCommonFunc.check_and_push_to_this_sub(
+                            tenant, company, employee, period_obj, order
+                        )
                         if run_state is False:
                             break
 
@@ -40,6 +42,7 @@ class ReportInvLog:
                     # cập nhập giá cost cho từng log
                     for log in new_logs:
                         ReportStockLog.update_log_cost(log, period_obj, sub_period_order, cost_cfg)
+                    print('# Write to Inventory Report successfully!')
                     return True
                 raise serializers.ValidationError({'period_obj': f'Fiscal year {doc_date.year} does not exist.'})
         except Exception as err:
@@ -146,60 +149,55 @@ class ReportInvCommonFunc:
         return bulk_info, bulk_info_wh
 
     @classmethod
-    def sum_up_sub_period(cls, tenant, company, emp_current, this_period, this_sub_order):
-        if tenant and company and emp_current and this_period and this_sub_order:
-            this_sub = SubPeriods.objects.filter(period_mapped=this_period, order=this_sub_order).first()
-            last_period = Periods.objects.filter(
-                tenant=tenant,
-                company=company,
-                fiscal_year=this_period.fiscal_year - 1
-            ).first() if int(this_sub_order) == 1 else this_period
-            last_sub_order = 12 if int(this_sub_order) == 1 else int(this_sub_order) - 1
-            if this_sub and last_period and last_sub_order:
-                if not this_sub.run_report_inventory:
-                    bulk_info = []
-                    bulk_info_wh = []
-                    for last_sub_item in ReportInventoryCost.objects.filter(
-                            tenant=tenant,
-                            company=company,
-                            period_mapped=last_period,
-                            sub_period_order=last_sub_order
-                    ):
-                        if not ReportInventoryCost.objects.filter(
-                                tenant=tenant,
-                                company=company,
-                                period_mapped=this_period,
-                                sub_period_order=this_sub_order,
-                                product_id=last_sub_item.product_id,
-                                warehouse_id=last_sub_item.warehouse_id,
-                                lot_mapped_id=last_sub_item.lot_mapped_id,
-                                sale_order_id=last_sub_item.sale_order_id,
-                        ).exists():
-                            bulk_info, bulk_info_wh = cls.by_perpetual(
-                                tenant, company, emp_current,
-                                last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
-                            ) if company.company_config.definition_inventory_valuation == 0 else cls.by_periodic(
-                                tenant, company, emp_current,
-                                last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh
-                            )
+    def push_to_this_sub(cls, tenant, company, emp_current, this_sub, last_sub):
+        bulk_info = []
+        bulk_info_wh = []
+        for item in ReportInventoryCost.objects.filter(
+                tenant=tenant, company=company, period_mapped=last_sub.period_mapped, sub_period=last_sub
+        ):
+            if not ReportInventoryCost.objects.filter(
+                    tenant=tenant,
+                    company=company,
+                    period_mapped=this_sub.period_mapped,
+                    sub_period=this_sub,
+                    product_id=item.product_id,
+                    warehouse_id=item.warehouse_id,
+                    lot_mapped_id=item.lot_mapped_id,
+                    sale_order_id=item.sale_order_id,
+            ).exists():
+                bulk_info, bulk_info_wh = cls.by_perpetual(
+                    tenant, company, emp_current, item, this_sub.period_mapped, this_sub, bulk_info, bulk_info_wh
+                ) if company.company_config.definition_inventory_valuation == 0 else cls.by_periodic(
+                    tenant, company, emp_current, item, this_sub.period_mapped, this_sub, bulk_info, bulk_info_wh
+                )
 
-                    ReportInventoryCost.objects.bulk_create(bulk_info)
-                    ReportInventoryCostByWarehouse.objects.bulk_create(bulk_info_wh)
-                    last_sub = SubPeriods.objects.filter(period_mapped=last_period, order=last_sub_order).first()
-                    if company.software_start_using_time and last_sub and any([
-                        last_sub.run_report_inventory,
-                        int(this_sub_order) <= company.software_start_using_time.month - this_period.space_month
-                    ]):
-                        this_sub.run_report_inventory = True
-                        this_sub.save(update_fields=['run_report_inventory'])
-                        print(f"{last_sub.start_date.month}/{this_period.fiscal_year} was run. Pushed to next sub.")
-                        return True
-                    print('Error: software_start_using_time || last_sub is None')
-            else:
-                if not last_period:
-                    this_sub.run_report_inventory = True
-                    this_sub.save(update_fields=['run_report_inventory'])
-                    return True
-                print('Error: this_sub || last_period || last_sub_order is None')
-            return False
-        raise serializers.ValidationError({'error': 'Some objects are not exist.'})
+        ReportInventoryCost.objects.bulk_create(bulk_info)
+        ReportInventoryCostByWarehouse.objects.bulk_create(bulk_info_wh)
+        return True
+
+    @classmethod
+    def check_and_push_to_this_sub(cls, tenant, company, emp_current, this_period, this_sub_order):
+        """
+        1. Lấy kỳ hiện tại + kỳ con hiện tại
+        2. Nếu kỳ hiện tại chưa chạy report thì:
+            2.1: Lấy kỳ trước + kỳ con trước
+            2.2: Nếu kỳ con trước đã chạy report -> đẩy cuối kỳ trước qua đầu kỳ hiện tại -> cập nhập tt report kỳ này
+                 Nếu không có kỳ con -> cập nhập tt report kỳ này
+        """
+        this_sub = SubPeriods.objects.filter(period_mapped=this_period, order=this_sub_order).first()
+        if tenant and company and emp_current and this_period and this_sub:
+            if not this_sub.run_report_inventory:
+                last_period = Periods.objects.filter(
+                    tenant=tenant, company=company, fiscal_year=this_period.fiscal_year - 1
+                ).first() if int(this_sub_order) == 1 else this_period
+                last_sub_order = 12 if int(this_sub_order) == 1 else int(this_sub_order) - 1
+                last_sub = SubPeriods.objects.filter(period_mapped=last_period, order=last_sub_order).first()
+                if last_period and last_sub:
+                    if last_sub.run_report_inventory:
+                        cls.push_to_this_sub(tenant, company, emp_current, this_sub, last_sub)
+                this_sub.run_report_inventory = True
+                this_sub.save(update_fields=['run_report_inventory'])
+                print(f"Started {this_sub.start_date.month}/{this_period.fiscal_year}.")
+            return True
+        print('Error: Some objects are not exist.')
+        return False

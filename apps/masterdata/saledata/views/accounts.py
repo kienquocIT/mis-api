@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models.accounts import (
 )
 from apps.masterdata.saledata.serializers.accounts import (
     AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer, AccountUpdateSerializer,
-    AccountsMapEmployeesListSerializer, AccountForSaleListSerializer, CustomerListSerializer,
+    AccountsMapEmployeesListSerializer, AccountForSaleListSerializer, CustomerListSerializer, SupplierListSerializer,
 )
 from apps.masterdata.saledata.serializers.accounts_masterdata import (
     AccountTypeListSerializer, AccountTypeCreateSerializer, AccountTypeDetailsSerializer, AccountTypeUpdateSerializer,
@@ -52,8 +52,6 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):  # noqa
 
 class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = AccountType.objects
-    serializer_list = AccountTypeListSerializer
-    serializer_create = AccountTypeCreateSerializer
     serializer_detail = AccountTypeDetailsSerializer
     serializer_update = AccountTypeUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -110,8 +108,6 @@ class AccountGroupList(BaseListMixin, BaseCreateMixin):
 
 class AccountGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = AccountGroup.objects
-    serializer_list = AccountGroupListSerializer
-    serializer_create = AccountGroupCreateSerializer
     serializer_detail = AccountGroupDetailsSerializer
     serializer_update = AccountGroupUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -168,8 +164,6 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
 
 class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Industry.objects
-    serializer_list = IndustryListSerializer
-    serializer_create = IndustryCreateSerializer
     serializer_detail = IndustryDetailsSerializer
     serializer_update = IndustryUpdateSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -245,6 +239,27 @@ class CustomerList(BaseListMixin):  # noqa
 
     def get_queryset(self):
         return super().get_queryset().filter(is_customer_account=True).select_related().prefetch_related()
+
+    @swagger_auto_schema(
+        operation_summary="Customer list",
+        operation_description="Customer list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='saledata', model_code='account', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class SupplierList(BaseListMixin):  # noqa
+    queryset = Account.objects
+    serializer_list = SupplierListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    search_fields = ['name', 'code', 'tax_code']
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_supplier_account=True).select_related().prefetch_related()
 
     @swagger_auto_schema(
         operation_summary="Customer list",

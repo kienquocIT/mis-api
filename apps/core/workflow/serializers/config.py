@@ -135,12 +135,11 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_application(cls, obj):
-        if obj.application:
-            return {
-                'id': obj.application_id,
-                'title': obj.application.get_title_i18n(),
-            }
-        return {}
+        return {
+            'id': obj.application_id,
+            'title': obj.application.title,
+            'title_i18n': trans(obj.application.title),
+        } if obj.application else {}
 
     @classmethod
     def get_zone(cls, obj):

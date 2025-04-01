@@ -2,8 +2,9 @@ from django.urls import path
 from .views import (
     ReportRevenueList, ReportProductList, ReportCustomerList, ReportPipelineList, ReportCashflowList,
     ReportStockList, BalanceInitializationList, ReportInventoryCostList, ReportGeneralList,
-    PurchaseOrderListReport, ReportInventoryCostWarehouseDetail, BudgetReportCompanyList, PaymentListForBudgetReport,
-    BudgetReportGroupList, BalanceInitializationListImportDB, ReportProductListForDashBoard
+    PurchaseOrderListReport, WarehouseAvailableProductList, BudgetReportCompanyList, PaymentListForBudgetReport,
+    BudgetReportGroupList, BalanceInitializationListImportDB, ReportProductListForDashBoard, AdvanceFilterList,
+    AdvanceFilterDetail, WarehouseAvailableProductDetail
 )
 
 urlpatterns = [
@@ -30,9 +31,14 @@ urlpatterns = [
     path('inventory-cost-report/list', ReportInventoryCostList.as_view(), name='ReportInventoryCostList'),
     path('inventory-stock-report/list', ReportStockList.as_view(), name='ReportStockList'),
     path(
-        'inventory-cost-warehouse-detail',
-        ReportInventoryCostWarehouseDetail.as_view(),
-        name='ReportInventoryCostWarehouseDetail'
+        'warehouse-available-product-list',
+        WarehouseAvailableProductList.as_view(),
+        name='WarehouseAvailableProductList'
+    ),
+    path(
+        'warehouse-available-product-detail',
+        WarehouseAvailableProductDetail.as_view(),
+        name='WarehouseAvailableProductDetail'
     ),
 
     # Report purchasing
@@ -42,4 +48,9 @@ urlpatterns = [
     path('budget-report-company/list', BudgetReportCompanyList.as_view(), name='BudgetReportCompanyList'),
     path('budget-report-group/list', BudgetReportGroupList.as_view(), name='BudgetReportGroupList'),
     path('budget-report-payment/list', PaymentListForBudgetReport.as_view(), name='PaymentListForBudgetReport'),
+
+    # Advance Filter
+    path('advance-filter/list', AdvanceFilterList.as_view(), name='AdvanceFilterList'),
+    path('advance-filter/detail/<str:pk>', AdvanceFilterDetail.as_view(), name='AdvanceFilterDetail'),
+
 ]

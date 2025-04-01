@@ -7,9 +7,8 @@ from apps.sales.bidding.models import Bidding, BiddingAttachment, BiddingDocumen
 from apps.sales.bidding.serializers.bidding_sub import BiddingCommonCreate
 from apps.sales.opportunity.models import Opportunity
 from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel, \
-    HRMsg, BaseMsg
+    HRMsg, BaseMsg, BiddingMsg
 from apps.shared.translations.base import AttachmentMsg
-from apps.shared.translations.bidding import BiddingMsg
 from apps.core.process.utils import ProcessRuntimeControl
 
 class BiddingResultConfigListSerializer(serializers.ModelSerializer):

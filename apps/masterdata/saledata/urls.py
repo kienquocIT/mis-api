@@ -7,7 +7,7 @@ from apps.masterdata.saledata.views.contacts import (
 from apps.masterdata.saledata.views.accounts import (
     AccountTypeList, AccountTypeDetail, IndustryList, IndustryDetail,
     AccountList, AccountDetail, AccountGroupList, AccountGroupDetail, AccountsMapEmployeesList, AccountForSaleList,
-    CustomerList,
+    CustomerList, SupplierList,
 )
 from apps.masterdata.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
 from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail, ExpenseForSaleList
@@ -17,7 +17,7 @@ from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail, UnitOfMeasureList, UnitOfMeasureDetail, ProductList,
     ProductDetail, ProductForSaleList, UnitOfMeasureOfGroupLaborList, ProductForSaleDetail, ProductQuickCreateList,
-    ProductQuotationListLoadDB,
+    ProductQuotationListLoadDB, ManufacturerList, ManufacturerDetail,
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
@@ -27,12 +27,14 @@ from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail, WareHouseListForInventoryAdjustment,
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
     WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail,
-    RevenuePlanConfigList, PriceListItemListImportDB, DocumentTypeList, DocumentTypeDetail
+    RevenuePlanConfigList, PriceListItemListImportDB, DocumentTypeList, DocumentTypeDetail,
+    FixedAssetClassificationList, FixedAssetClassificationGroupList, ToolClassificationList, BankList, BankDetail,
+    BankAccountDetail, BankAccountList, ToolClassificationDetail
 )
 from apps.masterdata.saledata.views.warehouse import (
     ProductWareHouseLotList, ProductWareHouseSerialList,
     ProductWareHouseAssetToolsList, ProductWareHouseListForGoodsTransfer,
-    WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail,
+    WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail, WareHouseForInventoryList,
 )
 
 urlpatterns = [
@@ -55,6 +57,7 @@ urlpatterns = [
     # account
     path('accounts', AccountList.as_view(), name='AccountList'),
     path('customer/list', CustomerList.as_view(), name='CustomerList'),
+    path('supplier/list', SupplierList.as_view(), name='SupplierList'),
     path('account/<str:pk>', AccountDetail.as_view(), name='AccountDetail'),
     path('accounts-map-employees', AccountsMapEmployeesList.as_view(), name='AccountsMapEmployeesList'),
     path('accounts-sale', AccountForSaleList.as_view(), name='AccountForSaleList'),
@@ -72,7 +75,8 @@ urlpatterns += [
     path('product-type/<str:pk>', ProductTypeDetail.as_view(), name='ProductTypeDetail'),
     path('product-categories', ProductCategoryList.as_view(), name='ProductCategoryList'),
     path('product-category/<str:pk>', ProductCategoryDetail.as_view(), name='ProductCategoryDetail'),
-
+    path('manufacturers', ManufacturerList.as_view(), name='ManufacturerList'),
+    path('manufacturer/<str:pk>', ManufacturerDetail.as_view(), name='ManufacturerDetail'),
     path('units-of-measure-group', UnitOfMeasureGroupList.as_view(), name='UnitOfMeasureGroupList'),
     path('unit-of-measure-group/<str:pk>', UnitOfMeasureGroupDetail.as_view(), name='UnitOfMeasureGroupDetail'),
     path('units-of-measure', UnitOfMeasureList.as_view(), name='UnitOfMeasureList'),
@@ -175,6 +179,7 @@ urlpatterns += [
         WarehouseEmployeeConfigDetail.as_view(),
         name='WarehouseEmployeeConfigDetail'
     ),
+    path('warehouses-for-inventory', WareHouseForInventoryList.as_view(), name='WareHouseForInventoryList'),
 ]
 # // warehouse
 
@@ -197,4 +202,24 @@ urlpatterns += [
     path('document-type', DocumentTypeList.as_view(), name='DocumentTypeList'),
     path('document-type/<str:pk>', DocumentTypeDetail.as_view(), name='DocumentTypeDetail'),
     # path('expense-item/<str:pk>', ExpenseItemDetail.as_view(), name='ExpenseItemDetail'),
+]
+
+# fixed assets
+urlpatterns += [
+    path('fixed-asset/classification-group/list', FixedAssetClassificationGroupList.as_view(),
+         name='FixedAssetClassificationGroupList'),
+    path('fixed-asset/classification/list', FixedAssetClassificationList.as_view(),
+         name='FixedAssetClassificationList'),
+    path('tool/classification/list', ToolClassificationList.as_view(),
+         name='ToolClassificationList'),
+    path('tool/classification/detail/<str:pk>', ToolClassificationDetail.as_view(),
+         name='ToolClassificationDetail'),
+]
+
+# bank
+urlpatterns += [
+    path('bank/list', BankList.as_view(), name='BankList'),
+    path('bank/detail/<str:pk>', BankDetail.as_view(), name='BankDetail'),
+    path('bank-account/list', BankAccountList.as_view(), name='BankAccountList'),
+    path('bank-account/detail/<str:pk>', BankAccountDetail.as_view(), name='BankAccountDetail'),
 ]

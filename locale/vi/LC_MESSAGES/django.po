@@ -90,6 +90,10 @@ msgstr "Phê duyệt hợp đồng"
 msgid "Delivery"
 msgstr "Giao hàng"
 
+# 1373e903-909c-4b77-9957-8bcf97e8d6d3
+msgid "Distribution Plan"
+msgstr "Kế hoạch phân phối"
+
 # 319356b4-f16c-4ba4-bdcb-e1b0c2a2c124
 msgid "Document For Customer"
 msgstr "Tài liệu cho khách hàng"
@@ -117,6 +121,10 @@ msgstr "Xuất hàng"
 # dd16a86c-4aef-46ec-9302-19f30b101cf5
 msgid "Goods Receipt"
 msgstr "Nhập kho"
+
+# a196c182-01d4-4450-a4ef-86c16b536daa
+msgid "Goods Recovery"
+msgstr "Thu hồi"
 
 # 0242ba77-8b02-4589-8ed9-239788083f2b
 msgid "Goods Return"
@@ -691,7 +699,7 @@ msgid "This record has been finalized and is not allow to any further modificati
 msgstr "Phiếu này đã hoàn thành và không được phép chỉnh sửa hoặc xóa."
 
 #
-msgid "New Task"
+msgid "New task"
 msgstr "Công việc mới"
 
 #
@@ -1271,10 +1279,6 @@ msgid "Rejected"
 msgstr "Từ chối"
 
 #
-msgid "Star date or finish date not in range of project date"
-msgstr "Ngày bắt đầu, ngày kết thức không khớp với ngày của dự án"
-
-#
 msgid "Document was returned"
 msgstr "Phiếu bị trả về"
 
@@ -1411,6 +1415,10 @@ msgid "Total payment must be equal to total after tax."
 msgstr "Tổng số tiền thanh toán phải bằng tổng số tiền sau thuế."
 
 #
+msgid "This record cannot be deleted because it is associated with other records."
+msgstr "Dữ liệu này không thể xóa vì đã liên kết với dữ liệu khác."
+
+#
 msgid "This product is being used. Can not update general uom group."
 msgstr "Sản phẩm này đang được sử dụng. Không thể cập nhật nhóm đơn vị tính."
 
@@ -1457,3 +1465,135 @@ msgstr "Đơn vị tính"
 #
 msgid "Unit Of Measure Group"
 msgstr "Nhóm đơn vị tính"
+
+#
+msgid "Code already exists"
+msgstr "Mã đã tồn tại"
+
+#
+msgid "Error create asset"
+msgstr "Lỗi tạo tài sản"
+
+#
+msgid "Description of each source is required"
+msgstr "Mô tả của mỗi nguồn là bắt buộc"
+
+#
+msgid "Total value must be equal to the sum of source value"
+msgstr "Tổng giá trị phải bằng tổng giá trị mỗi nguồn"
+
+#
+msgid "Fixed Asset"
+msgstr "Tài sản cố định"
+
+#
+msgid "Instrument & Tool"
+msgstr "Công cụ dụng cụ"
+
+#
+msgid "Sale"
+msgstr "Bán hàng"
+
+#
+msgid "Purchasing"
+msgstr "Mua hàng"
+
+#
+msgid "Inventory"
+msgstr "Hàng tồn kho"
+
+#
+msgid "Product information"
+msgstr "Thông tin sản phẩm"
+
+#
+msgid "Cost information"
+msgstr "Thông tin giá vốn"
+
+#
+msgid "Expense information"
+msgstr "Thông tin chi phí"
+
+#
+msgid "Logistic information"
+msgstr "Thông tin vận chuyển"
+
+#
+msgid "Indicator information"
+msgstr "Thông tin chỉ tiêu tài chính"
+
+#
+msgid "Sales person"
+msgstr "NV kinh doanh"
+
+#
+msgid "Product category"
+msgstr "Danh mục sản phẩm"
+
+#
+msgid "Product type"
+msgstr "Loại sản phẩm"
+
+#
+msgid "Product quantity"
+msgstr "Số lượng sản phẩm"
+
+#
+msgid "Product unit price"
+msgstr "Đơn giá sản phẩm"
+
+#
+msgid "Product subtotal"
+msgstr "Tổng phụ sản phẩm"
+
+#
+msgid "Expense type"
+msgstr "Loại chi phí"
+
+#
+msgid "Labor expense type"
+msgstr "Loại chi phí nhân công"
+
+#
+msgid "Expense quantity"
+msgstr "Số lượng chi phí"
+
+#
+msgid "Expense unit price"
+msgstr "Đơn giá chi phí"
+
+#
+msgid "Expense subtotal before tax"
+msgstr "Tổng phụ chi phí trước thuế"
+
+#
+msgid "Expense subtotal after tax"
+msgstr "Tổng phụ chi phí sau thuế"
+
+#
+msgid "Total revenue before tax"
+msgstr "Tổng doanh thu trước thuế"
+
+#
+msgid "Total revenue after tax"
+msgstr "Tổng doanh thu sau thuế"
+
+#
+msgid "Total cost before tax"
+msgstr "Tổng giá vốn trước thuế"
+
+#
+msgid "Total cost after tax"
+msgstr "Tổng giá vốn sau thuế"
+
+#
+msgid "Total expense before tax"
+msgstr "Tổng chi phí trước thuế"
+
+#
+msgid "Total expense after tax"
+msgstr "Tổng chi phí sau thuế"
+
+#
+msgid "Group order"
+msgstr "Đơn hàng nhóm"

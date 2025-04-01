@@ -11,7 +11,7 @@ from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin,
 )
 from apps.masterdata.saledata.models.product import (
-    ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product,
+    ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer,
 )
 from apps.masterdata.saledata.serializers.product import (
     ProductListSerializer, ProductCreateSerializer,
@@ -26,7 +26,8 @@ from apps.masterdata.saledata.serializers.product_masterdata import (
     UnitOfMeasureGroupListSerializer, UnitOfMeasureGroupCreateSerializer,
     UnitOfMeasureGroupDetailSerializer, UnitOfMeasureUpdateSerializer,
     UnitOfMeasureListSerializer, UnitOfMeasureCreateSerializer,
-    UnitOfMeasureGroupUpdateSerializer, UnitOfMeasureDetailSerializer
+    UnitOfMeasureGroupUpdateSerializer, UnitOfMeasureDetailSerializer, ManufacturerListSerializer,
+    ManufacturerCreateSerializer, ManufacturerDetailSerializer, ManufacturerUpdateSerializer
 )
 from apps.masterdata.saledata.serializers.product_custom import (
     ProductForSaleListSerializer, ProductForSaleDetailSerializer
@@ -74,8 +75,6 @@ class ProductTypeList(BaseListMixin, BaseCreateMixin):
 
 class ProductTypeDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = ProductType.objects
-    serializer_list = ProductTypeListSerializer
-    serializer_create = ProductTypeCreateSerializer
     serializer_detail = ProductTypeDetailSerializer
     serializer_update = ProductTypeUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -151,8 +150,6 @@ class ProductCategoryList(BaseListMixin, BaseCreateMixin):
 
 class ProductCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = ProductCategory.objects
-    serializer_list = ProductCategoryListSerializer
-    serializer_create = ProductCategoryCreateSerializer
     serializer_detail = ProductCategoryDetailSerializer
     serializer_update = ProductCategoryUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -181,12 +178,7 @@ class ProductCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
         allow_admin_tenant=True, allow_admin_company=True,
     )
     def delete(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if self.has_related_records(instance):
-            return ResponseController.bad_request_400(msg="This ProductCategory is referenced by some records.")
-        instance.is_delete = True
-        instance.save(update_fields=['is_delete'])
-        return ResponseController.success_200({}, key_data='result')
+        return self.destroy(request, *args, **kwargs)
 
 
 class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
@@ -226,8 +218,6 @@ class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
 
 class UnitOfMeasureGroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = UnitOfMeasureGroup.objects
-    serializer_list = UnitOfMeasureGroupListSerializer
-    serializer_create = UnitOfMeasureGroupCreateSerializer
     serializer_detail = UnitOfMeasureGroupDetailSerializer
     serializer_update = UnitOfMeasureGroupUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -274,6 +264,7 @@ class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     filterset_fields = {
         'group': ['exact', 'in'],
+        'group_id': ['exact', 'in'],
         'group__code': ['exact'],
     }
 
@@ -303,8 +294,6 @@ class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
 
 class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = UnitOfMeasure.objects
-    serializer_list = UnitOfMeasureListSerializer
-    serializer_create = UnitOfMeasureCreateSerializer
     serializer_detail = UnitOfMeasureDetailSerializer
     serializer_update = UnitOfMeasureUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
@@ -342,6 +331,74 @@ class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         instance.is_delete = True
         instance.save(update_fields=['is_delete'])
         return ResponseController.success_200({}, key_data='result')
+
+
+class ManufacturerList(BaseListMixin, BaseCreateMixin):
+    queryset = Manufacturer.objects
+    search_fields = ['title']
+    serializer_list = ManufacturerListSerializer
+    serializer_create = ManufacturerCreateSerializer
+    serializer_detail = ManufacturerDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_delete=False)
+
+    @swagger_auto_schema(
+        operation_summary="Manufacturer list",
+        operation_description="Manufacturer list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Manufacturer",
+        operation_description="Create new Manufacturer",
+        request_body=ManufacturerCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class ManufacturerDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
+    queryset = Manufacturer.objects
+    serializer_detail = ManufacturerDetailSerializer
+    serializer_update = ManufacturerUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    @swagger_auto_schema(operation_summary='Detail Manufacturer')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(operation_summary="Update Manufacturer", request_body=ManufacturerUpdateSerializer)
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary='Remove Manufacturer'
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
 
 class ProductList(BaseListMixin, BaseCreateMixin):
@@ -435,8 +492,6 @@ class ProductQuickCreateList(BaseListMixin, BaseCreateMixin):
 
 class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Product.objects
-    serializer_list = ProductListSerializer
-    serializer_create = ProductCreateSerializer
     serializer_detail = ProductDetailSerializer
     serializer_update = ProductUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
@@ -486,7 +541,7 @@ class ProductForSaleList(BaseListMixin):
         'general_product_types_mapped__is_goods': ['exact'],
         'general_product_types_mapped__is_finished_goods': ['exact'],
         'general_product_types_mapped__is_material': ['exact'],
-        'general_product_types_mapped__is_asset_tool': ['exact'],
+        'general_product_types_mapped__is_tool': ['exact'],
         'general_product_types_mapped__is_service': ['exact'],
         'bom_product__opportunity_id': ['exact', 'isnull'],
         'bom_product': ['isnull'],

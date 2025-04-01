@@ -3,7 +3,7 @@ from rest_framework import exceptions
 from rest_framework.parsers import MultiPartParser
 from rest_framework.views import APIView
 
-from apps.core.company.models import CompanyUserEmployee, CompanyConfig, CompanyBankAccount
+from apps.core.company.models import CompanyUserEmployee, CompanyConfig
 from apps.core.company.mixins import CompanyDestroyMixin
 from apps.core.company.models import Company
 from apps.core.hr.models import Employee
@@ -18,9 +18,8 @@ from apps.core.company.serializers import (
     CompanyUpdateSerializer,
     CompanyOverviewSerializer,
     CompanyUserNotMapEmployeeSerializer, CompanyOverviewDetailSerializer, CompanyOverviewConnectedSerializer,
-    CompanyConfigDetailSerializer, CompanyConfigUpdateSerializer, RestoreDefaultOpportunityConfigStageSerializer,
-    CompanyUploadLogoSerializer, CompanyBankAccountListSerializer, CompanyBankAccountCreateSerializer,
-    CompanyBankAccountDetailSerializer,
+    CompanyConfigDetailSerializer, CompanyConfigUpdateSerializer,
+    CompanyUploadLogoSerializer, AccountingPoliciesUpdateSerializer,
 )
 
 
@@ -56,6 +55,31 @@ class CompanyConfigDetail(APIView):
                 company_id=company_id
             )
             ser = CompanyConfigUpdateSerializer(obj, data=request.data)
+            ser.is_valid(raise_exception=True)
+            ser.save()
+            return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+        except CompanyConfig.DoesNotExist:
+            pass
+        return ResponseController.notfound_404()
+
+
+class AccountingPoliciesDetail(APIView):
+    serializer_class = AccountingPoliciesUpdateSerializer
+    @swagger_auto_schema(
+        operation_summary='Update config of Company',
+    )
+    @mask_view(
+        login_require=True, auth_require=True, allow_admin_tenant=True,
+        label_code='company', model_code='company', perm_code='edit',
+    )
+    def put(self, request, *args, **kwargs):
+        try:
+            company_id = self.request.query_params['company_id'] \
+                if 'company_id' in self.request.query_params else request.user.company_current_id
+            obj = CompanyConfig.objects.select_related('currency').get(
+                company_id=company_id
+            )
+            ser = AccountingPoliciesUpdateSerializer(obj, data=request.data)
             ser.is_valid(raise_exception=True)
             ser.save()
             return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
@@ -232,56 +256,3 @@ class CompanyOverviewDetail(BaseRetrieveMixin):
             if kwargs['option'] == 1:
                 self.serializer_detail = CompanyOverviewConnectedSerializer
         return self.retrieve(request, *args, **kwargs)
-
-
-class RestoreDefaultOpportunityConfigStage(BaseUpdateMixin):
-    queryset = Company.objects
-    serializer_update = RestoreDefaultOpportunityConfigStageSerializer
-
-    @swagger_auto_schema(
-        operation_summary='Restore Default Opportunity Config Stage'
-    )
-    @mask_view(login_require=True, auth_require=True, allow_admin_tenant=True, allow_admin_company=True)
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
-
-class CompanyBankAccountList(BaseListMixin, BaseCreateMixin):
-    queryset = CompanyBankAccount.objects
-    serializer_list = CompanyBankAccountListSerializer
-    serializer_create = CompanyBankAccountCreateSerializer
-    serializer_detail = CompanyBankAccountDetailSerializer
-    list_hidden_field = ['company_id']
-    create_hidden_field = ['company_id']
-    filterset_fields = {
-        'is_active': ['exact'],
-    }
-    search_fields = ('bank_name', 'bank_code', 'bank_account_number', 'bic_swift_code')
-
-    def get_queryset(self):
-        if 'disabled_account' in self.request.query_params and 'pk' in self.request.query_params:
-            CompanyBankAccount.objects.filter(
-                id=self.request.query_params.get('pk')
-            ).update(is_active=self.request.query_params.get('disabled_account')=='1')
-        return super().get_queryset().select_related()
-
-    @swagger_auto_schema(
-        operation_summary="Company Bank Account list",
-        operation_description="Company Bank Account list",
-    )
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_summary="Create Company",
-        operation_description="Create new Company",
-        request_body=CompanyBankAccountCreateSerializer,
-    )
-    @mask_view(
-        login_require=True, auth_require=True, allow_admin_tenant=True,
-    )
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)

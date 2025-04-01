@@ -50,7 +50,7 @@ class PurchaseRequestList(BaseListMixin, BaseCreateMixin):
         request_body=PurchaseRequestCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True, employee_require=True,
+        login_require=True, auth_require=True,
         label_code='purchasing', model_code='purchaserequest', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
@@ -126,7 +126,7 @@ class PurchaseRequestProductList(BaseListMixin):
     list_hidden_field = []
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        return super().get_queryset().filter(remain_for_purchase_order__gt=0).select_related(
             'purchase_request',
             'product',
             'product__general_product_category',

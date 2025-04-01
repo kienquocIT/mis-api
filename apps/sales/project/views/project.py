@@ -1,5 +1,6 @@
 __init__ = ['ProjectList', 'ProjectDetail', 'ProjectUpdate', 'ProjectMemberAdd', 'ProjectMemberDetail',
-            'ProjectUpdateOrder', 'ProjectCreateBaseline', 'ProjectCreateBaseline', 'ProjectBaselineDetail']
+            'ProjectUpdateOrder', 'ProjectCreateBaseline', 'ProjectCreateBaseline', 'ProjectBaselineDetail',
+            'ProjectCloseOrOpen']
 
 from typing import Union
 
@@ -13,7 +14,7 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
     BaseDestroyMixin, TypeCheck, ResponseController
 from apps.sales.project.serializers import ProjectListSerializers, ProjectCreateSerializers, ProjectDetailSerializers, \
     ProjectUpdateSerializers, MemberOfProjectAddSerializer, MemberOfProjectDetailSerializer, \
-    MemberOfProjectUpdateSerializer, ProjectUpdateOrderSerializers
+    MemberOfProjectUpdateSerializer, ProjectUpdateOrderSerializers, ProjectUpdateStatusSerializers
 from ..extend_func import get_prj_mem_of_crt_user
 
 
@@ -235,11 +236,14 @@ class ProjectUpdate(BaseUpdateMixin, BaseDestroyMixin):
         # special case skip with True if current user is employee_inherit
         emp_id = self.cls_check.employee_attr.employee_current_id
         prj_obj = instance
-        if emp_id and str(prj_obj.employee_inherit_id) == str(emp_id):
-            return True
         obj_of_current_user = get_prj_mem_of_crt_user(
             prj_obj=prj_obj, employee_current=self.cls_check.employee_attr.employee_current
         )
+        if obj_of_current_user:
+            self.ser_context['has_permit_update_lock'] = obj_of_current_user.permit_lock_fd
+
+        if emp_id and str(prj_obj.employee_inherit_id) == str(emp_id):
+            return True
         if obj_of_current_user:
             return obj_of_current_user.permit_add_gaw
         return False
@@ -460,3 +464,22 @@ class ProjectUpdateOrder(BaseUpdateMixin):
         if TypeCheck.check_uuid(pk):
             return self.update(request, *args, pk, **kwargs)
         return ResponseController.notfound_404()
+
+
+class ProjectCloseOrOpen(BaseUpdateMixin):
+    queryset = Project.objects
+    serializer_update = ProjectUpdateStatusSerializers
+    retrieve_hidden_field = ('tenant_id', 'company_id')
+
+    @swagger_auto_schema(
+        operation_summary='Update close or open project',
+        operation_description='Update close or open project',
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def put(self, request, *args, pk, **kwargs):
+        self.ser_context = {
+            'tenant': request.user.tenant_current,
+            'company': request.user.company_current,
+            'employee': request.user.employee_current,
+        }
+        return self.update(request, *args, pk, **kwargs)

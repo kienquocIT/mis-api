@@ -174,6 +174,7 @@ class APInvoiceDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_item_mapped(cls, obj):
         return [{
+            'id': item.id,
             'item_index': item.item_index,
             'product_data': {
                 'id': item.product_id,
@@ -189,6 +190,7 @@ class APInvoiceDetailSerializer(serializers.ModelSerializer):
             'product_unit_price': item.product_unit_price,
             'product_tax_value': item.product_tax_value,
             'product_subtotal_price': item.product_subtotal,
+            'increased_FA_value': item.increased_FA_value,
         } for item in obj.ap_invoice_items.all()]
 
     @classmethod

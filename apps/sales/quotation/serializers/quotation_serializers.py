@@ -293,11 +293,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
     def validate_opportunity_rules(cls, validate_data):
         if 'opportunity_id' in validate_data:
             if validate_data['opportunity_id'] is not None:
-                opportunity = Opportunity.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=validate_data['opportunity_id']
-                ).first()
+                opportunity = Opportunity.objects.filter_on_company(id=validate_data['opportunity_id']).first()
                 if opportunity:
                     if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
@@ -454,11 +450,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
     def validate_opportunity_rules(self, validate_data):
         if 'opportunity_id' in validate_data:
             if validate_data['opportunity_id'] is not None:
-                opportunity = Opportunity.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=validate_data['opportunity_id']
-                ).first()
+                opportunity = Opportunity.objects.filter_on_company(id=validate_data['opportunity_id']).first()
                 if opportunity:
                     if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})

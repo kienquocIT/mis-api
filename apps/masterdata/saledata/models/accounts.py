@@ -1,5 +1,8 @@
+import datetime
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.price import Price, Currency
 from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.masterdata.saledata.models.contacts import Contact
@@ -75,6 +78,7 @@ class AccountType(MasterDataAbstractModel):
 
 class AccountGroup(MasterDataAbstractModel):
     description = models.CharField(blank=True, max_length=200)
+    is_default = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'AccountGroup'
@@ -87,6 +91,7 @@ class AccountGroup(MasterDataAbstractModel):
 
 class Industry(MasterDataAbstractModel):
     description = models.CharField(blank=True, max_length=200)
+    is_default = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Industry'
@@ -130,11 +135,13 @@ class Account(DataAbstractModel):
         on_delete=models.CASCADE,
         null=True
     )
+    account_group_data = models.JSONField(default=dict)
     owner = models.ForeignKey(
         Contact,
         on_delete=models.CASCADE,
         null=True
     )
+    owner_data = models.JSONField(default=dict)
     manager = models.JSONField(
         default=list
     )
@@ -145,6 +152,7 @@ class Account(DataAbstractModel):
         blank=True,
         related_name='account_map_employee'
     )
+    employee_data = models.JSONField(default=list)
     account_types_mapped = models.ManyToManyField(
         AccountType,
         through='AccountAccountTypes',
@@ -152,16 +160,13 @@ class Account(DataAbstractModel):
         blank=True,
         related_name='account_map_account_types'
     )
-    parent_account = models.CharField(
-        verbose_name='parent account',
-        null=True,
-        max_length=150
-    )
+    account_types_mapped_data = models.JSONField(default=list)
     parent_account_mapped = models.ForeignKey(
         'self',
         on_delete=models.CASCADE,
         null=True
     )
+    parent_account_mapped_data = models.JSONField(default=dict)
     tax_code = models.CharField(
         verbose_name='tax code',
         blank=True,
@@ -171,8 +176,9 @@ class Account(DataAbstractModel):
     industry = models.ForeignKey(
         'saledata.Industry',
         on_delete=models.CASCADE,
-        null=False
+        null=True
     )
+    industry_data = models.JSONField(default=dict)
     # annual_revenue = models.SmallIntegerField(choices=ANNUAL_REVENUE_SELECTION, null=True)
     # total_employees = models.SmallIntegerField(choices=TOTAL_EMPLOYEES_SELECTION, default=1)
     annual_revenue = models.CharField(
@@ -206,9 +212,8 @@ class Account(DataAbstractModel):
         null=True,
         related_name='payment_term_customer_mapped'
     )
-    price_list_mapped = models.ForeignKey(Price, on_delete=models.CASCADE, null=True)
+    payment_term_customer_mapped_data = models.JSONField(default=dict)
     credit_limit_customer = models.FloatField(null=True)
-    currency = models.ForeignKey(Currency, on_delete=models.CASCADE, null=True)
 
     payment_term_supplier_mapped = models.ForeignKey(
         PaymentTerm,
@@ -216,7 +221,15 @@ class Account(DataAbstractModel):
         null=True,
         related_name='payment_term_supplier_mapped'
     )
+    payment_term_supplier_mapped_data = models.JSONField(default=dict)
     credit_limit_supplier = models.FloatField(null=True)
+
+    price_list_mapped = models.ForeignKey(Price, on_delete=models.CASCADE, null=True)
+    price_list_mapped_data = models.JSONField(default=dict)
+
+    currency = models.ForeignKey(Currency, on_delete=models.CASCADE, null=True)
+    currency_data = models.JSONField(default=dict)
+
     is_customer_account = models.BooleanField(default=False)
     is_supplier_account = models.BooleanField(default=False)
     is_partner_account = models.BooleanField(default=False)
@@ -229,6 +242,30 @@ class Account(DataAbstractModel):
         unique_together = ('company', 'code')
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def get_revenue_information(cls, obj):
+        current_date = timezone.now()
+        this_period = Periods.get_current_period(obj.tenant_id, obj.company_id)
+        revenue_ytd = 0
+        order_number = 0
+        if this_period:
+            for period in obj.company.saledata_periods_belong_to_company.all():
+                if period.fiscal_year == this_period.fiscal_year:
+                    start_date_str = str(period.start_date) + ' 00:00:00'
+                    start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d %H:%M:%S")
+                    for customer_revenue in obj.report_customer_customer.filter(
+                            group_inherit__is_delete=False, sale_order__system_status=3
+                    ):
+                        if (customer_revenue.date_approved and
+                                start_date <= customer_revenue.date_approved <= current_date):
+                            revenue_ytd += customer_revenue.revenue
+                            order_number += 1
+        return {
+            'revenue_ytd': revenue_ytd,
+            'order_number': order_number,
+            'revenue_average': round(revenue_ytd / order_number) if order_number > 0 else 0,
+        }
 
 
 # AccountEmployee

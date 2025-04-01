@@ -4,7 +4,110 @@ from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.leaseorder.utils.logical import LOHandler
 from apps.sales.leaseorder.utils.logical_finish import LOFinishHandler
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS, \
-    BastionFieldAbstractModel, RecurrenceAbstractModel, ASSET_TYPE
+    BastionFieldAbstractModel, RecurrenceAbstractModel, ASSET_TYPE, PRODUCT_CONVERT_INTO, SimpleAbstractModel
+
+
+# CONFIG
+class LeaseOrderAppConfig(MasterDataAbstractModel):
+    company = models.OneToOneField(
+        'company.Company',
+        on_delete=models.CASCADE,
+        related_name='lease_order_app_config',
+    )
+    asset_type = models.ForeignKey(
+        'saledata.FixedAssetClassification',
+        on_delete=models.CASCADE,
+        related_name="lease_config_asset_type",
+        null=True
+    )
+    asset_type_data = models.JSONField(default=dict, help_text="data json of asset_type")
+    asset_group_manage = models.ForeignKey(
+        'hr.Group',
+        on_delete=models.CASCADE,
+        related_name="lease_config_asset_group_manage",
+        null=True
+    )
+    asset_group_manage_data = models.JSONField(default=dict, help_text="data json of asset_group_manage")
+    asset_group_using = models.ManyToManyField(
+        'hr.Group',
+        through="LeaseOrderConfigAssetGroupUsing",
+        symmetrical=False,
+        blank=True,
+        related_name='lo_config_map_asset_group_using'
+    )
+    asset_group_using_data = models.JSONField(default=dict, help_text="data json of asset_group_using")
+    tool_type = models.ForeignKey(
+        'saledata.ToolClassification',
+        on_delete=models.CASCADE,
+        related_name="lease_config_tool_type",
+        null=True
+    )
+    tool_type_data = models.JSONField(default=dict, help_text="data json of tool_type")
+    tool_group_manage = models.ForeignKey(
+        'hr.Group',
+        on_delete=models.CASCADE,
+        related_name="lease_config_tool_group_manage",
+        null=True
+    )
+    tool_group_manage_data = models.JSONField(default=dict, help_text="data json of tool_group_manage")
+    tool_group_using = models.ManyToManyField(
+        'hr.Group',
+        through="LeaseOrderConfigToolGroupUsing",
+        symmetrical=False,
+        blank=True,
+        related_name='lo_config_map_tool_group_using'
+    )
+    tool_group_using_data = models.JSONField(default=list, help_text="data json of tool_group_using")
+
+    class Meta:
+        verbose_name = 'Lease order Config'
+        verbose_name_plural = 'Lease order Configs'
+        default_permissions = ()
+        permissions = ()
+
+
+class LeaseOrderConfigAssetGroupUsing(SimpleAbstractModel):
+    lease_order_config = models.ForeignKey(
+        LeaseOrderAppConfig,
+        on_delete=models.CASCADE,
+        verbose_name="lease order config",
+        related_name="lo_config_asset_group_using_lo_config",
+    )
+    group_using = models.ForeignKey(
+        'hr.Group',
+        on_delete=models.CASCADE,
+        verbose_name="group",
+        related_name="lo_config_asset_group_using_group",
+    )
+
+    class Meta:
+        verbose_name = 'Lease Order Config Asset Group Using'
+        verbose_name_plural = 'Lease Order Config Asset Groups Using'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class LeaseOrderConfigToolGroupUsing(SimpleAbstractModel):
+    lease_order_config = models.ForeignKey(
+        LeaseOrderAppConfig,
+        on_delete=models.CASCADE,
+        verbose_name="lease order config",
+        related_name="lo_config_tool_group_using_lo_config",
+    )
+    group_using = models.ForeignKey(
+        'hr.Group',
+        on_delete=models.CASCADE,
+        verbose_name="group",
+        related_name="lo_config_tool_group_using_group",
+    )
+
+    class Meta:
+        verbose_name = 'Lease Order Config Tool Group Using'
+        verbose_name_plural = 'Lease Order Config Tool Groups Using'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
 
 
 # BEGIN LEASE ORDER
@@ -90,15 +193,23 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
     )
     lease_costs_data = models.JSONField(
         default=list,
-        help_text="read data cost, use for get list or detail sale order"
+        help_text="read data cost, use for get list or detail lease order"
+    )
+    lease_costs_leased_data = models.JSONField(
+        default=list,
+        help_text="read data cost leased, use for get list or detail lease order"
     )
     lease_expenses_data = models.JSONField(
         default=list,
-        help_text="read data expense, use for get list or detail sale order"
+        help_text="read data expense, use for get list or detail lease order"
     )
     lease_payment_stage = models.JSONField(
         default=list,
-        help_text="read data payment stage, use for get list or detail sale order"
+        help_text="read data payment stage, use for get list or detail lease order"
+    )
+    lease_invoice = models.JSONField(
+        default=list,
+        help_text="read data invoice, use for get list or detail lease order"
     )
     # total amount of products
     total_product_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab product")
@@ -200,6 +311,7 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
                 if 'date_approved' in kwargs['update_fields']:
                     self.push_code(instance=self, kwargs=kwargs)  # code
                     LOFinishHandler.push_product_info(instance=self)  # product info
+                    LOFinishHandler.update_asset_status(instance=self)  # asset status => leased
 
                     LOFinishHandler.push_final_acceptance_lo(instance=self)  # final acceptance
                     LOFinishHandler.update_recurrence_task(instance=self)  # recurrence
@@ -233,11 +345,13 @@ class LeaseOrderProduct(MasterDataAbstractModel):
     offset = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
-        verbose_name="product",
+        verbose_name="offset",
         related_name="lease_order_product_offset",
         null=True
     )
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
+    tool_data = models.JSONField(default=list, help_text='data json of tool')
+    asset_data = models.JSONField(default=list, help_text='data json of asset')
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -269,8 +383,6 @@ class LeaseOrderProduct(MasterDataAbstractModel):
     product_uom_title = models.CharField(max_length=100, blank=True, null=True)
     product_uom_code = models.CharField(max_length=100, blank=True, null=True)
     product_quantity = models.FloatField(default=0)
-    product_quantity_new = models.FloatField(default=0)
-    product_quantity_leased = models.FloatField(default=0)
     product_quantity_time = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
     product_discount_value = models.FloatField(default=0)
@@ -323,6 +435,86 @@ class LeaseOrderProduct(MasterDataAbstractModel):
         permissions = ()
 
 
+class LeaseOrderProductTool(MasterDataAbstractModel):
+    lease_order = models.ForeignKey(
+        LeaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="lease_order_product_tool_lease_order",
+        null=True
+    )
+    lease_order_product = models.ForeignKey(
+        LeaseOrderProduct,
+        on_delete=models.CASCADE,
+        verbose_name="lease order product",
+        related_name="lease_order_product_tool_lo_product",
+    )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="lease_order_product_tool_product",
+        null=True
+    )
+    product_data = models.JSONField(default=dict, help_text='data json of product')
+    tool = models.ForeignKey(
+        'asset.InstrumentTool',
+        on_delete=models.CASCADE,
+        verbose_name="tool",
+        related_name="lease_order_product_tool_tool",
+        null=True
+    )
+    tool_data = models.JSONField(default=dict, help_text='data json of tool')
+    product_quantity = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Lease Order Product Tool'
+        verbose_name_plural = 'Lease Order Products Tools'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class LeaseOrderProductAsset(MasterDataAbstractModel):
+    lease_order = models.ForeignKey(
+        LeaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="lease_order_product_asset_lease_order",
+        null=True
+    )
+    lease_order_product = models.ForeignKey(
+        LeaseOrderProduct,
+        on_delete=models.CASCADE,
+        verbose_name="lease order product",
+        related_name="lease_order_product_asset_lo_product",
+    )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="lease_order_product_asset_product",
+        null=True
+    )
+    product_data = models.JSONField(default=dict, help_text='data json of product')
+    asset = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.CASCADE,
+        verbose_name="asset",
+        related_name="lease_order_product_asset_asset",
+        null=True
+    )
+    asset_data = models.JSONField(default=dict, help_text='data json of asset')
+    product_quantity = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Lease Order Product Asset'
+        verbose_name_plural = 'Lease Order Products Assets'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
 # SUPPORT LOGISTICS
 class LeaseOrderLogistic(MasterDataAbstractModel):
     lease_order = models.ForeignKey(
@@ -356,6 +548,31 @@ class LeaseOrderCost(MasterDataAbstractModel):
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
+    asset_type = models.SmallIntegerField(null=True, help_text='choices= ' + str(ASSET_TYPE))
+    offset = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="offset",
+        related_name="lease_order_cost_offset",
+        null=True
+    )
+    offset_data = models.JSONField(default=dict, help_text='data json of offset')
+    tool = models.ForeignKey(
+        'asset.InstrumentTool',
+        on_delete=models.CASCADE,
+        verbose_name="tool",
+        related_name="lease_order_cost_tool",
+        null=True
+    )
+    tool_data = models.JSONField(default=dict, help_text='data json of tool')
+    asset = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.CASCADE,
+        verbose_name="asset",
+        related_name="lease_order_cost_asset",
+        null=True
+    )
+    asset_data = models.JSONField(default=dict, help_text='data json of asset')
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,
@@ -367,7 +584,7 @@ class LeaseOrderCost(MasterDataAbstractModel):
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
-        verbose_name="unit",
+        verbose_name="uom",
         related_name="lease_order_cost_uom",
         null=True
     )
@@ -375,11 +592,11 @@ class LeaseOrderCost(MasterDataAbstractModel):
     uom_time = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
-        verbose_name="unit",
+        verbose_name="uom time",
         related_name="lease_order_cost_uom_time",
         null=True
     )
-    uom_time_data = models.JSONField(default=dict, help_text='data json of uom')
+    uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
@@ -412,6 +629,26 @@ class LeaseOrderCost(MasterDataAbstractModel):
     )
     shipping_data = models.JSONField(default=dict, help_text='data json of shipping')
     supplied_by = models.SmallIntegerField(default=0)  # (0: 'purchasing', 1: 'making')
+
+    # Begin depreciation fields
+
+    product_depreciation_subtotal = models.FloatField(default=0)
+    product_depreciation_price = models.FloatField(default=0)
+    product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
+    product_depreciation_adjustment = models.FloatField(default=0)
+    product_depreciation_time = models.FloatField(default=0)
+    product_depreciation_start_date = models.DateField(null=True)
+    product_depreciation_end_date = models.DateField(null=True)
+
+    product_lease_start_date = models.DateField(null=True)
+    product_lease_end_date = models.DateField(null=True)
+
+    depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+    depreciation_lease_data = models.JSONField(default=list, help_text='data json of depreciation lease')
+
+    product_convert_into = models.SmallIntegerField(choices=PRODUCT_CONVERT_INTO, null=True)
+
+    # End depreciation fields
 
     class Meta:
         verbose_name = 'Lease Order Cost'
@@ -508,31 +745,73 @@ class LeaseOrderPaymentStage(MasterDataAbstractModel):
         LeaseOrder,
         on_delete=models.CASCADE,
         verbose_name="lease order",
-        related_name="payment_stage_lease_order",
+        related_name="lease_order_payment_stage_lease_order",
     )
     remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
     term = models.ForeignKey(
         'saledata.Term',
         on_delete=models.SET_NULL,
         verbose_name="payment term",
-        related_name="lease_payment_stage_term",
+        related_name="lease_order_payment_stage_term",
         null=True
     )
     term_data = models.JSONField(default=dict)
     date = models.DateTimeField(null=True)
-    date_type = models.CharField(max_length=200, blank=True)
-    payment_ratio = models.FloatField(default=0)
-    value_before_tax = models.FloatField(default=0)
-    issue_invoice = models.IntegerField(null=True)
-    value_after_tax = models.FloatField(default=0)
-    value_total = models.FloatField(default=0)
     due_date = models.DateTimeField(null=True)
+    date_type = models.CharField(max_length=200, blank=True)
+    ratio = models.FloatField(null=True)
+    invoice = models.IntegerField(null=True)
+    invoice_data = models.JSONField(default=dict, help_text='data json of invoice')
+    value_before_tax = models.FloatField(default=0)
+    value_reconcile = models.FloatField(default=0)
+    reconcile_data = models.JSONField(default=list, help_text='data json of reconcile')
+    tax = models.ForeignKey(
+        'saledata.Tax',
+        on_delete=models.CASCADE,
+        verbose_name="tax",
+        related_name="lease_order_payment_stage_tax",
+        null=True
+    )
+    tax_data = models.JSONField(default=dict, help_text='data json of tax')
+    value_tax = models.FloatField(default=0)
+    value_total = models.FloatField(default=0)
     is_ar_invoice = models.BooleanField(default=False)
     order = models.IntegerField(default=1)
 
     class Meta:
         verbose_name = 'Lease Order Payment Stage'
         verbose_name_plural = 'Lease Order Payment Stages'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class LeaseOrderInvoice(MasterDataAbstractModel):
+    lease_order = models.ForeignKey(
+        LeaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="lease_order_invoice_lease_order",
+    )
+    remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+    date = models.DateTimeField(null=True)
+    term_data = models.JSONField(default=list, help_text='data json of terms')
+    ratio = models.FloatField(null=True)
+    tax = models.ForeignKey(
+        'saledata.Tax',
+        on_delete=models.CASCADE,
+        verbose_name="tax",
+        related_name="lease_order_invoice_tax",
+        null=True
+    )
+    tax_data = models.JSONField(default=dict, help_text='data json of tax')
+    total = models.FloatField(default=0)
+    balance = models.FloatField(default=0)
+    order = models.IntegerField(default=1)
+
+    class Meta:
+        verbose_name = 'Lease Order Invoice'
+        verbose_name_plural = 'Lease Order Invoices'
         ordering = ('order',)
         default_permissions = ()
         permissions = ()

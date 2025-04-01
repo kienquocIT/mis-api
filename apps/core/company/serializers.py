@@ -3,18 +3,14 @@ from crum import get_current_user
 from rest_framework import serializers
 from django.conf import settings
 from django.db.models import Count, Subquery
-from django.utils.translation import gettext_lazy as _
 from apps.core.account.models import User
-from apps.core.base.models import Country
 from apps.core.company.models import (
-    Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee, CompanyBankAccount,
+    Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
 )
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.masterdata.saledata.models import Periods
-from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.sales.report.models import ReportStockLog
 from apps.shared import DisperseModel, AttMsg, FORMATTING, BaseMsg
-from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.translations.company import CompanyMsg
 
 
@@ -59,7 +55,9 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
             'default_inventory_value_method',
             'cost_per_warehouse',
             'cost_per_lot',
-            'cost_per_project'
+            'cost_per_project',
+            'accounting_policies',
+            'applicable_circular'
         )
 
 
@@ -116,8 +114,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
                     'definition_inventory_valuation':
                         "Can't update Definition inventory valuation because there are transactions in this Period."
                 })
-            this_period.definition_inventory_valuation = validate_data.get('definition_inventory_valuation')
-            this_period.save(update_fields=['definition_inventory_valuation'])
+            validate_data['this_period'] = this_period
 
             old_cost_setting = [
                 self.instance.cost_per_warehouse,
@@ -137,6 +134,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"fiscal_year_not_found": 'This period is not found.'})
 
     def update(self, instance, validated_data):
+        this_period = validated_data.pop('this_period')
         sub_domain = validated_data.pop('sub_domain', None)
         currency_rule = validated_data.pop('currency_rule', {})
 
@@ -152,6 +150,20 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'cost_per_lot',
             'cost_per_project'
         ])
+
+        this_period.definition_inventory_valuation = instance.definition_inventory_valuation
+        this_period.default_inventory_value_method = instance.default_inventory_value_method
+        this_period.cost_per_warehouse = instance.cost_per_warehouse
+        this_period.cost_per_lot = instance.cost_per_lot
+        this_period.cost_per_project = instance.cost_per_project
+        this_period.save(update_fields=[
+            'definition_inventory_valuation',
+            'default_inventory_value_method',
+            'cost_per_warehouse',
+            'cost_per_lot',
+            'cost_per_project'
+        ])
+
         if currency_rule and all(
             key in currency_rule for key in ['prefix', 'suffix', 'thousands', 'decimal', 'precision']
         ):
@@ -178,6 +190,41 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'cost_per_warehouse',
             'cost_per_lot',
             'cost_per_project'
+        )
+
+
+class AccountingPoliciesUpdateSerializer(serializers.ModelSerializer):
+    def validate(self, validate_data):
+        tenant_obj = self.instance.company.tenant
+        company_obj = self.instance.company
+        this_period = Periods.get_current_period(tenant_obj.id, company_obj.id)
+        if this_period:
+            validate_data['this_period'] = this_period
+        else:
+            # chỗ này không được sửa key lỗi trả về - fiscal_year_not_found
+            # (vì trên UI company dựa vào key lỗi này để check đã có năm tài chính hay chưa)
+            raise serializers.ValidationError(
+                {'fiscal_year_not_found': f"Can't find fiscal year {datetime.datetime.now().year}."}
+            )
+        return validate_data
+
+    def update(self, instance, validated_data):
+        this_period = validated_data.pop('this_period')
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save(update_fields=['accounting_policies', 'applicable_circular'])
+
+        this_period.accounting_policies = instance.accounting_policies
+        this_period.applicable_circular = instance.applicable_circular
+        this_period.save(update_fields=['accounting_policies', 'applicable_circular'])
+
+        return instance
+
+    class Meta:
+        model = CompanyConfig
+        fields = (
+            'accounting_policies',
+            'applicable_circular',
         )
 
 
@@ -214,7 +261,6 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     cost_cfg = serializers.SerializerMethodField()
     company_function_number = serializers.SerializerMethodField()
-    company_bank_data = serializers.SerializerMethodField()
 
     @classmethod
     def get_logo(cls, obj):
@@ -236,7 +282,6 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'phone',
             'fax',
             'company_function_number',
-            'company_bank_data',
             'sub_domain',
             'logo',
             'icon',
@@ -258,22 +303,6 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
                 'min_number_char': item.min_number_char
             })
         return company_function_number
-
-    @classmethod
-    def get_company_bank_data(cls, obj):
-        company_bank_data = []
-        for item in obj.company_bank_account_company.all():
-            company_bank_data.append({
-                'id': item.id,
-                'bank_name': item.bank_name,
-                'bank_code': item.bank_code,
-                'bank_account_name': item.bank_account_name,
-                'bank_account_number': item.bank_account_number,
-                'bic_swift_code': item.bic_swift_code,
-                'is_default': item.is_default,
-                'is_active': item.is_active,
-            })
-        return company_bank_data
 
     @classmethod
     def get_cost_cfg(cls, obj):
@@ -642,131 +671,3 @@ class CompanyOverviewConnectedSerializer(serializers.ModelSerializer):
             ),
             many=True
         ).data
-
-
-class RestoreDefaultOpportunityConfigStageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Company
-        fields = []
-
-    @classmethod
-    def update_stage_default(cls, list_stage_update, dict_data, bulk_data):
-        for stage in list_stage_update:
-            stage_data = dict_data[stage.indicator]
-            if stage.indicator == stage_data['indicator']:
-                obj = stage
-                is_changed = False
-
-                # Check data changed
-                if obj.description != stage_data['description']:
-                    obj.description = stage_data['description']
-                    is_changed = True
-
-                if obj.win_rate != stage_data['win_rate']:
-                    obj.win_rate = stage_data['win_rate']
-                    is_changed = True
-
-                if obj.condition_datas != stage_data['condition_datas']:
-                    obj.condition_datas = stage_data['condition_datas']
-                    is_changed = True
-
-                # Save if has changed
-                if is_changed:
-                    obj.save()
-                for condition in stage_data['condition_datas']:
-                    bulk_data.append(
-                        StageCondition(
-                            stage=obj,
-                            condition_property_id=condition['condition_property']['id'],
-                            comparison_operator=condition['comparison_operator'],
-                            compare_data=condition['compare_data']
-                        )
-                    )
-                del dict_data[stage.indicator]
-        return bulk_data
-
-    def update(self, instance, validated_data):
-        # data default
-        data = ConfigDefaultData.opportunity_config_stage_data
-        dict_data = {item['indicator']: item for item in data}
-
-        # stage need delete
-        list_stage_delete = OpportunityConfigStage.objects.filter(company=instance, is_default=False)
-        list_stage_delete.delete()
-
-        # delete all condition of stage of company
-        StageCondition.objects.filter(stage__company=instance).delete()
-
-        # stage need update
-        list_stage_update = OpportunityConfigStage.objects.filter(company=instance, is_default=True)
-        bulk_data = []
-
-        # update stage need update
-        bulk_data = self.update_stage_default(list_stage_update, dict_data, bulk_data)
-
-        bulk_data_stage = []
-
-        # add again deleted default stage
-        for _, value in dict_data.items():
-            stage = OpportunityConfigStage(**value, company=instance)
-            bulk_data_stage.append(stage)
-            for condition in value['condition_datas']:
-                bulk_data.append(
-                    StageCondition(
-                        stage=stage,
-                        condition_property_id=condition['condition_property']['id'],
-                        comparison_operator=condition['comparison_operator'],
-                        compare_data=condition['compare_data']
-                    )
-                )
-
-        OpportunityConfigStage.objects.bulk_create(bulk_data_stage)
-        StageCondition.objects.bulk_create(bulk_data)
-        return True
-
-
-class CompanyBankAccountListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CompanyBankAccount
-        fields = '__all__'
-
-
-class CompanyBankAccountCreateSerializer(serializers.ModelSerializer):
-    country = serializers.UUIDField(required=True)
-    bank_name = serializers.CharField(required=True)
-    bank_code = serializers.CharField(required=True)
-    bank_account_name = serializers.CharField(required=True)
-    bank_account_number = serializers.CharField(required=True)
-    bic_swift_code = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    is_default = serializers.BooleanField(required=True)
-
-    class Meta:
-        model = CompanyBankAccount
-        fields = (
-            'country',
-            'bank_name',
-            'bank_code',
-            'bank_account_name',
-            'bank_account_number',
-            'bic_swift_code',
-            'is_default',
-        )
-
-    @classmethod
-    def validate_country(cls, value):
-        try:
-            return Country.objects.get(id=value)
-        except Country.DoesNotExist:
-            raise serializers.ValidationError({'country': _('Country does not exist')})
-
-    def create(self, validated_data):
-        company_bank_account_obj = CompanyBankAccount.objects.create(**validated_data)
-        if validated_data.get('is_default') is True:
-            CompanyBankAccount.objects.exclude(id=company_bank_account_obj.id).update(is_default=False)
-        return company_bank_account_obj
-
-
-class CompanyBankAccountDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CompanyBankAccount
-        fields = '__all__'

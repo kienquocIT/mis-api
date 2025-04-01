@@ -10,11 +10,27 @@ from apps.sharedapp.admin import my_admin_site
 
 from . import media_proxy
 
+
+def zalo_verify(request):
+    from django.http import HttpResponse
+    html = """
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <meta name="zalo-platform-site-verification" content="HzwJ8CFR82SAxvS2siit92R7fmJAiNPUCZ0u" />
+        </head>
+    </html>
+    """
+    return HttpResponse(html, content_type='text/html')
+
+
 urlpatterns = [
+    path('zalo_verifierHzwJ8CFR82SAxvS2siit92R7fmJAiNPUCZ0u.html', zalo_verify),
     path('api/', include('apps.core.urls')),
     path('api/', include('apps.masterdata.urls')),
     path('api/private-system/', include('apps.sharedapp.urls')),
     path('api/', include('apps.sales.urls')),
+    path('api/', include('apps.accounting.urls')),
     path('api/', include('apps.eoffice.urls')),
     path('api/hrm/', include('apps.hrm.urls')),
     path('django-admin/', my_admin_site.urls),

@@ -66,7 +66,17 @@ class BOM(DataAbstractModel):
                 if self.product.has_bom:
                     raise ValueError("This product is mapped with BOM")
                 self.product.has_bom = True
-                self.product.save(update_fields=['has_bom'])
+                self.product.bom_data = {
+                    'id': str(self.id),
+                    'code': self.code,
+                    'title': self.title,
+                    'bom_type': self.bom_type,
+                    'for_outsourcing': self.for_outsourcing,
+                    'sum_price': self.sum_price,
+                    'sum_time': self.sum_time,
+                    'opp_data': self.opp_data,
+                }
+                self.product.save(update_fields=['has_bom', 'bom_data'])
 
         # opportunity log
         AdvanceHandler.push_opportunity_log(instance=self)
