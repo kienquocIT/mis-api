@@ -1317,6 +1317,17 @@ class SubScripts:
         print('Done :))')
         return True
 
+    @classmethod
+    def update_order_delivery_has_ar_invoice_already(cls):
+        for obj in OrderDeliverySub.objects.all():
+            obj.has_ar_invoice_already = ARInvoiceDelivery.objects.filter(
+                ar_invoice__system_status=3,
+                delivery_mapped=obj
+            ).exists()
+            obj.save(update_fields=['has_ar_invoice_already'], **{'skip_check_period': True})
+        print('Done :))')
+        return True
+
 
 def reset_run_indicator_fields(kwargs):
     for sale_order in SaleOrder.objects.filter(**kwargs):

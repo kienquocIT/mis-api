@@ -296,7 +296,8 @@ class GoodsReceipt(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        SubPeriods.check_period(self.tenant_id, self.company_id)
+        if not kwargs.pop('skip_check_period', False):
+            SubPeriods.check_period(self.tenant_id, self.company_id)
 
         if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
             # check if date_approved then call related functions
