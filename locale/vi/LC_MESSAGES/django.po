@@ -1597,3 +1597,15 @@ msgstr "Tổng chi phí sau thuế"
 #
 msgid "Group order"
 msgstr "Đơn hàng nhóm"
+
+#
+msgid "Group Order"
+msgstr "Đơn hàng nhóm"
+
+#
+msgid "Fixed Asset Write-off"
+msgstr "Ghi giảm tài sản cố định"
+
+#
+msgid "Instrument Tool Write-off"
+msgstr "Ghi giảm công cụ dụng cụ"
