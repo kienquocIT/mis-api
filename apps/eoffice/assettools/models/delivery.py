@@ -2,13 +2,11 @@ __all__ = ['AssetToolsDelivery', 'AssetToolsDeliveryAttachmentFile', 'ProductDel
 
 import json
 
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.masterdata.saledata.models import ProductWareHouse
 from apps.shared import DataAbstractModel, AssetToolsMsg
-from .provide import AssetToolsProvideProduct
 
 
 class AssetToolsDelivery(DataAbstractModel):
@@ -77,45 +75,27 @@ class AssetToolsDelivery(DataAbstractModel):
             self.code = code
 
     def update_product_used(self):
-        if not self.code:
-            prod_list = ProductDeliveredMapProvide.objects.filter(
-                delivery_id=str(self.id),
-            )
-            product_asset_list = []
-            product_warehouse_list = []
-            for item in prod_list:
-                count = item.done
-                row_item = item.product.product_map_asset_provide.filter(
-                    asset_tools_provide=self.provide,
-                ).first()  # bảng AssetToolsProvideProduct
-                if row_item:
-                    # update delivered cho provide product
-                    row_item.delivered += count
-                    if row_item.delivered > row_item.quantity:
-                        raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
-                    product_asset_list.append(row_item)
-
-                    # update used_amount cho prod trong warehouse bảng ProductWareHouse if product has control inventory
-                    if 1 in item.product.product_choice:
-                        prod_warehouse = item.product.product_warehouse_product.first()
-                        if (prod_warehouse.stock_amount - prod_warehouse.used_amount) < count:
+        try:
+            with transaction.atomic():
+                if self.system_status == 3:
+                    prod_list = ProductDeliveredMapProvide.objects.filter(
+                        delivery_id=str(self.id),
+                    )
+                    for item in prod_list:
+                        delivered = item.done
+                        prod_instrument_tools = item.prod_in_tools
+                        prod_available = prod_instrument_tools.quantity - prod_instrument_tools.allocated_quantity
+                        if prod_available and prod_available - delivered >= 0 and delivered <= item.request_number:
+                            item.delivered_number += delivered
+                            prod_instrument_tools.allocated_quantity += delivered
+                            prod_instrument_tools.save(update_fields=["allocated_quantity"])
+                        else:
+                            # ccdc is empty
                             raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
-                        prod_warehouse.used_amount += count
-                        product_warehouse_list.append(prod_warehouse)
-            if product_asset_list:
-                AssetToolsProvideProduct.objects.bulk_update(product_asset_list, fields=['delivered'])
-            if product_warehouse_list:
-                ProductWareHouse.objects.bulk_update(product_warehouse_list, fields=['used_amount'])
-
-            check_lst = AssetToolsProvideProduct.objects.filter(asset_tools_provide=self.provide)
-            is_completed = True
-            for item in check_lst:
-                if item.quantity != item.delivered:
-                    is_completed = False
-                    break
-            if is_completed:
-                self.provide.complete_delivered = True
-                self.provide.save(update_fields=['complete_delivered'])
+                        # update delivered cho provide product
+                        item.save(update_fields=["delivered_number"])
+        except ValueError:
+            raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
         return True
 
     def create_backup_data(self):
@@ -208,9 +188,6 @@ class ProductDeliveredMapProvide(DataAbstractModel):
     )
     order = models.IntegerField(
         default=1, verbose_name='Order',
-    )
-    is_inventory = models.BooleanField(
-        default=False, verbose_name='Has Inventory',
     )
 
     def create_backup_data(self):

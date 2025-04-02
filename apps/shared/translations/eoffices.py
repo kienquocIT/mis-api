@@ -43,3 +43,4 @@ class AssetToolsMsg:
     ERROR_UPDATE_DELIVERED = _('Error update product delivered')
     RETURN_PRODUCT_ERROR01 = _('Product used in warehouse less than product return')
     ERROR_CREATE_ASSET_REQUEST = _('Internal server error during request provided')
+    ERROR_CREATE_ASSET_DELIVERY = _('Internal server error during request delivery')

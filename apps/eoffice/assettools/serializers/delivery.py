@@ -5,6 +5,7 @@ __all__ = [
 
 from datetime import datetime
 
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -19,13 +20,16 @@ from apps.shared.translations.base import AttachmentMsg
 
 class AssetToolsProductsMapDeliverySerializer(serializers.Serializer):  # noqa
     product = serializers.UUIDField()
-    warehouse = serializers.UUIDField()
     order = serializers.IntegerField()
     request_number = serializers.FloatField()
     delivered_number = serializers.FloatField()
     done = serializers.IntegerField()
     date_delivered = serializers.DateTimeField()
-    is_inventory = serializers.BooleanField()
+
+    def validate(self, attrs):
+        if attrs['done'] > attrs['request_number']:
+            raise serializers.ValidationError({'detail': AssetToolsMsg.RETURN_PRODUCT_ERROR01})
+        return attrs
 
 
 def create_products(instance, prod_list):
@@ -44,14 +48,12 @@ def create_products(instance, prod_list):
             company=instance.company,
             delivery=instance,
             order=item['order'],
-            product_id=item['product'],
-            warehouse_id=item['warehouse'],
+            prod_in_tools_id=item['product'],
             employee_inherit=instance.employee_inherit,
             request_number=item['request_number'],
             delivered_number=item['delivered_number'],
             done=item['done'],
-            date_delivered=date_delivered,
-            is_inventory=item['is_inventory']
+            date_delivered=date_delivered
         )
         temp.before_save()
         create_lst.append(temp)
@@ -107,12 +109,16 @@ class AssetToolsDeliveryCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
-        products_list = validated_data.pop('products', None)
-        attachments = validated_data.pop('attachments', None)
-        delivery = AssetToolsDelivery.objects.create(**validated_data)
-        create_products(delivery, products_list)
-        handle_attach_file(delivery, attachments)
-        return delivery
+        try:
+            with transaction.atomic():
+                products_list = validated_data.pop('products', None)
+                attachments = validated_data.pop('attachments', None)
+                delivery = AssetToolsDelivery.objects.create(**validated_data)
+                create_products(delivery, products_list)
+                handle_attach_file(delivery, attachments)
+                return delivery
+        except ValueError:
+            raise serializers.ValidationError({'detail': AssetToolsMsg.ERROR_CREATE_ASSET_DELIVERY})
 
     class Meta:
         model = AssetToolsDelivery
@@ -135,23 +141,17 @@ class AssetToolsDeliveryDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_products(cls, obj):
-        if obj.products:
+        if obj.prod_in_tools:
             products_list = []
             for item in list(obj.provide_map_delivery.all()):
-                product_available = 0
-                if item.warehouse_data:
-                    prod_warehouse = item.product.product_warehouse_product.filter(
-                        warehouse_id=item.warehouse_data['id']
-                    )
-                    warehouse = prod_warehouse.first()
-                    product_available = warehouse.stock_amount - warehouse.used_amount if warehouse else 0
+                prod_instrument_tool = item.prod_in_tools
+                product_available = prod_instrument_tool.quantity - prod_instrument_tool.allocated_quantity
 
                 products_list.append(
                     {
                         'order': item.order,
                         'product_available': product_available,
                         'product': {**item.product_data, } if hasattr(item, 'product_data') else {},
-                        'warehouse': item.warehouse_data if hasattr(item, 'warehouse_data') else {},
                         'request_number': item.request_number,
                         'delivered_number': item.delivered_number,
                         'done': item.done,

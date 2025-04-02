@@ -256,12 +256,9 @@ class AssetToolsProductListByProvideIDSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_available(cls, obj):
         if obj.prod_in_tools:
-            prod_warehouse = obj.prod_in_tools.product_warehouse_product.all()
-            temp = {}
-            for warehouse in prod_warehouse:
-                temp[str(warehouse.warehouse.id)] = warehouse.stock_amount - warehouse.used_amount if warehouse else 0
+            prod = obj.prod_in_tools
+            temp = prod.quantity - prod.allocated_quantity
             return temp
-
         return 0
 
     @classmethod
