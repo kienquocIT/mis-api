@@ -5,7 +5,8 @@ from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseOrderRequest, \
-    PurchaseRequest, PurchaseOrderRequestProduct, PurchaseQuotation, PurchaseOrderQuotation, PurchaseOrderPaymentStage
+    PurchaseRequest, PurchaseOrderRequestProduct, PurchaseQuotation, PurchaseOrderQuotation,\
+    PurchaseOrderPaymentStage, PurchaseOrderInvoice
 from apps.sales.saleorder.models import SaleOrderProduct
 from apps.shared import PurchaseRequestMsg, SaleMsg, BaseMsg
 
@@ -109,16 +110,28 @@ class PurchaseOrderCommonCreate:
 
     @classmethod
     def create_payment_stage(cls, validated_data, instance):
-        bulk_info = []
-        for purchase_order_payment_stage in validated_data['purchase_order_payment_stage']:
-            valid_data = cls.validate_payment_stage_data(purchase_order_payment_stage)
-            bulk_info.append(PurchaseOrderPaymentStage(
+        instance.purchase_order_payment_stage_po.all().delete()
+        PurchaseOrderPaymentStage.objects.bulk_create(
+            [PurchaseOrderPaymentStage(
                 purchase_order=instance,
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
-                **valid_data,
-            ))
-        PurchaseOrderPaymentStage.objects.bulk_create(bulk_info)
+                **purchase_order_payment_stage,
+            ) for purchase_order_payment_stage in validated_data['purchase_order_payment_stage']]
+        )
+        return True
+
+    @classmethod
+    def create_invoice(cls, validated_data, instance):
+        instance.purchase_order_invoice_purchase_order.all().delete()
+        PurchaseOrderInvoice.objects.bulk_create(
+            [PurchaseOrderInvoice(
+                purchase_order=instance,
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                **purchase_order_invoice,
+            ) for purchase_order_invoice in validated_data['purchase_order_invoice']]
+        )
         return True
 
     @classmethod
@@ -156,13 +169,6 @@ class PurchaseOrderCommonCreate:
         return True
 
     @classmethod
-    def delete_old_payment_stage(cls, instance):
-        old_payment_stage = PurchaseOrderPaymentStage.objects.filter(purchase_order=instance)
-        if old_payment_stage:
-            old_payment_stage.delete()
-        return True
-
-    @classmethod
     def create_purchase_order_sub_models(cls, validated_data, instance, is_update=False):
         if 'purchase_requests_data' in validated_data:
             if is_update is True:
@@ -192,10 +198,14 @@ class PurchaseOrderCommonCreate:
                 validated_data=validated_data,
                 instance=instance
             )
+        # payment stage tab
         if 'purchase_order_payment_stage' in validated_data:
-            if is_update is True:
-                cls.delete_old_payment_stage(instance=instance)
             cls.create_payment_stage(
+                validated_data=validated_data,
+                instance=instance
+            )
+        if 'purchase_order_invoice' in validated_data:
+            cls.create_invoice(
                 validated_data=validated_data,
                 instance=instance
             )
@@ -223,22 +233,14 @@ class PurchasingCommonValidate:
     @classmethod
     def validate_supplier(cls, value):
         try:
-            return Account.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            return Account.objects.get_on_company(id=value)
         except Account.DoesNotExist:
             raise serializers.ValidationError({'supplier': BaseMsg.NOT_EXIST})
 
     @classmethod
     def validate_contact(cls, value):
         try:
-            return Contact.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            return Contact.objects.get_on_company(id=value)
         except Contact.DoesNotExist:
             raise serializers.ValidationError({'contact': BaseMsg.NOT_EXIST})
 
@@ -247,11 +249,7 @@ class PurchasingCommonValidate:
         try:
             if value is None:
                 return {}
-            product = Product.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            product = Product.objects.get_on_company(id=value)
             return {
                 'id': str(product.id),
                 'title': product.title,
@@ -272,11 +270,7 @@ class PurchasingCommonValidate:
     @classmethod
     def validate_purchase_quotation(cls, value):
         try:
-            purchase_quotation = PurchaseQuotation.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            purchase_quotation = PurchaseQuotation.objects.get_on_company(id=value)
             return {
                 'id': str(purchase_quotation.id),
                 'title': purchase_quotation.title,
@@ -302,11 +296,7 @@ class PurchasingCommonValidate:
         try:
             if value is None:
                 return {}
-            uom = UnitOfMeasure.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            uom = UnitOfMeasure.objects.get_on_company(id=value)
             return {
                 'id': str(uom.id),
                 'title': uom.title,
@@ -318,17 +308,20 @@ class PurchasingCommonValidate:
     @classmethod
     def validate_tax(cls, value):
         try:
-            tax = Tax.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
+            tax = Tax.objects.get_on_company(id=value)
             return {
                 'id': str(tax.id),
                 'title': tax.title,
                 'code': tax.code,
                 'value': tax.rate
             }
+        except Tax.DoesNotExist:
+            raise serializers.ValidationError({'tax': BaseMsg.NOT_EXIST})
+
+    @classmethod
+    def validate_tax_id(cls, value):
+        try:
+            return str(Tax.objects.get_on_company(id=value).id)
         except Tax.DoesNotExist:
             raise serializers.ValidationError({'tax': BaseMsg.NOT_EXIST})
 
