@@ -2,8 +2,8 @@ import logging
 from django.db import transaction
 from rest_framework import serializers
 from apps.masterdata.saledata.models import (
-    UnitOfMeasureGroup, ProductType, ProductCategory,
-    Product, ProductProductType, ProductMeasurements, UnitOfMeasure, Currency, Price, ProductPriceList
+    UnitOfMeasureGroup, ProductType, ProductCategory, Manufacturer,
+    Product, ProductProductType, ProductMeasurements, UnitOfMeasure, Currency, Price, ProductPriceList, Tax
 )
 from apps.masterdata.saledata.serializers import (
     CommonCreateUpdateProduct, ProductCreateSerializer
@@ -15,7 +15,7 @@ from apps.core.base.models import BaseItemUnit
 logger = logging.getLogger(__name__)
 
 
-class ProductImportListSerializer(serializers.ModelSerializer):
+class ProductImportCreateSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -24,6 +24,7 @@ class ProductImportListSerializer(serializers.ModelSerializer):
     general_product_category = serializers.CharField()
     general_product_types_mapped = serializers.CharField()
     general_uom_group = serializers.CharField()
+    general_manufacturer = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     length = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     height = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     width = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -47,6 +48,7 @@ class ProductImportListSerializer(serializers.ModelSerializer):
             'code', 'title', 'description', 'product_choice', 'part_number',
             # General
             'general_product_category',
+            'general_manufacturer',
             'general_product_types_mapped',
             'general_uom_group',
             'general_traceability_method',
@@ -61,11 +63,11 @@ class ProductImportListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_code(cls, value):
-        ProductCreateSerializer.validate_code(value)
+        return ProductCreateSerializer.validate_code(value)
 
     @classmethod
     def validate_product_choice(cls, value):
-        ProductCreateSerializer.validate_product_choice(value)
+        return ProductCreateSerializer.validate_product_choice(value)
 
     @classmethod
     def validate_general_product_types_mapped(cls, value):
@@ -87,6 +89,15 @@ class ProductImportListSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'general_product_category': ProductMsg.PRODUCT_CATEGORY_NOT_NULL})
 
     @classmethod
+    def validate_general_manufacturer(cls, value):
+        if value:
+            try:
+                return Manufacturer.objects.get_on_company(code=value)
+            except Manufacturer.DoesNotExist:
+                raise serializers.ValidationError({'manufacturer': ProductMsg.MANUFACTURER_DOES_NOT_EXIST})
+        return None
+
+    @classmethod
     def validate_general_uom_group(cls, value):
         if value:
             try:
@@ -101,28 +112,35 @@ class ProductImportListSerializer(serializers.ModelSerializer):
             # valid sale_default_uom
             if not validate_data.get('sale_default_uom'):
                 raise serializers.ValidationError({'sale_default_uom': ProductMsg.UOM_NOT_NULL})
-            sale_default_uom = UnitOfMeasure.objects.filter_current(
-                fill__tenant=True, fill__company=True, code=validate_data.get('sale_default_uom')
-            ).first()
+            sale_default_uom = UnitOfMeasure.objects.filter_on_company(
+                code=validate_data.get('sale_default_uom')).first()
+
             if not sale_default_uom:
                 raise serializers.ValidationError({'sale_default_uom': ProductMsg.UOM_NOT_EXIST})
             validate_data['sale_default_uom'] = sale_default_uom
             # valid sale_tax
             if not validate_data.get('sale_tax'):
                 raise serializers.ValidationError({'sale_tax': ProductMsg.TAX_NOT_NULL})
-            sale_tax = UnitOfMeasure.objects.filter_current(
-                fill__tenant=True, fill__company=True, code=validate_data.get('sale_tax')
-            ).first()
+            sale_tax = Tax.objects.filter_on_company(code=validate_data.get('sale_tax')).first()
             if not sale_tax:
                 raise serializers.ValidationError({'sale_tax': ProductMsg.TAX_NOT_EXIST})
             validate_data['sale_tax'] = sale_tax
             # valid sale_general_price
             try:
-                sale_general_price = float(validate_data.get('sale_general_price', 0))
+                value = validate_data.get('sale_general_price', 0)
+                if not value and value != 0:
+                    raise serializers.ValidationError({'sale_general_price': ProductMsg.INVALID_SALE_GENERAL_PRICE})
+
+                sale_general_price = float(value)
                 if sale_general_price < 0:
                     raise serializers.ValidationError({'sale_general_price': ProductMsg.INVALID_SALE_GENERAL_PRICE})
+            except ValueError:
+                raise serializers.ValidationError({'sale_general_price': ProductMsg.INVALID_SALE_GENERAL_PRICE})
             except Exception as error:
-                raise serializers.ValidationError({'sale_general_price_error': error})
+                print(error)
+                raise serializers.ValidationError({'sale_general_price': ProductMsg.INVALID_SALE_GENERAL_PRICE})
+            validate_data['sale_general_price'] = sale_general_price
+
             # find sale_currency_using
             sale_currency_using = Currency.objects.filter_current(
                 fill__tenant=True, fill__company=True, is_primary=True
@@ -154,6 +172,7 @@ class ProductImportListSerializer(serializers.ModelSerializer):
             validate_data['inventory_uom'] = inventory_uom
             if str(inventory_uom.group_id) != str(validate_data.get('general_uom_group').id):
                 raise serializers.ValidationError({'inventory_uom': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_MATCH})
+
             # valid valuation_method
             try:
                 valuation_method = int(validate_data.get('valuation_method', 1))
@@ -161,13 +180,23 @@ class ProductImportListSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'valuation_method': ProductMsg.INVALID_PRODUCT_CHOICE_VALUE})
             except Exception as error:
                 raise serializers.ValidationError({'valuation_method_error': error})
+
             # valid standard_price
             try:
-                standard_price = float(validate_data.get('standard_price', 0))
+                value = validate_data.get('standard_price', 0)
+                if not value and value != 0:
+                    raise serializers.ValidationError({'standard_price': ProductMsg.INVALID_STANDARD_PRICE})
+
+                standard_price = float(value)
                 if standard_price < 0:
                     raise serializers.ValidationError({'standard_price': ProductMsg.INVALID_STANDARD_PRICE})
+            except ValueError:
+                raise serializers.ValidationError({'standard_price': ProductMsg.INVALID_STANDARD_PRICE})
             except Exception as error:
-                raise serializers.ValidationError({'standard_price_error': error})
+                print(error)
+                raise serializers.ValidationError({'standard_price': ProductMsg.INVALID_STANDARD_PRICE})
+            validate_data['standard_price'] = standard_price
+
         else:
             validate_data['inventory_uom'] = None
             validate_data['valuation_method'] = 1
@@ -191,9 +220,7 @@ class ProductImportListSerializer(serializers.ModelSerializer):
             # valid purchase_tax
             if not validate_data.get('purchase_tax'):
                 raise serializers.ValidationError({'purchase_tax': ProductMsg.TAX_NOT_NULL})
-            purchase_tax = UnitOfMeasure.objects.filter_current(
-                fill__tenant=True, fill__company=True, code=validate_data.get('purchase_tax')
-            ).first()
+            purchase_tax = Tax.objects.filter_on_company( code=validate_data.get('purchase_tax')).first()
             if not purchase_tax:
                 raise serializers.ValidationError({'purchase_tax': ProductMsg.TAX_NOT_EXIST})
             validate_data['purchase_tax'] = purchase_tax
@@ -261,14 +288,22 @@ class ProductImportListSerializer(serializers.ModelSerializer):
                 # get all price list by company that are auto updated
                 sale_general_price = validated_data.pop('sale_general_price', 0)
                 general_product_types_mapped_list = validated_data.pop('general_product_types_mapped', [])
+
                 # create
+                # volume and weight not allow null in model
+                if validated_data['volume'] is None:
+                    validated_data['volume'] = {}
+                if validated_data['weight'] is None:
+                    validated_data['weight'] = {}
                 product = Product.objects.create(**validated_data)
+
                 # create product_measurements
                 if 'volume' in validated_data and 'weight' in validated_data:
                     measure_data = {
                         'weight': validated_data.get('weight', {}),
                         'volume': validated_data.get('volume', {})
                     }
+                    # create only if id in volume and value in volume is not None
                     if all([
                         'id' in measure_data.get('volume', {}),
                         measure_data.get('volume', {}).get('value') is not None
@@ -287,12 +322,14 @@ class ProductImportListSerializer(serializers.ModelSerializer):
                             measure_id=measure_data.get('weight', {}).get('id'),
                             value=measure_data.get('weight', {}).get('value')
                         )
+
                 # add data to table ProductProductType
                 bulk_info = []
                 for item in general_product_types_mapped_list:
                     bulk_info.append(ProductProductType(product=product, product_type=item))
                 ProductProductType.objects.filter(product=product).delete()
                 ProductProductType.objects.bulk_create(bulk_info)
+
                 # create price list
                 if 0 in validated_data.get('product_choice', []):
                     prod_price_bulk_info = []
@@ -327,6 +364,7 @@ class ProductImportListSerializer(serializers.ModelSerializer):
                         product.sale_price = sale_general_price
                         product.save()
                         ProductPriceList.objects.bulk_create(prod_price_bulk_info)
+
         except Exception as err:
             logger.error(msg=f'Import product errors: {str(err)}')
             raise serializers.ValidationError({'import_product_error': err})
@@ -337,3 +375,35 @@ class ProductImportDetailSerializer(serializers.Serializer):
     class Meta:
         model = Product
         fields = ('id',)
+
+
+class ProductManufacturerImportCreateSerializer(serializers.ModelSerializer):
+    code = serializers.CharField(max_length=100)
+    title = serializers.CharField(max_length=100)
+
+    class Meta:
+        model = Manufacturer
+        fields = ('code', 'title', 'description')
+
+    @classmethod
+    def validate_title(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError({"title": ProductMsg.TITLE_NOT_NULL})
+
+    @classmethod
+    def validate_code(cls, value):
+        if value:
+            if Manufacturer.objects.filter_on_company(code=value).exists():
+                raise serializers.ValidationError(ProductMsg.CODE_EXIST)
+            return value
+        raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
+
+    def create(self, validated_data):
+        instance = Manufacturer.objects.create(**validated_data)
+        return instance
+
+class ProductManufacturerImportDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Manufacturer
+        fields = ('id','code')
