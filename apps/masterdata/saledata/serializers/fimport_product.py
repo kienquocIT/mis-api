@@ -107,7 +107,7 @@ class ProductImportCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'general_uom_group': ProductMsg.UOM_GROUP_NOT_NULL})
 
     @classmethod
-    def validate_sale_tab_data(cls, product_choice, validate_data):
+    def validate_sale_tab_data(cls, product_choice, validate_data):# pylint: disable=R0912
         if 0 in product_choice:
             # valid sale_default_uom
             if not validate_data.get('sale_default_uom'):
