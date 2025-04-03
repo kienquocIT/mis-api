@@ -72,13 +72,15 @@ class APInvoiceItems(SimpleAbstractModel):
     product_uom_data = models.JSONField(default=dict)
     product_quantity = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
+    product_subtotal = models.FloatField(default=0)
     product_tax = models.ForeignKey('saledata.Tax', on_delete=models.CASCADE, null=True)
     product_tax_data = models.JSONField(default=dict)
     product_tax_value = models.FloatField(default=0)
     product_subtotal_final = models.FloatField(default=0)
-    product_subtotal = models.FloatField(default=0)
     note = models.TextField(blank=True)
-    increased_FA_value = models.FloatField(default=0)
+    increased_FA_value = models.FloatField(
+        default=0, help_text='increased fixed asset value for this item (product_subtotal)'
+    )
 
     class Meta:
         verbose_name = 'AP Invoice Item'
