@@ -9,7 +9,7 @@ from rest_framework import serializers
 from apps.core.recurrence.models import Recurrence
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, Product, UnitOfMeasure, Tax, AccountBillingAddress, AccountBanks
-from apps.sales.delivery.models import OrderDelivery, OrderDeliverySub
+from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import (
     ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile, ARInvoiceSign
 )
