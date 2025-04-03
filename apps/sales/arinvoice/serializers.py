@@ -9,7 +9,7 @@ from rest_framework import serializers
 from apps.core.recurrence.models import Recurrence
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, Product, UnitOfMeasure, Tax, AccountBillingAddress, AccountBanks
-from apps.sales.delivery.models import OrderDeliverySub
+from apps.sales.delivery.models import OrderDelivery, OrderDeliverySub
 from apps.sales.arinvoice.models import (
     ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile, ARInvoiceSign
 )
@@ -50,6 +50,7 @@ class ARInvoiceListSerializer(AbstractListSerializerModel):
             'invoice_number',
             'invoice_example',
             'invoice_status',
+            'date_created'
         )
 
 
@@ -78,9 +79,9 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
+            'note',
             'delivery_mapped_list',
             'data_item_list',
-            'note',
             # recurrence
             'is_recurrence_template',
             'is_recurring',
@@ -92,7 +93,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
         try:
             return Account.objects.get(id=value)
         except Account.DoesNotExist:
-            raise serializers.ValidationError({'customer_mapped': "Account does not exist."})
+            raise serializers.ValidationError({'customer_mapped': "Customer does not exist."})
 
     @classmethod
     def validate_sale_order_mapped(cls, value):
@@ -339,9 +340,9 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
+            'note',
             'delivery_mapped_list',
             'data_item_list',
-            'note',
         )
 
     @classmethod
@@ -675,10 +676,7 @@ class SaleOrderListSerializerForARInvoice(serializers.ModelSerializer):
 
     @classmethod
     def get_has_not_ar_delivery(cls, obj):
-        root_delivery_now = obj.delivery_of_sale_order
-        if not root_delivery_now:
-            return False
-        return OrderDeliverySub.objects.filter(order_delivery=root_delivery_now, has_ar_invoice_already=False).exists()
+        return OrderDeliverySub.objects.filter(order_delivery__sale_order=obj, has_ar_invoice_already=False).exists()
 
 
 class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
