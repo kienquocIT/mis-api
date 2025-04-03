@@ -1538,3 +1538,29 @@ def clear_old_data_asset():
     # script chạy 1 lần
     AssetToolsProvideProduct.objects.all().update(product=None)
     print('update reset table is DONE !')
+
+
+def update_bid_doctype_for_HongQuang():
+    Document_Type_data = [
+        {'code': 'BDT001', 'title': 'Đơn dự thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'BDT002', 'title': 'Tài liệu chứng minh tư cách pháp nhân', 'is_default': 1,
+         'doc_type_category': 'bidding'},
+        {'code': 'BDT003', 'title': 'Giấy ủy quyền', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'BDT004', 'title': 'Thỏa thuận liên doanh', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'BDT005', 'title': 'Bảo đảm dự thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'BDT006', 'title': 'Tài liệu chứng minh năng lực nhà thầu', 'is_default': 1,
+         'doc_type_category': 'bidding'},
+        {'code': 'BDT007', 'title': 'Đề xuất kĩ thuật', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'BDT008', 'title': 'Đề xuất giá', 'is_default': 1, 'doc_type_category': 'bidding'}
+    ]
+
+    company_obj_list = Company.objects.all()
+
+    for company_obj in company_obj_list:
+        if not DocumentType.objects.filter(company = company_obj, tenant = company_obj.tenant, code='BDT001').exists():
+            objs = [
+                DocumentType(tenant=company_obj.tenant, company=company_obj, **item)
+                for item in Document_Type_data
+            ]
+            DocumentType.objects.bulk_create(objs)
+            print(f'Bidding default document type created for {company_obj.title}')
