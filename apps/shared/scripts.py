@@ -21,7 +21,7 @@ from apps.core.workflow.models import (
 )
 from apps.masterdata.saledata.models import (
     ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, DocumentType,
-    FixedAssetClassificationGroup, FixedAssetClassification, Salutation, AccountGroup, Industry,
+    FixedAssetClassificationGroup, FixedAssetClassification, Salutation, AccountGroup, Industry, AccountType,
 )
 from . import MediaForceAPI, DisperseModel
 
@@ -1564,3 +1564,14 @@ def update_bid_doctype_for_HongQuang():
             ]
             DocumentType.objects.bulk_create(objs)
             print(f'Bidding default document type created for {company_obj.title}')
+
+
+def delete_non_default_account_type():
+    # KO cho tạo mới account type nữa
+    company_obj_list = Company.objects.all()
+    for company_obj in company_obj_list:
+        # delete all account type with is_default=False
+        non_default_account_type_list = AccountType.objects.filter(company=company_obj, tenant=company_obj.tenant,
+                                                                   is_default=False)
+        non_default_account_type_list.delete()
+        print(f'Non-default account type deleted for {company_obj.title}')
