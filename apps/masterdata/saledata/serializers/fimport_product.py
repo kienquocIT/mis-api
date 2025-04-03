@@ -128,9 +128,8 @@ class ProductImportCreateSerializer(serializers.ModelSerializer):
             # valid sale_general_price
             try:
                 value = validate_data.get('sale_general_price', 0)
-                if not value and value != 0:
-                    raise serializers.ValidationError({'sale_general_price': ProductMsg.INVALID_SALE_GENERAL_PRICE})
-
+                if value is None or value == '':
+                    value = 0
                 sale_general_price = float(value)
                 if sale_general_price < 0:
                     raise serializers.ValidationError({'sale_general_price': ProductMsg.INVALID_SALE_GENERAL_PRICE})
@@ -184,9 +183,8 @@ class ProductImportCreateSerializer(serializers.ModelSerializer):
             # valid standard_price
             try:
                 value = validate_data.get('standard_price', 0)
-                if not value and value != 0:
-                    raise serializers.ValidationError({'standard_price': ProductMsg.INVALID_STANDARD_PRICE})
-
+                if value is None or value == '':
+                    value = 0
                 standard_price = float(value)
                 if standard_price < 0:
                     raise serializers.ValidationError({'standard_price': ProductMsg.INVALID_STANDARD_PRICE})
