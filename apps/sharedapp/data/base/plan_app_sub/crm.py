@@ -31,7 +31,7 @@ ACCOUNT_TYPE_APP_CONFIG = {
     "permit_mapping": {},
     "model_code": "accounttype",
     "app_label": "saledata",
-    "allow_import": True,
+    # "allow_import": True,
 }
 
 INDUSTRY_APP_CONFIG = {
@@ -70,7 +70,7 @@ PRODUCT_TYPE_APP_CONFIG = {
     "permit_mapping": {},
     "model_code": "producttype",
     "app_label": "saledata",
-    "allow_import": True,
+    # "allow_import": True,
 }
 
 PRODUCT_CATEGORY_APP_CONFIG = {

@@ -1609,3 +1609,7 @@ msgstr "Ghi giảm tài sản cố định"
 #
 msgid "Instrument Tool Write-off"
 msgstr "Ghi giảm công cụ dụng cụ"
+
+#
+msgid "Manufacturer"
+msgstr "Hãng sản xuất"
