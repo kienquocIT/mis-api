@@ -3,6 +3,7 @@ import json
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
+from apps.accounting.accountingsettings.utils import AccountDeterminationForProductTypeHandler
 from apps.masterdata.saledata.models import (
     Contact, Salutation, Account, Currency, AccountGroup, AccountType, Industry,
     PaymentTerm, Term, Price, UnitOfMeasureGroup, ProductType, ProductCategory, UnitOfMeasure, TaxCategory, Tax,
@@ -833,6 +834,11 @@ class ProductProductTypeImportSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(ProductMsg.PRODUCT_CODE_EXIST)
             return value
         raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
+
+    def create(self, validated_data):
+        product_type_obj = ProductType.objects.create(**validated_data)
+        AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj)
+        return product_type_obj
 
 class ProductProductTypeImportReturnSerializer(serializers.ModelSerializer):
     class Meta:
