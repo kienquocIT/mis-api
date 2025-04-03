@@ -23,11 +23,12 @@ class FixedAssetList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
+        query_set = (super().get_queryset().select_related('product', 'manage_department', 'use_customer')
+                                           .prefetch_related('use_departments'))
         # get fixed assets that haven't been written off
-        return super().get_queryset().filter(
-            Q(fixed_asset_write_off__isnull=True) |
-            Q(fixed_asset_write_off__isnull=False, fixed_asset_write_off__system_status=0)
-        )
+        return query_set.filter(
+                        Q(fixed_asset_write_off__isnull=True) |
+                        Q(fixed_asset_write_off__isnull=False, fixed_asset_write_off__system_status=0))
 
     @swagger_auto_schema(
         operation_summary="Fixed Asset List",
@@ -61,6 +62,11 @@ class FixedAssetDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_update = FixedAssetUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        query_set = (super().get_queryset().select_related('classification', 'product', 'manage_department')
+                                           .prefetch_related('use_departments', 'asset_sources', 'ap_invoice_items'))
+        return query_set
 
     @swagger_auto_schema(
         operation_summary="Fixed Asset Detail",
