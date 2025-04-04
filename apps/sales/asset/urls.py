@@ -2,12 +2,13 @@ from django.urls import path
 
 from apps.sales.asset.views import FixedAssetList, FixedAssetDetail, InstrumentToolList, InstrumentToolDetail, \
     FixedAssetWriteOffList, FixedAssetWriteOffDetail, InstrumentToolWriteOffList, InstrumentToolWriteOffDetail, \
-    AssetForLeaseList, ToolForLeaseList
+    AssetForLeaseList, ToolForLeaseList, AssetStatusLeaseList
 
 fixed_asset_urlpatterns = [
     path('fixed-asset/list', FixedAssetList.as_view(), name='FixedAssetList'),
     path('fixed-asset/detail/<str:pk>', FixedAssetDetail.as_view(), name='FixedAssetDetail'),
     path('fixed-asset-for-lease/list', AssetForLeaseList.as_view(), name='AssetForLeaseList'),
+    path('fixed-asset-status-lease/list', AssetStatusLeaseList.as_view(), name='AssetStatusLeaseList'),
 ]
 
 instrument_tool_urlpatterns = [
