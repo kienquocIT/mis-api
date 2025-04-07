@@ -19,6 +19,7 @@ __all__= [
     'FixedAssetDetailSerializer',
     'FixedAssetUpdateSerializer',
     'AssetForLeaseListSerializer',
+    'AssetStatusLeaseListSerializer',
 ]
 
 
@@ -517,3 +518,73 @@ class AssetForLeaseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_depreciation_time(cls, obj):
         return obj.depreciation_time
+
+
+class AssetStatusLeaseListSerializer(serializers.ModelSerializer):
+    quantity = serializers.SerializerMethodField()
+    quantity_leased = serializers.SerializerMethodField()
+    asset_type = serializers.SerializerMethodField()
+    lease_order_data = serializers.SerializerMethodField()
+    origin_cost = serializers.SerializerMethodField()
+    net_value = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FixedAsset
+        fields = (
+            'id',
+            'title',
+            'code',
+            'quantity',
+            'quantity_leased',
+            'asset_type',
+            'status',
+            'lease_order_data',
+
+            'origin_cost',
+            'net_value',
+            'depreciation_time',
+            'depreciation_start_date',
+            'depreciation_end_date',
+            'depreciation_data',
+        )
+
+    @classmethod
+    def get_quantity(cls, obj):
+        return 1 if obj else 0
+
+    @classmethod
+    def get_quantity_leased(cls, obj):
+        return 1 if obj.status == 2 else 0
+
+    @classmethod
+    def get_asset_type(cls, obj):
+        return 'asset' if obj else ''
+
+    @classmethod
+    def get_lease_order_data(cls, obj):
+        lease_order = None
+        delivery_product_asset = obj.delivery_pa_asset.first()
+        if delivery_product_asset:
+            if delivery_product_asset.delivery_sub:
+                if delivery_product_asset.delivery_sub.order_delivery:
+                    lease_order = delivery_product_asset.delivery_sub.order_delivery.lease_order
+        return {
+            'id': lease_order.id,
+            'title': lease_order.title,
+            'code': lease_order.code,
+            'customer': {
+                'id': lease_order.customer_id,
+                'title': lease_order.customer.name,
+                'code': lease_order.customer.code
+            } if lease_order.customer else {},
+            'product_lease_start_date': delivery_product_asset.product_lease_start_date,
+            'product_lease_end_date': delivery_product_asset.product_lease_end_date,
+        } if lease_order else {}
+
+    @classmethod
+    def get_origin_cost(cls, obj):
+        return obj.original_cost
+
+    @classmethod
+    def get_net_value(cls, obj):
+        return 0 if obj else 0

@@ -398,7 +398,7 @@ class PurchaseOrderPaymentStageSerializer(serializers.ModelSerializer):
             'tax_data',
             'value_tax',
             'value_total',
-            'is_ar_invoice',
+            'is_ap_invoice',
             'order',
         )
 

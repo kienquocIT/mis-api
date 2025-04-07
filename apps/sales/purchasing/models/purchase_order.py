@@ -360,9 +360,9 @@ class PurchaseOrderPaymentStage(MasterDataAbstractModel):
     tax_data = models.JSONField(default=dict, help_text='data json of tax')
     value_tax = models.FloatField(default=0)
     value_total = models.FloatField(default=0)
-    is_ar_invoice = models.BooleanField(default=False)
+    is_ap_invoice = models.BooleanField(default=False)
     order = models.IntegerField(default=1)
-    cash_inflow_done = models.BooleanField(default=False)
+    cash_outflow_done = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Purchase Order Payment Stage'

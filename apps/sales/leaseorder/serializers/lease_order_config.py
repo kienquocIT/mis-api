@@ -22,10 +22,10 @@ class LeaseOrderConfigDetailSerializer(serializers.ModelSerializer):
 
 
 class LeaseOrderConfigUpdateSerializer(serializers.ModelSerializer):
-    asset_type_id = serializers.UUIDField()
-    asset_group_manage_id = serializers.UUIDField()
-    tool_type_id = serializers.UUIDField()
-    tool_group_manage_id = serializers.UUIDField()
+    asset_type_id = serializers.UUIDField(allow_null=True)
+    asset_group_manage_id = serializers.UUIDField(allow_null=True)
+    tool_type_id = serializers.UUIDField(allow_null=True)
+    tool_group_manage_id = serializers.UUIDField(allow_null=True)
 
     class Meta:
         model = LeaseOrderAppConfig
@@ -45,6 +45,8 @@ class LeaseOrderConfigUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_asset_type_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(FixedAssetClassification.objects.get_on_company(id=value).id)
         except FixedAssetClassification.DoesNotExist:
             raise serializers.ValidationError({'asset_type': BaseMsg.NOT_EXIST})
@@ -52,6 +54,8 @@ class LeaseOrderConfigUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_asset_group_manage_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(Group.objects.get_on_company(id=value).id)
         except Group.DoesNotExist:
             raise serializers.ValidationError({'asset_group_manage': BaseMsg.NOT_EXIST})
@@ -59,6 +63,8 @@ class LeaseOrderConfigUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_tool_type_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(ToolClassification.objects.get_on_company(id=value).id)
         except ToolClassification.DoesNotExist:
             raise serializers.ValidationError({'tool_type': BaseMsg.NOT_EXIST})
@@ -66,6 +72,8 @@ class LeaseOrderConfigUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_tool_group_manage_id(cls, value):
         try:
+            if value is None:
+                return value
             return str(Group.objects.get_on_company(id=value).id)
         except Group.DoesNotExist:
             raise serializers.ValidationError({'tool_group_manage': BaseMsg.NOT_EXIST})
