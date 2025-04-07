@@ -18,6 +18,7 @@ __all__ = [
     'CashInflowCreateSerializer',
     'CashInflowDetailSerializer',
     'CashInflowUpdateSerializer',
+    'CustomerAdvanceForCashInflowSerializer',
     'ARInvoiceListForCashInflowSerializer',
 ]
 

@@ -1,9 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.sales.financialcashflow.models import CashInflow
+from apps.sales.financialcashflow.models.cif_models import CashInflow
 from apps.sales.saleorder.models import SaleOrderPaymentStage
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.sales.arinvoice.models import ARInvoice
-from apps.sales.financialcashflow.serializers import (
+from apps.sales.financialcashflow.serializers.cif_serializers import (
     ARInvoiceListForCashInflowSerializer, CashInflowListSerializer, CashInflowCreateSerializer,
     CashInflowDetailSerializer, CashInflowUpdateSerializer, CustomerAdvanceForCashInflowSerializer
 )
@@ -11,6 +11,7 @@ from apps.sales.financialcashflow.serializers import (
 __all__ = [
     'CashInflowList',
     'CashInflowDetail',
+    'CustomerAdvanceListForCashInflow',
     'ARInvoiceListForCashInflow',
 ]
 

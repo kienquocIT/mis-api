@@ -1,7 +1,8 @@
 from django.urls import path
 from apps.sales.financialcashflow.views import (
     CashInflowList, CashInflowDetail,
-    ARInvoiceListForCashInflow, CustomerAdvanceListForCashInflow
+    CustomerAdvanceListForCashInflow, ARInvoiceListForCashInflow,
+    AdvanceForSupplierListForCashOutflow, APInvoiceListForCashOutflow
 )
 
 urlpatterns = [
@@ -16,5 +17,16 @@ urlpatterns = [
         'ar-invoice-for-cashinflow/list',
         ARInvoiceListForCashInflow.as_view(),
         name='ARInvoiceListForCashInflow'
+    ),
+] + [
+    path(
+        'advance-for-supplier-for-cashoutflow/list',
+        AdvanceForSupplierListForCashOutflow.as_view(),
+        name='AdvanceForSupplierListForCashOutflow'
+    ),
+    path(
+        'ap-invoice-for-cashoutflow/list',
+        APInvoiceListForCashOutflow.as_view(),
+        name='APInvoiceListForCashOutflow'
     ),
 ]
