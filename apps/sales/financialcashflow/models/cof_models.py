@@ -1,6 +1,6 @@
 from django.db import models
-from apps.accounting.journalentry.utils.log_for_cash_inflow import JEForCIFHandler
-from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
+# from apps.accounting.journalentry.utils.log_for_cash_inflow import JEForCIFHandler
+# from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
