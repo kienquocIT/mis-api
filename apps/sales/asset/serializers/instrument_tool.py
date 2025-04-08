@@ -524,7 +524,7 @@ class ToolStatusLeaseListSerializer(serializers.ModelSerializer):
     def get_quantity_leased(cls, obj):
         delivery_product_tool = obj.delivery_pt_tool.first()
         if delivery_product_tool:
-            return delivery_product_tool.picked_quantity
+            return delivery_product_tool.quantity_remain_recovery
         return 0
 
     @classmethod
@@ -535,7 +535,7 @@ class ToolStatusLeaseListSerializer(serializers.ModelSerializer):
     def get_lease_order_data(cls, obj):
         lease_order = None
         delivery_product_tool = obj.delivery_pt_tool.first()
-        if delivery_product_tool:
+        if delivery_product_tool and obj.status == 2:
             if delivery_product_tool.delivery_sub:
                 if delivery_product_tool.delivery_sub.order_delivery:
                     lease_order = delivery_product_tool.delivery_sub.order_delivery.lease_order
