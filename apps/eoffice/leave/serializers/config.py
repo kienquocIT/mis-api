@@ -111,7 +111,7 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveType
         fields = ('leave_config', 'paid_by', 'remark', 'balance_control', 'is_check_expiration', 'no_of_paid',
-                  'title', 'code', 'is_lt_system', 'is_lt_edit', 'no_of_paid', 'prev_year')
+                  'title', 'is_lt_system', 'is_lt_edit', 'no_of_paid', 'prev_year')
 
     def update_available_list(self, l_type):
         list_available = LeaveAvailable.objects.filter_current(fill__company=True, fill__tenant=True, leave_type=l_type)
@@ -168,13 +168,6 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
     def validate_leave_config(cls, value):
         if not value:
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_ID_CONFIG})
-        return value
-
-    def validate_code(self, value):
-        if value and LeaveType.objects.exclude(id=str(self.instance.id)).filter_current(
-                code=value, fill__company=True
-        ).exists():
-            raise serializers.ValidationError({'detail': LeaveMsg.ERROR_LEAVE_TYPE_CODE})
         return value
 
     @classmethod

@@ -95,24 +95,14 @@ class ToolClassificationDetailSerializer(serializers.ModelSerializer):
 
 
 class ToolClassificationUpdateSerializer(serializers.ModelSerializer):
-    code = serializers.CharField(max_length=100)
     title = serializers.CharField(max_length=100)
 
     class Meta:
         model = ToolClassification
-        fields = ('code', 'title')
+        fields = ('title')
 
     @classmethod
     def validate_title(cls, value):
         if value:
             return value
         raise serializers.ValidationError({"title": BaseMsg.REQUIRED})
-
-    def validate_code(self, value):
-        if value:
-            if ToolClassification.objects.filter_current(
-                    fill__tenant=True, fill__company=True, code=value
-            ).exclude(id=self.instance.id).exists():
-                raise serializers.ValidationError(FixedAssetMsg.CODE_EXIST)
-            return value
-        raise serializers.ValidationError({"code": BaseMsg.REQUIRED})

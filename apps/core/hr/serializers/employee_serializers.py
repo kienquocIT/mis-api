@@ -397,7 +397,6 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
 
 
 class EmployeeUpdateSerializer(serializers.ModelSerializer):
-    code = serializers.CharField(max_length=150)
     user = serializers.UUIDField(required=False, allow_null=True)
     group = serializers.UUIDField(required=False, allow_null=True)
     role = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
@@ -411,7 +410,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = (
-            'code', 'user', 'first_name', 'last_name', 'email', 'phone', 'date_joined', 'dob',
+            'user', 'first_name', 'last_name', 'email', 'phone', 'date_joined', 'dob',
             'group', 'role', 'is_admin_company',
             'plan_app', 'permission_by_configured',
             'is_active',
@@ -466,15 +465,6 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
 
     def validate_permission_by_configured(self, attrs):
         return PermissionController(tenant_id=self.instance.tenant_id).valid(attrs=attrs)
-
-    def validate_code(self, value):
-        if value:
-            if Employee.objects.filter_current(
-                    fill__tenant=True, fill__company=True, code=value
-            ).exclude(code=self.instance.code).exists():
-                raise serializers.ValidationError({"code": AccountMsg.CODE_EXIST})
-            return value
-        raise serializers.ValidationError({"code": AccountMsg.CODE_NOT_NULL})
 
     def validate_plan_app(self, attrs):
         if isinstance(attrs, list): # noqa
