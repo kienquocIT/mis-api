@@ -626,7 +626,7 @@ class AssetStatusLeaseListSerializer(serializers.ModelSerializer):
     def get_lease_order_data(cls, obj):
         lease_order = None
         delivery_product_asset = obj.delivery_pa_asset.first()
-        if delivery_product_asset:
+        if delivery_product_asset and obj.status == 2:
             if delivery_product_asset.delivery_sub:
                 if delivery_product_asset.delivery_sub.order_delivery:
                     lease_order = delivery_product_asset.delivery_sub.order_delivery.lease_order
