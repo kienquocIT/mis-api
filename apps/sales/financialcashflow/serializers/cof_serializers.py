@@ -539,7 +539,12 @@ class APInvoiceListForCashOutflowSerializer(serializers.ModelSerializer):
                 'invoice': item.invoice,
                 'invoice_data': item.invoice_data,
                 'recon_total': item.value_total,
-                'recon_balance': 0,
+                'recon_balance': item.value_total - sum(
+                    CashOutflowItem.objects.filter(
+                        cash_outflow__system_status=3,
+                        ap_invoice=obj
+                    ).values_list('sum_payment_value', flat=True)
+                ),
                 'due_date': item.due_date,
                 'is_ap_invoice': item.is_ap_invoice,
                 'order': item.order

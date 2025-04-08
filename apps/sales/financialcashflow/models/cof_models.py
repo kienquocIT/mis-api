@@ -94,7 +94,7 @@ class CashOutflow(DataAbstractModel):
             if ap_invoice_obj:
                 if sum(
                         CashOutflowItem.objects.filter(
-                            ar_invoice=ap_invoice_obj
+                            ap_invoice=ap_invoice_obj
                         ).values_list('sum_payment_value', flat=True)
                 ) == ap_invoice_obj.sum_after_tax_value:
                     ap_invoice_obj.cash_outflow_done = True
@@ -126,8 +126,8 @@ class CashOutflow(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-                JEForCIFHandler.push_to_journal_entry(self)
-                ReconForCIFHandler.auto_create_recon_doc(self)
+                # JEForCIFHandler.push_to_journal_entry(self)
+                # ReconForCIFHandler.auto_create_recon_doc(self)
                 self.update_ap_invoice_cash_outflow_done()
                 self.update_po_stage_cash_outflow_done()
         super().save(*args, **kwargs)
@@ -179,7 +179,7 @@ class CashOutflowItem(SimpleAbstractModel):
     #     'invoice_data': dict,
     #     'value_total': number,
     #     'due_date': str,
-    #     'is_ar_invoice': bool,
+    #     'is_ap_invoice': bool,
     #     'order': number,
     # }
     purchase_order = models.ForeignKey(
@@ -232,7 +232,7 @@ class CashOutflowItemDetail(SimpleAbstractModel):
     #     'invoice_data': dict,
     #     'value_total': number,
     #     'due_date': str,
-    #     'is_ar_invoice': bool,
+    #     'is_ap_invoice': bool,
     #     'order': number,
     # }
     balance_value = models.FloatField(default=0)
