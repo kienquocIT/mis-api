@@ -19,7 +19,7 @@ class ProductImportList(BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='saledata', model_code='product', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
