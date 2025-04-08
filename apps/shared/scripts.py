@@ -1328,6 +1328,132 @@ class SubScripts:
         print('Done :))')
         return True
 
+    @classmethod
+    def update_master_data_for_HQG(cls):
+        tenant_obj = Tenant.objects.get(id='f46dad3817be4ab4b77f549705b9387c')
+        company_obj = Company.objects.get(id='0248237bcb6b46b182ad9282115a0624')
+        UnitOfMeasureGroup.objects.filter(tenant=tenant_obj, company=company_obj).delete()
+        UnitOfMeasure.objects.filter(tenant=tenant_obj, company=company_obj).delete()
+
+        UoM_Group_data = [
+            {'code': 'ImportGroup', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
+            {'code': 'Labor', 'title': 'Nhân công', 'is_default': 1},
+            {'code': 'Size', 'title': 'Kích thước', 'is_default': 1},
+            {'code': 'Time', 'title': 'Thời gian', 'is_default': 1},
+            {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
+        ]
+        objs = [
+            UnitOfMeasureGroup(tenant=tenant_obj, company=company_obj, **uom_group_item)
+            for uom_group_item in UoM_Group_data
+        ]
+        UnitOfMeasureGroup.objects.bulk_create(objs)
+
+        unit_group = UnitOfMeasureGroup.objects.filter(
+            tenant=tenant_obj, company=company_obj, code='Unit', is_default=1
+        ).first()
+        if unit_group:
+            referenced_unit_obj = UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='UOM001',
+                title='Cái',
+                is_referenced_unit=1,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='UOM002',
+                title='Con',
+                is_referenced_unit=0,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='UOM003',
+                title='Thanh',
+                is_referenced_unit=0,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='UOM004',
+                title='Lần',
+                is_referenced_unit=0,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='UOM005',
+                title='Gói',
+                is_referenced_unit=0,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            unit_group.uom_reference = referenced_unit_obj
+            unit_group.save(update_fields=['uom_reference'])
+
+        # add default uom for group time
+        labor_group = UnitOfMeasureGroup.objects.filter(
+            tenant=tenant_obj, company=company_obj, code='Labor', is_default=1
+        ).first()
+        if labor_group:
+            referenced_unit_obj = UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='Manhour',
+                title='Manhour',
+                is_referenced_unit=1,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=labor_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='Manday',
+                title='Manday',
+                is_referenced_unit=0,
+                ratio=8,
+                rounding=4,
+                is_default=1,
+                group=labor_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='Manmonth',
+                title='Manmonth',
+                is_referenced_unit=0,
+                ratio=176,
+                rounding=4,
+                is_default=1,
+                group=labor_group
+            )
+            labor_group.uom_reference = referenced_unit_obj
+            labor_group.save(update_fields=['uom_reference'])
+
+
+        return True
+
 
 def reset_run_indicator_fields(kwargs):
     for sale_order in SaleOrder.objects.filter(**kwargs):

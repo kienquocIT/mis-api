@@ -4,8 +4,9 @@ from apps.sales.saleorder.models import SaleOrderPaymentStage
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.sales.arinvoice.models import ARInvoice
 from apps.sales.financialcashflow.serializers.cif_serializers import (
-    ARInvoiceListForCashInflowSerializer, CashInflowListSerializer, CashInflowCreateSerializer,
-    CashInflowDetailSerializer, CashInflowUpdateSerializer, CustomerAdvanceForCashInflowSerializer
+    CashInflowListSerializer, CashInflowCreateSerializer,
+    CashInflowUpdateSerializer, CashInflowDetailSerializer,
+    ARInvoiceListForCashInflowSerializer, CustomerAdvanceForCashInflowSerializer,
 )
 
 __all__ = [
@@ -130,8 +131,7 @@ class ARInvoiceListForCashInflow(BaseListMixin):
             system_status=3
         ).prefetch_related(
             'ar_invoice_items',
-            'sale_order_mapped__sale_order_payment_stage_sale_order',
-            'sale_order_mapped__sale_order_payment_stage_sale_order__cash_inflow_item_detail_so_pm_stage',
+            'sale_order_mapped__sale_order_payment_stage_sale_order'
         ).select_related(
             'customer_mapped',
             'sale_order_mapped',

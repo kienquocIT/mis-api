@@ -98,18 +98,11 @@ class SaleDefaultData:
         {'code': 'service', 'title': 'Dịch vụ', 'is_default': 1, 'is_service': 1},
     ]
     UoM_Group_data = [
-        {'code': 'Import', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
+        {'code': 'ImportGroup', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
         {'code': 'Labor', 'title': 'Nhân công', 'is_default': 1},
         {'code': 'Size', 'title': 'Kích thước', 'is_default': 1},
         {'code': 'Time', 'title': 'Thời gian', 'is_default': 1},
         {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
-    ]
-    UOM_data = [
-        {'code': 'UOM001', 'title': 'Cái', 'is_referenced_unit': 1, 'is_default': 1},
-        {'code': 'UOM002', 'title': 'Con', 'is_default': 1},
-        {'code': 'UOM003', 'title': 'Thanh', 'is_default': 1},
-        {'code': 'UOM004', 'title': 'Lần', 'is_default': 1},
-        {'code': 'UOM005', 'title': 'Gói', 'is_default': 1},
     ]
     TaxCategory_data = [
         {'code': 'TC001', 'title': 'Thuế GTGT', 'is_default': 1},
@@ -173,8 +166,7 @@ class SaleDefaultData:
                 self.create_account_group()
                 self.create_industry()
                 self.create_product_type()
-                self.create_uom_group()
-                self.create_uom()
+                self.create_uom_group_and_uom()
                 self.create_tax_category()
                 self.create_tax()
                 self.create_currency()
@@ -242,12 +234,73 @@ class SaleDefaultData:
         ProductType.objects.bulk_create(objs)
         return True
 
-    def create_uom_group(self):
+    def create_uom_group_and_uom(self):
         objs = [
             UnitOfMeasureGroup(tenant=self.company_obj.tenant, company=self.company_obj, **uom_group_item)
             for uom_group_item in self.UoM_Group_data
         ]
         UnitOfMeasureGroup.objects.bulk_create(objs)
+
+        unit_group = UnitOfMeasureGroup.objects.filter(
+            tenant=self.company_obj.tenant, company=self.company_obj, code='Unit', is_default=1
+        ).first()
+        if unit_group:
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='UOM001',
+                title='Cái',
+                is_referenced_unit=1,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='UOM002',
+                title='Con',
+                is_referenced_unit=1,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='UOM003',
+                title='Thanh',
+                is_referenced_unit=1,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='UOM004',
+                title='Lần',
+                is_referenced_unit=1,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=self.company_obj.tenant,
+                company=self.company_obj,
+                code='UOM005',
+                title='Gói',
+                is_referenced_unit=1,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+
 
         # add default uom for group time
         labor_group = UnitOfMeasureGroup.objects.filter(
@@ -270,7 +323,7 @@ class SaleDefaultData:
                 company=self.company_obj,
                 code='Manday',
                 title='Manday',
-                is_referenced_unit=1,
+                is_referenced_unit=0,
                 ratio=8,
                 rounding=4,
                 is_default=1,
@@ -281,28 +334,12 @@ class SaleDefaultData:
                 company=self.company_obj,
                 code='Manmonth',
                 title='Manmonth',
-                is_referenced_unit=1,
+                is_referenced_unit=0,
                 ratio=176,
                 rounding=4,
                 is_default=1,
                 group=labor_group
             )
-        return True
-
-    def create_uom(self):
-        # get group unit
-        unit_uom_group = UnitOfMeasureGroup.objects.filter(
-            tenant=self.company_obj.tenant,
-            company=self.company_obj,
-            code='Unit'
-        ).first()
-
-        if unit_uom_group:
-            objs = [
-                UnitOfMeasure(tenant=self.company_obj.tenant, company=self.company_obj, group=unit_uom_group, **item)
-                for item in self.UOM_data
-            ]
-            UnitOfMeasure.objects.bulk_create(objs)
         return True
 
     def create_tax_category(self):

@@ -2,6 +2,7 @@ from django.urls import path
 from apps.sales.financialcashflow.views import (
     CashInflowList, CashInflowDetail,
     CustomerAdvanceListForCashInflow, ARInvoiceListForCashInflow,
+    CashOutflowList, CashOutflowDetail,
     AdvanceForSupplierListForCashOutflow, APInvoiceListForCashOutflow
 )
 
@@ -19,6 +20,8 @@ urlpatterns = [
         name='ARInvoiceListForCashInflow'
     ),
 ] + [
+    path('cashoutflows', CashOutflowList.as_view(), name='CashOutflowList'),
+    path('cashoutflow/<str:pk>', CashOutflowDetail.as_view(), name='CashOutflowDetail'),
     path(
         'advance-for-supplier-for-cashoutflow/list',
         AdvanceForSupplierListForCashOutflow.as_view(),

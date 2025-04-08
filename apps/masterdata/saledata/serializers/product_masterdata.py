@@ -281,6 +281,7 @@ class UnitOfMeasureListSerializer(serializers.ModelSerializer):
     def get_group(cls, obj):
         return {
             'id': obj.group_id,
+            'code': obj.group.code,
             'title': obj.group.title,
             'is_referenced_unit': obj.is_referenced_unit
         } if obj.group else {}
@@ -320,7 +321,7 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
 
     def validate(self, validate_data):
-        if validate_data['group'].code == 'Import':
+        if validate_data['group'].code == 'ImportGroup':
             raise serializers.ValidationError({'group': ProductMsg.CAN_NOT_CREATE_UOM_FOR_IMPORT_GROUP})
 
         has_referenced_unit = UnitOfMeasure.objects.filter_current(
