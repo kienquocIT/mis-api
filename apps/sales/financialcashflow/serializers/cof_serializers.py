@@ -225,7 +225,9 @@ class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
             setattr(instance, key, value)
         instance.save()
 
-        CashOutflowCommonFunction.create_cof_item(instance, cash_out_advance_for_supplier_data, cash_out_ap_invoice_data)
+        CashOutflowCommonFunction.create_cof_item(
+            instance, cash_out_advance_for_supplier_data, cash_out_ap_invoice_data
+        )
         return instance
 
 
@@ -295,7 +297,9 @@ class CashOutflowCommonFunction:
         # check po
         purchase_order_stage = PurchaseOrderPaymentStage.objects.filter(id=item.get('purchase_order_stage_id')).first()
         if not purchase_order_stage:
-            raise serializers.ValidationError({'purchase_order_stage_id': CashOutflowMsg.PURCHASE_ORDER_STAGE_NOT_EXIST})
+            raise serializers.ValidationError(
+                {'purchase_order_stage_id': CashOutflowMsg.PURCHASE_ORDER_STAGE_NOT_EXIST}
+            )
         item['purchase_order_stage_id'] = str(purchase_order_stage.id)
         item['purchase_order_stage_data'] = {
             'id': str(purchase_order_stage.id),
