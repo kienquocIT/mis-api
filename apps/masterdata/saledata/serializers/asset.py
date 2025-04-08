@@ -99,7 +99,7 @@ class ToolClassificationUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ToolClassification
-        fields = ('title')
+        fields = ('title',)
 
     @classmethod
     def validate_title(cls, value):
