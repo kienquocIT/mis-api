@@ -69,7 +69,7 @@ class InstrumentTool(DataAbstractModel):
         choices=SOURCE_TYPE_CHOICES,
     )
 
-    #depreciation + value:
+    # depreciation + value:
     unit_price = models.FloatField(default=0)
     total_value = models.FloatField(default=0)
     quantity = models.IntegerField(default=0)

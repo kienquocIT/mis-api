@@ -2,12 +2,11 @@ __all__ = ['AssetToolsReturn', 'AssetToolsReturnMapProduct', 'AssetToolsReturnAt
 
 import json
 
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.masterdata.saledata.models import ProductWareHouse
-from apps.shared import DataAbstractModel, AssetToolsMsg
+from apps.shared import DataAbstractModel, AssetToolsMsg, DisperseModel
 
 
 class AssetToolsReturn(DataAbstractModel):
@@ -72,36 +71,81 @@ class AssetToolsReturn(DataAbstractModel):
                 code += f".{num_quotient}"
             self.code = code
 
-    # def update_prod
+    def update_prod_provide(self, prod_list, return_info_list, product_instrument_list):
+        models_provide_map = DisperseModel(app_model='assettools.AssetToolsProvideProduct').get_model()
+        for item in prod_list:
+            count = item.return_number
+            item_prod = item.prod_in_tools
+
+            # Khởi tạo thông tin log trả sản phẩm
+            return_info_list.append(
+                {
+                    'product': item.product_data if item.product_data else {},
+                    'product_remark': item.product_remark,
+                    'return_number': count,
+                    'reason': self.remark
+                }
+            )
+
+            # Nếu sản phẩm đã được cấp phát
+            if item_prod:
+                if item_prod.allocated_quantity < count:
+                    raise ValueError(AssetToolsMsg.RETURN_PRODUCT_ERROR01)
+
+                item_prod.allocated_quantity -= count
+                product_instrument_list.append(item_prod)
+
+                prod_provide_lst = item_prod.product_map_asset_provide.filter(
+                    asset_tools_provide__employee_inherit=self.employee_inherit
+                )
+            else:
+                # Sản phẩm chưa có trong công cụ cấp phát (dạng ghi chú)
+                prod_provide_lst = models_provide_map.objects.filter(
+                    asset_tools_provide__employee_inherit=self.employee_inherit,
+                    product_remark=item.product_remark,
+                    prod_in_tools__isnull=True
+                )
+
+            # Cập nhật số lượng trả cho từng mục cung cấp
+            for provide_item in prod_provide_lst:
+                available_return = provide_item.delivered - provide_item.is_returned
+                if available_return <= 0:
+                    continue
+
+                returned_now = min(available_return, count)
+                provide_item.is_returned += returned_now
+                count -= returned_now
+
+                if count == 0:
+                    break
+
+            models_provide_map.objects.bulk_update(prod_provide_lst, fields=['is_returned'])
 
     def return_product_used(self):
         return_info_list = []
-        if not self.code:
-            prod_list = AssetToolsReturnMapProduct.objects.filter(
-                asset_return_id=str(self.id),
-            ).select_related('product')
-            product_warehouse_list = []
-            for item in prod_list:
-                count = item.return_number
-                item_prod = item.product
-                if item_prod and 1 in item_prod.product_choice:
-                    prod_warehouse = item.product.product_warehouse_product.first()
-                    if prod_warehouse.used_amount < count:
-                        return_info_list.append(
-                            {
-                                'product': item_prod.product_data if item_prod.product_data else {},
-                                'return_number': count,
-                                'reason': AssetToolsMsg.RETURN_PRODUCT_ERROR01
-                            }
-                        )
-                        raise ValueError(AssetToolsMsg.RETURN_PRODUCT_ERROR01)
-                    # minus used_amount in ProductWareHouse if product has control inventory
-                    prod_warehouse.used_amount -= count
-                    product_warehouse_list.append(prod_warehouse)
-            if return_info_list:
-                self.return_info_list = return_info_list
-            if product_warehouse_list:
-                ProductWareHouse.objects.bulk_update(product_warehouse_list, fields=['used_amount'])
+        product_instrument_list = []
+        models_instrument = DisperseModel(app_model='asset.InstrumentTool').get_model()
+
+        try:
+            with transaction.atomic():
+                if self.system_status != 3:
+                    return True, return_info_list
+
+                prod_list = AssetToolsReturnMapProduct.objects.filter(
+                    asset_return_id=str(self.id),
+                ).select_related('prod_in_tools')
+
+                self.update_prod_provide(prod_list, return_info_list, product_instrument_list)
+
+                # Ghi nhận danh sách trả và cập nhật lại số lượng công cụ
+                if return_info_list:
+                    self.return_info_list = return_info_list
+
+                if product_instrument_list:
+                    models_instrument.objects.bulk_update(product_instrument_list, fields=['allocated_quantity'])
+
+        except ValueError:
+            raise ValueError(AssetToolsMsg.ERROR_CREATE_ASSET_RETURN)
 
         return True, return_info_list
 
@@ -153,6 +197,7 @@ class AssetToolsReturnMapProduct(DataAbstractModel):
         related_name='product_map_asset_return',
         null=True,
     )
+    product_remark = models.CharField(verbose_name='Product title buy new', null=True, blank=True, max_length=500)
     product_data = models.JSONField(
         default=dict,
         verbose_name='Product data backup',

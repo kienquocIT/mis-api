@@ -140,6 +140,7 @@ class AssetToolsProvideProduct(DataAbstractModel):
     )
     subtotal = models.FloatField(default=0, verbose_name='Subtotal price')
     delivered = models.FloatField(default=0, verbose_name='Product is delivered')
+    is_returned = models.FloatField(default=0, verbose_name='Product is returned')
 
     def create_backup_data(self):
         if self.tax and not self.tax_data:

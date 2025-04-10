@@ -14,7 +14,7 @@ from ..models import AssetToolsProvide, AssetToolsProvideProduct, AssetToolsProv
 
 class AssetToolsProvideMapProductSerializer(serializers.Serializer):  # noqa
     order = serializers.IntegerField()
-    product = serializers.UUIDField(allow_null=True)
+    product = serializers.UUIDField(allow_null=True, required=False)
     product_remark = serializers.CharField(allow_null=True, required=False, allow_blank=True)
     uom = serializers.CharField()
     tax = serializers.UUIDField(allow_null=True, required=False)
@@ -134,7 +134,8 @@ class AssetToolsProvideListSerializer(serializers.ModelSerializer):
             'employee_inherit',
             'code',
             'system_status',
-            'date_created'
+            'date_created',
+            'complete_delivered'
         )
 
 
@@ -272,8 +273,10 @@ class AssetToolsProductListByProvideIDSerializer(serializers.ModelSerializer):
         fields = (
             'product',
             'uom',
+            'product_remark',
             'product_available',
             'order',
             'quantity',
             'delivered',
+            'is_returned',
         )

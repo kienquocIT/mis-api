@@ -6,7 +6,7 @@ from django.db import models, transaction
 from django.utils import timezone
 
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import DataAbstractModel, AssetToolsMsg
+from apps.shared import DataAbstractModel, AssetToolsMsg, DisperseModel
 
 
 class AssetToolsDelivery(DataAbstractModel):
@@ -75,25 +75,77 @@ class AssetToolsDelivery(DataAbstractModel):
             self.code = code
 
     def update_product_used(self):
+        provide_prod_map = DisperseModel(app_model='assettools.AssetToolsProvideProduct').get_model()
+
+        def handle_provide_completed(provide):
+            # loop trong danh sách prod_map_provide nếu tất cả product đều cấp hết check complete_delivered
+            # cho provide đó
+            model_provide_lst = provide_prod_map.objects.filter(asset_tools_provide=provide)
+            is_completed = True
+            for prov_item in model_provide_lst:
+                if prov_item.quantity != prov_item.delivered:
+                    is_completed = False
+                    break
+            if is_completed:
+                provide.complete_delivered = True
+                provide.save(update_fields=['complete_delivered'])
+
+        def update_provide(prod_map_queryset, number_delivered):
+            if prod_map_queryset.exists():
+                delivered_copy = number_delivered
+                items_to_update = []
+
+                for prod_item in prod_map_queryset:
+                    if prod_item.delivered < prod_item.quantity:
+                        remaining = prod_item.quantity - prod_item.delivered
+                        increment = min(remaining, delivered_copy)
+                        prod_item.delivered += increment
+                        delivered_copy -= increment
+                        items_to_update.append(prod_item)
+                        if delivered_copy == 0:
+                            break
+
+                if len(items_to_update) > 1:
+                    provide_prod_map.objects.bulk_update(items_to_update, fields=['delivered'])
+                elif items_to_update:
+                    items_to_update[0].save(update_fields=['delivered'])
+
         try:
             with transaction.atomic():
                 if self.system_status == 3:
-                    prod_list = ProductDeliveredMapProvide.objects.filter(
+                    # lấy danh sách prod_map_deliver
+                    prod_map_deliver_lst = ProductDeliveredMapProvide.objects.filter(
                         delivery_id=str(self.id),
                     )
-                    for item in prod_list:
+                    for item in prod_map_deliver_lst:
                         delivered = item.done
-                        prod_instrument_tools = item.prod_in_tools
-                        prod_available = prod_instrument_tools.quantity - prod_instrument_tools.allocated_quantity
-                        if prod_available and prod_available - delivered >= 0 and delivered <= item.request_number:
+                        item_has_prod = item.prod_in_tools
+
+                        if item_has_prod:
+                            prod_available = item_has_prod.quantity - item_has_prod.allocated_quantity
+
+                            if prod_available < delivered:
+                                raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
+
                             item.delivered_number += delivered
-                            prod_instrument_tools.allocated_quantity += delivered
-                            prod_instrument_tools.save(update_fields=["allocated_quantity"])
+                            item_has_prod.allocated_quantity += delivered
+                            item_has_prod.save(update_fields=["allocated_quantity"])
+
+                            prod_map_provide = provide_prod_map.objects.filter(
+                                asset_tools_provide=self.provide,
+                                prod_in_tools=item_has_prod
+                            )
                         else:
-                            # ccdc is empty
-                            raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
-                        # update delivered cho provide product
+                            item.delivered_number += delivered
+                            prod_map_provide = provide_prod_map.objects.filter(
+                                asset_tools_provide=self.provide,
+                                product_remark=item.prod_buy_new
+                            )
+
+                        update_provide(prod_map_provide, delivered)
                         item.save(update_fields=["delivered_number"])
+
+                    handle_provide_completed(self.provide)
         except ValueError:
             raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
         return True
@@ -148,6 +200,12 @@ class ProductDeliveredMapProvide(DataAbstractModel):
         verbose_name='Product map delivery',
         related_name='provide_map_delivery',
     )
+    prod_buy_new = models.CharField(
+        verbose_name='Title of Product buy new',
+        max_length=500,
+        null=True,
+        blank=True
+    )
     prod_in_tools = models.ForeignKey(
         'asset.InstrumentTool',
         on_delete=models.CASCADE,
@@ -163,6 +221,12 @@ class ProductDeliveredMapProvide(DataAbstractModel):
                 {'id': '', 'title': '', 'code': '', 'uom': {'id': '', 'code': ''}}
             ]
         )
+    )
+    uom = models.CharField(
+        verbose_name='Unit of Measure',
+        max_length=500,
+        null=True,
+        blank=True
     )
     employee_inherit_data = models.JSONField(
         default=dict,
@@ -196,6 +260,7 @@ class ProductDeliveredMapProvide(DataAbstractModel):
                 "id": str(self.prod_in_tools_id),
                 "title": self.prod_in_tools.title,
                 "code": self.prod_in_tools.code,
+                "uom": self.prod_in_tools.measure_unit,
             }
         if self.employee_inherit:
             self.employee_inherit_data = {

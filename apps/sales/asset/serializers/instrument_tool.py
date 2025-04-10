@@ -65,7 +65,8 @@ class InstrumentToolListSerializer(AbstractListSerializerModel):
             'date_created',
             'depreciation_time',
             'depreciation_time_unit',
-            'write_off_quantity'
+            'write_off_quantity',
+            'allocated_quantity',
         )
 
     @classmethod
