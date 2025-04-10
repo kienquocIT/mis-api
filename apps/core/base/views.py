@@ -143,6 +143,7 @@ class ApplicationPropertyList(BaseListMixin):
         'application': ['exact', 'in'],
         'type': ['exact'],
         'id': ['in'],
+        'application_id': ['exact'],
         'application__code': ['exact'],
         'is_sale_indicator': ['exact'],
         'parent_n': ['exact', 'isnull'],
