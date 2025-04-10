@@ -739,6 +739,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
                 'total_product_revenue_before_tax',
                 # payment stage tab
                 'purchase_order_payment_stage',
+                'purchase_order_invoice',
                 # system
                 'is_active',
                 'attachment',

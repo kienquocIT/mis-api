@@ -126,6 +126,7 @@ MAP_FIELD_TITLE = {
     'distributionplan.distributionplan': 'title',
     'production.bom': 'title',
     'financialcashflow.cashinflow': 'title',
+    'financialcashflow.cashoutflow': 'title',
     #
     'bidding.bidding': 'title',
     'consulting.consulting': 'title',

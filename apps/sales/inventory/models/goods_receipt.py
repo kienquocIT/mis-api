@@ -120,6 +120,10 @@ class GoodsReceipt(DataAbstractModel):
     total_revenue_before_tax = models.FloatField(default=0)
     # is no warehouse
     is_no_warehouse = models.BooleanField(default=False, help_text="flag to know goods receipts to warehouse or not")
+    has_ap_invoice_already = models.BooleanField(
+        default=False,
+        help_text='is true if this Goods receipt has AP invoice'
+    )
 
     class Meta:
         verbose_name = 'Goods Receipt'
@@ -309,16 +313,16 @@ class GoodsReceipt(DataAbstractModel):
                     GRFinishHandler.push_product_info(instance=self)
                     GRFinishHandler.push_gr_info_for_po_ia_production(instance=self)
 
-            # update lot_id in GoodsReceiptLot (for new LOT)
-            for item in self.goods_receipt_lot_goods_receipt.all():
-                lot_obj = ProductWareHouseLot.objects.filter(
-                    lot_number=item.lot_number,
-                    product_warehouse__product=item.goods_receipt_warehouse.goods_receipt_product.product
-                ).first()
-                item.lot = lot_obj
-                item.save(update_fields=['lot'])
-            self.push_goods_receipt_data_to_goods_detail(self)
-            IRForGoodsReceiptHandler.push_to_inventory_report(self)
+                    # update lot_id in GoodsReceiptLot (for new LOT)
+                    for item in self.goods_receipt_lot_goods_receipt.all():
+                        lot_obj = ProductWareHouseLot.objects.filter(
+                            lot_number=item.lot_number,
+                            product_warehouse__product=item.goods_receipt_warehouse.goods_receipt_product.product
+                        ).first()
+                        item.lot = lot_obj
+                        item.save(update_fields=['lot'])
+                    self.push_goods_receipt_data_to_goods_detail(self)
+                    IRForGoodsReceiptHandler.push_to_inventory_report(self)
 
         if self.system_status in [4]:  # cancel
             GRFinishHandler.push_product_info(instance=self)

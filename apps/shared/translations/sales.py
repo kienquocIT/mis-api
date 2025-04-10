@@ -119,6 +119,23 @@ class CashInflowMsg:
     CUSTOMER_NOT_NULL = _('Customer is not null')
 
 
+class CashOutflowMsg:
+    COF_TOTAL_VALUE_NOT_MATCH = _('Cash outflow total value must = Cash value + Bank value')
+    MISSING_PAYMENT_METHOD_INFO = _('Payment method information is missing')
+    SUM_PAYMENT_VALUE_NOT_MATCH = _('Sum payment value is not match')
+    BALANCE_VALUE_CHANGED = _('Balance value has changed')
+    PAYMENT_STAGE_NOT_EXIST = _('Payment stage does not exist')
+    PAYMENT_VALUE_NOT_VALID = _('Payment value can not > Balance value')
+    AP_INVOICE_NOT_EXIST = _('AP invoice does not exist')
+    PURCHASE_ORDER_NOT_EXIST = _('Purchase order does not exist')
+    PURCHASE_ORDER_STAGE_NOT_EXIST = _('Purchase order stage does not exist')
+    BANK_NOT_EXIST = _('This company bank account does not exist')
+    BANK_NOT_NULL = _('This company bank account is not null')
+    ACCOUNT_NOT_SUPPLIER = _('This account is not a Supplier account')
+    SUPPLIER_NOT_EXIST = _('Supplier does not exist')
+    SUPPLIER_NOT_NULL = _('Supplier is not null')
+
+
 class ReconMsg:
     ACCOUNT_NOT_CUSTOMER = _('This account is not a Customer account')
     CUSTOMER_NOT_EXIST = _('Customer does not exist')

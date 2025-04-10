@@ -1,15 +1,17 @@
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.asset.models import FixedAsset
 from apps.sales.asset.serializers import FixedAssetListSerializer, FixedAssetCreateSerializer, \
-    FixedAssetDetailSerializer, FixedAssetUpdateSerializer, AssetForLeaseListSerializer
+    FixedAssetDetailSerializer, FixedAssetUpdateSerializer, AssetForLeaseListSerializer, AssetStatusLeaseListSerializer
+from apps.sales.delivery.models import OrderDeliveryProductAsset
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 __all__ =[
     'FixedAssetList',
     'FixedAssetDetail',
     'AssetForLeaseList',
+    'AssetStatusLeaseList',
 ]
 
 class FixedAssetList(BaseListMixin, BaseCreateMixin):
@@ -109,6 +111,41 @@ class AssetForLeaseList(BaseListMixin, BaseCreateMixin):
     @mask_view(
         login_require=True, auth_require=False,
         # label_code='asset', model_code='fixedasset', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class AssetStatusLeaseList(BaseListMixin, BaseCreateMixin):
+    queryset = FixedAsset.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        "status": ["exact"],
+        "delivery_pa_asset__delivery_sub__order_delivery__lease_order_id": ["exact", "in"],
+    }
+    serializer_list = AssetStatusLeaseListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            Prefetch(
+                'delivery_pa_asset',
+                queryset=OrderDeliveryProductAsset.objects.select_related(
+                    'delivery_sub',
+                    'delivery_sub__order_delivery',
+                    'delivery_sub__order_delivery__lease_order',
+                    'delivery_sub__order_delivery__lease_order__customer',
+                ),
+            ),
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Fixed Asset Status Lease List",
+        operation_description="Get Fixed Asset Status Lease List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='asset', model_code='fixedasset', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

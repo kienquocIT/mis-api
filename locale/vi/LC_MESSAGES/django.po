@@ -322,6 +322,10 @@ msgstr "Thông tin nhân viên"
 msgid "Cash Inflow"
 msgstr "Phiếu thu"
 
+# c51857ef-513f-4dbf-babd-26d68950ad6e
+msgid "Cash Outflow"
+msgstr "Phiếu chi"
+
 # b690b9ff-670a-474b-8ae2-2c17d7c30f40
 msgid "Reconciliation"
 msgstr "Cấn trừ"
@@ -1609,3 +1613,7 @@ msgstr "Ghi giảm tài sản cố định"
 #
 msgid "Instrument Tool Write-off"
 msgstr "Ghi giảm công cụ dụng cụ"
+
+#
+msgid "Manufacturer"
+msgstr "Hãng sản xuất"
