@@ -567,7 +567,7 @@ AppProp_SaleData_Quotation_data = {
     '9c3a10d1-1153-4379-9089-b39dbf3dbf0b': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Expense',
-        'code': 'quotation_expenses_data__expense_item_data__id',
+        'code': 'quotation_expenses_data__expense_item_data__title',
         'type': 5,
         'content_type': 'saledata.expenseitem',
         'is_wf_zone': False,
@@ -576,10 +576,19 @@ AppProp_SaleData_Quotation_data = {
     '3f921b12-a9cc-4143-8fcb-d4f9ee92ce7e': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Labor',
-        'code': 'quotation_expenses_data__expense_data__id',
+        'code': 'quotation_expenses_data__expense_data__title',
         'type': 5,
         'content_type': 'saledata.expense',
         'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
+    '8a2b30d4-d764-44dc-b886-8d82118e4ba0': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Expense subtotal',
+        'code': 'quotation_expenses_data__expense_subtotal_price',
+        'remark': 'Thành tiền của một dòng chi phí',
+        'type': 6,
+        'example': 'prop(Expense subtotal)',
         'is_wf_condition': True,
     },
     '54c2b111-0f31-41f8-a8aa-d095aad4c90a': {
@@ -1365,7 +1374,7 @@ AppProp_SaleData_SaleOrder_data = {
     '95723552-7fe0-4f22-8980-5ebc303891db': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Expense',
-        'code': 'sale_order_expenses_data__expense_item_data__id',
+        'code': 'sale_order_expenses_data__expense_item_data__title',
         'type': 5,
         'content_type': 'saledata.expenseitem',
         'is_wf_zone': False,
@@ -1374,10 +1383,19 @@ AppProp_SaleData_SaleOrder_data = {
     '428c5ce6-21d8-4ba3-823b-33c999a3cb7d': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Labor',
-        'code': 'sale_order_expenses_data__expense_data__id',
+        'code': 'sale_order_expenses_data__expense_data__title',
         'type': 5,
         'content_type': 'saledata.expense',
         'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
+    'ded9be0a-ef08-4e4d-a494-b7647d968218': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense subtotal',
+        'code': 'sale_order_expenses_data__expense_subtotal_price',
+        'remark': 'Thành tiền của một dòng chi phí',
+        'type': 6,
+        'example': 'prop(Expense subtotal)',
         'is_wf_condition': True,
     },
     '34fa41c9-3cce-4178-bf13-e1499fe5afd3': {
