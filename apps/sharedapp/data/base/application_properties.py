@@ -1723,6 +1723,9 @@ AppProp_Eoffice_Business_trip_data = {
         'title': 'Destination',
         'code': 'destination',
         'type': 5,
+        'content_type': 'base.city',
+        'is_wf_zone': False,
+        'is_wf_condition': True,
     },
     '99638e9d-2136-4060-84a2-45568b833bec': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
@@ -1771,6 +1774,8 @@ AppProp_Eoffice_Business_trip_data = {
         'title': 'Total day',
         'code': 'total_day',
         'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
     },
 }
 
