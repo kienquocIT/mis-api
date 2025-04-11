@@ -1597,3 +1597,35 @@ msgstr "Tổng chi phí sau thuế"
 #
 msgid "Group order"
 msgstr "Đơn hàng nhóm"
+
+#
+msgid "Revenue"
+msgstr "Doanh thu"
+
+#
+msgid "Gross profit"
+msgstr "Lợi nhuận gộp"
+
+#
+msgid "Net income"
+msgstr "Lợi nhuận thuần"
+
+#
+msgid "Expense"
+msgstr "Chi phí"
+
+#
+msgid "Expense subtotal"
+msgstr "Tổng phụ chi phí"
+
+#
+msgid "Labor"
+msgstr "Nhân công"
+
+#
+msgid "Total leave of absence"
+msgstr "Tổng số ngày nghỉ phép"
+
+#
+msgid "Total day"
+msgstr "Tổng số ngày"
