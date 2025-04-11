@@ -27,7 +27,7 @@ msgstr "Tạm ứng"
 
 #
 msgid "APP_Asset, Tools Delivery"
-msgstr "Yêu cầu bàn giao"
+msgstr "Phiếu bàn giao"
 
 #
 msgid "APP_Asset, Tools Provide"

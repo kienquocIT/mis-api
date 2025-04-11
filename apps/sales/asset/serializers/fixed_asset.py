@@ -5,8 +5,9 @@ from rest_framework import serializers
 from apps.core.hr.models import Group
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import FixedAssetClassification, Product
-from apps.sales.apinvoice.models import APInvoiceItems, APInvoice
+from apps.sales.apinvoice.models import APInvoice
 from apps.sales.asset.models import FixedAsset, FixedAssetSource, FixedAssetUseDepartment, FixedAssetAPInvoiceItems
+from apps.sales.asset.serializers.handler import CommonHandler
 from apps.shared import BaseMsg, FixedAssetMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
 
@@ -206,7 +207,7 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
         return validate_data
 
     @decorator_run_workflow
-    def create(self, validated_data): # pylint: disable=R0914
+    def create(self, validated_data):
         use_departments = validated_data.pop('use_department')
         asset_sources = validated_data.pop('asset_sources')
         increase_fa_list = validated_data.pop('increase_fa_list')
@@ -214,52 +215,20 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
         try:
             with transaction.atomic():
                 fixed_asset = FixedAsset.objects.create(**validated_data)
+                CommonHandler.create_sub_data(
+                    fixed_asset,
+                    use_departments=use_departments,
+                    asset_sources = asset_sources,
+                    increase_fa_list = increase_fa_list,
+                    use_department_model = FixedAssetUseDepartment,
+                    source_model = FixedAssetSource,
+                    feature_ap_invoice_item_model = FixedAssetAPInvoiceItems
+                )
 
-                bulk_data = []
-                for use_department in use_departments:
-                    bulk_data.append(FixedAssetUseDepartment(
-                        fixed_asset= fixed_asset,
-                        use_department= use_department,
-                    ))
-                FixedAssetUseDepartment.objects.bulk_create(bulk_data)
-
-                bulk_data = []
-                for asset_source in asset_sources:
-                    bulk_data.append(FixedAssetSource(
-                        fixed_asset= fixed_asset,
-                        description= asset_source.get('description'),
-                        code= asset_source.get('code'),
-                        document_no= asset_source.get('document_no'),
-                        transaction_type= asset_source.get('transaction_type'),
-                        value= asset_source.get('value')
-                    ))
-                FixedAssetSource.objects.bulk_create(bulk_data)
-
-                bulk_data = []
-                # format of increase_fa_list: increase_fa_list = {
-                #     apinvoiceid: {
-                #         apinvoiceitemid : value
-                #     }
-                # }
-                for ap_invoice_id_key, items in increase_fa_list.items():
-                    ap_invoice_items = APInvoiceItems.objects.filter(ap_invoice=ap_invoice_id_key)
-                    ap_invoice_items_dict = {str(item.id): item for item in ap_invoice_items}
-                    for ap_invoice_item_id_key, value in items.items():
-                        bulk_data.append(FixedAssetAPInvoiceItems(
-                            fixed_asset= fixed_asset,
-                            ap_invoice_item_id= ap_invoice_item_id_key,
-                            increased_FA_value= value
-                        ))
-                        if ap_invoice_item_id_key in ap_invoice_items_dict:
-                            item = ap_invoice_items_dict[ap_invoice_item_id_key]
-                            item.increased_FA_value += value
-                            item.save()
-                FixedAssetAPInvoiceItems.objects.bulk_create(bulk_data)
+            return fixed_asset
         except Exception as err:
             logger.error(msg=f'Create fixed asset errors: {str(err)}')
             raise serializers.ValidationError({'asset': FixedAssetMsg.ERROR_CREATE})
-
-        return fixed_asset
 
 
 class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
@@ -497,51 +466,20 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
 
                 fixed_asset_apinvoice_items.delete()
 
-                bulk_data = []
-                for use_department in use_departments:
-                    bulk_data.append(FixedAssetUseDepartment(
-                        fixed_asset= fixed_asset,
-                        use_department= use_department,
-                    ))
-                FixedAssetUseDepartment.objects.bulk_create(bulk_data)
+                CommonHandler.create_sub_data(
+                    fixed_asset,
+                    use_departments=use_departments,
+                    asset_sources=asset_sources,
+                    increase_fa_list=increase_fa_list,
+                    use_department_model=FixedAssetUseDepartment,
+                    source_model=FixedAssetSource,
+                    feature_ap_invoice_item_model=FixedAssetAPInvoiceItems
+                )
 
-                bulk_data = []
-                for asset_source in asset_sources:
-                    bulk_data.append(FixedAssetSource(
-                        fixed_asset= fixed_asset,
-                        description= asset_source.get('description'),
-                        code= asset_source.get('code'),
-                        document_no= asset_source.get('document_no'),
-                        transaction_type= asset_source.get('transaction_type'),
-                        value= asset_source.get('value')
-                    ))
-                FixedAssetSource.objects.bulk_create(bulk_data)
-
-                bulk_data = []
-                # format of increase_fa_list: increase_fa_list = {
-                #     apinvoiceid: {
-                #         apinvoiceitemid : value
-                #     }
-                # }
-                for ap_invoice_id_key, items in increase_fa_list.items():
-                    ap_invoice_items = APInvoiceItems.objects.filter(ap_invoice=ap_invoice_id_key)
-                    ap_invoice_items_dict = {str(item.id): item for item in ap_invoice_items}
-                    for ap_invoice_item_id_key, value in items.items():
-                        bulk_data.append(FixedAssetAPInvoiceItems(
-                            fixed_asset= fixed_asset,
-                            ap_invoice_item_id= ap_invoice_item_id_key,
-                            increased_FA_value= value
-                        ))
-                        if ap_invoice_item_id_key in ap_invoice_items_dict:
-                            item = ap_invoice_items_dict[ap_invoice_item_id_key]
-                            item.increased_FA_value += value
-                            item.save()
-                FixedAssetAPInvoiceItems.objects.bulk_create(bulk_data)
+            return fixed_asset
         except Exception as err:
             logger.error(msg=f'Create fixed asset errors: {str(err)}')
             raise serializers.ValidationError({'asset': FixedAssetMsg.ERROR_CREATE})
-
-        return fixed_asset
 
 
 class AssetForLeaseListSerializer(serializers.ModelSerializer):

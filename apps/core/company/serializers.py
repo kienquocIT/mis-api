@@ -395,23 +395,12 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         model = Company
         fields = (
             'title',
-            'code',
             'representative_fullname',
             'address',
             'email',
             'phone',
             'fax'
         )
-
-    def validate_code(self, attrs):
-        attrs = attrs.lower()
-        if Company.objects.filter(code=attrs).exclude(id=self.instance.id).exists():
-            raise serializers.ValidationError(
-                {
-                    'code': BaseMsg.CODE_IS_EXISTS,
-                }
-            )
-        return attrs
 
     def validate(self, validate_data):
         for item in self.initial_data.get('company_function_number_data', []):

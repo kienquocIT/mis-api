@@ -31,7 +31,7 @@ ACCOUNT_TYPE_APP_CONFIG = {
     "permit_mapping": {},
     "model_code": "accounttype",
     "app_label": "saledata",
-    "allow_import": True,
+    # "allow_import": True,
 }
 
 INDUSTRY_APP_CONFIG = {
@@ -70,7 +70,7 @@ PRODUCT_TYPE_APP_CONFIG = {
     "permit_mapping": {},
     "model_code": "producttype",
     "app_label": "saledata",
-    "allow_import": True,
+    # "allow_import": True,
 }
 
 PRODUCT_CATEGORY_APP_CONFIG = {
@@ -79,6 +79,16 @@ PRODUCT_CATEGORY_APP_CONFIG = {
     "code": "productcategory",
     "permit_mapping": {},
     "model_code": "productcategory",
+    "app_label": "saledata",
+    "allow_import": True,
+}
+
+PRODUCT_MANUFACTURER_APP_CONFIG = {
+    "id": "d6e7d038-aef7-4e4e-befd-b13895974ec5",
+    "title": "Manufacturer",
+    "code": "manufacturer",
+    "permit_mapping": {},
+    "model_code": "manufacturer",
     "app_label": "saledata",
     "allow_import": True,
 }
@@ -2552,6 +2562,58 @@ FINANCIAL_CASHFLOW_CASH_INFLOW_APP_CONFIG = {
     "allow_opportunity": False,
 }
 
+FINANCIAL_CASHFLOW_CASH_OUTFLOW_APP_CONFIG = {
+    "id": "c51857ef-513f-4dbf-babd-26d68950ad6e",
+    "title": "Cash Outflow",
+    "code": "cashoutflow",
+    "model_code": "cashoutflow",
+    "app_label": "financialcashflow",
+    "is_workflow": True,
+    "app_depend_on": [
+        "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {
+                    "view": "==",
+                },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {
+                    "view": "==",
+                },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_print": True,
+    "allow_process": False,
+    "allow_opportunity": False,
+}
+
 FINANCIAL_RECON_APP_CONFIG = {
     "id": "b690b9ff-670a-474b-8ae2-2c17d7c30f40",
     "title": "Reconciliation",
@@ -2654,26 +2716,26 @@ FIXED_ASSET_APP_CONFIG = {
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "create": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "edit": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "delete": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
@@ -2693,26 +2755,26 @@ INSTRUMENT_TOOL_APP_CONFIG = {
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "create": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "edit": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "delete": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
@@ -2771,26 +2833,26 @@ FIXED_ASSET_WRITEOFF_APP_CONFIG = {
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "create": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "edit": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "delete": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
@@ -2810,26 +2872,26 @@ INSTRUMENT_TOOL_WRITEOFF_APP_CONFIG = {
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "create": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "edit": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "delete": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
@@ -2909,6 +2971,7 @@ Application_crm_data = {
     'eb5c547f-3a68-4113-8aa3-a1f938c9d3a7': ApplicationConfigFrame(**UOM_GROUP_APP_CONFIG).data(),
     '90f07280-e2f4-4406-aa23-ba255a22ec2d': ApplicationConfigFrame(**PRODUCT_TYPE_APP_CONFIG).data(),
     '053c0804-162a-4357-a1c2-2161e6606cc2': ApplicationConfigFrame(**PRODUCT_CATEGORY_APP_CONFIG).data(),
+    'd6e7d038-aef7-4e4e-befd-b13895974ec5': ApplicationConfigFrame(**PRODUCT_MANUFACTURER_APP_CONFIG).data(),
     '7bc78f47-66f1-4104-a6fa-5ca07f3f2275': ApplicationConfigFrame(**UOM_APP_CONFIG).data(),
     '133e105e-cb3f-4845-8fba-bbb2516c5de2': ApplicationConfigFrame(**TAX_CATEGORY_APP_CONFIG).data(),
     '720d14f9-e031-4ffe-acb9-3c7763c134fc': ApplicationConfigFrame(**TAX_APP_CONFIG).data(),
@@ -2973,6 +3036,11 @@ Application_crm_data = {
         spacing_allow=["0", "1"],
     ),
     "7ba35923-d8ff-4f6d-bf80-468a7190a63b": ApplicationConfigFrame(**FINANCIAL_CASHFLOW_CASH_INFLOW_APP_CONFIG).data(
+        depend_follow_main=True,
+        filtering_inheritor=True,
+        spacing_allow=["0", "1"],
+    ),
+    "c51857ef-513f-4dbf-babd-26d68950ad6e": ApplicationConfigFrame(**FINANCIAL_CASHFLOW_CASH_OUTFLOW_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
         spacing_allow=["0", "1"],

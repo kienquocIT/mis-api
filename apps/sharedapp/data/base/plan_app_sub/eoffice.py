@@ -113,7 +113,7 @@ ASSET_TOOLS_PROVIDE = {
     "app_label": "assettools",
     "is_workflow": True,
     "app_depend_on": [
-        "a8badb2e-54ff-4654-b3fd-0d2d3c777538",  # Product
+        "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",  # Product instrument tool
     ],
     "permit_mapping": {
         "view": {
@@ -124,14 +124,14 @@ ASSET_TOOLS_PROVIDE = {
         "create": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1": {"view": "4", },
             },
             "local_depends_on": {},
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },},
+                "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1": {"view": "4", },},
             "local_depends_on": {},
         },
         "delete": {

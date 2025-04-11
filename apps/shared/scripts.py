@@ -21,7 +21,7 @@ from apps.core.workflow.models import (
 )
 from apps.masterdata.saledata.models import (
     ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, DocumentType,
-    FixedAssetClassificationGroup, FixedAssetClassification, Salutation, AccountGroup, Industry,
+    FixedAssetClassificationGroup, FixedAssetClassification, Salutation, AccountGroup, Industry, AccountType,
 )
 from . import MediaForceAPI, DisperseModel
 
@@ -1317,6 +1317,143 @@ class SubScripts:
         print('Done :))')
         return True
 
+    @classmethod
+    def update_order_delivery_has_ar_invoice_already(cls):
+        for obj in OrderDeliverySub.objects.all():
+            obj.has_ar_invoice_already = ARInvoiceDelivery.objects.filter(
+                ar_invoice__system_status=3,
+                delivery_mapped=obj
+            ).exists()
+            obj.save(update_fields=['has_ar_invoice_already'], **{'skip_check_period': True})
+        print('Done :))')
+        return True
+
+    @classmethod
+    def update_master_data_for_HQG(cls):
+        tenant_obj = Tenant.objects.get(id='f46dad3817be4ab4b77f549705b9387c')
+        company_obj = Company.objects.get(id='0248237bcb6b46b182ad9282115a0624')
+        UnitOfMeasureGroup.objects.filter(tenant=tenant_obj, company=company_obj).delete()
+        UnitOfMeasure.objects.filter(tenant=tenant_obj, company=company_obj).delete()
+
+        UoM_Group_data = [
+            {'code': 'ImportGroup', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
+            {'code': 'Labor', 'title': 'Nhân công', 'is_default': 1},
+            {'code': 'Size', 'title': 'Kích thước', 'is_default': 1},
+            {'code': 'Time', 'title': 'Thời gian', 'is_default': 1},
+            {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
+        ]
+        objs = [
+            UnitOfMeasureGroup(tenant=tenant_obj, company=company_obj, **uom_group_item)
+            for uom_group_item in UoM_Group_data
+        ]
+        UnitOfMeasureGroup.objects.bulk_create(objs)
+
+        unit_group = UnitOfMeasureGroup.objects.filter(
+            tenant=tenant_obj, company=company_obj, code='Unit', is_default=1
+        ).first()
+        if unit_group:
+            referenced_unit_obj = UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='UOM001',
+                title='Cái',
+                is_referenced_unit=1,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='UOM002',
+                title='Con',
+                is_referenced_unit=0,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='UOM003',
+                title='Thanh',
+                is_referenced_unit=0,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='UOM004',
+                title='Lần',
+                is_referenced_unit=0,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='UOM005',
+                title='Gói',
+                is_referenced_unit=0,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=unit_group
+            )
+            unit_group.uom_reference = referenced_unit_obj
+            unit_group.save(update_fields=['uom_reference'])
+
+        # add default uom for group time
+        labor_group = UnitOfMeasureGroup.objects.filter(
+            tenant=tenant_obj, company=company_obj, code='Labor', is_default=1
+        ).first()
+        if labor_group:
+            referenced_unit_obj = UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='Manhour',
+                title='Manhour',
+                is_referenced_unit=1,
+                ratio=1,
+                rounding=4,
+                is_default=1,
+                group=labor_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='Manday',
+                title='Manday',
+                is_referenced_unit=0,
+                ratio=8,
+                rounding=4,
+                is_default=1,
+                group=labor_group
+            )
+            UnitOfMeasure.objects.create(
+                tenant=tenant_obj,
+                company=company_obj,
+                code='Manmonth',
+                title='Manmonth',
+                is_referenced_unit=0,
+                ratio=176,
+                rounding=4,
+                is_default=1,
+                group=labor_group
+            )
+            labor_group.uom_reference = referenced_unit_obj
+            labor_group.save(update_fields=['uom_reference'])
+
+
+        return True
+
 
 def reset_run_indicator_fields(kwargs):
     for sale_order in SaleOrder.objects.filter(**kwargs):
@@ -1538,3 +1675,40 @@ def clear_old_data_asset():
     # script chạy 1 lần
     AssetToolsProvideProduct.objects.all().update(product=None)
     print('update reset table is DONE !')
+
+
+def update_bid_doctype_for_HongQuang():
+    Document_Type_data = [
+        {'code': 'BDT001', 'title': 'Đơn dự thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'BDT002', 'title': 'Tài liệu chứng minh tư cách pháp nhân', 'is_default': 1,
+         'doc_type_category': 'bidding'},
+        {'code': 'BDT003', 'title': 'Giấy ủy quyền', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'BDT004', 'title': 'Thỏa thuận liên doanh', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'BDT005', 'title': 'Bảo đảm dự thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'BDT006', 'title': 'Tài liệu chứng minh năng lực nhà thầu', 'is_default': 1,
+         'doc_type_category': 'bidding'},
+        {'code': 'BDT007', 'title': 'Đề xuất kĩ thuật', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'BDT008', 'title': 'Đề xuất giá', 'is_default': 1, 'doc_type_category': 'bidding'}
+    ]
+
+    company_obj_list = Company.objects.all()
+
+    for company_obj in company_obj_list:
+        if not DocumentType.objects.filter(company = company_obj, tenant = company_obj.tenant, code='BDT001').exists():
+            objs = [
+                DocumentType(tenant=company_obj.tenant, company=company_obj, **item)
+                for item in Document_Type_data
+            ]
+            DocumentType.objects.bulk_create(objs)
+            print(f'Bidding default document type created for {company_obj.title}')
+
+
+def delete_non_default_account_type():
+    # KO cho tạo mới account type nữa
+    company_obj_list = Company.objects.all()
+    for company_obj in company_obj_list:
+        # delete all account type with is_default=False
+        non_default_account_type_list = AccountType.objects.filter(company=company_obj, tenant=company_obj.tenant,
+                                                                   is_default=False)
+        non_default_account_type_list.delete()
+        print(f'Non-default account type deleted for {company_obj.title}')

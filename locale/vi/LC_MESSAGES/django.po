@@ -52,7 +52,7 @@ msgstr "Hóa đơn bán hàng"
 
 # 41abd4e9-da89-450b-a44a-da1d6f8a5cd2
 msgid "Asset, Tools Delivery"
-msgstr "Yêu cầu bàn giao"
+msgstr "Phiếu bàn giao"
 
 # 55ba3005-6ccc-4807-af27-7cc45e99e3f6
 msgid "Asset, Tools Provide"
@@ -321,6 +321,10 @@ msgstr "Thông tin nhân viên"
 # 7ba35923-d8ff-4f6d-bf80-468a7190a63b
 msgid "Cash Inflow"
 msgstr "Phiếu thu"
+
+# c51857ef-513f-4dbf-babd-26d68950ad6e
+msgid "Cash Outflow"
+msgstr "Phiếu chi"
 
 # b690b9ff-670a-474b-8ae2-2c17d7c30f40
 msgid "Reconciliation"
@@ -1597,6 +1601,22 @@ msgstr "Tổng chi phí sau thuế"
 #
 msgid "Group order"
 msgstr "Đơn hàng nhóm"
+
+#
+msgid "Group Order"
+msgstr "Đơn hàng nhóm"
+
+#
+msgid "Fixed Asset Write-off"
+msgstr "Ghi giảm tài sản cố định"
+
+#
+msgid "Instrument Tool Write-off"
+msgstr "Ghi giảm công cụ dụng cụ"
+
+#
+msgid "Manufacturer"
+msgstr "Hãng sản xuất"
 
 #
 msgid "Revenue"

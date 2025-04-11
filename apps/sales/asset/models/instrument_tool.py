@@ -69,7 +69,7 @@ class InstrumentTool(DataAbstractModel):
         choices=SOURCE_TYPE_CHOICES,
     )
 
-    #depreciation + value:
+    # depreciation + value:
     unit_price = models.FloatField(default=0)
     total_value = models.FloatField(default=0)
     quantity = models.IntegerField(default=0)
@@ -113,6 +113,7 @@ class InstrumentTool(DataAbstractModel):
 
         # hit DB
         super().save(*args, **kwargs)
+
 
 class InstrumentToolUseDepartment(SimpleAbstractModel):
     instrument_tool = models.ForeignKey(

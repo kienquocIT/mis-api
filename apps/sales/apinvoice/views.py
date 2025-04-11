@@ -1,10 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.inventory.models import GoodsReceipt
+from apps.sales.purchasing.models import PurchaseOrder
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.apinvoice.serializers import (
     GoodsReceiptListSerializerForAPInvoice, APInvoiceListSerializer, APInvoiceCreateSerializer,
-    APInvoiceDetailSerializer, APInvoiceUpdateSerializer
+    APInvoiceDetailSerializer, APInvoiceUpdateSerializer, PurchaseOrderListSerializerForAPInvoice
 )
 from apps.sales.apinvoice.models import APInvoice
 
@@ -20,7 +21,7 @@ class APInvoiceList(BaseListMixin, BaseCreateMixin):
         'code',
     ]
     filterset_fields = {
-        'po_mapped__purchase_requests__request_for': ['exact']
+        'purchase_order_mapped__purchase_requests__request_for': ['exact']
     }
     serializer_list = APInvoiceListSerializer
     serializer_create = APInvoiceCreateSerializer
@@ -34,7 +35,7 @@ class APInvoiceList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         return super().get_queryset().prefetch_related().select_related(
             'supplier_mapped',
-            'po_mapped'
+            'purchase_order_mapped'
         )
 
     @swagger_auto_schema(
@@ -77,7 +78,7 @@ class APInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'ap_invoice_goods_receipts__goods_receipt_mapped'
         ).select_related(
             'supplier_mapped',
-            'po_mapped'
+            'purchase_order_mapped'
         )
 
     @swagger_auto_schema(operation_summary='Detail ARInvoice')
@@ -98,16 +99,47 @@ class APInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
+# related views
+class PurchaseOrderListForAPInvoice(BaseListMixin):
+    queryset = PurchaseOrder.objects
+    search_fields = ['title', 'code', 'supplier__name']
+    filterset_fields = {
+        'supplier_id': ['exact'],
+    }
+    serializer_list = PurchaseOrderListSerializerForAPInvoice
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            system_status=3
+        ).select_related()
+
+    @swagger_auto_schema(
+        operation_summary="PurchaseOrder List",
+        operation_description="Get PurchaseOrder List",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='purchasing', model_code='purchaseorder', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
 class GoodsReceiptListForAPInvoice(BaseListMixin):
     queryset = GoodsReceipt.objects
     serializer_list = GoodsReceiptListSerializerForAPInvoice
+    filterset_fields = {
+        'purchase_order_id': ['exact'],
+    }
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            "purchase_order",
-            "inventory_adjustment",
+        return super().get_queryset().filter(
+            system_status=3
+        ).select_related().prefetch_related(
+            'goods_receipt_product_goods_receipt'
         ).order_by('date_created')
 
     @swagger_auto_schema(
@@ -118,9 +150,4 @@ class GoodsReceiptListForAPInvoice(BaseListMixin):
         label_code='inventory', model_code='goodsreceipt', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
-        self.lookup_field = 'company_id'
-        self.kwargs['company_id'] = request.user.company_current_id
-        self.kwargs['system_status'] = 3
-        self.kwargs['purchase_order_id'] = request.GET.get('purchase_order_id')
-        self.pagination_class.page_size = -1
         return self.list(request, *args, **kwargs)

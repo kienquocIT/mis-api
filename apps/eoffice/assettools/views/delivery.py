@@ -57,7 +57,7 @@ class AssetToolsProductUsedList(BaseListMixin):
     }
 
     def get_queryset(self):
-        return super().get_queryset().filter(is_inventory=True, delivery__system_status__gte=2)
+        return super().get_queryset().filter(delivery__system_status__gte=2)
 
     @swagger_auto_schema(
         operation_summary="Asset, Tools list by employee",

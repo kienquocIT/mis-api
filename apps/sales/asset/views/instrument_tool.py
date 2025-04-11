@@ -15,6 +15,7 @@ __all__ =[
     'ToolStatusLeaseList',
 ]
 
+
 class InstrumentToolList(BaseListMixin, BaseCreateMixin):
     queryset = InstrumentTool.objects
     search_fields = ['title', 'code']
@@ -26,7 +27,9 @@ class InstrumentToolList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('write_off_quantities')
+        queryset = (super().get_queryset().select_related('product', 'manage_department', 'use_customer')
+                                          .prefetch_related('write_off_quantities', 'use_departments'))
+        return queryset
 
     @swagger_auto_schema(
         operation_summary="Instrument Tool List",
@@ -46,7 +49,6 @@ class InstrumentToolList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        employee_require=True,
         label_code='asset', model_code='instrumenttool', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
@@ -60,6 +62,12 @@ class InstrumentToolDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_update = InstrumentToolUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        queryset = (super().get_queryset().select_related('classification', 'product', 'manage_department')
+                                          .prefetch_related('write_off_quantities', 'use_departments',
+                                                            'ap_invoice_items', 'asset_sources'))
+        return queryset
 
     @swagger_auto_schema(
         operation_summary="Instrument Tool Detail",

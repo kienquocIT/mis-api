@@ -56,6 +56,8 @@ class FilesUploadSerializer(serializers.ModelSerializer):
 
 
 class FilesDetailSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()  # Add a custom field for the file URL
+
     class Meta:
         model = Files
         fields = (
@@ -67,7 +69,13 @@ class FilesDetailSerializer(serializers.ModelSerializer):
             'file_size',
             'file_type',
             'remarks',
+            'url'
         )
+
+    @classmethod
+    def get_url(cls, obj):
+        # Return the file's URL
+        return obj.get_url()
 
 
 class FilesListSerializer(serializers.ModelSerializer):

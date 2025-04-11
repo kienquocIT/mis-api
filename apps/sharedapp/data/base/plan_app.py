@@ -125,6 +125,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "053c0804-162a-4357-a1c2-2161e6606cc2",  # Product category
     },
+    "d6e7d038-aef7-4e4e-befd-b13895974ec5": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "d6e7d038-aef7-4e4e-befd-b13895974ec5",  # Manufacturer
+    },
     "7bc78f47-66f1-4104-a6fa-5ca07f3f2275":{
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "7bc78f47-66f1-4104-a6fa-5ca07f3f2275",  # UOM
@@ -368,6 +372,10 @@ _PlanApplication_sale_data = {
     "7ba35923-d8ff-4f6d-bf80-468a7190a63b": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "7ba35923-d8ff-4f6d-bf80-468a7190a63b",  # Cash infow
+    },
+    "c51857ef-513f-4dbf-babd-26d68950ad6e": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "c51857ef-513f-4dbf-babd-26d68950ad6e",  # Cash outfow
     },
     "b690b9ff-670a-474b-8ae2-2c17d7c30f40": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data

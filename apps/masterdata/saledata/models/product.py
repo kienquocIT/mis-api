@@ -10,7 +10,7 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstra
 __all__ = [
     'ProductType', 'ProductCategory', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
     'ExpensePrice', 'ExpenseRole', 'ProductMeasurements', 'ProductProductType',
-    'ProductVariantAttribute', 'ProductVariant'
+    'ProductVariantAttribute', 'ProductVariant', 'Manufacturer'
 ]
 
 
@@ -136,8 +136,10 @@ class Manufacturer(MasterDataAbstractModel):
 
 
 class Product(DataAbstractModel):
+    # import in quotation
     create_from_import = models.BooleanField(default=False)
     import_data_row = models.JSONField(default=dict)
+    #
     has_bom = models.BooleanField(default=False)
     bom_data = models.JSONField(default=dict)
     # bom_data = {

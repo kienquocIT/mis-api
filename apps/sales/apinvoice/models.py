@@ -1,10 +1,6 @@
 from django.db import models
-
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import (
-    SimpleAbstractModel, DataAbstractModel
-)
-# Create your models here.
+from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 
 INVOICE_EXP = (
@@ -20,14 +16,20 @@ INVOICE_EXP = (
 
 class APInvoice(DataAbstractModel):
     supplier_mapped = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
-    supplier_name = models.CharField(max_length=250, null=True, blank=True)
-    po_mapped = models.ForeignKey('purchasing.PurchaseOrder', on_delete=models.CASCADE)
+    supplier_mapped_data = models.JSONField(default=dict)
+    purchase_order_mapped = models.ForeignKey('purchasing.PurchaseOrder', on_delete=models.CASCADE)
+    purchase_order_mapped_data = models.JSONField(default=dict)
     posting_date = models.DateTimeField()
     document_date = models.DateTimeField()
     invoice_date = models.DateTimeField()
-    invoice_sign = models.CharField(max_length=250)
-    invoice_number = models.CharField(max_length=250)
+    invoice_sign = models.CharField(max_length=250, null=True, blank=True)
+    invoice_number = models.CharField(max_length=250, null=True, blank=True)
     invoice_example = models.SmallIntegerField(choices=INVOICE_EXP)
+    sum_pretax_value = models.FloatField(default=0)
+    sum_tax_value = models.FloatField(default=0)
+    sum_after_tax_value = models.FloatField(default=0)
+    cash_outflow_done = models.BooleanField(default=False)
+    note = models.TextField(blank=True)
 
     class Meta:
         verbose_name = 'AP Invoice'
@@ -36,18 +38,49 @@ class APInvoice(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def update_goods_receipt_has_ap_invoice_already(cls, instance):
+        for item in instance.ap_invoice_goods_receipts.all():
+            if item.goods_receipt_mapped:
+                item.goods_receipt_mapped.has_ap_invoice_already = True
+                item.goods_receipt_mapped.save(update_fields=['has_ap_invoice_already'])
+        return True
+
+    def save(self, *args, **kwargs):
+        if self.system_status in [2, 3]:
+            if not self.code:
+                self.add_auto_generate_code_to_instance(self, 'AP[n4]', True)
+
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+
+                self.update_goods_receipt_has_ap_invoice_already(self)
+        # hit DB
+        super().save(*args, **kwargs)
+
 
 class APInvoiceItems(SimpleAbstractModel):
     ap_invoice = models.ForeignKey('APInvoice', on_delete=models.CASCADE, related_name='ap_invoice_items')
     item_index = models.IntegerField(default=0)
 
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
+    product_data = models.JSONField(default=dict)
     product_uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE, null=True)
+    product_uom_data = models.JSONField(default=dict)
     product_quantity = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
-    product_tax_value = models.FloatField(default=0)
     product_subtotal = models.FloatField(default=0)
-    increased_FA_value = models.FloatField(default=0)
+    product_tax = models.ForeignKey('saledata.Tax', on_delete=models.CASCADE, null=True)
+    product_tax_data = models.JSONField(default=dict)
+    product_tax_value = models.FloatField(default=0)
+    product_subtotal_final = models.FloatField(default=0)
+    note = models.TextField(blank=True)
+    increased_FA_value = models.FloatField(
+        default=0, help_text='increased fixed asset value for this item (product_subtotal)'
+    )
 
     class Meta:
         verbose_name = 'AP Invoice Item'
@@ -60,6 +93,7 @@ class APInvoiceItems(SimpleAbstractModel):
 class APInvoiceGoodsReceipt(SimpleAbstractModel):
     ap_invoice = models.ForeignKey('APInvoice', on_delete=models.CASCADE, related_name='ap_invoice_goods_receipts')
     goods_receipt_mapped = models.ForeignKey('inventory.GoodsReceipt', on_delete=models.CASCADE)
+    goods_receipt_mapped_data = models.JSONField(default=dict)
 
     class Meta:
         verbose_name = 'AP Invoice Goods Receipt'
