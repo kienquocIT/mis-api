@@ -549,7 +549,7 @@ AppProp_SaleData_Quotation_data = {
     '47e31f9e-69a3-4b69-ada3-ce777c420864': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product',
-        'code': 'quotation_products_data__product_data__id',
+        'code': 'quotation_products_data__product_data__title',
         'type': 5,
         'content_type': 'saledata.product',
         'is_wf_zone': False,
@@ -558,7 +558,7 @@ AppProp_SaleData_Quotation_data = {
     '42cc882b-15af-4034-b8a1-0d8d6038d537': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product type',
-        'code': 'quotation_products_data__product_data__general_information__product_type__id',
+        'code': 'quotation_products_data__product_data__general_information__product_type__title',
         'type': 5,
         'content_type': 'saledata.producttype',
         'is_wf_zone': False,
@@ -1365,7 +1365,7 @@ AppProp_SaleData_SaleOrder_data = {
     'de2717ad-b461-4b7a-a29c-63baf1e0f632': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Product',
-        'code': 'sale_order_products_data__product_data__id',
+        'code': 'sale_order_products_data__product_data__title',
         'type': 5,
         'content_type': 'saledata.product',
         'is_wf_zone': False,
@@ -1374,7 +1374,7 @@ AppProp_SaleData_SaleOrder_data = {
     'ded465fa-2ed9-48a8-9e70-ba72e8a011d2': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Product type',
-        'code': 'sale_order_products_data__product_data__general_information__product_type__id',
+        'code': 'sale_order_products_data__product_data__general_information__product_type__title',
         'type': 5,
         'content_type': 'saledata.producttype',
         'is_wf_zone': False,
