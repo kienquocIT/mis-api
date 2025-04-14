@@ -422,6 +422,7 @@ class SaleDefaultData:
             )
         return True
 
+
 class ConfigDefaultData:
     """
     Class support create all config of company when signal new Company just created

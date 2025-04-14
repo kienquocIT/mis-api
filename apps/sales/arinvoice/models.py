@@ -6,8 +6,6 @@ from apps.sales.acceptance.models import FinalAcceptance
 from apps.sales.reconciliation.utils.autocreate_recon_for_ar_invoice import ReconForARInvoiceHandler
 from apps.shared import SimpleAbstractModel, DataAbstractModel, RecurrenceAbstractModel
 
-# Create your models here.
-
 
 INVOICE_EXP = (
     (0, '01GTKT0'),
@@ -53,6 +51,7 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
     sum_tax_value = models.FloatField(default=0)
     sum_after_tax_value = models.FloatField(default=0)
     cash_inflow_done = models.BooleanField(default=False)
+    note = models.TextField(blank=True)
 
     @classmethod
     def push_final_acceptance_invoice(cls, instance):
@@ -86,6 +85,14 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
             )
         return True
 
+    @classmethod
+    def update_order_delivery_has_ar_invoice_already(cls, instance):
+        for item in instance.ar_invoice_deliveries.all():
+            if item.delivery_mapped:
+                item.delivery_mapped.has_ar_invoice_already = True
+                item.delivery_mapped.save(update_fields=['has_ar_invoice_already'])
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -99,6 +106,7 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
 
                 JEForARInvoiceHandler.push_to_journal_entry(self)
                 ReconForARInvoiceHandler.auto_create_recon_doc(self)
+                self.update_order_delivery_has_ar_invoice_already(self)
 
         if self.invoice_status == 1:  # published
             self.push_final_acceptance_invoice(instance=self)
@@ -125,13 +133,12 @@ class ARInvoiceItems(SimpleAbstractModel):
     product_quantity = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
     product_subtotal = models.FloatField(default=0)
-    product_discount_rate = models.FloatField(default=0)
     product_discount_value = models.FloatField(default=0)
     product_tax = models.ForeignKey('saledata.Tax', on_delete=models.CASCADE, null=True)
     product_tax_data = models.JSONField(default=dict)
     product_tax_value = models.FloatField(default=0)
-
     product_subtotal_final = models.FloatField(default=0)
+    note = models.TextField(blank=True)
 
     class Meta:
         verbose_name = 'AR Invoice Item'

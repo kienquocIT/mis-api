@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, PurchaseOrderRequestProduct, \
-    PurchaseOrderQuotation, PurchaseOrderPaymentStage, PurchaseOrderAttachmentFile
+    PurchaseOrderQuotation, PurchaseOrderPaymentStage, PurchaseOrderAttachmentFile, PurchaseOrderInvoice
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate, \
     PurchaseOrderCommonGet
 from apps.sales.quotation.models import QuotationAppConfig
@@ -378,24 +378,55 @@ class POProductGRListSerializer(serializers.ModelSerializer):
 
 
 class PurchaseOrderPaymentStageSerializer(serializers.ModelSerializer):
-    tax = serializers.UUIDField(required=False, allow_null=True)
+    date = serializers.CharField(required=False, allow_null=True)
     due_date = serializers.CharField(required=False, allow_null=True)
+    tax_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = PurchaseOrderPaymentStage
         fields = (
             'remark',
-            'payment_ratio',
-            'value_before_tax',
-            'tax',
-            'value_after_tax',
+            'date',
             'due_date',
+            'ratio',
+            'invoice',
+            'invoice_data',
+            'value_before_tax',
+            'value_reconcile',
+            'reconcile_data',
+            'tax_id',
+            'tax_data',
+            'value_tax',
+            'value_total',
+            'is_ap_invoice',
             'order',
         )
 
     @classmethod
-    def validate_tax(cls, value):
-        return PurchasingCommonValidate().validate_tax(value=value)
+    def validate_tax_id(cls, value):
+        return PurchasingCommonValidate().validate_tax_id(value=value)
+
+
+class PurchaseOrderInvoiceSerializer(serializers.ModelSerializer):
+    date = serializers.CharField(required=False, allow_null=True)
+    tax_id = serializers.UUIDField(required=False, allow_null=True)
+
+    class Meta:
+        model = PurchaseOrderInvoice
+        fields = (
+            'remark',
+            'date',
+            'ratio',
+            'tax_id',
+            'tax_data',
+            'total',
+            'balance',
+            'order',
+        )
+
+    @classmethod
+    def validate_tax_id(cls, value):
+        return PurchasingCommonValidate().validate_tax_id(value=value)
 
 
 def handle_attach_file(instance, attachment_result):
@@ -468,6 +499,7 @@ class PurchaseOrderDetailSerializer(AbstractDetailSerializerModel):
             'total_product_revenue_before_tax',
             # payment stage tab
             'purchase_order_payment_stage',
+            'purchase_order_invoice',
             # system
             'system_status',
             'workflow_runtime_id',
@@ -556,6 +588,10 @@ class PurchaseOrderCreateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    purchase_order_invoice = PurchaseOrderInvoiceSerializer(
+        many=True,
+        required=False
+    )
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
@@ -579,6 +615,7 @@ class PurchaseOrderCreateSerializer(AbstractCreateSerializerModel):
             'total_product_revenue_before_tax',
             # payment stage tab
             'purchase_order_payment_stage',
+            'purchase_order_invoice',
             # attachment
             'attachment',
         )
@@ -597,22 +634,26 @@ class PurchaseOrderCreateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_total_payment_term(cls, validate_data):
-        if 'purchase_order_payment_stage' in validate_data:
-            total = 0
-            for payment_stage in validate_data['purchase_order_payment_stage']:
-                total += payment_stage.get('payment_ratio', 0)
-                # check required field
-                due_date = payment_stage.get('due_date', '')
-                if not due_date:
-                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
-            if total != 100:
-                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_RATIO_PAYMENT})
-        else:
-            # check required by config
-            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
-            if so_config:
-                if so_config.is_require_payment is True:
-                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
+        if 'purchase_order_payment_stage' in validate_data and 'total_product' in validate_data:
+            if len(validate_data['purchase_order_payment_stage']) > 0:
+                total_payment = 0
+                for payment_stage in validate_data['purchase_order_payment_stage']:
+                    total_payment += payment_stage.get('value_total', 0)
+                    # check required field
+                    date = payment_stage.get('date', '')
+                    due_date = payment_stage.get('due_date', '')
+                    if not date:
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DATE_REQUIRED})
+                    if not due_date:
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
+                if total_payment != validate_data.get('total_product', 0):
+                    raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+            else:
+                # check required by config
+                so_config = QuotationAppConfig.objects.filter_on_company().first()
+                if so_config:
+                    if so_config.is_require_payment is True:
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
     def validate_attachment(self, value):
@@ -666,6 +707,10 @@ class PurchaseOrderUpdateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    purchase_order_invoice = PurchaseOrderInvoiceSerializer(
+        many=True,
+        required=False
+    )
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
@@ -689,6 +734,7 @@ class PurchaseOrderUpdateSerializer(AbstractCreateSerializerModel):
             'total_product_revenue_before_tax',
             # payment stage tab
             'purchase_order_payment_stage',
+            'purchase_order_invoice',
             # attachment
             'attachment',
         )
@@ -707,22 +753,26 @@ class PurchaseOrderUpdateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def validate_total_payment_term(cls, validate_data):
-        if 'purchase_order_payment_stage' in validate_data:
-            total = 0
-            for payment_stage in validate_data['purchase_order_payment_stage']:
-                total += payment_stage.get('payment_ratio', 0)
-                # check required field
-                due_date = payment_stage.get('due_date', '')
-                if not due_date:
-                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
-            if total != 100:
-                raise serializers.ValidationError({'detail': SaleMsg.TOTAL_RATIO_PAYMENT})
-        else:
-            # check required by config
-            so_config = QuotationAppConfig.objects.filter_current(fill__tenant=True, fill__company=True).first()
-            if so_config:
-                if so_config.is_require_payment is True:
-                    raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
+        if 'purchase_order_payment_stage' in validate_data and 'total_product' in validate_data:
+            if len(validate_data['purchase_order_payment_stage']) > 0:
+                total_payment = 0
+                for payment_stage in validate_data['purchase_order_payment_stage']:
+                    total_payment += payment_stage.get('value_total', 0)
+                    # check required field
+                    date = payment_stage.get('date', '')
+                    due_date = payment_stage.get('due_date', '')
+                    if not date:
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DATE_REQUIRED})
+                    if not due_date:
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
+                if total_payment != validate_data.get('total_product', 0):
+                    raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
+            else:
+                # check required by config
+                so_config = QuotationAppConfig.objects.filter_on_company().first()
+                if so_config:
+                    if so_config.is_require_payment is True:
+                        raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_REQUIRED_BY_CONFIG})
         return True
 
     def validate_attachment(self, value):

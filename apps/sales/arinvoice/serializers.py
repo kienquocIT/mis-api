@@ -50,6 +50,7 @@ class ARInvoiceListSerializer(AbstractListSerializerModel):
             'invoice_number',
             'invoice_example',
             'invoice_status',
+            'date_created'
         )
 
 
@@ -78,6 +79,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
+            'note',
             'delivery_mapped_list',
             'data_item_list',
             # recurrence
@@ -91,7 +93,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
         try:
             return Account.objects.get(id=value)
         except Account.DoesNotExist:
-            raise serializers.ValidationError({'customer_mapped': "Account does not exist."})
+            raise serializers.ValidationError({'customer_mapped': "Customer does not exist."})
 
     @classmethod
     def validate_sale_order_mapped(cls, value):
@@ -176,7 +178,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                     'id': str(product_obj.id),
                     'code': product_obj.code,
                     'title': product_obj.title,
-                    'des': product_obj.description,
+                    'description': product_obj.description,
                 } if product_obj else {}
                 item['product_uom_data'] = {
                     'id': str(uom_obj.id),
@@ -237,6 +239,7 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
             'item_mapped',
             'attachment',
             'invoice_status',
+            'note',
         )
 
     @classmethod
@@ -277,11 +280,11 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
             'product_quantity': item.product_quantity,
             'product_unit_price': item.product_unit_price,
             'product_subtotal': item.product_subtotal,
-            'product_discount_rate': item.product_discount_rate,
             'product_discount_value': item.product_discount_value,
             'product_tax_data': item.product_tax_data,
             'product_tax_value': item.product_tax_value,
-            'product_subtotal_final': item.product_subtotal_final
+            'product_subtotal_final': item.product_subtotal_final,
+            'note': item.note,
         } for item in obj.ar_invoice_items.all()]
 
     @classmethod
@@ -337,6 +340,7 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
+            'note',
             'delivery_mapped_list',
             'data_item_list',
         )
@@ -508,7 +512,7 @@ class ARInvoiceCommonFunc:
                     "<Extra></Extra>"
                     "</Product>"
                 )
-                if float(item.product_discount_rate) > 0:
+                if float(item.product_discount_value) > 0:
                     discount += float(item.product_discount_value)
                 #     product_xml += (
                 #         "<Product>"
@@ -516,7 +520,7 @@ class ARInvoiceCommonFunc:
                 #         "<No></No>"
                 #         "<Feature>3</Feature>"
                 #         "<ProdName>"
-                #         f"Chiết khấu {item.product_discount_rate}% (cho sản phẩm {item.product.title})"
+                #         f"Chiết khấu xxx% (cho sản phẩm {item.product.title})"
                 #         "</ProdName>"
                 #         "<ProdUnit></ProdUnit>"
                 #         "<ProdQuantity></ProdQuantity>"
@@ -649,6 +653,7 @@ class ARInvoiceCommonFunc:
 # related serializers
 class SaleOrderListSerializerForARInvoice(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
+    has_not_ar_delivery = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -657,7 +662,8 @@ class SaleOrderListSerializerForARInvoice(serializers.ModelSerializer):
             'title',
             'code',
             'opportunity',
-            'sale_order_payment_stage'
+            'sale_order_payment_stage',
+            'has_not_ar_delivery'
         )
 
     @classmethod
@@ -668,13 +674,14 @@ class SaleOrderListSerializerForARInvoice(serializers.ModelSerializer):
             'code': obj.opportunity.code,
         } if obj.opportunity else {}
 
+    @classmethod
+    def get_has_not_ar_delivery(cls, obj):
+        return OrderDeliverySub.objects.filter(order_delivery__sale_order=obj, has_ar_invoice_already=False).exists()
+
 
 class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
     details = serializers.SerializerMethodField()
     already = serializers.SerializerMethodField()
-    sum_tax = serializers.SerializerMethodField()
-    sum_discount = serializers.SerializerMethodField()
-    sum_discount_rate = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderDeliverySub
@@ -688,52 +695,48 @@ class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
             'is_active',
             'already',
             'details',
-            'sum_tax',
-            'sum_discount',
-            'sum_discount_rate',
             'actual_delivery_date'
         )
 
     @classmethod
-    def get_sum_tax(cls, obj):
-        return obj.order_delivery.sale_order.total_product_tax
-
-    @classmethod
-    def get_sum_discount(cls, obj):
-        return obj.order_delivery.sale_order.total_product_discount
-
-    @classmethod
-    def get_sum_discount_rate(cls, obj):
-        return obj.order_delivery.sale_order.total_product_discount_rate
-
-    @classmethod
     def get_details(cls, obj):
-        return [{
-            'product_data': item.product_data,
-            'uom_data': item.uom_data,
-            'delivery_quantity': item.delivery_quantity,
-            'delivered_quantity_before': item.delivered_quantity_before,
-            'picked_quantity': item.picked_quantity,
-            'data_from_so': list(obj.order_delivery.sale_order.sale_order_product_sale_order.filter(
-                order=item.order
-            ).values(
-                'product_description',
-                'product_unit_price',
-                'product_discount_value',
-                'product_discount_amount',
-                'tax',
-                'product_tax_title',
-                'product_tax_value',
-                'product_tax_amount',
-            ))[0]
-        } for item in obj.delivery_product_delivery_sub.all()]
+        so_mapped = obj.order_delivery.sale_order if obj.order_delivery else None
+        so_product_data = {
+            str(item.product_id): {
+                'product_id': str(item.product_id),
+                'product_data': item.product_data,
+                'product_unit_price': item.product_unit_price,
+                'product_discount_value': item.product_discount_value,
+                'product_tax_data': item.tax_data
+            }
+            for item in so_mapped.sale_order_product_sale_order.all()
+        } if so_mapped else {}
+
+        details = []
+        for item in obj.delivery_product_delivery_sub.all():
+            so_product_data_get = so_product_data.get(str(item.product_id), {})
+            if so_product_data_get:
+                product_subtotal = so_product_data_get.get('product_unit_price', 0) * item.picked_quantity
+                product_discount_amount = product_subtotal * so_product_data_get.get('product_discount_value', 0) / 100
+                so_product_data_get['product_subtotal'] = product_subtotal
+                so_product_data_get['product_discount_value'] = product_discount_amount
+                so_product_data_get['product_tax_value'] = (
+                    product_subtotal - product_discount_amount
+                ) * so_product_data_get.get('product_tax_data', {}).get('rate', 0) / 100
+                so_product_data_get['product_subtotal_final'] = (
+                    product_subtotal - product_discount_amount
+                ) + so_product_data_get.get('product_tax_value', 0)
+            details.append({
+                'product_uom_data': item.uom_data,
+                'delivery_quantity': item.delivery_quantity,
+                'product_quantity': item.picked_quantity,
+                **so_product_data_get
+            })
+        return details
 
     @classmethod
     def get_already(cls, obj):
-        return ARInvoiceDelivery.objects.filter_on_company(
-            ar_invoice__system_status=3,
-            delivery_mapped=obj
-        ).exists()
+        return obj.has_ar_invoice_already
 
 
 class ARInvoiceSignCreateSerializer(serializers.ModelSerializer):

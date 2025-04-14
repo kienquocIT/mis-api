@@ -148,6 +148,7 @@ class ARInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
+# related views
 class SaleOrderListForARInvoice(BaseListMixin):
     queryset = SaleOrder.objects
     search_fields = ['title', 'code', 'customer__name']
@@ -158,10 +159,9 @@ class SaleOrderListForARInvoice(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('opportunity').filter(
-            delivery_status=3,
+        return super().get_queryset().filter(
             system_status=3
-        )
+        ).select_related('opportunity')
 
     @swagger_auto_schema(
         operation_summary="Sale Order List",
@@ -178,12 +178,19 @@ class SaleOrderListForARInvoice(BaseListMixin):
 class DeliveryListForARInvoice(BaseListMixin):
     queryset = OrderDeliverySub.objects
     serializer_list = DeliveryListSerializerForARInvoice
+    filterset_fields = {
+        'order_delivery__sale_order_id': ['exact'],
+    }
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('employee_inherit').prefetch_related(
-            'delivery_product_delivery_sub'
+        return super().get_queryset().filter(
+            system_status=3, state=2
+        ).select_related(
+            'order_delivery'
+        ).prefetch_related(
+            'delivery_product_delivery_sub', 'order_delivery__sale_order__sale_order_product_sale_order'
         ).order_by('date_created')
 
     @swagger_auto_schema(
@@ -194,11 +201,6 @@ class DeliveryListForARInvoice(BaseListMixin):
         label_code='delivery', model_code='orderDeliverySub', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
-        self.lookup_field = 'company_id'
-        self.kwargs['company_id'] = request.user.company_current_id
-        self.kwargs['state'] = 2
-        self.kwargs['sale_order_data__id'] = request.GET.get('sale_order_id')
-        self.pagination_class.page_size = -1
         return self.list(request, *args, **kwargs)
 
 

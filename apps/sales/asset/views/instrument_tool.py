@@ -1,14 +1,18 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.asset.models import InstrumentTool
 from apps.sales.asset.serializers import InstrumentToolUpdateSerializer, InstrumentToolDetailSerializer, \
-    InstrumentToolCreateSerializer, InstrumentToolListSerializer, ToolForLeaseListSerializer
+    InstrumentToolCreateSerializer, InstrumentToolListSerializer, ToolForLeaseListSerializer, \
+    ToolStatusLeaseListSerializer
+from apps.sales.delivery.models import OrderDeliveryProductTool
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 __all__ =[
     'InstrumentToolList',
     'InstrumentToolDetail',
     'ToolForLeaseList',
+    'ToolStatusLeaseList',
 ]
 
 class InstrumentToolList(BaseListMixin, BaseCreateMixin):
@@ -22,7 +26,9 @@ class InstrumentToolList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('write_off_quantities')
+        queryset = (super().get_queryset().select_related('product', 'manage_department', 'use_customer')
+                                          .prefetch_related('write_off_quantities', 'use_departments'))
+        return queryset
 
     @swagger_auto_schema(
         operation_summary="Instrument Tool List",
@@ -56,6 +62,12 @@ class InstrumentToolDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_update = InstrumentToolUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        queryset = (super().get_queryset().select_related('classification', 'product', 'manage_department')
+                                          .prefetch_related('write_off_quantities', 'use_departments',
+                                                            'ap_invoice_items', 'asset_sources'))
+        return queryset
 
     @swagger_auto_schema(
         operation_summary="Instrument Tool Detail",
@@ -98,6 +110,41 @@ class ToolForLeaseList(BaseListMixin, BaseCreateMixin):
     @mask_view(
         login_require=True, auth_require=False,
         # label_code='asset', model_code='instrumenttool', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ToolStatusLeaseList(BaseListMixin, BaseCreateMixin):
+    queryset = InstrumentTool.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        "status": ["exact"],
+        "delivery_pt_tool__delivery_sub__order_delivery__lease_order_id": ["exact", "in"],
+    }
+    serializer_list = ToolStatusLeaseListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            Prefetch(
+                'delivery_pt_tool',
+                queryset=OrderDeliveryProductTool.objects.select_related(
+                    'delivery_sub',
+                    'delivery_sub__order_delivery',
+                    'delivery_sub__order_delivery__lease_order',
+                    'delivery_sub__order_delivery__lease_order__customer',
+                ),
+            ),
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Instrument Tool Status Lease List",
+        operation_description="Get Instrument Tool Status Lease List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='asset', model_code='instrumenttool', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

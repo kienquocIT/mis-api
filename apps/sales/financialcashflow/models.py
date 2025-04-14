@@ -23,9 +23,9 @@ class CashInflow(DataAbstractModel):
     posting_date = models.DateTimeField()
     document_date = models.DateTimeField()
     description = models.TextField(blank=True, null=True)
-    purchase_advance_value = models.FloatField(default=0)
-    no_ar_invoice_value = models.FloatField(default=0)
-    has_ar_invoice_value = models.FloatField(default=0)
+    purchase_advance_value = models.FloatField(default=0)  # tiền tạm ứng mua hàng (không theo SO)
+    no_ar_invoice_value = models.FloatField(default=0)  # tổng tiền nhận của khách hàng không hóa đơn (theo SO)
+    has_ar_invoice_value = models.FloatField(default=0)  # tổng tiền nhận của khách hàng có hóa đơn (theo SO)
     total_value = models.FloatField(
         default=0,
         help_text="total_value = purchase_advance_value + no_ar_invoice_value + has_ar_invoice_value"

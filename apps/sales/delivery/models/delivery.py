@@ -350,6 +350,10 @@ class OrderDeliverySub(DataAbstractModel):
         blank=True,
         related_name='file_of_delivery',
     )
+    has_ar_invoice_already = models.BooleanField(
+        default=False,
+        help_text='is true if this Delivery has AR invoice'
+    )
 
     def set_and_check_quantity(self):
         if self.times != 1 and not self.previous_step:
@@ -401,7 +405,8 @@ class OrderDeliverySub(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        SubPeriods.check_period(self.tenant_id, self.company_id)
+        if not kwargs.pop('skip_check_period', False):
+            SubPeriods.check_period(self.tenant_id, self.company_id)
         if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):

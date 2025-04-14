@@ -5,9 +5,10 @@ from rest_framework import serializers
 from apps.core.hr.models import Group
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Product, ToolClassification
-from apps.sales.apinvoice.models import APInvoiceItems, APInvoice
+from apps.sales.apinvoice.models import APInvoice
 from apps.sales.asset.models import InstrumentTool, InstrumentToolUseDepartment, InstrumentToolSource, \
     InstrumentToolAPInvoiceItems
+from apps.sales.asset.serializers.handler import CommonHandler
 from apps.shared import BaseMsg, FixedAssetMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
 
@@ -19,6 +20,7 @@ __all__= [
     'InstrumentToolDetailSerializer',
     'InstrumentToolUpdateSerializer',
     'ToolForLeaseListSerializer',
+    'ToolStatusLeaseListSerializer',
 ]
 
 
@@ -108,6 +110,7 @@ class InstrumentToolListSerializer(AbstractListSerializerModel):
             write_off_quantity += quantity_item.write_off_quantity
         return write_off_quantity
 
+
 class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
     classification = serializers.UUIDField()
     product = serializers.UUIDField()
@@ -193,7 +196,7 @@ class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
         return validate_data
 
     @decorator_run_workflow
-    def create(self, validated_data): # pylint: disable=R0914
+    def create(self, validated_data):
         use_departments = validated_data.pop('use_department')
         asset_sources = validated_data.pop('asset_sources')
         increase_fa_list = validated_data.pop('increase_fa_list')
@@ -202,51 +205,20 @@ class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
             with transaction.atomic():
                 instrument_tool = InstrumentTool.objects.create(**validated_data)
 
-                bulk_data = []
-                for use_department in use_departments:
-                    bulk_data.append(InstrumentToolUseDepartment(
-                        instrument_tool= instrument_tool,
-                        use_department= use_department,
-                    ))
-                InstrumentToolUseDepartment.objects.bulk_create(bulk_data)
+                CommonHandler.create_sub_data(
+                    instrument_tool,
+                    use_departments=use_departments,
+                    asset_sources=asset_sources,
+                    increase_fa_list=increase_fa_list,
+                    use_department_model=InstrumentToolUseDepartment,
+                    source_model=InstrumentToolSource,
+                    feature_ap_invoice_item_model=InstrumentToolAPInvoiceItems
+                )
 
-                bulk_data = []
-                for asset_source in asset_sources:
-                    bulk_data.append(InstrumentToolSource(
-                        instrument_tool= instrument_tool,
-                        description= asset_source.get('description'),
-                        code= asset_source.get('code'),
-                        document_no= asset_source.get('document_no'),
-                        transaction_type= asset_source.get('transaction_type'),
-                        value= asset_source.get('value')
-                    ))
-                InstrumentToolSource.objects.bulk_create(bulk_data)
-
-                bulk_data = []
-                # format of increase_fa_list: increase_fa_list = {
-                #     apinvoiceid: {
-                #         apinvoiceitemid : value
-                #     }
-                # }
-                for ap_invoice_id_key, items in increase_fa_list.items():
-                    ap_invoice_items = APInvoiceItems.objects.filter(ap_invoice=ap_invoice_id_key)
-                    ap_invoice_items_dict = {str(item.id): item for item in ap_invoice_items}
-                    for ap_invoice_item_id_key, value in items.items():
-                        bulk_data.append(InstrumentToolAPInvoiceItems(
-                            instrument_tool= instrument_tool,
-                            ap_invoice_item_id= ap_invoice_item_id_key,
-                            increased_FA_value= value
-                        ))
-                        if ap_invoice_item_id_key in ap_invoice_items_dict:
-                            item = ap_invoice_items_dict[ap_invoice_item_id_key]
-                            item.increased_FA_value += value
-                            item.save()
-                InstrumentToolAPInvoiceItems.objects.bulk_create(bulk_data)
+            return instrument_tool
         except Exception as err:
             logger.error(msg=f'Create instrument tool errors: {str(err)}')
             raise serializers.ValidationError({'asset': FixedAssetMsg.ERROR_CREATE})
-
-        return instrument_tool
 
 
 class InstrumentToolDetailSerializer(AbstractDetailSerializerModel):
@@ -353,6 +325,7 @@ class InstrumentToolDetailSerializer(AbstractDetailSerializerModel):
             using_quantity = using_quantity - write_off_quantity.write_off_quantity
         return using_quantity
 
+
 class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
     classification = serializers.UUIDField()
     product = serializers.UUIDField()
@@ -438,7 +411,7 @@ class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
         return validate_data
 
     @decorator_run_workflow
-    def update(self, instrument_tool, validated_data): # pylint: disable=R0914
+    def update(self, instrument_tool, validated_data):
         use_departments = validated_data.pop('use_department')
         asset_sources = validated_data.pop('asset_sources')
         increase_fa_list = validated_data.pop('increase_fa_list')
@@ -466,51 +439,20 @@ class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
 
                 instrument_tool_apinvoice_items.delete()
 
-                bulk_data = []
-                for use_department in use_departments:
-                    bulk_data.append(InstrumentToolUseDepartment(
-                        instrument_tool= instrument_tool,
-                        use_department= use_department,
-                    ))
-                InstrumentToolUseDepartment.objects.bulk_create(bulk_data)
+                CommonHandler.create_sub_data(
+                    instrument_tool,
+                    use_departments=use_departments,
+                    asset_sources=asset_sources,
+                    increase_fa_list=increase_fa_list,
+                    use_department_model=InstrumentToolUseDepartment,
+                    source_model=InstrumentToolSource,
+                    feature_ap_invoice_item_model=InstrumentToolAPInvoiceItems
+                )
 
-                bulk_data = []
-                for asset_source in asset_sources:
-                    bulk_data.append(InstrumentToolSource(
-                        instrument_tool= instrument_tool,
-                        description= asset_source.get('description'),
-                        code= asset_source.get('code'),
-                        document_no= asset_source.get('document_no'),
-                        transaction_type= asset_source.get('transaction_type'),
-                        value= asset_source.get('value')
-                    ))
-                InstrumentToolSource.objects.bulk_create(bulk_data)
-
-                bulk_data = []
-                # format of increase_fa_list: increase_fa_list = {
-                #     apinvoiceid: {
-                #         apinvoiceitemid : value
-                #     }
-                # }
-                for ap_invoice_id_key, items in increase_fa_list.items():
-                    ap_invoice_items = APInvoiceItems.objects.filter(ap_invoice=ap_invoice_id_key)
-                    ap_invoice_items_dict = {str(item.id): item for item in ap_invoice_items}
-                    for ap_invoice_item_id_key, value in items.items():
-                        bulk_data.append(InstrumentToolAPInvoiceItems(
-                            instrument_tool= instrument_tool,
-                            ap_invoice_item_id= ap_invoice_item_id_key,
-                            increased_FA_value= value
-                        ))
-                        if ap_invoice_item_id_key in ap_invoice_items_dict:
-                            item = ap_invoice_items_dict[ap_invoice_item_id_key]
-                            item.increased_FA_value += value
-                            item.save()
-                InstrumentToolAPInvoiceItems.objects.bulk_create(bulk_data)
+            return instrument_tool
         except Exception as err:
             logger.error(msg=f'Create instrument tool errors: {str(err)}')
             raise serializers.ValidationError({'asset': FixedAssetMsg.ERROR_CREATE})
-
-        return instrument_tool
 
 
 class ToolForLeaseListSerializer(serializers.ModelSerializer):
@@ -549,3 +491,71 @@ class ToolForLeaseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_depreciation_time(cls, obj):
         return obj.depreciation_time
+
+
+class ToolStatusLeaseListSerializer(serializers.ModelSerializer):
+    quantity_leased = serializers.SerializerMethodField()
+    asset_type = serializers.SerializerMethodField()
+    lease_order_data = serializers.SerializerMethodField()
+    origin_cost = serializers.SerializerMethodField()
+    net_value = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InstrumentTool
+        fields = (
+            'id',
+            'title',
+            'code',
+            'quantity',
+            'quantity_leased',
+            'asset_type',
+            'status',
+            'lease_order_data',
+
+            'origin_cost',
+            'net_value',
+            'depreciation_time',
+            'depreciation_start_date',
+            'depreciation_end_date',
+            'depreciation_data',
+        )
+
+    @classmethod
+    def get_quantity_leased(cls, obj):
+        delivery_product_tool = obj.delivery_pt_tool.first()
+        if delivery_product_tool:
+            return delivery_product_tool.picked_quantity
+        return 0
+
+    @classmethod
+    def get_asset_type(cls, obj):
+        return 'tool' if obj else ''
+
+    @classmethod
+    def get_lease_order_data(cls, obj):
+        lease_order = None
+        delivery_product_tool = obj.delivery_pt_tool.first()
+        if delivery_product_tool:
+            if delivery_product_tool.delivery_sub:
+                if delivery_product_tool.delivery_sub.order_delivery:
+                    lease_order = delivery_product_tool.delivery_sub.order_delivery.lease_order
+        return {
+            'id': lease_order.id,
+            'title': lease_order.title,
+            'code': lease_order.code,
+            'customer': {
+                'id': lease_order.customer_id,
+                'title': lease_order.customer.name,
+                'code': lease_order.customer.code
+            } if lease_order.customer else {},
+            'product_lease_start_date': delivery_product_tool.product_lease_start_date,
+            'product_lease_end_date': delivery_product_tool.product_lease_end_date,
+        } if lease_order else {}
+
+    @classmethod
+    def get_origin_cost(cls, obj):
+        return obj.unit_price
+
+    @classmethod
+    def get_net_value(cls, obj):
+        return 0 if obj else 0

@@ -2664,26 +2664,26 @@ FIXED_ASSET_APP_CONFIG = {
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "create": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "edit": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "delete": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
@@ -2703,26 +2703,26 @@ INSTRUMENT_TOOL_APP_CONFIG = {
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "create": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "edit": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "delete": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
@@ -2781,26 +2781,26 @@ FIXED_ASSET_WRITEOFF_APP_CONFIG = {
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "create": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "edit": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "delete": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
@@ -2820,26 +2820,26 @@ INSTRUMENT_TOOL_WRITEOFF_APP_CONFIG = {
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "create": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "edit": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "delete": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
