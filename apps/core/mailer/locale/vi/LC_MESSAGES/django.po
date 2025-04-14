@@ -169,3 +169,20 @@ msgstr "<h2 style=\"font-weight: 500; font-size: 20px\">Company: <strong><span s
     "<p><b><span class=\"params-data\" data-code=\"_contract__created_email\"></span></b></p>"
     "<p><b><span class=\"params-data\" data-code=\"_contract__title\"></span></b></p>"
     "<p><a href=\"_contract__url\" style=\"text-decoration:none;color:#fff;width: 150px;display: inline-block;background: #007D88;padding: 6px;text-transform: uppercase;letter-spacing: .95px;\">Xem tài liệu</a></p></div>"
+
+msgid "Missing info"
+msgstr "Thiếu thông tin"
+
+msgid "New leave request created"
+msgstr "Phiếu nghỉ phép mới đã tạo"
+
+msgid "<h2 style=\"font-weight: 500; font-size: 20px\">Company: <strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
+    "<p style=\"font-size: 18px\">Hi, </p>"
+    "<div><p>Employee __leave__employee__ has been granted leave for about __leave__day_off__ days, and will return to work on __leave__date_back__.</p>"
+    "<p>During this period, please contact __leave__leader_name__ at __leave__leader_email__ if your email requires immediate attention.</p>"
+    "</div>"
+msgstr "<h2 style=\"font-weight: 500; font-size: 20px\">Công ty: <strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
+    "<p style=\"font-size: 18px\">Chào, </p>"
+    "<div><p>Nhân viên __leave__employee__ đã được cấp phép nghỉ phép khoảng __leave__day_off__ ngảy, và sẽ quay lại làm việc vào __leave__date_back__.</p>"
+    "<p>Trong thời gian này, vui lòng liên hệ __leave__leader_name__ vào __leave__leader_email__ nếu công việc bạn cần xử lý gấp.</p>"
+    "</div>"

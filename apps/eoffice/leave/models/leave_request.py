@@ -3,8 +3,11 @@ from copy import deepcopy
 
 from django.db import models
 from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
-from apps.shared import DataAbstractModel, TYPE_LIST, LeaveMsg
+from apps.core.mailer.tasks import send_mail_annual_leave
+from apps.shared import DataAbstractModel, TYPE_LIST, LeaveMsg, DisperseModel, call_task_background
 
 __all__ = ['LeaveRequestDateListRegister', 'LeaveRequest', 'LeaveAvailable', 'LeaveAvailableHistory']
 
@@ -265,3 +268,33 @@ class LeaveAvailableHistory(DataAbstractModel):
         ordering = ('-date_modified',)
         default_permissions = ()
         permissions = ()
+
+
+@receiver(post_save, sender=LeaveRequest)
+def send_mail_leave(sender, instance, created, **kwargs):
+    emp_leave = instance.employee_inherit
+    email_lst = [str(instance.employee_inherit.email)]
+    opp_model = DisperseModel(app_model='sales.Opportunity').get_model()
+    prj_model = DisperseModel(app_model='sales.Project').get_model()
+    for emp in opp_model.objects.filter_on_company(
+            members__member_id=str(emp_leave.id), is_close_lost=False, is_deal_close=False
+    ):
+        email_lst.append(emp.employee_inherit.email) if emp.employee_inherit.email else None
+
+    for member in prj_model.objects.filter_on_company(
+            members__member_id=str(emp_leave.id), project_status__in=[1, 2]
+    ):
+        email_lst.append(member.project_pm.email) if member.project_pm.email else None
+        email_lst.append(member.employee_inherit.email) if member.employee_inherit.email else None
+
+    if instance.system_status == 3:
+        call_task_background(
+            my_task=send_mail_annual_leave,
+            **{
+                'leave_id': str(instance.id),
+                'tenant_id': str(instance.tenant),
+                'company_id': str(instance.company_id),
+                'employee_id': str(emp_leave.id),
+                'email_lst': email_lst
+            }
+        )
