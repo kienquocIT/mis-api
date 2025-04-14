@@ -40,7 +40,7 @@ class LeadList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        main_queryset = super().get_queryset().select_related('current_lead_stage').prefetch_related()
+        main_queryset = super().get_queryset().select_related().prefetch_related()
         return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
@@ -54,8 +54,8 @@ class LeadList(BaseListMixin, BaseCreateMixin):
     def get(self, request, *args, **kwargs):
         try:
             LeadChartInformation.create_update_chart_information(
-                self.request.user.tenant_current_id,
-                self.request.user.company_current_id
+                request.user.tenant_current_id,
+                request.user.company_current_id
             )
         except Exception as err:
             handle_exception_all_view(err, self)
@@ -71,6 +71,10 @@ class LeadList(BaseListMixin, BaseCreateMixin):
         label_code='lead', model_code='lead', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'tenant_current_id': request.user.tenant_current_id,
+            'company_current_id': request.user.company_current_id,
+        }
         return self.create(request, *args, **kwargs)
 
 
@@ -85,9 +89,6 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'industry',
-            'assign_to_sale',
-            'current_lead_stage'
         ).prefetch_related(
             'lead_notes',
             'lead_configs__account_mapped',
@@ -110,14 +111,16 @@ class LeadDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='lead', model_code='lead', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {
+            'tenant_current_id': request.user.tenant_current_id,
+            'company_current_id': request.user.company_current_id,
+        }
         if 'goto_stage' in request.data:
-            self.ser_context = {'goto_stage': True}
+            self.ser_context['goto_stage'] = True
             request.data['title'] = self.get_object().title
         if all(['convert_opp' in request.data, 'map_opp' in request.data]):
-            self.ser_context = {
-                'convert_opp': True,
-                'opp_mapped_id': request.data.get('opp_mapped_id')
-            }
+            self.ser_context['convert_opp'] = True
+            self.ser_context['opp_mapped_id'] = request.data.get('opp_mapped_id')
             request.data['title'] = self.get_object().title
         return self.update(request, *args, **kwargs)
 
