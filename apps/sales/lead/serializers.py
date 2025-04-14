@@ -1,6 +1,7 @@
 from django.db import transaction
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
+
 from apps.core.hr.models import Employee
 from apps.core.mailer.tasks import send_email_sale_activities_email, send_email_sale_activities_meeting
 from apps.masterdata.saledata.models import Periods, Contact, Industry
@@ -272,7 +273,7 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'stage': _('You have to go to "Marketing Qualified Lead" first.')})
             validate_data['stage_goto'] = stage_goto
             return validate_data
-        elif 'convert_opp' in self.context:
+        if 'convert_opp' in self.context:
             validate_data = {}
             # check config
             lead_config = self.instance.lead_configs.first()

@@ -1,10 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
-from apps.core.hr.models import Employee
-from apps.masterdata.saledata.models import Industry, Contact, Account
 from apps.masterdata.saledata.models.periods import Periods
-from apps.sales.opportunity.models import Opportunity
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 
