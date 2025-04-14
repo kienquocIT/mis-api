@@ -549,7 +549,7 @@ AppProp_SaleData_Quotation_data = {
     '47e31f9e-69a3-4b69-ada3-ce777c420864': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product',
-        'code': 'quotation_products_data__product_data__id',
+        'code': 'quotation_products_data__product_data__title',
         'type': 5,
         'content_type': 'saledata.product',
         'is_wf_zone': False,
@@ -558,10 +558,19 @@ AppProp_SaleData_Quotation_data = {
     '42cc882b-15af-4034-b8a1-0d8d6038d537': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product type',
-        'code': 'quotation_products_data__product_data__general_information__product_type__id',
+        'code': 'quotation_products_data__product_data__general_information__product_type__title',
         'type': 5,
         'content_type': 'saledata.producttype',
         'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
+    'b993cda2-4527-4e16-8a8d-d3277b243428': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Product subtotal',
+        'code': 'quotation_products_data__product_subtotal_price',
+        'remark': 'Thành tiền của một dòng sản phẩm',
+        'type': 6,
+        'example': 'prop(Product subtotal)',
         'is_wf_condition': True,
     },
     '9c3a10d1-1153-4379-9089-b39dbf3dbf0b': {
@@ -1356,7 +1365,7 @@ AppProp_SaleData_SaleOrder_data = {
     'de2717ad-b461-4b7a-a29c-63baf1e0f632': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Product',
-        'code': 'sale_order_products_data__product_data__id',
+        'code': 'sale_order_products_data__product_data__title',
         'type': 5,
         'content_type': 'saledata.product',
         'is_wf_zone': False,
@@ -1365,10 +1374,19 @@ AppProp_SaleData_SaleOrder_data = {
     'ded465fa-2ed9-48a8-9e70-ba72e8a011d2': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Product type',
-        'code': 'sale_order_products_data__product_data__general_information__product_type__id',
+        'code': 'sale_order_products_data__product_data__general_information__product_type__title',
         'type': 5,
         'content_type': 'saledata.producttype',
         'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
+    '5cd5d895-7b65-42ea-8889-d954c6cb7ef3': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product subtotal',
+        'code': 'sale_order_products_data__product_subtotal_price',
+        'remark': 'Thành tiền của một dòng sản phẩm',
+        'type': 6,
+        'example': 'prop(Product subtotal)',
         'is_wf_condition': True,
     },
     '95723552-7fe0-4f22-8980-5ebc303891db': {
