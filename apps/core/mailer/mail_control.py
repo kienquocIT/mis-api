@@ -154,7 +154,7 @@ class SendMailController:  # pylint: disable=R0902
             self,
             mail_to, template,
             data, mail_cc=None,
-            mail_bcc=None, as_name=None,
+            mail_bcc=None, as_name="",
             doc_id=None, previous_id=None,
             fpath_list=None
     ):
