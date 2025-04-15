@@ -1,6 +1,6 @@
 from uuid import UUID
-from celery import shared_task
 from datetime import timedelta
+from celery import shared_task
 from django.utils import timezone
 from apps.shared import DisperseModel
 from apps.core.mailer.mail_control import SendMailController
@@ -736,6 +736,24 @@ def mail_request_signing(cls, log_cls, **kwargs):
     return state_send
 
 
+def write_log(cls, tenant_id, company_id, doc_id, sub, employee_off):
+    log_cls = MailLogController(
+        tenant_id=tenant_id, company_id=company_id,
+        system_code=9, doc_id=doc_id, subject=sub
+    )
+
+    if not log_cls.create():
+        return 'SEND_FAILURE'
+    log_cls.update(
+        address_sender=cls.from_email if cls.from_email else '',
+    )
+    log_cls.update_employee_to(employee_to=[], address_to_init=[employee_off.email])
+    log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
+    log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
+    log_cls.update_log_data(host=cls.host, port=cls.port)
+    return log_cls
+
+
 @shared_task
 def send_mail_annual_leave(leave_id, tenant_id, company_id, employee_id, email_lst):
     obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=None, system_code=9)
@@ -751,60 +769,42 @@ def send_mail_annual_leave(leave_id, tenant_id, company_id, employee_id, email_l
         return 'MAIL_CONFIG_DEACTIVATE'
 
     employee_off = get_employee_obj(employee_id=employee_id, tenant_id=tenant_id, company_id=company_id)
-    employee_lead = employee_off.group.first_manager
-    if not employee_lead:
-        employee_lead = employee_off.group.second_manager
-    employee_info = {
-        'full_name': employee_lead.get_full_name() if employee_lead else _("Missing info"),
-        'email': employee_lead.email if employee_lead else _("Missing info")
-    }
-
+    employee_lead = employee_off.group.first_manager or employee_off.group.second_manager
     if not (employee_off and employee_off.email and template_obj.contents):
         return 'TEMPLATE_HAS_NOT_CONTENTS_VALUE OR USER_EMAIL_IS_NOT_CORRECT'
 
-    subject = template_obj.subject or 'New leave approved'
+    log_cls = write_log(cls, tenant_id, company_id, leave_id, template_obj.subject, employee_off)
 
-    log_cls = MailLogController(
-        tenant_id=tenant_id, company_id=company_id,
-        system_code=9, doc_id=leave_id, subject=subject
-    )
+    leave_obj = DisperseModel(app_model='leave.LeaveRequest').get_model().objects.get(id=leave_id)
 
-    if not log_cls.create():
-        return 'SEND_FAILURE'
-    log_cls.update(
-        address_sender=cls.from_email if cls.from_email else '',
-    )
-    log_cls.update_employee_to(employee_to=[], address_to_init=[employee_off.email])
-    log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
-    log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
-    log_cls.update_log_data(host=cls.host, port=cls.port)
-
-    tenant_obj = DisperseModel(app_model='core.Tenant').get_model()
-    tenant_obj = tenant_obj.objects.get(id=tenant_id)
-    leave_obj = DisperseModel(app_model='eoffice.LeaveRequest').get_model()
-    leave_obj = leave_obj.objects.get(id=leave_id)
-    date_back = (leave_obj.start_day + timedelta(leave_obj.total)).strftime("%d/%m/%Y")
     try:
         state_send = cls.setup(
-            subject=subject,
+            subject=template_obj.subject,
             from_email=cls.kwargs['from_email'],
             mail_cc=cls.kwargs['cc_email'],
             bcc=cls.kwargs['bcc_email'],
             header={},
             reply_to=cls.kwargs['reply_email'],
         ).send(
-            as_name=employee_off.email,
-            # mail_to=[employee_off.email, *email_lst],
-            mail_to=["mailcviec01@gmail.com", 'mailcviec03@gmail.com'],
+            as_name="No Reply",
+            mail_to=list({employee_off.email, *email_lst}),
             mail_cc=[],
             mail_bcc=[],
             template=template_obj.contents,
             data=MailDataResolver.new_leave_approved(
-                tenant_obj=tenant_obj, employee=employee_off, day_off=leave_obj.total, date_back=date_back,
-                link_id=leave_id, employee_lead=employee_info
+                tenant_obj=leave_obj.tenant,
+                employee=employee_off,
+                day_off=leave_obj.total,
+                date_back=(leave_obj.start_day + timedelta(
+                    leave_obj.total + 1 if str(leave_obj.total).split('.')[1] != '5' else leave_obj.total
+                )).strftime("%d/%m/%Y"),
+                link_id=leave_id,
+                employee_lead={
+                    'full_name': employee_lead.get_full_name() if employee_lead else _("Missing info"),
+                    'email': employee_lead.email if employee_lead else _("Missing info")
+                }
             ),
         )
-        print('email lst: ', [employee_off.email, *email_lst])
     except Exception as err:
         state_send = False
         log_cls.update(errors_data=str(err))

@@ -271,30 +271,33 @@ class LeaveAvailableHistory(DataAbstractModel):
 
 
 @receiver(post_save, sender=LeaveRequest)
-def send_mail_leave(sender, instance, created, **kwargs):
-    emp_leave = instance.employee_inherit
+def send_mail_leave(sender, instance, created, **kwargs):  # pylint: disable=unused-argument
+    if instance.system_status != 3:
+        return True
     email_lst = [str(instance.employee_inherit.email)]
-    opp_model = DisperseModel(app_model='sales.Opportunity').get_model()
-    prj_model = DisperseModel(app_model='sales.Project').get_model()
-    for emp in opp_model.objects.filter_on_company(
-            members__member_id=str(emp_leave.id), is_close_lost=False, is_deal_close=False
+    for emp in DisperseModel(app_model='opportunity.OpportunitySaleTeamMember').get_model().objects.filter_on_company(
+            member_id=str(instance.employee_inherit.id), opportunity__is_close_lost=False,
+            opportunity__is_deal_close=False
     ):
-        email_lst.append(emp.employee_inherit.email) if emp.employee_inherit.email else None
+        if emp.opportunity.employee_inherit.email:
+            email_lst.append(emp.opportunity.employee_inherit.email)
 
-    for member in prj_model.objects.filter_on_company(
-            members__member_id=str(emp_leave.id), project_status__in=[1, 2]
+    for member in DisperseModel(app_model='project.ProjectMapMember').get_model().objects.filter_on_company(
+            member_id=str(instance.employee_inherit.id), project__project_status__in=[1, 2]
     ):
-        email_lst.append(member.project_pm.email) if member.project_pm.email else None
-        email_lst.append(member.employee_inherit.email) if member.employee_inherit.email else None
+        if member.project.project_pm.email:
+            email_lst.append(member.project.project_pm.email)
+        if member.project.employee_inherit.email:
+            email_lst.append(member.project.employee_inherit.email)
 
-    if instance.system_status == 3:
         call_task_background(
             my_task=send_mail_annual_leave,
             **{
                 'leave_id': str(instance.id),
-                'tenant_id': str(instance.tenant),
+                'tenant_id': str(instance.tenant_id),
                 'company_id': str(instance.company_id),
-                'employee_id': str(emp_leave.id),
-                'email_lst': email_lst
+                'employee_id': str(instance.employee_inherit.id),
+                'email_lst': list(set(email_lst)),
             }
         )
+    return True

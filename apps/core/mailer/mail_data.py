@@ -151,9 +151,9 @@ class MailDataResolver:
         app_url = APP_MAP_DATA.get('leave.leaverequest', {}).get('url', '')
         return {
             '_leave': {
-                'employee': employee.full_name,
-                'leader_name': employee_lead['full_name'],
-                'leader_email': employee_lead['email'],
+                'employee': employee.get_full_name(),
+                'leader_name': employee_lead.get('full_name'),
+                'leader_email': employee_lead.get('email'),
                 'day_off': day_off,
                 'date_back': date_back,
                 'url': f'{full_domain}/{app_url}{link_id}'

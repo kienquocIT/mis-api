@@ -97,7 +97,7 @@ SUBJECT_LEAVE_NEW_DEFAULT = _('New leave request created')
 TEMPLATE_REQUEST_LEAVE_DEFAULT = _(
     "<h2 style=\"font-weight: 500; font-size: 20px\">Company: <strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
     "<p style=\"font-size: 18px\">Hi, </p>"
-    "<div><p>Employee __leave__employee__ has been granted leave for about __leave__day_off__ days, and will return to work on __leave__date_back__.</p>"
-    "<p>During this period, please contact __leave__leader_name__ at __leave__leader_email__ if your email requires immediate attention.</p>"
+    "<div><p>Employee <span class=\"params-data\" data-code=\"_leave__employee\"></span> has been granted leave for about <span class=\"params-data\" data-code=\"_leave__day_off\"></span> days, and will return to work on <span class=\"params-data\" data-code=\"_leave__date_back\"></span>.</p>"
+    "<p>During this period, please contact <span class=\"params-data\" data-code=\"_leave__leader_name\"></span> at <span class=\"params-data\" data-code=\"_leave__leader_email\"></span> if your email requires immediate attention.</p>"
     "</div>"
 )
