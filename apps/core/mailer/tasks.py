@@ -149,7 +149,6 @@ def send_mail_welcome(tenant_id: UUID or str, company_id: UUID or str, user_id: 
                             header={},
                             reply_to=cls.kwargs['reply_email'],
                         ).send(
-                            as_name=None,
                             mail_to=[user_obj.email],
                             mail_cc=[],
                             mail_bcc=[],
@@ -417,7 +416,6 @@ def send_mail_otp(  # pylint: disable=R0911,R1702,R0914
                                 header={},
                                 reply_to=cls.kwargs['reply_email'],
                             ).send(
-                                as_name=None,
                                 mail_to=[user_obj.email],
                                 mail_cc=[],
                                 mail_bcc=[],
@@ -484,7 +482,6 @@ def send_mail_form(tenant_id, company_id, subject, to_main, contents):
                     header={},
                     reply_to=cls.kwargs['reply_email'],
                 ).send(
-                    as_name=None,
                     mail_to=to_main,
                     mail_cc=[],
                     mail_bcc=[],
@@ -535,7 +532,6 @@ def send_mail_form_otp(subject, to_mail, contents, timeout=10, tenant_id=None, c
                 reply_to=cls.kwargs['reply_email'],
             )
             state_send = cls.send(
-                as_name=None,
                 mail_to=to_mail,
                 mail_cc=[],
                 mail_bcc=[],
