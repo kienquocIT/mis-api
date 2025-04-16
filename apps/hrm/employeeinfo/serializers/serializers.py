@@ -377,7 +377,7 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
                     obj.limit_time = contract.get('limit_time')
                     obj.represent = contract.get('represent')
                     obj.signing_date = contract.get('signing_date')
-                    obj.content_info = contract.get('content_info')
+                    obj.content_info = contract.get('content_info', {})
                     obj.save(
                         update_fields=['effected_date', 'content', 'contract_type', 'expired_date', 'file_type',
                                        'limit_time', 'represent', 'signing_date', 'date_modified', 'content_info']
@@ -398,7 +398,7 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
                     limit_time=contract.get('limit_time'),
                     represent=contract.get('represent'),
                     signing_date=contract.get('signing_date'),
-                    content_info=contract.get('content_info')
+                    content_info=contract.get('content_info', {})
                 )
         if attachment is not None and obj:
             handle_attach_file_contract(obj, attachment)
