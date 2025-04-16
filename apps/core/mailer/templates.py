@@ -1,4 +1,5 @@
-__all__ = ['TEMPLATE_OTP_VALIDATE_DEFAULT', 'TEMPLATE_MAIL_WELCOME_DEFAULT', 'TEMPLATE_CALENDAR_DEFAULT']
+__all__ = ['TEMPLATE_OTP_VALIDATE_DEFAULT', 'TEMPLATE_MAIL_WELCOME_DEFAULT', 'TEMPLATE_CALENDAR_DEFAULT',
+           'TEMPLATE_PROJECT_NEW_DEFAULT', 'TEMPLATE_REQUEST_CONTRACT_DEFAULT', 'TEMPLATE_REQUEST_LEAVE_DEFAULT', ]
 
 from django.utils.translation import gettext_lazy as _
 
@@ -89,4 +90,14 @@ TEMPLATE_REQUEST_CONTRACT_DEFAULT = _(
     "<p><b><span class=\"params-data\" data-code=\"_contract__created_email\"></span></b></p>"
     "<p><b><span class=\"params-data\" data-code=\"_contract__title\"></span></b></p>"
     "<p><a href=\"_contract__url\" style=\"text-decoration:none;color:#fff;width: 150px;display: inline-block;background: #007D88;padding: 6px;text-transform: uppercase;letter-spacing: .95px;\">View document</a></p></div>"
+)
+
+SUBJECT_LEAVE_NEW_DEFAULT = _('New leave request created')
+
+TEMPLATE_REQUEST_LEAVE_DEFAULT = _(
+    "<h2 style=\"font-weight: 500; font-size: 20px\">Company: <strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
+    "<p style=\"font-size: 18px\">Hi, </p>"
+    "<div><p>Employee <span class=\"params-data\" data-code=\"_leave__employee\"></span> has been granted leave for about <span class=\"params-data\" data-code=\"_leave__day_off\"></span> days, and will return to work on <span class=\"params-data\" data-code=\"_leave__date_back\"></span>.</p>"
+    "<p>During this period, please contact <span class=\"params-data\" data-code=\"_leave__leader_name\"></span> at <span class=\"params-data\" data-code=\"_leave__leader_email\"></span> if your email requires immediate attention.</p>"
+    "</div>"
 )
