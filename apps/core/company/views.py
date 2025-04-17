@@ -32,7 +32,9 @@ class CompanyConfigDetail(APIView):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         try:
-            company_id = request.query_params.get('company_id')
+            company_id = request.query_params.get('company_id') if request.query_params.get(
+                'company_id'
+            ) else request.user.company_current_id
             obj = CompanyConfig.objects.select_related('currency', 'master_data_currency').get(company_id=company_id)
             return ResponseController.success_200(data=CompanyConfigDetailSerializer(obj).data, key_data='result')
         except CompanyConfig.DoesNotExist:
