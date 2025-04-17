@@ -1,9 +1,12 @@
 import datetime
 from crum import get_current_user
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from django.conf import settings
 from django.db.models import Count, Subquery
 from apps.core.account.models import User
+from apps.core.base.views import BaseCurrencyList
+from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import (
     Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
 )
@@ -73,6 +76,7 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
 
 
 class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
+    master_data_currency = serializers.UUIDField()
     sub_domain = serializers.CharField(max_length=35, required=False)
     definition_inventory_valuation = serializers.BooleanField(default=False)
     default_inventory_value_method = serializers.IntegerField(default=1)
@@ -81,6 +85,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         model = CompanyConfig
         fields = (
             'language',
+            'master_data_currency',
             'currency_rule',
             'sub_domain',
             'definition_inventory_valuation',
@@ -95,6 +100,13 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         if attrs in [x[0] for x in settings.LANGUAGE_CHOICE]:
             return attrs
         raise serializers.ValidationError({'language': CompanyMsg.LANGUAGE_NOT_SUPPORT})
+
+    @classmethod
+    def validate_master_data_currency(cls, attrs):
+        try:
+            return Currency.objects.get(id=attrs)
+        except Currency.DoesNotExist:
+            raise serializers.ValidationError({'master_data_currency': CompanyMsg.CURRENCY_NOT_EXIST})
 
     def validate_sub_domain(self, attrs):
         if Company.objects.filter(sub_domain=attrs).exclude(pk=self.instance.company_id).exists():
@@ -117,35 +129,43 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         tenant_obj = self.instance.company.tenant
         company_obj = self.instance.company
 
-        this_period = Periods.get_current_period(tenant_obj.id, company_obj.id)
-        if this_period:
-            has_trans = ReportStockLog.objects.filter(
-                tenant=tenant_obj, company=company_obj, report_stock__period_mapped=this_period
-            ).exists()
-            old_div_config = company_obj.company_config.definition_inventory_valuation
-            if has_trans and validate_data['definition_inventory_valuation'] != old_div_config:
-                raise serializers.ValidationError({
-                    'definition_inventory_valuation':
-                        "Can't update Definition inventory valuation because there are transactions in this Period."
-                })
-            validate_data['this_period'] = this_period
+        if str(validate_data.get('master_data_currency').id) != str(company_obj.currency_mapped_id):
+            raise serializers.ValidationError({'master_data_currency': _('Can not change primary currency')})
 
-            old_cost_setting = [
-                self.instance.cost_per_warehouse,
-                self.instance.cost_per_lot,
-                self.instance.cost_per_project
-            ]
-            new_cost_setting = [
-                validate_data.get('cost_per_warehouse'),
-                validate_data.get('cost_per_lot'),
-                validate_data.get('cost_per_project')
-            ]
-            if has_trans and new_cost_setting != old_cost_setting:
-                raise serializers.ValidationError({'error': "Can't change cost setting in same period year."})
-            return validate_data
-        # chỗ này không được sửa key lỗi trả về - fiscal_year_not_found
-        # (vì trên UI dựa vào key lỗi này để check đã có năm tài chính hay chưa)
-        raise serializers.ValidationError({"fiscal_year_not_found": 'This period is not found.'})
+        if validate_data.get('master_data_currency'):
+            validate_data['currency'] = validate_data.get('master_data_currency').currency
+        else:
+            raise serializers.ValidationError({'currency': CompanyMsg.CURRENCY_NOT_EXIST})
+
+        this_period = Periods.get_current_period(tenant_obj.id, company_obj.id)
+        if not this_period:
+            # chỗ này không được sửa key lỗi trả về - fiscal_year_not_found
+            # (vì trên UI dựa vào key lỗi này để check đã có năm tài chính hay chưa)
+            raise serializers.ValidationError({"fiscal_year_not_found": 'This period is not found.'})
+        has_trans = ReportStockLog.objects.filter(
+            tenant=tenant_obj, company=company_obj, report_stock__period_mapped=this_period
+        ).exists()
+        old_div_config = company_obj.company_config.definition_inventory_valuation
+        if has_trans and validate_data['definition_inventory_valuation'] != old_div_config:
+            raise serializers.ValidationError({
+                'definition_inventory_valuation':
+                    "Can't update Definition inventory valuation because there are transactions in this Period."
+            })
+        validate_data['this_period'] = this_period
+
+        old_cost_setting = [
+            self.instance.cost_per_warehouse,
+            self.instance.cost_per_lot,
+            self.instance.cost_per_project
+        ]
+        new_cost_setting = [
+            validate_data.get('cost_per_warehouse'),
+            validate_data.get('cost_per_lot'),
+            validate_data.get('cost_per_project')
+        ]
+        if has_trans and new_cost_setting != old_cost_setting:
+            raise serializers.ValidationError({'error': "Can't change cost setting in same period year."})
+        return validate_data
 
     def update(self, instance, validated_data):
         this_period = validated_data.pop('this_period')
@@ -191,9 +211,13 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             instance.company.sub_domain = sub_domain
             instance.company.save(update_fields=['sub_domain'])
 
-        if instance.currency:
-            Currency.objects.filter_on_company().update(is_primary=False, rate=None)
-            Currency.objects.filter_on_company(abbreviation=instance.currency.code).update(is_primary=True, rate=1)
+        if instance.master_data_currency:
+            instance.company.currency_mapped = instance.master_data_currency
+            instance.company.save(update_fields=['currency_mapped'])
+            Currency.objects.filter(company=instance.company).update(is_primary=False, rate=None)
+            Currency.objects.filter(company=instance.company, abbreviation=instance.master_data_currency.code).update(
+                is_primary=True, rate=1
+            )
 
         return instance
 
@@ -353,7 +377,6 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
     email = serializers.CharField(max_length=150, required=True)
     address = serializers.CharField(max_length=150, required=True)
     phone = serializers.CharField(max_length=25, required=True)
-    currency_mapped = serializers.UUIDField()
 
     class Meta:
         model = Company
@@ -365,7 +388,6 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'email',
             'phone',
             'fax',
-            'currency_mapped'
         )
 
     @classmethod
@@ -376,13 +398,6 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
                 'code': BaseMsg.CODE_IS_EXISTS,
             })
         return attrs
-
-    @classmethod
-    def validate_currency_mapped(cls, attrs):
-        try:
-            return Currency.objects.get(id=attrs)
-        except Currency.DoesNotExist:
-            raise serializers.ValidationError({'currency_mapped': CompanyMsg.CURRENCY_NOT_EXIST})
 
     def validate(self, validate_data):
         for item in self.initial_data.get('company_function_number_data', []):

@@ -792,20 +792,13 @@ class ConfigDefaultData:
         self.company_obj = company_obj
 
     def company_config(self):
-        base_currency = BaseCurrency.objects.filter(
-            code=self.company_obj.currency_mapped.abbreviation
-        ).first() if self.company_obj.currency_mapped else None
-        if base_currency:
-            obj, _created = CompanyConfig.objects.get_or_create(
-                company=self.company_obj,
-                defaults={
-                    'language': 'vi',
-                    'currency': base_currency,
-                    'master_data_currency': self.company_obj.currency_mapped,
-                },
-            )
-        else:
-            print('\tCan not found Base Currency')
+        obj, _created = CompanyConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={
+                'language': 'vi',
+                'currency': BaseCurrency.objects.get(code='VND'),
+            },
+        )
         return obj
 
     def delivery_config(self):

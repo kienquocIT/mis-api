@@ -228,17 +228,10 @@ class InitialsData:
             try:
                 CompanyConfig.objects.get(company=obj)
             except CompanyConfig.DoesNotExist:
-                base_currency = BaseCurrency.objects.filter(
-                    code=obj.currency.abbreviation
-                ).first() if obj.currency_mapped else None
-                if base_currency:
-                    CompanyConfig.objects.create(
-                        company=obj,
-                        language='vi',
-                        currency=base_currency,
-                        master_data_currency=obj.currency_mapped,
-                    )
-                else:
-                    print('\tCan not found Base Currency')
+                CompanyConfig.objects.create(
+                    company=obj,
+                    language='vi',
+                    currency=BaseCurrency.objects.get(code='VND'),
+                )
         print('\t- Confirm config of Company is success')
         return True
