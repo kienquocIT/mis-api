@@ -8,10 +8,9 @@ from apps.core.company.models import (
     Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
 )
 from apps.core.hr.models import Employee, PlanEmployee
-from apps.core.base.models import Currency as BaseCurrency
-from apps.masterdata.saledata.models import Periods, Currency, Price
+from apps.masterdata.saledata.models import Periods, Currency
 from apps.sales.report.models import ReportStockLog
-from apps.shared import DisperseModel, AttMsg, FORMATTING, BaseMsg
+from apps.shared import AttMsg, FORMATTING, BaseMsg
 from apps.shared.translations.company import CompanyMsg
 
 
