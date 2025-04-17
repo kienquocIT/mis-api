@@ -8,7 +8,7 @@ from apps.core.company.models import (
     Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
 )
 from apps.core.hr.models import Employee, PlanEmployee
-from apps.masterdata.saledata.models import Periods
+from apps.masterdata.saledata.models import Periods, Currency
 from apps.sales.report.models import ReportStockLog
 from apps.shared import DisperseModel, AttMsg, FORMATTING, BaseMsg
 from apps.shared.translations.company import CompanyMsg
@@ -33,11 +33,19 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_currency(cls, obj):
+        master_data_currency = Currency.objects.filter_on_company(
+            abbreviation=obj.currency.code
+        ).first() if obj.currency else None
         return {
             "id": obj.currency.id,
             "title": obj.currency.title,
             "code": obj.currency.code,
-            "symbol": obj.currency.symbol
+            "symbol": obj.currency.symbol,
+            "master_data_currency": {
+                "id": master_data_currency.id,
+                "title": master_data_currency.title,
+                "code": master_data_currency.abbreviation
+            } if master_data_currency else {}
         } if obj.currency else {}
 
     @classmethod
@@ -62,7 +70,7 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
 
 
 class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
-    currency = serializers.CharField()
+    currency = serializers.UUIDField()
     sub_domain = serializers.CharField(max_length=35, required=False)
     definition_inventory_valuation = serializers.BooleanField(default=False)
     default_inventory_value_method = serializers.IntegerField(default=1)
@@ -71,8 +79,9 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
     def validate_currency(cls, attrs):
         currency_cls = DisperseModel(app_model='base.currency').get_model()
         try:
+            master_data_currency = Currency.objects.get(id=attrs)
             # valid currency allow use in company after add foreign key currency to sale-data.currency model
-            return currency_cls.objects.get(code=attrs)
+            return currency_cls.objects.get(code=master_data_currency.abbreviation)
         except currency_cls.DoesNotExist:
             pass
         raise serializers.ValidationError({'currency': CompanyMsg.CURRENCY_NOT_EXIST})
@@ -317,22 +326,27 @@ def create_company_function_number(company_obj, company_function_number_data):
     date_now = datetime.datetime.now()
     data_calendar = datetime.date.today().isocalendar()
     updated_function = []
-    for item in company_function_number_data:
-        function_name = item.get('function')
-        obj = CompanyFunctionNumber.objects.filter(company=company_obj, function=function_name)
-        if obj.count() == 1:
-            updated_function.append(function_name)
-            updated_fields = {
-                **item,
-                'latest_number': int(item.get('last_number', None)) - 1,
-                'year_reset': date_now.year,
-                'month_reset': int(f"{date_now.year}{date_now.month:02}"),
-                'week_reset': int(f"{data_calendar[0]}{data_calendar[1]:02}"),
-                'day_reset': int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
-            } if obj.first().latest_number is None else {**item}
-            obj.update(**updated_fields)
 
-    CompanyFunctionNumber.objects.filter_current(company=company_obj).exclude(function__in=updated_function).update(
+    for item in company_function_number_data:
+        function_name = item.get('function', '')
+        obj = CompanyFunctionNumber.objects.filter(company=company_obj, function=function_name).first()
+        if obj:
+            updated_function.append(function_name)
+            if obj.latest_number is None:
+                try:
+                    last_number = int(item.get('last_number') or 1)
+                except (TypeError, ValueError):
+                    last_number = 1
+                obj.latest_number = last_number - 1
+                obj.year_reset = date_now.year
+                obj.month_reset = int(f"{date_now.year}{date_now.month:02}")
+                obj.week_reset = int(f"{data_calendar[0]}{data_calendar[1]:02}")
+                obj.day_reset = int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
+            for key, value in item.items():
+                setattr(obj, key, value)
+            obj.save()
+    # Reset các function không nằm trong updated_function
+    CompanyFunctionNumber.objects.filter(company=company_obj).exclude(function__in=updated_function).update(
         numbering_by=0, schema=None, schema_text=None, first_number=None, last_number=None, reset_frequency=None,
         min_number_char=None, latest_number=None, year_reset=None, month_reset=None, week_reset=None, day_reset=None
     )
