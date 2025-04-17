@@ -392,7 +392,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})
         user_obj = get_current_user()
         if user_obj and hasattr(user_obj, 'tenant_current'):
-            company_quantity_max = 6
+            company_quantity_max = user_obj.tenant_current.company_quality_max
             current_company_quantity = Company.objects.filter(tenant=user_obj.tenant_current).count()
             if current_company_quantity <= company_quantity_max:
                 return validate_data
