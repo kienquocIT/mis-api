@@ -385,7 +385,8 @@ class SaleDefaultData:
                         abbreviation=item.code,
                         currency=item,
                         rate=rate,
-                        is_primary=primary
+                        is_primary=primary,
+                        is_default=True
                     )
                 )
             if len(bulk_info) > 0:

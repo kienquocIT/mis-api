@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models.product import (
     ProductType, Product, UnitOfMeasure
 )
 from apps.masterdata.saledata.models.price import (
-    UnitOfMeasureGroup, Tax, TaxCategory
+    UnitOfMeasureGroup, Tax, TaxCategory, Currency
 )
 from apps.masterdata.saledata.models.accounts import (
     Account, AccountCreditCards, AccountActivity
@@ -1449,8 +1449,17 @@ class SubScripts:
             )
             labor_group.uom_reference = referenced_unit_obj
             labor_group.save(update_fields=['uom_reference'])
+        print('Done :))')
+        return True
 
-
+    @classmethod
+    def update_currency_default(cls):
+        for company in Company.objects.all():
+            print(company.title)
+            Currency.objects.filter(
+                company=company, abbreviation__in=['VND', 'USD', 'EUR', 'JPY']
+            ).update(is_default=True)
+        print('Done :))')
         return True
 
 

@@ -185,6 +185,9 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             instance.company.sub_domain = sub_domain
             instance.company.save(update_fields=['sub_domain'])
 
+        Currency.objects.filter_on_company().update(is_primary=False, rate=None)
+        Currency.objects.filter_on_company(abbreviation=instance.currency.code).update(is_primary=True, rate=1)
+
         return instance
 
     class Meta:
