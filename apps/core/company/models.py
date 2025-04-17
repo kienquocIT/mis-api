@@ -118,13 +118,6 @@ class Company(CoreAbstractModel):
         null=True,
         max_length=25
     )
-    currency_mapped = models.ForeignKey(
-        'saledata.Currency',
-        on_delete=models.SET_NULL,
-        null=True,
-        verbose_name='Master data currency',
-        related_name='company_currency_mapped',
-    )
 
     # media
     media_company_id = models.UUIDField(null=True)

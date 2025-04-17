@@ -1,12 +1,10 @@
 import datetime
 from crum import get_current_user
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from django.conf import settings
 from django.db.models import Count, Subquery
+from django.utils.translation import gettext_lazy as _
 from apps.core.account.models import User
-from apps.core.base.views import BaseCurrencyList
-from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import (
     Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
 )
@@ -129,7 +127,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         tenant_obj = self.instance.company.tenant
         company_obj = self.instance.company
 
-        if str(validate_data.get('master_data_currency').id) != str(company_obj.currency_mapped_id):
+        if str(validate_data.get('master_data_currency').id) != str(self.instance.master_data_currency_id):
             raise serializers.ValidationError({'master_data_currency': _('Can not change primary currency')})
 
         if validate_data.get('master_data_currency'):
@@ -212,8 +210,6 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             instance.company.save(update_fields=['sub_domain'])
 
         if instance.master_data_currency:
-            instance.company.currency_mapped = instance.master_data_currency
-            instance.company.save(update_fields=['currency_mapped'])
             Currency.objects.filter(company=instance.company).update(is_primary=False, rate=None)
             Currency.objects.filter(company=instance.company, abbreviation=instance.master_data_currency.code).update(
                 is_primary=True, rate=1
