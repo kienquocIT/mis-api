@@ -33,6 +33,24 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
     currency_rule = CurrencyRuleDetail()
     sub_domain = serializers.SerializerMethodField()
 
+    class Meta:
+        model = CompanyConfig
+        fields = (
+            'id',
+            'language',
+            'currency',
+            'master_data_currency',
+            'currency_rule',
+            'sub_domain',
+            'definition_inventory_valuation',
+            'default_inventory_value_method',
+            'cost_per_warehouse',
+            'cost_per_lot',
+            'cost_per_project',
+            'accounting_policies',
+            'applicable_circular'
+        )
+
     @classmethod
     def get_currency(cls, obj):
         return {
@@ -54,28 +72,24 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
     def get_sub_domain(cls, obj):
         return obj.company.sub_domain if obj.company else ''
 
+
+class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
+    sub_domain = serializers.CharField(max_length=35, required=False)
+    definition_inventory_valuation = serializers.BooleanField(default=False)
+    default_inventory_value_method = serializers.IntegerField(default=1)
+
     class Meta:
         model = CompanyConfig
         fields = (
             'language',
-            'currency',
-            'master_data_currency',
             'currency_rule',
             'sub_domain',
             'definition_inventory_valuation',
             'default_inventory_value_method',
             'cost_per_warehouse',
             'cost_per_lot',
-            'cost_per_project',
-            'accounting_policies',
-            'applicable_circular'
+            'cost_per_project'
         )
-
-
-class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
-    sub_domain = serializers.CharField(max_length=35, required=False)
-    definition_inventory_valuation = serializers.BooleanField(default=False)
-    default_inventory_value_method = serializers.IntegerField(default=1)
 
     @classmethod
     def validate_language(cls, attrs):
@@ -139,8 +153,6 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         sub_domain = validated_data.pop('sub_domain', None)
         currency_rule = validated_data.pop('currency_rule', {})
 
-        # if Price
-
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save(update_fields=[
@@ -185,19 +197,6 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             Currency.objects.filter_on_company(abbreviation=instance.currency.code).update(is_primary=True, rate=1)
 
         return instance
-
-    class Meta:
-        model = CompanyConfig
-        fields = (
-            'language',
-            'currency_rule',
-            'sub_domain',
-            'definition_inventory_valuation',
-            'default_inventory_value_method',
-            'cost_per_warehouse',
-            'cost_per_lot',
-            'cost_per_project'
-        )
 
 
 class AccountingPoliciesUpdateSerializer(serializers.ModelSerializer):
