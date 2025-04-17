@@ -6,7 +6,7 @@ from django.db.models import Model
 
 from apps.core.base.models import (
     SubscriptionPlan, Application, PlanApplication, PermissionApplication, ApplicationProperty,
-    Country, City, District, Ward, Currency, BaseItemUnit, IndicatorParam,
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam,
 )
 from apps.core.company.models import Company, CompanyConfig
 from apps.sharedapp.data.base import (
@@ -65,7 +65,7 @@ class InitialsData:
         (City, Cities_VN_data),
         (District, Districts_VN_data),
         (Ward, Wards_VN_data),
-        (Currency, Currency_data),
+        (BaseCurrency, Currency_data),
         (BaseItemUnit, BaseItemUnit_data),
         (IndicatorParam, IndicatorParam_data),
     )
@@ -228,10 +228,17 @@ class InitialsData:
             try:
                 CompanyConfig.objects.get(company=obj)
             except CompanyConfig.DoesNotExist:
-                CompanyConfig.objects.create(
-                    company=obj,
-                    language='vi',
-                    currency=Currency.objects.get(code='VND'),
-                )
+                base_currency = BaseCurrency.objects.filter(
+                    code=obj.currency.abbreviation
+                ).first() if obj.currency_mapped else None
+                if base_currency:
+                    CompanyConfig.objects.create(
+                        company=obj,
+                        language='vi',
+                        currency=base_currency,
+                        master_data_currency=obj.currency_mapped,
+                    )
+                else:
+                    print('\tCan not found Base Currency')
         print('\t- Confirm config of Company is success')
         return True

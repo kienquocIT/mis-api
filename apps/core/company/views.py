@@ -34,7 +34,7 @@ class CompanyConfigDetail(APIView):
         try:
             company_id = self.request.query_params['company_id'] \
                 if 'company_id' in self.request.query_params else request.user.company_current_id
-            obj = CompanyConfig.objects.select_related('currency').get(company_id=company_id)
+            obj = CompanyConfig.objects.select_related('currency', 'master_data_currency').get(company_id=company_id)
             return ResponseController.success_200(data=CompanyConfigDetailSerializer(obj).data, key_data='result')
         except CompanyConfig.DoesNotExist:
             pass
@@ -51,7 +51,7 @@ class CompanyConfigDetail(APIView):
         try:
             company_id = self.request.query_params['company_id'] \
                 if 'company_id' in self.request.query_params else request.user.company_current_id
-            obj = CompanyConfig.objects.select_related('currency').get(
+            obj = CompanyConfig.objects.select_related('currency', 'master_data_currency').get(
                 company_id=company_id
             )
             ser = CompanyConfigUpdateSerializer(obj, data=request.data)

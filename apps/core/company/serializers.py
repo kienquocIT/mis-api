@@ -8,7 +8,8 @@ from apps.core.company.models import (
     Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
 )
 from apps.core.hr.models import Employee, PlanEmployee
-from apps.masterdata.saledata.models import Periods, Currency
+from apps.core.base.models import Currency as BaseCurrency
+from apps.masterdata.saledata.models import Periods, Currency, Price
 from apps.sales.report.models import ReportStockLog
 from apps.shared import DisperseModel, AttMsg, FORMATTING, BaseMsg
 from apps.shared.translations.company import CompanyMsg
@@ -28,25 +29,26 @@ class CurrencyRuleDetail(serializers.Serializer):  # noqa
 
 class CompanyConfigDetailSerializer(serializers.ModelSerializer):
     currency = serializers.SerializerMethodField()
+    master_data_currency = serializers.SerializerMethodField()
     currency_rule = CurrencyRuleDetail()
     sub_domain = serializers.SerializerMethodField()
 
     @classmethod
     def get_currency(cls, obj):
-        master_data_currency = Currency.objects.filter_on_company(
-            abbreviation=obj.currency.code
-        ).first() if obj.currency else None
         return {
-            "id": obj.currency.id,
+            "id": obj.currency_id,
             "title": obj.currency.title,
             "code": obj.currency.code,
             "symbol": obj.currency.symbol,
-            "master_data_currency": {
-                "id": master_data_currency.id,
-                "title": master_data_currency.title,
-                "code": master_data_currency.abbreviation
-            } if master_data_currency else {}
         } if obj.currency else {}
+
+    @classmethod
+    def get_master_data_currency(cls, obj):
+        return {
+            "id": obj.master_data_currency_id,
+            "title": obj.master_data_currency.title,
+            "code": obj.master_data_currency.abbreviation
+        } if obj.master_data_currency else {}
 
     @classmethod
     def get_sub_domain(cls, obj):
@@ -57,6 +59,7 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
         fields = (
             'language',
             'currency',
+            'master_data_currency',
             'currency_rule',
             'sub_domain',
             'definition_inventory_valuation',
@@ -70,21 +73,9 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
 
 
 class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
-    currency = serializers.UUIDField()
     sub_domain = serializers.CharField(max_length=35, required=False)
     definition_inventory_valuation = serializers.BooleanField(default=False)
     default_inventory_value_method = serializers.IntegerField(default=1)
-
-    @classmethod
-    def validate_currency(cls, attrs):
-        currency_cls = DisperseModel(app_model='base.currency').get_model()
-        try:
-            master_data_currency = Currency.objects.get(id=attrs)
-            # valid currency allow use in company after add foreign key currency to sale-data.currency model
-            return currency_cls.objects.get(code=master_data_currency.abbreviation)
-        except currency_cls.DoesNotExist:
-            pass
-        raise serializers.ValidationError({'currency': CompanyMsg.CURRENCY_NOT_EXIST})
 
     @classmethod
     def validate_language(cls, attrs):
@@ -112,6 +103,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         tenant_obj = self.instance.company.tenant
         company_obj = self.instance.company
+
         this_period = Periods.get_current_period(tenant_obj.id, company_obj.id)
         if this_period:
             has_trans = ReportStockLog.objects.filter(
@@ -147,11 +139,14 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         sub_domain = validated_data.pop('sub_domain', None)
         currency_rule = validated_data.pop('currency_rule', {})
 
+        # if Price
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save(update_fields=[
             'language',
             'currency',
+            'master_data_currency',
             'currency_rule',
             'definition_inventory_valuation',
             'default_inventory_value_method',
@@ -185,8 +180,9 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             instance.company.sub_domain = sub_domain
             instance.company.save(update_fields=['sub_domain'])
 
-        Currency.objects.filter_on_company().update(is_primary=False, rate=None)
-        Currency.objects.filter_on_company(abbreviation=instance.currency.code).update(is_primary=True, rate=1)
+        if instance.currency:
+            Currency.objects.filter_on_company().update(is_primary=False, rate=None)
+            Currency.objects.filter_on_company(abbreviation=instance.currency.code).update(is_primary=True, rate=1)
 
         return instance
 
@@ -194,7 +190,6 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         model = CompanyConfig
         fields = (
             'language',
-            'currency',
             'currency_rule',
             'sub_domain',
             'definition_inventory_valuation',
@@ -360,6 +355,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
     email = serializers.CharField(max_length=150, required=True)
     address = serializers.CharField(max_length=150, required=True)
     phone = serializers.CharField(max_length=25, required=True)
+    currency_mapped = serializers.UUIDField()
 
     class Meta:
         model = Company
@@ -370,7 +366,8 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'address',
             'email',
             'phone',
-            'fax'
+            'fax',
+            'currency_mapped'
         )
 
     @classmethod
@@ -382,13 +379,20 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             })
         return attrs
 
+    @classmethod
+    def validate_currency_mapped(cls, attrs):
+        try:
+            return Currency.objects.get(id=attrs)
+        except Currency.DoesNotExist:
+            raise serializers.ValidationError({'currency_mapped': CompanyMsg.CURRENCY_NOT_EXIST})
+
     def validate(self, validate_data):
         for item in self.initial_data.get('company_function_number_data', []):
             if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):
                 raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})
         user_obj = get_current_user()
         if user_obj and hasattr(user_obj, 'tenant_current'):
-            company_quantity_max = user_obj.tenant_current.company_quality_max
+            company_quantity_max = 6
             current_company_quantity = Company.objects.filter(tenant=user_obj.tenant_current).count()
             if current_company_quantity <= company_quantity_max:
                 return validate_data
