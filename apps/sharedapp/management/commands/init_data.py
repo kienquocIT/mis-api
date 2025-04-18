@@ -6,7 +6,7 @@ from django.db.models import Model
 
 from apps.core.base.models import (
     SubscriptionPlan, Application, PlanApplication, PermissionApplication, ApplicationProperty,
-    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam,
+    Country, City, District, Ward, Currency, BaseItemUnit, IndicatorParam,
 )
 from apps.core.company.models import Company, CompanyConfig
 from apps.sharedapp.data.base import (
@@ -65,7 +65,7 @@ class InitialsData:
         (City, Cities_VN_data),
         (District, Districts_VN_data),
         (Ward, Wards_VN_data),
-        (BaseCurrency, Currency_data),
+        (Currency, Currency_data),
         (BaseItemUnit, BaseItemUnit_data),
         (IndicatorParam, IndicatorParam_data),
     )
@@ -231,7 +231,7 @@ class InitialsData:
                 CompanyConfig.objects.create(
                     company=obj,
                     language='vi',
-                    currency=BaseCurrency.objects.get(code='VND'),
+                    currency=Currency.objects.get(code='VND'),
                 )
         print('\t- Confirm config of Company is success')
         return True
