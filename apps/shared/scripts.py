@@ -1466,11 +1466,29 @@ class SubScripts:
     def update_currency_in_period(cls):
         for period in Periods.objects.all():
             print(period.company.title)
-            vnd = Currency.objects.get_on_company(abbreviation='VND')
+            vnd = Currency.objects.get(company=period.company, abbreviation='VND')
             period.currency_mapped = vnd
             period.save(update_fields=['currency_mapped'])
-            period.compny.company_config.master_data_currency = vnd
-            period.compny.company_config.save(update_fields=['master_data_currency'])
+            period.company.company_config.master_data_currency = vnd
+            period.company.company_config.currency = vnd.currency
+            period.company.company_config.save(update_fields=['master_data_currency', 'currency'])
+        print('Done :))')
+        return True
+
+    @classmethod
+    def force_update_primary_currency(cls, company_id, abbreviation='VND'):
+        """ Hàm hỗ trợ cập nhập primary_currency (khi đã kiểm tra dữ liệu) """
+        company_obj = Company.objects.get(id=company_id)
+        primary_currency_obj = Currency.objects.get(company=company_obj, abbreviation=abbreviation)
+
+        company_obj.company_config.master_data_currency = primary_currency_obj
+        company_obj.company_config.currency = primary_currency_obj.currency
+        company_obj.company_config.save(update_fields=['master_data_currency', 'currency'])
+
+        this_period = Periods.get_current_period(company_obj.tenant_id, company_obj.id)
+        if this_period:
+            this_period.currency_mapped = primary_currency_obj
+            this_period.save(update_fields=['currency_mapped'])
         print('Done :))')
         return True
 
