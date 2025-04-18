@@ -127,42 +127,52 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         tenant_obj = self.instance.company.tenant
         company_obj = self.instance.company
 
-        if str(validate_data.get('master_data_currency').id) != str(self.instance.master_data_currency_id):
-            raise serializers.ValidationError({'master_data_currency': _('Can not change primary currency')})
-
-        if validate_data.get('master_data_currency'):
-            validate_data['currency'] = validate_data.get('master_data_currency').currency
-        else:
-            raise serializers.ValidationError({'currency': CompanyMsg.CURRENCY_NOT_EXIST})
-
         this_period = Periods.get_current_period(tenant_obj.id, company_obj.id)
         if not this_period:
             # chỗ này không được sửa key lỗi trả về - fiscal_year_not_found
             # (vì trên UI dựa vào key lỗi này để check đã có năm tài chính hay chưa)
-            raise serializers.ValidationError({"fiscal_year_not_found": 'This period is not found.'})
-        has_trans = ReportStockLog.objects.filter(
-            tenant=tenant_obj, company=company_obj, report_stock__period_mapped=this_period
-        ).exists()
-        old_div_config = company_obj.company_config.definition_inventory_valuation
-        if has_trans and validate_data['definition_inventory_valuation'] != old_div_config:
-            raise serializers.ValidationError({
-                'definition_inventory_valuation':
-                    "Can't update Definition inventory valuation because there are transactions in this Period."
-            })
+            raise serializers.ValidationError({"fiscal_year_not_found": 'Current period is not found.'})
         validate_data['this_period'] = this_period
 
-        old_cost_setting = [
-            self.instance.cost_per_warehouse,
-            self.instance.cost_per_lot,
-            self.instance.cost_per_project
-        ]
+        # 1. check thay đổi primary_currency trong kì kế toán
+        if all([
+            this_period.currency_mapped_id,
+            str(validate_data.get('master_data_currency').id) != str(this_period.currency_mapped_id)
+        ]):
+            raise serializers.ValidationError({'master_data_currency': CompanyMsg.CANNOT_CHANGE_PRIMARY_CURRENCY})
+        validate_data['currency'] = validate_data.get('master_data_currency').currency  # get base currency
+        ####
+
+        # 2. check thay đổi definition_inventory_valuation trong kì kế toán
+        has_trans = ReportStockLog.objects.filter_on_company(report_stock__period_mapped=this_period).exists()
+        if validate_data.get('definition_inventory_valuation') != this_period.definition_inventory_valuation:
+            if has_trans:
+                raise serializers.ValidationError({
+                    'definition_inventory_valuation': CompanyMsg.CANNOT_UPDATE_COMPANY_CFG
+                })
+        ####
+
+        # 3. check thay đổi default_inventory_value_method trong kì kế toán
+        if validate_data.get('default_inventory_value_method') != this_period.default_inventory_value_method:
+            if has_trans:
+                raise serializers.ValidationError({
+                    'default_inventory_value_method': CompanyMsg.CANNOT_UPDATE_COMPANY_CFG
+                })
+        ####
+
+        # 4. check thay đổi cost_setting trong kì kế toán
+        old_cost_setting = [this_period.cost_per_warehouse, this_period.cost_per_lot, this_period.cost_per_project]
         new_cost_setting = [
             validate_data.get('cost_per_warehouse'),
             validate_data.get('cost_per_lot'),
             validate_data.get('cost_per_project')
         ]
-        if has_trans and new_cost_setting != old_cost_setting:
-            raise serializers.ValidationError({'error': "Can't change cost setting in same period year."})
+        if new_cost_setting != old_cost_setting:
+            if has_trans:
+                raise serializers.ValidationError({
+                    'cost': CompanyMsg.CANNOT_UPDATE_COMPANY_CFG
+                })
+        ####
         return validate_data
 
     def update(self, instance, validated_data):
@@ -189,12 +199,14 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         this_period.cost_per_warehouse = instance.cost_per_warehouse
         this_period.cost_per_lot = instance.cost_per_lot
         this_period.cost_per_project = instance.cost_per_project
+        this_period.currency_mapped = instance.master_data_currency
         this_period.save(update_fields=[
             'definition_inventory_valuation',
             'default_inventory_value_method',
             'cost_per_warehouse',
             'cost_per_lot',
-            'cost_per_project'
+            'cost_per_project',
+            'currency_mapped'
         ])
 
         if currency_rule and all(
@@ -210,7 +222,9 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             instance.company.save(update_fields=['sub_domain'])
 
         if instance.master_data_currency:
-            Currency.objects.filter(company=instance.company).update(is_primary=False, rate=None)
+            Currency.objects.filter(company=instance.company).update(
+                is_primary=False, rate=None
+            )
             Currency.objects.filter(company=instance.company, abbreviation=instance.master_data_currency.code).update(
                 is_primary=True, rate=1
             )

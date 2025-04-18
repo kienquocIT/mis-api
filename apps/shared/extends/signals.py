@@ -24,7 +24,7 @@ from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, SQIndicatorDefaultData,
 )
-from apps.core.base.models import Currency as BaseCurrency, PlanApplication, BaseItemUnit
+from apps.core.base.models import Currency, PlanApplication, BaseItemUnit
 from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency, UnitOfMeasure,
@@ -368,7 +368,7 @@ class SaleDefaultData:
 
     def create_currency(self):
         currency_list = ['VND', 'USD', 'EUR', 'JPY']
-        data_currency = BaseCurrency.objects.filter(code__in=currency_list)
+        data_currency = Currency.objects.filter(code__in=currency_list)
         if data_currency.count() > 0:
             bulk_info = []
             for item in data_currency:
@@ -796,7 +796,7 @@ class ConfigDefaultData:
             company=self.company_obj,
             defaults={
                 'language': 'vi',
-                'currency': BaseCurrency.objects.get(code='VND'),
+                'currency': Currency.objects.get(code='VND'),
             },
         )
         return obj

@@ -1462,6 +1462,18 @@ class SubScripts:
         print('Done :))')
         return True
 
+    @classmethod
+    def update_currency_in_period(cls):
+        for period in Periods.objects.all():
+            print(period.company.title)
+            vnd = Currency.objects.get_on_company(abbreviation='VND')
+            period.currency_mapped = vnd
+            period.save(update_fields=['currency_mapped'])
+            period.compny.company_config.master_data_currency = vnd
+            period.compny.company_config.save(update_fields=['master_data_currency'])
+        print('Done :))')
+        return True
+
 
 def reset_run_indicator_fields(kwargs):
     for sale_order in SaleOrder.objects.filter(**kwargs):
