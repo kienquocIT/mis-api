@@ -3,7 +3,6 @@ from crum import get_current_user
 from rest_framework import serializers
 from django.conf import settings
 from django.db.models import Count, Subquery
-from django.utils.translation import gettext_lazy as _
 from apps.core.account.models import User
 from apps.core.company.models import (
     Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,

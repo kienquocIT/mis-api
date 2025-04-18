@@ -15,5 +15,7 @@ class CompanyMsg:
     PRIMARY_CURRENCY_IS_NOT_NULL = _("Primary currency is not NULL.")
     DIV_NOT_VALID = _("Definition inventory valuation not valid.")
     DIV_METHOD_NOT_VALID = _("Definition inventory value method not valid.")
-    CANNOT_UPDATE_COMPANY_CFG = _("This setting can't be updated because there are already transactions in the current period.")
+    CANNOT_UPDATE_COMPANY_CFG = _(
+        "This setting can't be updated because there are already transactions in the current period."
+    )
     CANNOT_CHANGE_PRIMARY_CURRENCY = _('Can not change primary currency in the current period.')
