@@ -1649,3 +1649,11 @@ msgstr "Tổng số ngày nghỉ phép"
 #
 msgid "Total day"
 msgstr "Tổng số ngày"
+
+#
+msgid "This company setting can't be updated because there are already transactions in the current fiscal year."
+msgstr "Thiết lập công ty này không thể cập nhật vì đã có giao dịch trong kỳ hiện tại."
+
+#
+msgid "Can not change primary currency in the current fiscal year."
+msgstr "Không thể thay đổi đồng tiền chính trong năm tài chính hiện tại."
