@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 # from apps.accounting.journalentry.utils.log_for_cash_inflow import JEForCIFHandler
 # from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel
@@ -6,8 +7,16 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 __all__ = ['CashOutflow', 'CashOutflowItem', 'CashOutflowItemDetail']
 
+CASH_OUT_FLOW_TYPE = [
+    (0, _('Payment to supplier')),
+    (1, _('Payment to customer')),
+    (2, _('Advance payment to employee')),
+    (3, _('Payment on account')),
+]
+
 
 class CashOutflow(DataAbstractModel):
+    cof_type = models.SmallIntegerField(choices=CASH_OUT_FLOW_TYPE, default=0)
     supplier = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
@@ -52,6 +61,7 @@ class CashOutflow(DataAbstractModel):
     posting_date = models.DateTimeField()
     document_date = models.DateTimeField()
     description = models.TextField(blank=True, null=True)
+    advance_for_employee_value = models.FloatField(default=0)  # tiền tạm ứng cho Nhân viên
     advance_for_supplier_value = models.FloatField(default=0)  # tiền tạm ứng cho NCC (không theo PO)
     no_ap_invoice_value = models.FloatField(default=0)  # tổng tiền nhận của NCC không hóa đơn (theo PO)
     has_ap_invoice_value = models.FloatField(default=0)  # tổng tiền nhận của NCC có hóa đơn (theo PO)

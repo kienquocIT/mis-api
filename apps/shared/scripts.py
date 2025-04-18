@@ -1328,9 +1328,9 @@ class SubScripts:
         return True
 
     @classmethod
-    def update_master_data_for_HQG(cls):
-        tenant_obj = Tenant.objects.get(id='f46dad3817be4ab4b77f549705b9387c')
-        company_obj = Company.objects.get(id='0248237bcb6b46b182ad9282115a0624')
+    def update_master_data_for_HQG(cls, company_id):
+        company_obj = Company.objects.get(id=company_id)
+        tenant_obj = company_obj.tenant
         UnitOfMeasureGroup.objects.filter(tenant=tenant_obj, company=company_obj).delete()
         UnitOfMeasure.objects.filter(tenant=tenant_obj, company=company_obj).delete()
 
