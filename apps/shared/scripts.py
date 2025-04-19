@@ -1328,7 +1328,7 @@ class SubScripts:
         return True
 
     @classmethod
-    def update_master_data_for_HQG(cls, company_id):
+    def update_master_data_multi_reference(cls, company_id):
         company_obj = Company.objects.get(id=company_id)
         tenant_obj = company_obj.tenant
         UnitOfMeasureGroup.objects.filter(tenant=tenant_obj, company=company_obj).delete()
