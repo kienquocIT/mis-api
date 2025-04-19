@@ -1328,8 +1328,8 @@ class SubScripts:
         return True
 
     @classmethod
-    def update_master_data_multi_reference(cls, company_id):
-        company_obj = Company.objects.get(id=company_id)
+    def update_master_data_multi_reference(cls, tenant_code):
+        company_obj = Company.objects.get(tenant__code=tenant_code)
         tenant_obj = company_obj.tenant
         UnitOfMeasureGroup.objects.filter(tenant=tenant_obj, company=company_obj).delete()
         UnitOfMeasure.objects.filter(tenant=tenant_obj, company=company_obj).delete()
