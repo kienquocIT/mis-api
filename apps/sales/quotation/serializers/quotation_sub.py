@@ -433,9 +433,9 @@ class QuotationCostSerializer(serializers.ModelSerializer):
     def validate_warehouse_id(cls, value):
         return QuotationCommonValidate().validate_warehouse(value=value)
 
-    @classmethod
-    def validate_product_quantity(cls, value):
-        return QuotationValueValidate.validate_quantity(value=value)
+    # @classmethod
+    # def validate_product_quantity(cls, value):
+    #     return QuotationValueValidate.validate_quantity(value=value)
 
 
 class QuotationExpenseSerializer(serializers.ModelSerializer):
