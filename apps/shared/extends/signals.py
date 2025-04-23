@@ -245,7 +245,7 @@ class SaleDefaultData:
             tenant=self.company_obj.tenant, company=self.company_obj, code='Unit', is_default=1
         ).first()
         if unit_group:
-            UnitOfMeasure.objects.create(
+            referenced_unit_obj = UnitOfMeasure.objects.create(
                 tenant=self.company_obj.tenant,
                 company=self.company_obj,
                 code='UOM001',
@@ -300,14 +300,15 @@ class SaleDefaultData:
                 is_default=1,
                 group=unit_group
             )
-
+            unit_group.uom_reference = referenced_unit_obj
+            unit_group.save(update_fields=['uom_reference'])
 
         # add default uom for group time
         labor_group = UnitOfMeasureGroup.objects.filter(
             tenant=self.company_obj.tenant, company=self.company_obj, code='Labor', is_default=1
         ).first()
         if labor_group:
-            UnitOfMeasure.objects.create(
+            referenced_unit_obj = UnitOfMeasure.objects.create(
                 tenant=self.company_obj.tenant,
                 company=self.company_obj,
                 code='Manhour',
@@ -340,6 +341,8 @@ class SaleDefaultData:
                 is_default=1,
                 group=labor_group
             )
+            labor_group.uom_reference = referenced_unit_obj
+            labor_group.save(update_fields=['uom_reference'])
         return True
 
     def create_tax_category(self):

@@ -221,7 +221,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             instance.company.save(update_fields=['sub_domain'])
 
         if instance.master_data_currency:
-            currency_abbreviation = instance.master_data_currency.code
+            currency_abbreviation = instance.master_data_currency.abbreviation
             Currency.objects.filter(company=instance.company).exclude(abbreviation=currency_abbreviation).update(
                 is_primary=False, rate=None
             )

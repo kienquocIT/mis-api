@@ -1485,6 +1485,13 @@ class SubScripts:
         company_obj.company_config.currency = primary_currency_obj.currency
         company_obj.company_config.save(update_fields=['master_data_currency', 'currency'])
 
+        Currency.objects.filter(company=company_obj).exclude(abbreviation=primary_currency_obj.abbreviation).update(
+            is_primary=False, rate=None
+        )
+        Currency.objects.filter(company=company_obj, abbreviation=primary_currency_obj.abbreviation).update(
+            is_primary=True, rate=1
+        )
+
         this_period = Periods.get_current_period(company_obj.tenant_id, company_obj.id)
         if this_period:
             this_period.currency_mapped = primary_currency_obj
