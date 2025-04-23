@@ -34,6 +34,7 @@ class ReportCommonGet:
 # REPORT REVENUE
 class ReportRevenueListSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
+    lease_order = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
@@ -44,6 +45,7 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'sale_order',
+            'lease_order',
             'quotation',
             'opportunity',
             'customer',
@@ -67,6 +69,19 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
                 'code': obj.sale_order.customer.code,
             } if obj.sale_order.customer else {},
         } if obj.sale_order else {}
+
+    @classmethod
+    def get_lease_order(cls, obj):
+        return {
+            'id': obj.lease_order_id,
+            'title': obj.lease_order.title,
+            'code': obj.lease_order.code,
+            'customer': {
+                'id': obj.lease_order.customer_id,
+                'title': obj.lease_order.customer.name,
+                'code': obj.lease_order.customer.code,
+            } if obj.lease_order.customer else {},
+        } if obj.lease_order else {}
 
     @classmethod
     def get_quotation(cls, obj):

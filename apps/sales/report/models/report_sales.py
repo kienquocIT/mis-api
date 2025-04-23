@@ -11,6 +11,12 @@ class ReportRevenue(DataAbstractModel):
         related_name='report_revenue_sale_order',
         null=True,
     )
+    lease_order = models.OneToOneField(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        related_name='report_revenue_lease_order',
+        null=True,
+    )
     quotation = models.OneToOneField(
         'quotation.Quotation',
         on_delete=models.CASCADE,
@@ -45,24 +51,24 @@ class ReportRevenue(DataAbstractModel):
             cls,
             **kwargs
     ):
-        quotation_id = kwargs.get('quotation_id', None)
         sale_order_id = kwargs.get('sale_order_id', None)
+        lease_order_id = kwargs.get('lease_order_id', None)
         tenant_id = kwargs.get('tenant_id', None)
         company_id = kwargs.get('company_id', None)
         if tenant_id and company_id:
-            if quotation_id:
-                if not cls.objects.filter(
-                        tenant_id=tenant_id,
-                        company_id=company_id,
-                        quotation_id=quotation_id,
-                ).exists():
-                    cls.objects.create(**kwargs)
-                    return True
             if sale_order_id:
                 if not cls.objects.filter(
                         tenant_id=tenant_id,
                         company_id=company_id,
                         sale_order_id=sale_order_id,
+                ).exists():
+                    cls.objects.create(**kwargs)
+                    return True
+            if lease_order_id:
+                if not cls.objects.filter(
+                        tenant_id=tenant_id,
+                        company_id=company_id,
+                        lease_order_id=lease_order_id,
                 ).exists():
                     cls.objects.create(**kwargs)
                     return True
@@ -177,6 +183,12 @@ class ReportCustomer(DataAbstractModel):
         related_name='report_customer_sale_order',
         null=True,
     )
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        related_name='report_customer_lease_order',
+        null=True,
+    )
     customer = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
@@ -199,6 +211,7 @@ class ReportCustomer(DataAbstractModel):
             tenant_id,
             company_id,
             sale_order_id,
+            lease_order_id,
             customer_id,
             employee_created_id,
             employee_inherit_id,
@@ -212,6 +225,7 @@ class ReportCustomer(DataAbstractModel):
             tenant_id=tenant_id,
             company_id=company_id,
             sale_order_id=sale_order_id,
+            lease_order_id=lease_order_id,
             customer_id=customer_id,
             employee_created_id=employee_created_id,
             employee_inherit_id=employee_inherit_id,
