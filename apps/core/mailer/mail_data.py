@@ -144,3 +144,18 @@ class MailDataResolver:
                 'url': f'{full_domain}/{app_url}{signature_runtime}'
             },
         }
+
+    @classmethod
+    def new_leave_approved(cls, tenant_obj, employee, day_off, date_back, link_id, employee_lead):
+        full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{tenant_obj.code.lower()}{settings.UI_DOMAIN_SUFFIX}'
+        app_url = APP_MAP_DATA.get('leave.leaverequest', {}).get('url', '')
+        return {
+            '_leave': {
+                'employee': employee.get_full_name(),
+                'leader_name': employee_lead.get('full_name'),
+                'leader_email': employee_lead.get('email'),
+                'day_off': day_off,
+                'date_back': date_back,
+                'url': f'{full_domain}/{app_url}{link_id}'
+            },
+        }

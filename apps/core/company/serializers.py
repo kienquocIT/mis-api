@@ -8,9 +8,9 @@ from apps.core.company.models import (
     Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
 )
 from apps.core.hr.models import Employee, PlanEmployee
-from apps.masterdata.saledata.models import Periods
+from apps.masterdata.saledata.models import Periods, Currency
 from apps.sales.report.models import ReportStockLog
-from apps.shared import DisperseModel, AttMsg, FORMATTING, BaseMsg
+from apps.shared import AttMsg, FORMATTING, BaseMsg
 from apps.shared.translations.company import CompanyMsg
 
 
@@ -28,27 +28,17 @@ class CurrencyRuleDetail(serializers.Serializer):  # noqa
 
 class CompanyConfigDetailSerializer(serializers.ModelSerializer):
     currency = serializers.SerializerMethodField()
+    master_data_currency = serializers.SerializerMethodField()
     currency_rule = CurrencyRuleDetail()
     sub_domain = serializers.SerializerMethodField()
-
-    @classmethod
-    def get_currency(cls, obj):
-        return {
-            "id": obj.currency.id,
-            "title": obj.currency.title,
-            "code": obj.currency.code,
-            "symbol": obj.currency.symbol
-        } if obj.currency else {}
-
-    @classmethod
-    def get_sub_domain(cls, obj):
-        return obj.company.sub_domain if obj.company else ''
 
     class Meta:
         model = CompanyConfig
         fields = (
+            'id',
             'language',
             'currency',
+            'master_data_currency',
             'currency_rule',
             'sub_domain',
             'definition_inventory_valuation',
@@ -60,28 +50,60 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
             'applicable_circular'
         )
 
+    @classmethod
+    def get_currency(cls, obj):
+        return {
+            "id": obj.currency_id,
+            "title": obj.currency.title,
+            "code": obj.currency.code,
+            "symbol": obj.currency.symbol,
+        } if obj.currency else {}
+
+    @classmethod
+    def get_master_data_currency(cls, obj):
+        return {
+            "id": obj.master_data_currency_id,
+            "title": obj.master_data_currency.title,
+            "code": obj.master_data_currency.abbreviation
+        } if obj.master_data_currency else {}
+
+    @classmethod
+    def get_sub_domain(cls, obj):
+        return obj.company.sub_domain if obj.company else ''
+
 
 class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
-    currency = serializers.CharField()
+    master_data_currency = serializers.UUIDField()
     sub_domain = serializers.CharField(max_length=35, required=False)
     definition_inventory_valuation = serializers.BooleanField(default=False)
     default_inventory_value_method = serializers.IntegerField(default=1)
 
-    @classmethod
-    def validate_currency(cls, attrs):
-        currency_cls = DisperseModel(app_model='base.currency').get_model()
-        try:
-            # valid currency allow use in company after add foreign key currency to sale-data.currency model
-            return currency_cls.objects.get(code=attrs)
-        except currency_cls.DoesNotExist:
-            pass
-        raise serializers.ValidationError({'currency': CompanyMsg.CURRENCY_NOT_EXIST})
+    class Meta:
+        model = CompanyConfig
+        fields = (
+            'language',
+            'master_data_currency',
+            'currency_rule',
+            'sub_domain',
+            'definition_inventory_valuation',
+            'default_inventory_value_method',
+            'cost_per_warehouse',
+            'cost_per_lot',
+            'cost_per_project'
+        )
 
     @classmethod
     def validate_language(cls, attrs):
         if attrs in [x[0] for x in settings.LANGUAGE_CHOICE]:
             return attrs
         raise serializers.ValidationError({'language': CompanyMsg.LANGUAGE_NOT_SUPPORT})
+
+    @classmethod
+    def validate_master_data_currency(cls, attrs):
+        try:
+            return Currency.objects.get(id=attrs)
+        except Currency.DoesNotExist:
+            raise serializers.ValidationError({'master_data_currency': CompanyMsg.CURRENCY_NOT_EXIST})
 
     def validate_sub_domain(self, attrs):
         if Company.objects.filter(sub_domain=attrs).exclude(pk=self.instance.company_id).exists():
@@ -103,35 +125,54 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         tenant_obj = self.instance.company.tenant
         company_obj = self.instance.company
-        this_period = Periods.get_current_period(tenant_obj.id, company_obj.id)
-        if this_period:
-            has_trans = ReportStockLog.objects.filter(
-                tenant=tenant_obj, company=company_obj, report_stock__period_mapped=this_period
-            ).exists()
-            old_div_config = company_obj.company_config.definition_inventory_valuation
-            if has_trans and validate_data['definition_inventory_valuation'] != old_div_config:
-                raise serializers.ValidationError({
-                    'definition_inventory_valuation':
-                        "Can't update Definition inventory valuation because there are transactions in this Period."
-                })
-            validate_data['this_period'] = this_period
 
-            old_cost_setting = [
-                self.instance.cost_per_warehouse,
-                self.instance.cost_per_lot,
-                self.instance.cost_per_project
-            ]
-            new_cost_setting = [
-                validate_data.get('cost_per_warehouse'),
-                validate_data.get('cost_per_lot'),
-                validate_data.get('cost_per_project')
-            ]
-            if has_trans and new_cost_setting != old_cost_setting:
-                raise serializers.ValidationError({'error': "Can't change cost setting in same period year."})
-            return validate_data
-        # chỗ này không được sửa key lỗi trả về - fiscal_year_not_found
-        # (vì trên UI dựa vào key lỗi này để check đã có năm tài chính hay chưa)
-        raise serializers.ValidationError({"fiscal_year_not_found": 'This period is not found.'})
+        this_period = Periods.get_current_period(tenant_obj.id, company_obj.id)
+        if not this_period:
+            # chỗ này không được sửa key lỗi trả về - fiscal_year_not_found
+            # (vì trên UI dựa vào key lỗi này để check đã có năm tài chính hay chưa)
+            raise serializers.ValidationError({"fiscal_year_not_found": 'Current period is not found.'})
+        validate_data['this_period'] = this_period
+
+        # 1. check thay đổi primary_currency trong kì kế toán
+        if all([
+            this_period.currency_mapped_id,
+            str(validate_data.get('master_data_currency').id) != str(this_period.currency_mapped_id)
+        ]):
+            raise serializers.ValidationError({'master_data_currency': CompanyMsg.CANNOT_CHANGE_PRIMARY_CURRENCY})
+        validate_data['currency'] = validate_data.get('master_data_currency').currency  # get base currency
+        ####
+
+        # 2. check thay đổi definition_inventory_valuation trong kì kế toán
+        has_trans = ReportStockLog.objects.filter_on_company(report_stock__period_mapped=this_period).exists()
+        if validate_data.get('definition_inventory_valuation') != this_period.definition_inventory_valuation:
+            if has_trans:
+                raise serializers.ValidationError({
+                    'definition_inventory_valuation': CompanyMsg.CANNOT_UPDATE_COMPANY_CFG
+                })
+        ####
+
+        # 3. check thay đổi default_inventory_value_method trong kì kế toán
+        if validate_data.get('default_inventory_value_method') != this_period.default_inventory_value_method:
+            if has_trans:
+                raise serializers.ValidationError({
+                    'default_inventory_value_method': CompanyMsg.CANNOT_UPDATE_COMPANY_CFG
+                })
+        ####
+
+        # 4. check thay đổi cost_setting trong kì kế toán
+        old_cost_setting = [this_period.cost_per_warehouse, this_period.cost_per_lot, this_period.cost_per_project]
+        new_cost_setting = [
+            validate_data.get('cost_per_warehouse'),
+            validate_data.get('cost_per_lot'),
+            validate_data.get('cost_per_project')
+        ]
+        if new_cost_setting != old_cost_setting:
+            if has_trans:
+                raise serializers.ValidationError({
+                    'cost': CompanyMsg.CANNOT_UPDATE_COMPANY_CFG
+                })
+        ####
+        return validate_data
 
     def update(self, instance, validated_data):
         this_period = validated_data.pop('this_period')
@@ -143,6 +184,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         instance.save(update_fields=[
             'language',
             'currency',
+            'master_data_currency',
             'currency_rule',
             'definition_inventory_valuation',
             'default_inventory_value_method',
@@ -156,12 +198,14 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         this_period.cost_per_warehouse = instance.cost_per_warehouse
         this_period.cost_per_lot = instance.cost_per_lot
         this_period.cost_per_project = instance.cost_per_project
+        this_period.currency_mapped = instance.master_data_currency
         this_period.save(update_fields=[
             'definition_inventory_valuation',
             'default_inventory_value_method',
             'cost_per_warehouse',
             'cost_per_lot',
-            'cost_per_project'
+            'cost_per_project',
+            'currency_mapped'
         ])
 
         if currency_rule and all(
@@ -176,21 +220,16 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             instance.company.sub_domain = sub_domain
             instance.company.save(update_fields=['sub_domain'])
 
-        return instance
+        if instance.master_data_currency:
+            currency_abbreviation = instance.master_data_currency.code
+            Currency.objects.filter(company=instance.company).exclude(abbreviation=currency_abbreviation).update(
+                is_primary=False, rate=None
+            )
+            Currency.objects.filter(company=instance.company, abbreviation=currency_abbreviation).update(
+                is_primary=True, rate=1
+            )
 
-    class Meta:
-        model = CompanyConfig
-        fields = (
-            'language',
-            'currency',
-            'currency_rule',
-            'sub_domain',
-            'definition_inventory_valuation',
-            'default_inventory_value_method',
-            'cost_per_warehouse',
-            'cost_per_lot',
-            'cost_per_project'
-        )
+        return instance
 
 
 class AccountingPoliciesUpdateSerializer(serializers.ModelSerializer):
@@ -317,22 +356,27 @@ def create_company_function_number(company_obj, company_function_number_data):
     date_now = datetime.datetime.now()
     data_calendar = datetime.date.today().isocalendar()
     updated_function = []
-    for item in company_function_number_data:
-        function_name = item.get('function')
-        obj = CompanyFunctionNumber.objects.filter(company=company_obj, function=function_name)
-        if obj.count() == 1:
-            updated_function.append(function_name)
-            updated_fields = {
-                **item,
-                'latest_number': int(item.get('last_number', None)) - 1,
-                'year_reset': date_now.year,
-                'month_reset': int(f"{date_now.year}{date_now.month:02}"),
-                'week_reset': int(f"{data_calendar[0]}{data_calendar[1]:02}"),
-                'day_reset': int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
-            } if obj.first().latest_number is None else {**item}
-            obj.update(**updated_fields)
 
-    CompanyFunctionNumber.objects.filter_current(company=company_obj).exclude(function__in=updated_function).update(
+    for item in company_function_number_data:
+        function_name = item.get('function', '')
+        obj = CompanyFunctionNumber.objects.filter(company=company_obj, function=function_name).first()
+        if obj:
+            updated_function.append(function_name)
+            if obj.latest_number is None:
+                try:
+                    last_number = int(item.get('last_number') or 1)
+                except (TypeError, ValueError):
+                    last_number = 1
+                obj.latest_number = last_number - 1
+                obj.year_reset = date_now.year
+                obj.month_reset = int(f"{date_now.year}{date_now.month:02}")
+                obj.week_reset = int(f"{data_calendar[0]}{data_calendar[1]:02}")
+                obj.day_reset = int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
+            for key, value in item.items():
+                setattr(obj, key, value)
+            obj.save()
+    # Reset các function không nằm trong updated_function
+    CompanyFunctionNumber.objects.filter(company=company_obj).exclude(function__in=updated_function).update(
         numbering_by=0, schema=None, schema_text=None, first_number=None, last_number=None, reset_frequency=None,
         min_number_char=None, latest_number=None, year_reset=None, month_reset=None, week_reset=None, day_reset=None
     )
@@ -353,7 +397,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'address',
             'email',
             'phone',
-            'fax'
+            'fax',
         )
 
     @classmethod
@@ -395,23 +439,12 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         model = Company
         fields = (
             'title',
-            'code',
             'representative_fullname',
             'address',
             'email',
             'phone',
             'fax'
         )
-
-    def validate_code(self, attrs):
-        attrs = attrs.lower()
-        if Company.objects.filter(code=attrs).exclude(id=self.instance.id).exists():
-            raise serializers.ValidationError(
-                {
-                    'code': BaseMsg.CODE_IS_EXISTS,
-                }
-            )
-        return attrs
 
     def validate(self, validate_data):
         for item in self.initial_data.get('company_function_number_data', []):

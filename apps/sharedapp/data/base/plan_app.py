@@ -373,6 +373,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "7ba35923-d8ff-4f6d-bf80-468a7190a63b",  # Cash infow
     },
+    "c51857ef-513f-4dbf-babd-26d68950ad6e": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "c51857ef-513f-4dbf-babd-26d68950ad6e",  # Cash outfow
+    },
     "b690b9ff-670a-474b-8ae2-2c17d7c30f40": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "b690b9ff-670a-474b-8ae2-2c17d7c30f40",  # Recon

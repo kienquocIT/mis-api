@@ -59,11 +59,12 @@ class ReportRevenueList(BaseListMixin):
     def get_queryset(self):
         query_set = super().get_queryset().select_related(
             "sale_order",
+            "lease_order",
             "quotation",
             "opportunity",
             "customer",
             "employee_inherit",
-        ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
+        ).filter(group_inherit__is_delete=False)
         filter_item_id = self.request.query_params.get('advance_filter_id')
 
         filter_item_obj = List.objects.filter(id=filter_item_id).first()
@@ -111,7 +112,7 @@ class ReportProductList(BaseListMixin):
             "product",
             "product__general_product_category",
             "product__sale_default_uom",
-        ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
+        ).filter(group_inherit__is_delete=False)
 
     @swagger_auto_schema(
         operation_summary="Report product List",
@@ -182,7 +183,7 @@ class ReportCustomerList(BaseListMixin):
             "customer",
             "customer__industry",
             "employee_inherit"
-        ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
+        ).filter(group_inherit__is_delete=False)
 
     @swagger_auto_schema(
         operation_summary="Report customer List",

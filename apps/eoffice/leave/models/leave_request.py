@@ -3,8 +3,11 @@ from copy import deepcopy
 
 from django.db import models
 from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
-from apps.shared import DataAbstractModel, TYPE_LIST, LeaveMsg
+from apps.core.mailer.tasks import send_mail_annual_leave
+from apps.shared import DataAbstractModel, TYPE_LIST, LeaveMsg, DisperseModel, call_task_background
 
 __all__ = ['LeaveRequestDateListRegister', 'LeaveRequest', 'LeaveAvailable', 'LeaveAvailableHistory']
 
@@ -265,3 +268,36 @@ class LeaveAvailableHistory(DataAbstractModel):
         ordering = ('-date_modified',)
         default_permissions = ()
         permissions = ()
+
+
+@receiver(post_save, sender=LeaveRequest)
+def send_mail_leave(sender, instance, created, **kwargs):  # pylint: disable=unused-argument
+    if instance.system_status != 3:
+        return True
+    email_lst = [str(instance.employee_inherit.email)]
+    for emp in DisperseModel(app_model='opportunity.OpportunitySaleTeamMember').get_model().objects.filter_on_company(
+            member_id=str(instance.employee_inherit.id), opportunity__is_close_lost=False,
+            opportunity__is_deal_close=False
+    ):
+        if emp.opportunity.employee_inherit.email:
+            email_lst.append(emp.opportunity.employee_inherit.email)
+
+    for member in DisperseModel(app_model='project.ProjectMapMember').get_model().objects.filter_on_company(
+            member_id=str(instance.employee_inherit.id), project__project_status__in=[1, 2]
+    ):
+        if member.project.project_pm.email:
+            email_lst.append(member.project.project_pm.email)
+        if member.project.employee_inherit.email:
+            email_lst.append(member.project.employee_inherit.email)
+
+        call_task_background(
+            my_task=send_mail_annual_leave,
+            **{
+                'leave_id': str(instance.id),
+                'tenant_id': str(instance.tenant_id),
+                'company_id': str(instance.company_id),
+                'employee_id': str(instance.employee_inherit.id),
+                'email_lst': list(set(email_lst)),
+            }
+        )
+    return True

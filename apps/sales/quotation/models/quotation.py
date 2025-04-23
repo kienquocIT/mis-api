@@ -316,7 +316,6 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
                     self.push_code(instance=self, kwargs=kwargs)  # code
                     QuotationFinishHandler.update_opportunity(instance=self)  # opportunity
                     QuotationFinishHandler.push_to_customer_activity(instance=self)  # customer
-                    # QuotationFinishHandler.push_to_report_revenue(instance=self)  # reports
         if self.system_status in [4]:  # cancel
             # opportunity
             QuotationFinishHandler.update_opportunity(instance=self)

@@ -150,7 +150,14 @@ class SendMailController:  # pylint: disable=R0902
             headers['Reply-To'] = settings.headers['Reply-To'] = self.reply_to
         return headers
 
-    def send(self, mail_to, mail_cc, mail_bcc, as_name, template, data, doc_id=None, previous_id=None, fpath_list=None):
+    def send(
+            self,
+            mail_to, template,
+            data, mail_cc=None,
+            mail_bcc=None, as_name="",
+            doc_id=None, previous_id=None,
+            fpath_list=None
+    ):
         if mail_bcc is None:
             mail_bcc = []
         if mail_cc is None:

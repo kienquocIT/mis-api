@@ -1,13 +1,21 @@
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from apps.core.hr.models import Employee
 from apps.core.mailer.tasks import send_email_sale_activities_email, send_email_sale_activities_meeting
-from apps.masterdata.saledata.models import Periods, Contact
+from apps.masterdata.saledata.models import Periods, Contact, Industry
 from apps.sales.lead.models import (
-    Lead, LeadNote, LeadStage, LeadConfig, LEAD_SOURCE, LEAD_STATUS,
-    LeadChartInformation, LeadHint, LeadOpportunity
+    Lead, LeadStage, LeadConfig, LeadChartInformation, LeadHint, LeadOpportunity, LeadNote, LeadParser,
+    LEAD_SOURCE, LEAD_STATUS
 )
+from apps.sales.opportunity.models import (
+    OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
+    OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember, OpportunityActivityLogs, Opportunity
+)
+from apps.sales.opportunity.serializers import ActivitiesCommonFunc
+from apps.shared import BaseMsg, SaleMsg, AccountsMsg
+
 
 __all__ = [
     'LeadListSerializer',
@@ -25,18 +33,10 @@ __all__ = [
     'LeadMeetingDetailSerializer'
 ]
 
-from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting, \
-    OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember, OpportunityActivityLogs
-
-from apps.sales.opportunity.serializers import ActivitiesCommonFunc
-
-from apps.shared import BaseMsg, SaleMsg
-
-
+# main
 class LeadListSerializer(serializers.ModelSerializer):
     source = serializers.SerializerMethodField()
     lead_status = serializers.SerializerMethodField()
-    current_lead_stage = serializers.SerializerMethodField()
 
     class Meta:
         model = Lead
@@ -47,7 +47,7 @@ class LeadListSerializer(serializers.ModelSerializer):
             'contact_name',
             'source',
             'lead_status',
-            'current_lead_stage',
+            'current_lead_stage_data',
             'date_created',
             'email'
         )
@@ -60,16 +60,12 @@ class LeadListSerializer(serializers.ModelSerializer):
     def get_lead_status(cls, obj):
         return str(dict(LEAD_STATUS).get(obj.lead_status))
 
-    @classmethod
-    def get_current_lead_stage(cls, obj):
-        return {
-            'title': obj.current_lead_stage.stage_title,
-            'level': obj.current_lead_stage.level,
-        }
-
 
 class LeadCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
+    industry = serializers.UUIDField(required=False, allow_null=True)
+    assign_to_sale = serializers.UUIDField(required=False, allow_null=True)
+    note_data = serializers.JSONField(required=False, default=list)
 
     class Meta:
         model = Lead
@@ -86,40 +82,70 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             'source',
             'lead_status',
             'assign_to_sale',
+            'note_data'
         )
 
-    def validate(self, validate_data):
+    @classmethod
+    def validate_industry(cls, value):
+        if value:
+            try:
+                return Industry.objects.get_on_company(id=value)
+            except Industry.DoesNotExist:
+                raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_assign_to_sale(cls, value):
+        if value:
+            try:
+                return Employee.objects.get_on_company(id=value)
+            except Employee.DoesNotExist:
+                raise serializers.ValidationError({"assign_to_sale": SaleMsg.EMPLOYEE_NOT_EXIST})
+        return None
+
+    def validate(self, validate_data, **kwargs):
+        industry_obj = validate_data.get('industry')
+        if industry_obj:
+            validate_data['industry_data'] = LeadParser.parse_data(industry_obj, 'industry')
+
+        assign_to_sale_obj = validate_data.get('assign_to_sale')
+        if assign_to_sale_obj:
+            validate_data['assign_to_sale_data'] = LeadParser.parse_data(assign_to_sale_obj, 'assign_to_sale')
+
+        current_stage_obj = LeadStage.objects.filter_on_company(level=1).first()
+        if current_stage_obj:
+            validate_data['current_lead_stage'] = current_stage_obj
+            validate_data['current_lead_stage_data'] = LeadParser.parse_data(current_stage_obj, 'lead_stage')
+        else:
+            raise serializers.ValidationError({'current_lead_stage': _("Lead stage not found")})
+
+
+        if 'tenant_current_id' in kwargs and 'company_current_id' in kwargs:
+            tenant_current_id = kwargs.get('tenant_current_id')
+            company_current_id = kwargs.get('company_current_id')
+        else:
+            tenant_current_id = self.context.get('tenant_current_id')
+            company_current_id = self.context.get('company_current_id')
+
+        period_mapped = Periods.get_current_period(tenant_current_id, company_current_id)
+        if period_mapped:
+            validate_data['period_mapped'] = period_mapped
+        else:
+            raise serializers.ValidationError({'period_mapped': _("Period not found")})
+
         return validate_data
 
     def create(self, validated_data):
-        current_stage = LeadStage.objects.filter(
-            tenant_id=validated_data['tenant_id'], company_id=validated_data['company_id'], level=1
-        ).first()
-        this_period = Periods.get_current_period(validated_data['tenant_id'], validated_data['company_id'])
-        if current_stage and this_period:
-            lead = Lead.objects.create(
-                **validated_data, current_lead_stage=current_stage, system_status=1,
-                period_mapped=this_period
-            )
-
-            # create notes
-            for note_content in self.initial_data.get('note_data', []):
-                LeadNote.objects.create(lead=lead, note=note_content)
-
-            # create config
-            if 'assign_to_sale' in validated_data:
-                LeadConfig.objects.create(lead=lead, assign_to_sale_config=validated_data['assign_to_sale'])
-
-            return lead
-        raise serializers.ValidationError({'Lead stage': "Lead stage not found"})
+        note_data = validated_data.pop('note_data', [])
+        lead_obj = Lead.objects.create(**validated_data, system_status=1)
+        LeadCommonFunc.create_lead_note(lead_obj, note_data)
+        LeadConfig.objects.create(lead=lead_obj)
+        return lead_obj
 
 
 class LeadDetailSerializer(serializers.ModelSerializer):
-    industry = serializers.SerializerMethodField()
-    assign_to_sale = serializers.SerializerMethodField()
     note_data = serializers.SerializerMethodField()
     config_data = serializers.SerializerMethodField()
-    current_lead_stage = serializers.SerializerMethodField()
     related_opps = serializers.SerializerMethodField()
     related_leads = serializers.SerializerMethodField()
 
@@ -134,34 +160,18 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             'mobile',
             'email',
             'company_name',
-            'industry',
+            'industry_data',
             'total_employees',
             'revenue',
             'source',
             'lead_status',
-            'assign_to_sale',
-            'current_lead_stage',
+            'assign_to_sale_data',
+            'current_lead_stage_data',
             'note_data',
             'config_data',
             'related_opps',
             'related_leads'
         )
-
-    @classmethod
-    def get_industry(cls, obj):
-        return {
-            'id': obj.industry_id,
-            'code': obj.industry.code,
-            'title': obj.industry.title
-        } if obj.industry else {}
-
-    @classmethod
-    def get_assign_to_sale(cls, obj):
-        return {
-            'id': obj.assign_to_sale_id,
-            'code': obj.assign_to_sale.code,
-            'full_name': obj.assign_to_sale.get_full_name(2)
-        } if obj.assign_to_sale else {}
 
     @classmethod
     def get_note_data(cls, obj):
@@ -175,35 +185,11 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             'convert_opp': config.convert_opp,
             'convert_opp_create': config.convert_opp_create,
             'convert_opp_select': config.convert_opp_select,
-            'account_mapped': {
-                'id': config.account_mapped_id,
-                'code': config.account_mapped.code,
-                'name': config.account_mapped.name,
-            } if config.account_mapped else None,
-            'assign_to_sale_config': {
-                'id': config.assign_to_sale_config_id,
-                'code': config.assign_to_sale_config.code,
-                'full_name': config.assign_to_sale_config.get_full_name(2),
-            } if config.assign_to_sale_config else {},
-            'contact_mapped': {
-                'id': config.contact_mapped_id,
-                'code': config.contact_mapped.code,
-                'fullname': config.contact_mapped.fullname,
-                'email': config.contact_mapped.email,
-            } if config.contact_mapped else {},
-            'opp_mapped': {
-                'id': config.opp_mapped_id,
-                'code': config.opp_mapped.code,
-                'title': config.opp_mapped.title,
-            } if config.opp_mapped else {}
+            'account_mapped': config.account_mapped_data,
+            'assign_to_sale_config': config.assign_to_sale_config_data,
+            'contact_mapped': config.contact_mapped_data,
+            'opp_mapped': config.opp_mapped_data
         } if config else {}
-
-    @classmethod
-    def get_current_lead_stage(cls, obj):
-        return {
-            'title': obj.current_lead_stage.stage_title,
-            'level': obj.current_lead_stage.level,
-        }
 
     @classmethod
     def get_related_opps(cls, obj):
@@ -220,21 +206,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
         hints_by_email = all_hint.filter(contact_email=obj.email) if obj.email else []
         for hint in list(hints_by_phone) + list(hints_by_mobile) + list(hints_by_email):
             if str(hint.opportunity_id) not in existed:
-                related_opps.append({
-                    'id': str(hint.opportunity_id),
-                    'code': hint.opportunity.code,
-                    'title': hint.opportunity.title,
-                    'customer': {
-                        'id': hint.opportunity.customer_id,
-                        'title': hint.opportunity.customer.name,
-                        'code': hint.opportunity.customer.code,
-                    } if hint.opportunity.customer else {},
-                    'sale_person': {
-                        'id': hint.opportunity.employee_inherit_id,
-                        'code': hint.opportunity.employee_inherit.code,
-                        'full_name': hint.opportunity.employee_inherit.get_full_name(2)
-                    } if hint.opportunity.employee_inherit else {}
-                })
+                related_opps.append(hint.opportunity_data)
                 existed.append(str(hint.opportunity_id))
         return related_opps
 
@@ -254,13 +226,16 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             filter_by_company_name = all_lead.filter(company_name=obj.company_name).count()
             if sum([filter_by_contact_name, filter_by_mobile, filter_by_email, filter_by_company_name]) > 0:
                 if str(lead.id) not in existed:
-                    related_leads.append({'id': lead.id, 'code': lead.code, 'title': lead.title})
+                    related_leads.append(LeadParser.parse_data(lead, 'lead'))
                     existed.append(str(lead.id))
         return related_leads
 
 
 class LeadUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
+    industry = serializers.UUIDField(required=False, allow_null=True)
+    assign_to_sale = serializers.UUIDField(required=False, allow_null=True)
+    note_data = serializers.JSONField(required=False, default=list)
 
     class Meta:
         model = Lead
@@ -277,77 +252,109 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
             'source',
             'lead_status',
             'assign_to_sale',
+            'note_data'
         )
 
+    @classmethod
+    def validate_industry(cls, value):
+        return LeadCreateSerializer.validate_industry(value)
+
+    @classmethod
+    def validate_assign_to_sale(cls, value):
+        return LeadCreateSerializer.validate_assign_to_sale(value)
+
     def validate(self, validate_data):
-        return validate_data
-
-    @classmethod
-    def goto_stage(cls, instance):
-        stage_goto = LeadStage.objects.filter(
-            company=instance.company, tenant=instance.tenant, level=3
-        ).first()
-        if instance.lead_status == 2 and stage_goto:
-            instance.current_lead_stage = stage_goto
-            instance.lead_status = 3
-        else:
-            raise serializers.ValidationError({
-                'error': 'Can not go to this Stage. You have to go to "Marketing Qualified Lead" first.'
-            })
-        instance.save()
-        return instance
-
-    @classmethod
-    def convert_opp(cls, instance, config, opp_mapped_id):
-        if config:
-            config.convert_opp = True
-            config.convert_opp_create = False
-            config.convert_opp_select = True
-            config.opp_mapped_id = opp_mapped_id
-            config.save(update_fields=[
-                'convert_opp', 'convert_opp_create', 'convert_opp_select', 'opp_mapped_id'
-            ])
-            LeadOpportunity.objects.create(
-                company=instance.company, tenant=instance.tenant,
-                lead=instance, opportunity_id=opp_mapped_id,
-                employee_created=instance.employee_created,
-                employee_inherit=instance.employee_inherit
-            )
-            stage = LeadStage.objects.filter(
-                company=instance.company, tenant=instance.tenant, level=4
-            ).first()
-            if stage:
-                instance.current_lead_stage = stage
-                instance.lead_status = 4
-        instance.save()
-        return instance
+        if 'goto_stage' in self.context:
+            validate_data = {}
+            stage_goto = LeadStage.objects.filter_on_company(level=3).first()
+            if not stage_goto:
+                raise serializers.ValidationError({'stage_goto': _("Lead stage level 3 not found.")})
+            if self.instance.lead_status != 2:
+                raise serializers.ValidationError({'stage': _('You have to go to "Marketing Qualified Lead" first.')})
+            validate_data['stage_goto'] = stage_goto
+            return validate_data
+        if 'convert_opp' in self.context:
+            validate_data = {}
+            # check config
+            lead_config = self.instance.lead_configs.first()
+            if not lead_config:
+                raise serializers.ValidationError({'lead_config': _("Lead config not found.")})
+            validate_data['lead_config'] = lead_config
+            # check lead converted
+            if lead_config.contact_mapped or lead_config.convert_opp:
+                raise serializers.ValidationError({'lead_config': _("Contact or Opp has been created already.")})
+            # valid opp
+            if 'opp_mapped_id' in self.context:
+                opp_mapped = Opportunity.objects.filter_on_company(id=self.context.get('opp_mapped_id')).first()
+                if not opp_mapped:
+                    raise serializers.ValidationError({'opp_mapped': SaleMsg.OPPORTUNITY_NOT_EXIST})
+                validate_data['opp_mapped'] = opp_mapped
+            return validate_data
+        return LeadCreateSerializer().validate(
+            validate_data,
+            **{
+                'tenant_current_id': self.context.get('tenant_current_id'),
+                'company_current_id': self.context.get('company_current_id'),
+            }
+        )
 
     def update(self, instance, validated_data):
-        # this_period = Periods.get_current_period(instance.tenant_id, instance.company_id)
-        config = instance.lead_configs.first()
-        # if str(this_period.id) == str(instance.period_mapped_id):
         if 'goto_stage' in self.context:
-            self.goto_stage(instance)
+            LeadCommonFunc.goto_stage(instance, validated_data.get('stage_goto'))
         elif 'convert_opp' in self.context:
-            self.convert_opp(instance, config, self.context.get('opp_mapped_id'))
+            LeadCommonFunc.convert_to_opp(instance, validated_data.get('lead_config'), validated_data.get('opp_mapped'))
         else:
-            if config.contact_mapped or config.convert_opp:
-                raise serializers.ValidationError(
-                    {'Finished': "Can not update this Lead. Contact or Opp has been created already."}
-                )
+            note_data = validated_data.pop('note_data', [])
             for key, value in validated_data.items():
                 setattr(instance, key, value)
             instance.save()
-
-            # update notes
-            LeadNote.objects.filter(lead=instance).delete()
-            for note_content in self.initial_data.get('note_data', []):
-                LeadNote.objects.create(lead=instance, note=note_content)
-
+            LeadCommonFunc.create_lead_note(instance, note_data)
         return instance
-        # raise serializers.ValidationError({'Lead period': "Can not update lead of other period."})
 
 
+class LeadCommonFunc:
+    @staticmethod
+    def create_lead_note(lead_obj, note_data):
+        LeadNote.objects.filter(lead=lead_obj).delete()
+        for order, note_content in enumerate(note_data, start=1):
+            LeadNote.objects.create(lead=lead_obj, note=note_content, order=order)
+        return True
+
+    @staticmethod
+    def goto_stage(lead_obj, stage_goto):
+        lead_obj.current_lead_stage = stage_goto
+        lead_obj.current_lead_stage_data = LeadParser.parse_data(stage_goto, 'lead_stage')
+        lead_obj.lead_status = 3
+        lead_obj.save(update_fields=['current_lead_stage', 'current_lead_stage_data', 'lead_status'])
+        return lead_obj
+
+    @staticmethod
+    def convert_to_opp(lead_obj, lead_config, opp_mapped):
+        lead_config.convert_opp = True
+        lead_config.convert_opp_select = True
+        lead_config.opp_mapped = opp_mapped
+        lead_config.opp_mapped_data = LeadParser.parse_data(opp_mapped, 'opportunity')
+        lead_config.save(
+            update_fields=['convert_opp', 'convert_opp_select', 'opp_mapped', 'opp_mapped_data']
+        )
+        LeadOpportunity.objects.create(
+            tenant=lead_obj.tenant,
+            company=lead_obj.company,
+            lead=lead_obj,
+            lead_data=LeadParser.parse_data(lead_obj, 'lead_mapped_opp'),
+            opportunity=opp_mapped,
+            employee_created=lead_obj.employee_created,
+            employee_inherit=lead_obj.employee_inherit
+        )
+        stage = LeadStage.objects.filter_on_company(level=4).first()
+        if stage:
+            lead_obj.current_lead_stage = stage
+            lead_obj.current_lead_stage_data = LeadParser.parse_data(stage, 'lead_stage')
+            lead_obj.lead_status = 4
+            lead_obj.save(update_fields=['current_lead_stage', 'current_lead_stage', 'lead_status'])
+        return lead_obj
+
+# related
 class LeadStageListSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeadStage
@@ -382,15 +389,7 @@ class LeadListForOpportunitySerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_lead(cls, obj):
-        return {
-            'id': obj.lead_id,
-            'code': obj.lead.code,
-            'title': obj.lead.title,
-            'contact_name': obj.lead.contact_name,
-            'source': str(dict(LEAD_SOURCE).get(obj.lead.source)),
-            'lead_status': str(dict(LEAD_STATUS).get(obj.lead.lead_status)),
-            'date_created': obj.lead.date_created
-        }
+        return obj.lead_data
 
 
 class LeadCallCreateSerializer(serializers.ModelSerializer):

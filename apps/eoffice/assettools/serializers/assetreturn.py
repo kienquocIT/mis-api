@@ -12,10 +12,10 @@ from apps.shared.translations.base import AttachmentMsg
 
 
 class AssetToolsProductsMapReturnSerializer(serializers.Serializer):  # noqa
-    product = serializers.UUIDField()
-    warehouse_stored_product = serializers.UUIDField()
+    product = serializers.UUIDField(required=False, allow_null=True)
     order = serializers.IntegerField()
     return_number = serializers.FloatField()
+    product_remark = serializers.CharField(required=False, allow_null=True)
 
 
 def create_products(instance, prod_list):
@@ -29,8 +29,8 @@ def create_products(instance, prod_list):
             company=instance.company,
             asset_return=instance,
             order=item['order'],
-            product_id=item['product'],
-            warehouse_stored_product_id=item['warehouse_stored_product'],
+            prod_in_tools_id=item['product'] if 'product' in item else None,
+            product_remark=item['product_remark'] if 'product_remark' in item else None,
             employee_inherit=instance.employee_inherit,
             return_number=item['return_number'],
         )
@@ -108,11 +108,13 @@ class AssetToolsReturnDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_products(cls, obj):
-        if obj.products:
+        if obj.prod_in_tools:
             products_list = []
-            for item in list(obj.asset_return_map_product.all()):
-                current_stock = item.product.stock_amount - \
-                                item.product.product_warehouse_product.all().first().used_amount
+            for item in obj.asset_return_map_product.all():
+                if item.prod_in_tools:
+                    current_stock = item.prod_in_tools.quantity - item.prod_in_tools.allocated_quantity
+                else:
+                    current_stock = 0
                 products_list.append(
                     {
                         'order': item.order,
@@ -120,8 +122,8 @@ class AssetToolsReturnDetailSerializer(AbstractDetailSerializerModel):
                             **item.product_data,
                             'available': current_stock,
                         } if hasattr(item, 'product_data') else {},
+                        'product_remark': item.product_remark,
                         'return_number': item.return_number,
-                        'product_warehouse': item.warehouse_sp_data if hasattr(item, 'warehouse_sp_data') else {}
                     }
                 )
             return products_list

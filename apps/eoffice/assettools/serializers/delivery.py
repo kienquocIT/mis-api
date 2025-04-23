@@ -5,6 +5,7 @@ __all__ = [
 
 from datetime import datetime
 
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -12,20 +13,25 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.eoffice.assettools.models import AssetToolsDeliveryAttachmentFile, AssetToolsDelivery, \
     ProductDeliveredMapProvide
-from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel, DisperseModel, AbstractCreateSerializerModel
+from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel, AbstractCreateSerializerModel
 from apps.shared.translations import AssetToolsMsg
 from apps.shared.translations.base import AttachmentMsg
 
 
 class AssetToolsProductsMapDeliverySerializer(serializers.Serializer):  # noqa
-    product = serializers.UUIDField()
-    warehouse = serializers.UUIDField()
+    product = serializers.UUIDField(required=False, allow_null=True)
     order = serializers.IntegerField()
     request_number = serializers.FloatField()
     delivered_number = serializers.FloatField()
     done = serializers.IntegerField()
     date_delivered = serializers.DateTimeField()
-    is_inventory = serializers.BooleanField()
+    product_remark = serializers.CharField(required=False, allow_null=True)
+    uom = serializers.CharField(required=False, allow_null=True)
+
+    def validate(self, attrs):
+        if attrs['done'] > attrs['request_number']:
+            raise serializers.ValidationError({'detail': AssetToolsMsg.RETURN_PRODUCT_ERROR01})
+        return attrs
 
 
 def create_products(instance, prod_list):
@@ -44,14 +50,14 @@ def create_products(instance, prod_list):
             company=instance.company,
             delivery=instance,
             order=item['order'],
-            product_id=item['product'],
-            warehouse_id=item['warehouse'],
+            prod_buy_new=item['product_remark'] if 'product_remark' in item else None,
+            prod_in_tools_id=item['product'] if 'product' in item else None,
             employee_inherit=instance.employee_inherit,
             request_number=item['request_number'],
             delivered_number=item['delivered_number'],
             done=item['done'],
             date_delivered=date_delivered,
-            is_inventory=item['is_inventory']
+            uom=item['uom'] if 'uom' in item else None
         )
         temp.before_save()
         create_lst.append(temp)
@@ -107,12 +113,16 @@ class AssetToolsDeliveryCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
-        products_list = validated_data.pop('products', None)
-        attachments = validated_data.pop('attachments', None)
-        delivery = AssetToolsDelivery.objects.create(**validated_data)
-        create_products(delivery, products_list)
-        handle_attach_file(delivery, attachments)
-        return delivery
+        try:
+            with transaction.atomic():
+                products_list = validated_data.pop('products', None)
+                attachments = validated_data.pop('attachments', None)
+                delivery = AssetToolsDelivery.objects.create(**validated_data)
+                create_products(delivery, products_list)
+                handle_attach_file(delivery, attachments)
+                return delivery
+        except ValueError:
+            raise serializers.ValidationError({'detail': AssetToolsMsg.ERROR_CREATE_ASSET_DELIVERY})
 
     class Meta:
         model = AssetToolsDelivery
@@ -135,23 +145,20 @@ class AssetToolsDeliveryDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_products(cls, obj):
-        if obj.products:
+        if obj.prod_in_tools:
             products_list = []
             for item in list(obj.provide_map_delivery.all()):
+                prod_instrument_tool = item.prod_in_tools
                 product_available = 0
-                if item.warehouse_data:
-                    prod_warehouse = item.product.product_warehouse_product.filter(
-                        warehouse_id=item.warehouse_data['id']
-                    )
-                    warehouse = prod_warehouse.first()
-                    product_available = warehouse.stock_amount - warehouse.used_amount if warehouse else 0
+                if prod_instrument_tool:
+                    product_available = prod_instrument_tool.quantity - prod_instrument_tool.allocated_quantity
 
                 products_list.append(
                     {
                         'order': item.order,
+                        'product_remark': item.prod_buy_new,
                         'product_available': product_available,
                         'product': {**item.product_data, } if hasattr(item, 'product_data') else {},
-                        'warehouse': item.warehouse_data if hasattr(item, 'warehouse_data') else {},
                         'request_number': item.request_number,
                         'delivered_number': item.delivered_number,
                         'done': item.done,
@@ -214,30 +221,14 @@ class AssetToolsDeliveryListSerializer(serializers.ModelSerializer):
 
 
 class AssetToolsProductUsedListSerializer(serializers.ModelSerializer):
-    done = serializers.SerializerMethodField()
-
-    @classmethod
-    def get_employee_inherit(cls, obj):
-        return obj.employee_inherit_data if obj.employee_inherit else {}
-
-    @classmethod
-    def get_done(cls, obj):
-        done = obj.done
-        list_return_model = DisperseModel(app_model='assettools.AssetToolsReturnMapProduct').get_model()
-        list_return = list_return_model.objects.filter(
-            asset_return__system_status__gte=2, employee_inherit=obj.employee_inherit, product=obj.product
-        )
-        if list_return.exists():
-            list_total = sum(item.return_number for item in list_return)
-            if obj.done > 0 and list_total > 0:
-                done -= list_total
-        return done
 
     class Meta:
         model = ProductDeliveredMapProvide
         fields = (
             'product_data',
+            'prod_buy_new',
             'done',
+            'uom',
         )
 
 

@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models.product import (
     ProductType, Product, UnitOfMeasure
 )
 from apps.masterdata.saledata.models.price import (
-    UnitOfMeasureGroup, Tax, TaxCategory
+    UnitOfMeasureGroup, Tax, TaxCategory, Currency
 )
 from apps.masterdata.saledata.models.accounts import (
     Account, AccountCreditCards, AccountActivity
@@ -32,7 +32,6 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, RolePermission,
 )
 from ..core.mailer.models import MailTemplateSystem
-from ..eoffice.assettools.models import AssetToolsProvideProduct
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
@@ -1328,6 +1327,171 @@ class SubScripts:
         print('Done :))')
         return True
 
+    @classmethod
+    def update_master_data_multi_reference(cls, tenant_code):
+        for company_obj in Company.objects.filter(tenant__code=tenant_code):
+            tenant_obj = company_obj.tenant
+            UnitOfMeasureGroup.objects.filter(tenant=tenant_obj, company=company_obj).delete()
+            UnitOfMeasure.objects.filter(tenant=tenant_obj, company=company_obj).delete()
+
+            UoM_Group_data = [
+                {'code': 'ImportGroup', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
+                {'code': 'Labor', 'title': 'Nhân công', 'is_default': 1},
+                {'code': 'Size', 'title': 'Kích thước', 'is_default': 1},
+                {'code': 'Time', 'title': 'Thời gian', 'is_default': 1},
+                {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
+            ]
+            objs = [
+                UnitOfMeasureGroup(tenant=tenant_obj, company=company_obj, **uom_group_item)
+                for uom_group_item in UoM_Group_data
+            ]
+            UnitOfMeasureGroup.objects.bulk_create(objs)
+
+            unit_group = UnitOfMeasureGroup.objects.filter(
+                tenant=tenant_obj, company=company_obj, code='Unit', is_default=1
+            ).first()
+            if unit_group:
+                referenced_unit_obj = UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='UOM001',
+                    title='Cái',
+                    is_referenced_unit=1,
+                    ratio=1,
+                    rounding=4,
+                    is_default=1,
+                    group=unit_group
+                )
+                UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='UOM002',
+                    title='Con',
+                    is_referenced_unit=0,
+                    ratio=1,
+                    rounding=4,
+                    is_default=1,
+                    group=unit_group
+                )
+                UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='UOM003',
+                    title='Thanh',
+                    is_referenced_unit=0,
+                    ratio=1,
+                    rounding=4,
+                    is_default=1,
+                    group=unit_group
+                )
+                UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='UOM004',
+                    title='Lần',
+                    is_referenced_unit=0,
+                    ratio=1,
+                    rounding=4,
+                    is_default=1,
+                    group=unit_group
+                )
+                UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='UOM005',
+                    title='Gói',
+                    is_referenced_unit=0,
+                    ratio=1,
+                    rounding=4,
+                    is_default=1,
+                    group=unit_group
+                )
+                unit_group.uom_reference = referenced_unit_obj
+                unit_group.save(update_fields=['uom_reference'])
+
+            # add default uom for group time
+            labor_group = UnitOfMeasureGroup.objects.filter(
+                tenant=tenant_obj, company=company_obj, code='Labor', is_default=1
+            ).first()
+            if labor_group:
+                referenced_unit_obj = UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='Manhour',
+                    title='Manhour',
+                    is_referenced_unit=1,
+                    ratio=1,
+                    rounding=4,
+                    is_default=1,
+                    group=labor_group
+                )
+                UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='Manday',
+                    title='Manday',
+                    is_referenced_unit=0,
+                    ratio=8,
+                    rounding=4,
+                    is_default=1,
+                    group=labor_group
+                )
+                UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='Manmonth',
+                    title='Manmonth',
+                    is_referenced_unit=0,
+                    ratio=176,
+                    rounding=4,
+                    is_default=1,
+                    group=labor_group
+                )
+                labor_group.uom_reference = referenced_unit_obj
+                labor_group.save(update_fields=['uom_reference'])
+        print('Done :))')
+        return True
+
+    @classmethod
+    def update_currency_default(cls):
+        for company in Company.objects.all():
+            print(company.title)
+            Currency.objects.filter(
+                company=company, abbreviation__in=['VND', 'USD', 'EUR', 'JPY']
+            ).update(is_default=True)
+        print('Done :))')
+        return True
+
+    @classmethod
+    def update_currency_in_period(cls):
+        for period in Periods.objects.all():
+            print(period.company.title)
+            vnd = Currency.objects.get(company=period.company, abbreviation='VND')
+            period.currency_mapped = vnd
+            period.save(update_fields=['currency_mapped'])
+            period.company.company_config.master_data_currency = vnd
+            period.company.company_config.currency = vnd.currency
+            period.company.company_config.save(update_fields=['master_data_currency', 'currency'])
+        print('Done :))')
+        return True
+
+    @classmethod
+    def force_update_primary_currency(cls, company_id, abbreviation='VND'):
+        """ Hàm hỗ trợ cập nhập primary_currency (khi đã kiểm tra dữ liệu) """
+        company_obj = Company.objects.get(id=company_id)
+        primary_currency_obj = Currency.objects.get(company=company_obj, abbreviation=abbreviation)
+
+        company_obj.company_config.master_data_currency = primary_currency_obj
+        company_obj.company_config.currency = primary_currency_obj.currency
+        company_obj.company_config.save(update_fields=['master_data_currency', 'currency'])
+
+        this_period = Periods.get_current_period(company_obj.tenant_id, company_obj.id)
+        if this_period:
+            this_period.currency_mapped = primary_currency_obj
+            this_period.save(update_fields=['currency_mapped'])
+        print('Done :))')
+        return True
+
 
 def reset_run_indicator_fields(kwargs):
     for sale_order in SaleOrder.objects.filter(**kwargs):
@@ -1543,12 +1707,6 @@ def make_sure_lease_order_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).lease_order_config()
     print('Make sure lease order config is done!')
-
-
-def clear_old_data_asset():
-    # script chạy 1 lần
-    AssetToolsProvideProduct.objects.all().update(product=None)
-    print('update reset table is DONE !')
 
 
 def update_bid_doctype_for_HongQuang():

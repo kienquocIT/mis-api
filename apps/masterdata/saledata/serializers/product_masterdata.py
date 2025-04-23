@@ -61,27 +61,17 @@ class ProductTypeDetailSerializer(serializers.ModelSerializer):
 
 
 class ProductTypeUpdateSerializer(serializers.ModelSerializer):
-    code = serializers.CharField(max_length=100)
     title = serializers.CharField(max_length=100)
 
     class Meta:
         model = ProductType
-        fields = ('code', 'title', 'description')
+        fields = ('title', 'description')
 
     @classmethod
     def validate_title(cls, value):
         if value:
             return value
         raise serializers.ValidationError({"title": ProductMsg.TITLE_NOT_NULL})
-
-    def validate_code(self, value):
-        if ProductType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value
-        ).exclude(id=self.instance.id).exists():
-            raise serializers.ValidationError(ProductMsg.CODE_EXIST)
-        return value
 
 # Product Category
 class ProductCategoryListSerializer(serializers.ModelSerializer):  # noqa
@@ -122,25 +112,16 @@ class ProductCategoryDetailSerializer(serializers.ModelSerializer):
 
 class ProductCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
     title = serializers.CharField(max_length=100)
-    code = serializers.CharField(max_length=100)
+
     class Meta:
         model = ProductCategory
-        fields = ('code', 'title', 'description')
+        fields = ('title', 'description')
 
     @classmethod
     def validate_title(cls, value):
         if value:
             return value
         raise serializers.ValidationError({"title": ProductMsg.TITLE_NOT_NULL})
-
-    def validate_code(self, value):
-        if ProductCategory.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value
-        ).exclude(id=self.instance.id).exists():
-            raise serializers.ValidationError(ProductMsg.CODE_EXIST)
-        return value
 
 
 # Unit Of Measure Group
@@ -225,22 +206,13 @@ class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UnitOfMeasureGroup
-        fields = ('title', 'code', 'uom_reference')
+        fields = ('title', 'uom_reference')
 
     @classmethod
     def validate_title(cls, value):
         if value:
             return value
         raise serializers.ValidationError({"title": ProductMsg.TITLE_NOT_NULL})
-
-    def validate_code(self, value):
-        if UnitOfMeasureGroup.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value
-        ).exclude(id=self.instance.id).exists():
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_CODE_EXIST)
-        return value
 
     @classmethod
     def validate_uom_reference(cls, value):
@@ -281,6 +253,7 @@ class UnitOfMeasureListSerializer(serializers.ModelSerializer):
     def get_group(cls, obj):
         return {
             'id': obj.group_id,
+            'code': obj.group.code,
             'title': obj.group.title,
             'is_referenced_unit': obj.is_referenced_unit
         } if obj.group else {}
@@ -320,7 +293,7 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
 
     def validate(self, validate_data):
-        if validate_data['group'].code == 'Import':
+        if validate_data['group'].code == 'ImportGroup':
             raise serializers.ValidationError({'group': ProductMsg.CAN_NOT_CREATE_UOM_FOR_IMPORT_GROUP})
 
         has_referenced_unit = UnitOfMeasure.objects.filter_current(
@@ -370,16 +343,7 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UnitOfMeasure
-        fields = ('code', 'title', 'group', 'ratio', 'rounding')
-
-    def validate_code(self, value):
-        if UnitOfMeasure.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value
-        ).exclude(id=self.instance.id).exists():
-            raise serializers.ValidationError(ProductMsg.CODE_EXIST)
-        return value
+        fields = ('title', 'group', 'ratio', 'rounding')
 
     @classmethod
     def validate_title(cls, value):
@@ -485,22 +449,13 @@ class ManufacturerDetailSerializer(serializers.ModelSerializer):
 
 class ManufacturerUpdateSerializer(serializers.ModelSerializer):  # noqa
     title = serializers.CharField(max_length=100)
-    code = serializers.CharField(max_length=100)
+
     class Meta:
         model = Manufacturer
-        fields = ('code', 'title', 'description')
+        fields = ('title', 'description')
 
     @classmethod
     def validate_title(cls, value):
         if value:
             return value
         raise serializers.ValidationError({"title": ProductMsg.TITLE_NOT_NULL})
-
-    def validate_code(self, value):
-        if Manufacturer.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value
-        ).exclude(id=self.instance.id).exists():
-            raise serializers.ValidationError(ProductMsg.CODE_EXIST)
-        return value

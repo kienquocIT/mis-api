@@ -654,7 +654,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'description',
             'part_number',
             'product_choice',
-            'general_product_category', 'general_uom_group', 'general_manufacturer', 'standard_price',
+            'general_product_category', 'general_uom_group', 'general_manufacturer', 'general_traceability_method',
+            'standard_price',
             'width', 'height', 'length', 'volume', 'weight',
             'sale_default_uom', 'sale_tax', 'online_price_list', 'available_notify', 'available_notify_quantity',
             'inventory_uom', 'inventory_level_min', 'inventory_level_max',
@@ -737,12 +738,12 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             validate_data.get('weight'), 'weight', ProductMsg.WGT_IS_WRONG
         )
         instance = self.instance
-        # kiểm tra trước khi cho phép thay đổi Product Type
-
         being_used = CommonCreateUpdateProduct.check_being_used_product(instance)
-
+        # kiểm tra trước khi cho phép thay đổi Product Type
         if sorted(self.initial_data.get('product_types_mapped_list', [])) != sorted(
-                instance.product_product_types.values_list('id', flat=True)) and being_used:
+                [str(prd_type_id) for prd_type_id in instance.product_product_types.values_list(
+                    'product_type_id', flat=True
+                )]) and being_used:
             raise serializers.ValidationError(
                 {'product_types_mapped_list': _('This product is being used. Can not update product type.')}
             )
@@ -750,6 +751,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         if str(validate_data.get('general_uom_group').id) != str(instance.general_uom_group_id) and being_used:
             raise serializers.ValidationError(
                 {'general_uom_group': _('This product is being used. Can not update general uom group.')}
+            )
+        # kiểm tra trước khi cho phép thay đổi PP truy xuất
+        if validate_data.get('general_traceability_method') != instance.general_traceability_method and being_used:
+            raise serializers.ValidationError(
+                {'general_traceability_method': _('This product is being used. Can not update traceability method.')}
             )
         # kiểm tra trước khi cho phép thay đổi PP tính giá hàng tồn kho
         old_valuation_mtd = instance.valuation_method

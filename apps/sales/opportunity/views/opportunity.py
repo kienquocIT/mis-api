@@ -125,14 +125,12 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         if all(['convert_opp' in request.data, 'lead_id' in request.data]):
             # create a new Opp with selected Customer
-            lead = Lead.objects.filter(id=request.data['lead_id']).first()
+            lead = Lead.objects.filter_on_company(id=request.data.get('lead_id')).first()
             if lead:
                 request.data['title'] = f'Opportunity from {lead.code}'
                 request.data['customer'] = request.data.get('account_mapped')
                 request.data['employee_inherit_id'] = request.data.get('employee_inherit_id')
-
                 self.ser_context = {'lead': lead}
-        self.ser_context = {'employee_current': request.user.employee_current}
         return self.create(request, *args, **kwargs)
 
 

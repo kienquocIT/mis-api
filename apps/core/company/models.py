@@ -190,7 +190,14 @@ class CompanyConfig(SimpleAbstractModel):
     currency = models.ForeignKey(
         'base.Currency',
         on_delete=models.CASCADE,
-        verbose_name='Currency was used by Company',
+        null=True,
+        verbose_name='Base currency was used by Company',
+    )
+    master_data_currency = models.ForeignKey(
+        'saledata.Currency',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Master data currency',
     )
     currency_rule = models.JSONField(
         default=dict,

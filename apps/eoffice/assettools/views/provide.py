@@ -103,7 +103,7 @@ class AssetToolsProductListByProvideIDList(BaseListMixin):
     }
 
     def get_queryset(self):
-        return super().get_queryset().select_related('product')
+        return super().get_queryset().select_related('prod_in_tools')
 
     @swagger_auto_schema(
         operation_summary="Asset, Tools Provide request list",

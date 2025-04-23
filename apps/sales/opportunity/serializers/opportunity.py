@@ -9,7 +9,7 @@ from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeas
 from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
-from apps.sales.lead.models import LeadStage, LeadHint, LeadChartInformation, LeadOpportunity
+from apps.sales.lead.models import LeadStage, LeadHint, LeadChartInformation, LeadOpportunity, LeadParser
 from apps.sales.opportunity.models import (
     Opportunity, OpportunityProductCategory, OpportunityProduct,
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember,
@@ -277,37 +277,56 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             validate_data['win_rate'] = init_stage.win_rate
         else:
             raise serializers.ValidationError({'stage': _('Can not found the init Stage')})
+        if 'lead' in self.context:
+            lead_obj = self.context.get('lead')
+            if not lead_obj:
+                raise serializers.ValidationError({'lead': _('Lead not found.')})
+            validate_data['lead'] = lead_obj
+            lead_config = lead_obj.lead_configs.first()
+            if not lead_config:
+                raise serializers.ValidationError({'lead_config': _('Lead config not found.')})
+            validate_data['lead_config'] = lead_config
+            if lead_config.convert_opp:
+                raise serializers.ValidationError({'converted': _('Already converted to opportunity.')})
         return validate_data
 
     @classmethod
-    def convert_opportunity(cls, lead, tenant_id, company_id, opp_mapped, account_mapped):
+    def convert_opportunity(cls, lead_obj, lead_config, opp_mapped_obj):
         # convert to a new opp (existed account)
-        lead_configs = lead.lead_configs.first() if lead else None
-        if lead_configs:
-            if not lead_configs.convert_opp:
-                current_stage = LeadStage.objects.filter(
-                    tenant_id=tenant_id, company_id=company_id, level=4
-                ).first()
-                lead.current_lead_stage = current_stage
-                lead.lead_status = 4
-                lead.save(update_fields=['current_lead_stage', 'lead_status'])
-                lead_configs.opp_mapped = opp_mapped
-                lead_configs.account_mapped = account_mapped
-                lead_configs.convert_opp = True
-                lead_configs.assign_to_sale_config = opp_mapped.employee_inherit
-                lead_configs.save(update_fields=[
-                    'opp_mapped', 'account_mapped', 'convert_opp', 'assign_to_sale_config'
-                ])
-                LeadOpportunity.objects.create(
-                    company=lead.company, tenant=lead.tenant,
-                    lead=lead, opportunity=lead_configs.opp_mapped,
-                    employee_created=lead.employee_created,
-                    employee_inherit=lead.employee_inherit
-                )
-                LeadChartInformation.create_update_chart_information(tenant_id, company_id)
-                return True
-            raise serializers.ValidationError({'converted': 'Converted to opp.'})
-        raise serializers.ValidationError({'not found': 'Lead config not found.'})
+        current_stage = LeadStage.objects.filter_on_company(level=4).first()
+        lead_obj.current_lead_stage = current_stage
+        lead_obj.current_lead_stage_data = LeadParser.parse_data(current_stage, 'lead_stage')
+        lead_obj.lead_status = 4
+        lead_obj.save(update_fields=['current_lead_stage', 'current_lead_stage_data', 'lead_status'])
+
+        lead_config.opp_mapped = opp_mapped_obj
+        lead_config.opp_mapped_data = LeadParser.parse_data(opp_mapped_obj, 'opportunity')
+        lead_config.account_mapped = opp_mapped_obj.customer
+        lead_config.account_mapped_data = LeadParser.parse_data(opp_mapped_obj.customer, 'account')
+        lead_config.assign_to_sale_config = opp_mapped_obj.employee_inherit
+        lead_config.assign_to_sale_config_data = LeadParser.parse_data(
+            opp_mapped_obj.employee_inherit, 'assign_to_sale'
+        )
+        lead_config.convert_opp = True
+        lead_config.convert_opp_create = True
+        lead_config.save(update_fields=[
+            'opp_mapped', 'opp_mapped_data',
+            'account_mapped', 'account_mapped_data',
+            'assign_to_sale_config', 'assign_to_sale_config_data',
+            'convert_opp', 'convert_opp_create'
+        ])
+
+        LeadOpportunity.objects.create(
+            company=lead_obj.company,
+            tenant=lead_obj.tenant,
+            lead=lead_obj,
+            lead_data=LeadParser.parse_data(lead_obj, 'lead_mapped_opp'),
+            opportunity=opp_mapped_obj,
+            employee_created=lead_obj.employee_created,
+            employee_inherit=lead_obj.employee_inherit
+        )
+        LeadChartInformation.create_update_chart_information(opp_mapped_obj.tenant_id, opp_mapped_obj.company_id)
+        return True
 
     def create(self, validated_data):
         # handle process
@@ -331,14 +350,25 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             }
         ]
 
-        opportunity = Opportunity.objects.create(
-            **validated_data,
-            opportunity_sale_team_datas=sale_team_data,
-            open_date=datetime.datetime.now(),
-            system_status=1
-        )
+        if 'lead' in self.context:
+            lead_obj = validated_data.pop('lead')
+            lead_config = validated_data.pop('lead_config')
+            opportunity = Opportunity.objects.create(
+                **validated_data,
+                opportunity_sale_team_datas=sale_team_data,
+                open_date=datetime.datetime.now(),
+                system_status=1
+            )
+            self.convert_opportunity(lead_obj, lead_config, opportunity)
+        else:
+            opportunity = Opportunity.objects.create(
+                **validated_data,
+                opportunity_sale_team_datas=sale_team_data,
+                open_date=datetime.datetime.now(),
+                system_status=1
+            )
 
-        if Opportunity.objects.filter_current(fill__tenant=True, fill__company=True, code=opportunity.code).count() > 1:
+        if Opportunity.objects.filter_on_company(code=opportunity.code).count() > 1:
             raise serializers.ValidationError({'detail': HRMsg.INVALID_SCHEMA})
 
         # create M2M Opportunity and Product Category
@@ -375,15 +405,6 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
                 code=opportunity.code,
                 date_activity=opportunity.date_created,
                 revenue=None,
-            )
-
-        if 'lead' in self.context:
-            self.convert_opportunity(
-                self.context.get('lead'),
-                validated_data['tenant_id'],
-                validated_data['company_id'],
-                opportunity,
-                opportunity.customer
             )
 
         # handle process after create opp
