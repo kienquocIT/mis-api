@@ -41,7 +41,6 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             response1.data['result'],
             [
                 'id',
-                'free_input',
                 'title',
                 'code',
                 'method',
@@ -138,7 +137,6 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             response.data['result'],
             [
                 'id',
-                'free_input',
                 'title',
                 'code',
                 'method',
@@ -467,6 +465,7 @@ class PaymentTestCase(AdvanceTestCase):
             response1.data['result'],
             [
                 'id',
+                'free_input',
                 'title',
                 'code',
                 'method',
@@ -568,6 +567,7 @@ class PaymentTestCase(AdvanceTestCase):
             [
                 'id',
                 'code',
+                'free_input',
                 'title',
                 'sale_code_type',
                 'supplier',
@@ -611,6 +611,7 @@ class PaymentTestCase(AdvanceTestCase):
             response.data['result'],
             [
                 'id',
+                'free_input',
                 'title',
                 'code',
                 'method',
