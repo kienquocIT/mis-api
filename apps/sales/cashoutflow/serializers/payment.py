@@ -159,6 +159,7 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
             'process',
             'process_stage_app',
             #
+            'free_input',
             'title',
             'opportunity_id',
             'quotation_mapped_id',
@@ -250,6 +251,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
         model = Payment
         fields = (
             'id',
+            'free_input',
             'title',
             'code',
             'method',
@@ -477,6 +479,7 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
     class Meta:
         model = Payment
         fields = (
+            'free_input',
             'title',
             'supplier_id',
             'is_internal_payment',

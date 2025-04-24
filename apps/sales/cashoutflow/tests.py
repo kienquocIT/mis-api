@@ -41,6 +41,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             response1.data['result'],
             [
                 'id',
+                'free_input',
                 'title',
                 'code',
                 'method',
@@ -137,6 +138,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             response.data['result'],
             [
                 'id',
+                'free_input',
                 'title',
                 'code',
                 'method',

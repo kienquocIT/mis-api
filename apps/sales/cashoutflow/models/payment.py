@@ -77,6 +77,7 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
     payment_value = models.FloatField(default=0)
     payment_value_by_words = models.CharField(max_length=500, default='', blank=True)
     sale_code = models.CharField(max_length=100, null=True)
+    free_input = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Payment'
