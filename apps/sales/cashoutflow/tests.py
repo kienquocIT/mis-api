@@ -567,7 +567,6 @@ class PaymentTestCase(AdvanceTestCase):
             [
                 'id',
                 'code',
-                'free_input',
                 'title',
                 'sale_code_type',
                 'supplier',
