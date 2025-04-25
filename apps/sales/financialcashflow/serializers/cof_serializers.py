@@ -42,7 +42,7 @@ class CashOutflowListSerializer(AbstractListSerializerModel):
 class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     cof_type = serializers.IntegerField()
-    supplier = serializers.UUIDField()
+    supplier_id = serializers.UUIDField()
     posting_date = serializers.DateTimeField()
     document_date = serializers.DateTimeField()
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -83,7 +83,7 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'cof_type',
-            'supplier',
+            'supplier_id',
             'posting_date',
             'document_date',
             'description',
@@ -98,7 +98,7 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
 
     def validate(self, validate_data):
         CashOutflowCommonFunction.validate_cof_type(validate_data)
-        CashOutflowCommonFunction.validate_supplier(validate_data)
+        CashOutflowCommonFunction.validate_supplier_id(validate_data)
         if validate_data.get('cof_type') == 0:
             validate_data['total_value'] = float(validate_data.get('advance_for_supplier_value', 0))
         if validate_data.get('cof_type') == 2:
@@ -189,7 +189,7 @@ class CashOutflowDetailSerializer(AbstractDetailSerializerModel):
 
 class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
-    supplier = serializers.UUIDField()
+    supplier_id = serializers.UUIDField()
     posting_date = serializers.DateTimeField()
     document_date = serializers.DateTimeField()
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -202,7 +202,7 @@ class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'cof_type',
-            'supplier',
+            'supplier_id',
             'posting_date',
             'document_date',
             'description',
@@ -249,25 +249,25 @@ class CashOutflowCommonFunction:
         return validate_data
 
     @classmethod
-    def validate_supplier(cls, validate_data):
-        if 'supplier' in validate_data:
-            if validate_data.get('supplier'):
+    def validate_supplier_id(cls, validate_data):
+        if 'supplier_id' in validate_data:
+            if validate_data.get('supplier_id'):
                 try:
-                    supplier = Account.objects.get(id=validate_data.get('supplier'))
+                    supplier = Account.objects.get(id=validate_data.get('supplier_id'))
                     if not supplier.is_supplier_account:
-                        raise serializers.ValidationError({'supplier': CashOutflowMsg.ACCOUNT_NOT_SUPPLIER})
-                    validate_data['supplier'] = str(supplier.id)
+                        raise serializers.ValidationError({'supplier_id': CashOutflowMsg.ACCOUNT_NOT_SUPPLIER})
+                    validate_data['supplier_id'] = str(supplier.id)
                     validate_data['supplier_data'] = {
                         'id': str(supplier.id),
                         'code': supplier.code,
                         'name': supplier.name,
                         'tax_code': supplier.tax_code,
                     }
-                    print('2. validate_supplier --- ok')
+                    print('2. validate_supplier_id --- ok')
                     return validate_data
                 except Account.DoesNotExist:
-                    raise serializers.ValidationError({'supplier': CashOutflowMsg.SUPPLIER_NOT_EXIST})
-        raise serializers.ValidationError({'supplier': CashOutflowMsg.SUPPLIER_NOT_NULL})
+                    raise serializers.ValidationError({'supplier_id': CashOutflowMsg.SUPPLIER_NOT_EXIST})
+        raise serializers.ValidationError({'supplier_id': CashOutflowMsg.SUPPLIER_NOT_NULL})
 
     @staticmethod
     def common_valid_cash_out_ap_invoice_data(item):

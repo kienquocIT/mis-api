@@ -321,6 +321,7 @@ class GoodsReceipt(DataAbstractModel):
                         ).first()
                         item.lot = lot_obj
                         item.save(update_fields=['lot'])
+
                     self.push_goods_receipt_data_to_goods_detail(self)
                     IRForGoodsReceiptHandler.push_to_inventory_report(self)
 

@@ -495,15 +495,15 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             obj.save()
             schema_item_list = [
                 str(obj.latest_number).zfill(obj.min_number_char) if obj.min_number_char else str(obj.latest_number),
-                current_year % 100,
-                current_year,
-                calendar.month_name[current_month][0:3],
-                calendar.month_name[current_month],
-                current_month,
-                data_calendar[1],
-                datetime.date.today().timetuple().tm_yday,
-                datetime.date.today().day,
-                data_calendar[2]
+                str(current_year % 100),
+                str(current_year),
+                str(calendar.month_name[current_month][0:3]),
+                str(calendar.month_name[current_month]),
+                str(current_month).zfill(2),
+                str(data_calendar[1]).zfill(2),
+                str(datetime.date.today().timetuple().tm_yday).zfill(3),
+                str(datetime.date.today().day).zfill(2),
+                str(data_calendar[2])
             ]
             for match in re.findall(r"\[.*?\]", result):
                 result = result.replace(match, str(schema_item_list[int(match[1:-1])]))

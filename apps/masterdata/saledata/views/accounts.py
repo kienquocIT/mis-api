@@ -7,7 +7,8 @@ from apps.masterdata.saledata.models.accounts import (
 )
 from apps.masterdata.saledata.serializers.accounts import (
     AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer, AccountUpdateSerializer,
-    AccountsMapEmployeesListSerializer, AccountForSaleListSerializer, CustomerListSerializer, SupplierListSerializer,
+    AccountsMapEmployeesListSerializer, AccountForSaleListSerializer,
+    CustomerListSimpleSerializer, SupplierListSimpleSerializer,
 )
 from apps.masterdata.saledata.serializers.accounts_masterdata import (
     AccountTypeListSerializer, AccountTypeCreateSerializer, AccountTypeDetailsSerializer, AccountTypeUpdateSerializer,
@@ -233,11 +234,13 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
 
 class CustomerList(BaseListMixin):  # noqa
     queryset = Account.objects
-    serializer_list = CustomerListSerializer
+    serializer_list = CustomerListSimpleSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     search_fields = ['name', 'code', 'tax_code']
 
     def get_queryset(self):
+        if self.request.query_params.dict().get('full_info', None):
+            self.serializer_list = AccountListSerializer
         return super().get_queryset().filter(is_customer_account=True).select_related().prefetch_related()
 
     @swagger_auto_schema(
@@ -254,11 +257,13 @@ class CustomerList(BaseListMixin):  # noqa
 
 class SupplierList(BaseListMixin):  # noqa
     queryset = Account.objects
-    serializer_list = SupplierListSerializer
+    serializer_list = SupplierListSimpleSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     search_fields = ['name', 'code', 'tax_code']
 
     def get_queryset(self):
+        if self.request.query_params.dict().get('full_info', None):
+            self.serializer_list = AccountListSerializer
         return super().get_queryset().filter(is_supplier_account=True).select_related().prefetch_related()
 
     @swagger_auto_schema(

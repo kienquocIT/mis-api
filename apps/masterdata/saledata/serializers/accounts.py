@@ -663,7 +663,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
-class CustomerListSerializer(serializers.ModelSerializer):
+class CustomerListSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = (
@@ -674,7 +674,7 @@ class CustomerListSerializer(serializers.ModelSerializer):
         )
 
 
-class SupplierListSerializer(serializers.ModelSerializer):
+class SupplierListSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = (

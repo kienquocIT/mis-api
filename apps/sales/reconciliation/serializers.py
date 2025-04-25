@@ -93,7 +93,8 @@ class ReconDetailSerializer(serializers.ModelSerializer):
             'posting_date',
             'document_date',
             'business_partner_data',
-            'recon_items_data'
+            'recon_items_data',
+            'system_status'
         )
 
     @classmethod
