@@ -32,6 +32,7 @@ urlpatterns = [
     path('api/', include('apps.sales.urls')),
     path('api/', include('apps.accounting.urls')),
     path('api/', include('apps.eoffice.urls')),
+    path('api/', include('apps.kms.urls')),
     path('api/hrm/', include('apps.hrm.urls')),
     path('django-admin/', my_admin_site.urls),
 ]
