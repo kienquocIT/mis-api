@@ -1280,10 +1280,10 @@ def append_permission_viewer_runtime(sender, instance, created, **kwargs):
                     doc_id=str(doc_id),
                     tenant_id=instance.runtime.tenant_id,
                 )
-                # check if assignee has zones => append perm edit on doc_id
+                # check if assignee has zones or edit all zones => append perm edit on doc_id
                 if emp.all_runtime_assignee_of_employee.filter(
-                        ~Q(zone_and_properties={}) & ~Q(zone_and_properties=[]),
-                        stage__runtime=runtime,
+                        (~Q(zone_and_properties={}) & ~Q(zone_and_properties=[])) | Q(is_edit_all_zone=True),
+                        stage__runtime=runtime
                 ).exists():
                     emp.append_permit_by_ids(
                         app_label=app_obj.app_label,
