@@ -14,6 +14,7 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
             'je_transaction_data',
             'original_transaction',
             'date_created',
+            'system_status',
             'system_auto_create'
         )
 
@@ -48,7 +49,9 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
             'je_posting_date',
             'je_document_date',
             'original_transaction',
-            'je_items'
+            'je_items',
+            'system_status',
+            'system_auto_create'
         )
 
     @classmethod
