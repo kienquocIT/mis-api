@@ -1,13 +1,12 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.core.hr.mixins import HRDestroyMixin
 from apps.core.hr.models import GroupLevel, Group
 from apps.core.hr.serializers.group_serializers import (
     GroupLevelListSerializer,
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer,
     GroupUpdateSerializer, GroupDetailSerializer, GroupParentListSerializer, GroupLevelCreateSerializer,
 )
-from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, mask_view
+from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, mask_view, BaseDestroyMixin
 
 
 # Group Level
@@ -138,7 +137,7 @@ class GroupList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class GroupDetail(BaseRetrieveMixin, BaseUpdateMixin, HRDestroyMixin):
+class GroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = Group.objects
     serializer_detail = GroupDetailSerializer
     serializer_update = GroupUpdateSerializer
