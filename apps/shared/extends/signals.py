@@ -29,6 +29,7 @@ from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumb
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency, UnitOfMeasure,
     DocumentType, FixedAssetClassificationGroup, FixedAssetClassification, Tax, Salutation, Industry, AccountGroup,
+    Account,
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import (
@@ -1530,3 +1531,24 @@ def project_work_event_destroy(sender, instance, **kwargs):
         }
     )
     print('re calculator rate is Done')
+
+
+@receiver(post_save, sender=Account)
+def append_permission_managers_account(sender, instance, created, **kwargs):
+    # Get managers of account and sync perm view & edit on this account ID
+    employees = Employee.objects.filter_on_company(id__in=[manager.get('id') for manager in instance.manager])
+    for employee in employees:
+        employee.append_permit_by_ids(
+            app_label="saledata",
+            model_code="account",
+            perm_code='view',
+            doc_id=str(instance.id),
+            tenant_id=instance.tenant_id,
+        )
+        employee.append_permit_by_ids(
+            app_label="saledata",
+            model_code="account",
+            perm_code='edit',
+            doc_id=str(instance.id),
+            tenant_id=instance.tenant_id,
+        )
