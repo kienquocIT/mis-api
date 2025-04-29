@@ -321,6 +321,14 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
     def create(self, validated_data):
         quotation = Quotation.objects.create(**validated_data)
         QuotationCommonCreate().create_quotation_sub_models(validated_data=validated_data, instance=quotation)
+
+        # Check instance is change document => set is_change True for root
+        if quotation.is_change is True and quotation.document_root_id:
+            document_root = Quotation.objects.filter_on_company(id=quotation.document_root_id).first()
+            if document_root:
+                document_root.is_change = True
+                document_root.save(update_fields=['is_change'])
+
         if quotation.process:
             ProcessRuntimeControl(process_obj=quotation.process).register_doc(
                 process_stage_app_obj=quotation.process_stage_app,
