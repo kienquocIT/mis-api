@@ -369,6 +369,13 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
         sale_order = SaleOrder.objects.create(**validated_data)
         SaleOrderCommonCreate().create_sale_order_sub_models(validated_data=validated_data, instance=sale_order)
 
+        # Check instance is change document => set is_change True for root
+        if sale_order.is_change is True and sale_order.document_root_id:
+            document_root = SaleOrder.objects.filter_on_company(id=sale_order.document_root_id).first()
+            if document_root:
+                document_root.is_change = True
+                document_root.save(update_fields=['is_change'])
+
         if sale_order.process:
             ProcessRuntimeControl(process_obj=sale_order.process).register_doc(
                 process_stage_app_obj=sale_order.process_stage_app,

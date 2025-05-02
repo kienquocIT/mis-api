@@ -29,6 +29,7 @@ from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumb
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency, UnitOfMeasure,
     DocumentType, FixedAssetClassificationGroup, FixedAssetClassification, Tax, Salutation, Industry, AccountGroup,
+    Account,
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import (
@@ -1280,10 +1281,10 @@ def append_permission_viewer_runtime(sender, instance, created, **kwargs):
                     doc_id=str(doc_id),
                     tenant_id=instance.runtime.tenant_id,
                 )
-                # check if assignee has zones => append perm edit on doc_id
+                # check if assignee has zones or edit all zones => append perm edit on doc_id
                 if emp.all_runtime_assignee_of_employee.filter(
-                        ~Q(zone_and_properties={}) & ~Q(zone_and_properties=[]),
-                        stage__runtime=runtime,
+                        (~Q(zone_and_properties={}) & ~Q(zone_and_properties=[])) | Q(is_edit_all_zone=True),
+                        stage__runtime=runtime
                 ).exists():
                     emp.append_permit_by_ids(
                         app_label=app_obj.app_label,
@@ -1533,3 +1534,24 @@ def project_work_event_destroy(sender, instance, **kwargs):
         }
     )
     print('re calculator rate is Done')
+
+
+@receiver(post_save, sender=Account)
+def append_permission_managers_account(sender, instance, created, **kwargs):
+    # Get managers of account and sync perm view & edit on this account ID
+    employees = Employee.objects.filter_on_company(id__in=[manager.get('id') for manager in instance.manager])
+    for employee in employees:
+        employee.append_permit_by_ids(
+            app_label="saledata",
+            model_code="account",
+            perm_code='view',
+            doc_id=str(instance.id),
+            tenant_id=instance.tenant_id,
+        )
+        employee.append_permit_by_ids(
+            app_label="saledata",
+            model_code="account",
+            perm_code='edit',
+            doc_id=str(instance.id),
+            tenant_id=instance.tenant_id,
+        )

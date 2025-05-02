@@ -145,7 +145,7 @@ CONTACT_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {
-                    "view": "4",
+                    "view": "==",
                 },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {
                     "view": "==",
@@ -159,7 +159,7 @@ CONTACT_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {
-                    "view": "4",
+                    "view": "==",
                 },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {
                     "view": "==",
@@ -203,7 +203,7 @@ ACCOUNT_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {
-                    "view": "4",
+                    "view": "==",
                 },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {
                     "view": "==",
@@ -217,7 +217,7 @@ ACCOUNT_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {
-                    "view": "4",
+                    "view": "==",
                 },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {
                     "view": "==",
@@ -261,7 +261,7 @@ OPPORTUNITY_APP_CONFIG = {
         "create": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
@@ -273,7 +273,7 @@ OPPORTUNITY_APP_CONFIG = {
         "edit": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
@@ -316,7 +316,7 @@ TASK_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "4", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -324,7 +324,7 @@ TASK_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "4", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -620,16 +620,16 @@ PROMOTION_APP_CONFIG = {
         "create": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "4", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "4", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -667,7 +667,7 @@ ADVANCE_PAYMENT_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {
-                    "view": "4"
+                    "view": "=="
                 },
                 "a870e392-9ad2-4fe2-9baa-298a38691cf2": {
                     "view": "==",
@@ -693,7 +693,7 @@ ADVANCE_PAYMENT_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {
-                    "view": "4"
+                    "view": "=="
                 },
                 "a870e392-9ad2-4fe2-9baa-298a38691cf2": {
                     "view": "==",
@@ -757,7 +757,7 @@ PAYMENT_APP_CONFIG = {
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
                 "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
             },
             "local_depends_on": {
@@ -771,7 +771,7 @@ PAYMENT_APP_CONFIG = {
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
                 "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
             },
             "local_depends_on": {
@@ -825,7 +825,7 @@ RETURN_ADVANCE_APP_CONFIG = {
             "range": ["1", "4"],
             "app_depends_on": {
                 "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -835,7 +835,7 @@ RETURN_ADVANCE_APP_CONFIG = {
             "range": ["1", "4"],
             "app_depends_on": {
                 "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -1063,7 +1063,7 @@ PURCHASE_QUOTATION_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "4", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "d78bd5f3-8a8d-48a3-ad62-b50d576ce173": {"view": "==", },
                 "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
             },
@@ -1073,7 +1073,7 @@ PURCHASE_QUOTATION_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "4", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "d78bd5f3-8a8d-48a3-ad62-b50d576ce173": {"view": "==", },
                 "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
             },
@@ -1165,7 +1165,7 @@ PURCHASE_REQUEST_APP_CONFIG = {
                 "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
                 "57a32d5a-3580-43b7-bf31-953a1afc68f4": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "4", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
             },
             "local_depends_on": {"view": "==", },
@@ -1176,7 +1176,7 @@ PURCHASE_REQUEST_APP_CONFIG = {
                 "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
                 "57a32d5a-3580-43b7-bf31-953a1afc68f4": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
-                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "4", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
             },
             "local_depends_on": {"view": "==", },

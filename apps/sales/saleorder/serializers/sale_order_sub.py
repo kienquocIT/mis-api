@@ -585,9 +585,9 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
     def validate_warehouse_id(cls, value):
         return SaleOrderCommonValidate().validate_warehouse(value=value)
 
-    @classmethod
-    def validate_product_quantity(cls, value):
-        return SaleOrderValueValidate.validate_quantity(value=value)
+    # @classmethod
+    # def validate_product_quantity(cls, value):
+    #     return SaleOrderValueValidate.validate_quantity(value=value)
 
 
 class SaleOrderExpenseSerializer(serializers.ModelSerializer):
