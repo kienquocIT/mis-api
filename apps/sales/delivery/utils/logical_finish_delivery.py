@@ -506,7 +506,9 @@ class DeliFinishHandler:
                         'delivery_sub_id': instance.id,
                         'product_id': deli_product.product_id,
                         'actual_value': DeliFinishHandler.get_delivery_cost(
-                            deli_product=deli_product, sale_order=instance.order_delivery.sale_order
+                            deli_product=deli_product,
+                            sale_order=instance.order_delivery.sale_order,
+                            lease_order=instance.order_delivery.lease_order,
                         ),
                         'acceptance_affect_by': 3,
                     })
@@ -523,21 +525,28 @@ class DeliFinishHandler:
         return True
 
     @classmethod
-    def get_delivery_cost(cls, deli_product, sale_order):
+    def get_delivery_cost(cls, deli_product, sale_order=None, lease_order=None):
         actual_value = 0
-        if 1 in deli_product.product.product_choice:  # case: product allow inventory
-            for data_deli in deli_product.delivery_data:
-                if all(key in data_deli for key in ('warehouse_id', 'picked_quantity')):
-                    cost = DeliFinishHandler.get_cost_by_warehouse(
-                        product_obj=deli_product.product,
-                        warehouse_id=data_deli.get('warehouse_id', None),
-                        sale_order_id=data_deli.get('sale_order_id', None),
-                    )
-                    actual_value += cost * data_deli['picked_quantity']
-        else:  # case: product not allow inventory
-            so_cost = deli_product.product.sale_order_cost_product.filter(sale_order=sale_order).first()
-            if so_cost:
-                actual_value = so_cost.product_cost_price * deli_product.picked_quantity
+        target_obj = deli_product.product
+        if lease_order:
+            target_obj = deli_product.offset
+        if target_obj:
+            if 1 in target_obj.product_choice:
+                for data_deli in deli_product.delivery_data:
+                    if all(key in data_deli for key in ('warehouse_id', 'picked_quantity')):
+                        cost = DeliFinishHandler.get_cost_by_warehouse(
+                            product_obj=target_obj,
+                            warehouse_id=data_deli.get('warehouse_id', None),
+                            sale_order_id=data_deli.get('sale_order_id', None),
+                        )
+                        actual_value += cost * data_deli['picked_quantity']
+                return actual_value
+        so_cost = deli_product.product.sale_order_cost_product.filter(sale_order=sale_order).first()
+        if so_cost:
+            actual_value = so_cost.product_cost_price * deli_product.picked_quantity
+        lo_cost = deli_product.product.lease_order_cost_product.filter(lease_order=lease_order).first()
+        if lo_cost:
+            actual_value = lo_cost.product_subtotal_price * deli_product.picked_quantity
         return actual_value
 
     @classmethod
