@@ -817,6 +817,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'code',
                 'advance_payment',
                 'date_created',
+                'employee_inherit',
                 'money_received',
                 'system_status',
                 'return_total',
