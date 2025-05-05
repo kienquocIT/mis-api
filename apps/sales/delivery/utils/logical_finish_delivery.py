@@ -253,6 +253,7 @@ class DeliFinishHandler:
                     adjustment_factor=delivery_product.product_depreciation_adjustment,
                     depreciation_start_date=delivery_product.product_depreciation_start_date,
                     depreciation_end_date=delivery_product.product_depreciation_end_date,
+                    depreciation_value=delivery_product.product_depreciation_price * delivery_product.product_quantity,
                     depreciation_data=DeliFinishHandler.update_depreciation_data(
                         depreciation_data=delivery_product.depreciation_data,
                         old_cost=delivery_product.product_cost,
