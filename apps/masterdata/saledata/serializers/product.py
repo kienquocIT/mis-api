@@ -26,7 +26,6 @@ class ProductListSerializer(serializers.ModelSerializer):
         model = Product
         fields = (
             'id', 'code', 'title', 'description',
-            'date_created',
             'product_choice',
             'general_product_types_mapped',
             'general_product_category',
