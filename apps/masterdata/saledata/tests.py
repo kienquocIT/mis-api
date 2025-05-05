@@ -370,6 +370,7 @@ class ProductTestCase(AdvanceTestCase):
                 'code',
                 'title',
                 'description',
+                'date_created',
                 'general_product_types_mapped',
                 'general_product_category',
                 'general_uom_group',
