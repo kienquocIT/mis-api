@@ -35,30 +35,12 @@ APPLICABLE_CIRCULAR_CHOICES = [
     (1, '133/2015/TT-BTC'),
 ]
 
-NUMBERING_BY_CHOICES = [
-    (0, _('System')),
-    (1, _('User defined')),
-]
-
 RESET_FREQUENCY_CHOICES = [
     (0, _('Yearly')),
     (1, _('Monthly')),
     (2, _('Weekly')),
     (3, _('Daily')),
     (4, _('Never')),
-]
-
-FUNCTION_CHOICES = [
-    (0, _('Opportunity')),
-    (1, _('Sale quotation')),
-    (2, _('Sale order')),
-    (3, _('Picking')),
-    (4, _('Delivery')),
-    (5, _('Task')),
-    (6, _('Advance payment')),
-    (7, _('Payment')),
-    (8, _('Return payment')),
-    (9, _('Purchase request')),
 ]
 
 
@@ -437,9 +419,10 @@ class CompanyUserEmployee(SimpleAbstractModel):
 
 
 class CompanyFunctionNumber(SimpleAbstractModel):
+    tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE, null=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_function_number')
-    function = models.SmallIntegerField(choices=FUNCTION_CHOICES)
-    numbering_by = models.SmallIntegerField(choices=NUMBERING_BY_CHOICES, default=0)
+    app_code = models.CharField(max_length=150, blank=True, null=True, help_text='App code')
+    app_title = models.CharField(max_length=150, blank=True, null=True, help_text='App title')
     schema = models.CharField(max_length=500, null=True)
     schema_text = models.CharField(max_length=500, null=True)
     first_number = models.IntegerField(null=True)
@@ -467,8 +450,8 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         raise RuntimeError('[CompanyFunctionNumber.reset_frequency] Find Field Map returned null.')
 
     @classmethod
-    def gen_code(cls, company_obj, func):
-        obj = cls.objects.filter(company=company_obj, function=func).first()
+    def gen_auto_code(cls, app_code):
+        obj = cls.objects.filter_on_company(app_code=app_code).first()
         if obj and obj.schema is not None:
             result = obj.schema
 

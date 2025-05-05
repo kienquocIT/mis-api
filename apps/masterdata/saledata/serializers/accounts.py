@@ -23,6 +23,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     revenue_information = serializers.SerializerMethodField()
     billing_address = serializers.SerializerMethodField()
     industry = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -41,7 +42,9 @@ class AccountListSerializer(serializers.ModelSerializer):
             'bank_accounts_mapped',
             'revenue_information',
             'billing_address',
-            'industry'
+            'industry',
+            'date_created',
+            'employee_created'
         )
 
     @classmethod
@@ -54,7 +57,11 @@ class AccountListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        return {'id': obj.owner_id, 'fullname': obj.owner.fullname} if obj.owner else {}
+        return {
+            'id': obj.owner_id,
+            'code': obj.owner.code,
+            'fullname': obj.owner.fullname,
+        } if obj.owner else {}
 
     @classmethod
     def get_contact_mapped(cls, obj):
@@ -116,6 +123,19 @@ class AccountListSerializer(serializers.ModelSerializer):
             'code': obj.industry.code,
             'title': obj.industry.title,
         } if obj.industry else {}
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'id': obj.employee_created_id,
+            'code': obj.employee_created.code,
+            'full_name': obj.employee_created.get_full_name(2),
+            'group': {
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
 
 
 class AccountCreateSerializer(serializers.ModelSerializer):
@@ -311,8 +331,8 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             'currency',
             'contact_mapped',
             'account_type_selection',
-            "activity",
-            "revenue_information"
+            'activity',
+            'revenue_information'
         )
 
     @classmethod

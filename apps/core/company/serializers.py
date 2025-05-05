@@ -332,8 +332,8 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
         company_function_number = []
         for item in obj.company_function_number.all():
             company_function_number.append({
-                'function': item.function,
-                'numbering_by': item.numbering_by,
+                'app_code': item.app_code,
+                'app_title': item.app_title,
                 'schema_text': item.schema_text,
                 'schema': item.schema,
                 'first_number': item.first_number,
@@ -355,31 +355,21 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
 def create_company_function_number(company_obj, company_function_number_data):
     date_now = datetime.datetime.now()
     data_calendar = datetime.date.today().isocalendar()
-    updated_function = []
-
+    app_code_available = []
     for item in company_function_number_data:
-        function_name = item.get('function', '')
-        obj = CompanyFunctionNumber.objects.filter(company=company_obj, function=function_name).first()
-        if obj:
-            updated_function.append(function_name)
-            if obj.latest_number is None:
-                try:
-                    last_number = int(item.get('last_number') or 1)
-                except (TypeError, ValueError):
-                    last_number = 1
-                obj.latest_number = last_number - 1
-                obj.year_reset = date_now.year
-                obj.month_reset = int(f"{date_now.year}{date_now.month:02}")
-                obj.week_reset = int(f"{data_calendar[0]}{data_calendar[1]:02}")
-                obj.day_reset = int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
-            for key, value in item.items():
-                setattr(obj, key, value)
-            obj.save()
-    # Reset các function không nằm trong updated_function
-    CompanyFunctionNumber.objects.filter(company=company_obj).exclude(function__in=updated_function).update(
-        numbering_by=0, schema=None, schema_text=None, first_number=None, last_number=None, reset_frequency=None,
-        min_number_char=None, latest_number=None, year_reset=None, month_reset=None, week_reset=None, day_reset=None
-    )
+        try:
+            last_number = int(item.get('last_number') or 1)
+        except (TypeError, ValueError):
+            last_number = 1
+        item['latest_number'] = last_number - 1
+        item['year_reset'] = date_now.year
+        item['month_reset'] = int(f"{date_now.year}{date_now.month:02}")
+        item['week_reset'] = int(f"{data_calendar[0]}{data_calendar[1]:02}")
+        item['day_reset'] = int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
+        CompanyFunctionNumber.objects.filter_on_company(app_code=item.get('app_code')).delete()
+        CompanyFunctionNumber.objects.create(tenant=company_obj.tenant, company=company_obj, **item)
+        app_code_available.append(item.get('app_code'))
+    CompanyFunctionNumber.objects.exclude(app_code__in=app_code_available).delete()
     return True
 
 
@@ -410,9 +400,6 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def validate(self, validate_data):
-        for item in self.initial_data.get('company_function_number_data', []):
-            if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):
-                raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})
         user_obj = get_current_user()
         if user_obj and hasattr(user_obj, 'tenant_current'):
             company_quantity_max = user_obj.tenant_current.company_quality_max
@@ -426,7 +413,6 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         company_obj = Company.objects.create(**validated_data)
-        create_company_function_number(company_obj, self.initial_data.get('company_function_number_data', []))
         return company_obj
 
 
@@ -448,8 +434,10 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         for item in self.initial_data.get('company_function_number_data', []):
-            if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):
-                raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})
+            if item.get('schema') is None or item.get('schema_text') is None:
+                raise serializers.ValidationError(
+                    {'company_function_number_data': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA}
+                )
         return validate_data
 
     def update(self, instance, validated_data):

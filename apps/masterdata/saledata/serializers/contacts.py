@@ -113,6 +113,7 @@ class ContactListSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
     account_name = serializers.SerializerMethodField()
     report_to = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
 
     class Meta:
         model = Contact
@@ -126,7 +127,9 @@ class ContactListSerializer(serializers.ModelSerializer):
             'mobile',
             'phone',
             'email',
-            'report_to'
+            'report_to',
+            'date_created',
+            'employee_created'
         )
 
     @classmethod
@@ -134,7 +137,12 @@ class ContactListSerializer(serializers.ModelSerializer):
         return {
             'id': obj.owner_id,
             'code': obj.owner.code,
-            'fullname': obj.owner.get_full_name(2)
+            'fullname': obj.owner.get_full_name(2),
+            'group': {
+                'id': obj.owner.group_id,
+                'title': obj.owner.group.title,
+                'code': obj.owner.group.code
+            } if obj.owner.group else {}
         } if obj.owner else {}
 
     @classmethod
@@ -152,6 +160,19 @@ class ContactListSerializer(serializers.ModelSerializer):
             'code': obj.report_to.code,
             'name': obj.report_to.fullname
         } if obj.report_to else {}
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'id': obj.employee_created_id,
+            'code': obj.employee_created.code,
+            'full_name': obj.employee_created.get_full_name(2),
+            'group': {
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
 
 
 class ContactCreateSerializer(serializers.ModelSerializer):

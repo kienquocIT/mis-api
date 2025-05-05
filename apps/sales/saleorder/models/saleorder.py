@@ -259,7 +259,7 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
     @classmethod
     def push_code(cls, instance, kwargs):
         if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_code(company_obj=instance.company, func=2)
+            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='saleorder')
             instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
             kwargs['update_fields'].append('code')
         return True

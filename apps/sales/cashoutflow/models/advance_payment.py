@@ -84,7 +84,7 @@ class AdvancePayment(DataAbstractModel, BastionFieldAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=6)
+                code_generated = CompanyFunctionNumber.gen_auto_code(app_code='advancepayment')
                 if code_generated:
                     self.code = code_generated
                 else:

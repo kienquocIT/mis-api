@@ -1,5 +1,5 @@
 from apps.masterdata.saledata.models.periods import Periods
-from apps.core.company.models import Company
+from apps.core.company.models import Company, CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import (
     ProductType, Product, UnitOfMeasure
 )
@@ -1496,6 +1496,14 @@ class SubScripts:
         if this_period:
             this_period.currency_mapped = primary_currency_obj
             this_period.save(update_fields=['currency_mapped'])
+        print('Done :))')
+        return True
+
+    @classmethod
+    def update_company_function_number(cls):
+        for item in CompanyFunctionNumber.objects.all():
+            item.tenant = item.company.tenant
+            item.save(update_fields=['tenant'])
         print('Done :))')
         return True
 

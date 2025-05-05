@@ -48,6 +48,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             'sale_order',
             'opportunity_sale_team_datas',
             'close_date',
+            'date_created',
             'stage',
             'is_close'
         )

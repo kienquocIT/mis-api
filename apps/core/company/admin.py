@@ -79,6 +79,6 @@ class CompanyUserEmployeeAdmin(AbstractAdmin):
 @admin.register(CompanyFunctionNumber, site=my_admin_site)
 class CompanyFunctionNumberAdmin(AbstractAdmin):
     list_display = [
-        'company', 'function', 'numbering_by', 'schema',
+        'company', 'schema',
     ]
     list_filter = ['company__tenant']

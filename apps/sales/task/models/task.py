@@ -170,7 +170,7 @@ class OpportunityTask(DataAbstractModel):
     def create_code_task(self):
         # auto create code (temporary)
         if not self.code:
-            code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=5)
+            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='opportunitytask')
             if code_generated:
                 self.code = code_generated
             else:

@@ -37,6 +37,7 @@ __all__ = [
 class LeadListSerializer(serializers.ModelSerializer):
     source = serializers.SerializerMethodField()
     lead_status = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
 
     class Meta:
         model = Lead
@@ -44,10 +45,10 @@ class LeadListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            'contact_name',
             'source',
             'lead_status',
             'current_lead_stage_data',
+            'employee_created',
             'date_created',
             'email'
         )
@@ -59,6 +60,19 @@ class LeadListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_lead_status(cls, obj):
         return str(dict(LEAD_STATUS).get(obj.lead_status))
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'id': obj.employee_created_id,
+            'code': obj.employee_created.code,
+            'full_name': obj.employee_created.get_full_name(2),
+            'group': {
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
 
 
 class LeadCreateSerializer(serializers.ModelSerializer):

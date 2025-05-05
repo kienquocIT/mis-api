@@ -11,6 +11,7 @@ class CompanyMsg:
     SUB_DOMAIN_EXIST = _("Sub domain already exists. Please choose another name.")
     INVALID_COMPANY_SETTING_DATA = _("Invalid company setting data.")
     INVALID_COMPANY_FUNCTION_NUMBER_DATA = _("Invalid company function number data.")
+    COMPANY_FUNCTION_NUMBER_EXISTED = _("Function number is duplicated.")
     INVALID_BASE_CURRENCY = _("Invalid currency.")
     PRIMARY_CURRENCY_IS_NOT_NULL = _("Primary currency is not NULL.")
     DIV_NOT_VALID = _("Definition inventory valuation not valid.")

@@ -25,7 +25,7 @@ from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, SQIndicatorDefaultData,
 )
 from apps.core.base.models import Currency as BaseCurrency, PlanApplication, BaseItemUnit
-from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
+from apps.core.company.models import Company, CompanyConfig
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency, UnitOfMeasure,
     DocumentType, FixedAssetClassificationGroup, FixedAssetClassification, Tax, Salutation, Industry, AccountGroup,
@@ -161,7 +161,6 @@ class SaleDefaultData:
     def __call__(self, *args, **kwargs):
         try:
             with transaction.atomic():
-                self.create_company_function_number()
                 self.create_salutation()
                 self.create_account_types()
                 self.create_account_group()
@@ -181,19 +180,6 @@ class SaleDefaultData:
                 str(self.company_obj.id), str(err)
             )
         return False
-
-    def create_company_function_number(self):
-        objs = []
-        for cf_item in range(0, 10):
-            objs.append(
-                CompanyFunctionNumber(
-                    company=self.company_obj,
-                    function=cf_item,
-                    numbering_by=0
-                )
-            )
-        CompanyFunctionNumber.objects.bulk_create(objs)
-        return True
 
     def create_salutation(self):
         objs = [
