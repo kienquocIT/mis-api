@@ -18,6 +18,7 @@ class ReturnAdvanceListSerializer(AbstractListSerializerModel):
     advance_payment = serializers.SerializerMethodField()
     money_received = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
+    date_created = serializers.SerializerMethodField()
 
     class Meta:
         model = ReturnAdvance
@@ -60,6 +61,10 @@ class ReturnAdvanceListSerializer(AbstractListSerializerModel):
     @classmethod
     def get_money_received(cls, obj):
         return obj.money_received
+
+    @classmethod
+    def get_date_created(cls, obj):
+        return obj.date_created.strftime('%d/%m/%Y')
 
     @classmethod
     def get_employee_inherit(cls, obj):
