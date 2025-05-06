@@ -294,7 +294,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
     method_parsed = serializers.SerializerMethodField()
-    date_created = serializers.SerializerMethodField()
+    date_created_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -305,7 +305,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'method',
             'method_parsed',
             'money_gave',
-            'date_created',
+            'date_created_parsed',
             'return_date',
             'sale_code_type',
             'advance_value_before_tax',
@@ -352,8 +352,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
         return [_('Cash'), _('Bank Transfer')][obj.method]
 
     @classmethod
-    def get_date_created(cls, obj):
-        print(obj.date_created.strftime('%d/%m/%Y'))
+    def get_date_created_parsed(cls, obj):
         return obj.date_created.strftime('%d/%m/%Y')
 
     @classmethod

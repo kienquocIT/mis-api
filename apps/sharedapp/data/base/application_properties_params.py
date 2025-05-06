@@ -602,7 +602,7 @@ AdvancePayment_data__params = {
     "1929cf5c-d788-4101-a7dc-354deb4caadf": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
         "title": "Date created",
-        "code": "date_created",
+        "code": "date_created_parsed",
         "remark": "",
         "type": 1,
         "is_print": True,
@@ -814,7 +814,7 @@ Payment_data__params = {
     "39ff8d24-4059-4551-8f8c-4ee339f434eb": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
         "title": "Date created",
-        "code": "date_created",
+        "code": "date_created_parsed",
         "remark": "",
         "type": 1,
         "is_print": True,

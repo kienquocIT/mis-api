@@ -235,7 +235,6 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
 
 
 class PaymentDetailSerializer(AbstractDetailSerializerModel):
-    date_created = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
@@ -248,6 +247,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
     method_parsed = serializers.SerializerMethodField()
+    date_created_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -258,7 +258,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             'code',
             'method',
             'method_parsed',
-            'date_created',
+            'date_created_parsed',
             'sale_code_type',
             'expense_items',
             'opportunity',
@@ -305,8 +305,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
         return [_('None'), _('Cash'), _('Bank Transfer')][obj.method]
 
     @classmethod
-    def get_date_created(cls, obj):
-        print(obj.date_created.strftime('%d/%m/%Y'))
+    def get_date_created_parsed(cls, obj):
         return obj.date_created.strftime('%d/%m/%Y')
 
     @classmethod
