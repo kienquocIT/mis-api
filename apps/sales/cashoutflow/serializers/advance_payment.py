@@ -305,6 +305,8 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'date_created',
             'return_date',
             'sale_code_type',
+            # 'advance_value_before_tax',
+            # 'advance_value_tax',
             'advance_value',
             'advance_value_by_words',
             'advance_payment_type',
@@ -767,8 +769,12 @@ class APCommonFunction:
         ).first()
         if vnd_currency:
             bulk_info = []
+            advance_value_before_tax = 0
+            advance_value_tax = 0
             advance_value = 0
             for item in ap_item_list:
+                advance_value_before_tax += float(item.get('expense_subtotal_price', 0))
+                advance_value_tax += float(item.get('expense_tax_price', 0))
                 advance_value += float(item.get('expense_after_tax_price', 0))
                 bulk_info.append(AdvancePaymentCost(
                     **item,
@@ -781,6 +787,8 @@ class APCommonFunction:
             if len(bulk_info) > 0:
                 AdvancePaymentCost.objects.filter(advance_payment=advance_payment_obj).delete()
                 AdvancePaymentCost.objects.bulk_create(bulk_info)
+                advance_payment_obj.advance_value_before_tax = advance_value_before_tax
+                advance_payment_obj.advance_value_tax = advance_value_tax
                 advance_payment_obj.advance_value = advance_value
                 advance_value_by_words = APCommonFunction.read_money_vnd(advance_value).capitalize()
                 if advance_value_by_words[-1] == ',':
@@ -795,7 +803,13 @@ class APCommonFunction:
                 ) else quotation.code if quotation else opp.code if opp else None
                 advance_payment_obj.sale_code = sale_code
 
-                advance_payment_obj.save(update_fields=['advance_value', 'advance_value_by_words', 'sale_code'])
+                advance_payment_obj.save(update_fields=[
+                    'advance_value_before_tax',
+                    'advance_value_tax',
+                    'advance_value',
+                    'advance_value_by_words',
+                    'sale_code'
+                ])
         return True
 
     @classmethod
