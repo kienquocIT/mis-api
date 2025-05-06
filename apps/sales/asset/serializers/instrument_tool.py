@@ -503,10 +503,12 @@ class ToolForLeaseListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_quantity_leased(cls, obj):
-        delivery_product_tool = obj.delivery_pt_tool.first()
-        if delivery_product_tool:
-            return delivery_product_tool.quantity_remain_recovery
-        return 0
+        leased = 0
+        delivery_product_tools = obj.delivery_pt_tool.filter(delivery_sub__system_status=3)
+        if delivery_product_tools:
+            for delivery_product_tool in delivery_product_tools:
+                leased += delivery_product_tool.quantity_remain_recovery
+        return leased
 
 
 class ToolStatusLeaseListSerializer(serializers.ModelSerializer):
@@ -538,10 +540,12 @@ class ToolStatusLeaseListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_quantity_leased(cls, obj):
-        delivery_product_tool = obj.delivery_pt_tool.filter_on_company(delivery_sub__system_status=3).first()
-        if delivery_product_tool:
-            return delivery_product_tool.quantity_remain_recovery
-        return 0
+        leased = 0
+        delivery_product_tools = obj.delivery_pt_tool.filter(delivery_sub__system_status=3)
+        if delivery_product_tools:
+            for delivery_product_tool in delivery_product_tools:
+                leased += delivery_product_tool.quantity_remain_recovery
+        return leased
 
     @classmethod
     def get_asset_type(cls, obj):
@@ -550,7 +554,7 @@ class ToolStatusLeaseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_lease_order_data(cls, obj):
         lease_order = None
-        delivery_product_tool = obj.delivery_pt_tool.filter_on_company(delivery_sub__system_status=3).first()
+        delivery_product_tool = obj.delivery_pt_tool.filter(delivery_sub__system_status=3).first()
         if delivery_product_tool:
             if delivery_product_tool.delivery_sub and delivery_product_tool.quantity_remain_recovery > 0:
                 if delivery_product_tool.delivery_sub.order_delivery:
