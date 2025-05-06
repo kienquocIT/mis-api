@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
 from apps.core.process.utils import ProcessRuntimeControl
@@ -246,6 +247,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
     attachment = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
+    method_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -255,6 +257,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'code',
             'method',
+            'method_parsed',
             'date_created',
             'sale_code_type',
             'expense_items',
@@ -268,6 +271,8 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             'employee_inherit',
             'attachment',
             'sale_code',
+            'payment_value_before_tax',
+            'payment_value_tax',
             'payment_value',
             'payment_value_by_words',
             # process
@@ -294,6 +299,10 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
                 'remark': obj.process_stage_app.remark,
             }
         return {}
+
+    @classmethod
+    def get_method_parsed(cls, obj):
+        return [_('None'), _('Cash'), _('Bank Transfer')][obj.method]
 
     @classmethod
     def get_date_created(cls, obj):
@@ -739,9 +748,13 @@ class PaymentCommonFunction:
         ).first()
         if vnd_currency:
             bulk_info = []
+            payment_value_before_tax = 0
+            payment_value_tax = 0
             payment_value = 0
             for item in payment_item_list:
                 if float(item['real_value']) + float(item['converted_value']) == float(item['sum_value']):
+                    payment_value_before_tax += item.get('expense_subtotal_price', 0)
+                    payment_value_tax += item.get('expense_tax_price', 0)
                     payment_value += item.get('expense_after_tax_price', 0)
                     bulk_info.append(
                         PaymentCost(
@@ -759,6 +772,8 @@ class PaymentCommonFunction:
             if len(bulk_info) > 0:
                 PaymentCost.objects.filter(payment=payment_obj).delete()
                 PaymentCost.objects.bulk_create(bulk_info)
+                payment_obj.payment_value_before_tax = payment_value_before_tax
+                payment_obj.payment_value_tax = payment_value_tax
                 payment_obj.payment_value = payment_value
                 payment_value_by_words = PaymentCommonFunction.read_money_vnd(payment_value).capitalize()
                 if payment_value_by_words[-1] == ',':
@@ -773,7 +788,13 @@ class PaymentCommonFunction:
                 ) else quotation.code if quotation else opp.code if opp else None
                 payment_obj.sale_code = sale_code
 
-                payment_obj.save(update_fields=['payment_value', 'payment_value_by_words', 'sale_code'])
+                payment_obj.save(update_fields=[
+                    'payment_value_before_tax',
+                    'payment_value_tax',
+                    'payment_value',
+                    'payment_value_by_words',
+                    'sale_code'
+                ])
         return True
 
     @classmethod

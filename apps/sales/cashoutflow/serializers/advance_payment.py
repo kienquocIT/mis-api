@@ -293,6 +293,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     attachment = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
+    method_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -301,6 +302,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'code',
             'method',
+            'method_parsed',
             'money_gave',
             'date_created',
             'return_date',
@@ -343,6 +345,10 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
                 'remark': obj.process_stage_app.remark,
             }
         return {}
+
+    @classmethod
+    def get_method_parsed(cls, obj):
+        return [_('Cash'), _('Bank Transfer')][obj.method]
 
     @classmethod
     def get_expense_items(cls, obj):
