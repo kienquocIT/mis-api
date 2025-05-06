@@ -558,12 +558,12 @@ class AssetStatusLeaseListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_asset_type(cls, obj):
-        return 'asset' if obj else ''
+        return 'Fixed asset' if obj else ''
 
     @classmethod
     def get_lease_order_data(cls, obj):
         lease_order = None
-        delivery_product_asset = obj.delivery_pa_asset.first()
+        delivery_product_asset = obj.delivery_pa_asset.filter_on_company(delivery_sub__system_status=3).first()
         if delivery_product_asset and obj.status == 2:
             if delivery_product_asset.delivery_sub:
                 if delivery_product_asset.delivery_sub.order_delivery:
