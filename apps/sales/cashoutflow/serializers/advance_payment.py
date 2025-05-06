@@ -353,6 +353,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_date_created(cls, obj):
+        print(obj.date_created.strftime('%d/%m/%Y'))
         return obj.date_created.strftime('%d/%m/%Y')
 
     @classmethod
