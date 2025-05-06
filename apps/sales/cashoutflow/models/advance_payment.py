@@ -70,6 +70,8 @@ class AdvancePayment(DataAbstractModel, BastionFieldAbstractModel):
     )
     return_date = models.DateTimeField()
     money_gave = models.BooleanField(default=False)
+    advance_value_before_tax = models.FloatField(default=0)
+    advance_value_tax = models.FloatField(default=0)
     advance_value = models.FloatField(default=0)
     advance_value_by_words = models.CharField(max_length=500, default='', blank=True)
     sale_code = models.CharField(max_length=100, null=True)

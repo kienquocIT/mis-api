@@ -195,7 +195,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
     serializer_detail = AccountDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
-    filterset_class = AccountListFilter
+    # filterset_class = AccountListFilter
     search_fields = ['name', 'code', 'tax_code']
 
     def get_queryset(self):
