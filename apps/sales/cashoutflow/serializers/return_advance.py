@@ -28,6 +28,7 @@ class ReturnAdvanceListSerializer(AbstractListSerializerModel):
             'advance_payment',
             'system_status',
             'money_received',
+            'date_created',
             'return_total',
             'employee_inherit'
         )
