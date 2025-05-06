@@ -33,6 +33,7 @@ APP_MAP_DATA = {
     'employeeinfo.EmployeeContractRuntime': {
         'title': 'Contract signature detail', 'url': 'hrm/employee-data/runtime-signature/detail/'
     },
+    'leaseorder.leaseorder': {'title': 'Lease Order', 'url': 'leaseorder/detail/'},
 }
 
 WORKFLOW_TYPE_MAP_TXT = {
