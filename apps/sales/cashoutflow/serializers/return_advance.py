@@ -18,7 +18,6 @@ class ReturnAdvanceListSerializer(AbstractListSerializerModel):
     advance_payment = serializers.SerializerMethodField()
     money_received = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
-    date_created_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = ReturnAdvance
@@ -29,7 +28,6 @@ class ReturnAdvanceListSerializer(AbstractListSerializerModel):
             'advance_payment',
             'system_status',
             'money_received',
-            'date_created_parsed',
             'return_total',
             'employee_inherit'
         )
@@ -61,10 +59,6 @@ class ReturnAdvanceListSerializer(AbstractListSerializerModel):
     @classmethod
     def get_money_received(cls, obj):
         return obj.money_received
-
-    @classmethod
-    def get_date_created_parsed(cls, obj):
-        return obj.date_created.strftime('%d/%m/%Y')
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -154,6 +148,7 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
     employee_created = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
+    date_created_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = ReturnAdvance
@@ -167,7 +162,7 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
             'method',
             'system_status',
             'money_received',
-            'date_created',
+            'date_created_parsed',
             'returned_list',
             'return_total',
             'process',
@@ -253,6 +248,10 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
                 'return_value': item.return_value
             })
         return list_result
+
+    @classmethod
+    def get_date_created_parsed(cls, obj):
+        return obj.date_created.strftime('%d/%m/%Y')
 
 
 class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
