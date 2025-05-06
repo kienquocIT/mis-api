@@ -3,6 +3,7 @@ from apps.sharedapp.data.base.settings import ApplicationConfigFrame
 __all__ = [
     'Application_hrm_data',
 ]
+
 EMPLOYEE_INFO = {
     "id": "7436c857-ad09-4213-a190-c1c7472e99be",
     "title": "Employee info",
