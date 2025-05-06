@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.masterdata.saledata.filters import AccountListFilter
+# from apps.masterdata.saledata.filters import AccountListFilter
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models.accounts import (
     AccountType, Industry, Account, AccountEmployee, AccountGroup,
