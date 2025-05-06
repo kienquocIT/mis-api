@@ -124,14 +124,14 @@ ASSET_TOOLS_PROVIDE = {
         "create": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1": {"view": "4", },
+                "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1": {"view": "==", },
             },
             "local_depends_on": {},
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1": {"view": "4", },},
+                "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1": {"view": "==", },},
             "local_depends_on": {},
         },
         "delete": {
@@ -164,7 +164,7 @@ MEETING_SCHEDULE = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -172,7 +172,7 @@ MEETING_SCHEDULE = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
-                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },

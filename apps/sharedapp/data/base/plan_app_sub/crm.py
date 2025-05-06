@@ -264,7 +264,7 @@ OPPORTUNITY_APP_CONFIG = {
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -276,7 +276,7 @@ OPPORTUNITY_APP_CONFIG = {
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
             },
             "local_depends_on": {
                 "view": "==",
@@ -315,7 +315,7 @@ TASK_APP_CONFIG = {
         "create": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "4", },
+                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
@@ -323,7 +323,7 @@ TASK_APP_CONFIG = {
         "edit": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "4", },
+                "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
@@ -365,7 +365,7 @@ QUOTATION_APP_CONFIG = {
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
+                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "==", },
                 "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
@@ -376,7 +376,7 @@ QUOTATION_APP_CONFIG = {
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
+                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "==", },
                 "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
@@ -422,7 +422,7 @@ SALEORDER_APP_CONFIG = {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
+                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "==", },
                 "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
             },
             "local_depends_on": {
@@ -436,7 +436,7 @@ SALEORDER_APP_CONFIG = {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
+                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "==", },
                 "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
             },
             "local_depends_on": {
@@ -518,14 +518,14 @@ PICKING_APP_CONFIG = {
         "create": {
             "range": ["1", "3", "4"],
             "app_depends_on": {
-                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "4", },
+                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
         "edit": {
             "range": ["1", "3", "4"],
             "app_depends_on": {
-                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "4", },
+                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -682,7 +682,7 @@ ADVANCE_PAYMENT_APP_CONFIG = {
                     "view": "==",
                 },
                 "022375ce-c99c-4f11-8841-0a26c85f2fc2": {
-                    "view": "4",
+                    "view": "==",
                 },
             },
             "local_depends_on": {
@@ -708,7 +708,7 @@ ADVANCE_PAYMENT_APP_CONFIG = {
                     "view": "==",
                 },
                 "022375ce-c99c-4f11-8841-0a26c85f2fc2": {
-                    "view": "4",
+                    "view": "==",
                 },
             },
             "local_depends_on": {
@@ -756,7 +756,7 @@ PAYMENT_APP_CONFIG = {
                 "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
                 "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
             },
@@ -770,7 +770,7 @@ PAYMENT_APP_CONFIG = {
                 "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "==", },
                 "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
             },
@@ -1016,7 +1016,7 @@ PURCHASE_QUOTATION_REQUEST_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf": {"view": "==", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -1024,7 +1024,7 @@ PURCHASE_QUOTATION_REQUEST_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf": {"view": "==", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -1032,7 +1032,7 @@ PURCHASE_QUOTATION_REQUEST_APP_CONFIG = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf": {"view": "==", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -1062,20 +1062,20 @@ PURCHASE_QUOTATION_APP_CONFIG = {
         "create": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "d78bd5f3-8a8d-48a3-ad62-b50d576ce173": {"view": "==", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "d78bd5f3-8a8d-48a3-ad62-b50d576ce173": {"view": "==", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -1164,9 +1164,9 @@ PURCHASE_REQUEST_APP_CONFIG = {
             "app_depends_on": {
                 "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
                 "57a32d5a-3580-43b7-bf31-953a1afc68f4": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -1175,9 +1175,9 @@ PURCHASE_REQUEST_APP_CONFIG = {
             "app_depends_on": {
                 "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
                 "57a32d5a-3580-43b7-bf31-953a1afc68f4": {"view": "==", },
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "==", },
             },
             "local_depends_on": {"view": "==", },
         },
@@ -1669,7 +1669,7 @@ AR_INVOICE_APP_CONFIG = {
         "create": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
                 "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "==", },
             },
@@ -1680,7 +1680,7 @@ AR_INVOICE_APP_CONFIG = {
         "edit": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "==", },
                 "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "==", },
             },
@@ -1721,7 +1721,7 @@ AP_INVOICE_APP_CONFIG = {
         "create": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "==", },
                 "dd16a86c-4aef-46ec-9302-19f30b101cf5": {"view": "==", },
             },
@@ -1732,7 +1732,7 @@ AP_INVOICE_APP_CONFIG = {
         "edit": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "==", },
                 "dd16a86c-4aef-46ec-9302-19f30b101cf5": {"view": "==", },
             },
@@ -2474,7 +2474,7 @@ LEASEORDER_APP_CONFIG = {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
+                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "==", },
                 "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
             },
             "local_depends_on": {
@@ -2488,7 +2488,7 @@ LEASEORDER_APP_CONFIG = {
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
                 "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {"view": "==", },
-                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "4", },
+                "3407d35d-27ce-407e-8260-264574a216e3": {"view": "==", },
                 "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": {"view": "==", },
             },
             "local_depends_on": {

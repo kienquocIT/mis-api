@@ -24,7 +24,7 @@ SALE_CODE_TYPE = [
     (3, _('Others'))
 ]
 
-ADVANCE_PAYMENT_METHOD = [
+PAYMENT_METHOD = [
     (0, _('None')),
     (1, _('Cash')),
     (2, _('Bank Transfer')),
@@ -70,10 +70,12 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
     )
     is_internal_payment = models.BooleanField(default=False)
     method = models.SmallIntegerField(
-        choices=ADVANCE_PAYMENT_METHOD,
+        choices=PAYMENT_METHOD,
         verbose_name='Payment method',
         help_text='0 is None, 1 is Cash, 2 is Bank Transfer'
     )
+    payment_value_before_tax = models.FloatField(default=0)
+    payment_value_tax = models.FloatField(default=0)
     payment_value = models.FloatField(default=0)
     payment_value_by_words = models.CharField(max_length=500, default='', blank=True)
     sale_code = models.CharField(max_length=100, null=True)
