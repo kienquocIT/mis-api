@@ -67,11 +67,24 @@ class TenantApplicationList(BaseListMixin):
 
     def get_queryset(self):
         if not isinstance(self.request.user, AnonymousUser) and getattr(self.request.user, 'tenant_current', None):
-            return super().get_queryset().filter(
-                id__in=PlanApplication.objects.filter(
-                    plan_id__in=self.request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
-                ).values_list('application__id', flat=True)
-            )
+            plan_ids = self.request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
+            app_ids = PlanApplication.objects.filter(plan_id__in=plan_ids).values_list('application__id', flat=True)
+            qs = super().get_queryset().filter(id__in=app_ids)
+            if self.request.query_params.get('only_app', False):
+                return qs.filter(code__in=[
+                    'advancepayment',
+                    'payment',
+                    'returnadvance',
+                    'orderpickingsub',
+                    'orderdeliverysub',
+                    'leaseorder',
+                    'saleorder',
+                    'quotation',
+                    'opportunity',
+                    'purchaserequest',
+                    # thêm app đã cấu hình sinh code theo công thức vào đây
+                ])
+            return qs
         return Application.objects.none()
 
     def get_serializer_list_data(self, ser_data):
