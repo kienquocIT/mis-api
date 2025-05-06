@@ -71,7 +71,7 @@ class TenantApplicationList(BaseListMixin):
             app_ids = PlanApplication.objects.filter(plan_id__in=plan_ids).values_list('application__id', flat=True)
             qs = super().get_queryset().filter(id__in=app_ids)
             if self.request.query_params.get('only_app', False):
-                return qs.filter(code__in=[
+                return qs.filter(model_code__in=[
                     'advancepayment',
                     'payment',
                     'returnadvance',
