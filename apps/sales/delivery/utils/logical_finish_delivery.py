@@ -248,6 +248,7 @@ class DeliFinishHandler:
                     asset_code=delivery_product.offset.code,
                     source_type=1,
                     original_cost=cost,
+                    net_book_value=cost,
                     depreciation_method=delivery_product.product_depreciation_method,
                     depreciation_time=delivery_product.product_depreciation_time,
                     adjustment_factor=delivery_product.product_depreciation_adjustment,
