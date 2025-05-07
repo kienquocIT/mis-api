@@ -14,7 +14,7 @@ from apps.core.base.models import (
 )
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
-    AdvancePaymentCost, PaymentCost
+    AdvancePaymentCost, PaymentCost, AdvancePayment, Payment
 )
 from apps.core.workflow.models import (
     WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
@@ -1500,10 +1500,39 @@ class SubScripts:
         return True
 
     @classmethod
-    def update_company_function_number(cls):
-        for item in CompanyFunctionNumber.objects.all():
-            item.tenant = item.company.tenant
-            item.save(update_fields=['tenant'])
+    def update_print_field_for_sale_cashoutflow(cls):
+        for ap in AdvancePayment.objects.all():
+            advance_value_before_tax = 0
+            advance_value_tax = 0
+            advance_value = 0
+            for item in ap.advance_payment.all():
+                advance_value_before_tax += item.expense_subtotal_price
+                advance_value_tax += item.expense_tax_price
+                advance_value += item.expense_after_tax_price
+            ap.advance_value_before_tax = advance_value_before_tax
+            ap.advance_value_tax = advance_value_tax
+            ap.advance_value = advance_value
+            ap.save(update_fields=[
+                'advance_value_before_tax',
+                'advance_value_tax',
+                'advance_value'
+            ])
+        for payment in Payment.objects.all():
+            payment_value_before_tax = 0
+            payment_value_tax = 0
+            payment_value = 0
+            for item in payment.payment.all():
+                payment_value_before_tax += item.expense_subtotal_price
+                payment_value_tax += item.expense_tax_price
+                payment_value += item.expense_after_tax_price
+            payment.payment_value_before_tax = payment_value_before_tax
+            payment.payment_value_tax = payment_value_tax
+            payment.payment_value = payment_value
+            payment.save(update_fields=[
+                'payment_value_before_tax',
+                'payment_value_tax',
+                'payment_value'
+            ])
         print('Done :))')
         return True
 

@@ -224,8 +224,6 @@ class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validate_data):
-        if self.instance.is_default:
-            raise serializers.ValidationError({'is_default': _('Can not update default data')})
         return validate_data
 
     def update(self, instance, validated_data):
@@ -364,8 +362,6 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
 
     def validate(self, validate_data):
-        if self.instance.is_default:
-            raise serializers.ValidationError({'is_default': _('Can not update default data')})
         if validate_data.get('ratio', 0) != 1 and self.instance.is_referenced_unit:
             raise serializers.ValidationError({'ratio': _('Ratio must be 1 for referenced unit')})
         return validate_data
