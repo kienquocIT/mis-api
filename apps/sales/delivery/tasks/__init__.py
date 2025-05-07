@@ -423,7 +423,7 @@ class OrderActiveDeliverySerializer:
                     if self.config_obj.is_picking is True and app_code == "saleorder.saleorder":
                         if self.check_has_prod_services != len(self.order_products):
                             # nếu saleorder product toàn là dịch vụ thì ko cần tạo picking
-                            # nều leaseorder thì không cần tạo picking
+                            # nếu leaseorder thì không cần tạo picking
                             self._create_order_picking()
                     obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
                     # setup SUB
