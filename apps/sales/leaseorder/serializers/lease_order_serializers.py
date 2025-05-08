@@ -33,6 +33,7 @@ class LeaseOrderListSerializer(AbstractListSerializerModel):
             'quotation',
             'delivery_call',
             'delivery_status',
+            'lease_from',
         )
 
     @classmethod

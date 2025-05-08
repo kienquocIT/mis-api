@@ -35,7 +35,7 @@ class LeaseOrderAppConfig(MasterDataAbstractModel):
         blank=True,
         related_name='lo_config_map_asset_group_using'
     )
-    asset_group_using_data = models.JSONField(default=dict, help_text="data json of asset_group_using")
+    asset_group_using_data = models.JSONField(default=list, help_text="data json of asset_group_using")
     tool_type = models.ForeignKey(
         'saledata.ToolClassification',
         on_delete=models.CASCADE,
@@ -649,6 +649,12 @@ class LeaseOrderCost(MasterDataAbstractModel):
     depreciation_lease_data = models.JSONField(default=list, help_text='data json of depreciation lease')
 
     product_convert_into = models.SmallIntegerField(choices=PRODUCT_CONVERT_INTO, null=True)
+    asset_type_data = models.JSONField(default=dict, help_text="data json of asset_type")
+    asset_group_manage_data = models.JSONField(default=dict, help_text="data json of asset_group_manage")
+    asset_group_using_data = models.JSONField(default=list, help_text="data json of asset_group_using")
+    tool_type_data = models.JSONField(default=dict, help_text="data json of tool_type")
+    tool_group_manage_data = models.JSONField(default=dict, help_text="data json of tool_group_manage")
+    tool_group_using_data = models.JSONField(default=list, help_text="data json of tool_group_using")
 
     # End depreciation fields
 

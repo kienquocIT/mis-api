@@ -27,15 +27,17 @@ class OrderActiveDeliverySerializer:
             order_obj,  # SaleOrder || LeaseOrder
             order_products: list,
             delivery_config_obj: DeliveryConfig,
+            estimated_delivery_date=None,
+            remarks="",
             process_id=None,
     ):
         if order_obj:
-            self.tenant_id = order_obj.tenant_id
-            self.company_id = order_obj.company_id
-
             self.order_obj = order_obj
             self.order_products = order_products
             self.config_obj = delivery_config_obj
+
+            self.estimated_delivery_date = estimated_delivery_date
+            self.remarks = remarks
         else:
             raise AttributeError('instance must be required')
         self.process_id = process_id
@@ -112,6 +114,12 @@ class OrderActiveDeliverySerializer:
                     'product_cost': cost_product.product_cost_price,
                     'product_subtotal_cost': cost_product.product_subtotal_price,
                     'product_convert_into': cost_product.product_convert_into,
+                    'asset_type_data': cost_product.asset_type_data,
+                    'asset_group_manage_data': cost_product.asset_group_manage_data,
+                    'asset_group_using_data': cost_product.asset_group_using_data,
+                    'tool_type_data': cost_product.tool_type_data,
+                    'tool_group_manage_data': cost_product.tool_group_manage_data,
+                    'tool_group_using_data': cost_product.tool_group_using_data,
                 })
                 result.update(OrderActiveDeliverySerializer.append_depreciation_data(cost_product=cost_product))
         return result
@@ -225,8 +233,8 @@ class OrderActiveDeliverySerializer:
         sub_id, pickup_quantity, m2m_obj_arr = self.__create_order_picking_sub_map_product()
         # setup MAIN
         obj = OrderPicking.objects.create(
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
+            tenant_id=self.order_obj.tenant_id if self.order_obj else None,
+            company_id=self.order_obj.company_id if self.order_obj else None,
             sale_order=self.order_obj,
             title=self.order_obj.title,
             sale_order_data={
@@ -240,7 +248,7 @@ class OrderActiveDeliverySerializer:
             },
             ware_house=None,
             ware_house_data={},
-            estimated_delivery_date=None,
+            estimated_delivery_date=self.estimated_delivery_date,
             state=0,
             remarks='',
             delivery_option=1 if self.config_obj.is_partial_ship else 0,  # 0: Full, 1: Partial
@@ -254,8 +262,8 @@ class OrderActiveDeliverySerializer:
 
         # setup SUB
         sub_obj = OrderPickingSub.objects.create(
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
+            tenant_id=self.order_obj.tenant_id if self.order_obj else None,
+            company_id=self.order_obj.company_id if self.order_obj else None,
             id=sub_id,
             order_picking=obj,
             date_done=None,
@@ -268,7 +276,7 @@ class OrderActiveDeliverySerializer:
             sale_order_data=obj.sale_order_data,
             ware_house=None,
             ware_house_data={},
-            estimated_delivery_date=None,
+            estimated_delivery_date=self.estimated_delivery_date,
             state=0,
             delivery_option=obj.delivery_option,
             remarks='',
@@ -335,8 +343,8 @@ class OrderActiveDeliverySerializer:
             title=self.order_obj.title if self.order_obj else '',
             employee_created=self.order_obj.employee_created if self.order_obj else None,
             #
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
+            tenant_id=self.order_obj.tenant_id if self.order_obj else None,
+            company_id=self.order_obj.company_id if self.order_obj else None,
             sale_order=sale_order,
             sale_order_data=sale_order_data,
             lease_order=lease_order,
@@ -354,6 +362,8 @@ class OrderActiveDeliverySerializer:
                 "title": str(self.order_obj.contact.fullname),
                 "code": str(self.order_obj.contact.code),
             } if self.order_obj.contact else {},
+            estimated_delivery_date=self.estimated_delivery_date,
+            remarks=self.remarks,
             kind_pickup=0 if self.config_obj.is_picking else 1,
             sub=None,
             delivery_option=0 if not self.config_obj.is_partial_ship else 1,
@@ -379,8 +389,8 @@ class OrderActiveDeliverySerializer:
             title=obj_delivery.title,
             employee_created=obj_delivery.employee_created,
             #
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
+            tenant_id=self.order_obj.tenant_id if self.order_obj else None,
+            company_id=self.order_obj.company_id if self.order_obj else None,
             id=sub_id,
             order_delivery=obj_delivery,
             date_done=None,
@@ -397,6 +407,8 @@ class OrderActiveDeliverySerializer:
             lease_order_data=obj_delivery.lease_order_data,
             customer_data=obj_delivery.customer_data,
             contact_data=obj_delivery.contact_data,
+            estimated_delivery_date=self.estimated_delivery_date,
+            remarks=self.remarks,
             date_created=obj_delivery.date_created,
             config_at_that_point={
                 "is_picking": self.config_obj.is_picking,
@@ -423,7 +435,7 @@ class OrderActiveDeliverySerializer:
                     if self.config_obj.is_picking is True and app_code == "saleorder.saleorder":
                         if self.check_has_prod_services != len(self.order_products):
                             # nếu saleorder product toàn là dịch vụ thì ko cần tạo picking
-                            # nều leaseorder thì không cần tạo picking
+                            # nếu leaseorder thì không cần tạo picking
                             self._create_order_picking()
                     obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
                     # setup SUB
@@ -470,7 +482,7 @@ class OrderActiveDeliverySerializer:
 
 
 @shared_task
-def task_active_delivery_from_sale_order(sale_order_id, process_id=None):
+def task_active_delivery_from_sale_order(sale_order_id, estimated_delivery_date=None, remarks="", process_id=None):
     state, msg_returned = False, ""
     sale_order_obj = SaleOrder.objects.filter(id=sale_order_id).first()
     if sale_order_obj:
@@ -482,6 +494,8 @@ def task_active_delivery_from_sale_order(sale_order_id, process_id=None):
             order_obj=sale_order_obj,
             order_products=sale_order_products,
             delivery_config_obj=config_obj,
+            estimated_delivery_date=estimated_delivery_date,
+            remarks=remarks,
             process_id=process_id,
         ).active(app_code="saleorder.saleorder")
         if state is True:
@@ -491,7 +505,7 @@ def task_active_delivery_from_sale_order(sale_order_id, process_id=None):
 
 
 @shared_task
-def task_active_delivery_from_lease_order(lease_order_id, process_id=None):
+def task_active_delivery_from_lease_order(lease_order_id, estimated_delivery_date=None, remarks="", process_id=None):
     state, msg_returned = False, ""
     lease_order_obj = LeaseOrder.objects.filter(id=lease_order_id).first()
     if lease_order_obj:
@@ -503,6 +517,8 @@ def task_active_delivery_from_lease_order(lease_order_id, process_id=None):
             order_obj=lease_order_obj,
             order_products=lease_order_products,
             delivery_config_obj=config_obj,
+            estimated_delivery_date=estimated_delivery_date,
+            remarks=remarks,
             process_id=process_id,
         ).active(app_code="leaseorder.leaseorder")
         if state is True:
