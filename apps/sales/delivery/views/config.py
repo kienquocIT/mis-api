@@ -126,7 +126,12 @@ class SaleOrderActiveDelivery(APIView):
 
                 call_task_background(
                     my_task=task_active_delivery_from_sale_order,
-                    **{'sale_order_id': str(obj.id), 'process_id': process_id}
+                    **{
+                        'sale_order_id': str(obj.id),
+                        'estimated_delivery_date': body_data.get('estimated_delivery_date', None),
+                        'remarks': body_data.get('remarks', ''),
+                        'process_id': process_id,
+                    }
                 )
 
                 serializer = DeliveryConfigDetailSerializer(config)
@@ -202,7 +207,12 @@ class LeaseOrderActiveDelivery(APIView):
 
                 call_task_background(
                     my_task=task_active_delivery_from_lease_order,
-                    **{'lease_order_id': str(obj.id), 'process_id': process_id}
+                    **{
+                        'lease_order_id': str(obj.id),
+                        'estimated_delivery_date': body_data.get('estimated_delivery_date', None),
+                        'remarks': body_data.get('remarks', ''),
+                        'process_id': process_id,
+                    }
                 )
 
                 serializer = DeliveryConfigDetailSerializer(config)

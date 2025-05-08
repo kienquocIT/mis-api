@@ -27,6 +27,8 @@ class OrderActiveDeliverySerializer:
             order_obj,  # SaleOrder || LeaseOrder
             order_products: list,
             delivery_config_obj: DeliveryConfig,
+            estimated_delivery_date=None,
+            remarks="",
             process_id=None,
     ):
         if order_obj:
@@ -36,6 +38,9 @@ class OrderActiveDeliverySerializer:
             self.order_obj = order_obj
             self.order_products = order_products
             self.config_obj = delivery_config_obj
+
+            self.estimated_delivery_date = estimated_delivery_date
+            self.remarks = remarks
         else:
             raise AttributeError('instance must be required')
         self.process_id = process_id
@@ -240,7 +245,7 @@ class OrderActiveDeliverySerializer:
             },
             ware_house=None,
             ware_house_data={},
-            estimated_delivery_date=None,
+            estimated_delivery_date=self.estimated_delivery_date,
             state=0,
             remarks='',
             delivery_option=1 if self.config_obj.is_partial_ship else 0,  # 0: Full, 1: Partial
@@ -268,7 +273,7 @@ class OrderActiveDeliverySerializer:
             sale_order_data=obj.sale_order_data,
             ware_house=None,
             ware_house_data={},
-            estimated_delivery_date=None,
+            estimated_delivery_date=self.estimated_delivery_date,
             state=0,
             delivery_option=obj.delivery_option,
             remarks='',
@@ -354,6 +359,8 @@ class OrderActiveDeliverySerializer:
                 "title": str(self.order_obj.contact.fullname),
                 "code": str(self.order_obj.contact.code),
             } if self.order_obj.contact else {},
+            estimated_delivery_date=self.estimated_delivery_date,
+            remarks=self.remarks,
             kind_pickup=0 if self.config_obj.is_picking else 1,
             sub=None,
             delivery_option=0 if not self.config_obj.is_partial_ship else 1,
@@ -397,6 +404,8 @@ class OrderActiveDeliverySerializer:
             lease_order_data=obj_delivery.lease_order_data,
             customer_data=obj_delivery.customer_data,
             contact_data=obj_delivery.contact_data,
+            estimated_delivery_date=self.estimated_delivery_date,
+            remarks=self.remarks,
             date_created=obj_delivery.date_created,
             config_at_that_point={
                 "is_picking": self.config_obj.is_picking,
@@ -470,7 +479,7 @@ class OrderActiveDeliverySerializer:
 
 
 @shared_task
-def task_active_delivery_from_sale_order(sale_order_id, process_id=None):
+def task_active_delivery_from_sale_order(sale_order_id, estimated_delivery_date=None, remarks="", process_id=None):
     state, msg_returned = False, ""
     sale_order_obj = SaleOrder.objects.filter(id=sale_order_id).first()
     if sale_order_obj:
@@ -482,6 +491,8 @@ def task_active_delivery_from_sale_order(sale_order_id, process_id=None):
             order_obj=sale_order_obj,
             order_products=sale_order_products,
             delivery_config_obj=config_obj,
+            estimated_delivery_date=estimated_delivery_date,
+            remarks=remarks,
             process_id=process_id,
         ).active(app_code="saleorder.saleorder")
         if state is True:
@@ -491,7 +502,7 @@ def task_active_delivery_from_sale_order(sale_order_id, process_id=None):
 
 
 @shared_task
-def task_active_delivery_from_lease_order(lease_order_id, process_id=None):
+def task_active_delivery_from_lease_order(lease_order_id, estimated_delivery_date=None, remarks="", process_id=None):
     state, msg_returned = False, ""
     lease_order_obj = LeaseOrder.objects.filter(id=lease_order_id).first()
     if lease_order_obj:
@@ -503,6 +514,8 @@ def task_active_delivery_from_lease_order(lease_order_id, process_id=None):
             order_obj=lease_order_obj,
             order_products=lease_order_products,
             delivery_config_obj=config_obj,
+            estimated_delivery_date=estimated_delivery_date,
+            remarks=remarks,
             process_id=process_id,
         ).active(app_code="leaseorder.leaseorder")
         if state is True:
