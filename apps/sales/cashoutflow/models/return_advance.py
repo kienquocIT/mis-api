@@ -83,6 +83,8 @@ class ReturnAdvanceCost(SimpleAbstractModel):
         null=True,
         related_name='advance_payment_cost',
     )
+    expense_name = models.CharField(max_length=150, null=True)
+    expense_description = models.CharField(max_length=250, null=True)
     expense_type = models.ForeignKey(
         'saledata.ExpenseItem',
         on_delete=models.CASCADE,
@@ -90,10 +92,7 @@ class ReturnAdvanceCost(SimpleAbstractModel):
         related_name='return_advance_expense'
     )
     expense_type_data = models.JSONField(default=dict)
-    expense_name = models.CharField(
-        max_length=150,
-        null=True
-    )
+
 
     remain_value = models.FloatField(
         default=0,

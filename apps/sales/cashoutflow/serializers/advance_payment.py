@@ -168,7 +168,7 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
             expense_items.append(
                 {
                     'id': item.id,
-                    'expense_name': item.expense_name,
+                    'expense_description': item.expense_description,
                     'expense_type': {
                         'id': item.expense_type_id,
                         'code': item.expense_type.code,
@@ -363,7 +363,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             expense_items.append({
                 'id': item.id,
                 'order': order,
-                'expense_name': item.expense_name,
+                'expense_description': item.expense_description,
                 'expense_type': item.expense_type_data,
                 'expense_uom_name': item.expense_uom_name,
                 'expense_quantity': item.expense_quantity,
@@ -540,7 +540,7 @@ class AdvancePaymentCostListSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdvancePaymentCost
         fields = (
-            'expense_name',
+            'expense_description',
             'expense_type',
             'expense_uom_name',
             'expense_quantity',
@@ -670,7 +670,7 @@ class APCommonFunction:
         try:
             for item in validate_data.get('ap_item_list', []):
                 if not all([
-                    item.get('expense_name'),
+                    item.get('expense_description'),
                     item.get('expense_uom_name'),
                     float(item.get('expense_quantity', 0)) > 0,
                     float(item.get('expense_unit_price')) > 0,

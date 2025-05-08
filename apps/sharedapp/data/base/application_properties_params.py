@@ -706,7 +706,7 @@ AdvancePayment_data__params = {
     # detail
     '19b83b91-9034-4ee9-a5fd-6b18a158b929': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': 'Line detail table - order',
+        'title': '(detail) order',
         'code': 'expense_items___order',
         'remark': '',
         'type': 1,
@@ -714,15 +714,15 @@ AdvancePayment_data__params = {
     },
     'c5adaa1e-cf3d-45a1-a1cb-aa3a7273b82d': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': 'Line detail table - expense name',
-        'code': 'expense_items___expense_name',
+        'title': '(detail) expense description',
+        'code': 'expense_items___expense_description',
         'remark': '',
         'type': 1,
         'is_print': True,
     },
     'c3e75526-fe66-4777-9d61-3c89730719f0': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': 'Line detail table - expense type',
+        'title': '(detail) expense type',
         'code': 'expense_items___expense_type__title',
         'remark': '',
         'type': 1,
@@ -730,7 +730,7 @@ AdvancePayment_data__params = {
     },
     'b54eaeb7-e9f6-4240-a276-d87a011bb875': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': 'Line detail table - uom name',
+        'title': '(detail) uom name',
         'code': 'expense_items___expense_uom_name',
         'remark': '',
         'type': 1,
@@ -738,7 +738,7 @@ AdvancePayment_data__params = {
     },
     'c7086a06-26ec-4ebd-9a2b-9fe70d968614': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': 'Line detail table - expense quantity',
+        'title': '(detail) expense quantity',
         'code': 'expense_items___expense_quantity',
         'remark': '',
         'type': 1,
@@ -746,7 +746,7 @@ AdvancePayment_data__params = {
     },
     'fe0e9c27-dddd-4fd6-a38a-6b941d9a38dd': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': 'Line detail table - expense unit price',
+        'title': '(detail) expense unit price',
         'code': 'expense_items___expense_unit_price',
         'remark': '',
         'type': 1,
@@ -754,7 +754,7 @@ AdvancePayment_data__params = {
     },
     'd54b19fc-d131-43f3-90d1-2f97df76e0fc': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': 'Line detail table - expense tax',
+        'title': '(detail) expense tax',
         'code': 'expense_items___expense_tax__title',
         'remark': '',
         'type': 1,
@@ -762,7 +762,7 @@ AdvancePayment_data__params = {
     },
     'd4ae3140-7a27-414e-bd1b-552fd0a3a821': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': 'Line detail table - expense tax price',
+        'title': '(detail) expense tax price',
         'code': 'expense_items___expense_tax_price',
         'remark': '',
         'type': 1,
@@ -770,7 +770,7 @@ AdvancePayment_data__params = {
     },
     'cd0f973e-2df8-43f7-8afa-4349e1c4ec52': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': 'Line detail table - expense subtotal price',
+        'title': '(detail) expense subtotal price',
         'code': 'expense_items___expense_subtotal_price',
         'remark': '',
         'type': 1,
@@ -778,7 +778,7 @@ AdvancePayment_data__params = {
     },
     'fce6ef2c-0024-4a6b-ac41-9c473a5be10d': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': 'Line detail table - expense after tax price',
+        'title': '(detail) expense after tax price',
         'code': 'expense_items___expense_after_tax_price',
         'remark': '',
         'type': 1,
@@ -910,7 +910,7 @@ Payment_data__params = {
     # detail
     '09b8a635-2061-4368-b987-31c835e518a5': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': 'Line detail table - order',
+        'title': '(detail) order',
         'code': 'expense_items___order',
         'remark': '',
         'type': 1,
@@ -918,15 +918,23 @@ Payment_data__params = {
     },
     '6c33d0a5-6766-463a-bca8-ebb9dfbc033e': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': 'Line detail table - expense type',
+        'title': '(detail) expense type',
         'code': 'expense_items___expense_type__title',
+        'remark': '',
+        'type': 1,
+        'is_print': True,
+    },
+    '730e0c3d-eb64-4521-b50e-70cff137c28b': {
+        'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
+        'title': '(detail) expense description',
+        'code': 'expense_items___expense_description',
         'remark': '',
         'type': 1,
         'is_print': True,
     },
     'a73125fd-1116-4263-b15f-cc16551a0bac': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': 'Line detail table - uom name',
+        'title': '(detail) uom name',
         'code': 'expense_items___expense_uom_name',
         'remark': '',
         'type': 1,
@@ -934,7 +942,7 @@ Payment_data__params = {
     },
     '7d383bbe-9613-40e8-90a9-daffb5a00bcf': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': 'Line detail table - expense quantity',
+        'title': '(detail) expense quantity',
         'code': 'expense_items___expense_quantity',
         'remark': '',
         'type': 1,
@@ -942,7 +950,7 @@ Payment_data__params = {
     },
     '67b2efcb-5068-4ea9-9241-df6725d3150e': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': 'Line detail table - expense unit price',
+        'title': '(detail) expense unit price',
         'code': 'expense_items___expense_unit_price',
         'remark': '',
         'type': 1,
@@ -950,7 +958,7 @@ Payment_data__params = {
     },
     '51ba7237-eaa4-4b60-846e-38b825c25dc5': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': 'Line detail table - expense tax',
+        'title': '(detail) expense tax',
         'code': 'expense_items___expense_tax__title',
         'remark': '',
         'type': 1,
@@ -958,7 +966,7 @@ Payment_data__params = {
     },
     '191c5f28-808b-48cc-b4df-470df5f7309d': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': 'Line detail table - expense tax price',
+        'title': '(detail) expense tax price',
         'code': 'expense_items___expense_tax_price',
         'remark': '',
         'type': 1,
@@ -966,7 +974,7 @@ Payment_data__params = {
     },
     '8bf47209-cb3f-45a9-b614-44251efeebb3': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': 'Line detail table - expense subtotal price',
+        'title': '(detail) expense subtotal price',
         'code': 'expense_items___expense_subtotal_price',
         'remark': '',
         'type': 1,
@@ -974,7 +982,7 @@ Payment_data__params = {
     },
     'a0ea393e-c0fa-48df-af0a-4e1c5c51025d': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': 'Line detail table - expense after tax price',
+        'title': '(detail) expense after tax price',
         'code': 'expense_items___expense_after_tax_price',
         'remark': '',
         'type': 1,
@@ -982,7 +990,7 @@ Payment_data__params = {
     },
     'b49bd6f4-65be-4aba-a1d4-22e576dcae69': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': 'Line detail table - document number',
+        'title': '(detail) document number',
         'code': 'expense_items___document_number',
         'remark': '',
         'type': 1,
@@ -990,7 +998,7 @@ Payment_data__params = {
     },
     'cfb94882-e4a0-4824-ab57-c99c73f25214': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': 'Line detail table - payment detail',
+        'title': '(detail) payment detail',
         'code': 'expense_items___detail_payment',
         'remark': '',
         'type': 1,

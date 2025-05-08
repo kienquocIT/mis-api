@@ -764,7 +764,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             cost_data.append(
                 {
                     'advance_payment_cost_id': item['id'],
-                    'expense_name': item['expense_name'],
+                    'expense_description': item['expense_description'],
                     'expense_type_id': item['expense_type']['id'],
                     'remain_value': item['remain_total'],
                     'return_value': item['remain_total'],

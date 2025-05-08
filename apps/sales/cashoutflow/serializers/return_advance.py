@@ -243,7 +243,7 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
         for item in obj.return_advance.all():
             list_result.append({
                 'id': item.advance_payment_cost_id,
-                'expense_name': item.expense_name,
+                'expense_description': item.expense_description,
                 'expense_type': item.expense_type_data,
                 'remain_total': item.remain_value,
                 'return_value': item.return_value
@@ -402,7 +402,7 @@ class APListForReturnSerializer(AbstractListSerializerModel):
                 {
                     'id': item.id,
                     'order': order,
-                    'expense_name': item.expense_name,
+                    'expense_description': item.expense_description,
                     'expense_type': item.expense_type_data,
                     'expense_uom_name': item.expense_uom_name,
                     'expense_quantity': item.expense_quantity,
