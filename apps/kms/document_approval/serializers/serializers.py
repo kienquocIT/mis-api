@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.shared import AttachmentMsg, HRMsg, KMSMsg
+from apps.shared import AttachmentMsg, HRMsg, KMSMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel
 from ..models import KMSDocumentApproval, AttachDocumentMapAttachmentFile, KMSInternalRecipient, KSMAttachedDocuments
 
 
@@ -38,11 +38,24 @@ def create_attached_document(document_appr, attached_list):
             folder=item['folder'],
             attachment=attachments
         ))
-    KMSInternalRecipient.objects.bulk_create(new_list)
+    KSMAttachedDocuments.objects.bulk_create(new_list)
 
 
 def create_internal_recipient(doc_obj, internal_list):
-    print(doc_obj, internal_list)
+    KMSInternalRecipient.objects.filter(document_approval_id=str(doc_obj.id)).delete()
+    new_list = []
+    for item in internal_list:
+        new_list.append(
+            KMSInternalRecipient(
+                document_approval_id=str(doc_obj.id),
+                kind=item['kind'],
+                employee_access=item['employee_access'] if 'employee_access' in item else {},
+                group_access=item['group_access'] if 'group_access' in item else {},
+                document_permission_list=item['permission_list'],
+                expiration_date=item['expiration_date']
+            )
+        )
+    KMSInternalRecipient.objects.bulk_create(new_list)
 
 class KMSAttachedDocumentSerializers(serializers.Serializer):  # noqa
     attachment = serializers.ListSerializer(child=serializers.UUIDField())
@@ -74,7 +87,7 @@ class KMSInternalRecipientSerializers(serializers.Serializer):  # noqa
     expiration_date = serializers.DateField(required=False, allow_null=True)
 
 
-class KMSDocumentApprovalCreateSerializer(serializers.ModelSerializer):
+class KMSDocumentApprovalCreateSerializer(AbstractCreateSerializerModel):
     attached_list = KMSAttachedDocumentSerializers(many=True)
     internal_recipient = KMSInternalRecipientSerializers(many=True)
 
@@ -111,7 +124,6 @@ class KMSDocumentApprovalCreateSerializer(serializers.ModelSerializer):
             'remark',
             'attached_list',
             'internal_recipient',
-            'system_status',
         )
 
 
@@ -126,12 +138,56 @@ class KMSDocumentApprovalListSerializer(serializers.ModelSerializer):
         )
 
 
-class KMSDocumentApprovalDetailSerializer(serializers.ModelSerializer):
+class KMSDocumentApprovalDetailSerializer(AbstractDetailSerializerModel):
 
     class Meta:
         model = KMSDocumentApproval
         fields = (
+            'id',
             'title',
             'remark',
             'system_status',
         )
+
+
+class KMSDocumentApprovalUpdateSerializer(AbstractCreateSerializerModel):
+    attached_list = KMSAttachedDocumentSerializers(many=True)
+    internal_recipient = KMSInternalRecipientSerializers(many=True)
+
+    class Meta:
+        model = KMSDocumentApproval
+        fields = (
+            'id',
+            'title',
+            'remark',
+            'attached_list',
+            'internal_recipient',
+        )
+
+    @classmethod
+    def validate_attached_list(cls, value):
+        if not len(value) > 0:
+            raise serializers.ValidationError({'detail': AttachmentMsg.FILE_NOT_FOUND})
+        return value
+
+    @classmethod
+    def validate_internal_recipient(cls, value):
+        if not len(value) > 0:
+            raise serializers.ValidationError({'detail': KMSMsg.INTERNAL_RECIPIENT_NOT_FOUND})
+        return value
+
+    @decorator_run_workflow
+    def update(self, instance, validated_data):
+        try:
+            with transaction.atomic():
+                attached_list = validated_data.pop('attached_list', None)
+                internal_list = validated_data.pop('internal_recipient', None)
+                for key, value in validated_data.items():
+                    setattr(instance, key, value)
+                instance.save()
+                create_attached_document(instance, attached_list)
+                create_internal_recipient(instance, internal_list)
+                return instance
+        except ValueError as err:
+            print('update document approval error, ', err)
+            raise serializers.ValidationError({'detail': KMSMsg.CREATE_APPROVAL_ERROR})

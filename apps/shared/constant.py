@@ -134,6 +134,7 @@ MAP_FIELD_TITLE = {
     'asset.instrumenttool': 'title',
     'asset.fixedassetwriteoff': 'title',
     'asset.instrumenttoolwriteoff': 'title',
+    'kms.kmsdocumentapproval': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

@@ -20,3 +20,7 @@ msgstr ""
 #
 msgid "Internal recipient not found"
 msgstr "Nhân viên nội bộ không tìm thấy"
+
+#
+msgid "Document approval"
+msgstr "Công văn đến"

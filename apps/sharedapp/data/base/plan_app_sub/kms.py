@@ -11,15 +11,15 @@ KMS_DOCUMENT_APPROVAL = {
     "app_label": "kms",
     "is_workflow": True,
     "allow_permit": True,
-    "option_permission": 1,
-    "option_allowed": [4],
+    "option_permission": 0,
+    "option_allowed": [1, 2, 3, 4],
     "app_depend_on": [
         "50348927-2c4f-4023-b638-445469c66953",  # Employee
         "e17b9123-8002-4c9b-921b-7722c3c9e3a5",  # Group
     ],
     "permit_mapping": {
         "view": {
-            "range": ["4"],
+            "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },  # For summary permit of employee
                 "e17b9123-8002-4c9b-921b-7722c3c9e3a5": {"view": "4", },  # For summary permit of group
@@ -29,7 +29,7 @@ KMS_DOCUMENT_APPROVAL = {
             },
         },
         "create": {
-            "range": ["4"],
+            "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },  # For summary permit of employee
                 "e17b9123-8002-4c9b-921b-7722c3c9e3a5": {"view": "4", },  # For summary permit of group
@@ -39,7 +39,7 @@ KMS_DOCUMENT_APPROVAL = {
             },
         },
         "edit": {
-            "range": ["4"],
+            "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },  # For summary permit of employee
                 "e17b9123-8002-4c9b-921b-7722c3c9e3a5": {"view": "4", },  # For summary permit of group
