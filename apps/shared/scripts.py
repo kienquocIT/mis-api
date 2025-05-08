@@ -14,7 +14,7 @@ from apps.core.base.models import (
 )
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
-    AdvancePaymentCost, PaymentCost, AdvancePayment, Payment
+    AdvancePaymentCost, PaymentCost, AdvancePayment, Payment, ReturnAdvanceCost
 )
 from apps.core.workflow.models import (
     WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
@@ -1533,6 +1533,17 @@ class SubScripts:
                 'payment_value_tax',
                 'payment_value'
             ])
+        print('Done :))')
+        return True
+
+    @classmethod
+    def update_des_for_cashoutflow(cls):
+        for item in AdvancePaymentCost.objects.all():
+            item.expense_description = item.expense_name
+            item.save(update_fields=['expense_description'])
+        for item in ReturnAdvanceCost.objects.all():
+            item.expense_description = item.expense_name
+            item.save(update_fields=['expense_description'])
         print('Done :))')
         return True
 
