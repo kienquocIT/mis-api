@@ -32,9 +32,6 @@ class OrderActiveDeliverySerializer:
             process_id=None,
     ):
         if order_obj:
-            self.tenant_id = order_obj.tenant_id
-            self.company_id = order_obj.company_id
-
             self.order_obj = order_obj
             self.order_products = order_products
             self.config_obj = delivery_config_obj
@@ -236,8 +233,8 @@ class OrderActiveDeliverySerializer:
         sub_id, pickup_quantity, m2m_obj_arr = self.__create_order_picking_sub_map_product()
         # setup MAIN
         obj = OrderPicking.objects.create(
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
+            tenant_id=self.order_obj.tenant_id if self.order_obj else None,
+            company_id=self.order_obj.company_id if self.order_obj else None,
             sale_order=self.order_obj,
             title=self.order_obj.title,
             sale_order_data={
@@ -265,8 +262,8 @@ class OrderActiveDeliverySerializer:
 
         # setup SUB
         sub_obj = OrderPickingSub.objects.create(
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
+            tenant_id=self.order_obj.tenant_id if self.order_obj else None,
+            company_id=self.order_obj.company_id if self.order_obj else None,
             id=sub_id,
             order_picking=obj,
             date_done=None,
@@ -346,8 +343,8 @@ class OrderActiveDeliverySerializer:
             title=self.order_obj.title if self.order_obj else '',
             employee_created=self.order_obj.employee_created if self.order_obj else None,
             #
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
+            tenant_id=self.order_obj.tenant_id if self.order_obj else None,
+            company_id=self.order_obj.company_id if self.order_obj else None,
             sale_order=sale_order,
             sale_order_data=sale_order_data,
             lease_order=lease_order,
@@ -392,8 +389,8 @@ class OrderActiveDeliverySerializer:
             title=obj_delivery.title,
             employee_created=obj_delivery.employee_created,
             #
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
+            tenant_id=self.order_obj.tenant_id if self.order_obj else None,
+            company_id=self.order_obj.company_id if self.order_obj else None,
             id=sub_id,
             order_delivery=obj_delivery,
             date_done=None,

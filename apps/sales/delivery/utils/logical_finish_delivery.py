@@ -360,6 +360,7 @@ class DeliFinishHandler:
             source_type=1,
             unit_price=cost,
             quantity=quantity,
+            total_value=cost * quantity,
             depreciation_time=delivery_product.product_depreciation_time,
             depreciation_start_date=delivery_product.product_depreciation_start_date,
             depreciation_end_date=delivery_product.product_depreciation_end_date,
