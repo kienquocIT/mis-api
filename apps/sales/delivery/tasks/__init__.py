@@ -117,6 +117,12 @@ class OrderActiveDeliverySerializer:
                     'product_cost': cost_product.product_cost_price,
                     'product_subtotal_cost': cost_product.product_subtotal_price,
                     'product_convert_into': cost_product.product_convert_into,
+                    'asset_type_data': cost_product.asset_type_data,
+                    'asset_group_manage_data': cost_product.asset_group_manage_data,
+                    'asset_group_using_data': cost_product.asset_group_using_data,
+                    'tool_type_data': cost_product.tool_type_data,
+                    'tool_group_manage_data': cost_product.tool_group_manage_data,
+                    'tool_group_using_data': cost_product.tool_group_using_data,
                 })
                 result.update(OrderActiveDeliverySerializer.append_depreciation_data(cost_product=cost_product))
         return result
