@@ -659,7 +659,7 @@ class PaymentCommonFunction:
                     'id': str(expense_type.id),
                     'code': expense_type.code,
                     'title': expense_type.title
-                }
+                } if expense_type else {}
                 if item.get('expense_tax_id'):
                     expense_tax = Tax.objects.get(id=item.get('expense_tax_id'))
                     item['expense_tax_id'] = str(expense_tax.id)
@@ -668,11 +668,7 @@ class PaymentCommonFunction:
                         'code': expense_tax.code,
                         'title': expense_tax.title,
                         'rate': expense_tax.rate
-                    }
-                else:
-                    item['expense_tax_id'] = None
-                    item['expense_tax_data'] = {}
-                    item['expense_tax_price'] = 0
+                    } if expense_tax else {}
             print('9. validate_payment_item_list --- ok')
             return validate_data
         except Exception as err:

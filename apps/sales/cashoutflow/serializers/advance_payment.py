@@ -670,11 +670,9 @@ class APCommonFunction:
         try:
             for item in validate_data.get('ap_item_list', []):
                 if not all([
-                    item.get('expense_description'),
                     item.get('expense_uom_name'),
                     float(item.get('expense_quantity', 0)) > 0,
-                    float(item.get('expense_unit_price')) > 0,
-                    float(item.get('expense_tax_price', 0)) >= 0,
+                    float(item.get('expense_unit_price')) > 0
                 ]):
                     raise serializers.ValidationError({'ap_item_list': 'AP item list is not valid.'})
 
@@ -694,12 +692,6 @@ class APCommonFunction:
                         'title': expense_tax.title,
                         'rate': expense_tax.rate
                     } if expense_tax else {}
-                item['expense_subtotal_price'] = (
-                        float(item['expense_quantity']) * float(item['expense_unit_price'])
-                )
-                item['expense_after_tax_price'] = (
-                        item['expense_subtotal_price'] + float(item.get('expense_tax_price', 0))
-                )
             print('9. validate_ap_item_list --- ok')
             return validate_data
         except Exception as err:
