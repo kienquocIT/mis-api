@@ -22,9 +22,10 @@ from apps.core.attachments.serializers import (
 )
 
 
-class FilesUpload(BaseCreateMixin):
+class FilesUpload(BaseListMixin, BaseCreateMixin):
     parser_classes = [MultiPartParser]
     queryset = Files.objects
+    serializer_list = FilesListSerializer
     serializer_create = FilesUploadSerializer
     serializer_detail = FilesDetailSerializer
 
@@ -136,6 +137,7 @@ class FilesUnused(BaseListMixin):
     queryset = Files.objects
     serializer_list = FilesListSerializer
     search_fields = ('file_name',)
+    filterset_fields = {'id': ['in']}
     list_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     @swagger_auto_schema()

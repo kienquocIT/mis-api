@@ -2,13 +2,11 @@ __all__ = ['AssetToolsDelivery', 'AssetToolsDeliveryAttachmentFile', 'ProductDel
 
 import json
 
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.masterdata.saledata.models import ProductWareHouse
-from apps.shared import DataAbstractModel, AssetToolsMsg
-from .provide import AssetToolsProvideProduct
+from apps.shared import DataAbstractModel, AssetToolsMsg, DisperseModel
 
 
 class AssetToolsDelivery(DataAbstractModel):
@@ -37,9 +35,7 @@ class AssetToolsDelivery(DataAbstractModel):
         )
     )
     provide_inheritor = models.ForeignKey(
-        'hr.Employee',
-        null=True,
-        on_delete=models.SET_NULL,
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
         help_text='Provide inheritor',
         related_name='%(app_label)s_%(class)s_employee_inheritor',
     )
@@ -49,12 +45,11 @@ class AssetToolsDelivery(DataAbstractModel):
         null=True,
         blank=True
     )
-    products = models.ManyToManyField(
-        'saledata.Product',
+    prod_in_tools = models.ManyToManyField(
+        'asset.InstrumentTool',
         through='ProductDeliveredMapProvide',
         symmetrical=False,
-        related_name='products_asset_tools_delivery',
-        blank=True,
+        related_name='prod_asset_tools_delivery',
     )
     attachments = models.ManyToManyField(
         'attachments.Files',
@@ -80,45 +75,79 @@ class AssetToolsDelivery(DataAbstractModel):
             self.code = code
 
     def update_product_used(self):
-        if not self.code:
-            prod_list = ProductDeliveredMapProvide.objects.filter(
-                delivery_id=str(self.id),
-            )
-            product_asset_list = []
-            product_warehouse_list = []
-            for item in prod_list:
-                count = item.done
-                row_item = item.product.product_map_asset_provide.filter(
-                    asset_tools_provide=self.provide,
-                ).first()  # bảng AssetToolsProvideProduct
-                if row_item:
-                    # update delivered cho provide product
-                    row_item.delivered += count
-                    if row_item.delivered > row_item.quantity:
-                        raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
-                    product_asset_list.append(row_item)
+        provide_prod_map = DisperseModel(app_model='assettools.AssetToolsProvideProduct').get_model()
 
-                    # update used_amount cho prod trong warehouse bảng ProductWareHouse if product has control inventory
-                    if 1 in item.product.product_choice:
-                        prod_warehouse = item.product.product_warehouse_product.first()
-                        if (prod_warehouse.stock_amount - prod_warehouse.used_amount) < count:
-                            raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
-                        prod_warehouse.used_amount += count
-                        product_warehouse_list.append(prod_warehouse)
-            if product_asset_list:
-                AssetToolsProvideProduct.objects.bulk_update(product_asset_list, fields=['delivered'])
-            if product_warehouse_list:
-                ProductWareHouse.objects.bulk_update(product_warehouse_list, fields=['used_amount'])
-
-            check_lst = AssetToolsProvideProduct.objects.filter(asset_tools_provide=self.provide)
+        def handle_provide_completed(provide):
+            # loop trong danh sách prod_map_provide nếu tất cả product đều cấp hết check complete_delivered
+            # cho provide đó
+            model_provide_lst = provide_prod_map.objects.filter(asset_tools_provide=provide)
             is_completed = True
-            for item in check_lst:
-                if item.quantity != item.delivered:
+            for prov_item in model_provide_lst:
+                if prov_item.quantity != prov_item.delivered:
                     is_completed = False
                     break
             if is_completed:
-                self.provide.complete_delivered = True
-                self.provide.save(update_fields=['complete_delivered'])
+                provide.complete_delivered = True
+                provide.save(update_fields=['complete_delivered'])
+
+        def update_provide(prod_map_queryset, number_delivered):
+            if prod_map_queryset.exists():
+                delivered_copy = number_delivered
+                items_to_update = []
+
+                for prod_item in prod_map_queryset:
+                    if prod_item.delivered < prod_item.quantity:
+                        remaining = prod_item.quantity - prod_item.delivered
+                        increment = min(remaining, delivered_copy)
+                        prod_item.delivered += increment
+                        delivered_copy -= increment
+                        items_to_update.append(prod_item)
+                        if delivered_copy == 0:
+                            break
+
+                if len(items_to_update) > 1:
+                    provide_prod_map.objects.bulk_update(items_to_update, fields=['delivered'])
+                elif items_to_update:
+                    items_to_update[0].save(update_fields=['delivered'])
+
+        try:
+            with transaction.atomic():
+                if self.system_status == 3:
+                    # lấy danh sách prod_map_deliver
+                    prod_map_deliver_lst = ProductDeliveredMapProvide.objects.filter(
+                        delivery_id=str(self.id),
+                    )
+                    for item in prod_map_deliver_lst:
+                        delivered = item.done
+                        item_has_prod = item.prod_in_tools
+
+                        if item_has_prod:
+                            prod_available = item_has_prod.quantity - item_has_prod.allocated_quantity
+
+                            if prod_available < delivered:
+                                raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
+
+                            item.delivered_number += delivered
+                            item_has_prod.allocated_quantity += delivered
+                            item_has_prod.save(update_fields=["allocated_quantity"])
+
+                            prod_map_provide = provide_prod_map.objects.filter(
+                                asset_tools_provide=self.provide,
+                                prod_in_tools=item_has_prod
+                            )
+                        else:
+                            item.delivered_number += delivered
+                            prod_map_provide = provide_prod_map.objects.filter(
+                                asset_tools_provide=self.provide,
+                                product_remark=item.prod_buy_new
+                            )
+
+                        update_provide(prod_map_provide, delivered)
+                        item.save(update_fields=["delivered_number"])
+
+                    handle_provide_completed(self.provide)
+        except ValueError:
+            raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
         return True
 
     def create_backup_data(self):
@@ -171,8 +200,14 @@ class ProductDeliveredMapProvide(DataAbstractModel):
         verbose_name='Product map delivery',
         related_name='provide_map_delivery',
     )
-    product = models.ForeignKey(
-        'saledata.Product',
+    prod_buy_new = models.CharField(
+        verbose_name='Title of Product buy new',
+        max_length=500,
+        null=True,
+        blank=True
+    )
+    prod_in_tools = models.ForeignKey(
+        'asset.InstrumentTool',
         on_delete=models.CASCADE,
         verbose_name='Product provide map with request delivery',
         related_name='product_map_asset_tools_delivery',
@@ -187,21 +222,11 @@ class ProductDeliveredMapProvide(DataAbstractModel):
             ]
         )
     )
-    warehouse = models.ForeignKey(
-        'saledata.WareHouse',
-        on_delete=models.CASCADE,
-        verbose_name='Product had provided at warehouse',
-        related_name='product_provided_at_warehouse',
-        null=True
-    )
-    warehouse_data = models.JSONField(
-        default=dict,
-        verbose_name='Warehouse info backup',
-        help_text=json.dumps(
-            [
-                {'id': '', 'title': '', 'code': ''}
-            ]
-        )
+    uom = models.CharField(
+        verbose_name='Unit of Measure',
+        max_length=500,
+        null=True,
+        blank=True
     )
     employee_inherit_data = models.JSONField(
         default=dict,
@@ -228,27 +253,14 @@ class ProductDeliveredMapProvide(DataAbstractModel):
     order = models.IntegerField(
         default=1, verbose_name='Order',
     )
-    is_inventory = models.BooleanField(
-        default=False, verbose_name='Has Inventory',
-    )
 
     def create_backup_data(self):
-        if self.product:
+        if self.prod_in_tools:
             self.product_data = {
-                "id": str(self.product_id),
-                "title": self.product.title,
-                "code": self.product.code,
-                "uom": {
-                    "id": str(self.product.inventory_uom.id),
-                    "title": self.product.inventory_uom.title,
-                    "code": self.product.inventory_uom.code
-                } if hasattr(self.product.inventory_uom, 'id') else {}
-            }
-        if self.warehouse:
-            self.warehouse_data = {
-                "id": str(self.warehouse_id),
-                "title": self.warehouse.title,
-                "code": self.warehouse.code,
+                "id": str(self.prod_in_tools_id),
+                "title": self.prod_in_tools.title,
+                "code": self.prod_in_tools.code,
+                "uom": self.prod_in_tools.measure_unit,
             }
         if self.employee_inherit:
             self.employee_inherit_data = {

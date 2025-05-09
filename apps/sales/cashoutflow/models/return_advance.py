@@ -52,7 +52,7 @@ class ReturnAdvance(DataAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=8)
+                code_generated = CompanyFunctionNumber.gen_auto_code(app_code='returnadvance')
                 if code_generated:
                     self.code = code_generated
                 else:
@@ -83,6 +83,8 @@ class ReturnAdvanceCost(SimpleAbstractModel):
         null=True,
         related_name='advance_payment_cost',
     )
+    expense_name = models.CharField(max_length=150, null=True)
+    expense_description = models.CharField(max_length=250, null=True)
     expense_type = models.ForeignKey(
         'saledata.ExpenseItem',
         on_delete=models.CASCADE,
@@ -90,10 +92,7 @@ class ReturnAdvanceCost(SimpleAbstractModel):
         related_name='return_advance_expense'
     )
     expense_type_data = models.JSONField(default=dict)
-    expense_name = models.CharField(
-        max_length=150,
-        null=True
-    )
+
 
     remain_value = models.FloatField(
         default=0,

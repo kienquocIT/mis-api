@@ -577,7 +577,7 @@ SaleOrder_data__params = {
 AdvancePayment_data__params = {
     "9616c619-3d13-4278-b960-33a806af008d": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Code",
+        "title": "Code",
         "code": "code",
         "remark": "",
         "type": 1,
@@ -585,7 +585,7 @@ AdvancePayment_data__params = {
     },
     "8a677597-59ec-4264-a8ad-32ce827a9152": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Title",
+        "title": "Title",
         "code": "title",
         "remark": "",
         "type": 1,
@@ -593,7 +593,7 @@ AdvancePayment_data__params = {
     },
     "1f1a4221-5446-4695-b9be-947c984a7ff3": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Sale code",
+        "title": "Sale code",
         "code": "sale_code",
         "remark": "",
         "type": 1,
@@ -601,15 +601,15 @@ AdvancePayment_data__params = {
     },
     "1929cf5c-d788-4101-a7dc-354deb4caadf": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Date created",
-        "code": "date_created",
+        "title": "Date created",
+        "code": "date_created_parsed",
         "remark": "",
         "type": 1,
         "is_print": True,
     },
     "53ca77cb-a101-41db-9239-18d8dca35a60": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Employee created fullname",
+        "title": "Employee created fullname",
         "code": "employee_created__full_name",
         "remark": "",
         "type": 1,
@@ -617,7 +617,7 @@ AdvancePayment_data__params = {
     },
     "4e6dc8ec-36c3-4ec4-a3ab-468abd2db2d4": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Employee created group",
+        "title": "Employee created group title",
         "code": "employee_created__group__title",
         "remark": "",
         "type": 1,
@@ -625,7 +625,7 @@ AdvancePayment_data__params = {
     },
     "bc7df0ac-ad85-41c5-b853-b71454185b1b": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Employee inherited fullname",
+        "title": "Employee inherited fullname",
         "code": "employee_inherit__full_name",
         "remark": "",
         "type": 1,
@@ -633,7 +633,7 @@ AdvancePayment_data__params = {
     },
     "afb72267-1efd-4475-9dd5-d977f0f7da19": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Employee inherited group",
+        "title": "Employee inherited group title",
         "code": "employee_inherit__group__title",
         "remark": "",
         "type": 1,
@@ -641,7 +641,7 @@ AdvancePayment_data__params = {
     },
     "e80b1db2-ffd8-445b-9bc0-915434874c72": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Advance payment type",
+        "title": "Advance payment type",
         "code": "advance_payment_type",
         "remark": "",
         "type": 1,
@@ -649,7 +649,7 @@ AdvancePayment_data__params = {
     },
     "7b1c06ca-e9f6-43e4-9de0-ae95c5dc80d6": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Supplier",
+        "title": "Supplier",
         "code": "supplier__name",
         "remark": "",
         "type": 1,
@@ -657,23 +657,39 @@ AdvancePayment_data__params = {
     },
     "b9b001d5-5252-4d79-8b29-ef6276544a32": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Advance payment method",
-        "code": "method",
+        "title": "Advance payment method",
+        "code": "method_parsed",
         "remark": "",
         "type": 1,
         "is_print": True,
     },
     "70980b0a-a03e-4566-93df-e48a8c7b1399": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Return date",
+        "title": "Return date",
         "code": "return_date",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "30fd8396-6e0d-4098-89cf-f4dd4be14808": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Advance payment before tax value",
+        "code": "advance_value_before_tax",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "299b9908-32ff-4135-ad2d-5d4130631a0a": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Advance payment tax value",
+        "code": "advance_value_tax",
         "remark": "",
         "type": 1,
         "is_print": True,
     },
     "db1ec197-34c0-4194-b17c-6ee54476ebfb": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Advance payment value",
+        "title": "Advance payment value",
         "code": "advance_value",
         "remark": "",
         "type": 1,
@@ -681,7 +697,7 @@ AdvancePayment_data__params = {
     },
     "cbe3d23d-42e5-42e7-aec2-d0114a79a4da": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "(print) Advance payment value (by words)",
+        "title": "Advance payment value (by words)",
         "code": "advance_value_by_words",
         "remark": "",
         "type": 1,
@@ -690,7 +706,7 @@ AdvancePayment_data__params = {
     # detail
     '19b83b91-9034-4ee9-a5fd-6b18a158b929': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': '(print) Line detail table - order',
+        'title': '(detail) order',
         'code': 'expense_items___order',
         'remark': '',
         'type': 1,
@@ -698,15 +714,15 @@ AdvancePayment_data__params = {
     },
     'c5adaa1e-cf3d-45a1-a1cb-aa3a7273b82d': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': '(print) Line detail table - expense name',
-        'code': 'expense_items___expense_name',
+        'title': '(detail) expense description',
+        'code': 'expense_items___expense_description',
         'remark': '',
         'type': 1,
         'is_print': True,
     },
     'c3e75526-fe66-4777-9d61-3c89730719f0': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': '(print) Line detail table - expense type',
+        'title': '(detail) expense type',
         'code': 'expense_items___expense_type__title',
         'remark': '',
         'type': 1,
@@ -714,7 +730,7 @@ AdvancePayment_data__params = {
     },
     'b54eaeb7-e9f6-4240-a276-d87a011bb875': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': '(print) Line detail table - uom name',
+        'title': '(detail) uom name',
         'code': 'expense_items___expense_uom_name',
         'remark': '',
         'type': 1,
@@ -722,7 +738,7 @@ AdvancePayment_data__params = {
     },
     'c7086a06-26ec-4ebd-9a2b-9fe70d968614': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': '(print) Line detail table - expense quantity',
+        'title': '(detail) expense quantity',
         'code': 'expense_items___expense_quantity',
         'remark': '',
         'type': 1,
@@ -730,7 +746,7 @@ AdvancePayment_data__params = {
     },
     'fe0e9c27-dddd-4fd6-a38a-6b941d9a38dd': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': '(print) Line detail table - expense unit price',
+        'title': '(detail) expense unit price',
         'code': 'expense_items___expense_unit_price',
         'remark': '',
         'type': 1,
@@ -738,7 +754,7 @@ AdvancePayment_data__params = {
     },
     'd54b19fc-d131-43f3-90d1-2f97df76e0fc': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': '(print) Line detail table - expense tax',
+        'title': '(detail) expense tax',
         'code': 'expense_items___expense_tax__title',
         'remark': '',
         'type': 1,
@@ -746,7 +762,7 @@ AdvancePayment_data__params = {
     },
     'd4ae3140-7a27-414e-bd1b-552fd0a3a821': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': '(print) Line detail table - expense tax price',
+        'title': '(detail) expense tax price',
         'code': 'expense_items___expense_tax_price',
         'remark': '',
         'type': 1,
@@ -754,7 +770,7 @@ AdvancePayment_data__params = {
     },
     'cd0f973e-2df8-43f7-8afa-4349e1c4ec52': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': '(print) Line detail table - expense subtotal price',
+        'title': '(detail) expense subtotal price',
         'code': 'expense_items___expense_subtotal_price',
         'remark': '',
         'type': 1,
@@ -762,7 +778,7 @@ AdvancePayment_data__params = {
     },
     'fce6ef2c-0024-4a6b-ac41-9c473a5be10d': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': '(print) Line detail table - expense after tax price',
+        'title': '(detail) expense after tax price',
         'code': 'expense_items___expense_after_tax_price',
         'remark': '',
         'type': 1,
@@ -773,7 +789,7 @@ AdvancePayment_data__params = {
 Payment_data__params = {
     "130acae6-f1d6-40ef-a3a4-85947708c5a0": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "(print) Code",
+        "title": "Code",
         "code": "code",
         "remark": "",
         "type": 1,
@@ -781,7 +797,7 @@ Payment_data__params = {
     },
     "52baca3b-2e09-4455-b568-fe46bb3a0182": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "(print) Title",
+        "title": "Title",
         "code": "title",
         "remark": "",
         "type": 1,
@@ -789,7 +805,7 @@ Payment_data__params = {
     },
     "eee4b5b7-7ce6-455a-a943-7f6932a395b1": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "(print) Sale code",
+        "title": "Sale code",
         "code": "sale_code",
         "remark": "",
         "type": 1,
@@ -797,15 +813,15 @@ Payment_data__params = {
     },
     "39ff8d24-4059-4551-8f8c-4ee339f434eb": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "(print) Date created",
-        "code": "date_created",
+        "title": "Date created",
+        "code": "date_created_parsed",
         "remark": "",
         "type": 1,
         "is_print": True,
     },
     "cef635ef-62b3-48a7-bdf5-ecb93b4094f2": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "(print) Employee created fullname",
+        "title": "Employee created fullname",
         "code": "employee_created__full_name",
         "remark": "",
         "type": 1,
@@ -813,7 +829,7 @@ Payment_data__params = {
     },
     "e3c4bbf6-9834-4cca-aaaa-70bcde404133": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "(print) Employee created group",
+        "title": "Employee created group title",
         "code": "employee_created__group__title",
         "remark": "",
         "type": 1,
@@ -821,7 +837,7 @@ Payment_data__params = {
     },
     "eb6e5522-61f7-4cc6-ac65-2c276e74083b": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "(print) Employee inherited fullname",
+        "title": "Employee inherited fullname",
         "code": "employee_inherit__full_name",
         "remark": "",
         "type": 1,
@@ -829,7 +845,7 @@ Payment_data__params = {
     },
     "46cff973-f673-4585-bb21-569594d11818": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "(print) Employee inherited group",
+        "title": "Employee inherited group title",
         "code": "employee_inherit__group__title",
         "remark": "",
         "type": 1,
@@ -837,7 +853,7 @@ Payment_data__params = {
     },
     "dc700ece-9f8c-468a-90ab-d7333d7ecccc": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "(print) Supplier",
+        "title": "Supplier",
         "code": "supplier__name",
         "remark": "",
         "type": 1,
@@ -845,7 +861,7 @@ Payment_data__params = {
     },
     "a679d6af-6b90-47e9-909a-c1d8c2f705c5": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "(print) Employee payment",
+        "title": "Employee payment",
         "code": "employee_payment__full_name",
         "remark": "",
         "type": 1,
@@ -853,15 +869,31 @@ Payment_data__params = {
     },
     "09cd193c-1106-4dcf-988e-31f4fbfcfbd1": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "(print) Payment method",
-        "code": "method",
+        "title": "Payment method",
+        "code": "method_parsed",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "f238b6e9-373c-4967-839f-b4f0a22ab1fa": {
+        "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
+        "title": "Payment before tax value",
+        "code": "payment_value_before_tax",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "43de9393-364f-4f70-b0c0-32ebc30a5e9e": {
+        "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
+        "title": "Payment tax value",
+        "code": "payment_value_tax",
         "remark": "",
         "type": 1,
         "is_print": True,
     },
     "66594b93-91e9-42d3-8b9b-7deb849c82ac": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "(print) Payment value",
+        "title": "Payment value",
         "code": "payment_value",
         "remark": "",
         "type": 1,
@@ -869,7 +901,7 @@ Payment_data__params = {
     },
     "613b5a7f-b25b-42e9-b7e2-ad00e9a12a0e": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "(print) Payment value (by words)",
+        "title": "Payment value (by words)",
         "code": "payment_value_by_words",
         "remark": "",
         "type": 1,
@@ -878,7 +910,7 @@ Payment_data__params = {
     # detail
     '09b8a635-2061-4368-b987-31c835e518a5': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': '(print) Line detail table - order',
+        'title': '(detail) order',
         'code': 'expense_items___order',
         'remark': '',
         'type': 1,
@@ -886,15 +918,23 @@ Payment_data__params = {
     },
     '6c33d0a5-6766-463a-bca8-ebb9dfbc033e': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': '(print) Line detail table - expense type',
+        'title': '(detail) expense type',
         'code': 'expense_items___expense_type__title',
+        'remark': '',
+        'type': 1,
+        'is_print': True,
+    },
+    '730e0c3d-eb64-4521-b50e-70cff137c28b': {
+        'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
+        'title': '(detail) expense description',
+        'code': 'expense_items___expense_description',
         'remark': '',
         'type': 1,
         'is_print': True,
     },
     'a73125fd-1116-4263-b15f-cc16551a0bac': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': '(print) Line detail table - uom name',
+        'title': '(detail) uom name',
         'code': 'expense_items___expense_uom_name',
         'remark': '',
         'type': 1,
@@ -902,7 +942,7 @@ Payment_data__params = {
     },
     '7d383bbe-9613-40e8-90a9-daffb5a00bcf': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': '(print) Line detail table - expense quantity',
+        'title': '(detail) expense quantity',
         'code': 'expense_items___expense_quantity',
         'remark': '',
         'type': 1,
@@ -910,7 +950,7 @@ Payment_data__params = {
     },
     '67b2efcb-5068-4ea9-9241-df6725d3150e': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': '(print) Line detail table - expense unit price',
+        'title': '(detail) expense unit price',
         'code': 'expense_items___expense_unit_price',
         'remark': '',
         'type': 1,
@@ -918,7 +958,7 @@ Payment_data__params = {
     },
     '51ba7237-eaa4-4b60-846e-38b825c25dc5': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': '(print) Line detail table - expense tax',
+        'title': '(detail) expense tax',
         'code': 'expense_items___expense_tax__title',
         'remark': '',
         'type': 1,
@@ -926,7 +966,7 @@ Payment_data__params = {
     },
     '191c5f28-808b-48cc-b4df-470df5f7309d': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': '(print) Line detail table - expense tax price',
+        'title': '(detail) expense tax price',
         'code': 'expense_items___expense_tax_price',
         'remark': '',
         'type': 1,
@@ -934,7 +974,7 @@ Payment_data__params = {
     },
     '8bf47209-cb3f-45a9-b614-44251efeebb3': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': '(print) Line detail table - expense subtotal price',
+        'title': '(detail) expense subtotal price',
         'code': 'expense_items___expense_subtotal_price',
         'remark': '',
         'type': 1,
@@ -942,7 +982,7 @@ Payment_data__params = {
     },
     'a0ea393e-c0fa-48df-af0a-4e1c5c51025d': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': '(print) Line detail table - expense after tax price',
+        'title': '(detail) expense after tax price',
         'code': 'expense_items___expense_after_tax_price',
         'remark': '',
         'type': 1,
@@ -950,7 +990,7 @@ Payment_data__params = {
     },
     'b49bd6f4-65be-4aba-a1d4-22e576dcae69': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': '(print) Line detail table - document number',
+        'title': '(detail) document number',
         'code': 'expense_items___document_number',
         'remark': '',
         'type': 1,
@@ -958,7 +998,7 @@ Payment_data__params = {
     },
     'cfb94882-e4a0-4824-ab57-c99c73f25214': {
         'application_id': '1010563f7c9442f9ba9963d5d26a1aca',
-        'title': '(print) Line detail table - payment detail',
+        'title': '(detail) payment detail',
         'code': 'expense_items___detail_payment',
         'remark': '',
         'type': 1,

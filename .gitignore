@@ -17,6 +17,8 @@ logs/*
 z_test*.py
 build/*
 *.egg-info/*
+serviceAccountKey.json
+*/serviceAccountKey.json
 
 # Bỏ qua file đã biên dịch
 *.c

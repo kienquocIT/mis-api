@@ -3,7 +3,7 @@ from django.db import transaction
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, ProductWareHouseSerial, ProductWareHouse
-from apps.sales.report.inventory_log import ReportInvLog, ReportInvCommonFunc
+from apps.sales.report.utils.log_for_goods_issue import IRForGoodsIssueHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE
 
 __all__ = ['GoodsIssue', 'GoodsIssueProduct']
@@ -45,56 +45,6 @@ class GoodsIssue(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-    @classmethod
-    def prepare_data_for_logging(cls, instance):
-        doc_data = []
-        for item in instance.goods_issue_product.filter(issued_quantity__gt=0):
-            if len(item.lot_data) > 0:
-                for lot_item in item.lot_data:
-                    prd_wh_lot = ProductWareHouseLot.objects.filter(id=lot_item['lot_id']).first()
-                    if prd_wh_lot and lot_item.get('quantity', 0) > 0:
-                        casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
-                            item.uom, lot_item.get('quantity', 0)
-                        )
-                        doc_data.append({
-                            'product': item.product,
-                            'warehouse': item.warehouse,
-                            'system_date': instance.date_approved,
-                            'posting_date': instance.date_approved,
-                            'document_date': instance.date_approved,
-                            'stock_type': -1,
-                            'trans_id': str(instance.id),
-                            'trans_code': instance.code,
-                            'trans_title': 'Goods issue',
-                            'quantity': casted_quantity,
-                            'cost': 0,  # theo gia cost
-                            'value': 0,  # theo gia cost
-                            'lot_data': {
-                                'lot_id': str(prd_wh_lot.id),
-                                'lot_number': prd_wh_lot.lot_number,
-                                'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
-                            }
-                        })
-            else:
-                casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.issued_quantity)
-                doc_data.append({
-                    'product': item.product,
-                    'warehouse': item.warehouse,
-                    'system_date': instance.date_approved,
-                    'posting_date': instance.date_approved,
-                    'document_date': instance.date_approved,
-                    'stock_type': -1,
-                    'trans_id': str(instance.id),
-                    'trans_code': instance.code,
-                    'trans_title': 'Goods issue',
-                    'quantity': casted_quantity,
-                    'cost': 0,  # theo gia cost
-                    'value': 0,  # theo gia cost
-                    'lot_data': {}
-                })
-        ReportInvLog.log(instance, instance.date_approved, doc_data)
-        return True
 
     @classmethod
     def update_product_warehouse_data(cls, data):
@@ -154,8 +104,36 @@ class GoodsIssue(DataAbstractModel):
         wo_item_obj.save(update_fields=['issued_quantity'])
         return True
 
+    @classmethod
+    def update_related_app_after_issue(cls, instance):
+        try:
+            with transaction.atomic():
+                if instance.inventory_adjustment:
+                    for item in instance.goods_issue_product.all():
+                        cls.update_product_warehouse_data(item)
+                        cls.update_status_inventory_adjustment_item(
+                            item.inventory_adjustment_item, item.issued_quantity
+                        )
+                elif instance.production_order:
+                    for item in instance.goods_issue_product.all():
+                        cls.update_product_warehouse_data(item)
+                        cls.update_issued_quantity_production_order_item(
+                            item.production_order_item, item.issued_quantity
+                        )
+                elif instance.work_order:
+                    for item in instance.goods_issue_product.all():
+                        cls.update_product_warehouse_data(item)
+                        cls.update_issued_quantity_work_order_item(
+                            item.work_order_item, item.issued_quantity
+                        )
+                return True
+        except Exception as err:
+            print(err)
+            raise err
+
     def save(self, *args, **kwargs):
-        SubPeriods.check_period(self.tenant_id, self.company_id)
+        if not kwargs.pop('skip_check_period', False):
+            SubPeriods.check_period(self.tenant_id, self.company_id)
 
         if self.system_status in [2, 3]:
             if not self.code:
@@ -167,32 +145,9 @@ class GoodsIssue(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
-                try:
-                    with transaction.atomic():
-                        if self.inventory_adjustment:
-                            for item in self.goods_issue_product.all():
-                                self.update_product_warehouse_data(item)
-                                self.update_status_inventory_adjustment_item(
-                                    item.inventory_adjustment_item, item.issued_quantity
-                                )
-                            # self.inventory_adjustment.update_ia_state()
-                        elif self.production_order:
-                            for item in self.goods_issue_product.all():
-                                self.update_product_warehouse_data(item)
-                                self.update_issued_quantity_production_order_item(
-                                    item.production_order_item, item.issued_quantity
-                                )
-                        elif self.work_order:
-                            for item in self.goods_issue_product.all():
-                                self.update_product_warehouse_data(item)
-                                self.update_issued_quantity_work_order_item(
-                                    item.work_order_item, item.issued_quantity
-                                )
-                except Exception as err:
-                    print(err)
-                    raise err
+                self.update_related_app_after_issue(self)
 
-                self.prepare_data_for_logging(self)
+                IRForGoodsIssueHandler.push_to_inventory_report(self)
 
         super().save(*args, **kwargs)
 

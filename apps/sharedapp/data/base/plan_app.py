@@ -125,6 +125,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "053c0804-162a-4357-a1c2-2161e6606cc2",  # Product category
     },
+    "d6e7d038-aef7-4e4e-befd-b13895974ec5": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "d6e7d038-aef7-4e4e-befd-b13895974ec5",  # Manufacturer
+    },
     "7bc78f47-66f1-4104-a6fa-5ca07f3f2275":{
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "7bc78f47-66f1-4104-a6fa-5ca07f3f2275",  # UOM
@@ -369,9 +373,41 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "7ba35923-d8ff-4f6d-bf80-468a7190a63b",  # Cash infow
     },
+    "c51857ef-513f-4dbf-babd-26d68950ad6e": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "c51857ef-513f-4dbf-babd-26d68950ad6e",  # Cash outfow
+    },
     "b690b9ff-670a-474b-8ae2-2c17d7c30f40": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "b690b9ff-670a-474b-8ae2-2c17d7c30f40",  # Recon
+    },
+    "488a6284-6341-4c51-b837-fb6964e51d82": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "488a6284-6341-4c51-b837-fb6964e51d82",  # Partner Center/ Lists
+    },
+    "fc552ebb-eb98-4d7b-81cd-e4b5813b7815": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "fc552ebb-eb98-4d7b-81cd-e4b5813b7815",  # Fixed asset
+    },
+    "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "2952f630-30e9-4a6a-a108-fb1dc4b9cdb1",  # Instrument Tool
+    },
+    "a196c182-01d4-4450-a4ef-86c16b536daa": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "a196c182-01d4-4450-a4ef-86c16b536daa",  # Goods Recovery
+    },
+    "bf724e39-fdd0-45ab-a343-d19c9c559e28": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "bf724e39-fdd0-45ab-a343-d19c9c559e28",  # Fixed asset write off
+    },
+    "5db2cba4-564f-4386-8b89-86e2457d60e0": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "5db2cba4-564f-4386-8b89-86e2457d60e0",  # Instrument tool write off
+    },
+    "14662696-261f-4878-8765-56f17d738b66": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "14662696-261f-4878-8765-56f17d738b66",  # Group Order
     },
 }
 
@@ -403,7 +439,7 @@ _PlanApplication_eOffice_data = {
     "08e41084-4379-4778-9e16-c09401f0a66e": {
         "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
         "application_id": "08e41084-4379-4778-9e16-c09401f0a66e",  # Asset, Tools Return
-    }
+    },
 }
 
 PlanApplication_data = {

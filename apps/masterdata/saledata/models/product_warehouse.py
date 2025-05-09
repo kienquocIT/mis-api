@@ -5,7 +5,7 @@ __all__ = [
 ]
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel, TYPE_LOT_TRANSACTION
+from apps.shared import MasterDataAbstractModel, SimpleAbstractModel, TYPE_LOT_TRANSACTION, SERIAL_STATUS
 from .product import UnitOfMeasure
 
 
@@ -100,7 +100,8 @@ class ProductWareHouse(MasterDataAbstractModel):
     ):
         obj, _created = cls.objects.get_or_create(
             tenant_id=tenant_id, company_id=company_id, product_id=product_id, warehouse_id=warehouse_id,
-            uom_id=uom_id, defaults={
+            defaults={
+                'uom_id': uom_id,
                 'tax_id': tax_id,
                 'stock_amount': amount,
                 'receipt_amount': amount,
@@ -447,11 +448,13 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
         related_name="pw_serial_purchase_request",
         help_text="To know this serial was receipted by which PurchaseRequest"
     )
+    # Status of serial
+    serial_status = models.SmallIntegerField(choices=SERIAL_STATUS, default=0, help_text="Flag to know current status")
 
     class Meta:
         verbose_name = 'Product Warehouse Serial'
         verbose_name_plural = 'Product Warehouse Serials'
-        ordering = ('-date_created',)
+        ordering = ('serial_number',)
         default_permissions = ()
         permissions = ()
 

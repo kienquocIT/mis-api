@@ -51,11 +51,10 @@ class TaxCategoryDetailSerializer(serializers.ModelSerializer):  # noqa
 
 class TaxCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
     title = serializers.CharField(max_length=150)
-    code = serializers.CharField(max_length=100)
 
     class Meta:
         model = TaxCategory
-        fields = ('code', 'title', 'description')
+        fields = ('title', 'description')
 
     def validate_title(self, value):
         if value != self.instance.title and TaxCategory.objects.filter_current(
@@ -66,15 +65,6 @@ class TaxCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
             raise serializers.ValidationError({"title": PriceMsg.TITLE_EXIST})
         return value
 
-    def validate_code(self, value):
-        if TaxCategory.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value
-        ).exclude(id=self.instance.id).exists():
-            raise serializers.ValidationError(PriceMsg.CODE_EXIST)
-        return value
-
 
 # Tax
 class TaxListSerializer(serializers.ModelSerializer):  # noqa
@@ -82,7 +72,7 @@ class TaxListSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Tax
-        fields = ('id', 'code', 'title', 'rate', 'category', 'tax_type')
+        fields = ('id', 'code', 'title', 'rate', 'category', 'tax_type', 'is_default')
 
     @classmethod
     def get_category(cls, obj):
@@ -145,10 +135,10 @@ class CurrencyListSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def get_currency(cls, obj):
         return {
-            "id": "",
-            "title": obj.title,
-            "code": obj.abbreviation
-        }
+            "id": obj.currency_id,
+            "title": obj.currency.title,
+            "code": obj.currency.code
+        } if obj.currency else {}
 
     class Meta:
         model = Currency

@@ -1,5 +1,6 @@
 import datetime
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Term, Periods
@@ -22,6 +23,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     revenue_information = serializers.SerializerMethodField()
     billing_address = serializers.SerializerMethodField()
     industry = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -40,7 +42,9 @@ class AccountListSerializer(serializers.ModelSerializer):
             'bank_accounts_mapped',
             'revenue_information',
             'billing_address',
-            'industry'
+            'industry',
+            'date_created',
+            'employee_created'
         )
 
     @classmethod
@@ -53,7 +57,11 @@ class AccountListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        return {'id': obj.owner_id, 'fullname': obj.owner.fullname} if obj.owner else {}
+        return {
+            'id': obj.owner_id,
+            'code': obj.owner.code,
+            'fullname': obj.owner.fullname,
+        } if obj.owner else {}
 
     @classmethod
     def get_contact_mapped(cls, obj):
@@ -62,7 +70,8 @@ class AccountListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_bank_accounts_mapped(cls, obj):
         return [{
-            'bank_country_id': item.country_id,
+            'id': str(item.id),
+            'bank_country_id': str(item.country_id),
             'bank_name': item.bank_name,
             'bank_code': item.bank_code,
             'bank_account_name': item.bank_account_name,
@@ -98,7 +107,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_billing_address(cls, obj):
         return [{
-            'id': item.id,
+            'id': str(item.id),
             'account_name': item.account_name,
             'email': item.email,
             'tax_code': item.tax_code,
@@ -115,11 +124,24 @@ class AccountListSerializer(serializers.ModelSerializer):
             'title': obj.industry.title,
         } if obj.industry else {}
 
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'id': obj.employee_created_id,
+            'code': obj.employee_created.code,
+            'full_name': obj.employee_created.get_full_name(2),
+            'group': {
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
+
 
 class AccountCreateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     code = serializers.CharField(max_length=150)
-    tax_code = serializers.CharField(max_length=150, required=False, allow_null=True)
+    tax_code = serializers.CharField(max_length=150, required=False, allow_null=True, allow_blank=True)
     account_group = serializers.UUIDField(required=False, allow_null=True)
     industry = serializers.UUIDField(required=False, allow_null=True)
     account_type = serializers.ListField(child=serializers.UUIDField(required=True))
@@ -163,13 +185,17 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_tax_code(cls, value):
-        if Account.objects.filter_current(fill__tenant=True, fill__company=True, tax_code=value).exists():
-            raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
-        return value
+        if value:
+            if Account.objects.filter_on_company(tax_code=value).exists():
+                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
+            return value
+        return ''
 
     @classmethod
     def validate_account_type(cls, value):
         if isinstance(value, list):
+            if len(value) == 0:
+                raise serializers.ValidationError({'account_type': _('Account type is required')})
             account_type = AccountType.objects.filter(id__in=value)
             if account_type.count() == len(value):
                 return [{'id': str(item.id), 'code': item.code, 'title': item.title} for item in account_type]
@@ -188,6 +214,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_manager(cls, value):
         if isinstance(value, list):
+            if len(value) == 0:
+                raise serializers.ValidationError({'manager': _('Manager is required')})
             employee_list = Employee.objects.filter(id__in=value)
             if employee_list.count() == len(value):
                 return [
@@ -213,11 +241,25 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                 return Industry.objects.get(id=value)
             except Industry.DoesNotExist:
                 raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_EXIST})
-        raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_NULL})
+        return None
 
     def validate(self, validate_data):
-        if validate_data.get('account_type_selection', None):
-            if 'tax_code' not in validate_data:
+        if validate_data.get('account_type_selection') == 0:
+            if len(self.initial_data.get('contact_mapped', [])) != 1:
+                raise serializers.ValidationError(
+                    {"contact_mapped": _('Contact is required (only 1) for individual account')}
+                )
+            contact_mapped_obj = Contact.objects.filter_on_company(
+                id__in=validate_data.get('contact_mapped', [])
+            ).first()
+            if contact_mapped_obj:
+                validate_data['name'] = contact_mapped_obj.fullname
+                validate_data['phone'] = contact_mapped_obj.mobile
+                validate_data['email'] = contact_mapped_obj.email
+            else:
+                raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
+        else:
+            if not validate_data.get('tax_code'):
                 raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         try:
             validate_data['price_list_mapped'] = Price.objects.get_current(
@@ -289,8 +331,8 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             'currency',
             'contact_mapped',
             'account_type_selection',
-            "activity",
-            "revenue_information"
+            'activity',
+            'revenue_information'
         )
 
     @classmethod
@@ -354,6 +396,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
                 list_contact_mapped.insert(
                     0, ({
                         'id': item.id,
+                        'code': item.code,
                         'fullname': item.fullname,
                         'job_title': item.job_title,
                         'email': item.email,
@@ -368,6 +411,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             else:
                 list_contact_mapped.append({
                     'id': item.id,
+                    'code': item.code,
                     'fullname': item.fullname,
                     'job_title': item.job_title,
                     'email': item.email,
@@ -465,7 +509,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
 
 class AccountUpdateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
-    tax_code = serializers.CharField(max_length=150, required=False, allow_null=True)
+    tax_code = serializers.CharField(max_length=150, required=False, allow_null=True, allow_blank=True)
     account_group = serializers.UUIDField(required=False, allow_null=True)
     industry = serializers.UUIDField(required=False, allow_null=True)
     account_type = serializers.ListField(child=serializers.UUIDField(required=True))
@@ -509,15 +553,17 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"name": AccountsMsg.NAME_NOT_NULL})
 
     def validate_tax_code(self, value):
-        if Account.objects.filter_current(
-                fill__tenant=True, fill__company=True, tax_code=value
-        ).exclude(id=self.instance.id).count() > 0:
-            raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
-        return value
+        if value:
+            if Account.objects.filter_on_company(tax_code=value).exclude(id=self.instance.id).count() > 0:
+                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
+            return value
+        return ''
 
     @classmethod
     def validate_account_type(cls, value):
         if isinstance(value, list):
+            if len(value) == 0:
+                raise serializers.ValidationError({'account_type': _('Account type is required')})
             account_type = AccountType.objects.filter(id__in=value)
             if account_type.count() == len(value):
                 return [{'id': str(item.id), 'code': item.code, 'title': item.title} for item in account_type]
@@ -536,6 +582,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_manager(cls, value):
         if isinstance(value, list):
+            if len(value) == 0:
+                raise serializers.ValidationError({'manager': _('Manager is required')})
             employee_list = Employee.objects.filter(id__in=value)
             if employee_list.count() == len(value):
                 return [
@@ -561,7 +609,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                 return Industry.objects.get(id=value)
             except Industry.DoesNotExist:
                 raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_EXIST})
-        raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_NULL})
+        return None
 
     @classmethod
     def validate_currency(cls, value):
@@ -600,8 +648,22 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validate_data):
-        if validate_data.get('account_type_selection', None):
-            if 'tax_code' not in validate_data:
+        if validate_data.get('account_type_selection') == 0:
+            if len(self.initial_data.get('contact_mapped', [])) != 1:
+                raise serializers.ValidationError(
+                    {"contact_mapped": _('Contact is required (only 1) for individual account')}
+                )
+            contact_mapped_obj = Contact.objects.filter_on_company(
+                id__in=validate_data.get('contact_mapped', [])
+            ).first()
+            if contact_mapped_obj:
+                validate_data['name'] = contact_mapped_obj.title
+                validate_data['phone'] = contact_mapped_obj.mobile
+                validate_data['email'] = contact_mapped_obj.email
+            else:
+                raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
+        else:
+            if not validate_data.get('tax_code'):
                 raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         return validate_data
 
@@ -621,7 +683,18 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
-class CustomerListSerializer(serializers.ModelSerializer):
+class CustomerListSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = (
+            "id",
+            'code',
+            "name",
+            "tax_code"
+        )
+
+
+class SupplierListSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = (

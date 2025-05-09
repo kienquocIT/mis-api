@@ -153,3 +153,36 @@ msgstr "<h2><strong><span style=\"text-align: center;\"> __company_title__ </spa
 
 msgid "New Project Created"
 msgstr "Dự án mới được tạo"
+
+msgid "New Contract signature request created"
+msgstr "Yêu cầu ký hợp đồng mới được tạo"
+
+msgid "<h2 style=\"font-weight: 500; font-size: 20px\">Company: <strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
+    "<p style=\"color: #007D88; font-size: 18px\">Hello <b><span class=\"params-data\" data-code=\"_contract__member\"></span></b></p>"
+    "<div style=\"background: #f6f6f6;text-align: center;padding: 20px 25px\"><p>You have a document needed signature from:</p>"
+    "<p><b><span class=\"params-data\" data-code=\"_contract__created_email\"></span></b></p>"
+    "<p><b><span class=\"params-data\" data-code=\"_contract__title\"></span></b></p>"
+    "<p><a href=\"_contract__url\" style=\"text-decoration:none;color:#fff;width: 150px;display: inline-block;background: #007D88;padding: 6px;text-transform: uppercase;letter-spacing: .95px;\">View document</a></p></div>"
+msgstr "<h2 style=\"font-weight: 500; font-size: 20px\">Company: <strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
+    "<p style=\"color: #007D88; font-size: 18px\">Xin chào <b><span class=\"params-data\" data-code=\"_contract__member\"></span></b></p>"
+    "<div style=\"background: #f6f6f6;text-align: center;padding: 20px 25px\"><p>Bạn có một tài liệu cần ký từ:</p>"
+    "<p><b><span class=\"params-data\" data-code=\"_contract__created_email\"></span></b></p>"
+    "<p><b><span class=\"params-data\" data-code=\"_contract__title\"></span></b></p>"
+    "<p><a href=\"_contract__url\" style=\"text-decoration:none;color:#fff;width: 150px;display: inline-block;background: #007D88;padding: 6px;text-transform: uppercase;letter-spacing: .95px;\">Xem tài liệu</a></p></div>"
+
+msgid "Missing info"
+msgstr "Thiếu thông tin"
+
+msgid "New leave request created"
+msgstr "Phiếu nghỉ phép mới đã tạo"
+
+msgid "<h2 style=\"font-weight: 500; font-size: 20px\">Company: <strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
+    "<p style=\"font-size: 18px\">Hi, </p>"
+    "<div><p>Employee <b><span class=\"params-data\" data-code=\"_leave__employee\"></span></b> has been granted leave for about <b><span class=\"params-data\" data-code=\"_leave__day_off\"></span></b> days, and will return to work on <b><span class=\"params-data\" data-code=\"_leave__date_back\"></span></b>.</p>"
+    "<p>During this period, please contact <b><span class=\"params-data\" data-code=\"_leave__leader_name\"></span></b> at <b><span class=\"params-data\" data-code=\"_leave__leader_email\"></span></b> if your email requires immediate attention.</p>"
+    "</div>"
+msgstr "<h2 style=\"font-weight: 500; font-size: 20px\">Công ty: <strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
+    "<p style=\"font-size: 18px\">Chào, </p>"
+    "<div><p>Nhân viên <b><span class=\"params-data\" data-code=\"_leave__employee\"></span></b> đã được cấp phép nghỉ phép khoảng <b><span class=\"params-data\" data-code=\"_leave__day_off\"></span></b> ngảy, và sẽ quay lại làm việc vào <b><span class=\"params-data\" data-code=\"_leave__date_back\"></span></b>.</p>"
+    "<p>Trong thời gian này, vui lòng liên hệ <b><span class=\"params-data\" data-code=\"_leave__leader_name\"></span></b> vào <b><span class=\"params-data\" data-code=\"_leave__leader_email\"></span></b> nếu công việc bạn cần xử lý gấp.</p>"
+    "</div>"

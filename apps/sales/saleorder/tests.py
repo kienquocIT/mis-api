@@ -226,7 +226,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
             "total_employees": 1,
             "phone": "string",
             "email": "string",
-            "account_type_selection": 0,
+            "account_type_selection": 1,
             "system_status": 0
         }
         url = reverse("AccountList")
@@ -299,6 +299,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'indicator_net_income',
                 # payment stage tab
                 'sale_order_payment_stage',
+                'sale_order_invoice',
                 # system
                 'workflow_runtime_id',
                 'is_active',
@@ -442,6 +443,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'indicator_net_income',
                 # payment stage tab
                 'sale_order_payment_stage',
+                'sale_order_invoice',
                 # system
                 'workflow_runtime_id',
                 'is_active',

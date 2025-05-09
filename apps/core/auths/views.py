@@ -18,6 +18,7 @@ from apps.core.auths.serializers import (
     ValidateUserDetailSerializer, SubmitOTPSerializer,
 )
 from apps.core.company.models import CompanyUserEmployee
+from apps.core.firebase.utils import FCMNotify
 from apps.shared import (
     mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel, TypeCheck, Caching,
 )
@@ -114,7 +115,7 @@ class AuthLogin(generics.GenericAPIView):
         translation.activate('vi')
 
         # validate username and password
-        ser = self.get_serializer(data=request.data)
+        ser = AuthLoginSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
 
         # get user object from serializer
@@ -172,6 +173,7 @@ class AuthLogout(APIView):
             metadata=mongo_log_auth.metadata(user_id=str(request.user.id)),
             endpoint="LOGOUT",
         )
+        FCMNotify.destroy_token_of_user(user_obj=request.user)
         return ResponseController.no_content_204()
 
 

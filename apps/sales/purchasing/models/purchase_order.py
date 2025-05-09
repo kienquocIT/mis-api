@@ -65,6 +65,14 @@ class PurchaseOrder(DataAbstractModel):
         default=list,
         help_text="read data products, use for get list or detail"
     )
+    purchase_order_payment_stage = models.JSONField(
+        default=list,
+        help_text="read data payment stage, use for get list or detail purchase order"
+    )
+    purchase_order_invoice = models.JSONField(
+        default=list,
+        help_text="read data invoice, use for get list or detail purchase order"
+    )
     # total amount of products
     total_product_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab product")
     total_product_tax = models.FloatField(default=0, help_text="total tax of tab product")
@@ -72,10 +80,6 @@ class PurchaseOrder(DataAbstractModel):
     total_product_revenue_before_tax = models.FloatField(
         default=0,
         help_text="total revenue before tax of tab product (after discount on total, apply promotion,...)"
-    )
-    purchase_order_payment_stage = models.JSONField(
-        default=list,
-        help_text="read data payment stage, use for get list or detail purchase order"
     )
     attachment_m2m = models.ManyToManyField(
         'attachments.Files',
@@ -260,11 +264,8 @@ class PurchaseOrderProduct(SimpleAbstractModel):
     product_subtotal_price = models.FloatField(default=0)
     product_subtotal_price_after_tax = models.FloatField(default=0)
     order = models.IntegerField(default=1)
-    # goods receipt information
-    gr_remain_quantity = models.FloatField(
-        default=0,
-        help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
-    )
+    # fields for receipt
+    gr_remain_quantity = models.FloatField(default=0, help_text="minus when receipt")
     # shipping
     is_shipping = models.BooleanField(default=False, help_text="flag to know this record is shipping not product")
     shipping_title = models.CharField(max_length=100, blank=True)
@@ -320,11 +321,8 @@ class PurchaseOrderRequestProduct(SimpleAbstractModel):
         default=False,
         help_text="True if quantity order > quantity request => create quantity stock"
     )
-    # goods receipt information
-    gr_remain_quantity = models.FloatField(
-        default=0,
-        help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
-    )
+    # fields for receipt
+    gr_remain_quantity = models.FloatField(default=0, help_text="minus when receipt")
 
     class Meta:
         verbose_name = 'Purchase Order Request Product'
@@ -343,8 +341,15 @@ class PurchaseOrderPaymentStage(MasterDataAbstractModel):
         related_name="purchase_order_payment_stage_po",
     )
     remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
-    payment_ratio = models.FloatField(default=0)
+    date = models.DateTimeField(null=True)
+    due_date = models.DateTimeField(null=True)
+    date_type = models.CharField(max_length=200, blank=True)
+    ratio = models.FloatField(null=True)
+    invoice = models.IntegerField(null=True)
+    invoice_data = models.JSONField(default=dict, help_text='data json of invoice')
     value_before_tax = models.FloatField(default=0)
+    value_reconcile = models.FloatField(default=0)
+    reconcile_data = models.JSONField(default=list, help_text='data json of reconcile')
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
@@ -352,13 +357,46 @@ class PurchaseOrderPaymentStage(MasterDataAbstractModel):
         related_name="purchase_order_payment_stage_tax",
         null=True
     )
-    value_after_tax = models.FloatField(default=0)
-    due_date = models.DateTimeField(null=True)
+    tax_data = models.JSONField(default=dict, help_text='data json of tax')
+    value_tax = models.FloatField(default=0)
+    value_total = models.FloatField(default=0)
+    is_ap_invoice = models.BooleanField(default=False)
     order = models.IntegerField(default=1)
+    cash_outflow_done = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Purchase Order Payment Stage'
         verbose_name_plural = 'Purchase Order Payment Stages'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class PurchaseOrderInvoice(MasterDataAbstractModel):
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="purchase order",
+        related_name="purchase_order_invoice_purchase_order",
+    )
+    remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+    date = models.DateTimeField(null=True)
+    ratio = models.FloatField(null=True)
+    tax = models.ForeignKey(
+        'saledata.Tax',
+        on_delete=models.CASCADE,
+        verbose_name="tax",
+        related_name="purchase_order_invoice_tax",
+        null=True
+    )
+    tax_data = models.JSONField(default=dict, help_text='data json of tax')
+    total = models.FloatField(default=0)
+    balance = models.FloatField(default=0)
+    order = models.IntegerField(default=1)
+
+    class Meta:
+        verbose_name = 'Purchase Order Invoice'
+        verbose_name_plural = 'Purchase Order Invoices'
         ordering = ('order',)
         default_permissions = ()
         permissions = ()

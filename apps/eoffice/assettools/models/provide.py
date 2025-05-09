@@ -14,8 +14,8 @@ class AssetToolsProvide(DataAbstractModel):
         null=True,
         blank=True
     )
-    products = models.ManyToManyField(
-        'saledata.Product',
+    prod_in_tools = models.ManyToManyField(
+        'asset.InstrumentTool',
         through='AssetToolsProvideProduct',
         symmetrical=False,
         related_name='products_of_asset_provide',
@@ -91,8 +91,8 @@ class AssetToolsProvideProduct(DataAbstractModel):
         verbose_name='Product of Asset, Tools provide',
         related_name='asset_provide_map_product',
     )
-    product = models.ForeignKey(
-        'saledata.Product',
+    prod_in_tools = models.ForeignKey(
+        'asset.InstrumentTool',
         on_delete=models.CASCADE,
         verbose_name='Product need provide',
         related_name='product_map_asset_provide',
@@ -116,19 +116,8 @@ class AssetToolsProvideProduct(DataAbstractModel):
             ]
         )
     )
-    uom = models.ForeignKey(
-        'saledata.UnitOfMeasure',
-        on_delete=models.CASCADE,
-        verbose_name='',
-    )
-    uom_data = models.JSONField(
-        default=dict,
-        verbose_name='Unit of Measure backup',
-        help_text=json.dumps(
-            {
-                'id': '', 'title': '', 'code': '',
-            }
-        )
+    uom = models.CharField(
+        max_length=100, blank=True, default=None
     )
     quantity = models.FloatField(
         verbose_name='Quantity of user request',
@@ -151,6 +140,7 @@ class AssetToolsProvideProduct(DataAbstractModel):
     )
     subtotal = models.FloatField(default=0, verbose_name='Subtotal price')
     delivered = models.FloatField(default=0, verbose_name='Product is delivered')
+    is_returned = models.FloatField(default=0, verbose_name='Product is returned')
 
     def create_backup_data(self):
         if self.tax and not self.tax_data:
@@ -160,17 +150,11 @@ class AssetToolsProvideProduct(DataAbstractModel):
                 "code": str(self.tax.code),
                 "rate": str(self.tax.rate),
             }
-        if self.uom and not self.uom_data:
-            self.uom_data = {
-                "id": str(self.uom_id),
-                "title": str(self.uom.title)
-            }
-        if self.product and not self.product_data:
+        if self.prod_in_tools and not self.product_data:
             self.product_data = {
-                "id": str(self.product_id),
-                "title": str(self.product.title),
-                "code": self.product.code,
-                "is_inventory": 1 in self.product.product_choice,
+                "id": str(self.prod_in_tools_id),
+                "title": str(self.prod_in_tools.title),
+                "code": self.prod_in_tools.code,
             }
 
     def before_save(self):

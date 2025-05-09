@@ -195,6 +195,16 @@ class ProcessRuntimeControl:  # pylint: disable=R0904
                 return True
         raise exceptions.PermissionDenied
 
+    @classmethod
+    def check_app_available_in_process(
+            cls, process_obj: Process, app_id: UUID or str
+    ) -> True or exceptions.PermissionDenied:
+        if process_obj and app_id:
+            for item in process_obj.global_app:
+                if 'application' in item and item['application'] == app_id:
+                    return True
+        raise exceptions.PermissionDenied
+
     def __init__(self, process_obj: Process, key_raise_error: str = 'process'):
         self.key_raise_error: str = key_raise_error
         self.process_obj: Process = process_obj

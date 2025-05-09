@@ -100,7 +100,7 @@ class PurchaseRequest(DataAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=9)
+                code_generated = CompanyFunctionNumber.gen_auto_code(app_code='purchaserequest')
                 if code_generated:
                     self.code = code_generated
                 else:
@@ -148,10 +148,8 @@ class PurchaseRequestProduct(MasterDataAbstractModel):
         null=True
     )
     sub_total_price = models.FloatField()
-    remain_for_purchase_order = models.FloatField(
-        default=0,
-        help_text="this is quantity of product which is not purchased order yet, update when PO finish"
-    )
+    # fields for purchase order
+    remain_for_purchase_order = models.FloatField(default=0, help_text="minus when purchase")
     date_modified = models.DateTimeField(
         default=timezone.now,
     )

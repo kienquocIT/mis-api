@@ -114,7 +114,16 @@ def create_revenue_plan_group_employee(revenue_plan, revenue_plan_group_employee
             any(isinstance(item, (int, float)) for item in data.get('emp_quarter_profit_target', [])),
             data.get('employee_mapped_id'),
         ]):
-            bulk_data.append(RevenuePlanGroupEmployee(revenue_plan_mapped=revenue_plan, **data))
+            bulk_data.append(
+                RevenuePlanGroupEmployee(
+                    revenue_plan_mapped=revenue_plan,
+                    employee_created=revenue_plan.employee_created,
+                    employee_inherit_id=data.get('employee_mapped_id'),
+                    tenant=revenue_plan.tenant,
+                    company=revenue_plan.company,
+                    **data
+                )
+            )
         else:
             raise serializers.ValidationError({'employee_data': 'Employee data is not validated.'})
     RevenuePlanGroupEmployee.objects.filter(revenue_plan_mapped=revenue_plan).delete()
@@ -312,3 +321,56 @@ class RevenuePlanUpdateSerializer(serializers.ModelSerializer):
         create_revenue_plan_group(instance, self.initial_data.get('RevenuePlanGroup_data', []))
         create_revenue_plan_group_employee(instance, self.initial_data.get('RevenuePlanGroupEmployee_data', []))
         return instance
+
+
+# Employee Plan
+class RevenuePlanByReportPermListSerializer(serializers.ModelSerializer):
+    employee_mapped = serializers.SerializerMethodField()
+    profit_target_type = serializers.SerializerMethodField()
+    period_mapped = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RevenuePlanGroupEmployee
+        fields = (
+            'id',
+            'emp_month_target',
+            'emp_quarter_target',
+            'emp_year_target',
+            'emp_month_profit_target',
+            'emp_quarter_profit_target',
+            'emp_year_profit_target',
+            'employee_mapped',
+            'profit_target_type',
+            'period_mapped'
+        )
+
+    @classmethod
+    def get_employee_mapped(cls, obj):
+        return {
+            'id': obj.employee_mapped_id,
+            'code': obj.employee_mapped.code,
+            'full_name': obj.employee_mapped.get_full_name(2),
+            'group': {
+                'id': obj.employee_mapped.group_id,
+                'code': obj.employee_mapped.group.code,
+                'title': obj.employee_mapped.group.title
+            } if obj.employee_mapped.group else {},
+        } if obj.employee_mapped else {}
+
+    @classmethod
+    def get_profit_target_type(cls, obj):
+        return obj.revenue_plan_mapped.profit_target_type if obj.revenue_plan_mapped else None
+
+    @classmethod
+    def get_period_mapped(cls, obj):
+        return {
+            'id': obj.revenue_plan_mapped.period_mapped_id,
+            'code': obj.revenue_plan_mapped.period_mapped.code,
+            'title': obj.revenue_plan_mapped.period_mapped.title,
+            'space_month': obj.revenue_plan_mapped.period_mapped.space_month,
+            'fiscal_year': obj.revenue_plan_mapped.period_mapped.fiscal_year,
+        } if obj.revenue_plan_mapped else {}
+
+    @classmethod
+    def get_profit_type(cls, obj):
+        return obj.revenue_plan_mapped.profit_target_type if obj.revenue_plan_mapped else None

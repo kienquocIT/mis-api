@@ -87,7 +87,7 @@ class GoodsTransferProductSerializer(serializers.ModelSerializer):
         try:
             return UnitOfMeasure.objects.get(id=value)
         except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'uom': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+            raise serializers.ValidationError({'uom': ProductMsg.UOM_NOT_EXIST})
 
     def validate(self, validated_data):
         return validated_data

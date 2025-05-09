@@ -114,12 +114,12 @@ class Group(TenantAbstractModel):
         return [str(x) for x in cls.objects.filter(first_manager_id=employee_id).values_list('id', flat=True)]
 
     @classmethod
-    def update_budget_plan(cls, this_budget_plan):
+    def update_budget_plan(cls, group_mapped, this_budget_plan):
         existed_expense_id_list = []
         bulk_info = []
         order = 1
         for item in BudgetPlanGroupExpense.objects.filter(budget_plan=this_budget_plan).exclude(
-            budget_plan_group__group_mapped=cls
+            budget_plan_group__group_mapped=group_mapped
         ):
             if str(item.expense_item_id) not in existed_expense_id_list:
                 bulk_info.append(
@@ -158,6 +158,6 @@ class Group(TenantAbstractModel):
             this_period = Periods.get_current_period(self.tenant_id, self.company_id)
             if this_period:
                 this_budget_plan = this_period.budget_plan_period_mapped.first()
-                self.update_budget_plan(this_budget_plan)
+                self.update_budget_plan(self, this_budget_plan)
         # hit DB
         super().save(*args, **kwargs)

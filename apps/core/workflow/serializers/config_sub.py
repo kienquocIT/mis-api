@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from django.utils.translation import gettext_lazy as trans
+
 from apps.core.base.models import ApplicationProperty
 from apps.core.hr.models import Employee
 from apps.core.workflow.models import Node, Zone, Association, CollaborationInForm, \
@@ -383,7 +385,7 @@ class ZoneDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_property_list(cls, obj):
         return [
-            {'id': proper[0], 'title': proper[1], 'code': proper[2]}
+            {'id': proper[0], 'title': proper[1], 'title_i18n': trans(proper[1]), 'code': proper[2]}
             for proper in obj.properties.values_list(
                 'id',
                 'title',

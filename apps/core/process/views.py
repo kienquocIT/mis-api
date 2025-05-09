@@ -103,6 +103,7 @@ class ProcessConfigDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
 
 
 class ProcessRuntimeDataMatch(BaseRetrieveMixin):
+    queryset = Process.objects
     filterset_class = ProcessRuntimeDataMatchFilter
     serializer_detail = ProcessRuntimeDataMatchFromStageSerializer
 
@@ -150,6 +151,10 @@ class ProcessRuntimeDataMatch(BaseRetrieveMixin):
             if obj_process:
                 ProcessRuntimeControl.check_permit_process(
                     process_obj=obj_process, employee_id=request.user.employee_current_id
+                )
+                # if func bellow pass, continue check app available in global app
+                ProcessRuntimeControl.check_app_available_in_process(
+                    process_obj=obj_process, app_id=app_id
                 )
                 result = ProcessRuntimeDataMatchFromProcessSerializer(
                     instance=obj_process, context={'app_id': app_id}
@@ -240,7 +245,7 @@ class ProcessRuntimeList(BaseListMixin, BaseCreateMixin):
     search_fields = ['title', 'remark']
 
     def get_queryset(self):
-        if self.request.user.employee_current_id:
+        if self.request.user and hasattr(self.request.user, 'employee_current_id'):
             return super().get_queryset().filter(members__contains=str(self.request.user.employee_current_id))
         return super().get_queryset().none()
 

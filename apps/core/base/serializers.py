@@ -55,11 +55,14 @@ class ApplicationListSerializer(serializers.ModelSerializer):
 
 
 class ApplicationPropertyListSerializer(serializers.ModelSerializer):
+    title_i18n = serializers.SerializerMethodField()
+
     class Meta:
         model = ApplicationProperty
         fields = (
             'id',
             'title',
+            'title_i18n',
             'code',
             'remark',
             'type',
@@ -69,6 +72,10 @@ class ApplicationPropertyListSerializer(serializers.ModelSerializer):
             'stage_compare_data',
             'example',
         )
+
+    @classmethod
+    def get_title_i18n(cls, obj):
+        return trans(obj.title)
 
 
 class ApplicationPropertyForPrintListSerializer(serializers.ModelSerializer):

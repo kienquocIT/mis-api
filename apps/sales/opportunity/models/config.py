@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from apps.shared import SimpleAbstractModel
+from apps.shared import SimpleAbstractModel, MasterDataAbstractModel
 
 STAGE_CONDITION_ATTRIBUTE = [
     (0, _('Customer')),
@@ -9,13 +9,13 @@ STAGE_CONDITION_ATTRIBUTE = [
     (2, _('Budget')),
     (3, _('Open Date')),
     (4, _('Close Date')),
-    (5, _('Decision maker')),
-    (6, _('LostByOtherReason')),
-    (7, _('Product.line.detail')),
-    (8, _('Competitor.Win')),
-    (9, _('Quotation.confirm')),
-    (10, _('SaleOrder.status')),
-    (11, _('SaleOrder.Delivery.Status')),
+    (5, _('Decision Maker')),
+    (6, _('Lost By Other Reason')),
+    (7, _('Product Line Detail')),
+    (8, _('Competitor Win')),
+    (9, _('Quotation Status')),
+    (10, _('SaleOrder Status')),
+    (11, _('SaleOrder Delivery Status')),
     (12, _('Close Deal')),
 ]
 
@@ -55,21 +55,11 @@ class OpportunityConfig(SimpleAbstractModel):
         permissions = ()
 
 
-class CustomerDecisionFactor(SimpleAbstractModel):
-    title = models.CharField(
-        max_length=100,
-    )
-
-    company = models.ForeignKey(
-        'company.Company',
-        on_delete=models.CASCADE,
-        related_name='sales_opportunity_customer_decision_factor',
-    )
-
+class CustomerDecisionFactor(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Opportunity Customer Decision Factor'
         verbose_name_plural = 'Opportunity Customer Decision Factors'
-        ordering = ('-title',)
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 

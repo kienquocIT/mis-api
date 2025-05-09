@@ -22,3 +22,6 @@ from .eoffices import *
 from .warehouse import *
 from .web_builder import *
 from .project import *
+from .fixed_asset import *
+from .bidding import *
+from .consulting import *

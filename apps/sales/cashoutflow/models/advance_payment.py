@@ -68,8 +68,10 @@ class AdvancePayment(DataAbstractModel, BastionFieldAbstractModel):
         verbose_name='AdvancePayment method',
         help_text='0 is Cash, 1 is Bank Transfer'
     )
-    return_date = models.DateTimeField()
+    return_date = models.DateField()
     money_gave = models.BooleanField(default=False)
+    advance_value_before_tax = models.FloatField(default=0)
+    advance_value_tax = models.FloatField(default=0)
     advance_value = models.FloatField(default=0)
     advance_value_by_words = models.CharField(max_length=500, default='', blank=True)
     sale_code = models.CharField(max_length=100, null=True)
@@ -84,7 +86,7 @@ class AdvancePayment(DataAbstractModel, BastionFieldAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=6)
+                code_generated = CompanyFunctionNumber.gen_auto_code(app_code='advancepayment')
                 if code_generated:
                     self.code = code_generated
                 else:
@@ -128,6 +130,7 @@ class AdvancePaymentCost(SimpleAbstractModel):
     expense_name = models.CharField(max_length=150, null=True)
     expense_type = models.ForeignKey('saledata.ExpenseItem', on_delete=models.CASCADE, null=True)
     expense_type_data = models.JSONField(default=dict)
+    expense_description = models.CharField(max_length=250, null=True)
     expense_uom_name = models.CharField(max_length=150, null=True)
     expense_quantity = models.FloatField()
     expense_unit_price = models.FloatField(default=0)

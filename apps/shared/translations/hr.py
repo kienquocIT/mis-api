@@ -5,6 +5,7 @@ class HRMsg:
     GROUP_LEVEL_NOT_EXIST = _('Group level does not exist.')
     GROUP_CODE_EXIST = _('Group code is exist.')
     GROUP_NOT_EXIST = _('Group does not exist.')
+    GROUP_IS_ARRAY = _('Group must be array.')
     ROLES_NOT_EXIST = _('Some roles do not exist.')
     ROLE_IS_ARRAY = _('Role must be array.')
     EMPLOYEE_PLAN_APP_CHECK = _('Licenses used of "{}" plan is over total licenses.')
@@ -30,3 +31,4 @@ class HRMsg:
     INVALID_SCHEMA = _("Duplicated code! Check the schema function in Company setting.")
     GROUP_LEVEL_EXIST = _("The level of the group exists")
     COMPANY_IS_REQUIRED = _("The company data is requires when validating data")
+    UPDATE_CONTRACT_DENIED = _("Contract is signing can not update")

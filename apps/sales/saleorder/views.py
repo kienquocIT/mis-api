@@ -49,13 +49,13 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
         if is_minimal:
             return super().get_queryset()
 
-        main_queryset = super().get_queryset().select_related(
+        return super().get_queryset().select_related(
             "customer",
             "opportunity",
             "quotation",
             "employee_inherit",
         )
-        return self.get_queryset_custom_direct_page(main_queryset)
+        # return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Sale Order List",
@@ -272,7 +272,12 @@ class SaleOrderPurchasingStaffList(BaseListMixin):
     list_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('sale_order_product_sale_order')
+        return super().get_queryset().filter(
+            delivery_status__in=[0, 1, 2]
+        ).select_related(
+            'employee_inherit',
+            'employee_inherit__group'
+        ).prefetch_related('sale_order_product_sale_order')
 
     @swagger_auto_schema(
         operation_summary="Sale Order List For Purchasing Staff",

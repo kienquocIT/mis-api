@@ -17,6 +17,7 @@ from apps.shared import (
 class ReturnAdvanceListSerializer(AbstractListSerializerModel):
     advance_payment = serializers.SerializerMethodField()
     money_received = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = ReturnAdvance
@@ -29,6 +30,7 @@ class ReturnAdvanceListSerializer(AbstractListSerializerModel):
             'money_received',
             'date_created',
             'return_total',
+            'employee_inherit'
         )
 
     @classmethod
@@ -58,6 +60,19 @@ class ReturnAdvanceListSerializer(AbstractListSerializerModel):
     @classmethod
     def get_money_received(cls, obj):
         return obj.money_received
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'group': {
+                'id': obj.employee_inherit.group_id,
+                'title': obj.employee_inherit.group.title,
+                'code': obj.employee_inherit.group.code
+            } if obj.employee_inherit.group else {}
+        } if obj.employee_inherit else {}
 
 
 class ReturnAdvanceCreateSerializer(AbstractCreateSerializerModel):
@@ -134,6 +149,7 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
     employee_created = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
+    date_created_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = ReturnAdvance
@@ -147,7 +163,7 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
             'method',
             'system_status',
             'money_received',
-            'date_created',
+            'date_created_parsed',
             'returned_list',
             'return_total',
             'process',
@@ -199,12 +215,8 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
     def get_employee_created(cls, obj):
         return {
             'id': obj.employee_created_id,
-            'first_name': obj.employee_created.first_name,
-            'last_name': obj.employee_created.last_name,
-            'email': obj.employee_created.email,
             'full_name': obj.employee_created.get_full_name(2),
             'code': obj.employee_created.code,
-            'is_active': obj.employee_created.is_active,
             'group': {
                 'id': obj.employee_created.group_id,
                 'title': obj.employee_created.group.title,
@@ -216,12 +228,8 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
     def get_employee_inherit(cls, obj):
         return {
             'id': obj.employee_inherit_id,
-            'first_name': obj.employee_inherit.first_name,
-            'last_name': obj.employee_inherit.last_name,
-            'email': obj.employee_inherit.email,
             'full_name': obj.employee_inherit.get_full_name(2),
             'code': obj.employee_inherit.code,
-            'is_active': obj.employee_inherit.is_active,
             'group': {
                 'id': obj.employee_inherit.group_id,
                 'title': obj.employee_inherit.group.title,
@@ -235,12 +243,16 @@ class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
         for item in obj.return_advance.all():
             list_result.append({
                 'id': item.advance_payment_cost_id,
-                'expense_name': item.expense_name,
+                'expense_description': item.expense_description,
                 'expense_type': item.expense_type_data,
                 'remain_total': item.remain_value,
                 'return_value': item.return_value
             })
         return list_result
+
+    @classmethod
+    def get_date_created_parsed(cls, obj):
+        return obj.date_created.strftime('%d/%m/%Y')
 
 
 class ReturnAdvanceUpdateSerializer(AbstractCreateSerializerModel):
@@ -390,7 +402,7 @@ class APListForReturnSerializer(AbstractListSerializerModel):
                 {
                     'id': item.id,
                     'order': order,
-                    'expense_name': item.expense_name,
+                    'expense_description': item.expense_description,
                     'expense_type': item.expense_type_data,
                     'expense_uom_name': item.expense_uom_name,
                     'expense_quantity': item.expense_quantity,

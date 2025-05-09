@@ -137,7 +137,7 @@ class PurchaseOrderProductGRList(BaseListMixin):
     list_hidden_field = []
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        return super().get_queryset().filter(gr_remain_quantity__gt=0).select_related(
             'product',
             'uom_order_request',
             'uom_order_actual',
@@ -149,12 +149,13 @@ class PurchaseOrderProductGRList(BaseListMixin):
         ).prefetch_related(
             Prefetch(
                 'purchase_order_request_order_product',
-                queryset=PurchaseOrderRequestProduct.objects.select_related(
+                queryset=PurchaseOrderRequestProduct.objects.filter(gr_remain_quantity__gt=0).select_related(
                     'uom_stock',
                     'purchase_request_product',
                     'purchase_request_product__purchase_request',
                     'purchase_request_product__uom',
                 ),
+                to_attr='filtered_po_pr_product'
             ),
         )
 

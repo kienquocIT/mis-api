@@ -1,0 +1,151 @@
+from django.db.models import Q, Prefetch
+from drf_yasg.utils import swagger_auto_schema
+
+from apps.sales.asset.models import FixedAsset
+from apps.sales.asset.serializers import FixedAssetListSerializer, FixedAssetCreateSerializer, \
+    FixedAssetDetailSerializer, FixedAssetUpdateSerializer, AssetForLeaseListSerializer, AssetStatusLeaseListSerializer
+from apps.sales.delivery.models import OrderDeliveryProductAsset
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+
+__all__ =[
+    'FixedAssetList',
+    'FixedAssetDetail',
+    'AssetForLeaseList',
+    'AssetStatusLeaseList',
+]
+
+class FixedAssetList(BaseListMixin, BaseCreateMixin):
+    queryset = FixedAsset.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {}
+    serializer_list = FixedAssetListSerializer
+    serializer_create = FixedAssetCreateSerializer
+    serializer_detail = FixedAssetDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        query_set = (super().get_queryset().select_related('product', 'manage_department', 'use_customer')
+                                           .prefetch_related('use_departments'))
+        # get fixed assets that haven't been written off
+        return query_set.filter(
+                        Q(fixed_asset_write_off__isnull=True) |
+                        Q(fixed_asset_write_off__isnull=False, fixed_asset_write_off__system_status=0))
+
+    @swagger_auto_schema(
+        operation_summary="Fixed Asset List",
+        operation_description="Get Fixed Asset List",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='asset', model_code='fixedasset', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Fixed Asset",
+        operation_description="Create New Fixed Asset",
+        request_body=FixedAssetCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        employee_require=True,
+        label_code='asset', model_code='fixedasset', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
+        return self.create(request, *args, **kwargs)
+
+
+class FixedAssetDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = FixedAsset.objects
+    serializer_detail = FixedAssetDetailSerializer
+    serializer_update = FixedAssetUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        query_set = (super().get_queryset().select_related('classification', 'product', 'manage_department')
+                                           .prefetch_related('use_departments', 'asset_sources', 'ap_invoice_items'))
+        return query_set
+
+    @swagger_auto_schema(
+        operation_summary="Fixed Asset Detail",
+        operation_description="Get Fixed Asset Detail",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='asset', model_code='fixedasset', perm_code='view',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Fixed Asset Update",
+        operation_description="Fixed Asset Update",
+        request_body=FixedAssetUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='asset', model_code='fixedasset', perm_code='edit',
+    )
+    def put(self, request, *args, pk, **kwargs):
+        self.ser_context = {'user': request.user}
+        return self.update(request, *args, pk, **kwargs)
+
+
+class AssetForLeaseList(BaseListMixin, BaseCreateMixin):
+    queryset = FixedAsset.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        "status": ["exact"],
+    }
+    serializer_list = AssetForLeaseListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Fixed Asset For Lease List",
+        operation_description="Get Fixed Asset For Lease List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='asset', model_code='fixedasset', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class AssetStatusLeaseList(BaseListMixin, BaseCreateMixin):
+    queryset = FixedAsset.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        "status": ["exact"],
+        "delivery_pa_asset__delivery_sub__order_delivery__lease_order_id": ["exact", "in"],
+    }
+    serializer_list = AssetStatusLeaseListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            Prefetch(
+                'delivery_pa_asset',
+                queryset=OrderDeliveryProductAsset.objects.select_related(
+                    'delivery_sub',
+                    'delivery_sub__order_delivery',
+                    'delivery_sub__order_delivery__lease_order',
+                    'delivery_sub__order_delivery__lease_order__customer',
+                ),
+            ),
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Fixed Asset Status Lease List",
+        operation_description="Get Fixed Asset Status Lease List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='asset', model_code='fixedasset', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

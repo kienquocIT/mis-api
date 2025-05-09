@@ -6,7 +6,7 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
     SaleOrderProductSerializer, SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, \
-    SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer, SaleOrderRuleValidate
+    SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer, SaleOrderRuleValidate, SaleOrderInvoiceSerializer
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
@@ -156,6 +156,7 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'sale_order_payment_stage',
+            'sale_order_invoice',
             # system
             'workflow_runtime_id',
             'is_active',
@@ -227,6 +228,10 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    sale_order_invoice = SaleOrderInvoiceSerializer(
+        many=True,
+        required=False
+    )
     # recurrence
     recurrence_task_id = serializers.UUIDField(allow_null=True, required=False)
 
@@ -292,6 +297,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'sale_order_payment_stage',
+            'sale_order_invoice',
             # recurrence
             'is_recurrence_template',
             'is_recurring',
@@ -363,6 +369,13 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
         sale_order = SaleOrder.objects.create(**validated_data)
         SaleOrderCommonCreate().create_sale_order_sub_models(validated_data=validated_data, instance=sale_order)
 
+        # Check instance is change document => set is_change True for root
+        if sale_order.is_change is True and sale_order.document_root_id:
+            document_root = SaleOrder.objects.filter_on_company(id=sale_order.document_root_id).first()
+            if document_root:
+                document_root.is_change = True
+                document_root.save(update_fields=['is_change'])
+
         if sale_order.process:
             ProcessRuntimeControl(process_obj=sale_order.process).register_doc(
                 process_stage_app_obj=sale_order.process_stage_app,
@@ -426,6 +439,10 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    sale_order_invoice = SaleOrderInvoiceSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = SaleOrder
@@ -471,6 +488,7 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
             'indicator_net_income',
             # payment stage tab
             'sale_order_payment_stage',
+            'sale_order_invoice',
         )
 
     @classmethod
@@ -508,11 +526,7 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
     def validate_opportunity_rules(self, validate_data):
         if 'opportunity_id' in validate_data:
             if validate_data['opportunity_id'] is not None:
-                opportunity = Opportunity.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=validate_data['opportunity_id']
-                ).first()
+                opportunity = Opportunity.objects.filter_on_company(id=validate_data['opportunity_id']).first()
                 if opportunity:
                     if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
@@ -636,6 +650,7 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
 
 class SaleOrderPurchasingStaffListSerializer(serializers.ModelSerializer):
     is_create_purchase_request = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -651,6 +666,19 @@ class SaleOrderPurchasingStaffListSerializer(serializers.ModelSerializer):
     def get_is_create_purchase_request(cls, obj):
         so_product = obj.sale_order_product_sale_order.all()
         return any(item.remain_for_purchase_request > 0 and item.product_id is not None for item in so_product)
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            "id": obj.employee_inherit_id,
+            "code": obj.employee_inherit.code,
+            "full_name": obj.employee_inherit.get_full_name(2),
+            "group": {
+                "id": str(obj.employee_inherit.group_id),
+                "title": obj.employee_inherit.group.title,
+                "code": obj.employee_inherit.group.code
+            } if obj.employee_inherit.group_id else {}
+        } if obj.employee_inherit else {}
 
 
 class SOProductWOListSerializer(serializers.ModelSerializer):

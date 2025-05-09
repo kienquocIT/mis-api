@@ -10,7 +10,6 @@ from apps.shared import TypeCheck, EmployeeAttribute, DisperseModel
 from .models import Account, ProductWareHouse
 
 
-
 class AccountListFilter(django_filters.FilterSet):
     manager__contains = filters.CharFilter(method='filter_manager__contains', field_name='manager__contains')
     has_manager_custom = filters.CharFilter(method='filter_has_manager_custom', field_name='manager__contains')
@@ -75,33 +74,39 @@ class ProductWareHouseListFilter(django_filters.FilterSet):
         }
 
     def filter_is_asset(self, queryset, name, value):  # pylint: disable=W0613  # noqa
-        user_obj = getattr(self.request, 'user', None) # noqa
+        user_obj = getattr(self.request, 'user', None)  # noqa
         params = self.request.query_params.dict()
-        if user_obj:
-            filter_kwargs = Q()
-            if 'product_id' in params:
-                filter_kwargs &= Q(**{'product_id': params['product_id']})
-            if 'is_asset' in params:
-                asset_config = DisperseModel(app_model='assettools.AssetToolsConfig').get_model().objects.filter(
-                    company_id=user_obj.company_current_id,
-                )
-                product_type = [str(asset_config.first().product_type.id)]
-                warehouses = asset_config.first().asset_config_warehouse_map_asset_config.all()
-                product_warehouse = [str(warehouse.warehouse.id) for warehouse in warehouses]
-                # check admin list
-                asset_admin_list = asset_config.first().asset_config_employee_map_asset_config.all()
-                is_authen = False
-                if user_obj.employee_current and asset_admin_list:
-                    for item in asset_admin_list:
-                        if item.employee == user_obj.employee_current:
-                            is_authen = True
-                            break
-                if not is_authen:
-                    raise exceptions.PermissionDenied
-                filter_kwargs &= Q(Q(product__general_product_types_mapped__id__in=product_type) & Q(
-                    warehouse__id__in=product_warehouse
-                ))
-            if filter_kwargs is not None:
-                return queryset.filter(filter_kwargs)
-            return queryset
-        raise exceptions.AuthenticationFailed
+
+        if not user_obj:
+            raise exceptions.AuthenticationFailed
+
+        filter_kwargs = Q()
+
+        if 'product_id' in params:
+            filter_kwargs &= Q(product_id=params['product_id'])
+
+        if 'is_asset' in params:
+            asset_config_qs = DisperseModel(app_model='assettools.AssetToolsConfig').get_model().objects.filter(
+                company_id=user_obj.company_current_id
+            )
+
+            asset_config = asset_config_qs.first()
+            if not asset_config or not asset_config.product_type:
+                raise exceptions.PermissionDenied
+
+            product_type = str(asset_config.product_type.id)
+            product_warehouse = [
+                str(warehouse.warehouse.id) for warehouse in asset_config.asset_config_warehouse_map_asset_config.all()
+            ]
+
+            # Kiểm tra quyền truy cập
+            asset_admin_list = {item.employee for item in asset_config.asset_config_employee_map_asset_config.all()}
+            if user_obj.employee_current not in asset_admin_list:
+                raise exceptions.PermissionDenied
+
+            filter_kwargs &= Q(
+                product__general_product_types_mapped__id=product_type,
+                warehouse__id__in=product_warehouse
+            )
+
+        return queryset.filter(filter_kwargs)

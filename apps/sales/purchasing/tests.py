@@ -199,7 +199,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
             "code": "AC01",
             "website": "trucphuong.com.vn",
             "account_type": [account_type],
-            "account_type_selection": 0,
+            "account_type_selection": 1,
             "account_group": account_group,
             "manager": [
                 employee
@@ -568,7 +568,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
             "code": "SUP01",
             "website": "trucphuong.com.vn",
             "account_type": [account_type],
-            "account_type_selection": 0,
+            "account_type_selection": 1,
             "account_group": account_group,
             "manager": [
                 employee
@@ -739,6 +739,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
                 'total_product_revenue_before_tax',
                 # payment stage tab
                 'purchase_order_payment_stage',
+                'purchase_order_invoice',
                 # system
                 'is_active',
                 'attachment',
@@ -1164,7 +1165,7 @@ class TestCasePurchaseQuotation(AdvanceTestCase):
             "code": "SUP01",
             "website": "trucphuong.com.vn",
             "account_type": [account_type],
-            "account_type_selection": 0,
+            "account_type_selection": 1,
             "account_group": account_group,
             "manager": [
                 employee

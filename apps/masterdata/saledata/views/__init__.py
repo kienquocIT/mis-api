@@ -11,3 +11,5 @@ from .price import *
 from .periods import *
 from .revenue_plan_config import *
 from .document import *
+from .asset import *
+from .bank import *

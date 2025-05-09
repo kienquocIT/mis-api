@@ -43,6 +43,9 @@ class SaleMsg:
     PRODUCTION_REPORT_NOT_EXIST = _('Production report does not exist.')
     EMPLOYEE_INHERIT_NOT_EXIST = _('Employee inherit does not exist.')
     WORK_ORDER_NOT_EXIST = _('Work order does not exist.')
+    LEASE_ORDER_NOT_EXIST = _('Lease order does not exist.')
+    FROM_EMAIL_NOT_EXIST = _('From email does not exist.')
+    DELIVERY_NOT_EXIST = _('Delivery does not exist.')
 
 
 class SaleTask:
@@ -108,12 +111,31 @@ class CashInflowMsg:
     PAYMENT_VALUE_NOT_VALID = _('Payment value can not > Balance value')
     AR_INVOICE_NOT_EXIST = _('AR invoice does not exist')
     SALE_ORDER_NOT_EXIST = _('Sale order does not exist')
-    BANK_NOT_ACTIVE = _('This company bank account is not active')
+    SALE_ORDER_STAGE_NOT_EXIST = _('Sale order stage does not exist')
     BANK_NOT_EXIST = _('This company bank account does not exist')
     BANK_NOT_NULL = _('This company bank account is not null')
     ACCOUNT_NOT_CUSTOMER = _('This account is not a Customer account')
     CUSTOMER_NOT_EXIST = _('Customer does not exist')
     CUSTOMER_NOT_NULL = _('Customer is not null')
+
+
+class CashOutflowMsg:
+    COF_TOTAL_VALUE_NOT_MATCH = _('Cash outflow total value must = Cash value + Bank value')
+    MISSING_PAYMENT_METHOD_INFO = _('Payment method information is missing')
+    SUM_PAYMENT_VALUE_NOT_MATCH = _('Sum payment value is not match')
+    BALANCE_VALUE_CHANGED = _('Balance value has changed')
+    PAYMENT_STAGE_NOT_EXIST = _('Payment stage does not exist')
+    PAYMENT_VALUE_NOT_VALID = _('Payment value can not > Balance value')
+    AP_INVOICE_NOT_EXIST = _('AP invoice does not exist')
+    PURCHASE_ORDER_NOT_EXIST = _('Purchase order does not exist')
+    PURCHASE_ORDER_STAGE_NOT_EXIST = _('Purchase order stage does not exist')
+    BANK_NOT_EXIST = _('This company bank account does not exist')
+    BANK_NOT_NULL = _('This company bank account is not null')
+    ACCOUNT_NOT_SUPPLIER = _('This account is not a Supplier account')
+    SUPPLIER_NOT_EXIST = _('Supplier does not exist')
+    SUPPLIER_NOT_NULL = _('Supplier is not null')
+    COF_TYPE_NOT_VALID = _('Cash out type is not valid')
+    COF_TYPE_NOT_NULL = _('Cash out type is not null')
 
 
 class ReconMsg:

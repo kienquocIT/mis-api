@@ -36,7 +36,7 @@ class OrderPickingSubList(BaseListMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='delivery', model_code='orderPickingSub', perm_code='view'
+        label_code='delivery', model_code='orderpickingsub', perm_code='view'
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -71,7 +71,7 @@ class OrderPickingSubDetail(
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='delivery', model_code='orderPickingSub', perm_code='view',
+        label_code='delivery', model_code='orderpickingsub', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
@@ -83,7 +83,7 @@ class OrderPickingSubDetail(
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='delivery', model_code='orderPickingSub', perm_code='edit'
+        label_code='delivery', model_code='orderpickingsub', perm_code='edit'
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)

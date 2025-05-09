@@ -25,9 +25,14 @@ DEFAULT_INVENTORY_VALUE_METHOD_CHOICES = [
     (2, _('Specific identification method')),
 ]
 
-NUMBERING_BY_CHOICES = [
-    (0, _('System')),
-    (1, _('User defined')),
+ACCOUNTING_POLICIES_CHOICES = [
+    (0, _('VAS')),
+    (1, _('IAS')),
+]
+
+APPLICABLE_CIRCULAR_CHOICES = [
+    (0, '200/2014/TT-BTC'),
+    (1, '133/2015/TT-BTC'),
 ]
 
 RESET_FREQUENCY_CHOICES = [
@@ -36,19 +41,6 @@ RESET_FREQUENCY_CHOICES = [
     (2, _('Weekly')),
     (3, _('Daily')),
     (4, _('Never')),
-]
-
-FUNCTION_CHOICES = [
-    (0, _('Opportunity')),
-    (1, _('Sale quotation')),
-    (2, _('Sale order')),
-    (3, _('Picking')),
-    (4, _('Delivery')),
-    (5, _('Task')),
-    (6, _('Advance payment')),
-    (7, _('Payment')),
-    (8, _('Return payment')),
-    (9, _('Purchase request')),
 ]
 
 
@@ -180,7 +172,14 @@ class CompanyConfig(SimpleAbstractModel):
     currency = models.ForeignKey(
         'base.Currency',
         on_delete=models.CASCADE,
-        verbose_name='Currency was used by Company',
+        null=True,
+        verbose_name='Base currency was used by Company',
+    )
+    master_data_currency = models.ForeignKey(
+        'saledata.Currency',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Master data currency',
     )
     currency_rule = models.JSONField(
         default=dict,
@@ -203,6 +202,8 @@ class CompanyConfig(SimpleAbstractModel):
     cost_per_warehouse = models.BooleanField(default=True)
     cost_per_lot = models.BooleanField(default=False)
     cost_per_project = models.BooleanField(default=False)
+    accounting_policies = models.SmallIntegerField(choices=ACCOUNTING_POLICIES_CHOICES, default=0)
+    applicable_circular = models.SmallIntegerField(choices=APPLICABLE_CIRCULAR_CHOICES, default=0)
 
     class Meta:
         verbose_name = 'Company Config'
@@ -418,9 +419,10 @@ class CompanyUserEmployee(SimpleAbstractModel):
 
 
 class CompanyFunctionNumber(SimpleAbstractModel):
+    tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE, null=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_function_number')
-    function = models.SmallIntegerField(choices=FUNCTION_CHOICES)
-    numbering_by = models.SmallIntegerField(choices=NUMBERING_BY_CHOICES, default=0)
+    app_code = models.CharField(max_length=150, blank=True, null=True, help_text='App code')
+    app_title = models.CharField(max_length=150, blank=True, null=True, help_text='App title')
     schema = models.CharField(max_length=500, null=True)
     schema_text = models.CharField(max_length=500, null=True)
     first_number = models.IntegerField(null=True)
@@ -448,8 +450,8 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         raise RuntimeError('[CompanyFunctionNumber.reset_frequency] Find Field Map returned null.')
 
     @classmethod
-    def gen_code(cls, company_obj, func):
-        obj = cls.objects.filter(company=company_obj, function=func).first()
+    def gen_auto_code(cls, app_code):
+        obj = cls.objects.filter_on_company(app_code=app_code).first()
         if obj and obj.schema is not None:
             result = obj.schema
 
@@ -476,65 +478,17 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             obj.save()
             schema_item_list = [
                 str(obj.latest_number).zfill(obj.min_number_char) if obj.min_number_char else str(obj.latest_number),
-                current_year % 100,
-                current_year,
-                calendar.month_name[current_month][0:3],
-                calendar.month_name[current_month],
-                current_month,
-                data_calendar[1],
-                datetime.date.today().timetuple().tm_yday,
-                datetime.date.today().day,
-                data_calendar[2]
+                str(current_year % 100),
+                str(current_year),
+                str(calendar.month_name[current_month][0:3]),
+                str(calendar.month_name[current_month]),
+                str(current_month).zfill(2),
+                str(data_calendar[1]).zfill(2),
+                str(datetime.date.today().timetuple().tm_yday).zfill(3),
+                str(datetime.date.today().day).zfill(2),
+                str(data_calendar[2])
             ]
             for match in re.findall(r"\[.*?\]", result):
                 result = result.replace(match, str(schema_item_list[int(match[1:-1])]))
             return result
         return None
-
-
-class CompanyBankAccount(SimpleAbstractModel):
-    company = models.ForeignKey(
-        Company,
-        on_delete=models.CASCADE,
-        related_name='company_bank_account_company'
-    )
-    country = models.ForeignKey('base.Country', on_delete=models.CASCADE)
-    bank_name = models.CharField(
-        verbose_name='Name of bank',
-        blank=True,
-        null=True,
-        max_length=150
-    )
-    bank_code = models.CharField(
-        verbose_name='Code of bank',
-        blank=True,
-        null=True,
-        max_length=50
-    )
-    bank_account_name = models.CharField(
-        verbose_name='Bank account name',
-        blank=True,
-        null=True,
-        max_length=150
-    )
-    bank_account_number = models.CharField(
-        verbose_name='Bank account number',
-        blank=True,
-        null=True,
-        max_length=150
-    )
-    bic_swift_code = models.CharField(
-        verbose_name='BIC/SWIFT code',
-        blank=True,
-        null=True,
-        max_length=150
-    )
-    is_default = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        verbose_name = 'Company bank account'
-        verbose_name_plural = 'Company bank accounts'
-        ordering = ('bank_code',)
-        default_permissions = ()
-        permissions = ()

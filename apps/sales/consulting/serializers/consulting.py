@@ -10,9 +10,8 @@ from apps.sales.consulting.models import Consulting, ConsultingDocument, Consult
 from apps.sales.consulting.serializers.consulting_sub import ConsultingCommonCreate
 from apps.sales.opportunity.models import Opportunity
 from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, BaseMsg, HRMsg, \
-    AbstractDetailSerializerModel
+    AbstractDetailSerializerModel, ConsultingMsg
 from apps.shared.translations.base import AttachmentMsg
-from apps.shared.translations.consulting import ConsultingMsg
 
 logger = logging.getLogger(__name__)
 

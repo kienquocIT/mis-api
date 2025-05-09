@@ -181,18 +181,20 @@ class WFSupportFunctionsHandler:
         if collab.in_wf_option == 1 and doc_employee_inherit:  # BY POSITION
             if not doc_employee_inherit.group:
                 raise ValueError('Employee inherit does not have group')
-            if collab.position_choice == 1:  # 1st manager
+            if collab.position_choice == 1:  # Beneficiary (Document inherit)
+                return doc_employee_inherit.id
+            if collab.position_choice == 2:  # 1st manager
                 if not doc_employee_inherit.group.first_manager_id:
                     raise ValueError('1st manager is not defined')
                 if doc_employee_inherit.group.first_manager_id == doc_employee_inherit.id:
                     return cls.get_manager_upper_group(doc_employee_inherit.group)
                 return doc_employee_inherit.group.first_manager_id
-            if collab.position_choice == 2:  # 2nd manager
+            if collab.position_choice == 3:  # 2nd manager
                 if not doc_employee_inherit.group.second_manager_id:
                     raise ValueError('2nd manager is not defined')
                 return doc_employee_inherit.group.second_manager_id
-            if collab.position_choice == 3:  # Beneficiary (Document inherit)
-                return doc_employee_inherit.id
+            if collab.position_choice == 4:  # Upper manager
+                return cls.get_manager_upper_group(doc_employee_inherit.group)
         if collab.in_wf_option == 2:  # BY EMPLOYEE
             return collab.employee_id
         raise ValueError('Can not find assignee for this node')

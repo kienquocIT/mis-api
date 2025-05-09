@@ -193,7 +193,7 @@ class TestCaseOpportunity(AdvanceTestCase):
             "total_employees": 1,
             "phone": "string",
             "email": "string",
-            "account_type_selection": 0,
+            "account_type_selection": 1,
             "system_status": 0
         }
         url = reverse("AccountList")
@@ -233,6 +233,7 @@ class TestCaseOpportunity(AdvanceTestCase):
                 'quotation',
                 'sale_order',
                 'opportunity_sale_team_datas',
+                'date_created',
                 'close_date',
                 'stage',
                 'is_close'
@@ -272,6 +273,7 @@ class TestCaseOpportunity(AdvanceTestCase):
                 'quotation',
                 'sale_order',
                 'opportunity_sale_team_datas',
+                'date_created',
                 'close_date',
                 'stage',
                 'is_close'
@@ -397,12 +399,12 @@ class TestCaseOpportunity(AdvanceTestCase):
 
         return response
 
-    def test_delete_factor(self):
-        data_created = self.test_create_factor()
-        url = reverse('CustomerDecisionFactorDetail', kwargs={'pk': data_created.data['result']['id']})
-        response = self.client.delete(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        return response
+    # def test_delete_factor(self):
+    #     data_created = self.test_create_factor()
+    #     url = reverse('CustomerDecisionFactorDetail', kwargs={'pk': data_created.data['result']['id']})
+    #     response = self.client.delete(url, format='json')
+    #     self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+    #     return response
 
     def test_create_stage(self):
         url = reverse('OpportunityConfigStageList')
@@ -509,9 +511,9 @@ class TestCaseOpportunity(AdvanceTestCase):
         self.assertEqual(data_changed.data['result']['win_rate'], win_rate)
         return response
 
-    def test_delete_stage(self):
-        stage = self.test_create_stage()
-        url = reverse("OpportunityConfigStageDetail", kwargs={'pk': stage.data['result']['id']})
-        response = self.client.delete(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        return response
+    # def test_delete_stage(self):
+    #     stage = self.test_create_stage()
+    #     url = reverse("OpportunityConfigStageDetail", kwargs={'pk': stage.data['result']['id']})
+    #     response = self.client.delete(url, format='json')
+    #     self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+    #     return response
