@@ -82,15 +82,14 @@ class TenantApplicationList(BaseListMixin):
                     'quotation',
                     'opportunity',
                     'purchaserequest',
-                    # thêm app đã cấu hình sinh code theo công thức vào đây
+                    # thêm model_code của app đã cấu hình sinh code theo công thức vào đây
                 ])
             if self.request.query_params.get('allowed_master_data', False):
                 return qs.filter(model_code__in=[
                     'account',
                     'product',
-                    'fixedasset',
                     'employee',
-                    # thêm masterdata đã cấu hình sinh code theo công thức vào đây
+                    # thêm model_code của masterdata đã cấu hình sinh code theo công thức vào đây
                 ])
             return qs
         return Application.objects.none()
