@@ -421,6 +421,7 @@ class CompanyUserEmployee(SimpleAbstractModel):
 class CompanyFunctionNumber(SimpleAbstractModel):
     tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE, null=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_function_number')
+    app_type = models.SmallIntegerField(choices=[(0, _('Application')), (1, _('Master data'))], default=0)
     app_code = models.CharField(max_length=150, blank=True, null=True, help_text='App code')
     app_title = models.CharField(max_length=150, blank=True, null=True, help_text='App title')
     schema = models.CharField(max_length=500, null=True)

@@ -2,6 +2,8 @@ import datetime
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+
+from apps.core.company.models import CompanyFunctionNumber
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Term, Periods
 from apps.masterdata.saledata.models.accounts import (
@@ -10,7 +12,7 @@ from apps.masterdata.saledata.models.accounts import (
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
-from apps.shared import AccountsMsg, HRMsg
+from apps.shared import AccountsMsg, HRMsg, BaseMsg
 
 
 # Account
@@ -140,7 +142,6 @@ class AccountListSerializer(serializers.ModelSerializer):
 
 class AccountCreateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
-    code = serializers.CharField(max_length=150)
     tax_code = serializers.CharField(max_length=150, required=False, allow_null=True, allow_blank=True)
     account_group = serializers.UUIDField(required=False, allow_null=True)
     industry = serializers.UUIDField(required=False, allow_null=True)
@@ -170,18 +171,21 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
+    def validate_code(cls, value):
+        if value:
+            if Account.objects.filter_on_company(code=value).exists():
+                raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
+            return value
+        code_generated = CompanyFunctionNumber.gen_auto_code(app_code='account')
+        if code_generated:
+            return code_generated
+        raise serializers.ValidationError({"code": f"{AccountsMsg.CODE_NOT_NULL}. {BaseMsg.NO_CONFIG_AUTO_CODE}"})
+
+    @classmethod
     def validate_name(cls, value):
         if value:
             return value
         raise serializers.ValidationError({"name": AccountsMsg.NAME_NOT_NULL})
-
-    @classmethod
-    def validate_code(cls, value):
-        if value:
-            if Account.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
-                raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
-            return value
-        raise serializers.ValidationError({"code": AccountsMsg.CODE_NOT_NULL})
 
     @classmethod
     def validate_tax_code(cls, value):

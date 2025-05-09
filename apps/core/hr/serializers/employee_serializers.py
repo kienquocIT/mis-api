@@ -8,7 +8,7 @@ from apps.core.hr.models import (
     Employee, PlanEmployee, Group, Role, RoleHolder, EmployeePermission, PlanEmployeeApp
 )
 from apps.shared import (
-    HRMsg, AccountMsg, AttMsg, TypeCheck, call_task_background, FORMATTING, SimpleEncryptor
+    HRMsg, AccountMsg, AttMsg, TypeCheck, call_task_background, FORMATTING, SimpleEncryptor, BaseMsg
 )
 from apps.shared.permissions.util import PermissionController
 
@@ -19,6 +19,7 @@ from .common import (
     HasPermPlanAppCreateSerializer, set_up_data_plan_app, validate_license_used,
     create_plan_employee_update_tenant_plan, PlanAppUpdateSerializer
 )
+from ...company.models import CompanyFunctionNumber
 
 
 class RoleOfEmployeeSerializer(serializers.ModelSerializer):
@@ -282,7 +283,6 @@ def validate_role_for_employee(value):
 
 
 class EmployeeCreateSerializer(serializers.ModelSerializer):
-    code = serializers.CharField(max_length=150)
     user = serializers.UUIDField(required=False, allow_null=True)
     plan_app = HasPermPlanAppCreateSerializer(many=True)
     group = serializers.UUIDField(required=False, allow_null=True)
@@ -315,10 +315,13 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_code(cls, value):
         if value:
-            if Employee.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+            if Employee.objects.filter_on_company(code=value).exists():
                 raise serializers.ValidationError({"code": AccountMsg.CODE_EXIST})
             return value
-        raise serializers.ValidationError({"code": AccountMsg.CODE_NOT_NULL})
+        code_generated = CompanyFunctionNumber.gen_auto_code(app_code='employee')
+        if code_generated:
+            return code_generated
+        raise serializers.ValidationError({"code": f"{AccountMsg.CODE_NOT_NULL}. {BaseMsg.NO_CONFIG_AUTO_CODE}"})
 
     @classmethod
     def validate_user(cls, value):
