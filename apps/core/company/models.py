@@ -426,15 +426,15 @@ class CompanyFunctionNumber(SimpleAbstractModel):
     app_title = models.CharField(max_length=150, blank=True, null=True, help_text='App title')
     schema = models.CharField(max_length=500, null=True)
     schema_text = models.CharField(max_length=500, null=True)
-    first_number = models.IntegerField(null=True)
-    last_number = models.IntegerField(null=True)
+    first_number = models.IntegerField(null=True, blank=True)
+    last_number = models.IntegerField(null=True, blank=True)
     reset_frequency = models.SmallIntegerField(choices=RESET_FREQUENCY_CHOICES, null=True)
-    min_number_char = models.IntegerField(null=True)
-    latest_number = models.IntegerField(null=True)
-    year_reset = models.IntegerField(null=True)
-    month_reset = models.IntegerField(null=True)
-    week_reset = models.IntegerField(null=True)
-    day_reset = models.IntegerField(null=True)
+    min_number_char = models.IntegerField(null=True, blank=True)
+    latest_number = models.IntegerField(null=True, blank=True)
+    year_reset = models.IntegerField(null=True, blank=True)
+    month_reset = models.IntegerField(null=True, blank=True)
+    week_reset = models.IntegerField(null=True, blank=True)
+    day_reset = models.IntegerField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'Company Function Number'
