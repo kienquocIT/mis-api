@@ -658,7 +658,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                 id=validate_data['contact_mapped'][0].get('id')
             ).first()
             if contact_mapped_obj:
-                validate_data['name'] = contact_mapped_obj.title
+                validate_data['name'] = contact_mapped_obj.fullname
                 validate_data['phone'] = contact_mapped_obj.mobile
                 validate_data['email'] = contact_mapped_obj.email
             else:
