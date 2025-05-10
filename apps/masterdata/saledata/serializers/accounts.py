@@ -148,7 +148,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     account_type = serializers.ListField(child=serializers.UUIDField(required=True))
     manager = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     parent_account_mapped = serializers.UUIDField(required=False, allow_null=True)
-    contact_mapped = serializers.ListField()
+    contact_mapped = serializers.ListField(required=False)
 
     class Meta:
         model = Account
@@ -516,7 +516,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
     account_type = serializers.ListField(child=serializers.UUIDField(required=True))
     manager = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     parent_account_mapped = serializers.UUIDField(required=False, allow_null=True)
-    contact_mapped = serializers.ListField()
+    contact_mapped = serializers.ListField(required=False)
     price_list_mapped = serializers.UUIDField(required=False, allow_null=True)
     currency = serializers.UUIDField()
     payment_term_customer_mapped = serializers.UUIDField(required=False, allow_null=True)
