@@ -70,7 +70,7 @@ class TenantApplicationList(BaseListMixin):
             plan_ids = self.request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
             app_ids = PlanApplication.objects.filter(plan_id__in=plan_ids).values_list('application__id', flat=True)
             qs = super().get_queryset().filter(id__in=app_ids)
-            if self.request.query_params.get('only_app', False):
+            if self.request.query_params.get('allowed_app', False):
                 return qs.filter(model_code__in=[
                     'advancepayment',
                     'payment',
@@ -82,7 +82,14 @@ class TenantApplicationList(BaseListMixin):
                     'quotation',
                     'opportunity',
                     'purchaserequest',
-                    # thêm app đã cấu hình sinh code theo công thức vào đây
+                    # thêm model_code của app đã cấu hình sinh code theo công thức vào đây
+                ])
+            if self.request.query_params.get('allowed_master_data', False):
+                return qs.filter(model_code__in=[
+                    'account',
+                    'product',
+                    'employee',
+                    # thêm model_code của masterdata đã cấu hình sinh code theo công thức vào đây
                 ])
             return qs
         return Application.objects.none()

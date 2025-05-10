@@ -421,19 +421,20 @@ class CompanyUserEmployee(SimpleAbstractModel):
 class CompanyFunctionNumber(SimpleAbstractModel):
     tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE, null=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_function_number')
+    app_type = models.SmallIntegerField(choices=[(0, _('Application')), (1, _('Master data'))], default=0)
     app_code = models.CharField(max_length=150, blank=True, null=True, help_text='App code')
     app_title = models.CharField(max_length=150, blank=True, null=True, help_text='App title')
     schema = models.CharField(max_length=500, null=True)
     schema_text = models.CharField(max_length=500, null=True)
-    first_number = models.IntegerField(null=True)
-    last_number = models.IntegerField(null=True)
+    first_number = models.IntegerField(null=True, blank=True)
+    last_number = models.IntegerField(null=True, blank=True)
     reset_frequency = models.SmallIntegerField(choices=RESET_FREQUENCY_CHOICES, null=True)
-    min_number_char = models.IntegerField(null=True)
-    latest_number = models.IntegerField(null=True)
-    year_reset = models.IntegerField(null=True)
-    month_reset = models.IntegerField(null=True)
-    week_reset = models.IntegerField(null=True)
-    day_reset = models.IntegerField(null=True)
+    min_number_char = models.IntegerField(null=True, blank=True)
+    latest_number = models.IntegerField(null=True, blank=True)
+    year_reset = models.IntegerField(null=True, blank=True)
+    month_reset = models.IntegerField(null=True, blank=True)
+    week_reset = models.IntegerField(null=True, blank=True)
+    day_reset = models.IntegerField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'Company Function Number'

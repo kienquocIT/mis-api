@@ -299,15 +299,7 @@ class CompanyListSerializer(serializers.ModelSerializer):
 class CompanyDetailSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     cost_cfg = serializers.SerializerMethodField()
-    company_function_number = serializers.SerializerMethodField()
-
-    @classmethod
-    def get_logo(cls, obj):
-        return obj.logo.url if obj.logo else None
-
-    @classmethod
-    def get_icon(cls, obj):
-        return obj.icon.url if obj.icon else None
+    function_number = serializers.SerializerMethodField()
 
     class Meta:
         model = Company
@@ -320,7 +312,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'address',
             'phone',
             'fax',
-            'company_function_number',
+            'function_number',
             'sub_domain',
             'logo',
             'icon',
@@ -328,10 +320,19 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def get_company_function_number(cls, obj):
-        company_function_number = []
+    def get_logo(cls, obj):
+        return obj.logo.url if obj.logo else None
+
+    @classmethod
+    def get_icon(cls, obj):
+        return obj.icon.url if obj.icon else None
+
+    @classmethod
+    def get_function_number(cls, obj):
+        function_number = []
         for item in obj.company_function_number.all():
-            company_function_number.append({
+            function_number.append({
+                'app_type': item.app_type,
                 'app_code': item.app_code,
                 'app_title': item.app_title,
                 'schema_text': item.schema_text,
@@ -341,7 +342,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
                 'reset_frequency': item.reset_frequency,
                 'min_number_char': item.min_number_char
             })
-        return company_function_number
+        return function_number
 
     @classmethod
     def get_cost_cfg(cls, obj):
@@ -352,11 +353,11 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
         }
 
 
-def create_company_function_number(company_obj, company_function_number_data):
+def create_function_number(company_obj, function_number):
     date_now = datetime.datetime.now()
     data_calendar = datetime.date.today().isocalendar()
-    app_code_available = []
-    for item in company_function_number_data:
+    bulk_info = []
+    for item in function_number:
         try:
             last_number = int(item.get('last_number') or 1)
         except (TypeError, ValueError):
@@ -366,10 +367,9 @@ def create_company_function_number(company_obj, company_function_number_data):
         item['month_reset'] = int(f"{date_now.year}{date_now.month:02}")
         item['week_reset'] = int(f"{data_calendar[0]}{data_calendar[1]:02}")
         item['day_reset'] = int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
-        CompanyFunctionNumber.objects.filter_on_company(app_code=item.get('app_code')).delete()
-        CompanyFunctionNumber.objects.create(tenant=company_obj.tenant, company=company_obj, **item)
-        app_code_available.append(item.get('app_code'))
-    CompanyFunctionNumber.objects.exclude(app_code__in=app_code_available).delete()
+        bulk_info.append(CompanyFunctionNumber(tenant=company_obj.tenant, company=company_obj, **item))
+    company_obj.company_function_number.all().delete()
+    CompanyFunctionNumber.objects.bulk_create(bulk_info)
     return True
 
 
@@ -433,11 +433,9 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
-        for item in self.initial_data.get('company_function_number_data', []):
+        for item in self.initial_data.get('app_function_number', []):
             if item.get('schema') is None or item.get('schema_text') is None:
-                raise serializers.ValidationError(
-                    {'company_function_number_data': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA}
-                )
+                raise serializers.ValidationError({'app_function_number': CompanyMsg.INVALID_APP_FUNCTION_NUMBER_DATA})
         return validate_data
 
     def update(self, instance, validated_data):
@@ -445,7 +443,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
 
-        create_company_function_number(instance, self.initial_data.get('company_function_number_data', []))
+        create_function_number(instance, self.initial_data.get('function_number', []))
         return instance
 
 
