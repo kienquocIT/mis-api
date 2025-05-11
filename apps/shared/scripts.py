@@ -1547,6 +1547,28 @@ class SubScripts:
         print('Done :))')
         return True
 
+    @classmethod
+    def update_company_config_json_data(cls):
+        for company_obj in Company.objects.all():
+            print(company_obj.title)
+            function_number_data = []
+            for item in company_obj.company_function_number.all():
+                function_number_data.append({
+                    'app_type': item.app_type,
+                    'app_code': item.app_code,
+                    'app_title': item.app_title,
+                    'schema_text': item.schema_text,
+                    'schema': item.schema,
+                    'first_number': item.first_number,
+                    'last_number': item.last_number,
+                    'reset_frequency': item.reset_frequency,
+                    'min_number_char': item.min_number_char
+                })
+            company_obj.function_number_data = function_number_data
+            company_obj.save(update_fields=['function_number_data'])
+        print('Done :))')
+        return True
+
 
 def reset_run_indicator_fields(kwargs):
     for sale_order in SaleOrder.objects.filter(**kwargs):

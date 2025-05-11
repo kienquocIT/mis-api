@@ -112,6 +112,18 @@ class Company(CoreAbstractModel):
     logo = models.ImageField(storage=PublicMediaStorage, upload_to=generate_company_logo_path, null=True)
     icon = models.ImageField(storage=PublicMediaStorage, upload_to=generate_company_icon_path, null=True)
 
+    # config data
+    function_number_data = models.JSONField(default=list)
+    # {'app_type',
+    # 'app_code',
+    # 'app_title',
+    # 'schema_text',
+    # 'schema',
+    # 'first_number',
+    # 'last_number',
+    # 'reset_frequency',
+    # 'min_number_char'}
+
     def get_detail(self, excludes=None):
         return {
             'id': str(self.id),

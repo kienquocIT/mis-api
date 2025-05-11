@@ -293,13 +293,11 @@ class CompanyListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_tenant_auto_create_company(cls, obj):
-        return obj.tenant.auto_create_company
+        return obj.tenant.auto_create_company if obj.tenant else False
 
 
 class CompanyDetailSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
-    cost_cfg = serializers.SerializerMethodField()
-    function_number = serializers.SerializerMethodField()
 
     class Meta:
         model = Company
@@ -312,11 +310,10 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'address',
             'phone',
             'fax',
-            'function_number',
             'sub_domain',
             'logo',
             'icon',
-            'cost_cfg'
+            'function_number_data'
         )
 
     @classmethod
@@ -327,30 +324,24 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
     def get_icon(cls, obj):
         return obj.icon.url if obj.icon else None
 
-    @classmethod
-    def get_function_number(cls, obj):
-        function_number = []
-        for item in obj.company_function_number.all():
-            function_number.append({
-                'app_type': item.app_type,
-                'app_code': item.app_code,
-                'app_title': item.app_title,
-                'schema_text': item.schema_text,
-                'schema': item.schema,
-                'first_number': item.first_number,
-                'last_number': item.last_number,
-                'reset_frequency': item.reset_frequency,
-                'min_number_char': item.min_number_char
-            })
-        return function_number
 
-    @classmethod
-    def get_cost_cfg(cls, obj):
-        return {
-            'cost_per_warehouse': obj.company_config.cost_per_warehouse,
-            'cost_per_lot': obj.company_config.cost_per_lot,
-            'cost_per_project': obj.company_config.cost_per_project,
-        }
+def parse_function_number_data(company_obj):
+    function_number_data = []
+    for item in company_obj.company_function_number.all():
+        function_number_data.append({
+            'app_type': item.app_type,
+            'app_code': item.app_code,
+            'app_title': item.app_title,
+            'schema_text': item.schema_text,
+            'schema': item.schema,
+            'first_number': item.first_number,
+            'last_number': item.last_number,
+            'reset_frequency': item.reset_frequency,
+            'min_number_char': item.min_number_char
+        })
+    company_obj.function_number_data = function_number_data
+    company_obj.save(update_fields=['function_number_data'])
+    return True
 
 
 def create_function_number(company_obj, function_number):
@@ -444,6 +435,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         create_function_number(instance, self.initial_data.get('function_number', []))
+        parse_function_number_data(instance)
         return instance
 
 

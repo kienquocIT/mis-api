@@ -95,14 +95,13 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
     queryset = Company.objects
     serializer_list = CompanyListSerializer
     serializer_create = CompanyCreateSerializer
-    serializer_detail = CompanyDetailSerializer
     list_hidden_field = ['tenant_id']
     create_hidden_field = ['tenant_id']
     search_fields = ('title', 'code')
     filterset_fields = ('title', 'code')
 
     def get_queryset(self):
-        return super().get_queryset().select_related('tenant')
+        return super().get_queryset().prefetch_related('tenant')
 
     @swagger_auto_schema(
         operation_summary="Company list",
@@ -133,7 +132,7 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     serializer_update = CompanyUpdateSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related('tenant')
+        return super().get_queryset()
 
     @swagger_auto_schema(operation_summary='Detail Company')
     @mask_view(
@@ -158,6 +157,21 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+class CompanyFunctionNumberDetail(APIView):
+    @swagger_auto_schema(
+        operation_summary='Get Company function number data',
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        try:
+            company_id = request.query_params.get('company_id', request.user.company_current_id)
+            obj = Company.objects.get(id=company_id)
+            return ResponseController.success_200(data=obj.function_number_data, key_data='result')
+        except Company.DoesNotExist:
+            pass
+        return ResponseController.notfound_404()
 
 
 class CompanyUploadLogo(BaseUpdateMixin):
