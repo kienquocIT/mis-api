@@ -131,9 +131,6 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     serializer_detail = CompanyDetailSerializer
     serializer_update = CompanyUpdateSerializer
 
-    def get_queryset(self):
-        return super().get_queryset()
-
     @swagger_auto_schema(operation_summary='Detail Company')
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True,
