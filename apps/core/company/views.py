@@ -94,8 +94,8 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
     """
     queryset = Company.objects
     serializer_list = CompanyListSerializer
-    serializer_detail = CompanyDetailSerializer
     serializer_create = CompanyCreateSerializer
+    serializer_detail = CompanyDetailSerializer
     list_hidden_field = ['tenant_id']
     create_hidden_field = ['tenant_id']
     search_fields = ('title', 'code')
