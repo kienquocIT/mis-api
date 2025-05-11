@@ -94,6 +94,7 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
     """
     queryset = Company.objects
     serializer_list = CompanyListSerializer
+    serializer_detail = CompanyDetailSerializer
     serializer_create = CompanyCreateSerializer
     list_hidden_field = ['tenant_id']
     create_hidden_field = ['tenant_id']
@@ -101,7 +102,7 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
     filterset_fields = ('title', 'code')
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('tenant')
+        return super().get_queryset().select_related('tenant')
 
     @swagger_auto_schema(
         operation_summary="Company list",
