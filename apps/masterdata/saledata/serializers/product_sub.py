@@ -4,6 +4,7 @@ from apps.masterdata.saledata.models import (
     ProductMeasurements, ProductProductType, ProductVariantAttribute, ProductVariant
 )
 from apps.masterdata.saledata.models.price import ProductPriceList, Price, Currency
+from apps.masterdata.saledata.models.product import ProductComponent
 from apps.shared import ProductMsg
 
 
@@ -130,6 +131,15 @@ class CommonCreateUpdateProduct:
             bulk_info.append(ProductProductType(product=product_obj, product_type_id=item))
         ProductProductType.objects.filter(product=product_obj).delete()
         ProductProductType.objects.bulk_create(bulk_info)
+        return True
+
+    @classmethod
+    def create_component_mapped(cls, product_obj, component_list_data):
+        bulk_info = []
+        for item in component_list_data:
+            bulk_info.append(ProductComponent(product=product_obj, **item))
+        ProductComponent.objects.filter(product=product_obj).delete()
+        ProductComponent.objects.bulk_create(bulk_info)
         return True
 
     @classmethod

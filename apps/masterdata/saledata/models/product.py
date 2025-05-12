@@ -10,7 +10,7 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstra
 __all__ = [
     'ProductType', 'ProductCategory', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
     'ExpensePrice', 'ExpenseRole', 'ProductMeasurements', 'ProductProductType',
-    'ProductVariantAttribute', 'ProductVariant', 'Manufacturer'
+    'ProductVariantAttribute', 'ProductVariant', 'Manufacturer', 'ProductComponent'
 ]
 
 
@@ -709,5 +709,24 @@ class ProductVariant(MasterDataAbstractModel):
         verbose_name = 'Product ProductVariant'
         verbose_name_plural = 'Products ProductVariants'
         ordering = ('date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class ProductComponent(MasterDataAbstractModel):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='product_components'
+    )
+    order = models.IntegerField(default=1)
+    component_name = models.CharField(max_length=150, blank=True)
+    component_des = models.CharField(max_length=250, blank=True)
+    component_quantity = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Product Component'
+        verbose_name_plural = 'Products Components'
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()

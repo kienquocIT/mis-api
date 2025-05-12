@@ -298,7 +298,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             validate_data.get('weight'), 'weight', ProductMsg.WGT_IS_WRONG
         )
         # add sale_currency_using
-        primary_crc = Currency.objects.filter_current(fill__tenant=True, fill__company=True, is_primary=True).first()
+        primary_crc = Currency.objects.filter_on_company(is_primary=True).first()
         if not primary_crc:
             raise serializers.ValidationError({'sale_currency_using': ProductMsg.CURRENCY_NOT_EXIST})
         validate_data['sale_currency_using'] = primary_crc
@@ -328,6 +328,11 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
+
+        CommonCreateUpdateProduct.create_component_mapped(
+            product_obj, self.initial_data.get('component_list_data', [])
+        )
+
         CommonCreateUpdateProduct.create_product_variant_attribute(
             product_obj, self.initial_data.get('product_variant_attribute_list', [])
         )
@@ -383,12 +388,12 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
             validate_data['purchase_default_uom'] = validate_data.get('sale_default_uom')
             validate_data['purchase_tax'] = validate_data.get('sale_tax')
 
-        default_pr = Price.objects.filter_current(fill__tenant=True, fill__company=True, is_default=True).first()
+        default_pr = Price.objects.filter_on_company(is_default=True).first()
         if not default_pr:
             raise serializers.ValidationError({'default_price_list': ProductMsg.PRICE_LIST_NOT_EXIST})
         validate_data['default_price_list'] = default_pr
 
-        primary_crc = Currency.objects.filter_current(fill__tenant=True, fill__company=True, is_primary=True).first()
+        primary_crc = Currency.objects.filter_on_company(is_primary=True).first()
         if not primary_crc:
             raise serializers.ValidationError({'sale_currency_using': ProductMsg.CURRENCY_NOT_EXIST})
         validate_data['sale_currency_using'] = primary_crc
@@ -425,6 +430,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     wait_delivery_amount = serializers.SerializerMethodField()
     wait_receipt_amount = serializers.SerializerMethodField()
     available_amount = serializers.SerializerMethodField()
+    component_list_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -441,7 +447,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'is_public_website',
             'account_deter_referenced_by',
             # Transaction information
-            'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount'
+            'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount',
+            'component_list_data'
         )
 
     @classmethod
@@ -631,6 +638,18 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             return available / obj.inventory_uom.ratio if obj.inventory_uom.ratio > 0 else 0
         return 0
 
+    @classmethod
+    def get_component_list_data(cls, obj):
+        component_list_data = []
+        for item in obj.product_components.all():
+            component_list_data.append({
+                'order': item.order,
+                'component_name': item.component_name,
+                'component_des': item.component_des,
+                'component_quantity': item.component_quantity
+            })
+        return component_list_data
+
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
@@ -800,6 +819,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
+
+        CommonCreateUpdateProduct.create_component_mapped(
+            instance, self.initial_data.get('component_list_data', [])
+        )
+
         CommonCreateUpdateProduct.create_product_variant_attribute(
             instance, self.initial_data.get('product_variant_attribute_list', [])
         )

@@ -347,19 +347,25 @@ def parse_function_number_data(company_obj):
 def create_function_number(company_obj, function_number):
     date_now = datetime.datetime.now()
     data_calendar = datetime.date.today().isocalendar()
+    new_function_number = []
     bulk_info = []
     for item in function_number:
-        try:
-            last_number = int(item.get('last_number') or 1)
-        except (TypeError, ValueError):
-            last_number = 1
-        item['latest_number'] = last_number - 1
-        item['year_reset'] = date_now.year
-        item['month_reset'] = int(f"{date_now.year}{date_now.month:02}")
-        item['week_reset'] = int(f"{data_calendar[0]}{data_calendar[1]:02}")
-        item['day_reset'] = int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
-        bulk_info.append(CompanyFunctionNumber(tenant=company_obj.tenant, company=company_obj, **item))
-    company_obj.company_function_number.all().delete()
+        item_existed = CompanyFunctionNumber.objects.filter_on_company(
+            app_code=item.get('app_code'), schema=item.get('schema')
+        ).first()
+        if not item_existed or (item_existed.last_number - item_existed.latest_number == 1):
+            try:
+                last_number = int(item.get('last_number') or 1)
+            except (TypeError, ValueError):
+                last_number = 1
+            item['latest_number'] = last_number - 1
+            item['year_reset'] = date_now.year
+            item['month_reset'] = int(f"{date_now.year}{date_now.month:02}")
+            item['week_reset'] = int(f"{data_calendar[0]}{data_calendar[1]:02}")
+            item['day_reset'] = int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
+            bulk_info.append(CompanyFunctionNumber(tenant=company_obj.tenant, company=company_obj, **item))
+            new_function_number.append(item.get('app_code'))
+    company_obj.company_function_number.filter(app_code__in=new_function_number).delete()
     CompanyFunctionNumber.objects.bulk_create(bulk_info)
     return True
 
