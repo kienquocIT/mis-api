@@ -851,7 +851,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                 'value': instance.value,
                 'lot_data': {}
             })
-        ReportInvLog.log(instance, instance.company.software_start_using_time, doc_data)
+        ReportInvLog.log(instance, instance.company.software_start_using_time, doc_data, True)
         return True
 
     @classmethod
