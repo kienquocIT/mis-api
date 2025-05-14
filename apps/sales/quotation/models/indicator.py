@@ -39,6 +39,9 @@ class QuotationIndicatorConfig(MasterDataAbstractModel):
     order = models.IntegerField(
         default=1
     )
+    is_negative_set_zero = models.BooleanField(
+        default=False, help_text="flag allow return 0 if value indicator is negative"
+    )
 
     class Meta:
         verbose_name = 'Quotation Indicator Config'

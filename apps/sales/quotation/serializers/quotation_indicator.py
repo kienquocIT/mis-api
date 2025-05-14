@@ -22,6 +22,7 @@ class IndicatorListSerializer(serializers.ModelSerializer):
             'formula_data_show',
             'acceptance_affect_by',
             'is_acceptance_editable',
+            'is_negative_set_zero',
         )
 
 
@@ -42,6 +43,7 @@ class IndicatorDetailSerializer(serializers.ModelSerializer):
             'formula_data_show',
             'acceptance_affect_by',
             'is_acceptance_editable',
+            'is_negative_set_zero',
         )
 
 
@@ -74,6 +76,7 @@ class IndicatorUpdateSerializer(serializers.ModelSerializer):
             'formula_data_show',
             'acceptance_affect_by',
             'is_acceptance_editable',
+            'is_negative_set_zero',
             'order',
         )
 

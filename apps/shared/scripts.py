@@ -38,7 +38,8 @@ from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..sales.arinvoice.models import ARInvoice, ARInvoiceItems, ARInvoiceDelivery
-from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
+from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct, OrderPickingProduct
+from ..sales.delivery.models.delivery import OrderDeliverySerial, OrderDeliveryProductWarehouse
 from ..sales.delivery.utils import DeliFinishHandler
 from ..sales.inventory.models import (
     InventoryAdjustmentItem, GoodsReceipt, GoodsReceiptWarehouse, GoodsReturn, GoodsDetail
@@ -1821,3 +1822,134 @@ def delete_non_default_account_type():
                                                                    is_default=False)
         non_default_account_type_list.delete()
         print(f'Non-default account type deleted for {company_obj.title}')
+
+
+def update_product_warehouse_picked_ready(product_id=None, warehouse_id=None):
+    picked = 0
+    delivered = 0
+    for picked_obj in OrderPickingProduct.objects.filter_on_company(product_id=product_id):
+        picked += picked_obj.picked_quantity
+    for delivered_obj in OrderDeliveryProduct.objects.filter_on_company(product_id=product_id):
+        delivered += delivered_obj.picked_quantity
+    product_warehouse = ProductWareHouse.objects.filter_on_company(
+        product_id=product_id, warehouse_id=warehouse_id
+    ).first()
+    if product_warehouse:
+        product_warehouse.picked_ready = picked - delivered
+        product_warehouse.save(update_fields=['picked_ready'])
+    print('update_product_warehouse_picked_ready done.')
+
+
+def add_delivery_pw_serial(sub_product_id=None, pw_serial_id=None):
+    sub_product = OrderDeliveryProduct.objects.filter_on_company(id=sub_product_id).first()
+    pw_serial = ProductWareHouseSerial.objects.filter_on_company(id=pw_serial_id).first()
+    if sub_product and pw_serial:
+        sub_product.delivery_data = [
+            {
+                "id": "b473c7aa-9a34-4190-a222-2b62f23cd09f",
+                "uom": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "title": "Cái"
+                },
+                "stock": 0,
+                "agency": None,
+                "uom_id": "02d31f81-313c-4be7-8839-f6088011afba",
+                "product": {
+                    "id": "28b33b97-33ba-421f-bb95-799bc7b36692",
+                    "code": "SP001",
+                    "title": "Server Super Micro 1111",
+                    "general_traceability_method": 2
+                },
+                "lot_data": [
+
+                ],
+                "uom_data": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "title": "Cái"
+                },
+                "uom_stock": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "title": "Cái"
+                },
+                "warehouse": {
+                    "id": "15bbe829-5c82-4284-a0f7-2332a2a8826b",
+                    "code": "W0001",
+                    "title": "Kho hàng cho thuê"
+                },
+                "product_id": "28b33b97-33ba-421f-bb95-799bc7b36692",
+                "is_regis_so": False,
+                "serial_data": [
+                    {
+                        "product_warehouse_serial_id": "2d2e3296-c383-4027-984b-47818950b892",
+                        "product_warehouse_serial_data": {
+                            "id": "2d2e3296-c383-4027-984b-47818950b892",
+                            "is_delete": False,
+                            "expire_date": None,
+                            "warranty_end": None,
+                            "serial_number": "SPR005",
+                            "warranty_start": None,
+                            "manufacture_date": None,
+                            "product_warehouse": {
+                                "id": "b473c7aa-9a34-4190-a222-2b62f23cd09f",
+                                "product": {
+                                    "id": "28b33b97-33ba-421f-bb95-799bc7b36692",
+                                    "code": "SP001",
+                                    "title": "Server Super Micro 1111"
+                                },
+                                "warehouse": {
+                                    "id": "15bbe829-5c82-4284-a0f7-2332a2a8826b",
+                                    "code": "W0001",
+                                    "title": "Kho hàng cho thuê"
+                                }
+                            },
+                            "vendor_serial_number": None
+                        }
+                    }
+                ],
+                "sold_amount": 2,
+                "picked_ready": 0,
+                "product_data": {
+                    "id": "28b33b97-33ba-421f-bb95-799bc7b36692",
+                    "code": "SP001",
+                    "title": "Server Super Micro 1111",
+                    "general_traceability_method": 2
+                },
+                "stock_amount": 8,
+                "uom_delivery": {
+                    "id": "b6860398-0be3-4992-8dc2-18bf5b7fbbbb",
+                    "code": "UOM002",
+                    "ratio": 1,
+                    "title": "Con",
+                    "rounding": 4,
+                    "is_referenced_unit": False
+                },
+                "warehouse_id": "15bbe829-5c82-4284-a0f7-2332a2a8826b",
+                "receipt_amount": 10,
+                "warehouse_data": {
+                    "id": "15bbe829-5c82-4284-a0f7-2332a2a8826b",
+                    "code": "W0001",
+                    "title": "Kho hàng cho thuê"
+                },
+                "available_stock": 8,
+                "picked_quantity": 1,
+                "available_picked": 0,
+                "lease_order_data": {
+                    "id": "eadfa541-fbd1-4d26-81ef-3d5be2f991e6",
+                    "code": "LO0009",
+                    "title": "THUÊ SERVER",
+                    "opportunity": {
+
+                    }
+                }
+            }
+        ]
+        sub_product.save(update_fields=['delivery_data'])
+        pw_serial.serial_status = 1
+        pw_serial.save(update_fields=['serial_status'])
+    print('add_delivery_pw_serial done.')

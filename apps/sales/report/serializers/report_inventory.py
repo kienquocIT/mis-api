@@ -518,7 +518,7 @@ class WarehouseAvailableProductDetailSerializer(serializers.ModelSerializer):
                 'quantity_import': cast_unit_to_inv_quantity(obj.product.inventory_uom, item.quantity_import),
                 'goods_receipt_date': goods_receipt_date
             })
-        for item in obj.product_warehouse_serial_product_warehouse.filter(is_delete=False):
+        for item in obj.product_warehouse_serial_product_warehouse.filter(serial_status=False):
             sn_data.append({
                 'id': item.id,
                 'vendor_serial_number': item.vendor_serial_number,
