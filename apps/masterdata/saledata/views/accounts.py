@@ -8,7 +8,7 @@ from apps.masterdata.saledata.models.accounts import (
 from apps.masterdata.saledata.serializers.accounts import (
     AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer, AccountUpdateSerializer,
     AccountsMapEmployeesListSerializer, AccountForSaleListSerializer,
-    CustomerListSimpleSerializer, SupplierListSimpleSerializer,
+    CustomerListSimpleSerializer, SupplierListSimpleSerializer, AccountMinimalListSerializer,
 )
 from apps.masterdata.saledata.serializers.accounts_masterdata import (
     AccountTypeListSerializer, AccountTypeCreateSerializer, AccountTypeDetailsSerializer, AccountTypeUpdateSerializer,
@@ -232,6 +232,27 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
         return self.create(request, *args, **kwargs)
 
 
+class AccountDDList(BaseListMixin):
+    queryset = Account.objects
+    search_fields = ['name', 'code', 'tax_code']
+    filterset_fields = {
+        'account_types_mapped__account_type_order': ['exact'],
+        'employee__id': ['exact']
+    }
+    serializer_list = AccountMinimalListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Account DD list",
+        operation_description="Account DD list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
 class CustomerList(BaseListMixin):  # noqa
     queryset = Account.objects
     serializer_list = CustomerListSimpleSerializer
@@ -341,13 +362,13 @@ class AccountsMapEmployeesList(BaseListMixin):
 class AccountForSaleList(BaseListMixin):
     queryset = Account.objects
     search_fields = ['name']
-    serializer_list = AccountForSaleListSerializer
-    serializer_detail = AccountDetailSerializer
-    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
         'account_types_mapped__account_type_order': ['exact'],
         'employee__id': ['exact']
     }
+    serializer_list = AccountForSaleListSerializer
+    serializer_detail = AccountDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(

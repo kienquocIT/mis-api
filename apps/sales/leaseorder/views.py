@@ -74,6 +74,35 @@ class LeaseOrderList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
+class LeaseOrderDDList(BaseListMixin):
+    queryset = LeaseOrder.objects
+    search_fields = ['title', 'code', 'customer__name']
+    filterset_fields = {
+        'delivery_call': ['exact'],
+        'system_status': ['exact', 'in'],
+        'quotation_id': ['exact'],
+        'customer_id': ['exact'],
+        'employee_inherit_id': ['exact', 'in'],
+        'employee_inherit__group_id': ['exact', 'in'],
+        'opportunity_id': ['exact', 'in'],
+        'opportunity__is_deal_close': ['exact'],
+        'has_regis': ['exact'],
+        'is_recurring': ['exact'],
+    }
+    serializer_list = LeaseOrderMinimalListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Lease Order DD List",
+        operation_description="Get Lease Order DD List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
 class LeaseOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = LeaseOrder.objects
     serializer_detail = LeaseOrderDetailSerializer
