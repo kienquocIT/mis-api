@@ -32,6 +32,7 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, RolePermission,
 )
 from ..core.mailer.models import MailTemplateSystem
+from ..core.provisioning.utils import TenantController
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
@@ -1953,3 +1954,24 @@ def add_delivery_pw_serial(sub_product_id=None, pw_serial_id=None):
         pw_serial.serial_status = 1
         pw_serial.save(update_fields=['serial_status'])
     print('add_delivery_pw_serial done.')
+
+
+def create_new_tenant(tenant_code, tenant_data, user_data):
+    TenantController().setup_new(
+        tenant_code=tenant_code,
+        tenant_data=tenant_data,
+        user_data=user_data,
+        create_company=True,
+        create_employee=True,
+        plan_data=[
+            {"title": "HRM", "code": "hrm", "quantity": 50, "date_active": "2024-01-02 03:46:00",
+             "date_end": "2025-01-02 03:46:00", "is_limited": False, "purchase_order": "PO-001"},
+            {"title": "Personal", "code": "personal", "quantity": None, "date_active": "2024-01-02 03:46:00",
+             "date_end": "2025-01-02 03:46:00", "is_limited": False, "purchase_order": "PO-001"},
+            {"title": "Sale", "code": "sale", "quantity": 50, "date_active": "2024-01-02 03:46:00",
+             "date_end": "2025-01-02 03:46:00", "is_limited": True, "purchase_order": "PO-001"},
+            {"title": "E-Office", "code": "e-office", "quantity": 50, "date_active": "2024-01-02 03:46:00",
+             "date_end": "2025-01-02 03:46:00", "is_limited": True, "purchase_order": "PO-001"}]
+    )
+    print('create_new_tenant done.')
+    return True
