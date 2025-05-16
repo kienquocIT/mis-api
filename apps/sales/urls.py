@@ -28,4 +28,5 @@ urlpatterns = [
     path('partner-center/', include('apps.sales.partnercenter.urls')),
     path('asset/', include('apps.sales.asset.urls')),
     path('group-order/', include('apps.sales.grouporder.urls')),
+    path('paymentplan/', include('apps.sales.paymentplan.urls')),
 ]

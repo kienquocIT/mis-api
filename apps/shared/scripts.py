@@ -51,6 +51,7 @@ from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunitySaleTeamMember, OpportunityMeeting, OpportunityActivityLogs,
 )
 from ..sales.partnercenter.models import DataObject
+from ..sales.paymentplan.models import PaymentPlan
 from ..sales.project.models import Project, ProjectMapMember
 from ..sales.purchasing.models import (
     PurchaseRequestProduct, PurchaseOrderRequestProduct, PurchaseOrder,
@@ -1974,4 +1975,14 @@ def create_new_tenant(tenant_code, tenant_data, user_data):
              "date_end": "2025-01-02 03:46:00", "is_limited": True, "purchase_order": "PO-001"}]
     )
     print('create_new_tenant done.')
+    return True
+
+
+def reset_push_payment_plan():
+    PaymentPlan.objects.all().delete()
+    for sale_order in SaleOrder.objects.filter(system_status=3):
+        SOFinishHandler.push_to_payment_plan(instance=sale_order)
+    for purchase_order in PurchaseOrder.objects.filter(system_status=3):
+        POFinishHandler.push_to_payment_plan(instance=purchase_order)
+    print('reset_push_payment_plan done.')
     return True
