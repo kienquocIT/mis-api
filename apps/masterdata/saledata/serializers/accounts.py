@@ -284,6 +284,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         AccountCommonFunc.add_shipping_address(account, self.initial_data.get('shipping_address_dict', []))
         AccountCommonFunc.add_billing_address(account, self.initial_data.get('billing_address_dict', []))
         AccountCommonFunc.add_contact_mapped(account, contact_mapped)
+        CompanyFunctionNumber.auto_code_update_latest_number(app_code='account')
         return account
 
 
