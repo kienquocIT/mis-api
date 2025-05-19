@@ -52,6 +52,8 @@ class PaymentPlan(DataAbstractModel):
     )
     po_payment_stage_data = models.JSONField(default=dict, help_text='data json of po_payment_stage')
     value_pay = models.FloatField(default=0)
+    invoice_planned_date = models.DateTimeField(null=True)
+    invoice_actual_date = models.DateTimeField(null=True)
     due_date = models.DateTimeField(null=True)
     group_inherit = models.ForeignKey(
         'hr.Group',
