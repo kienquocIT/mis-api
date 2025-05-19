@@ -396,6 +396,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             },
         )
 
+        CompanyFunctionNumber.auto_code_update_latest_number(app_code='employee')
         return employee
 
 
