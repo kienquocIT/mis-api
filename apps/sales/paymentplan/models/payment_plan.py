@@ -67,6 +67,22 @@ class PaymentPlan(DataAbstractModel):
         cls.objects.bulk_create(bulk_data)
         return True
 
+    @classmethod
+    def push_from_invoice(cls, sale_order=None, purchase_order=None, invoice_actual_date=None):
+        if sale_order:
+            for obj in cls.objects.filter(sale_order=sale_order):
+                if not obj.invoice_actual_date:
+                    obj.invoice_actual_date = invoice_actual_date
+                    obj.save(update_fields=['invoice_actual_date'])
+                    break
+        if purchase_order:
+            for obj in cls.objects.filter(purchase_order=purchase_order):
+                if not obj.invoice_actual_date:
+                    obj.invoice_actual_date = invoice_actual_date
+                    obj.save(update_fields=['invoice_actual_date'])
+                    break
+        return True
+
     class Meta:
         verbose_name = 'Payment Plan'
         verbose_name_plural = 'Payment Plans'

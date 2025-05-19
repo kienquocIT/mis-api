@@ -16,6 +16,8 @@ class PaymentPlanListSerializer(AbstractListSerializerModel):
             'so_payment_stage_data',
             'po_payment_stage_data',
             'value_pay',
+            'invoice_planned_date',
+            'invoice_actual_date',
             'due_date',
             'date_approved',
         )

@@ -134,6 +134,8 @@ class SOFinishHandler:
                         so_payment_stage_id=payment_obj.id,
                         so_payment_stage_data=payment_data,
                         value_pay=payment_obj.value_total,
+                        invoice_planned_date=payment_obj.invoice_data.get('date', None)
+                        if isinstance(payment_obj.invoice_data, dict) else None,
                         due_date=payment_obj.due_date,
                         group_inherit_id=instance.employee_inherit.group_id if instance.employee_inherit else None,
                         date_approved=instance.date_approved,
