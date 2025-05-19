@@ -486,10 +486,8 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                     break
             if flag:
                 new_latest_number = obj.first_number - 1
-                obj.save()
 
             new_latest_number = new_latest_number + 1
-            obj.save()
             schema_item_list = [
                 str(new_latest_number).zfill(obj.min_number_char) if obj.min_number_char else str(new_latest_number),
                 str(current_year % 100),
