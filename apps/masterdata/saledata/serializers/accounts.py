@@ -140,6 +140,17 @@ class AccountListSerializer(serializers.ModelSerializer):
         } if obj.employee_created else {}
 
 
+class AccountMinimalListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = (
+            'id',
+            'name',
+            'code',
+            'date_created',
+        )
+
+
 class AccountCreateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     tax_code = serializers.CharField(max_length=150, required=False, allow_null=True, allow_blank=True)
