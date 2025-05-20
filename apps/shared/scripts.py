@@ -39,9 +39,13 @@ from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..sales.arinvoice.models import ARInvoice, ARInvoiceItems, ARInvoiceDelivery
+from ..sales.arinvoice.utils.logical_finish import ARInvoiceFinishHandler
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct, OrderPickingProduct
 from ..sales.delivery.models.delivery import OrderDeliverySerial, OrderDeliveryProductWarehouse
 from ..sales.delivery.utils import DeliFinishHandler
+from ..sales.financialcashflow.models import CashInflow, CashOutflow
+from ..sales.financialcashflow.utils.logical_finish_cif import CashInFlowFinishHandler
+from ..sales.financialcashflow.utils.logical_finish_cof import CashOutFlowFinishHandler
 from ..sales.inventory.models import (
     InventoryAdjustmentItem, GoodsReceipt, GoodsReceiptWarehouse, GoodsReturn, GoodsDetail
 )
@@ -1984,5 +1988,11 @@ def reset_push_payment_plan():
         SOFinishHandler.push_to_payment_plan(instance=sale_order)
     for purchase_order in PurchaseOrder.objects.filter(system_status=3):
         POFinishHandler.push_to_payment_plan(instance=purchase_order)
+    # for ar_invoice in ARInvoice.objects.filter(system_status=3):
+    #     ARInvoiceFinishHandler.push_to_payment_plan(instance=ar_invoice)
+    for cash_in_flow in CashInflow.objects.filter(system_status=3):
+        CashInFlowFinishHandler.push_to_payment_plan(instance=cash_in_flow)
+    for cash_out_flow in CashOutflow.objects.filter(system_status=3):
+        CashOutFlowFinishHandler.push_to_payment_plan(instance=cash_out_flow)
     print('reset_push_payment_plan done.')
     return True
