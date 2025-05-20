@@ -346,7 +346,8 @@ class AccountForSaleList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
         'account_types_mapped__account_type_order': ['exact'],
-        'employee__id': ['exact']
+        'employee__id': ['exact'],
+        'id': ['exact', 'in'],
     }
 
     def get_queryset(self):
