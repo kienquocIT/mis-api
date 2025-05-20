@@ -364,7 +364,8 @@ class AccountForSaleList(BaseListMixin):
     search_fields = ['name']
     filterset_fields = {
         'account_types_mapped__account_type_order': ['exact'],
-        'employee__id': ['exact']
+        'employee__id': ['exact'],
+        'id': ['exact', 'in'],
     }
     serializer_list = AccountForSaleListSerializer
     serializer_detail = AccountDetailSerializer

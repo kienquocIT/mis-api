@@ -43,6 +43,14 @@ class PaymentPlan(DataAbstractModel):
         null=True
     )
     so_payment_stage_data = models.JSONField(default=dict, help_text='data json of so_payment_stage')
+    ar_invoice = models.ForeignKey(
+        'arinvoice.ARInvoice',
+        on_delete=models.CASCADE,
+        verbose_name="ar invoice",
+        related_name="payment_plan_ar_invoice",
+        null=True
+    )
+    ar_invoice_data = models.JSONField(default=dict, help_text='data json of ar_invoice')
     po_payment_stage = models.ForeignKey(
         'purchasing.PurchaseOrderPaymentStage',
         on_delete=models.SET_NULL,
@@ -51,6 +59,15 @@ class PaymentPlan(DataAbstractModel):
         null=True
     )
     po_payment_stage_data = models.JSONField(default=dict, help_text='data json of po_payment_stage')
+    ap_invoice = models.ForeignKey(
+        'apinvoice.APInvoice',
+        on_delete=models.CASCADE,
+        verbose_name="ap invoice",
+        related_name="payment_plan_ap_invoice",
+        null=True
+    )
+    ap_invoice_data = models.JSONField(default=dict, help_text='data json of ap_invoice')
+    value_balance = models.FloatField(default=0)
     value_pay = models.FloatField(default=0)
     invoice_planned_date = models.DateTimeField(null=True)
     invoice_actual_date = models.DateTimeField(null=True)
@@ -81,6 +98,58 @@ class PaymentPlan(DataAbstractModel):
                     obj.invoice_actual_date = invoice_actual_date
                     obj.save(update_fields=['invoice_actual_date'])
                     break
+        return True
+
+    @classmethod
+    def push_from_cash_in_flow(
+            cls,
+            sale_order_id=None,
+            payment_stage_id=None,
+            ar_invoice_id=None,
+            ar_invoice_data=None,
+            invoice_actual_date=None,
+            value_balance=0,
+            value_pay=0,
+    ):
+        if sale_order_id and payment_stage_id:
+            if ar_invoice_id:
+                plan_obj = cls.objects.filter(sale_order_id=sale_order_id, so_payment_stage_id=payment_stage_id).first()
+                if plan_obj:
+                    plan_obj.ar_invoice_id = ar_invoice_id
+                    plan_obj.ar_invoice_data = ar_invoice_data if ar_invoice_data else {}
+                    plan_obj.invoice_actual_date = invoice_actual_date
+                    plan_obj.value_balance = value_balance
+                    plan_obj.value_pay = value_pay
+                    plan_obj.save(update_fields=[
+                        'ar_invoice_id', 'ar_invoice_data', 'invoice_actual_date', 'value_balance', 'value_pay'
+                    ])
+        return True
+
+    @classmethod
+    def push_from_cash_out_flow(
+            cls,
+            purchase_order_id=None,
+            payment_stage_id=None,
+            ap_invoice_id=None,
+            ap_invoice_data=None,
+            invoice_actual_date=None,
+            value_balance=0,
+            value_pay=0,
+    ):
+        if purchase_order_id and payment_stage_id:
+            if ap_invoice_id:
+                plan_obj = cls.objects.filter(
+                    purchase_order_id=purchase_order_id, po_payment_stage_id=payment_stage_id
+                ).first()
+                if plan_obj:
+                    plan_obj.ap_invoice_id = ap_invoice_id
+                    plan_obj.ap_invoice_data = ap_invoice_data if ap_invoice_data else {}
+                    plan_obj.invoice_actual_date = invoice_actual_date
+                    plan_obj.value_balance = value_balance
+                    plan_obj.value_pay = value_pay
+                    plan_obj.save(update_fields=[
+                        'ap_invoice_id', 'ap_invoice_data', 'invoice_actual_date', 'value_balance', 'value_pay'
+                    ])
         return True
 
     class Meta:
