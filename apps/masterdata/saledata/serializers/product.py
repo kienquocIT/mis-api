@@ -1,11 +1,12 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.accounting.accountingsettings.utils import AccountDeterminationForProductHandler
+from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, \
     Manufacturer
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
 from apps.sales.report.utils.inventory_log import ReportInvCommonFunc
-from apps.shared import ProductMsg, PriceMsg
+from apps.shared import ProductMsg, PriceMsg, BaseMsg
 from .product_sub import CommonCreateUpdateProduct
 from ..models import ProductWareHouse
 
@@ -101,7 +102,6 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
-    code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()
@@ -139,10 +139,13 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_code(cls, value):
         if value:
-            if Product.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+            if Product.objects.filter_on_company(code=value).exists():
                 raise serializers.ValidationError({"code": ProductMsg.CODE_EXIST})
             return value
-        raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
+        code_generated = CompanyFunctionNumber.gen_auto_code(app_code='product')
+        if code_generated:
+            return code_generated
+        raise serializers.ValidationError({"code": f"{ProductMsg.CODE_NOT_NULL}. {BaseMsg.NO_CONFIG_AUTO_CODE}"})
 
     @classmethod
     def validate_product_choice(cls, value):
@@ -332,11 +335,11 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             product_obj, self.initial_data.get('product_variant_item_list', [])
         )
         AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj)
+        CompanyFunctionNumber.auto_code_update_latest_number(app_code='product')
         return product_obj
 
 
 class ProductQuickCreateSerializer(serializers.ModelSerializer):
-    code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()

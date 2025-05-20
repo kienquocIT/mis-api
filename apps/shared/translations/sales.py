@@ -134,6 +134,8 @@ class CashOutflowMsg:
     ACCOUNT_NOT_SUPPLIER = _('This account is not a Supplier account')
     SUPPLIER_NOT_EXIST = _('Supplier does not exist')
     SUPPLIER_NOT_NULL = _('Supplier is not null')
+    COF_TYPE_NOT_VALID = _('Cash out type is not valid')
+    COF_TYPE_NOT_NULL = _('Cash out type is not null')
 
 
 class ReconMsg:

@@ -24,6 +24,7 @@ class BaseMsg:
     ZONE_NOT_EXIST = _('Zone does not exist.')
     ZONE_IS_ARRAY = _('Zone property must be array')
     DOES_NOT_EXIST = _("Does not exist")
+    NO_CONFIG_AUTO_CODE = _('Can not found auto code generator config')
 
 
 class PermissionMsg:

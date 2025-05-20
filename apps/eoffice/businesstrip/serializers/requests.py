@@ -390,7 +390,7 @@ class BusinessRequestUpdateSerializer(AbstractCreateSerializerModel):
         has_item = Counter(list_current) - Counter(has_item)
         has_item = [element for element, count in has_item]
         if len(has_item) > 0:
-            ExpenseItemMapBusinessRequest.objects.exclude(id__in=has_item).delete()
+            ExpenseItemMapBusinessRequest.objects.filter_on_company().exclude(id__in=has_item).delete()
         if len(list_create) > 0:
             ExpenseItemMapBusinessRequest.objects.bulk_create(list_create)
 

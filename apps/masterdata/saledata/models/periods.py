@@ -3,7 +3,6 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-
 from apps.core.company.models import Company
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
@@ -45,6 +44,12 @@ class Periods(MasterDataAbstractModel):
     cost_per_project = models.BooleanField(default=False)
     accounting_policies = models.SmallIntegerField(choices=ACCOUNTING_POLICIES_CHOICES, default=0)
     applicable_circular = models.SmallIntegerField(choices=APPLICABLE_CIRCULAR_CHOICES, default=0)
+    currency_mapped = models.ForeignKey(
+        'saledata.Currency',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='period_currency_mapped'
+    )
 
     @classmethod
     def get_period_by_doc_date(cls, tenant_id, company_id, doc_date):

@@ -201,7 +201,7 @@ class OrderDelivery(DataAbstractModel):
     @classmethod
     def push_code(cls, instance):
         if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_code(company_obj=instance.company, func=4)
+            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='orderdeliverysub')
             instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
         return True
 
@@ -393,7 +393,7 @@ class OrderDeliverySub(DataAbstractModel):
     @classmethod
     def push_code(cls, instance, kwargs):
         if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_code(company_obj=instance.company, func=4)
+            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='orderdeliverysub')
             instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
             kwargs['update_fields'].append('code')
         return True
@@ -534,6 +534,12 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
     depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
 
     product_convert_into = models.SmallIntegerField(choices=PRODUCT_CONVERT_INTO, null=True)
+    asset_type_data = models.JSONField(default=dict, help_text="data json of asset_type")
+    asset_group_manage_data = models.JSONField(default=dict, help_text="data json of asset_group_manage")
+    asset_group_using_data = models.JSONField(default=list, help_text="data json of asset_group_using")
+    tool_type_data = models.JSONField(default=dict, help_text="data json of tool_type")
+    tool_group_manage_data = models.JSONField(default=dict, help_text="data json of tool_group_manage")
+    tool_group_using_data = models.JSONField(default=list, help_text="data json of tool_group_using")
 
     # End depreciation fields
 

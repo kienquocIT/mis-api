@@ -34,6 +34,8 @@ __all__ = [
 
 
 class ARInvoiceListSerializer(AbstractListSerializerModel):
+    employee_created = serializers.SerializerMethodField()
+
     class Meta:
         model = ARInvoice
         fields = (
@@ -50,8 +52,22 @@ class ARInvoiceListSerializer(AbstractListSerializerModel):
             'invoice_number',
             'invoice_example',
             'invoice_status',
-            'date_created'
+            'date_created',
+            'employee_created'
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'id': obj.employee_created_id,
+            'code': obj.employee_created.code,
+            'full_name': obj.employee_created.get_full_name(2),
+            'group': {
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
 
 
 class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):

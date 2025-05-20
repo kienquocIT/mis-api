@@ -35,30 +35,12 @@ APPLICABLE_CIRCULAR_CHOICES = [
     (1, '133/2015/TT-BTC'),
 ]
 
-NUMBERING_BY_CHOICES = [
-    (0, _('System')),
-    (1, _('User defined')),
-]
-
 RESET_FREQUENCY_CHOICES = [
     (0, _('Yearly')),
     (1, _('Monthly')),
     (2, _('Weekly')),
     (3, _('Daily')),
     (4, _('Never')),
-]
-
-FUNCTION_CHOICES = [
-    (0, _('Opportunity')),
-    (1, _('Sale quotation')),
-    (2, _('Sale order')),
-    (3, _('Picking')),
-    (4, _('Delivery')),
-    (5, _('Task')),
-    (6, _('Advance payment')),
-    (7, _('Payment')),
-    (8, _('Return payment')),
-    (9, _('Purchase request')),
 ]
 
 
@@ -130,6 +112,18 @@ class Company(CoreAbstractModel):
     logo = models.ImageField(storage=PublicMediaStorage, upload_to=generate_company_logo_path, null=True)
     icon = models.ImageField(storage=PublicMediaStorage, upload_to=generate_company_icon_path, null=True)
 
+    # config data
+    function_number_data = models.JSONField(default=list)
+    # {'app_type',
+    # 'app_code',
+    # 'app_title',
+    # 'schema_text',
+    # 'schema',
+    # 'first_number',
+    # 'last_number',
+    # 'reset_frequency',
+    # 'min_number_char'}
+
     def get_detail(self, excludes=None):
         return {
             'id': str(self.id),
@@ -190,7 +184,14 @@ class CompanyConfig(SimpleAbstractModel):
     currency = models.ForeignKey(
         'base.Currency',
         on_delete=models.CASCADE,
-        verbose_name='Currency was used by Company',
+        null=True,
+        verbose_name='Base currency was used by Company',
+    )
+    master_data_currency = models.ForeignKey(
+        'saledata.Currency',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Master data currency',
     )
     currency_rule = models.JSONField(
         default=dict,
@@ -430,20 +431,22 @@ class CompanyUserEmployee(SimpleAbstractModel):
 
 
 class CompanyFunctionNumber(SimpleAbstractModel):
+    tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE, null=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_function_number')
-    function = models.SmallIntegerField(choices=FUNCTION_CHOICES)
-    numbering_by = models.SmallIntegerField(choices=NUMBERING_BY_CHOICES, default=0)
+    app_type = models.SmallIntegerField(choices=[(0, _('Application')), (1, _('Master data'))], default=0)
+    app_code = models.CharField(max_length=150, blank=True, null=True, help_text='App code')
+    app_title = models.CharField(max_length=150, blank=True, null=True, help_text='App title')
     schema = models.CharField(max_length=500, null=True)
     schema_text = models.CharField(max_length=500, null=True)
-    first_number = models.IntegerField(null=True)
-    last_number = models.IntegerField(null=True)
+    first_number = models.IntegerField(null=True, blank=True)
+    last_number = models.IntegerField(null=True, blank=True)
     reset_frequency = models.SmallIntegerField(choices=RESET_FREQUENCY_CHOICES, null=True)
-    min_number_char = models.IntegerField(null=True)
-    latest_number = models.IntegerField(null=True)
-    year_reset = models.IntegerField(null=True)
-    month_reset = models.IntegerField(null=True)
-    week_reset = models.IntegerField(null=True)
-    day_reset = models.IntegerField(null=True)
+    min_number_char = models.IntegerField(null=True, blank=True)
+    latest_number = models.IntegerField(null=True, blank=True)
+    year_reset = models.IntegerField(null=True, blank=True)
+    month_reset = models.IntegerField(null=True, blank=True)
+    week_reset = models.IntegerField(null=True, blank=True)
+    day_reset = models.IntegerField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'Company Function Number'
@@ -460,14 +463,15 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         raise RuntimeError('[CompanyFunctionNumber.reset_frequency] Find Field Map returned null.')
 
     @classmethod
-    def gen_code(cls, company_obj, func):
-        obj = cls.objects.filter(company=company_obj, function=func).first()
+    def gen_auto_code(cls, app_code):
+        obj = cls.objects.filter_on_company(app_code=app_code).first()
         if obj and obj.schema is not None:
             result = obj.schema
 
             # check_reset_frequency
             current_year, current_month = datetime.datetime.now().year, datetime.datetime.now().month
             data_calendar = datetime.date.today().isocalendar()
+            new_latest_number = obj.latest_number
             flag = False
             conditions = [
                 (0, obj.year_reset, current_year),
@@ -481,24 +485,35 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                     flag = True
                     break
             if flag:
-                obj.latest_number = obj.first_number - 1
-                obj.save()
+                new_latest_number = obj.first_number - 1
 
-            obj.latest_number = obj.latest_number + 1
-            obj.save()
+            new_latest_number = new_latest_number + 1
             schema_item_list = [
-                str(obj.latest_number).zfill(obj.min_number_char) if obj.min_number_char else str(obj.latest_number),
-                current_year % 100,
-                current_year,
-                calendar.month_name[current_month][0:3],
-                calendar.month_name[current_month],
-                current_month,
-                data_calendar[1],
-                datetime.date.today().timetuple().tm_yday,
-                datetime.date.today().day,
-                data_calendar[2]
+                str(new_latest_number).zfill(obj.min_number_char) if obj.min_number_char else str(new_latest_number),
+                str(current_year % 100),
+                str(current_year),
+                str(calendar.month_name[current_month][0:3]),
+                str(calendar.month_name[current_month]),
+                str(current_month).zfill(2),
+                str(data_calendar[1]).zfill(2),
+                str(datetime.date.today().timetuple().tm_yday).zfill(3),
+                str(datetime.date.today().day).zfill(2),
+                str(data_calendar[2])
             ]
             for match in re.findall(r"\[.*?\]", result):
                 result = result.replace(match, str(schema_item_list[int(match[1:-1])]))
+
+            if obj.app_type == 0:
+                obj.latest_number = new_latest_number
+                obj.save(update_fields=['latest_number'])
+
             return result
         return None
+
+    @classmethod
+    def auto_code_update_latest_number(cls, app_code):
+        obj = cls.objects.filter_on_company(app_code=app_code).first()
+        if obj:
+            obj.latest_number = obj.latest_number + 1
+            obj.save(update_fields=['latest_number'])
+        return True

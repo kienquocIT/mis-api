@@ -135,10 +135,10 @@ class CurrencyListSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def get_currency(cls, obj):
         return {
-            "id": "",
-            "title": obj.title,
-            "code": obj.abbreviation
-        }
+            "id": obj.currency_id,
+            "title": obj.currency.title,
+            "code": obj.currency.code
+        } if obj.currency else {}
 
     class Meta:
         model = Currency

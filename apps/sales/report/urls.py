@@ -24,7 +24,7 @@ urlpatterns = [
     # Report inventory
     path('balance-init/list', BalanceInitializationList.as_view(), name='BalanceInitializationList'),
     path(
-        'balance-init-import-db/list',
+        'balance-init-import-db',
         BalanceInitializationListImportDB.as_view(),
         name='BalanceInitializationListImportDB'
     ),

@@ -233,6 +233,7 @@ class TestCaseOpportunity(AdvanceTestCase):
                 'quotation',
                 'sale_order',
                 'opportunity_sale_team_datas',
+                'date_created',
                 'close_date',
                 'stage',
                 'is_close'
@@ -272,6 +273,7 @@ class TestCaseOpportunity(AdvanceTestCase):
                 'quotation',
                 'sale_order',
                 'opportunity_sale_team_datas',
+                'date_created',
                 'close_date',
                 'stage',
                 'is_close'

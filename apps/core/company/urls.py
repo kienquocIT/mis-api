@@ -4,12 +4,13 @@ from apps.core.company.views import (
     CompanyDetail, CompanyUploadLogo,
     CompanyListOverview,
     CompanyUserNotMapEmployeeList, CompanyOverviewDetail,
-    CompanyConfigDetail, AccountingPoliciesDetail,
+    CompanyConfigDetail, AccountingPoliciesDetail, CompanyFunctionNumberDetail,
 )
 
 
 urlpatterns = [
     path('config', CompanyConfigDetail.as_view(), name='CompanyConfigDetail'),
+    path('function-number', CompanyFunctionNumberDetail.as_view(), name='CompanyFunctionNumberDetail'),
     path('accounting-policies-config', AccountingPoliciesDetail.as_view(), name='AccountingPoliciesDetail'),
     path('list', CompanyList.as_view(), name='CompanyList'),
     path('<str:pk>', CompanyDetail.as_view(), name='CompanyDetail'),

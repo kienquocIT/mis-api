@@ -116,7 +116,8 @@ class TenantController:
                                 email=self.user_obj.email,
                                 tenant=self.tenant_obj.id,
                                 company=self.company_obj.id,
-                                user=self.user_obj.id
+                                user=self.user_obj.id,
+                                is_admin_company=True,
                             )
                             # self.update_employee(self.employee_obj, user=self.user_obj)
                             self.update_user(self.user_obj, employee_current=self.employee_obj)

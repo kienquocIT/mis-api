@@ -35,7 +35,7 @@ class LeaseOrderAppConfig(MasterDataAbstractModel):
         blank=True,
         related_name='lo_config_map_asset_group_using'
     )
-    asset_group_using_data = models.JSONField(default=dict, help_text="data json of asset_group_using")
+    asset_group_using_data = models.JSONField(default=list, help_text="data json of asset_group_using")
     tool_type = models.ForeignKey(
         'saledata.ToolClassification',
         on_delete=models.CASCADE,
@@ -287,7 +287,7 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
     @classmethod
     def push_code(cls, instance, kwargs):
         if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_code(company_obj=instance.company, func=2)
+            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='leaseorder')
             instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
             kwargs['update_fields'].append('code')
         return True
@@ -312,6 +312,8 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
                     self.push_code(instance=self, kwargs=kwargs)  # code
                     LOFinishHandler.push_product_info(instance=self)  # product info
                     LOFinishHandler.update_asset_status(instance=self)  # asset status => leased
+                    LOFinishHandler.push_to_report_revenue(instance=self)  # reports
+                    LOFinishHandler.push_to_report_customer(instance=self)
 
                     LOFinishHandler.push_final_acceptance_lo(instance=self)  # final acceptance
                     LOFinishHandler.update_recurrence_task(instance=self)  # recurrence
@@ -647,6 +649,12 @@ class LeaseOrderCost(MasterDataAbstractModel):
     depreciation_lease_data = models.JSONField(default=list, help_text='data json of depreciation lease')
 
     product_convert_into = models.SmallIntegerField(choices=PRODUCT_CONVERT_INTO, null=True)
+    asset_type_data = models.JSONField(default=dict, help_text="data json of asset_type")
+    asset_group_manage_data = models.JSONField(default=dict, help_text="data json of asset_group_manage")
+    asset_group_using_data = models.JSONField(default=list, help_text="data json of asset_group_using")
+    tool_type_data = models.JSONField(default=dict, help_text="data json of tool_type")
+    tool_group_manage_data = models.JSONField(default=dict, help_text="data json of tool_group_manage")
+    tool_group_using_data = models.JSONField(default=list, help_text="data json of tool_group_using")
 
     # End depreciation fields
 

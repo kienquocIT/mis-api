@@ -2,6 +2,8 @@ import datetime
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+
+from apps.core.company.models import CompanyFunctionNumber
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Term, Periods
 from apps.masterdata.saledata.models.accounts import (
@@ -10,7 +12,7 @@ from apps.masterdata.saledata.models.accounts import (
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
-from apps.shared import AccountsMsg, HRMsg
+from apps.shared import AccountsMsg, HRMsg, BaseMsg
 
 
 # Account
@@ -23,6 +25,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     revenue_information = serializers.SerializerMethodField()
     billing_address = serializers.SerializerMethodField()
     industry = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -41,7 +44,9 @@ class AccountListSerializer(serializers.ModelSerializer):
             'bank_accounts_mapped',
             'revenue_information',
             'billing_address',
-            'industry'
+            'industry',
+            'date_created',
+            'employee_created'
         )
 
     @classmethod
@@ -54,7 +59,11 @@ class AccountListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        return {'id': obj.owner_id, 'fullname': obj.owner.fullname} if obj.owner else {}
+        return {
+            'id': obj.owner_id,
+            'code': obj.owner.code,
+            'fullname': obj.owner.fullname,
+        } if obj.owner else {}
 
     @classmethod
     def get_contact_mapped(cls, obj):
@@ -117,17 +126,40 @@ class AccountListSerializer(serializers.ModelSerializer):
             'title': obj.industry.title,
         } if obj.industry else {}
 
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'id': obj.employee_created_id,
+            'code': obj.employee_created.code,
+            'full_name': obj.employee_created.get_full_name(2),
+            'group': {
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
+
+
+class AccountMinimalListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = (
+            'id',
+            'name',
+            'code',
+            'date_created',
+        )
+
 
 class AccountCreateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
-    code = serializers.CharField(max_length=150)
     tax_code = serializers.CharField(max_length=150, required=False, allow_null=True, allow_blank=True)
     account_group = serializers.UUIDField(required=False, allow_null=True)
     industry = serializers.UUIDField(required=False, allow_null=True)
     account_type = serializers.ListField(child=serializers.UUIDField(required=True))
     manager = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     parent_account_mapped = serializers.UUIDField(required=False, allow_null=True)
-    contact_select_list = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
+    contact_mapped = serializers.ListField(required=False)
 
     class Meta:
         model = Account
@@ -146,22 +178,25 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             'total_employees',
             'phone',
             'email',
-            'contact_select_list',
+            'contact_mapped',
         )
+
+    @classmethod
+    def validate_code(cls, value):
+        if value:
+            if Account.objects.filter_on_company(code=value).exists():
+                raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
+            return value
+        code_generated = CompanyFunctionNumber.gen_auto_code(app_code='account')
+        if code_generated:
+            return code_generated
+        raise serializers.ValidationError({"code": f"{AccountsMsg.CODE_NOT_NULL}. {BaseMsg.NO_CONFIG_AUTO_CODE}"})
 
     @classmethod
     def validate_name(cls, value):
         if value:
             return value
         raise serializers.ValidationError({"name": AccountsMsg.NAME_NOT_NULL})
-
-    @classmethod
-    def validate_code(cls, value):
-        if value:
-            if Account.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
-                raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
-            return value
-        raise serializers.ValidationError({"code": AccountsMsg.CODE_NOT_NULL})
 
     @classmethod
     def validate_tax_code(cls, value):
@@ -225,12 +260,12 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         if validate_data.get('account_type_selection') == 0:
-            if len(self.initial_data.get('contact_mapped', [])) != 1:
+            if len(validate_data.get('contact_mapped', [])) != 1:
                 raise serializers.ValidationError(
                     {"contact_mapped": _('Contact is required (only 1) for individual account')}
                 )
             contact_mapped_obj = Contact.objects.filter_on_company(
-                id__in=validate_data.get('contact_mapped', [])
+                id=validate_data['contact_mapped'][0].get('id')
             ).first()
             if contact_mapped_obj:
                 validate_data['name'] = contact_mapped_obj.fullname
@@ -242,27 +277,25 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             if not validate_data.get('tax_code'):
                 raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         try:
-            validate_data['price_list_mapped'] = Price.objects.get_current(
-                fill__tenant=True, fill__company=True, is_default=True
-            )
+            validate_data['price_list_mapped'] = Price.objects.filter_on_company(is_default=True).first()
         except Price.DoesNotExist:
             raise serializers.ValidationError({"price_list_mapped": AccountsMsg.PRICE_LIST_DEFAULT_NOT_EXIST})
         try:
-            validate_data['currency'] = Currency.objects.get_current(
-                fill__tenant=True, fill__company=True, is_primary=True
-            )
+            validate_data['currency'] = Currency.objects.filter_on_company(is_primary=True).first()
         except Currency.DoesNotExist:
             raise serializers.ValidationError({"currency": AccountsMsg.CURRENCY_DEFAULT_NOT_EXIST})
         return validate_data
 
     def create(self, validated_data):
+        contact_mapped = validated_data.pop('contact_mapped', [])
         account = Account.objects.create(**validated_data)
         AccountCommonFunc.add_employee_map_account(account)
         AccountCommonFunc.add_account_types(account)
         AccountCommonFunc.update_account_type_fields(account)
         AccountCommonFunc.add_shipping_address(account, self.initial_data.get('shipping_address_dict', []))
         AccountCommonFunc.add_billing_address(account, self.initial_data.get('billing_address_dict', []))
-        AccountCommonFunc.add_contact_mapped(account, self.initial_data.get('contact_mapped', []))
+        AccountCommonFunc.add_contact_mapped(account, contact_mapped)
+        CompanyFunctionNumber.auto_code_update_latest_number(app_code='account')
         return account
 
 
@@ -311,8 +344,8 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             'currency',
             'contact_mapped',
             'account_type_selection',
-            "activity",
-            "revenue_information"
+            'activity',
+            'revenue_information'
         )
 
     @classmethod
@@ -495,7 +528,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
     account_type = serializers.ListField(child=serializers.UUIDField(required=True))
     manager = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     parent_account_mapped = serializers.UUIDField(required=False, allow_null=True)
-    contact_select_list = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
+    contact_mapped = serializers.ListField(required=False)
     price_list_mapped = serializers.UUIDField(required=False, allow_null=True)
     currency = serializers.UUIDField()
     payment_term_customer_mapped = serializers.UUIDField(required=False, allow_null=True)
@@ -517,7 +550,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             'total_employees',
             'phone',
             'email',
-            'contact_select_list',
+            'contact_mapped',
             'price_list_mapped',
             'currency',
             'payment_term_customer_mapped',
@@ -629,15 +662,15 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         if validate_data.get('account_type_selection') == 0:
-            if len(self.initial_data.get('contact_mapped', [])) != 1:
+            if len(validate_data.get('contact_mapped', [])) != 1:
                 raise serializers.ValidationError(
                     {"contact_mapped": _('Contact is required (only 1) for individual account')}
                 )
             contact_mapped_obj = Contact.objects.filter_on_company(
-                id__in=validate_data.get('contact_mapped', [])
+                id=validate_data['contact_mapped'][0].get('id')
             ).first()
             if contact_mapped_obj:
-                validate_data['name'] = contact_mapped_obj.title
+                validate_data['name'] = contact_mapped_obj.fullname
                 validate_data['phone'] = contact_mapped_obj.mobile
                 validate_data['email'] = contact_mapped_obj.email
             else:
@@ -648,6 +681,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def update(self, instance, validated_data):
+        contact_mapped = validated_data.pop('contact_mapped', [])
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.owner = None
@@ -657,13 +691,13 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         AccountCommonFunc.update_account_type_fields(instance)
         AccountCommonFunc.add_shipping_address(instance, self.initial_data.get('shipping_address_dict', []))
         AccountCommonFunc.add_billing_address(instance, self.initial_data.get('billing_address_dict', []))
-        AccountCommonFunc.add_contact_mapped(instance, self.initial_data.get('contact_mapped', []))
+        AccountCommonFunc.add_contact_mapped(instance, contact_mapped)
         AccountCommonFunc.add_banking_accounts(instance, self.initial_data.get('bank_accounts_information', []))
         AccountCommonFunc.add_credit_cards(instance, self.initial_data.get('credit_cards_information', []))
         return instance
 
 
-class CustomerListSerializer(serializers.ModelSerializer):
+class CustomerListSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = (
@@ -674,7 +708,7 @@ class CustomerListSerializer(serializers.ModelSerializer):
         )
 
 
-class SupplierListSerializer(serializers.ModelSerializer):
+class SupplierListSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = (
@@ -749,7 +783,7 @@ class AccountCommonFunc:
     def add_contact_mapped(account, contact_mapped):
         account.contact_account_name.all().update(account_name=None)
         for item in contact_mapped:
-            contact = Contact.objects.filter(id=item.get('id', None)).first()
+            contact = Contact.objects.filter(id=item.get('id')).first()
             if contact:
                 contact.account_name = account
                 if item.get('is_account_owner'):

@@ -24,7 +24,7 @@ SALE_CODE_TYPE = [
     (3, _('Others'))
 ]
 
-ADVANCE_PAYMENT_METHOD = [
+PAYMENT_METHOD = [
     (0, _('None')),
     (1, _('Cash')),
     (2, _('Bank Transfer')),
@@ -70,13 +70,16 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
     )
     is_internal_payment = models.BooleanField(default=False)
     method = models.SmallIntegerField(
-        choices=ADVANCE_PAYMENT_METHOD,
+        choices=PAYMENT_METHOD,
         verbose_name='Payment method',
         help_text='0 is None, 1 is Cash, 2 is Bank Transfer'
     )
+    payment_value_before_tax = models.FloatField(default=0)
+    payment_value_tax = models.FloatField(default=0)
     payment_value = models.FloatField(default=0)
     payment_value_by_words = models.CharField(max_length=500, default='', blank=True)
     sale_code = models.CharField(max_length=100, null=True)
+    free_input = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Payment'
@@ -151,7 +154,7 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=7)
+                code_generated = CompanyFunctionNumber.gen_auto_code(app_code='payment')
                 if code_generated:
                     self.code = code_generated
                 else:
@@ -199,7 +202,7 @@ class PaymentCost(SimpleAbstractModel):
     )
     expense_type = models.ForeignKey('saledata.ExpenseItem', on_delete=models.CASCADE, null=True)
     expense_type_data = models.JSONField(default=dict)
-    expense_description = models.CharField(max_length=150, null=True)
+    expense_description = models.CharField(max_length=250, null=True)
     expense_uom_name = models.CharField(max_length=150, null=True)
     expense_quantity = models.IntegerField()
     expense_unit_price = models.FloatField(default=0)

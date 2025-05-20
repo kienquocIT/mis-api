@@ -1,10 +1,11 @@
 from rest_framework import serializers
-from apps.core.hr.models import Employee
+from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact,
 )
-from apps.shared import (AccountsMsg,)
-from apps.sales.lead.models import LeadStage, LeadChartInformation, LeadHint
+from apps.shared import AccountsMsg
+from apps.core.hr.models import Employee
+from apps.sales.lead.models import LeadStage, LeadChartInformation, LeadHint, LeadParser
 
 
 # Salutation
@@ -112,6 +113,7 @@ class ContactListSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
     account_name = serializers.SerializerMethodField()
     report_to = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
 
     class Meta:
         model = Contact
@@ -125,7 +127,9 @@ class ContactListSerializer(serializers.ModelSerializer):
             'mobile',
             'phone',
             'email',
-            'report_to'
+            'report_to',
+            'date_created',
+            'employee_created'
         )
 
     @classmethod
@@ -133,7 +137,12 @@ class ContactListSerializer(serializers.ModelSerializer):
         return {
             'id': obj.owner_id,
             'code': obj.owner.code,
-            'fullname': obj.owner.get_full_name(2)
+            'fullname': obj.owner.get_full_name(2),
+            'group': {
+                'id': obj.owner.group_id,
+                'title': obj.owner.group.title,
+                'code': obj.owner.group.code
+            } if obj.owner.group else {}
         } if obj.owner else {}
 
     @classmethod
@@ -151,6 +160,19 @@ class ContactListSerializer(serializers.ModelSerializer):
             'code': obj.report_to.code,
             'name': obj.report_to.fullname
         } if obj.report_to else {}
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'id': obj.employee_created_id,
+            'code': obj.employee_created.code,
+            'full_name': obj.employee_created.get_full_name(2),
+            'group': {
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
 
 
 class ContactCreateSerializer(serializers.ModelSerializer):
@@ -225,39 +247,47 @@ class ContactCreateSerializer(serializers.ModelSerializer):
         validate_data['code'] = f"C00{num + 1}"
         validate_data['home_address_data'] = ContactCommonFunc.get_home_address_data(validate_data)
         validate_data['work_address_data'] = ContactCommonFunc.get_work_address_data(validate_data)
+        if 'lead' in self.context:
+            lead_obj = self.context.get('lead')
+            if not lead_obj:
+                raise serializers.ValidationError({'lead': _('Lead not found.')})
+            validate_data['lead'] = lead_obj
+            lead_config = lead_obj.lead_configs.first()
+            if not lead_config:
+                raise serializers.ValidationError({'lead_config': _('Lead config not found.')})
+            validate_data['lead_config'] = lead_config
+            if lead_config.create_contact:
+                raise serializers.ValidationError({'converted': _('Already converted to contact.')})
         return validate_data
 
     @classmethod
-    def convert_contact(cls, lead, contact_mapped):
+    def convert_contact(cls, lead_obj, lead_config, contact_obj):
         # convert to a new contact
-        lead_configs = lead.lead_configs.first() if lead else None
-        if lead_configs:
-            if not lead_configs.create_contact:
-                current_stage = LeadStage.objects.filter(
-                    tenant_id=contact_mapped.tenant_id, company_id=contact_mapped.company_id, level=2
-                ).first()
-                lead.current_lead_stage = current_stage
-                lead.lead_status = 2
-                lead.save(update_fields=['current_lead_stage', 'lead_status'])
-                lead_configs.contact_mapped = contact_mapped
-                lead_configs.create_contact = True
-                lead_configs.save(update_fields=['contact_mapped', 'create_contact'])
-                LeadChartInformation.create_update_chart_information(
-                    contact_mapped.tenant_id, contact_mapped.company_id
-                )
-                return True
-            raise serializers.ValidationError({'converted': 'Converted to contact.'})
-        raise serializers.ValidationError({'not found': 'Lead config not found.'})
+        current_stage = LeadStage.objects.filter_on_company(level=2).first()
+        lead_obj.current_lead_stage = current_stage
+        lead_obj.current_lead_stage_data = LeadParser.parse_data(current_stage, 'lead_stage')
+        lead_obj.lead_status = 2
+        lead_obj.save(update_fields=['current_lead_stage', 'current_lead_stage_data', 'lead_status'])
+
+        lead_config.contact_mapped = contact_obj
+        lead_config.contact_mapped_data = LeadParser.parse_data(contact_obj, 'contact')
+        lead_config.create_contact = True
+        lead_config.save(update_fields=['contact_mapped', 'contact_mapped_data', 'create_contact'])
+
+        LeadChartInformation.create_update_chart_information(contact_obj.tenant_id, contact_obj.company_id)
+        return True
 
     def create(self, validated_data):
-        contact = Contact.objects.create(**validated_data)
+        if 'lead' in self.context:
+            lead_obj = validated_data.pop('lead')
+            lead_config = validated_data.pop('lead_config')
+            contact = Contact.objects.create(**validated_data)
+            self.convert_contact(lead_obj, lead_config, contact)
+        else:
+            contact = Contact.objects.create(**validated_data)
         if contact.account_name:
             contact.account_name.owner = contact
             contact.account_name.save(update_fields=['owner'])
-
-        if 'lead' in self.context:
-            self.convert_contact(self.context.get('lead'), contact)
-
         return contact
 
 

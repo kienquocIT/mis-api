@@ -117,6 +117,8 @@ class BOMProductToolListSerializer(serializers.ModelSerializer):
 class BOMListSerializer(AbstractListSerializerModel):
     product = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = BOM
@@ -128,6 +130,9 @@ class BOMListSerializer(AbstractListSerializerModel):
             'for_outsourcing',
             'product',
             'opportunity',
+            'employee_created',
+            'employee_inherit',
+            'date_created',
             'sum_price',
             'sum_time'
         )
@@ -147,6 +152,32 @@ class BOMListSerializer(AbstractListSerializerModel):
             'code': obj.opportunity.code,
             'title': obj.opportunity.title
         } if obj.opportunity else {}
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'id': obj.employee_created_id,
+            'code': obj.employee_created.code,
+            'full_name': obj.employee_created.get_full_name(2),
+            'group': {
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'code': obj.employee_inherit.code,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'group': {
+                'id': obj.employee_inherit.group_id,
+                'title': obj.employee_inherit.group.title,
+                'code': obj.employee_inherit.group.code
+            } if obj.employee_inherit.group else {}
+        } if obj.employee_inherit else {}
 
 
 class BOMCreateSerializer(AbstractCreateSerializerModel):

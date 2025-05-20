@@ -32,9 +32,10 @@ class CompanyConfigDetail(APIView):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         try:
-            company_id = self.request.query_params['company_id'] \
-                if 'company_id' in self.request.query_params else request.user.company_current_id
-            obj = CompanyConfig.objects.select_related('currency').get(company_id=company_id)
+            company_id = request.query_params.get('company_id') if request.query_params.get(
+                'company_id'
+            ) else request.user.company_current_id
+            obj = CompanyConfig.objects.select_related('currency', 'master_data_currency').get(company_id=company_id)
             return ResponseController.success_200(data=CompanyConfigDetailSerializer(obj).data, key_data='result')
         except CompanyConfig.DoesNotExist:
             pass
@@ -49,11 +50,8 @@ class CompanyConfigDetail(APIView):
     )
     def put(self, request, *args, **kwargs):
         try:
-            company_id = self.request.query_params['company_id'] \
-                if 'company_id' in self.request.query_params else request.user.company_current_id
-            obj = CompanyConfig.objects.select_related('currency').get(
-                company_id=company_id
-            )
+            config_id = request.data.pop('config_id')
+            obj = CompanyConfig.objects.select_related('currency', 'master_data_currency').get(id=config_id)
             ser = CompanyConfigUpdateSerializer(obj, data=request.data)
             ser.is_valid(raise_exception=True)
             ser.save()
@@ -134,9 +132,6 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     serializer_detail = CompanyDetailSerializer
     serializer_update = CompanyUpdateSerializer
 
-    def get_queryset(self):
-        return super().get_queryset().select_related('tenant')
-
     @swagger_auto_schema(operation_summary='Detail Company')
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True,
@@ -160,6 +155,21 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+class CompanyFunctionNumberDetail(APIView):
+    @swagger_auto_schema(
+        operation_summary='Get Company function number data',
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        try:
+            company_id = request.query_params.get('company_id', request.user.company_current_id)
+            obj = Company.objects.get(id=company_id)
+            return ResponseController.success_200(data=obj.function_number_data, key_data='result')
+        except Company.DoesNotExist:
+            pass
+        return ResponseController.notfound_404()
 
 
 class CompanyUploadLogo(BaseUpdateMixin):

@@ -490,7 +490,7 @@ class Opportunity(DataAbstractModel):
 
     def save(self, *args, **kwargs):
         if not self.code:
-            code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=0)
+            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='opportunity')
             if code_generated:
                 self.code = code_generated
             else:

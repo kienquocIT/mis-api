@@ -1,10 +1,10 @@
 from apps.masterdata.saledata.models.periods import Periods
-from apps.core.company.models import Company
+from apps.core.company.models import Company, CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import (
     ProductType, Product, UnitOfMeasure
 )
 from apps.masterdata.saledata.models.price import (
-    UnitOfMeasureGroup, Tax, TaxCategory
+    UnitOfMeasureGroup, Tax, TaxCategory, Currency
 )
 from apps.masterdata.saledata.models.accounts import (
     Account, AccountCreditCards, AccountActivity
@@ -14,7 +14,7 @@ from apps.core.base.models import (
 )
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
-    AdvancePaymentCost, PaymentCost
+    AdvancePaymentCost, PaymentCost, AdvancePayment, Payment, ReturnAdvanceCost
 )
 from apps.core.workflow.models import (
     WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
@@ -32,14 +32,15 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, RolePermission,
 )
 from ..core.mailer.models import MailTemplateSystem
-from ..eoffice.assettools.models import AssetToolsProvideProduct
+from ..core.provisioning.utils import TenantController
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..sales.arinvoice.models import ARInvoice, ARInvoiceItems, ARInvoiceDelivery
-from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
+from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct, OrderPickingProduct
+from ..sales.delivery.models.delivery import OrderDeliverySerial, OrderDeliveryProductWarehouse
 from ..sales.delivery.utils import DeliFinishHandler
 from ..sales.inventory.models import (
     InventoryAdjustmentItem, GoodsReceipt, GoodsReceiptWarehouse, GoodsReturn, GoodsDetail
@@ -50,6 +51,7 @@ from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunitySaleTeamMember, OpportunityMeeting, OpportunityActivityLogs,
 )
 from ..sales.partnercenter.models import DataObject
+from ..sales.paymentplan.models import PaymentPlan
 from ..sales.project.models import Project, ProjectMapMember
 from ..sales.purchasing.models import (
     PurchaseRequestProduct, PurchaseOrderRequestProduct, PurchaseOrder,
@@ -1329,129 +1331,245 @@ class SubScripts:
         return True
 
     @classmethod
-    def update_master_data_for_HQG(cls):
-        tenant_obj = Tenant.objects.get(id='f46dad3817be4ab4b77f549705b9387c')
-        company_obj = Company.objects.get(id='0248237bcb6b46b182ad9282115a0624')
-        UnitOfMeasureGroup.objects.filter(tenant=tenant_obj, company=company_obj).delete()
-        UnitOfMeasure.objects.filter(tenant=tenant_obj, company=company_obj).delete()
+    def update_master_data_multi_reference(cls, tenant_code):
+        for company_obj in Company.objects.filter(tenant__code=tenant_code):
+            tenant_obj = company_obj.tenant
+            UnitOfMeasureGroup.objects.filter(tenant=tenant_obj, company=company_obj).delete()
+            UnitOfMeasure.objects.filter(tenant=tenant_obj, company=company_obj).delete()
 
-        UoM_Group_data = [
-            {'code': 'ImportGroup', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
-            {'code': 'Labor', 'title': 'Nhân công', 'is_default': 1},
-            {'code': 'Size', 'title': 'Kích thước', 'is_default': 1},
-            {'code': 'Time', 'title': 'Thời gian', 'is_default': 1},
-            {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
-        ]
-        objs = [
-            UnitOfMeasureGroup(tenant=tenant_obj, company=company_obj, **uom_group_item)
-            for uom_group_item in UoM_Group_data
-        ]
-        UnitOfMeasureGroup.objects.bulk_create(objs)
+            UoM_Group_data = [
+                {'code': 'ImportGroup', 'title': 'Nhóm đơn vị cho import', 'is_default': 1},
+                {'code': 'Labor', 'title': 'Nhân công', 'is_default': 1},
+                {'code': 'Size', 'title': 'Kích thước', 'is_default': 1},
+                {'code': 'Time', 'title': 'Thời gian', 'is_default': 1},
+                {'code': 'Unit', 'title': 'Đơn vị', 'is_default': 1},
+            ]
+            objs = [
+                UnitOfMeasureGroup(tenant=tenant_obj, company=company_obj, **uom_group_item)
+                for uom_group_item in UoM_Group_data
+            ]
+            UnitOfMeasureGroup.objects.bulk_create(objs)
 
-        unit_group = UnitOfMeasureGroup.objects.filter(
-            tenant=tenant_obj, company=company_obj, code='Unit', is_default=1
-        ).first()
-        if unit_group:
-            referenced_unit_obj = UnitOfMeasure.objects.create(
-                tenant=tenant_obj,
-                company=company_obj,
-                code='UOM001',
-                title='Cái',
-                is_referenced_unit=1,
-                ratio=1,
-                rounding=4,
-                is_default=1,
-                group=unit_group
-            )
-            UnitOfMeasure.objects.create(
-                tenant=tenant_obj,
-                company=company_obj,
-                code='UOM002',
-                title='Con',
-                is_referenced_unit=0,
-                ratio=1,
-                rounding=4,
-                is_default=1,
-                group=unit_group
-            )
-            UnitOfMeasure.objects.create(
-                tenant=tenant_obj,
-                company=company_obj,
-                code='UOM003',
-                title='Thanh',
-                is_referenced_unit=0,
-                ratio=1,
-                rounding=4,
-                is_default=1,
-                group=unit_group
-            )
-            UnitOfMeasure.objects.create(
-                tenant=tenant_obj,
-                company=company_obj,
-                code='UOM004',
-                title='Lần',
-                is_referenced_unit=0,
-                ratio=1,
-                rounding=4,
-                is_default=1,
-                group=unit_group
-            )
-            UnitOfMeasure.objects.create(
-                tenant=tenant_obj,
-                company=company_obj,
-                code='UOM005',
-                title='Gói',
-                is_referenced_unit=0,
-                ratio=1,
-                rounding=4,
-                is_default=1,
-                group=unit_group
-            )
-            unit_group.uom_reference = referenced_unit_obj
-            unit_group.save(update_fields=['uom_reference'])
+            unit_group = UnitOfMeasureGroup.objects.filter(
+                tenant=tenant_obj, company=company_obj, code='Unit', is_default=1
+            ).first()
+            if unit_group:
+                referenced_unit_obj = UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='UOM001',
+                    title='Cái',
+                    is_referenced_unit=1,
+                    ratio=1,
+                    rounding=4,
+                    is_default=1,
+                    group=unit_group
+                )
+                UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='UOM002',
+                    title='Con',
+                    is_referenced_unit=0,
+                    ratio=1,
+                    rounding=4,
+                    is_default=1,
+                    group=unit_group
+                )
+                UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='UOM003',
+                    title='Thanh',
+                    is_referenced_unit=0,
+                    ratio=1,
+                    rounding=4,
+                    is_default=1,
+                    group=unit_group
+                )
+                UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='UOM004',
+                    title='Lần',
+                    is_referenced_unit=0,
+                    ratio=1,
+                    rounding=4,
+                    is_default=1,
+                    group=unit_group
+                )
+                UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='UOM005',
+                    title='Gói',
+                    is_referenced_unit=0,
+                    ratio=1,
+                    rounding=4,
+                    is_default=1,
+                    group=unit_group
+                )
+                unit_group.uom_reference = referenced_unit_obj
+                unit_group.save(update_fields=['uom_reference'])
 
-        # add default uom for group time
-        labor_group = UnitOfMeasureGroup.objects.filter(
-            tenant=tenant_obj, company=company_obj, code='Labor', is_default=1
-        ).first()
-        if labor_group:
-            referenced_unit_obj = UnitOfMeasure.objects.create(
-                tenant=tenant_obj,
-                company=company_obj,
-                code='Manhour',
-                title='Manhour',
-                is_referenced_unit=1,
-                ratio=1,
-                rounding=4,
-                is_default=1,
-                group=labor_group
-            )
-            UnitOfMeasure.objects.create(
-                tenant=tenant_obj,
-                company=company_obj,
-                code='Manday',
-                title='Manday',
-                is_referenced_unit=0,
-                ratio=8,
-                rounding=4,
-                is_default=1,
-                group=labor_group
-            )
-            UnitOfMeasure.objects.create(
-                tenant=tenant_obj,
-                company=company_obj,
-                code='Manmonth',
-                title='Manmonth',
-                is_referenced_unit=0,
-                ratio=176,
-                rounding=4,
-                is_default=1,
-                group=labor_group
-            )
-            labor_group.uom_reference = referenced_unit_obj
-            labor_group.save(update_fields=['uom_reference'])
+            # add default uom for group time
+            labor_group = UnitOfMeasureGroup.objects.filter(
+                tenant=tenant_obj, company=company_obj, code='Labor', is_default=1
+            ).first()
+            if labor_group:
+                referenced_unit_obj = UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='Manhour',
+                    title='Manhour',
+                    is_referenced_unit=1,
+                    ratio=1,
+                    rounding=4,
+                    is_default=1,
+                    group=labor_group
+                )
+                UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='Manday',
+                    title='Manday',
+                    is_referenced_unit=0,
+                    ratio=8,
+                    rounding=4,
+                    is_default=1,
+                    group=labor_group
+                )
+                UnitOfMeasure.objects.create(
+                    tenant=tenant_obj,
+                    company=company_obj,
+                    code='Manmonth',
+                    title='Manmonth',
+                    is_referenced_unit=0,
+                    ratio=176,
+                    rounding=4,
+                    is_default=1,
+                    group=labor_group
+                )
+                labor_group.uom_reference = referenced_unit_obj
+                labor_group.save(update_fields=['uom_reference'])
+        print('Done :))')
+        return True
 
+    @classmethod
+    def update_currency_default(cls):
+        for company in Company.objects.all():
+            print(company.title)
+            Currency.objects.filter(
+                company=company, abbreviation__in=['VND', 'USD', 'EUR', 'JPY']
+            ).update(is_default=True)
+        print('Done :))')
+        return True
 
+    @classmethod
+    def update_currency_in_period(cls):
+        for period in Periods.objects.all():
+            print(period.company.title)
+            vnd = Currency.objects.get(company=period.company, abbreviation='VND')
+            period.currency_mapped = vnd
+            period.save(update_fields=['currency_mapped'])
+            period.company.company_config.master_data_currency = vnd
+            period.company.company_config.currency = vnd.currency
+            period.company.company_config.save(update_fields=['master_data_currency', 'currency'])
+        print('Done :))')
+        return True
+
+    @classmethod
+    def force_update_primary_currency(cls, company_id, abbreviation='VND'):
+        """ Hàm hỗ trợ cập nhập primary_currency (khi đã kiểm tra dữ liệu) """
+        company_obj = Company.objects.get(id=company_id)
+        primary_currency_obj = Currency.objects.get(company=company_obj, abbreviation=abbreviation)
+
+        company_obj.company_config.master_data_currency = primary_currency_obj
+        company_obj.company_config.currency = primary_currency_obj.currency
+        company_obj.company_config.save(update_fields=['master_data_currency', 'currency'])
+
+        Currency.objects.filter(company=company_obj).exclude(abbreviation=primary_currency_obj.abbreviation).update(
+            is_primary=False, rate=None
+        )
+        Currency.objects.filter(company=company_obj, abbreviation=primary_currency_obj.abbreviation).update(
+            is_primary=True, rate=1
+        )
+
+        this_period = Periods.get_current_period(company_obj.tenant_id, company_obj.id)
+        if this_period:
+            this_period.currency_mapped = primary_currency_obj
+            this_period.save(update_fields=['currency_mapped'])
+        print('Done :))')
+        return True
+
+    @classmethod
+    def update_print_field_for_sale_cashoutflow(cls):
+        for ap in AdvancePayment.objects.all():
+            advance_value_before_tax = 0
+            advance_value_tax = 0
+            advance_value = 0
+            for item in ap.advance_payment.all():
+                advance_value_before_tax += item.expense_subtotal_price
+                advance_value_tax += item.expense_tax_price
+                advance_value += item.expense_after_tax_price
+            ap.advance_value_before_tax = advance_value_before_tax
+            ap.advance_value_tax = advance_value_tax
+            ap.advance_value = advance_value
+            ap.save(update_fields=[
+                'advance_value_before_tax',
+                'advance_value_tax',
+                'advance_value'
+            ])
+        for payment in Payment.objects.all():
+            payment_value_before_tax = 0
+            payment_value_tax = 0
+            payment_value = 0
+            for item in payment.payment.all():
+                payment_value_before_tax += item.expense_subtotal_price
+                payment_value_tax += item.expense_tax_price
+                payment_value += item.expense_after_tax_price
+            payment.payment_value_before_tax = payment_value_before_tax
+            payment.payment_value_tax = payment_value_tax
+            payment.payment_value = payment_value
+            payment.save(update_fields=[
+                'payment_value_before_tax',
+                'payment_value_tax',
+                'payment_value'
+            ])
+        print('Done :))')
+        return True
+
+    @classmethod
+    def update_des_for_cashoutflow(cls):
+        for item in AdvancePaymentCost.objects.all():
+            item.expense_description = item.expense_name
+            item.save(update_fields=['expense_description'])
+        for item in ReturnAdvanceCost.objects.all():
+            item.expense_description = item.expense_name
+            item.save(update_fields=['expense_description'])
+        print('Done :))')
+        return True
+
+    @classmethod
+    def update_company_config_json_data(cls):
+        for company_obj in Company.objects.all():
+            print(company_obj.title)
+            function_number_data = []
+            for item in company_obj.company_function_number.all():
+                function_number_data.append({
+                    'app_type': item.app_type,
+                    'app_code': item.app_code,
+                    'app_title': item.app_title,
+                    'schema_text': item.schema_text,
+                    'schema': item.schema,
+                    'first_number': item.first_number,
+                    'last_number': item.last_number,
+                    'reset_frequency': item.reset_frequency,
+                    'min_number_char': item.min_number_char
+                })
+            company_obj.function_number_data = function_number_data
+            company_obj.save(update_fields=['function_number_data'])
+        print('Done :))')
         return True
 
 
@@ -1671,12 +1789,6 @@ def make_sure_lease_order_config():
     print('Make sure lease order config is done!')
 
 
-def clear_old_data_asset():
-    # script chạy 1 lần
-    AssetToolsProvideProduct.objects.all().update(product=None)
-    print('update reset table is DONE !')
-
-
 def update_bid_doctype_for_HongQuang():
     Document_Type_data = [
         {'code': 'BDT001', 'title': 'Đơn dự thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
@@ -1712,3 +1824,165 @@ def delete_non_default_account_type():
                                                                    is_default=False)
         non_default_account_type_list.delete()
         print(f'Non-default account type deleted for {company_obj.title}')
+
+
+def update_product_warehouse_picked_ready(product_id=None, warehouse_id=None):
+    picked = 0
+    delivered = 0
+    for picked_obj in OrderPickingProduct.objects.filter_on_company(product_id=product_id):
+        picked += picked_obj.picked_quantity
+    for delivered_obj in OrderDeliveryProduct.objects.filter_on_company(product_id=product_id):
+        delivered += delivered_obj.picked_quantity
+    product_warehouse = ProductWareHouse.objects.filter_on_company(
+        product_id=product_id, warehouse_id=warehouse_id
+    ).first()
+    if product_warehouse:
+        product_warehouse.picked_ready = picked - delivered
+        product_warehouse.save(update_fields=['picked_ready'])
+    print('update_product_warehouse_picked_ready done.')
+
+
+def add_delivery_pw_serial(sub_product_id=None, pw_serial_id=None):
+    sub_product = OrderDeliveryProduct.objects.filter_on_company(id=sub_product_id).first()
+    pw_serial = ProductWareHouseSerial.objects.filter_on_company(id=pw_serial_id).first()
+    if sub_product and pw_serial:
+        sub_product.delivery_data = [
+            {
+                "id": "b473c7aa-9a34-4190-a222-2b62f23cd09f",
+                "uom": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "title": "Cái"
+                },
+                "stock": 0,
+                "agency": None,
+                "uom_id": "02d31f81-313c-4be7-8839-f6088011afba",
+                "product": {
+                    "id": "28b33b97-33ba-421f-bb95-799bc7b36692",
+                    "code": "SP001",
+                    "title": "Server Super Micro 1111",
+                    "general_traceability_method": 2
+                },
+                "lot_data": [
+
+                ],
+                "uom_data": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "title": "Cái"
+                },
+                "uom_stock": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "title": "Cái"
+                },
+                "warehouse": {
+                    "id": "15bbe829-5c82-4284-a0f7-2332a2a8826b",
+                    "code": "W0001",
+                    "title": "Kho hàng cho thuê"
+                },
+                "product_id": "28b33b97-33ba-421f-bb95-799bc7b36692",
+                "is_regis_so": False,
+                "serial_data": [
+                    {
+                        "product_warehouse_serial_id": "2d2e3296-c383-4027-984b-47818950b892",
+                        "product_warehouse_serial_data": {
+                            "id": "2d2e3296-c383-4027-984b-47818950b892",
+                            "is_delete": False,
+                            "expire_date": None,
+                            "warranty_end": None,
+                            "serial_number": "SPR005",
+                            "warranty_start": None,
+                            "manufacture_date": None,
+                            "product_warehouse": {
+                                "id": "b473c7aa-9a34-4190-a222-2b62f23cd09f",
+                                "product": {
+                                    "id": "28b33b97-33ba-421f-bb95-799bc7b36692",
+                                    "code": "SP001",
+                                    "title": "Server Super Micro 1111"
+                                },
+                                "warehouse": {
+                                    "id": "15bbe829-5c82-4284-a0f7-2332a2a8826b",
+                                    "code": "W0001",
+                                    "title": "Kho hàng cho thuê"
+                                }
+                            },
+                            "vendor_serial_number": None
+                        }
+                    }
+                ],
+                "sold_amount": 2,
+                "picked_ready": 0,
+                "product_data": {
+                    "id": "28b33b97-33ba-421f-bb95-799bc7b36692",
+                    "code": "SP001",
+                    "title": "Server Super Micro 1111",
+                    "general_traceability_method": 2
+                },
+                "stock_amount": 8,
+                "uom_delivery": {
+                    "id": "b6860398-0be3-4992-8dc2-18bf5b7fbbbb",
+                    "code": "UOM002",
+                    "ratio": 1,
+                    "title": "Con",
+                    "rounding": 4,
+                    "is_referenced_unit": False
+                },
+                "warehouse_id": "15bbe829-5c82-4284-a0f7-2332a2a8826b",
+                "receipt_amount": 10,
+                "warehouse_data": {
+                    "id": "15bbe829-5c82-4284-a0f7-2332a2a8826b",
+                    "code": "W0001",
+                    "title": "Kho hàng cho thuê"
+                },
+                "available_stock": 8,
+                "picked_quantity": 1,
+                "available_picked": 0,
+                "lease_order_data": {
+                    "id": "eadfa541-fbd1-4d26-81ef-3d5be2f991e6",
+                    "code": "LO0009",
+                    "title": "THUÊ SERVER",
+                    "opportunity": {
+
+                    }
+                }
+            }
+        ]
+        sub_product.save(update_fields=['delivery_data'])
+        pw_serial.serial_status = 1
+        pw_serial.save(update_fields=['serial_status'])
+    print('add_delivery_pw_serial done.')
+
+
+def create_new_tenant(tenant_code, tenant_data, user_data):
+    TenantController().setup_new(
+        tenant_code=tenant_code,
+        tenant_data=tenant_data,
+        user_data=user_data,
+        create_company=True,
+        create_employee=True,
+        plan_data=[
+            {"title": "HRM", "code": "hrm", "quantity": 50, "date_active": "2024-01-02 03:46:00",
+             "date_end": "2025-01-02 03:46:00", "is_limited": False, "purchase_order": "PO-001"},
+            {"title": "Personal", "code": "personal", "quantity": None, "date_active": "2024-01-02 03:46:00",
+             "date_end": "2025-01-02 03:46:00", "is_limited": False, "purchase_order": "PO-001"},
+            {"title": "Sale", "code": "sale", "quantity": 50, "date_active": "2024-01-02 03:46:00",
+             "date_end": "2025-01-02 03:46:00", "is_limited": True, "purchase_order": "PO-001"},
+            {"title": "E-Office", "code": "e-office", "quantity": 50, "date_active": "2024-01-02 03:46:00",
+             "date_end": "2025-01-02 03:46:00", "is_limited": True, "purchase_order": "PO-001"}]
+    )
+    print('create_new_tenant done.')
+    return True
+
+
+def reset_push_payment_plan():
+    PaymentPlan.objects.all().delete()
+    for sale_order in SaleOrder.objects.filter(system_status=3):
+        SOFinishHandler.push_to_payment_plan(instance=sale_order)
+    for purchase_order in PurchaseOrder.objects.filter(system_status=3):
+        POFinishHandler.push_to_payment_plan(instance=purchase_order)
+    print('reset_push_payment_plan done.')
+    return True

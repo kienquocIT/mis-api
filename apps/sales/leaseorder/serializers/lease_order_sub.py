@@ -617,6 +617,12 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
             'depreciation_lease_data',
 
             'product_convert_into',
+            'asset_type_data',
+            'asset_group_manage_data',
+            'asset_group_using_data',
+            'tool_type_data',
+            'tool_group_manage_data',
+            'tool_group_using_data',
         )
 
     @classmethod
@@ -655,9 +661,9 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
     def validate_warehouse_id(cls, value):
         return LeaseOrderCommonValidate().validate_warehouse(value=value)
 
-    @classmethod
-    def validate_product_quantity(cls, value):
-        return LeaseOrderValueValidate.validate_quantity(value=value)
+    # @classmethod
+    # def validate_product_quantity(cls, value):
+    #     return LeaseOrderValueValidate.validate_quantity(value=value)
 
 
 class LeaseOrderExpenseSerializer(serializers.ModelSerializer):

@@ -168,7 +168,7 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
             expense_items.append(
                 {
                     'id': item.id,
-                    'expense_name': item.expense_name,
+                    'expense_description': item.expense_description,
                     'expense_type': {
                         'id': item.expense_type_id,
                         'code': item.expense_type.code,
@@ -293,6 +293,8 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     attachment = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
+    method_parsed = serializers.SerializerMethodField()
+    date_created_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -301,10 +303,13 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'code',
             'method',
+            'method_parsed',
             'money_gave',
-            'date_created',
+            'date_created_parsed',
             'return_date',
             'sale_code_type',
+            'advance_value_before_tax',
+            'advance_value_tax',
             'advance_value',
             'advance_value_by_words',
             'advance_payment_type',
@@ -343,6 +348,14 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
         return {}
 
     @classmethod
+    def get_method_parsed(cls, obj):
+        return [_('Cash'), _('Bank Transfer')][obj.method]
+
+    @classmethod
+    def get_date_created_parsed(cls, obj):
+        return obj.date_created.strftime('%d/%m/%Y')
+
+    @classmethod
     def get_expense_items(cls, obj):
         expense_items = []
         order = 1
@@ -350,7 +363,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             expense_items.append({
                 'id': item.id,
                 'order': order,
-                'expense_name': item.expense_name,
+                'expense_description': item.expense_description,
                 'expense_type': item.expense_type_data,
                 'expense_uom_name': item.expense_uom_name,
                 'expense_quantity': item.expense_quantity,
@@ -527,7 +540,7 @@ class AdvancePaymentCostListSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdvancePaymentCost
         fields = (
-            'expense_name',
+            'expense_description',
             'expense_type',
             'expense_uom_name',
             'expense_quantity',
@@ -657,11 +670,9 @@ class APCommonFunction:
         try:
             for item in validate_data.get('ap_item_list', []):
                 if not all([
-                    item.get('expense_name'),
                     item.get('expense_uom_name'),
                     float(item.get('expense_quantity', 0)) > 0,
-                    float(item.get('expense_unit_price')) > 0,
-                    float(item.get('expense_tax_price', 0)) >= 0,
+                    float(item.get('expense_unit_price')) > 0
                 ]):
                     raise serializers.ValidationError({'ap_item_list': 'AP item list is not valid.'})
 
@@ -681,12 +692,6 @@ class APCommonFunction:
                         'title': expense_tax.title,
                         'rate': expense_tax.rate
                     } if expense_tax else {}
-                item['expense_subtotal_price'] = (
-                        float(item['expense_quantity']) * float(item['expense_unit_price'])
-                )
-                item['expense_after_tax_price'] = (
-                        item['expense_subtotal_price'] + float(item.get('expense_tax_price', 0))
-                )
             print('9. validate_ap_item_list --- ok')
             return validate_data
         except Exception as err:
@@ -767,8 +772,12 @@ class APCommonFunction:
         ).first()
         if vnd_currency:
             bulk_info = []
+            advance_value_before_tax = 0
+            advance_value_tax = 0
             advance_value = 0
             for item in ap_item_list:
+                advance_value_before_tax += float(item.get('expense_subtotal_price', 0))
+                advance_value_tax += float(item.get('expense_tax_price', 0))
                 advance_value += float(item.get('expense_after_tax_price', 0))
                 bulk_info.append(AdvancePaymentCost(
                     **item,
@@ -781,6 +790,8 @@ class APCommonFunction:
             if len(bulk_info) > 0:
                 AdvancePaymentCost.objects.filter(advance_payment=advance_payment_obj).delete()
                 AdvancePaymentCost.objects.bulk_create(bulk_info)
+                advance_payment_obj.advance_value_before_tax = advance_value_before_tax
+                advance_payment_obj.advance_value_tax = advance_value_tax
                 advance_payment_obj.advance_value = advance_value
                 advance_value_by_words = APCommonFunction.read_money_vnd(advance_value).capitalize()
                 if advance_value_by_words[-1] == ',':
@@ -795,7 +806,13 @@ class APCommonFunction:
                 ) else quotation.code if quotation else opp.code if opp else None
                 advance_payment_obj.sale_code = sale_code
 
-                advance_payment_obj.save(update_fields=['advance_value', 'advance_value_by_words', 'sale_code'])
+                advance_payment_obj.save(update_fields=[
+                    'advance_value_before_tax',
+                    'advance_value_tax',
+                    'advance_value',
+                    'advance_value_by_words',
+                    'sale_code'
+                ])
         return True
 
     @classmethod

@@ -518,7 +518,7 @@ class WarehouseAvailableProductDetailSerializer(serializers.ModelSerializer):
                 'quantity_import': cast_unit_to_inv_quantity(obj.product.inventory_uom, item.quantity_import),
                 'goods_receipt_date': goods_receipt_date
             })
-        for item in obj.product_warehouse_serial_product_warehouse.filter(is_delete=False):
+        for item in obj.product_warehouse_serial_product_warehouse.filter(serial_status=False):
             sn_data.append({
                 'id': item.id,
                 'vendor_serial_number': item.vendor_serial_number,
@@ -961,8 +961,11 @@ class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateS
         instance = BalanceInitialization.objects.create(
             product=validated_data.get('product'),
             warehouse=validated_data.get('warehouse'),
-            quantity=validated_data.get('quantity'),
-            value=validated_data.get('value'),
+            uom=validated_data.get('uom'),
+            quantity=validated_data.get('quantity', 0),
+            value=validated_data.get('value', 0),
+            data_lot=validated_data.get('data_lot', []),
+            data_sn=validated_data.get('data_sn', []),
             tenant=self.context.get('tenant_current'),
             company=self.context.get('company_current'),
             employee_created=self.context.get('employee_current'),

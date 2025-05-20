@@ -25,10 +25,11 @@ from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, SQIndicatorDefaultData,
 )
 from apps.core.base.models import Currency as BaseCurrency, PlanApplication, BaseItemUnit
-from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
+from apps.core.company.models import Company, CompanyConfig
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency, UnitOfMeasure,
     DocumentType, FixedAssetClassificationGroup, FixedAssetClassification, Tax, Salutation, Industry, AccountGroup,
+    Account,
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import (
@@ -160,7 +161,6 @@ class SaleDefaultData:
     def __call__(self, *args, **kwargs):
         try:
             with transaction.atomic():
-                self.create_company_function_number()
                 self.create_salutation()
                 self.create_account_types()
                 self.create_account_group()
@@ -180,19 +180,6 @@ class SaleDefaultData:
                 str(self.company_obj.id), str(err)
             )
         return False
-
-    def create_company_function_number(self):
-        objs = []
-        for cf_item in range(0, 10):
-            objs.append(
-                CompanyFunctionNumber(
-                    company=self.company_obj,
-                    function=cf_item,
-                    numbering_by=0
-                )
-            )
-        CompanyFunctionNumber.objects.bulk_create(objs)
-        return True
 
     def create_salutation(self):
         objs = [
@@ -245,7 +232,7 @@ class SaleDefaultData:
             tenant=self.company_obj.tenant, company=self.company_obj, code='Unit', is_default=1
         ).first()
         if unit_group:
-            UnitOfMeasure.objects.create(
+            referenced_unit_obj = UnitOfMeasure.objects.create(
                 tenant=self.company_obj.tenant,
                 company=self.company_obj,
                 code='UOM001',
@@ -300,14 +287,15 @@ class SaleDefaultData:
                 is_default=1,
                 group=unit_group
             )
-
+            unit_group.uom_reference = referenced_unit_obj
+            unit_group.save(update_fields=['uom_reference'])
 
         # add default uom for group time
         labor_group = UnitOfMeasureGroup.objects.filter(
             tenant=self.company_obj.tenant, company=self.company_obj, code='Labor', is_default=1
         ).first()
         if labor_group:
-            UnitOfMeasure.objects.create(
+            referenced_unit_obj = UnitOfMeasure.objects.create(
                 tenant=self.company_obj.tenant,
                 company=self.company_obj,
                 code='Manhour',
@@ -340,6 +328,8 @@ class SaleDefaultData:
                 is_default=1,
                 group=labor_group
             )
+            labor_group.uom_reference = referenced_unit_obj
+            labor_group.save(update_fields=['uom_reference'])
         return True
 
     def create_tax_category(self):
@@ -385,7 +375,8 @@ class SaleDefaultData:
                         abbreviation=item.code,
                         currency=item,
                         rate=rate,
-                        is_primary=primary
+                        is_primary=primary,
+                        is_default=True
                     )
                 )
             if len(bulk_info) > 0:
@@ -1276,10 +1267,10 @@ def append_permission_viewer_runtime(sender, instance, created, **kwargs):
                     doc_id=str(doc_id),
                     tenant_id=instance.runtime.tenant_id,
                 )
-                # check if assignee has zones => append perm edit on doc_id
+                # check if assignee has zones or edit all zones => append perm edit on doc_id
                 if emp.all_runtime_assignee_of_employee.filter(
-                        ~Q(zone_and_properties={}) & ~Q(zone_and_properties=[]),
-                        stage__runtime=runtime,
+                        (~Q(zone_and_properties={}) & ~Q(zone_and_properties=[])) | Q(is_edit_all_zone=True),
+                        stage__runtime=runtime
                 ).exists():
                     emp.append_permit_by_ids(
                         app_label=app_obj.app_label,
@@ -1529,3 +1520,24 @@ def project_work_event_destroy(sender, instance, **kwargs):
         }
     )
     print('re calculator rate is Done')
+
+
+@receiver(post_save, sender=Account)
+def append_permission_managers_account(sender, instance, created, **kwargs):
+    # Get managers of account and sync perm view & edit on this account ID
+    employees = Employee.objects.filter_on_company(id__in=[manager.get('id') for manager in instance.manager])
+    for employee in employees:
+        employee.append_permit_by_ids(
+            app_label="saledata",
+            model_code="account",
+            perm_code='view',
+            doc_id=str(instance.id),
+            tenant_id=instance.tenant_id,
+        )
+        employee.append_permit_by_ids(
+            app_label="saledata",
+            model_code="account",
+            perm_code='edit',
+            doc_id=str(instance.id),
+            tenant_id=instance.tenant_id,
+        )

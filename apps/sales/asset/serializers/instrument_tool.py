@@ -68,6 +68,7 @@ class InstrumentToolListSerializer(AbstractListSerializerModel):
             'depreciation_time_unit',
             'write_off_quantity',
             'allocated_quantity',
+            'quantity'
         )
 
     @classmethod
@@ -465,6 +466,7 @@ class ToolForLeaseListSerializer(serializers.ModelSerializer):
     origin_cost = serializers.SerializerMethodField()
     net_value = serializers.SerializerMethodField()
     depreciation_time = serializers.SerializerMethodField()
+    quantity_leased = serializers.SerializerMethodField()
 
     class Meta:
         model = InstrumentTool
@@ -475,10 +477,12 @@ class ToolForLeaseListSerializer(serializers.ModelSerializer):
             'tool_id',
             'origin_cost',
             'net_value',
+            'quantity',
             'depreciation_time',
             'depreciation_start_date',
             'depreciation_end_date',
             'depreciation_data',
+            'quantity_leased',
         )
 
     @classmethod
@@ -496,6 +500,15 @@ class ToolForLeaseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_depreciation_time(cls, obj):
         return obj.depreciation_time
+
+    @classmethod
+    def get_quantity_leased(cls, obj):
+        leased = 0
+        delivery_product_tools = obj.delivery_pt_tool.filter(delivery_sub__system_status=3)
+        if delivery_product_tools:
+            for delivery_product_tool in delivery_product_tools:
+                leased += delivery_product_tool.quantity_remain_recovery
+        return leased
 
 
 class ToolStatusLeaseListSerializer(serializers.ModelSerializer):
@@ -527,21 +540,23 @@ class ToolStatusLeaseListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_quantity_leased(cls, obj):
-        delivery_product_tool = obj.delivery_pt_tool.first()
-        if delivery_product_tool:
-            return delivery_product_tool.quantity_remain_recovery
-        return 0
+        leased = 0
+        delivery_product_tools = obj.delivery_pt_tool.filter(delivery_sub__system_status=3)
+        if delivery_product_tools:
+            for delivery_product_tool in delivery_product_tools:
+                leased += delivery_product_tool.quantity_remain_recovery
+        return leased
 
     @classmethod
     def get_asset_type(cls, obj):
-        return 'tool' if obj else ''
+        return 'Tool' if obj else ''
 
     @classmethod
     def get_lease_order_data(cls, obj):
         lease_order = None
-        delivery_product_tool = obj.delivery_pt_tool.first()
-        if delivery_product_tool and obj.status == 2:
-            if delivery_product_tool.delivery_sub:
+        delivery_product_tool = obj.delivery_pt_tool.filter(delivery_sub__system_status=3).first()
+        if delivery_product_tool:
+            if delivery_product_tool.delivery_sub and delivery_product_tool.quantity_remain_recovery > 0:
                 if delivery_product_tool.delivery_sub.order_delivery:
                     lease_order = delivery_product_tool.delivery_sub.order_delivery.lease_order
         return {

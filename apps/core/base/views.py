@@ -47,6 +47,29 @@ class PlanList(generics.GenericAPIView):
         return ResponseController.success_200(ser.data, key_data='result')
 
 
+APP_MODEL_CODE = [
+    'advancepayment',
+    'payment',
+    'returnadvance',
+    'orderpickingsub',
+    'orderdeliverysub',
+    'leaseorder',
+    'saleorder',
+    'quotation',
+    'opportunity',
+    'purchaserequest',
+    # thêm model_code của app đã cấu hình sinh code theo công thức vào đây
+]
+
+
+MASTER_DATA_MODEL_CODE = [
+    'account',
+    'product',
+    'employee',
+    # thêm model_code của masterdata đã cấu hình sinh code theo công thức vào đây
+]
+
+
 class TenantApplicationList(BaseListMixin):
     queryset = Application.objects
     search_fields = ['title', 'code']
@@ -67,11 +90,14 @@ class TenantApplicationList(BaseListMixin):
 
     def get_queryset(self):
         if not isinstance(self.request.user, AnonymousUser) and getattr(self.request.user, 'tenant_current', None):
-            return super().get_queryset().filter(
-                id__in=PlanApplication.objects.filter(
-                    plan_id__in=self.request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
-                ).values_list('application__id', flat=True)
-            )
+            plan_ids = self.request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
+            app_ids = PlanApplication.objects.filter(plan_id__in=plan_ids).values_list('application__id', flat=True)
+            qs = super().get_queryset().filter(id__in=app_ids)
+            if self.request.query_params.get('allowed_app', False):
+                return qs.filter(model_code__in=APP_MODEL_CODE)
+            if self.request.query_params.get('allowed_master_data', False):
+                return qs.filter(model_code__in=MASTER_DATA_MODEL_CODE)
+            return qs
         return Application.objects.none()
 
     def get_serializer_list_data(self, ser_data):
