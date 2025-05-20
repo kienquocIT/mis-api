@@ -9,7 +9,7 @@ from ..models import KMSDocumentApproval, AttachDocumentMapAttachmentFile, KMSIn
 
 def create_attachment(doc_id, attachment_result):
     if attachment_result and isinstance(attachment_result, dict):
-        relate_app = Application.objects.get(id="08e41084-4379-4778-9e16-c09401f0a66e")
+        relate_app = Application.objects.get(id="7505d5db-42fe-4cde-ae5e-dbba78e2df03")
         state = AttachDocumentMapAttachmentFile.resolve_change(
             result=attachment_result, doc_id=doc_id.id, doc_app=relate_app,
         )
@@ -20,45 +20,51 @@ def create_attachment(doc_id, attachment_result):
 
 
 def create_attached_document(document_appr, attached_list):
-    KSMAttachedDocuments.objects.filter(document_approval=document_appr).delete()
-    attachments = attached_list.pop('attachments')
-    create_attachment(document_appr, attachments)
-
+    KSMAttachedDocuments.objects.filter_on_company(document_approval=document_appr).delete()
     new_list = []
     for item in attached_list:
+        attachments = item.pop('attachment', [])
+        create_attachment(document_appr, attachments)
         new_list.append(KSMAttachedDocuments(
-            title=item['title'],
-            document_approval=document_appr,
-            document_type=item['doc_type'],
-            content_group=item['content_group'],
-            security_lv=item['security_lv'] if 'security' in item else None,
-            published_place=item['group'] if 'group' in item else None,
-            effective_date=item['effective_date'],
-            expired_date=item['expired_date'],
-            folder=item['folder'],
-            attachment=attachments
+            title=item.get('title'),
+            document_approval_id=str(document_appr.id),
+            document_type_id=item.get('document_type'),
+            content_group_id=item.get('content_group'),
+            security_lv=item.get('security_lv'),
+            published_place_id=item.get('group'),
+            effective_date=item.get('effective_date'),
+            expired_date=item.get('expired_date'),
+            folder_id=item.get('folder'),
+            attachment=[str(val.id) for val in attachments.get('new', [])],
+            company=document_appr.company,
+            tenant=document_appr.tenant
         ))
     KSMAttachedDocuments.objects.bulk_create(new_list)
 
 
 def create_internal_recipient(doc_obj, internal_list):
-    KMSInternalRecipient.objects.filter(document_approval_id=str(doc_obj.id)).delete()
+    # // delete all recipient before and create new
+    KMSInternalRecipient.objects.filter_on_company(document_approval_id=str(doc_obj.id)).delete()
     new_list = []
     for item in internal_list:
         new_list.append(
             KMSInternalRecipient(
+                title=item.get('title'),
                 document_approval_id=str(doc_obj.id),
-                kind=item['kind'],
-                employee_access=item['employee_access'] if 'employee_access' in item else {},
-                group_access=item['group_access'] if 'group_access' in item else {},
-                document_permission_list=item['permission_list'],
-                expiration_date=item['expiration_date']
+                kind=item.get('kind', 2),
+                employee_access=item.get('employee_access', {}),
+                group_access=item.get('group_access', {}),
+                document_permission_list=item['document_permission_list'],
+                expiration_date=item.get('expiration_date'),
+                company=doc_obj.company,
+                tenant=doc_obj.tenant,
             )
         )
     KMSInternalRecipient.objects.bulk_create(new_list)
 
 class KMSAttachedDocumentSerializers(serializers.Serializer):  # noqa
     attachment = serializers.ListSerializer(child=serializers.UUIDField())
+    title = serializers.CharField(required=False, allow_null=True)
     document_type = serializers.UUIDField(required=False, allow_null=True)
     content_group = serializers.UUIDField(required=False, allow_null=True)
     security_lv = serializers.IntegerField(required=False, allow_null=True)
@@ -80,11 +86,18 @@ class KMSAttachedDocumentSerializers(serializers.Serializer):  # noqa
 
 
 class KMSInternalRecipientSerializers(serializers.Serializer):  # noqa
+    title = serializers.CharField(required=False, allow_null=True)
     kind = serializers.IntegerField()
     employee_access = serializers.JSONField(required=False, allow_null=True)
     group_access = serializers.JSONField(required=False, allow_null=True)
     document_permission_list = serializers.JSONField()
     expiration_date = serializers.DateField(required=False, allow_null=True)
+
+    @classmethod
+    def validate_document_permission_list(cls, attrs):
+        if len(attrs) > 0:
+            return attrs
+        raise serializers.ValidationError({'document_permission_list': KMSMsg.RECIPIENT_PERMISSION_ERROR})
 
 
 class KMSDocumentApprovalCreateSerializer(AbstractCreateSerializerModel):

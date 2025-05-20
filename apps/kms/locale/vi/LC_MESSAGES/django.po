@@ -23,4 +23,4 @@ msgstr "Nhân viên nội bộ không tìm thấy"
 
 #
 msgid "Document approval"
-msgstr "Công văn đến"
+msgstr "Công văn phê duyệt"

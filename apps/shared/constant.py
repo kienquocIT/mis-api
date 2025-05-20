@@ -134,6 +134,7 @@ MAP_FIELD_TITLE = {
     'asset.instrumenttool': 'title',
     'asset.fixedassetwriteoff': 'title',
     'asset.instrumenttoolwriteoff': 'title',
+    # KMS
     'kms.kmsdocumentapproval': 'title',
 }
 

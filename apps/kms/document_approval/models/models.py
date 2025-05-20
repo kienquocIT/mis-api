@@ -27,10 +27,18 @@ KIND_PERM = (
 
 class KMSDocumentApproval(DataAbstractModel):
     remark = models.TextField(blank=True)
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='AttachDocumentMapAttachmentFile',
+        symmetrical=False,
+        blank=True,
+        related_name='kms_kmsdocapr_attach_m2m',
+    )
 
     class Meta:
         verbose_name = 'Document approval of KMS'
         verbose_name_plural = 'Document approval of KMS'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
@@ -87,13 +95,6 @@ class KSMAttachedDocuments(MasterDataAbstractModel):
             ["uuid4", "uuid4"]
         )
     )
-    attachment_m2m = models.ManyToManyField(
-        'attachments.Files',
-        through='AttachDocumentMapAttachmentFile',
-        symmetrical=False,
-        blank=True,
-        related_name='kms_kmsattached_attach_m2m',
-    )
 
     class Meta:
         verbose_name = 'Attached documents of KMS'
@@ -103,10 +104,11 @@ class KSMAttachedDocuments(MasterDataAbstractModel):
 
 
 class AttachDocumentMapAttachmentFile(M2MFilesAbstractModel):
-    kms_attached_doc = models.ForeignKey(
-        KSMAttachedDocuments,
+    document_approval = models.ForeignKey(
+        KMSDocumentApproval,
         on_delete=models.CASCADE,
-        verbose_name='Attachment file of KMS attached document'
+        verbose_name='Attachment file of KMS attached document',
+        null=True
     )
 
     @classmethod
@@ -125,7 +127,7 @@ class KMSInternalRecipient(MasterDataAbstractModel):
     document_approval = models.ForeignKey(
         KMSDocumentApproval,
         on_delete=models.CASCADE,
-        related_name='kms_kmsinternal_recipient_document_approval'
+        related_name='kms_kmsinternalrecipient_doc_apr'
     )
     kind = models.SmallIntegerField(
         default=2,

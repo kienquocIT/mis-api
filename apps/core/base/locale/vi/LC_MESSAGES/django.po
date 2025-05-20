@@ -123,4 +123,4 @@ msgstr "Thông tin nhân viên"
 
 #
 msgid "APP_Document approval"
-msgstr "Công văn đến"
+msgstr "Công văn phê duyệt"

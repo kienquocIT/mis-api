@@ -12,9 +12,7 @@ class KMSDocumentApprovalRequestList(BaseListMixin, BaseCreateMixin):
     serializer_detail = KMSDocumentApprovalListSerializer
     serializer_create = KMSDocumentApprovalCreateSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = [
-        'employee_created_id',
-    ]
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
     search_fields = ('code', 'title')
 
     @swagger_auto_schema(
