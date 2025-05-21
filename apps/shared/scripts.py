@@ -1585,6 +1585,7 @@ class SubScripts:
                 bulk_info.append(
                     AccountContacts(account=account, contact=contact, is_owner=is_account_owner)
                 )
+        AccountContacts.objects.all().delete()
         AccountContacts.objects.bulk_create(bulk_info)
         print('Done :))')
         return True
