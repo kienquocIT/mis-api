@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import ProductWareHouse, Product, ProductWareHouseSerial
 from apps.sales.productmodification.serializers import (
@@ -24,7 +25,7 @@ class ProductModifiedList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related()
+        return super().get_queryset().filter(Q(general_product_types_mapped__is_service=False))
 
     @swagger_auto_schema(
         operation_summary="Product Modified List",
@@ -50,7 +51,7 @@ class ProductComponentList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related()
+        return super().get_queryset().filter(Q(general_product_types_mapped__is_service=False))
 
     @swagger_auto_schema(
         operation_summary="Product Component List",
@@ -76,7 +77,7 @@ class WarehouseListByProduct(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related()
+        return super().get_queryset()
 
     @swagger_auto_schema(
         operation_summary="Warehouse List By Product",
@@ -102,7 +103,7 @@ class ProductSerialList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related()
+        return super().get_queryset()
 
     @swagger_auto_schema(
         operation_summary="Product Serial List",
