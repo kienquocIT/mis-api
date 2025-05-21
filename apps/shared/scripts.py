@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models.price import (
     UnitOfMeasureGroup, Tax, TaxCategory, Currency
 )
 from apps.masterdata.saledata.models.accounts import (
-    Account, AccountCreditCards, AccountActivity
+    Account, AccountCreditCards, AccountActivity, AccountContacts
 )
 from apps.core.base.models import (
     PlanApplication, ApplicationProperty, Application, SubscriptionPlan
@@ -21,7 +21,7 @@ from apps.core.workflow.models import (
 )
 from apps.masterdata.saledata.models import (
     ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, DocumentType,
-    FixedAssetClassificationGroup, FixedAssetClassification, Salutation, AccountGroup, Industry, AccountType,
+    FixedAssetClassificationGroup, FixedAssetClassification, Salutation, AccountGroup, Industry, AccountType, Contact,
 )
 from . import MediaForceAPI, DisperseModel
 
@@ -1573,6 +1573,19 @@ class SubScripts:
                 })
             company_obj.function_number_data = function_number_data
             company_obj.save(update_fields=['function_number_data'])
+        print('Done :))')
+        return True
+
+    @classmethod
+    def update_account_contacts_m2m(cls):
+        bulk_info = []
+        for account in Account.objects.all():
+            for contact in Contact.objects.filter(account_name=account):
+                is_account_owner = str(account.owner_id) == str(contact.id)
+                bulk_info.append(
+                    AccountContacts(account=account, contact=contact, is_owner=is_account_owner)
+                )
+        AccountContacts.objects.bulk_create(bulk_info)
         print('Done :))')
         return True
 
