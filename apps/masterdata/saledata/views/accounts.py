@@ -373,7 +373,6 @@ class AccountForSaleList(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'industry',
             'owner',
             'payment_term_customer_mapped',
             'payment_term_supplier_mapped',
