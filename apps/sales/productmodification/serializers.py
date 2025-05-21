@@ -2,7 +2,10 @@ from rest_framework import serializers
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSerial, Product
 
 __all__ = [
+    'ProductModifiedListSerializer',
+    'ProductComponentListSerializer',
     'WarehouseListByProductSerializer',
+    'ProductSerialListSerializer',
 ]
 
 

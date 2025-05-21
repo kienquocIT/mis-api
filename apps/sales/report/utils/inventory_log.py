@@ -43,8 +43,8 @@ class ReportInvLog:
                     # cập nhập giá cost cho từng log
                     for log in new_logs:
                         ReportStockLog.update_log_cost(log, period_obj, sub_period_order, cost_cfg)
-                        print(log.trans_code, log.product.title, log.quantity, log.cost, log.value, log.perpetual_current_quantity, log.perpetual_current_cost, log.perpetual_current_value)
-                    print('# Add log for balance init successfully!\n' if for_balance_init else '# Write to Inventory Report successfully!\n')
+                    print('# Add log for balance init successfully!\n'
+                          if for_balance_init else '# Write to Inventory Report successfully!\n')
                     return True
                 raise serializers.ValidationError({'period_obj': f'Fiscal year {doc_date.year} does not exist.'})
         except Exception as err:
