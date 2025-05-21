@@ -32,15 +32,20 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, RolePermission,
 )
 from ..core.mailer.models import MailTemplateSystem
+from ..core.provisioning.utils import TenantController
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..sales.arinvoice.models import ARInvoice, ARInvoiceItems, ARInvoiceDelivery
+from ..sales.arinvoice.utils.logical_finish import ARInvoiceFinishHandler
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct, OrderPickingProduct
 from ..sales.delivery.models.delivery import OrderDeliverySerial, OrderDeliveryProductWarehouse
 from ..sales.delivery.utils import DeliFinishHandler
+from ..sales.financialcashflow.models import CashInflow, CashOutflow
+from ..sales.financialcashflow.utils.logical_finish_cif import CashInFlowFinishHandler
+from ..sales.financialcashflow.utils.logical_finish_cof import CashOutFlowFinishHandler
 from ..sales.inventory.models import (
     InventoryAdjustmentItem, GoodsReceipt, GoodsReceiptWarehouse, GoodsReturn, GoodsDetail
 )
@@ -50,6 +55,7 @@ from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunitySaleTeamMember, OpportunityMeeting, OpportunityActivityLogs,
 )
 from ..sales.partnercenter.models import DataObject
+from ..sales.paymentplan.models import PaymentPlan
 from ..sales.project.models import Project, ProjectMapMember
 from ..sales.purchasing.models import (
     PurchaseRequestProduct, PurchaseOrderRequestProduct, PurchaseOrder,
@@ -1953,3 +1959,40 @@ def add_delivery_pw_serial(sub_product_id=None, pw_serial_id=None):
         pw_serial.serial_status = 1
         pw_serial.save(update_fields=['serial_status'])
     print('add_delivery_pw_serial done.')
+
+
+def create_new_tenant(tenant_code, tenant_data, user_data):
+    TenantController().setup_new(
+        tenant_code=tenant_code,
+        tenant_data=tenant_data,
+        user_data=user_data,
+        create_company=True,
+        create_employee=True,
+        plan_data=[
+            {"title": "HRM", "code": "hrm", "quantity": 50, "date_active": "2024-01-02 03:46:00",
+             "date_end": "2025-01-02 03:46:00", "is_limited": False, "purchase_order": "PO-001"},
+            {"title": "Personal", "code": "personal", "quantity": None, "date_active": "2024-01-02 03:46:00",
+             "date_end": "2025-01-02 03:46:00", "is_limited": False, "purchase_order": "PO-001"},
+            {"title": "Sale", "code": "sale", "quantity": 50, "date_active": "2024-01-02 03:46:00",
+             "date_end": "2025-01-02 03:46:00", "is_limited": True, "purchase_order": "PO-001"},
+            {"title": "E-Office", "code": "e-office", "quantity": 50, "date_active": "2024-01-02 03:46:00",
+             "date_end": "2025-01-02 03:46:00", "is_limited": True, "purchase_order": "PO-001"}]
+    )
+    print('create_new_tenant done.')
+    return True
+
+
+def reset_push_payment_plan():
+    PaymentPlan.objects.all().delete()
+    for sale_order in SaleOrder.objects.filter(system_status=3):
+        SOFinishHandler.push_to_payment_plan(instance=sale_order)
+    for purchase_order in PurchaseOrder.objects.filter(system_status=3):
+        POFinishHandler.push_to_payment_plan(instance=purchase_order)
+    # for ar_invoice in ARInvoice.objects.filter(system_status=3):
+    #     ARInvoiceFinishHandler.push_to_payment_plan(instance=ar_invoice)
+    for cash_in_flow in CashInflow.objects.filter(system_status=3):
+        CashInFlowFinishHandler.push_to_payment_plan(instance=cash_in_flow)
+    for cash_out_flow in CashOutflow.objects.filter(system_status=3):
+        CashOutFlowFinishHandler.push_to_payment_plan(instance=cash_out_flow)
+    print('reset_push_payment_plan done.')
+    return True

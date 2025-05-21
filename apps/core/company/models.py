@@ -471,6 +471,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             # check_reset_frequency
             current_year, current_month = datetime.datetime.now().year, datetime.datetime.now().month
             data_calendar = datetime.date.today().isocalendar()
+            new_latest_number = obj.latest_number
             flag = False
             conditions = [
                 (0, obj.year_reset, current_year),
@@ -484,13 +485,11 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                     flag = True
                     break
             if flag:
-                obj.latest_number = obj.first_number - 1
-                obj.save()
+                new_latest_number = obj.first_number - 1
 
-            obj.latest_number = obj.latest_number + 1
-            obj.save()
+            new_latest_number = new_latest_number + 1
             schema_item_list = [
-                str(obj.latest_number).zfill(obj.min_number_char) if obj.min_number_char else str(obj.latest_number),
+                str(new_latest_number).zfill(obj.min_number_char) if obj.min_number_char else str(new_latest_number),
                 str(current_year % 100),
                 str(current_year),
                 str(calendar.month_name[current_month][0:3]),
@@ -503,5 +502,18 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             ]
             for match in re.findall(r"\[.*?\]", result):
                 result = result.replace(match, str(schema_item_list[int(match[1:-1])]))
+
+            if obj.app_type == 0:
+                obj.latest_number = new_latest_number
+                obj.save(update_fields=['latest_number'])
+
             return result
         return None
+
+    @classmethod
+    def auto_code_update_latest_number(cls, app_code):
+        obj = cls.objects.filter_on_company(app_code=app_code).first()
+        if obj:
+            obj.latest_number = obj.latest_number + 1
+            obj.save(update_fields=['latest_number'])
+        return True

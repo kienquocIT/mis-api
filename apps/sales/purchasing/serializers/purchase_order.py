@@ -467,6 +467,17 @@ class PurchaseOrderListSerializer(AbstractListSerializerModel):
         } if obj.supplier else {}
 
 
+class PurchaseOrderMinimalListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PurchaseOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+            'date_created',
+        )
+
+
 class PurchaseOrderDetailSerializer(AbstractDetailSerializerModel):
     purchase_requests_data = serializers.SerializerMethodField()
     purchase_quotations_data = serializers.SerializerMethodField()

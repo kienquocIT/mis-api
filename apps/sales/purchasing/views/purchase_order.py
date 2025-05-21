@@ -5,7 +5,7 @@ from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderQuotation, 
     PurchaseOrderRequestProduct
 from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer, \
     PurchaseOrderListSerializer, PurchaseOrderUpdateSerializer, PurchaseOrderDetailSerializer, \
-    PurchaseOrderSaleListSerializer, POProductGRListSerializer
+    PurchaseOrderSaleListSerializer, POProductGRListSerializer, PurchaseOrderMinimalListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -52,6 +52,29 @@ class PurchaseOrderList(
     def post(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
+
+
+class PurchaseOrderDDList(
+    BaseListMixin,
+):
+    queryset = PurchaseOrder.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'supplier_id': ['exact'],
+        'contact_id': ['exact'],
+    }
+    serializer_list = PurchaseOrderMinimalListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Purchase order DD List",
+        operation_description="Get Purchase order DD List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class PurchaseOrderDetail(

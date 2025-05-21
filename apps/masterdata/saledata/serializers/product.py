@@ -340,6 +340,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             product_obj, self.initial_data.get('product_variant_item_list', [])
         )
         AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj)
+        CompanyFunctionNumber.auto_code_update_latest_number(app_code='product')
         return product_obj
 
 

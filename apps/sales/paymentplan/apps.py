@@ -3,4 +3,4 @@ from django.apps import AppConfig
 
 class PaymentplanConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'paymentplan'
+    name = 'apps.sales.paymentplan'

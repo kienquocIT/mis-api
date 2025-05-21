@@ -1,6 +1,7 @@
 from apps.masterdata.saledata.models import AccountActivity
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.sales.delivery.models import OrderPickingSub, OrderPickingProduct
+from apps.sales.paymentplan.models import PaymentPlan
 from apps.sales.report.models import ReportCashflow, ReportCustomer, ReportProduct, ReportRevenue
 from apps.shared import DisperseModel
 
@@ -115,6 +116,32 @@ class SOFinishHandler:
             value_estimate_sale=payment_stage.value_before_tax,
         ) for payment_stage in instance.sale_order_payment_stage_sale_order.all()]
         ReportCashflow.push_from_so_po(bulk_data)
+        return True
+
+    @classmethod
+    def push_to_payment_plan(cls, instance):
+        bulk_data = []
+        for payment_obj in instance.sale_order_payment_stage_sale_order.all():
+            for payment_data in instance.sale_order_payment_stage:
+                if payment_obj.order == payment_data.get('order', None):
+                    bulk_data.append(PaymentPlan(
+                        tenant_id=instance.tenant_id,
+                        company_id=instance.company_id,
+                        sale_order_id=instance.id,
+                        sale_order_data={"id": str(instance.id), "title": instance.title, "code": instance.code},
+                        customer_id=instance.customer_id,
+                        customer_data=instance.customer_data,
+                        so_payment_stage_id=payment_obj.id,
+                        so_payment_stage_data=payment_data,
+                        # value_pay=payment_obj.value_total,
+                        invoice_planned_date=payment_obj.invoice_data.get('date', None)
+                        if isinstance(payment_obj.invoice_data, dict) else None,
+                        due_date=payment_obj.due_date,
+                        group_inherit_id=instance.employee_inherit.group_id if instance.employee_inherit else None,
+                        date_approved=instance.date_approved,
+                    ))
+                    break
+        PaymentPlan.push_from_so_po(bulk_data)
         return True
 
     @classmethod

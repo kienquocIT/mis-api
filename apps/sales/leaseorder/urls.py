@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import (
-    LeaseOrderList, LeaseOrderDetail, LORecurrenceList, LeaseOrderConfigDetail,
+    LeaseOrderList, LeaseOrderDetail, LORecurrenceList, LeaseOrderConfigDetail, LeaseOrderDDList,
 )
 
 urlpatterns = [
@@ -10,4 +10,5 @@ urlpatterns = [
     path('<str:pk>', LeaseOrderDetail.as_view(), name='LeaseOrderDetail'),
 
     path('lease-order-recurrence/list', LORecurrenceList.as_view(), name='LORecurrenceList'),
+    path('dropdown/list', LeaseOrderDDList.as_view(), name='LeaseOrderDDList'),
 ]

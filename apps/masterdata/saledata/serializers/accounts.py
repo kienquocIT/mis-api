@@ -140,6 +140,17 @@ class AccountListSerializer(serializers.ModelSerializer):
         } if obj.employee_created else {}
 
 
+class AccountMinimalListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = (
+            'id',
+            'name',
+            'code',
+            'date_created',
+        )
+
+
 class AccountCreateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     tax_code = serializers.CharField(max_length=150, required=False, allow_null=True, allow_blank=True)
@@ -284,6 +295,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         AccountCommonFunc.add_shipping_address(account, self.initial_data.get('shipping_address_dict', []))
         AccountCommonFunc.add_billing_address(account, self.initial_data.get('billing_address_dict', []))
         AccountCommonFunc.add_contact_mapped(account, contact_mapped)
+        CompanyFunctionNumber.auto_code_update_latest_number(app_code='account')
         return account
 
 
