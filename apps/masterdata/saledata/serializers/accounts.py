@@ -894,7 +894,8 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
             'email': contact.email,
             'mobile': contact.mobile,
             'job_title': contact.job_title,
-            'is_owner': contact.account_contacts_contact.filter(account=obj, is_owner=True).exists()
+            # 'is_owner': contact.account_contacts_contact.filter(account=obj, is_owner=True).exists(),
+            'is_owner': True if contact.id == obj.owner_id else False,
         } for contact in obj.contacts_mapped.all()]
 
     @classmethod
