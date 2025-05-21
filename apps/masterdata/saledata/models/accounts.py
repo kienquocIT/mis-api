@@ -136,6 +136,13 @@ class Account(DataAbstractModel):
         null=True
     )
     account_group_data = models.JSONField(default=dict)
+    contacts_mapped = models.ManyToManyField(
+        'saledata.Contact',
+        through='AccountContacts',
+        symmetrical=False,
+        blank=True,
+        related_name='account_map_contacts'
+    )
     owner = models.ForeignKey(
         Contact,
         on_delete=models.CASCADE,
