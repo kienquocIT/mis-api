@@ -1,6 +1,7 @@
 from django.urls import path
-from apps.sales.productmodification.views import WarehouseListByProduct, ProductSerialList, ProductModifiedList, \
-    ProductComponentList
+from apps.sales.productmodification.views import (
+    WarehouseListByProduct, ProductSerialList, ProductModifiedList, ProductComponentList
+)
 
 urlpatterns = [
     path('product-modified-list', ProductModifiedList.as_view(), name='ProductModifiedList'),
