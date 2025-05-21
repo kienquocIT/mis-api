@@ -8,7 +8,7 @@ from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Term, Periods
 from apps.masterdata.saledata.models.accounts import (
     AccountType, Industry, Account, AccountEmployee, AccountGroup, AccountAccountTypes, AccountBanks,
-    AccountCreditCards, AccountShippingAddress, AccountBillingAddress, PaymentTerm
+    AccountCreditCards, AccountShippingAddress, AccountBillingAddress, PaymentTerm, AccountContacts
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
@@ -403,39 +403,28 @@ class AccountDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_contact_mapped(cls, obj):
-        list_contact_mapped = []
-        for item in obj.contact_account_name.all():
-            if item.is_primary:
-                list_contact_mapped.insert(
-                    0, ({
-                        'id': item.id,
-                        'code': item.code,
-                        'fullname': item.fullname,
-                        'job_title': item.job_title,
-                        'email': item.email,
-                        'mobile': item.mobile,
-                        'is_account_owner': item.is_primary,
-                        'owner': {
-                            'id': item.owner_id,
-                            'fullname': item.owner.get_full_name(2)
-                        } if item.owner else {}
-                    })
-                )
-            else:
-                list_contact_mapped.append({
-                    'id': item.id,
-                    'code': item.code,
-                    'fullname': item.fullname,
-                    'job_title': item.job_title,
-                    'email': item.email,
-                    'mobile': item.mobile,
-                    'is_account_owner': item.is_primary,
+        contact_mapped = []
+        for item in obj.account_contacts_account.all():
+            contact = item.contact
+            if contact:
+                mapped_contact = {
+                    'id': contact.id,
+                    'code': contact.code,
+                    'fullname': contact.fullname,
+                    'job_title': contact.job_title,
+                    'email': contact.email,
+                    'mobile': contact.mobile,
+                    'is_account_owner': item.is_owner,
                     'owner': {
-                        'id': item.owner_id,
-                        'fullname': item.owner.get_full_name(2)
-                    } if item.owner else {}
-                })
-        return list_contact_mapped
+                        'id': contact.owner_id,
+                        'fullname': contact.owner.get_full_name(2)
+                    } if contact.owner else {}
+                }
+                if item.is_owner:
+                    contact_mapped.insert(0, mapped_contact)
+                else:
+                    contact_mapped.append(mapped_contact)
+        return contact_mapped
 
     @classmethod
     def get_shipping_address(cls, obj):
@@ -782,11 +771,14 @@ class AccountCommonFunc:
     @staticmethod
     def add_contact_mapped(account, contact_mapped):
         account.contact_account_name.all().update(account_name=None)
+        bulk_info = []
         for item in contact_mapped:
             contact = Contact.objects.filter(id=item.get('id')).first()
+            is_account_owner = item.get('is_account_owner')
             if contact:
+                bulk_info.append(AccountContacts(account=account, contact=contact, is_owner=is_account_owner))
                 contact.account_name = account
-                if item.get('is_account_owner'):
+                if is_account_owner:
                     contact.is_primary = True
                     account.owner = contact
                     account.save()
@@ -795,6 +787,9 @@ class AccountCommonFunc:
                 contact.save()
             else:
                 raise serializers.ValidationError({"contact": AccountsMsg.CONTACT_NOT_EXIST})
+
+        AccountContacts.objects.filter(account=account).delete()
+        AccountContacts.objects.bulk_create(bulk_info)
         return True
 
     @staticmethod
