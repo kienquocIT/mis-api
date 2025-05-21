@@ -269,8 +269,10 @@ class Account(DataAbstractModel):
 
 
 class AccountContacts(SimpleAbstractModel):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='account_contacts')
-    contact = models.ForeignKey('saledata.Contact', on_delete=models.CASCADE, related_name='account_contact_mapped')
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='account_contacts_account')
+    contact = models.ForeignKey(
+        'saledata.Contact', on_delete=models.CASCADE, related_name='account_contact_contact'
+    )
     is_owner = models.BooleanField(default=False)
 
     class Meta:

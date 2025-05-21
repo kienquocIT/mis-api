@@ -404,7 +404,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_contact_mapped(cls, obj):
         contact_mapped = []
-        for item in obj.account_contacts.all():
+        for item in obj.account_contacts_account.all():
             contact = item.contact
             if contact:
                 mapped_contact = {
