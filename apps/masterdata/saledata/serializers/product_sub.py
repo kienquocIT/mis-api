@@ -185,8 +185,8 @@ class CommonCreateUpdateProduct:
 
         return factor
 
-    @classmethod
-    def check_being_used_product(cls, product_obj):
+    @staticmethod
+    def check_being_used_product(product_obj):
         """
             Kiểm tra sản phẩm có đang được sử dụng bởi các model liên kết hay không.
             Trả về True nếu có, False nếu không.
