@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
+
+from apps.masterdata.saledata.models.accounts import AccountContacts, Account
 from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact,
 )
@@ -285,9 +287,10 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             self.convert_contact(lead_obj, lead_config, contact)
         else:
             contact = Contact.objects.create(**validated_data)
+
+        AccountContacts.objects.filter(contact=contact).delete()
         if contact.account_name:
-            contact.account_name.owner = contact
-            contact.account_name.save(update_fields=['owner'])
+            AccountContacts.objects.create(account=contact.account_name, contact=contact)
         return contact
 
 
@@ -428,14 +431,17 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if not validated_data.get('account_name'):
-            account_mapped = instance.account_name
-            if account_mapped:
-                account_mapped.owner = None
-                account_mapped.save()
+            validated_data['account_name'] = None
+            Account.objects.filter_on_company(owner=instance).update(owner=None)
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
+        AccountContacts.objects.filter(contact=instance).delete()
+        if instance.account_name:
+            AccountContacts.objects.create(account=instance.account_name, contact=instance)
+
         LeadHint.check_and_create_lead_hint(None, instance)
         return instance
 

@@ -1,6 +1,6 @@
 import json
 import datetime
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import WareHouse, Periods, ProductWareHouse
@@ -64,7 +64,9 @@ class ReportRevenueList(BaseListMixin):
             "opportunity",
             "customer",
             "employee_inherit",
-        ).filter(group_inherit__is_delete=False)
+        ).filter(group_inherit__is_delete=False, is_initial=False).filter(
+            Q(sale_order__system_status=3) | Q(lease_order__system_status=3)
+        )
         filter_item_id = self.request.query_params.get('advance_filter_id')
 
         filter_item_obj = List.objects.filter(id=filter_item_id).first()
@@ -183,7 +185,9 @@ class ReportCustomerList(BaseListMixin):
             "customer",
             "customer__industry",
             "employee_inherit"
-        ).filter(group_inherit__is_delete=False)
+        ).filter(group_inherit__is_delete=False).filter(
+            Q(sale_order__system_status=3) | Q(lease_order__system_status=3)
+        )
 
     @swagger_auto_schema(
         operation_summary="Report customer List",
@@ -562,6 +566,20 @@ class ReportGeneralList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
+        is_initial = self.request.query_params.dict().get('is_initial', None)
+        if is_initial:
+            return super().get_queryset().select_related(
+                "employee_inherit",
+                "group_inherit",
+            ).prefetch_related(
+                Prefetch(
+                    'employee_inherit__rp_group_employee_employee',
+                    queryset=RevenuePlanGroupEmployee.objects.select_related(
+                        'revenue_plan_mapped',
+                        'revenue_plan_mapped__period_mapped',
+                    ),
+                ),
+            ).filter(group_inherit__is_delete=False)
         return super().get_queryset().select_related(
             "employee_inherit",
             "group_inherit",
@@ -573,7 +591,9 @@ class ReportGeneralList(BaseListMixin):
                     'revenue_plan_mapped__period_mapped',
                 ),
             ),
-        ).filter(group_inherit__is_delete=False, sale_order__system_status=3)
+        ).filter(group_inherit__is_delete=False).filter(
+            Q(sale_order__system_status=3) | Q(lease_order__system_status=3)
+        )
 
     @swagger_auto_schema(
         operation_summary="Report general List",

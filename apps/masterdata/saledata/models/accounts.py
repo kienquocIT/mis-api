@@ -136,6 +136,13 @@ class Account(DataAbstractModel):
         null=True
     )
     account_group_data = models.JSONField(default=dict)
+    contacts_mapped = models.ManyToManyField(
+        'saledata.Contact',
+        through='AccountContacts',
+        symmetrical=False,
+        blank=True,
+        related_name='account_map_contacts'
+    )
     owner = models.ForeignKey(
         Contact,
         on_delete=models.CASCADE,
@@ -268,7 +275,20 @@ class Account(DataAbstractModel):
         }
 
 
-# AccountEmployee
+class AccountContacts(SimpleAbstractModel):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='account_contacts_account')
+    contact = models.ForeignKey(
+        'saledata.Contact', on_delete=models.CASCADE, related_name='account_contacts_contact'
+    )
+    is_owner = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Account Contact'
+        verbose_name_plural = 'Accounts Contacts'
+        default_permissions = ()
+        permissions = ()
+
+# AccountEmployees
 class AccountEmployee(SimpleAbstractModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='account_employees_mapped')
     employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
