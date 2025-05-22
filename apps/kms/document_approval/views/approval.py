@@ -48,10 +48,9 @@ class KMSDocumentApprovalRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_update = KMSDocumentApprovalDetailSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = [
-        'employee_created_id',
-    ]
-    search_fields = ('code', 'title')
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('employee_inherit')
 
     @swagger_auto_schema(
         operation_summary="Document approval request detail",

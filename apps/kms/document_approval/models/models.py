@@ -3,6 +3,7 @@ import json
 from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import DataAbstractModel, MasterDataAbstractModel
 
 
@@ -34,6 +35,22 @@ class KMSDocumentApproval(DataAbstractModel):
         blank=True,
         related_name='kms_kmsdocapr_attach_m2m',
     )
+
+    def save(self, *args, **kwargs):
+        if self.system_status in [2, 3]:
+            if not self.code:
+                code_generated = CompanyFunctionNumber.gen_auto_code(app_code='kmsdocumentapproval')
+                if code_generated:
+                    self.code = code_generated
+                else:
+                    self.add_auto_generate_code_to_instance(self, 'KDA/[n6]', True)
+
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Document approval of KMS'

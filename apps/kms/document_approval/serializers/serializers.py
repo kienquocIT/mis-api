@@ -145,13 +145,76 @@ class KMSDocumentApprovalListSerializer(serializers.ModelSerializer):
     class Meta:
         model = KMSDocumentApproval
         fields = (
+            'id',
             'title',
             'remark',
+            'code',
             'system_status',
         )
 
 
 class KMSDocumentApprovalDetailSerializer(AbstractDetailSerializerModel):
+    attached_list = serializers.SerializerMethodField()
+    internal_recipient = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_attached_list(cls, obj):
+        item_list = obj.kms_kmsattached_document_approval.all().select_related(
+            'document_type', 'content_group', 'published_place', 'folder'
+        )
+        attr_lst = []
+        att_objs = AttachDocumentMapAttachmentFile.objects.select_related('attachment').filter(document_approval=obj)
+        for item in item_list:
+            att_lst = att_objs.filter(attachment_id__in=item.attachment)
+            attr_lst.append({
+                'id': item.id,
+                'title': item.title,
+                'document_type': {
+                    'id': item.document_type.id,
+                    'title': item.document_type.title
+                } if item.document_type else {},
+                'content_group': {
+                    'id': item.content_group.id,
+                    'title': item.content_group.title
+                } if item.content_group else {},
+                'security_lv': item.security_lv,
+                'published_place': {
+                    'id': item.published_place.id,
+                    'title': item.published_place.title,
+                    'code': item.published_place.code
+                } if item.published_place else {},
+                'effective_date': item.effective_date,
+                'expired_date': item.expired_date,
+                'folder': {
+                    'id': item.folder.id,
+                    'title': item.folder
+                } if item.folder else {},
+                'attachment': [att.attachment.get_detail() for att in att_lst]
+            })
+        return attr_lst
+
+    @classmethod
+    def get_internal_recipient(cls, obj):
+        item_list = obj.kms_kmsinternalrecipient_doc_apr.all()
+        itn_list = []
+        for item in item_list:
+            itn_list.append({
+                'id': item.id,
+                'title': item.title,
+                'kind': item.kind,
+                'employee_access': item.employee_access,
+                'group_access': item.group_access,
+                'document_permission_list': item.document_permission_list,
+                'expiration_date': item.expiration_date,
+            })
+        return itn_list
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            "id": obj.employee_inherit_id,
+            "full_name": obj.employee_inherit.get_full_name()
+        } if obj.employee_inherit else {}
 
     class Meta:
         model = KMSDocumentApproval
@@ -160,6 +223,9 @@ class KMSDocumentApprovalDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'remark',
             'system_status',
+            'employee_inherit',
+            'attached_list',
+            'internal_recipient',
         )
 
 

@@ -6,7 +6,7 @@ __all__ = [
 KMS_DOCUMENT_APPROVAL = {
     "id": "7505d5db-42fe-4cde-ae5e-dbba78e2df03",
     "title": "Document approval",
-    "code": "documentapproval",
+    "code": "kmsdocumentapproval",
     "model_code": "kmsdocumentapproval",
     "app_label": "kms",
     "is_workflow": True,
