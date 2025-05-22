@@ -366,7 +366,7 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
 
         LeaseOrderRuleValidate.validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
-        LeaseOrderRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
+        LeaseOrderRuleValidate.validate_then_set_indicators_value(validate_data=validate_data)
         LeaseOrderRuleValidate.validate_payment_stage(validate_data=validate_data)
         return validate_data
 
@@ -548,7 +548,7 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
     def validate(self, validate_data):
         LeaseOrderRuleValidate.validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
-        LeaseOrderRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
+        LeaseOrderRuleValidate.validate_then_set_indicators_value(validate_data=validate_data)
         LeaseOrderRuleValidate.validate_payment_stage(validate_data=validate_data)
         return validate_data
 
