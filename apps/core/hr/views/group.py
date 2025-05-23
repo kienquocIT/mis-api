@@ -5,6 +5,7 @@ from apps.core.hr.serializers.group_serializers import (
     GroupLevelListSerializer,
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer,
     GroupUpdateSerializer, GroupDetailSerializer, GroupParentListSerializer, GroupLevelCreateSerializer,
+    GroupMinimalListSerializer,
 )
 from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, mask_view, BaseDestroyMixin
 
@@ -135,6 +136,34 @@ class GroupList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+
+class GroupDDList(BaseListMixin, BaseCreateMixin):
+    queryset = Group.objects
+    search_fields = [
+        "title",
+        "code",
+        "description",
+        "first_manager_title",
+        "second_manager_title"
+    ]
+    filterset_fields = {
+        'group_level__level': ['exact', 'lt'],
+    }
+    ordering = ['group_level__level']
+
+    serializer_list = GroupMinimalListSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Group DD list",
+        operation_description="Get group DD list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class GroupDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
