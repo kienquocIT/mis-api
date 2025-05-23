@@ -71,6 +71,7 @@ class PurchaseOrderRequestProductListSerializer(serializers.ModelSerializer):
             'quantity_order',
             'uom_stock',
             'is_stock',
+            'gr_remain_quantity',
         )
 
     @classmethod
@@ -196,6 +197,7 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
             'order',
             'is_shipping',
             'shipping_title',
+            'gr_remain_quantity',
         )
 
     @classmethod
