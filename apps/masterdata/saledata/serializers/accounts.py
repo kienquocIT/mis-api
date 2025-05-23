@@ -850,7 +850,7 @@ class TermSubSerializer(serializers.ModelSerializer):
 class AccountForSaleListSerializer(serializers.ModelSerializer):
     account_type = serializers.SerializerMethodField()
     manager = serializers.SerializerMethodField()
-    industry = serializers.SerializerMethodField()
+    contact_list = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     shipping_address = serializers.SerializerMethodField()
     billing_address = serializers.SerializerMethodField()
@@ -867,7 +867,7 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
             "website",
             "code",
             "account_type",
-            "industry",
+            "contact_list",
             "manager",
             "owner",
             "phone",
@@ -875,7 +875,7 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
             "billing_address",
             "payment_term_customer_mapped",
             'payment_term_supplier_mapped',
-            "price_list_mapped"
+            "price_list_mapped",
         )
 
     @classmethod
@@ -887,6 +887,18 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
         return obj.manager if obj.manager else []
 
     @classmethod
+    def get_contact_list(cls, obj):
+        return [{
+            'id': contact.id,
+            'fullname': contact.fullname,
+            'email': contact.email,
+            'mobile': contact.mobile,
+            'job_title': contact.job_title,
+            # 'is_owner': contact.account_contacts_contact.filter(account=obj, is_owner=True).exists(),
+            'is_owner': contact.id == obj.owner_id,
+        } for contact in obj.contacts_mapped.all()]
+
+    @classmethod
     def get_owner(cls, obj):
         return {
             'id': obj.owner_id,
@@ -895,13 +907,6 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
             'mobile': obj.owner.mobile,
             'job_title': obj.owner.job_title,
         } if obj.owner else {}
-
-    @classmethod
-    def get_industry(cls, obj):
-        return {
-            'id': obj.industry_id,
-            'title': obj.industry.title
-        } if obj.industry else {}
 
     @classmethod
     def get_payment_term_customer_mapped(cls, obj):

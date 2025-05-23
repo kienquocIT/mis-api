@@ -373,7 +373,6 @@ class AccountForSaleList(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'industry',
             'owner',
             'payment_term_customer_mapped',
             'payment_term_supplier_mapped',
@@ -382,6 +381,7 @@ class AccountForSaleList(BaseListMixin):
             'account_mapped_shipping_address',
             'account_mapped_billing_address',
             'payment_term_customer_mapped__term_payment_term',
+            'contacts_mapped__account_contacts_contact',
         )
 
     @swagger_auto_schema(
