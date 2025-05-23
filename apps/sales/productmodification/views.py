@@ -76,8 +76,8 @@ class WarehouseListByProduct(BaseListMixin):
     serializer_list = WarehouseListByProductSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
-    def get_queryset(self):
-        return super().get_queryset()
+    # def get_queryset(self):
+    #     return super().get_queryset()
 
     @swagger_auto_schema(
         operation_summary="Warehouse List By Product",
@@ -102,8 +102,8 @@ class ProductSerialList(BaseListMixin):
     serializer_list = ProductSerialListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
-    def get_queryset(self):
-        return super().get_queryset()
+    # def get_queryset(self):
+    #     return super().get_queryset()
 
     @swagger_auto_schema(
         operation_summary="Product Serial List",

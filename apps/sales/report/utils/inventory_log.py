@@ -17,7 +17,6 @@ class ReportInvLog:
         try:
             tenant = doc_obj.tenant
             company = doc_obj.company
-            employee = doc_obj.employee_created if doc_obj.employee_created else doc_obj.employee_inherit
             with transaction.atomic():
                 # lấy pp tính giá cost (0_FIFO, 1_WA, 2_SIM)
                 cost_cfg = ReportInvCommonFunc.get_cost_config(company)
@@ -32,7 +31,11 @@ class ReportInvLog:
                     # kiểm tra và chạy tổng kết (các) tháng trước đó, sau đó đẩy số dư qua đầu kì tháng tiếp theo
                     for order in range(1, sub_period_order + 1):
                         run_state = ReportInvCommonFunc.check_and_push_to_this_sub(
-                            tenant, company, employee, period_obj, order
+                            tenant,
+                            company,
+                            doc_obj.employee_created if doc_obj.employee_created else doc_obj.employee_inherit,
+                            period_obj,
+                            order
                         )
                         if run_state is False:
                             break
