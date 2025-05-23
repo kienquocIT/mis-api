@@ -195,6 +195,17 @@ class GroupListSerializer(serializers.ModelSerializer):
         return obj.group_level.level if obj.group_level else None
 
 
+class GroupMinimalListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Group
+        fields = (
+            'id',
+            'title',
+            'code',
+        )
+
+
 class GroupDetailSerializer(serializers.ModelSerializer):
     group_level = serializers.SerializerMethodField()
     first_manager = serializers.SerializerMethodField()
