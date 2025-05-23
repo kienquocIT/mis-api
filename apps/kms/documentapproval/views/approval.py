@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.kms.document_approval.models import KMSDocumentApproval
-from apps.kms.document_approval.serializers.serializers import KMSDocumentApprovalListSerializer, \
+from apps.kms.documentapproval.models import KMSDocumentApproval
+from apps.kms.documentapproval.serializers.serializers import KMSDocumentApprovalListSerializer, \
     KMSDocumentApprovalCreateSerializer, KMSDocumentApprovalDetailSerializer
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -21,7 +21,7 @@ class KMSDocumentApprovalRequestList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='kms', model_code='kmsdocumentapproval', perm_code='view',
+        label_code='documentapproval', model_code='kmsdocumentapproval', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -33,7 +33,7 @@ class KMSDocumentApprovalRequestList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='kms', model_code='kmsdocumentapproval', perm_code='create'
+        label_code='documentapproval', model_code='kmsdocumentapproval', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
@@ -58,7 +58,7 @@ class KMSDocumentApprovalRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='kms', model_code='kmsdocumentapproval', perm_code='view',
+        label_code='documentapproval', model_code='kmsdocumentapproval', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -70,7 +70,7 @@ class KMSDocumentApprovalRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='kms', model_code='kmsdocumentapproval', perm_code="edit",
+        label_code='documentapproval', model_code='kmsdocumentapproval', perm_code="edit",
     )
     def put(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}

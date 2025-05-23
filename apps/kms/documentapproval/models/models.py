@@ -67,14 +67,14 @@ class KSMAttachedDocuments(MasterDataAbstractModel):
         related_name='kms_kmsattached_document_approval'
     )
     document_type = models.ForeignKey(
-        'document_approval.KMSDocumentType',
+        'documentapproval.KMSDocumentType',
         on_delete=models.SET_NULL,
         null=True,
         default=None,
         related_name='kms_kmsattached_document_types'
     )
     content_group = models.ForeignKey(
-        'document_approval.KMSContentGroup',
+        'documentapproval.KMSContentGroup',
         on_delete=models.SET_NULL,
         null=True,
         default=None,
