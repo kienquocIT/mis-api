@@ -64,6 +64,7 @@ from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.quotation.serializers import QuotationListSerializer
 from ..sales.report.models import ReportCashflow
+from ..sales.report.scripts import InventoryReportRun
 from ..sales.report.utils import IRForGoodsReceiptHandler
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrder, SaleOrderIndicator
@@ -2027,24 +2028,25 @@ def update_pr_product_goods_receipt():
         if gr_wh_1:
             gr_wh_1.goods_receipt_request_product_id = pr_product_1.id
             gr_wh_1.save(update_fields=['goods_receipt_request_product_id'])
-        gr_1 = GoodsReceipt.objects.filter(id="3942210b-7441-461c-8120-a9a690154e2f").first()
-        if gr_1:
-            IRForGoodsReceiptHandler.push_to_inventory_report(gr_1)
-    # pr_product_2 = GoodsReceiptRequestProduct.objects.create(
-    #     quantity_import=1,
-    #     goods_receipt_id="edaddf9f-60b4-4e6e-bea8-5d123ffe1a8c",
-    #     goods_receipt_product_id="275b97d1-c736-4e9d-9b059-e057b957fd8",
-    #     purchase_order_request_product_id="b7306365-5e42-46d3-b8e3-a39b243b53f6",
-    #     purchase_request_product_id="81006664-a40a-4100-bab8-367896e87226",
-    #     quantity_order=1,
-    # )
-    # if pr_product_2:
-    #     gr_wh_2 = GoodsReceiptWarehouse.objects.filter(id="806bf37d-5073-4261-94fc-47774135bab5").first()
-    #     if gr_wh_2:
-    #         gr_wh_2.goods_receipt_request_product_id = pr_product_2.id
-    #         gr_wh_2.save(update_fields=['goods_receipt_request_product_id'])
-    #     gr_2 = GoodsReceipt.objects.filter(id="edaddf9f-60b4-4e6e-bea8-5d123ffe1a8c").first()
-    #     if gr_2:
-    #         IRForGoodsReceiptHandler.push_to_inventory_report(gr_2)
+        # gr_1 = GoodsReceipt.objects.filter(id="3942210b-7441-461c-8120-a9a690154e2f").first()
+        # if gr_1:
+        #     IRForGoodsReceiptHandler.push_to_inventory_report(gr_1)
+    pr_product_2 = GoodsReceiptRequestProduct.objects.create(
+        quantity_import=1,
+        goods_receipt_id="b02fc96d-2fe0-4c18-9dfb-e05e997e5b83",
+        goods_receipt_product_id="48e6d4bc-20e7-473c-9d3c-401083b140c3",
+        purchase_order_request_product_id="1b2f0498-3283-493b-8522-57c714bb777e",
+        purchase_request_product_id="81006664-a40a-4100-bab8-367896e87226",
+        quantity_order=1,
+    )
+    if pr_product_2:
+        gr_wh_2 = GoodsReceiptWarehouse.objects.filter(id="cb4a0d86-6b6f-47a4-a4eb-abdd0d9bb897").first()
+        if gr_wh_2:
+            gr_wh_2.goods_receipt_request_product_id = pr_product_2.id
+            gr_wh_2.save(update_fields=['goods_receipt_request_product_id'])
+        # gr_2 = GoodsReceipt.objects.filter(id="edaddf9f-60b4-4e6e-bea8-5d123ffe1a8c").first()
+        # if gr_2:
+        #     IRForGoodsReceiptHandler.push_to_inventory_report(gr_2)
+    InventoryReportRun.run('0248237b-cb6b-46b1-82ad-9282115a0624', 2025)
     print('update_pr_product_goods_receipt done.')
     return True
