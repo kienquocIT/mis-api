@@ -69,6 +69,8 @@ class AdvancePayment(DataAbstractModel, BastionFieldAbstractModel):
         help_text='0 is Cash, 1 is Bank Transfer'
     )
     return_date = models.DateField()
+    advance_date = models.DateField(null=True)
+    bank_data = models.CharField(max_length=200, null=True, blank=True)
     money_gave = models.BooleanField(default=False)
     advance_value_before_tax = models.FloatField(default=0)
     advance_value_tax = models.FloatField(default=0)

@@ -3,7 +3,7 @@ from apps.sales.cashoutflow.models import AdvancePayment, AdvancePaymentCost
 from apps.sales.cashoutflow.serializers import (
     AdvancePaymentListSerializer, AdvancePaymentCreateSerializer,
     AdvancePaymentDetailSerializer, AdvancePaymentUpdateSerializer,
-    AdvancePaymentCostListSerializer
+    AdvancePaymentCostListSerializer, AdvancePaymentPrintSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -116,6 +116,37 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
+
+
+class AdvancePaymentPrint(BaseRetrieveMixin):
+    queryset = AdvancePayment.objects  # noqa
+    serializer_detail = AdvancePaymentPrintSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'advance_payment__currency',
+            'advance_payment__expense_type',
+            'advance_payment__expense_tax',
+        ).select_related(
+            'sale_order_mapped__opportunity__customer',
+            'sale_order_mapped__quotation__customer',
+            'quotation_mapped__opportunity__customer',
+            'opportunity__customer',
+            'supplier__owner',
+            'supplier__industry',
+            'employee_inherit__group',
+            'employee_created__group',
+            'process', 'process_stage_app',
+        )
+
+    @swagger_auto_schema(operation_summary='Print AdvancePayment')
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='cashoutflow', model_code='advancepayment', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
 
 class AdvancePaymentCostList(BaseListMixin):

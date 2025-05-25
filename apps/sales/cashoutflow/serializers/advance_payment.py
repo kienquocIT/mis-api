@@ -229,6 +229,8 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
             'supplier_id',
             'method',
             'return_date',
+            'advance_date',
+            'bank_data',
             'money_gave',
             'ap_item_list',
             'attachment'
@@ -293,8 +295,6 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     attachment = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
-    method_parsed = serializers.SerializerMethodField()
-    date_created_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -303,10 +303,10 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'code',
             'method',
-            'method_parsed',
             'money_gave',
-            'date_created_parsed',
             'return_date',
+            'advance_date',
+            'bank_data',
             'sale_code_type',
             'advance_value_before_tax',
             'advance_value_tax',
@@ -348,18 +348,9 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
         return {}
 
     @classmethod
-    def get_method_parsed(cls, obj):
-        return [_('Cash'), _('Bank Transfer')][obj.method]
-
-    @classmethod
-    def get_date_created_parsed(cls, obj):
-        return obj.date_created.strftime('%d/%m/%Y')
-
-    @classmethod
     def get_expense_items(cls, obj):
         expense_items = []
-        order = 1
-        for item in obj.advance_payment.all():
+        for order, item in enumerate(obj.advance_payment.all(), start=1):
             expense_items.append({
                 'id': item.id,
                 'order': order,
@@ -372,9 +363,12 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
                 'expense_tax_price': item.expense_tax_price,
                 'expense_subtotal_price': item.expense_subtotal_price,
                 'expense_after_tax_price': item.expense_after_tax_price,
-                'remain_total': item.expense_after_tax_price - item.sum_return_value - item.sum_converted_value
+                'remain_total': (
+                        item.expense_after_tax_price -
+                        item.sum_return_value -
+                        item.sum_converted_value
+                ),
             })
-            order += 1
         return expense_items
 
     @classmethod
@@ -491,24 +485,56 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
 
 
 class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
+    opportunity_id = serializers.UUIDField(required=False, allow_null=True)
+    quotation_mapped_id = serializers.UUIDField(required=False, allow_null=True)
+    sale_order_mapped_id = serializers.UUIDField(required=False, allow_null=True)
+    employee_inherit_id = serializers.UUIDField(required=False, allow_null=True)
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     ap_item_list = serializers.ListField(required=False, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+    process = serializers.UUIDField(allow_null=True, default=None, required=False)
+    process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
+
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
+
+    @classmethod
+    def validate_process_stage_app(cls, attrs):
+        return ProcessRuntimeControl.get_process_stage_app(
+            stage_app_id=attrs, app_id=AdvancePayment.get_app_id()
+        ) if attrs else None
 
     class Meta:
         model = AdvancePayment
         fields = (
+            # process
+            'process',
+            'process_stage_app',
+            #
             'title',
+            'opportunity_id',
+            'quotation_mapped_id',
+            'sale_order_mapped_id',
+            'sale_code_type',
+            'employee_inherit_id',
             'advance_payment_type',
             'supplier_id',
             'method',
             'return_date',
+            'advance_date',
+            'bank_data',
             'money_gave',
             'ap_item_list',
             'attachment'
         )
 
     def validate(self, validate_data):
+        APCommonFunction.validate_opportunity_id(validate_data)
+        APCommonFunction.validate_quotation_mapped_id(validate_data)
+        APCommonFunction.validate_sale_order_mapped_id(validate_data)
+        APCommonFunction.validate_sale_code_type(validate_data)
+        APCommonFunction.validate_employee_inherit_id(validate_data)
         APCommonFunction.validate_advance_payment_type(validate_data)
         APCommonFunction.validate_method(validate_data)
         APCommonFunction.validate_ap_item_list(validate_data)
@@ -518,6 +544,15 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
             doc_id=self.instance.id,
             validate_data=validate_data
         )
+
+        process_obj = validate_data.get('process', None)
+        process_stage_app_obj = validate_data.get('process_stage_app', None)
+        opportunity_id = validate_data.get('opportunity_id', None)
+        if process_obj:
+            ProcessRuntimeControl(process_obj=process_obj).validate_process(
+                process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id,
+            )
+
         return validate_data
 
     @decorator_run_workflow
@@ -531,6 +566,98 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
         APCommonFunction.create_ap_items(instance, ap_item_list)
         APCommonFunction.handle_attach_file(instance, attachment)
         return instance
+
+
+class AdvancePaymentPrintSerializer(serializers.ModelSerializer):
+    employee_created = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+    supplier = serializers.SerializerMethodField()
+    method = serializers.SerializerMethodField()
+    date_created = serializers.SerializerMethodField()
+    return_date = serializers.SerializerMethodField()
+    advance_date = serializers.SerializerMethodField()
+    expense_items = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AdvancePayment
+        fields = (
+            # info
+            'code',
+            'title',
+            'sale_code',
+            'date_created',
+            'employee_created',
+            'employee_inherit',
+            'supplier',
+            'method',
+            'return_date',
+            'advance_date',
+            'bank_data',
+            'advance_value_before_tax',
+            'advance_value_tax',
+            'advance_value',
+            'advance_value_by_words',
+            # detail
+            'expense_items'
+        )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'full_name': obj.employee_created.get_full_name(2),
+            'group': obj.employee_created.group.title if obj.employee_created.group else ''
+        } if obj.employee_created else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'group': obj.employee_inherit.group.title if obj.employee_inherit.group else ''
+        } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_supplier(cls, obj):
+        return obj.supplier.name if obj.supplier else ''
+
+    @classmethod
+    def get_method(cls, obj):
+        return [_('Cash'), _('Bank Transfer')][obj.method]
+
+    @classmethod
+    def get_date_created(cls, obj):
+        return obj.date_created.strftime('%d/%m/%Y')
+
+    @classmethod
+    def get_return_date(cls, obj):
+        return obj.return_date.strftime('%d/%m/%Y')
+
+    @classmethod
+    def get_advance_date(cls, obj):
+        return obj.advance_date.strftime('%d/%m/%Y')
+
+    @classmethod
+    def get_expense_items(cls, obj):
+        expense_items = []
+        for order, item in enumerate(obj.advance_payment.all(), start=1):
+            expense_items.append({
+                'id': item.id,
+                'order': order,
+                'expense_description': item.expense_description,
+                'expense_type': item.expense_type_data,
+                'expense_uom_name': item.expense_uom_name,
+                'expense_quantity': item.expense_quantity,
+                'expense_unit_price': item.expense_unit_price,
+                'expense_tax': item.expense_tax_data,
+                'expense_tax_price': item.expense_tax_price,
+                'expense_subtotal_price': item.expense_subtotal_price,
+                'expense_after_tax_price': item.expense_after_tax_price,
+                'remain_total': (
+                        item.expense_after_tax_price -
+                        item.sum_return_value -
+                        item.sum_converted_value
+                ),
+            })
+        return expense_items
 
 
 class AdvancePaymentCostListSerializer(serializers.ModelSerializer):
