@@ -3,22 +3,25 @@ from apps.sales.cashoutflow.views import (
     AdvancePaymentList, AdvancePaymentDetail,
     PaymentList, PaymentDetail,
     ReturnAdvanceList, ReturnAdvanceDetail, PaymentConfigList,
-    AdvancePaymentCostList, PaymentCostList, APListForReturn
+    AdvancePaymentCostList, PaymentCostList, APListForReturn, AdvancePaymentPrint
 )
-from apps.sales.cashoutflow.views.cashouflow_common import CashOutflowQuotationList, CashOutflowSaleOrderList
+from apps.sales.cashoutflow.views.cashouflow_common import CashOutflowQuotationList, CashOutflowSaleOrderList, \
+    CashOutflowSupplierList
 
 urlpatterns = [
     path('quotation-list', CashOutflowQuotationList.as_view(), name='CashOutflowQuotationList'),
     path('sale-order-list', CashOutflowSaleOrderList.as_view(), name='CashOutflowSaleOrderList'),
+    path('supplier-list', CashOutflowSupplierList.as_view(), name='CashOutflowSupplierList'),
 
-    path('advances-payments', AdvancePaymentList.as_view(), name='AdvancePaymentList'),
-    path('advances-payments/<str:pk>', AdvancePaymentDetail.as_view(), name='AdvancePaymentDetail'),
-    path('advances-payments-cost-list/lists', AdvancePaymentCostList.as_view(), name='AdvancePaymentCostList'),
+    path('advance-payments', AdvancePaymentList.as_view(), name='AdvancePaymentList'),
+    path('advance-payment/<str:pk>', AdvancePaymentDetail.as_view(), name='AdvancePaymentDetail'),
+    path('advance-payment-cost-list/list', AdvancePaymentCostList.as_view(), name='AdvancePaymentCostList'),
+    path('advance-payment-print/<str:pk>', AdvancePaymentPrint.as_view(), name='AdvancePaymentPrint'),
 
     path('payments', PaymentList.as_view(), name='PaymentList'),
     path('payment-config', PaymentConfigList.as_view(), name='PaymentConfigList'),
-    path('payments/<str:pk>', PaymentDetail.as_view(), name='PaymentDetail'),
-    path('payments-cost-list/lists', PaymentCostList.as_view(), name='PaymentCostList'),
+    path('payment/<str:pk>', PaymentDetail.as_view(), name='PaymentDetail'),
+    path('payment-cost-list/list', PaymentCostList.as_view(), name='PaymentCostList'),
 
     path('return-advances', ReturnAdvanceList.as_view(), name='ReturnAdvanceList'),
     path('return-advance/<str:pk>', ReturnAdvanceDetail.as_view(), name='ReturnAdvanceDetail'),
