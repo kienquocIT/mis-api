@@ -146,6 +146,8 @@ INSTALLED_APPS = \
     ] + [
         'apps.accounting.accountingsettings',
         'apps.accounting.journalentry'
+    ] + [  # KMS
+        'apps.kms.documentapproval'
     ]
 
 MIDDLEWARE = [

@@ -120,3 +120,7 @@ msgstr "Trình duyệt Dự án"
 #
 msgid "APP_Employee info"
 msgstr "Thông tin nhân viên"
+
+#
+msgid "APP_Document approval"
+msgstr "Công văn phê duyệt"

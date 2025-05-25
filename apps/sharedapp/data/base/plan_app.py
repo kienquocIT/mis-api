@@ -2,6 +2,7 @@ from .plan_app_sub.base import Application_base_data as _Application_base_data
 from .plan_app_sub.crm import Application_crm_data as _Application_crm_data
 from .plan_app_sub.eoffice import Application_eOffice_data as _Application_eOffice_data
 from .plan_app_sub.hrm import Application_hrm_data as _Application_hrm_data
+from .plan_app_sub.kms import Application_kms_data as _Application_kms_data
 
 __all__ = [
     "SubscriptionPlan_data",
@@ -33,6 +34,10 @@ SubscriptionPlan_data = {
         "title": "Personal",
         "code": "personal",
     },
+    "02793f68-3548-45c1-98f5-89899a963091": {
+        "title": "KMS",
+        "code": "kms",
+    },
 }
 
 Application_data = {
@@ -40,6 +45,7 @@ Application_data = {
     **_Application_crm_data,
     **_Application_eOffice_data,
     **_Application_hrm_data,
+    **_Application_kms_data,
 }
 
 _PlanApplication_base_data = {
@@ -442,11 +448,19 @@ _PlanApplication_eOffice_data = {
     },
 }
 
+_PlanApplication_kms_data = {
+    "7505d5db-42fe-4cde-ae5e-dbba78e2df03": {
+        "plan_id": "02793f68-3548-45c1-98f5-89899a963091",  # KMS
+        "application_id": "7505d5db-42fe-4cde-ae5e-dbba78e2df03",  # Document approval
+    },
+}
+
 PlanApplication_data = {
     **_PlanApplication_base_data,
     **_PlanApplication_hrm_data,
     **_PlanApplication_sale_data,
     **_PlanApplication_eOffice_data,
+    **_PlanApplication_kms_data,
 }
 
 

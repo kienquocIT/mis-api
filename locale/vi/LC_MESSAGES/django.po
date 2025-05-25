@@ -330,6 +330,10 @@ msgstr "Phiếu chi"
 msgid "Reconciliation"
 msgstr "Cấn trừ"
 
+# 7505d5db-42fe-4cde-ae5e-dbba78e2df03
+msgid "Document approval"
+msgstr "Công văn phê duyệt"
+
 #
 msgid "Does not exist"
 msgstr "Không tồn tại"
