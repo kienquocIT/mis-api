@@ -47,7 +47,7 @@ from ..sales.financialcashflow.models import CashInflow, CashOutflow
 from ..sales.financialcashflow.utils.logical_finish_cif import CashInFlowFinishHandler
 from ..sales.financialcashflow.utils.logical_finish_cof import CashOutFlowFinishHandler
 from ..sales.inventory.models import (
-    InventoryAdjustmentItem, GoodsReceipt, GoodsReceiptWarehouse, GoodsReturn, GoodsDetail
+    InventoryAdjustmentItem, GoodsReceipt, GoodsReceiptWarehouse, GoodsReturn, GoodsDetail, GoodsReceiptRequestProduct
 )
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler
 from ..sales.lead.models import Lead
@@ -64,6 +64,8 @@ from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.quotation.serializers import QuotationListSerializer
 from ..sales.report.models import ReportCashflow
+from ..sales.report.scripts import InventoryReportRun
+from ..sales.report.utils import IRForGoodsReceiptHandler
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrder, SaleOrderIndicator
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
@@ -2009,4 +2011,42 @@ def reset_push_payment_plan():
     for cash_out_flow in CashOutflow.objects.filter(system_status=3):
         CashOutFlowFinishHandler.push_to_payment_plan(instance=cash_out_flow)
     print('reset_push_payment_plan done.')
+    return True
+
+
+def update_pr_product_goods_receipt():
+    pr_product_1 = GoodsReceiptRequestProduct.objects.create(
+        quantity_import=1,
+        goods_receipt_id="3942210b-7441-461c-8120-a9a690154e2f",
+        goods_receipt_product_id="d3b95cb5-916b-4c8e-810f-33a644640cd9",
+        purchase_order_request_product_id="22ca3981-12f8-49e8-8c7d-bad1f5020cb3",
+        purchase_request_product_id="01e4b12d-a7b9-4cd9-8ea5-59b8f64c4595",
+        quantity_order=1,
+    )
+    if pr_product_1:
+        gr_wh_1 = GoodsReceiptWarehouse.objects.filter(id="6e516bc2-3fd8-4e03-a8c2-3e72f6bead6f").first()
+        if gr_wh_1:
+            gr_wh_1.goods_receipt_request_product_id = pr_product_1.id
+            gr_wh_1.save(update_fields=['goods_receipt_request_product_id'])
+        # gr_1 = GoodsReceipt.objects.filter(id="3942210b-7441-461c-8120-a9a690154e2f").first()
+        # if gr_1:
+        #     IRForGoodsReceiptHandler.push_to_inventory_report(gr_1)
+    pr_product_2 = GoodsReceiptRequestProduct.objects.create(
+        quantity_import=1,
+        goods_receipt_id="b02fc96d-2fe0-4c18-9dfb-e05e997e5b83",
+        goods_receipt_product_id="48e6d4bc-20e7-473c-9d3c-401083b140c3",
+        purchase_order_request_product_id="1b2f0498-3283-493b-8522-57c714bb777e",
+        purchase_request_product_id="81006664-a40a-4100-bab8-367896e87226",
+        quantity_order=1,
+    )
+    if pr_product_2:
+        gr_wh_2 = GoodsReceiptWarehouse.objects.filter(id="cb4a0d86-6b6f-47a4-a4eb-abdd0d9bb897").first()
+        if gr_wh_2:
+            gr_wh_2.goods_receipt_request_product_id = pr_product_2.id
+            gr_wh_2.save(update_fields=['goods_receipt_request_product_id'])
+        # gr_2 = GoodsReceipt.objects.filter(id="edaddf9f-60b4-4e6e-bea8-5d123ffe1a8c").first()
+        # if gr_2:
+        #     IRForGoodsReceiptHandler.push_to_inventory_report(gr_2)
+    InventoryReportRun.run('0248237b-cb6b-46b1-82ad-9282115a0624', 2025)
+    print('update_pr_product_goods_receipt done.')
     return True
