@@ -20,7 +20,7 @@ pipeline {
                 script {
                     echo "${currentBuild.changeSets}"
                     if (TELEGRAM_ENABLE == '1') {
-                        sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME} ] Build started... 💛💛💛 \nLast commit: ${GIT_COMMIT_MSG}");
+//                         sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME} ] Build started... 💛💛💛 \nLast commit: ${GIT_COMMIT_MSG}");
                     }
                 }
             }
@@ -75,7 +75,7 @@ pipeline {
         success {
             script {
                 if (TELEGRAM_ENABLE == '1') {
-                    sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME}] Build finished: Successful 💚💚💚")
+//                     sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME}] Build finished: Successful 💚💚💚")
                 }
             }
         }
@@ -83,7 +83,7 @@ pipeline {
             script {
                 if (TELEGRAM_ENABLE == '1') {
                     def errorMsg = env.ERROR_MESSAGE ?: 'No error message available'
-                    sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME} ] Build finished: Failure 💔💔💔 \nErrors: ${errorMsg}")
+//                     sendTelegram("[ ${BUILD_TRIGGER_BY_NAME} ][ ${JOB_NAME} ] Build finished: Failure 💔💔💔 \nErrors: ${errorMsg}")
                 }
             }
         }

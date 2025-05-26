@@ -1,5 +1,3 @@
-from django.utils.translation import gettext_lazy as trans
-
 from .application_properties_params import (
     Quotation_data__params,
     Bastion_data_params,
@@ -3274,6 +3272,16 @@ AppProp_SaleData_InstrumentToolWriteOff_data={
     },
 }
 
+AppProp_KMS_Document_data = {
+    "4727fabd-0d6f-4f23-ab29-0ca95759fb00": {
+        "application_id": "7505d5db-42fe-4cde-ae5e-dbba78e2df03",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    }
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -3315,5 +3323,7 @@ ApplicationProperty_data = {
     **AppProp_SaleData_FixedAsset_data,
     **AppProp_SaleData_InstrumentTool_data,
     **AppProp_SaleData_FixedAssetWriteOff_data,
-    **AppProp_SaleData_InstrumentToolWriteOff_data
+    **AppProp_SaleData_InstrumentToolWriteOff_data,
+    #  KMS
+    **AppProp_KMS_Document_data
 }

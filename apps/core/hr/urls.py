@@ -10,7 +10,7 @@ from apps.core.hr.views.employee import (
     EmployeeUpdateEmailAPIKey,
 )
 from apps.core.hr.views.group import (
-    GroupLevelList, GroupLevelDetail, GroupList, GroupDetail, GroupParentList,
+    GroupLevelList, GroupLevelDetail, GroupList, GroupDetail, GroupParentList, GroupDDList,
 )
 from apps.core.hr.views.role import (
     RoleList, RoleDetail, RoleAppList,
@@ -51,4 +51,5 @@ urlpatterns = [
     path('groups', GroupList.as_view(), name='GroupList'),
     path("group/<str:pk>", GroupDetail.as_view(), name="GroupDetail"),
     path("group/parent/<str:level>", GroupParentList.as_view(), name="GroupParentList"),
+    path('groups-dropdown', GroupDDList.as_view(), name='GroupDDList'),
 ]

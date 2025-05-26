@@ -535,7 +535,7 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
 # Products use for sale/ purchase/ inventory
 class ProductForSaleList(BaseListMixin):
     queryset = Product.objects
-    search_fields = ['title', 'code']
+    search_fields = ['title', 'code', 'description']
     filterset_fields = {
         'id': ['exact', 'in'],
         'general_product_types_mapped__is_goods': ['exact'],
@@ -603,7 +603,10 @@ class ProductForSaleList(BaseListMixin):
         operation_summary="Product Sale list",
         operation_description="Product Sale list",
     )
-    @mask_view(login_require=True, auth_require=False, )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='saledata', model_code='product', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 

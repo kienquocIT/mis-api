@@ -25,3 +25,4 @@ from .project import *
 from .fixed_asset import *
 from .bidding import *
 from .consulting import *
+from .kms import *

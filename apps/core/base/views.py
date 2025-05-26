@@ -58,6 +58,7 @@ APP_MODEL_CODE = [
     'quotation',
     'opportunity',
     'purchaserequest',
+    'kmsdocumentapproval',
     # thêm model_code của app đã cấu hình sinh code theo công thức vào đây
 ]
 
