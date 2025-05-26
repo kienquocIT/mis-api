@@ -12,6 +12,8 @@ pipeline {
         TELEGRAM_ENABLE = credentials('telegram-enable')
         TELEGRAM_TOKEN = credentials('telegram-token') 
         TELEGRAM_CHAT_ID = credentials('telegram-chat-id')
+
+        DISCORD_NOTIFY_URL = credentials('discord-notify')
     }
 
     stages {
@@ -98,8 +100,7 @@ def getGitBranchName() {
 def sendTelegram(message) {
     def msgEncode = java.net.URLEncoder.encode(message, "UTF-8")
     sh """
-        curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
-            -d chat_id=${TELEGRAM_CHAT_ID} \
+        curl -s -X POST ${DISCORD_NOTIFY_URL} \
             -d text="${msgEncode}"
     """
 }
