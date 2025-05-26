@@ -101,7 +101,8 @@ def sendTelegram(message) {
     def msgEncode = java.net.URLEncoder.encode(message, "UTF-8")
     sh """
         curl -s -X POST ${DISCORD_NOTIFY_URL} \
-            -d text="${msgEncode}"
+            -H "Content-Type: application/json" \
+            -d '{"content": "${msgEncode}"}'
     """
 }
 
