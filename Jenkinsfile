@@ -98,11 +98,12 @@ def getGitBranchName() {
 }
 
 def sendTelegram(message) {
-    def msgEncode = java.net.URLEncoder.encode(message, "UTF-8")
+    // def msgEncode = java.net.URLEncoder.encode(message, "UTF-8")
+    def escapedMessage = message.replace('"', '\\"')
     sh """
         curl -s -X POST ${DISCORD_NOTIFY_URL} \
             -H "Content-Type: application/json" \
-            -d '{"content": "${msgEncode}"}'
+            -d '{"content": "${escapedMessage}"}'
     """
 }
 
