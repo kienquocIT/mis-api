@@ -70,6 +70,7 @@ class SaleOrderListSerializer(AbstractListSerializerModel):
             'id': obj.quotation_id,
             'title': obj.quotation.title,
             'code': obj.quotation.code,
+            'indicator_revenue': obj.quotation.indicator_revenue,
         } if obj.quotation else {}
 
 
