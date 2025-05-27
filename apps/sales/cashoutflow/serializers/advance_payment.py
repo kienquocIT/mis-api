@@ -421,8 +421,24 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_supplier(cls, obj):
+        bank_accounts_mapped = []
+        for item in (obj.supplier.account_banks_mapped.all() if obj.supplier else []):
+            data = {
+                'id': str(item.id),
+                'bank_country_id': str(item.country_id),
+                'bank_name': item.bank_name,
+                'bank_code': item.bank_code,
+                'bank_account_name': item.bank_account_name,
+                'bank_account_number': item.bank_account_number,
+                'bic_swift_code': item.bic_swift_code,
+                'is_default': item.is_default
+            }
+            if item.is_default:
+                bank_accounts_mapped.insert(0, data)
+            else:
+                bank_accounts_mapped.append(data)
         return {
-            'id': str(obj.supplier.id),
+            'id': str(obj.supplier_id),
             'code': obj.supplier.code,
             'name': obj.supplier.name,
             'owner': {
@@ -433,15 +449,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
                 'id': str(obj.supplier.industry_id),
                 'title': obj.supplier.industry.title
             } if obj.supplier.industry else {},
-            'bank_accounts_mapped': [{
-                'bank_country_id': str(item.country_id),
-                'bank_name': item.bank_name,
-                'bank_code': item.bank_code,
-                'bank_account_name': item.bank_account_name,
-                'bank_account_number': item.bank_account_number,
-                'bic_swift_code': item.bic_swift_code,
-                'is_default': item.is_default
-            } for item in obj.supplier.account_banks_mapped.all()]
+            'bank_accounts_mapped': bank_accounts_mapped
         } if obj.supplier else {}
 
     @classmethod
