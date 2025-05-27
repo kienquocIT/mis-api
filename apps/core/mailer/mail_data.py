@@ -6,6 +6,7 @@ from apps.shared import DisperseModel
 
 __all__ = ['MailDataResolver']
 
+# key: app_label.model_code | value: {"title": "app title", "url": đường dẫn đến trang chi tiết chức năng trên UI}
 APP_MAP_DATA = {
     'quotation.quotation': {'title': 'Quotation', 'url': 'quotation/detail/'},
     'saleorder.saleorder': {'title': 'Sale Order', 'url': 'saleorder/detail/'},
@@ -34,6 +35,8 @@ APP_MAP_DATA = {
         'title': 'Contract signature detail', 'url': 'hrm/employee-data/runtime-signature/detail/'
     },
     'leaseorder.leaseorder': {'title': 'Lease Order', 'url': 'leaseorder/detail/'},
+    'bidding.bidding': {'title': 'Bidding', 'url': 'bidding/detail/'},
+    'consulting.consulting': {'title': 'Consulting', 'url': 'consulting/detail/'},
 }
 
 WORKFLOW_TYPE_MAP_TXT = {
