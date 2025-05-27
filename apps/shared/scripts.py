@@ -27,6 +27,7 @@ from . import MediaForceAPI, DisperseModel
 
 from .extends.signals import ConfigDefaultData
 from .permissions.util import PermissionController
+from ..core.account.models import User
 from ..core.attachments.models import Folder
 from ..core.hr.models import (
     Employee, Role, EmployeePermission, RolePermission,
@@ -2050,3 +2051,17 @@ def update_pr_product_goods_receipt():
     InventoryReportRun.run('0248237b-cb6b-46b1-82ad-9282115a0624', 2025)
     print('update_pr_product_goods_receipt done.')
     return True
+
+
+def delete_employee_user():
+    employee_objs = Employee.objects.filter(id__in=[
+        "b9b84dce-0e37-4f53-85bd-52d0f6db82b3",
+        "d64c5a60-bbc5-44c7-a145-4806bb760985",
+        "3836328d-429d-4508-a509-60f52999a303"
+    ], company_id="0248237b-cb6b-46b1-82ad-9282115a0624")
+    if employee_objs:
+        employee_objs.delete()
+    user_obj = User.objects.filter(id="837f0d6c-9e7c-481d-8ca5-e056c99da188").first()
+    if user_obj:
+        user_obj.delete()
+    print('delete_employee_user done')
