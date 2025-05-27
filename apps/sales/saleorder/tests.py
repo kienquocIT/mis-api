@@ -488,6 +488,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'quotation',
                 'delivery_call',
                 'delivery_status',
+                'invoice_status',
                 'is_change',
                 'document_change_order',
                 'document_root_id',
