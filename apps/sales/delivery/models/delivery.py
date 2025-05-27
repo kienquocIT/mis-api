@@ -227,6 +227,7 @@ class OrderDeliverySub(DataAbstractModel):
         OrderDelivery,
         on_delete=models.CASCADE,
         verbose_name='Order Delivery',
+        related_name='delivery_sub_order_delivery',
     )
     date_done = models.DateTimeField(
         help_text='The record done at value',

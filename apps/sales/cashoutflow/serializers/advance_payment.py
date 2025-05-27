@@ -629,19 +629,19 @@ class AdvancePaymentPrintSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_method(cls, obj):
-        return [_('Cash'), _('Bank Transfer')][obj.method]
+        return [_('Cash'), _('Bank Transfer')][obj.method] if obj.method else ''
 
     @classmethod
     def get_date_created(cls, obj):
-        return obj.date_created.strftime('%d/%m/%Y')
+        return obj.date_created.strftime('%d/%m/%Y') if obj.date_created else ''
 
     @classmethod
     def get_return_date(cls, obj):
-        return obj.return_date.strftime('%d/%m/%Y')
+        return obj.return_date.strftime('%d/%m/%Y') if obj.return_date else ''
 
     @classmethod
     def get_advance_date(cls, obj):
-        return obj.advance_date.strftime('%d/%m/%Y')
+        return obj.advance_date.strftime('%d/%m/%Y') if obj.advance_date else ''
 
     @classmethod
     def get_expense_items(cls, obj):

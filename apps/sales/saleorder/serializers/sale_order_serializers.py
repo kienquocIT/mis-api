@@ -18,6 +18,7 @@ class SaleOrderListSerializer(AbstractListSerializerModel):
     sale_person = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
+    invoice_status = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -33,6 +34,7 @@ class SaleOrderListSerializer(AbstractListSerializerModel):
             'quotation',
             'delivery_call',
             'delivery_status',
+            'invoice_status',
         )
 
     @classmethod
@@ -70,7 +72,28 @@ class SaleOrderListSerializer(AbstractListSerializerModel):
             'id': obj.quotation_id,
             'title': obj.quotation.title,
             'code': obj.quotation.code,
+            'indicator_revenue': obj.quotation.indicator_revenue,
         } if obj.quotation else {}
+
+    @classmethod
+    def get_invoice_status(cls, obj):
+        delivery_obj = getattr(obj, 'delivery_of_sale_order', None)
+        if delivery_obj:
+            count = 0
+            count_invoice = 0
+            count_no_invoice = 0
+            for sub in delivery_obj.delivery_sub_order_delivery.all():
+                count += 1
+                if sub.has_ar_invoice_already is True:
+                    count_invoice += 1
+                if sub.has_ar_invoice_already is False:
+                    count_no_invoice += 1
+            if count == count_invoice:
+                return 2
+            if count == count_no_invoice:
+                return 0
+            return 1
+        return 0
 
 
 class SaleOrderMinimalListSerializer(serializers.ModelSerializer):
