@@ -1354,18 +1354,18 @@ def destroy_employee_or_role(sender, instance, **kwargs):
                 ],
             }
         )
-    elif isinstance(instance, Employee):
-        call_task_background(
-            clear_cache_notify
-        )
-        call_task_background(
-            uninstall_plan_app_employee,
-            **{
-                'employee_id': str(instance.id),
-                'tenant_id': str(instance.tenant_id),
-                'company_id': str(instance.company_id)
-            }
-        )
+    # elif isinstance(instance, Employee):
+    #     call_task_background(
+    #         clear_cache_notify
+    #     )
+    #     call_task_background(
+    #         uninstall_plan_app_employee,
+    #         **{
+    #             'employee_id': str(instance.id),
+    #             'tenant_id': str(instance.tenant_id),
+    #             'company_id': str(instance.company_id)
+    #         }
+    #     )
 
 
 @receiver(post_save, sender=Role)
