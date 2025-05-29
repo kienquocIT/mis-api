@@ -2065,3 +2065,8 @@ def delete_employee_user():
     if user_obj:
         user_obj.delete()
     print('delete_employee_user done')
+
+
+def delete_workflow():
+    print('delete_workflow done.')
+    return True

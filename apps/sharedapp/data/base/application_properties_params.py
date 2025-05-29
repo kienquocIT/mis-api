@@ -116,7 +116,7 @@ Quotation_data__params = {
     '6a4808cf-5e65-4a25-b745-ad3c1c896b04': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Contact fullname',
-        'code': 'contact__fullname',
+        'code': 'contact_data__fullname',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -124,7 +124,7 @@ Quotation_data__params = {
     '6e15a6a5-47ac-4c5e-934b-7fbfc49e216c': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Customer name',
-        'code': 'customer__name',
+        'code': 'customer_data__name',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -132,7 +132,7 @@ Quotation_data__params = {
     '6dbc36e3-4909-4cc5-9043-42b5a2c00dfa': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Customer code',
-        'code': 'customer__code',
+        'code': 'customer_data__code',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -351,7 +351,7 @@ SaleOrder_data__params = {
     '70608ead-a09b-45c5-83e1-96d527fd7b83': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Contact fullname',
-        'code': 'contact__fullname',
+        'code': 'contact_data__fullname',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -359,7 +359,7 @@ SaleOrder_data__params = {
     '5ffa134a-ac63-4038-82de-34613609020c': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Customer name',
-        'code': 'customer__name',
+        'code': 'customer_data__name',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -367,7 +367,7 @@ SaleOrder_data__params = {
     'fd331624-b917-48fd-a7d6-e55aa833e312': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Customer code',
-        'code': 'customer__code',
+        'code': 'customer_data__code',
         'remark': '',
         'type': 1,
         'is_print': True,
