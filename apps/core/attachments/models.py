@@ -3,6 +3,7 @@ __all__ = [
     'PublicFiles', 'Folder',
 ]
 
+import json
 import logging
 
 from typing import Union
@@ -25,6 +26,13 @@ logger = logging.getLogger(__name__)
 FILE_BELONG_TO = (
     (0, 'Self'),
     (1, 'Company'),
+)
+
+CAPABILITY_LIST = (
+    (1, 'Preview'),
+    (2, 'Viewer'),
+    (3, 'Editor'),
+    (4, 'Custom')
 )
 
 
@@ -483,7 +491,7 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
 
 # BEGIN FOLDER
 class Folder(MasterDataAbstractModel):
-    # application = models.ForeignKey('base.Application', on_delete=models.CASCADE, null=True)
+    application = models.ForeignKey('base.Application', on_delete=models.CASCADE, null=True)
     parent_n = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,
@@ -502,5 +510,122 @@ class Folder(MasterDataAbstractModel):
         verbose_name = 'Folder'
         verbose_name_plural = 'Folders'
         ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class PermissionAbstractModel(SimpleAbstractModel):
+    employee_or_group = models.BooleanField(verbose_name='type of recipient', default=False)
+    exp_date = models.DateTimeField(null=True)
+    capability_list = models.JSONField(
+        default=list,
+        help_text=json.dumps(CAPABILITY_LIST),
+    )
+    employee_created = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='Employee created this record',
+        related_name='%(app_label)s_%(class)s_employee_creator',
+    )
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
+    employee_modified = models.ForeignKey(
+        'hr.Employee', on_delete=models.SET_NULL, null=True,
+        help_text='Employee modified this record in last',
+        related_name='%(app_label)s_%(class)s_employee_modifier'
+    )
+    date_modified = models.DateTimeField(
+        auto_now=True,
+        help_text='Date modified this record in last',
+    )
+
+    class Meta:
+        abstract = True
+        default_permissions = ()
+        permissions = ()
+        ordering = ('-date_created',)
+        indexes = [
+            models.Index(fields=['id']),
+        ]
+
+    @classmethod
+    def check_permission(cls, obj, employee_id, capability):
+        """
+        Check if an employee has the given capability on this object.
+        Args:
+            obj: FolderPermission or FilePermission instance
+            employee_id: UUID of the employee
+            capability: String like 'view', 'edit', 'delete', 'share', etc.
+        Returns:
+            Boolean
+        """
+        if not obj:
+            return False
+
+        # Normalize ID
+        employee_id = str(employee_id).replace('-', '')
+
+        # Creator always has full access
+        if str(obj.employee_created_id).replace('-', '') == employee_id:
+            return True
+
+        # Capability must be in list
+        if capability not in obj.capability_list:
+            return False
+
+        # Check if employee in group
+        # if employee_id not in obj.group.employee_list:
+        #     return False
+
+        # Check expiration if enabled
+        if obj.exp_date and obj.exp_date <= timezone.now():
+            return False
+
+        return True
+
+
+class FilePermission(PermissionAbstractModel):
+    file = models.ForeignKey(
+        "attachments.Files",
+        on_delete=models.CASCADE,
+        verbose_name="file permission",
+        related_name="file_permission_file",
+    )
+    employee_list = models.JSONField(
+        help_text='{"uuid": {"id":"uuid", "full_name": "Nguyen Van A", "group": {}}}',
+        default=dict
+    )
+    group_list = models.JSONField(
+        help_text='{"uuid": {"id":"uuid", "title": "Nguyen Van A", "parent_n": "uuid"}}',
+        default=dict
+    )
+
+    class Meta:
+        verbose_name = 'File Permission'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class FolderPermission(PermissionAbstractModel):
+    folder = models.ForeignKey(
+        "attachments.Folder",
+        on_delete=models.CASCADE,
+        verbose_name="folder permission",
+        related_name="folder_permission_folder",
+    )
+    employee_list = models.JSONField(
+        help_text='{"uuid": {"id":"uuid", "full_name": "Nguyen Van A", "group": {}}}',
+        default=dict
+    )
+    group_list = models.JSONField(
+        help_text='{"uuid": {"id":"uuid", "title": "Nguyen Van A", "parent_n": "uuid"}}',
+        default=dict
+    )
+
+    class Meta:
+        verbose_name = 'Folder Permission'
+        ordering = ()
         default_permissions = ()
         permissions = ()
