@@ -250,7 +250,7 @@ class OrderActiveDeliverySerializer:
             ware_house_data={},
             estimated_delivery_date=self.estimated_delivery_date,
             state=0,
-            remarks='',
+            remarks=self.remarks,
             delivery_option=1 if self.config_obj.is_partial_ship else 0,  # 0: Full, 1: Partial
             sub=None,
             pickup_quantity=pickup_quantity,
@@ -279,7 +279,7 @@ class OrderActiveDeliverySerializer:
             estimated_delivery_date=self.estimated_delivery_date,
             state=0,
             delivery_option=obj.delivery_option,
-            remarks='',
+            remarks=self.remarks,
             config_at_that_point={
                 "is_picking": self.config_obj.is_picking,
                 "is_partial_ship": self.config_obj.is_partial_ship
