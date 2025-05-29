@@ -536,7 +536,6 @@ class PaymentTestCase(AdvanceTestCase):
                 'method',
                 'employee_inherit',
                 'converted_value_list',
-                'return_value_list',
                 'payment_value',
                 'date_created',
                 'system_status',

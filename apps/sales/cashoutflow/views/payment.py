@@ -109,9 +109,9 @@ class PaymentPrint(BaseRetrieveMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'advance_payment__currency',
-            'advance_payment__expense_type',
-            'advance_payment__expense_tax',
+            'payment__currency',
+            'payment__expense_type',
+            'payment__expense_tax',
         ).select_related(
             'sale_order_mapped__opportunity__customer',
             'sale_order_mapped__quotation__customer',
