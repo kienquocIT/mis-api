@@ -255,6 +255,8 @@ class Employee(TenantAbstractModel):
             'first_name': self.first_name,
             'last_name': self.last_name,
             'full_name': self.get_full_name(),
+            'email': self.email,
+            'phone': self.phone,
             'avatar_img': self.avatar_img.url if self.avatar_img else None,
             'code': self.code,
         }
