@@ -271,7 +271,7 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
             return False
         # check delivery (if SO was used for OrderDelivery and all OrderDeliverySub is done => can't change)
         if hasattr(instance, 'delivery_of_sale_order'):
-            if not instance.delivery_of_sale_order.orderdeliverysub_set.filter(**{
+            if not instance.delivery_of_sale_order.delivery_sub_order_delivery.filter(**{
                 'tenant_id': instance.tenant_id,
                 'company_id': instance.company_id,
                 'order_delivery__sale_order_id': instance.id,

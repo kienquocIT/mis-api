@@ -318,7 +318,7 @@ class DocumentChangeHandler:
             doc_previous.delivery_of_sale_order.sale_order = instance
             doc_previous.delivery_of_sale_order.sale_order_data = so_data
             deli_update_fields = ['sale_order', 'sale_order_data']
-            delivery_sub = doc_previous.delivery_of_sale_order.orderdeliverysub_set.filter(**{
+            delivery_sub = doc_previous.delivery_of_sale_order.delivery_sub_order_delivery.filter(**{
                 'tenant_id': instance.tenant_id,
                 'company_id': instance.company_id,
                 'order_delivery__sale_order_id': doc_previous.id,
