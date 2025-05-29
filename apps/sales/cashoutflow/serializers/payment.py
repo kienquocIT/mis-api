@@ -4,22 +4,21 @@ from apps.core.base.models import Application
 from apps.core.hr.models import Employee
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.sales.cashoutflow.models import (
-    Payment, PaymentCost, PaymentConfig
-)
+from apps.sales.cashoutflow.models import Payment, PaymentCost, PaymentConfig
 from apps.masterdata.saledata.models import Currency, Account, ExpenseItem, Tax
 from apps.sales.cashoutflow.models.payment import PaymentAttachmentFile
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation
 from apps.sales.saleorder.models import SaleOrder
-from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg, AbstractCreateSerializerModel, \
+from apps.shared import (
+    AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg, AbstractCreateSerializerModel,
     AbstractListSerializerModel, HRMsg
+)
 from apps.shared.translations.base import AttachmentMsg
 
 
 class PaymentListSerializer(AbstractListSerializerModel):
     converted_value_list = serializers.SerializerMethodField()
-    return_value_list = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
@@ -37,7 +36,6 @@ class PaymentListSerializer(AbstractListSerializerModel):
             'sale_code',
             'employee_created',
             'employee_inherit',
-            'return_value_list',
             'payment_value',
             'date_created',
             'system_status',
@@ -49,14 +47,7 @@ class PaymentListSerializer(AbstractListSerializerModel):
 
     @classmethod
     def get_converted_value_list(cls, obj):
-        all_items = obj.payment.all()
-        sum_payment_value = sum(item.expense_after_tax_price for item in all_items)
-        return sum_payment_value
-
-    @classmethod
-    def get_return_value_list(cls, obj):
-        obj.return_value_list = {}
-        return obj.return_value_list
+        return sum(item.expense_after_tax_price for item in obj.payment.all())
 
     @classmethod
     def get_sale_order_mapped(cls, obj):
@@ -156,10 +147,6 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
     class Meta:
         model = Payment
         fields = (
-            # process
-            'process',
-            'process_stage_app',
-            #
             'free_input',
             'title',
             'opportunity_id',
@@ -171,8 +158,12 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
             'is_internal_payment',
             'employee_payment_id',
             'method',
+            'bank_data',
             'payment_item_list',
-            'attachment'
+            'attachment',
+            # process
+            'process',
+            'process_stage_app'
         )
 
     def validate(self, validate_data):
@@ -218,6 +209,7 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
         attachment = validated_data.pop('attachment', [])
 
         payment_obj = Payment.objects.create(**validated_data)
+
         PaymentCommonFunction.create_payment_items(payment_obj, payment_item_list)
         PaymentCommonFunction.handle_attach_file(payment_obj, attachment)
 
@@ -246,8 +238,6 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
     attachment = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
-    method_parsed = serializers.SerializerMethodField()
-    date_created_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -257,8 +247,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'code',
             'method',
-            'method_parsed',
-            'date_created_parsed',
+            'bank_data',
             'sale_code_type',
             'expense_items',
             'opportunity',
@@ -282,66 +271,54 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_process(cls, obj):
-        if obj.process:
-            return {
-                'id': obj.process.id,
-                'title': obj.process.title,
-                'remark': obj.process.remark,
-            }
-        return {}
+        return {
+            'id': obj.process.id,
+            'title': obj.process.title,
+            'remark': obj.process.remark,
+        } if obj.process else {}
 
     @classmethod
     def get_process_stage_app(cls, obj):
-        if obj.process_stage_app:
-            return {
-                'id': obj.process_stage_app.id,
-                'title': obj.process_stage_app.title,
-                'remark': obj.process_stage_app.remark,
-            }
-        return {}
-
-    @classmethod
-    def get_method_parsed(cls, obj):
-        return [_('None'), _('Cash'), _('Bank Transfer')][obj.method]
-
-    @classmethod
-    def get_date_created_parsed(cls, obj):
-        return obj.date_created.strftime('%d/%m/%Y')
+        return {
+            'id': obj.process_stage_app.id,
+            'title': obj.process_stage_app.title,
+            'remark': obj.process_stage_app.remark,
+        } if obj.process_stage_app else {}
 
     @classmethod
     def get_expense_items(cls, obj):
         all_expense_items_mapped = []
-        order = 1
-        for item in obj.payment.all():
-            detail_payment = f"- Giá trị thanh toán: {item.real_value} {item.currency.abbreviation}.\n"
-            detail_payment += "- Chuyển đổi từ Tạm ứng:\n" if len(item.ap_cost_converted_list) > 0 else ''
-            for data in item.ap_cost_converted_list:
-                detail_payment += (
-                    f"+ {data.get('ap_title')} - {data.get('value_converted')} {item.currency.abbreviation}.\n"
+        for order, item in enumerate(obj.payment.all(), start=1):
+            currency = item.currency.abbreviation
+            detail_lines = [f"- Giá trị thanh toán: {item.real_value} {currency}."]
+            if item.ap_cost_converted_list:
+                detail_lines.append("- Chuyển đổi từ Tạm ứng:")
+                detail_lines.extend(
+                    f"+ {data['ap_title']} - {data['value_converted']} {currency}."
+                    for data in item.ap_cost_converted_list
                 )
-            detail_payment += f"(Tổng: {item.sum_value} {item.currency.abbreviation})"
-            all_expense_items_mapped.append(
-                {
-                    'id': item.id,
-                    'order': order,
-                    'expense_type': item.expense_type_data,
-                    'expense_description': item.expense_description,
-                    'expense_uom_name': item.expense_uom_name,
-                    'expense_quantity': item.expense_quantity,
-                    'expense_unit_price': item.expense_unit_price,
-                    'expense_tax': item.expense_tax_data,
-                    'expense_tax_price': item.expense_tax_price,
-                    'expense_subtotal_price': item.expense_subtotal_price,
-                    'expense_after_tax_price': item.expense_after_tax_price,
-                    'document_number': item.document_number,
-                    'real_value': item.real_value,
-                    'converted_value': item.converted_value,
-                    'sum_value': item.sum_value,
-                    'ap_cost_converted_list': item.ap_cost_converted_list,
-                    'detail_payment': detail_payment
-                }
-            )
-            order += 1
+            detail_lines.append(f"(Tổng: {item.sum_value} {currency})")
+
+            all_expense_items_mapped.append({
+                'id': item.id,
+                'order': order,
+                'expense_type': item.expense_type_data,
+                'expense_description': item.expense_description,
+                'expense_uom_name': item.expense_uom_name,
+                'expense_quantity': item.expense_quantity,
+                'expense_unit_price': item.expense_unit_price,
+                'expense_tax': item.expense_tax_data,
+                'expense_tax_price': item.expense_tax_price,
+                'expense_subtotal_price': item.expense_subtotal_price,
+                'expense_after_tax_price': item.expense_after_tax_price,
+                'document_number': item.document_number,
+                'real_value': item.real_value,
+                'converted_value': item.converted_value,
+                'sum_value': item.sum_value,
+                'ap_cost_converted_list': item.ap_cost_converted_list,
+                'detail_payment': "\n".join(detail_lines),
+            })
+
         return all_expense_items_mapped
 
     @classmethod
@@ -394,35 +371,28 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_supplier(cls, obj):
-        if obj.supplier:
-            bank_accounts_mapped_list = []
-            for item in obj.supplier.account_banks_mapped.all():
-                bank_accounts_mapped_list.append(
-                    {
-                        'bank_country_id': item.country_id,
-                        'bank_name': item.bank_name,
-                        'bank_code': item.bank_code,
-                        'bank_account_name': item.bank_account_name,
-                        'bank_account_number': item.bank_account_number,
-                        'bic_swift_code': item.bic_swift_code,
-                        'is_default': item.is_default
-                    }
-                )
-            return {
-                'id': obj.supplier_id,
-                'code': obj.supplier.code,
-                'name': obj.supplier.name,
-                'owner': {
-                    'id': obj.supplier.owner_id,
-                    'fullname': obj.supplier.owner.fullname
-                } if obj.supplier.owner else {},
-                'industry': {
-                    'id': obj.supplier.industry_id,
-                    'title': obj.supplier.industry.title
-                } if obj.supplier.industry else {},
-                'bank_accounts_mapped': bank_accounts_mapped_list
-            }
-        return {}
+        return {
+            'id': obj.supplier_id,
+            'code': obj.supplier.code,
+            'name': obj.supplier.name,
+            'owner': {
+                'id': obj.supplier.owner_id,
+                'fullname': obj.supplier.owner.fullname
+            } if obj.supplier.owner else {},
+            'industry': {
+                'id': obj.supplier.industry_id,
+                'title': obj.supplier.industry.title
+            } if obj.supplier.industry else {},
+            'bank_accounts_mapped': [{
+                'bank_country_id': str(item.country_id),
+                'bank_name': item.bank_name,
+                'bank_code': item.bank_code,
+                'bank_account_name': item.bank_account_name,
+                'bank_account_number': item.bank_account_number,
+                'bic_swift_code': item.bic_swift_code,
+                'is_default': item.is_default
+            } for item in obj.supplier.account_banks_mapped.all()]
+        } if obj.supplier else {}
 
     @classmethod
     def get_employee_payment(cls, obj):
@@ -484,18 +454,39 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
     employee_payment_id = serializers.UUIDField(required=False, allow_null=True)
     payment_item_list = serializers.ListField(required=False, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+    process = serializers.UUIDField(allow_null=True, default=None, required=False)
+    process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
+
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
+
+    @classmethod
+    def validate_process_stage_app(cls, attrs):
+        return ProcessRuntimeControl.get_process_stage_app(
+            stage_app_id=attrs, app_id=Payment.get_app_id(),
+        ) if attrs else None
 
     class Meta:
         model = Payment
         fields = (
             'free_input',
             'title',
+            'opportunity_id',
+            'quotation_mapped_id',
+            'sale_order_mapped_id',
+            'sale_code_type',
+            'employee_inherit_id',
             'supplier_id',
             'is_internal_payment',
             'employee_payment_id',
             'method',
+            'bank_data',
             'payment_item_list',
-            'attachment'
+            'attachment',
+            # process
+            'process',
+            'process_stage_app'
         )
 
     def validate(self, validate_data):
@@ -508,6 +499,11 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
                 validate_data.pop('employee_payment_id', None)
                 if not validate_data.get('supplier_id'):
                     raise serializers.ValidationError({'supplier_id': "Supplier payment is missing."})
+        PaymentCommonFunction.validate_opportunity_id(validate_data)
+        PaymentCommonFunction.validate_quotation_mapped_id(validate_data)
+        PaymentCommonFunction.validate_sale_order_mapped_id(validate_data)
+        PaymentCommonFunction.validate_sale_code_type(validate_data)
+        PaymentCommonFunction.validate_employee_inherit_id(validate_data)
         PaymentCommonFunction.validate_supplier_id(validate_data)
         PaymentCommonFunction.validate_employee_payment_id(validate_data)
         PaymentCommonFunction.validate_method(validate_data)
@@ -518,7 +514,16 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
             doc_id=self.instance.id,
             validate_data=validate_data
         )
-        print('*validate done')
+
+        process_obj = validate_data.get('process', None)
+        process_stage_app_obj = validate_data.get('process_stage_app', None)
+        opportunity_id = validate_data.get('opportunity_id', None)
+        if process_obj:
+            process_cls = ProcessRuntimeControl(process_obj=process_obj)
+            process_cls.validate_process(
+                process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id,
+            )
+
         return validate_data
 
     @decorator_run_workflow
@@ -529,9 +534,120 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
         PaymentCommonFunction.create_payment_items(instance, payment_item_list)
         PaymentCommonFunction.handle_attach_file(instance, attachment)
+
+        if instance.process:
+            ProcessRuntimeControl(process_obj=instance.process).register_doc(
+                process_stage_app_obj=instance.process_stage_app,
+                app_id=Payment.get_app_id(),
+                doc_id=instance.id,
+                doc_title=instance.title,
+                employee_created_id=instance.employee_created_id,
+                date_created=instance.date_created,
+            )
+
         return instance
+
+
+class PaymentPrintSerializer(serializers.ModelSerializer):
+    employee_created = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+    employee_payment = serializers.SerializerMethodField()
+    supplier = serializers.SerializerMethodField()
+    method = serializers.SerializerMethodField()
+    date_created = serializers.SerializerMethodField()
+    expense_items = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Payment
+        fields = (
+            'code',
+            'title',
+            'sale_code',
+            'date_created',
+            'employee_created',
+            'employee_inherit',
+            'employee_payment',
+            'supplier',
+            'method',
+            'bank_data',
+            'payment_value_before_tax',
+            'payment_value_tax',
+            'payment_value',
+            'payment_value_by_words',
+            'expense_items'
+        )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'full_name': obj.employee_created.get_full_name(2),
+            'group': obj.employee_created.group.title if obj.employee_created.group else ''
+        } if obj.employee_created else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'group': obj.employee_inherit.group.title if obj.employee_inherit.group else ''
+        } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_employee_payment(cls, obj):
+        return {
+            'full_name': obj.employee_payment.get_full_name(2),
+            'group': obj.employee_payment.group.title if obj.employee_payment.group else ''
+        } if obj.employee_payment else {}
+
+    @classmethod
+    def get_supplier(cls, obj):
+        return obj.supplier.name if obj.supplier else ''
+
+    @classmethod
+    def get_method(cls, obj):
+        return [_('None'), _('Cash'), _('Bank Transfer')][obj.method] if obj.method else ''
+
+    @classmethod
+    def get_date_created(cls, obj):
+        return obj.date_created.strftime('%d/%m/%Y') if obj.date_created else ''
+
+    @classmethod
+    def get_expense_items(cls, obj):
+        all_expense_items_mapped = []
+        for order, item in enumerate(obj.payment.all(), start=1):
+            currency = item.currency.abbreviation
+            detail_lines = [f"- Giá trị thanh toán: {item.real_value} {currency}."]
+            if item.ap_cost_converted_list:
+                detail_lines.append("- Chuyển đổi từ Tạm ứng:")
+                detail_lines.extend(
+                    f"+ {data['ap_title']} - {data['value_converted']} {currency}."
+                    for data in item.ap_cost_converted_list
+                )
+            detail_lines.append(f"(Tổng: {item.sum_value} {currency})")
+
+            all_expense_items_mapped.append({
+                'id': item.id,
+                'order': order,
+                'expense_type': item.expense_type_data,
+                'expense_description': item.expense_description,
+                'expense_uom_name': item.expense_uom_name,
+                'expense_quantity': item.expense_quantity,
+                'expense_unit_price': item.expense_unit_price,
+                'expense_tax': item.expense_tax_data,
+                'expense_tax_price': item.expense_tax_price,
+                'expense_subtotal_price': item.expense_subtotal_price,
+                'expense_after_tax_price': item.expense_after_tax_price,
+                'document_number': item.document_number,
+                'real_value': item.real_value,
+                'converted_value': item.converted_value,
+                'sum_value': item.sum_value,
+                'ap_cost_converted_list': item.ap_cost_converted_list,
+                'detail_payment': "\n".join(detail_lines),
+            })
+
+        return all_expense_items_mapped
 
 
 class PaymentCommonFunction:
