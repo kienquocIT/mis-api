@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.kms.documentapproval.models import KMSDocumentApproval
 from apps.kms.documentapproval.serializers.serializers import KMSDocumentApprovalListSerializer, \
-    KMSDocumentApprovalCreateSerializer, KMSDocumentApprovalDetailSerializer
+    KMSDocumentApprovalCreateSerializer, KMSDocumentApprovalDetailSerializer, KMSDocumentApprovalUpdateSerializer
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -45,7 +45,7 @@ class KMSDocumentApprovalRequestList(BaseListMixin, BaseCreateMixin):
 class KMSDocumentApprovalRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = KMSDocumentApproval.objects
     serializer_detail = KMSDocumentApprovalDetailSerializer
-    serializer_update = KMSDocumentApprovalDetailSerializer
+    serializer_update = KMSDocumentApprovalUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
@@ -66,7 +66,7 @@ class KMSDocumentApprovalRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="Document approval request update",
         operation_description="Document approval request update by ID",
-        request_body=KMSDocumentApprovalDetailSerializer,
+        request_body=KMSDocumentApprovalUpdateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=True,
