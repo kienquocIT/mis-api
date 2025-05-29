@@ -31,6 +31,7 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
         'opportunity__is_deal_close': ['exact'],
         'has_regis': ['exact'],
         'is_recurring': ['exact'],
+        'document_root_id': ['exact'],
     }
     serializer_list = SaleOrderListSerializer
     serializer_list_minimal = SaleOrderMinimalListSerializer
