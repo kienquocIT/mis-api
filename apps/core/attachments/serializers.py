@@ -91,13 +91,41 @@ class FilesListSerializer(serializers.ModelSerializer):
         )
 
 
+class PublicFilesListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PublicFiles
+        fields = (
+            'id',
+            'file_name',
+            'file_size',
+            'file_type',
+            'date_created',
+            'remarks',
+        )
+
 class PublicFilesUploadSerializer(serializers.ModelSerializer):
     def validate_file(self, attrs):
         user_obj = self.context.get('user_obj', None)
         if user_obj:  # pylint: disable=R1702
             employee_current_id = getattr(user_obj, 'employee_current_id', None)
             if employee_current_id and TypeCheck.check_uuid(employee_current_id):
-                return attrs
+                if attrs and hasattr(attrs, 'size'):
+                    if isinstance(attrs.size, int) and attrs.size < settings.FILE_SIZE_UPLOAD_LIMIT:
+                        #skip checking if company has avaiable storage
+                        if settings.FILE_ENABLE_MAGIC_CHECK is True:
+                            # move control to first buffer file
+                            attrs.seek(0)
+                            # if mine type of magic != InMemoryUploadedFile.content_type => raise danger
+                            magic_check_mime = magic.from_buffer(attrs.read(), mime=True)
+                            if magic_check_mime == attrs.content_type:
+                                return attrs
+                            raise serializers.ValidationError({'file': AttMsg.FILE_TYPE_DETECT_DANGER})
+                        return attrs
+                    file_size_limit = AttMsg.FILE_SIZE_SHOULD_BE_LESS_THAN_X.format(
+                        FORMATTING.size_to_text(settings.FILE_SIZE_UPLOAD_LIMIT)
+                    )
+                    raise serializers.ValidationError({'file': file_size_limit})
+                raise serializers.ValidationError({'file': AttMsg.FILE_NO_DETECT_SIZE})
             raise serializers.ValidationError({'file': HrMsg.EMPLOYEE_REQUIRED})
         raise serializers.ValidationError({'employee': HrMsg.EMPLOYEE_REQUIRED})
 
@@ -116,10 +144,12 @@ class PublicFilesUploadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PublicFiles
-        fields = ('file',)
+        fields = ('file', 'remarks')
 
 
 class PublicFilesDetailSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()  # Add a custom field for the file URL
+
     class Meta:
         model = PublicFiles
         fields = (
@@ -128,8 +158,13 @@ class PublicFilesDetailSerializer(serializers.ModelSerializer):
             'file_size',
             'file_type',
             'remarks',
+            'url'
         )
 
+    @classmethod
+    def get_url(cls, obj):
+        # Return the file's URL
+        return obj.get_url()
 
 class CreateImageWebBuilderInPublicFileListSerializer(PublicFilesUploadSerializer):
     def validate_file(self, attrs):
