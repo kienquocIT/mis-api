@@ -625,7 +625,7 @@ AdvancePayment_data__params = {
     },
     "bc7df0ac-ad85-41c5-b853-b71454185b1b": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "Employee inherited fullname",
+        "title": "Employee inherit fullname",
         "code": "employee_inherit__full_name",
         "remark": "",
         "type": 1,
@@ -633,7 +633,7 @@ AdvancePayment_data__params = {
     },
     "afb72267-1efd-4475-9dd5-d977f0f7da19": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "Employee inherited group",
+        "title": "Employee inherit group",
         "code": "employee_inherit__group",
         "remark": "",
         "type": 1,
@@ -845,7 +845,7 @@ Payment_data__params = {
     },
     "eb6e5522-61f7-4cc6-ac65-2c276e74083b": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "Employee inherited fullname",
+        "title": "Employee inherit fullname",
         "code": "employee_inherit__full_name",
         "remark": "",
         "type": 1,
@@ -853,7 +853,7 @@ Payment_data__params = {
     },
     "46cff973-f673-4585-bb21-569594d11818": {
         "application_id": "1010563f7c9442f9ba9963d5d26a1aca",
-        "title": "Employee inherited group",
+        "title": "Employee inherit group",
         "code": "employee_inherit__group",
         "remark": "",
         "type": 1,
