@@ -36,12 +36,6 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
     def get_app_id(cls, raise_exception=True) -> str or None:
         return '1010563f-7c94-42f9-ba99-63d5d26a1aca'
 
-    # cái opportunity_mapped là field cũ, không sài
-    opportunity_mapped = models.ForeignKey(
-        'opportunity.Opportunity',
-        on_delete=models.CASCADE, null=True,
-        related_name="payment_opportunity_mapped"
-    )
     quotation_mapped = models.ForeignKey(
         'quotation.Quotation',
         on_delete=models.CASCADE, null=True,
@@ -74,6 +68,7 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
         verbose_name='Payment method',
         help_text='0 is None, 1 is Cash, 2 is Bank Transfer'
     )
+    bank_data = models.CharField(max_length=200, null=True, blank=True)
     payment_value_before_tax = models.FloatField(default=0)
     payment_value_tax = models.FloatField(default=0)
     payment_value = models.FloatField(default=0)

@@ -3,7 +3,7 @@ from apps.sales.cashoutflow.views import (
     AdvancePaymentList, AdvancePaymentDetail,
     PaymentList, PaymentDetail,
     ReturnAdvanceList, ReturnAdvanceDetail, PaymentConfigList,
-    AdvancePaymentCostList, PaymentCostList, APListForReturn, AdvancePaymentPrint
+    AdvancePaymentCostList, PaymentCostList, APListForReturn, AdvancePaymentPrint, PaymentPrint
 )
 from apps.sales.cashoutflow.views.cashouflow_common import (
     CashOutflowQuotationList, CashOutflowSaleOrderList, CashOutflowSupplierList
@@ -23,6 +23,7 @@ urlpatterns = [
     path('payment-config', PaymentConfigList.as_view(), name='PaymentConfigList'),
     path('payment/<str:pk>', PaymentDetail.as_view(), name='PaymentDetail'),
     path('payment-cost-list/list', PaymentCostList.as_view(), name='PaymentCostList'),
+    path('payment-print/<str:pk>', PaymentPrint.as_view(), name='PaymentPrint'),
 
     path('return-advances', ReturnAdvanceList.as_view(), name='ReturnAdvanceList'),
     path('return-advance/<str:pk>', ReturnAdvanceDetail.as_view(), name='ReturnAdvanceDetail'),

@@ -26,6 +26,8 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
     quotation_mapped = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
+    supplier = serializers.SerializerMethodField()
     opportunity_id = serializers.SerializerMethodField()
     expense_items = serializers.SerializerMethodField()
 
@@ -50,6 +52,8 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
             'quotation_mapped',
             'sale_order_mapped',
             'employee_inherit',
+            'employee_created',
+            'supplier',
             'opportunity_id',
             'expense_items',
         )
@@ -148,7 +152,33 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
             'id': obj.employee_inherit_id,
             'full_name': obj.employee_inherit.get_full_name(2),
             'code': obj.employee_inherit.code,
+            'group': {
+                'id': obj.employee_inherit.group_id,
+                'title': obj.employee_inherit.group.title,
+                'code': obj.employee_inherit.group.code
+            } if obj.employee_inherit.group else {}
         } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'id': obj.employee_created_id,
+            'code': obj.employee_created.code,
+            'full_name': obj.employee_created.get_full_name(2),
+            'group': {
+                'id': obj.employee_created.group_id,
+                'title': obj.employee_created.group.title,
+                'code': obj.employee_created.group.code
+            } if obj.employee_created.group else {}
+        } if obj.employee_created else {}
+
+    @classmethod
+    def get_supplier(cls, obj):
+        return {
+            'id': str(obj.supplier.id),
+            'code': obj.supplier.code,
+            'name': obj.supplier.name
+        } if obj.supplier else {}
 
     @classmethod
     def get_opportunity_id(cls, obj):
@@ -268,6 +298,7 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
         attachment = validated_data.pop('attachment', [])
 
         ap_obj = AdvancePayment.objects.create(**validated_data)
+
         APCommonFunction.create_ap_items(ap_obj, ap_item_list)
         APCommonFunction.handle_attach_file(ap_obj, attachment)
 
@@ -571,8 +602,20 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
         APCommonFunction.create_ap_items(instance, ap_item_list)
         APCommonFunction.handle_attach_file(instance, attachment)
+
+        if instance.process:
+            ProcessRuntimeControl(process_obj=instance.process).register_doc(
+                process_stage_app_obj=instance.process_stage_app,
+                app_id=AdvancePayment.get_app_id(),
+                doc_id=instance.id,
+                doc_title=instance.title,
+                employee_created_id=instance.employee_created_id,
+                date_created=instance.date_created,
+            )
+
         return instance
 
 

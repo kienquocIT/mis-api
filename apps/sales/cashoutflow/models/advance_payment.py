@@ -31,12 +31,6 @@ class AdvancePayment(DataAbstractModel, BastionFieldAbstractModel):
     def get_app_id(cls, raise_exception=True) -> str or None:
         return '57725469-8b04-428a-a4b0-578091d0e4f5'
 
-    # cái opportunity_mapped là field cũ, không sài
-    opportunity_mapped = models.ForeignKey(
-        'opportunity.Opportunity',
-        on_delete=models.CASCADE, null=True,
-        related_name="ap_opportunity_mapped"
-    )
     quotation_mapped = models.ForeignKey(
         'quotation.Quotation',
         on_delete=models.CASCADE, null=True,
@@ -68,9 +62,9 @@ class AdvancePayment(DataAbstractModel, BastionFieldAbstractModel):
         verbose_name='AdvancePayment method',
         help_text='0 is Cash, 1 is Bank Transfer'
     )
+    bank_data = models.CharField(max_length=200, null=True, blank=True)
     return_date = models.DateField()
     advance_date = models.DateField(null=True)
-    bank_data = models.CharField(max_length=200, null=True, blank=True)
     money_gave = models.BooleanField(default=False)
     advance_value_before_tax = models.FloatField(default=0)
     advance_value_tax = models.FloatField(default=0)
