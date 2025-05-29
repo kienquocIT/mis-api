@@ -171,6 +171,7 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
             'is_internal_payment',
             'employee_payment_id',
             'method',
+            'bank_data',
             'payment_item_list',
             'attachment'
         )
@@ -218,6 +219,7 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
         attachment = validated_data.pop('attachment', [])
 
         payment_obj = Payment.objects.create(**validated_data)
+
         PaymentCommonFunction.create_payment_items(payment_obj, payment_item_list)
         PaymentCommonFunction.handle_attach_file(payment_obj, attachment)
 
@@ -246,8 +248,6 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
     attachment = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
-    method_parsed = serializers.SerializerMethodField()
-    date_created_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -257,8 +257,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'code',
             'method',
-            'method_parsed',
-            'date_created_parsed',
+            'bank_data',
             'sale_code_type',
             'expense_items',
             'opportunity',
@@ -299,14 +298,6 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
                 'remark': obj.process_stage_app.remark,
             }
         return {}
-
-    @classmethod
-    def get_method_parsed(cls, obj):
-        return [_('None'), _('Cash'), _('Bank Transfer')][obj.method]
-
-    @classmethod
-    def get_date_created_parsed(cls, obj):
-        return obj.date_created.strftime('%d/%m/%Y')
 
     @classmethod
     def get_expense_items(cls, obj):
@@ -394,35 +385,28 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_supplier(cls, obj):
-        if obj.supplier:
-            bank_accounts_mapped_list = []
-            for item in obj.supplier.account_banks_mapped.all():
-                bank_accounts_mapped_list.append(
-                    {
-                        'bank_country_id': item.country_id,
-                        'bank_name': item.bank_name,
-                        'bank_code': item.bank_code,
-                        'bank_account_name': item.bank_account_name,
-                        'bank_account_number': item.bank_account_number,
-                        'bic_swift_code': item.bic_swift_code,
-                        'is_default': item.is_default
-                    }
-                )
-            return {
-                'id': obj.supplier_id,
-                'code': obj.supplier.code,
-                'name': obj.supplier.name,
-                'owner': {
-                    'id': obj.supplier.owner_id,
-                    'fullname': obj.supplier.owner.fullname
-                } if obj.supplier.owner else {},
-                'industry': {
-                    'id': obj.supplier.industry_id,
-                    'title': obj.supplier.industry.title
-                } if obj.supplier.industry else {},
-                'bank_accounts_mapped': bank_accounts_mapped_list
-            }
-        return {}
+        return {
+            'id': obj.supplier_id,
+            'code': obj.supplier.code,
+            'name': obj.supplier.name,
+            'owner': {
+                'id': obj.supplier.owner_id,
+                'fullname': obj.supplier.owner.fullname
+            } if obj.supplier.owner else {},
+            'industry': {
+                'id': obj.supplier.industry_id,
+                'title': obj.supplier.industry.title
+            } if obj.supplier.industry else {},
+            'bank_accounts_mapped': [{
+                'bank_country_id': str(item.country_id),
+                'bank_name': item.bank_name,
+                'bank_code': item.bank_code,
+                'bank_account_name': item.bank_account_name,
+                'bank_account_number': item.bank_account_number,
+                'bic_swift_code': item.bic_swift_code,
+                'is_default': item.is_default
+            } for item in obj.supplier.account_banks_mapped.all()]
+        } if obj.supplier else {}
 
     @classmethod
     def get_employee_payment(cls, obj):
@@ -484,16 +468,38 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
     employee_payment_id = serializers.UUIDField(required=False, allow_null=True)
     payment_item_list = serializers.ListField(required=False, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+    process = serializers.UUIDField(allow_null=True, default=None, required=False)
+    process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
+
+    @classmethod
+    def validate_process(cls, attrs):
+        return ProcessRuntimeControl.get_process_obj(process_id=attrs) if attrs else None
+
+    @classmethod
+    def validate_process_stage_app(cls, attrs):
+        return ProcessRuntimeControl.get_process_stage_app(
+            stage_app_id=attrs, app_id=Payment.get_app_id(),
+        ) if attrs else None
 
     class Meta:
         model = Payment
         fields = (
+            # process
+            'process',
+            'process_stage_app',
+            #
             'free_input',
             'title',
+            'opportunity_id',
+            'quotation_mapped_id',
+            'sale_order_mapped_id',
+            'sale_code_type',
+            'employee_inherit_id',
             'supplier_id',
             'is_internal_payment',
             'employee_payment_id',
             'method',
+            'bank_data',
             'payment_item_list',
             'attachment'
         )
@@ -508,6 +514,11 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
                 validate_data.pop('employee_payment_id', None)
                 if not validate_data.get('supplier_id'):
                     raise serializers.ValidationError({'supplier_id': "Supplier payment is missing."})
+        PaymentCommonFunction.validate_opportunity_id(validate_data)
+        PaymentCommonFunction.validate_quotation_mapped_id(validate_data)
+        PaymentCommonFunction.validate_sale_order_mapped_id(validate_data)
+        PaymentCommonFunction.validate_sale_code_type(validate_data)
+        PaymentCommonFunction.validate_employee_inherit_id(validate_data)
         PaymentCommonFunction.validate_supplier_id(validate_data)
         PaymentCommonFunction.validate_employee_payment_id(validate_data)
         PaymentCommonFunction.validate_method(validate_data)
@@ -518,7 +529,16 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
             doc_id=self.instance.id,
             validate_data=validate_data
         )
-        print('*validate done')
+
+        process_obj = validate_data.get('process', None)
+        process_stage_app_obj = validate_data.get('process_stage_app', None)
+        opportunity_id = validate_data.get('opportunity_id', None)
+        if process_obj:
+            process_cls = ProcessRuntimeControl(process_obj=process_obj)
+            process_cls.validate_process(
+                process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id,
+            )
+
         return validate_data
 
     @decorator_run_workflow
@@ -529,9 +549,122 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
         PaymentCommonFunction.create_payment_items(instance, payment_item_list)
         PaymentCommonFunction.handle_attach_file(instance, attachment)
+
+        if instance.process:
+            ProcessRuntimeControl(process_obj=instance.process).register_doc(
+                process_stage_app_obj=instance.process_stage_app,
+                app_id=Payment.get_app_id(),
+                doc_id=instance.id,
+                doc_title=instance.title,
+                employee_created_id=instance.employee_created_id,
+                date_created=instance.date_created,
+            )
+
         return instance
+
+
+class PaymentPrintSerializer(serializers.ModelSerializer):
+    employee_created = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+    employee_payment = serializers.SerializerMethodField()
+    supplier = serializers.SerializerMethodField()
+    method = serializers.SerializerMethodField()
+    date_created = serializers.SerializerMethodField()
+    expense_items = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Payment
+        fields = (
+            # info
+            'code',
+            'title',
+            'sale_code',
+            'date_created',
+            'employee_created',
+            'employee_inherit',
+            'employee_payment',
+            'supplier',
+            'method',
+            'bank_data',
+            'payment_value_before_tax',
+            'payment_value_tax',
+            'payment_value',
+            'payment_value_by_words',
+            # detail
+            'expense_items'
+        )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'full_name': obj.employee_created.get_full_name(2),
+            'group': obj.employee_created.group.title if obj.employee_created.group else ''
+        } if obj.employee_created else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'group': obj.employee_inherit.group.title if obj.employee_inherit.group else ''
+        } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_employee_payment(cls, obj):
+        return {
+            'full_name': obj.employee_payment.get_full_name(2),
+            'group': obj.employee_payment.group.title if obj.employee_payment.group else ''
+        } if obj.employee_payment else {}
+
+    @classmethod
+    def get_supplier(cls, obj):
+        return obj.supplier.name if obj.supplier else ''
+
+    @classmethod
+    def get_method(cls, obj):
+        return [_('Cash'), _('Bank Transfer')][obj.method] if obj.method else ''
+
+    @classmethod
+    def get_date_created(cls, obj):
+        return obj.date_created.strftime('%d/%m/%Y') if obj.date_created else ''
+
+    @classmethod
+    def get_expense_items(cls, obj):
+        all_expense_items_mapped = []
+        order = 1
+        for item in obj.payment.all():
+            detail_payment = f"- Giá trị thanh toán: {item.real_value} {item.currency.abbreviation}.\n"
+            detail_payment += "- Chuyển đổi từ Tạm ứng:\n" if len(item.ap_cost_converted_list) > 0 else ''
+            for data in item.ap_cost_converted_list:
+                detail_payment += (
+                    f"+ {data.get('ap_title')} - {data.get('value_converted')} {item.currency.abbreviation}.\n"
+                )
+            detail_payment += f"(Tổng: {item.sum_value} {item.currency.abbreviation})"
+            all_expense_items_mapped.append(
+                {
+                    'id': item.id,
+                    'order': order,
+                    'expense_type': item.expense_type_data,
+                    'expense_description': item.expense_description,
+                    'expense_uom_name': item.expense_uom_name,
+                    'expense_quantity': item.expense_quantity,
+                    'expense_unit_price': item.expense_unit_price,
+                    'expense_tax': item.expense_tax_data,
+                    'expense_tax_price': item.expense_tax_price,
+                    'expense_subtotal_price': item.expense_subtotal_price,
+                    'expense_after_tax_price': item.expense_after_tax_price,
+                    'document_number': item.document_number,
+                    'real_value': item.real_value,
+                    'converted_value': item.converted_value,
+                    'sum_value': item.sum_value,
+                    'ap_cost_converted_list': item.ap_cost_converted_list,
+                    'detail_payment': detail_payment
+                }
+            )
+            order += 1
+        return all_expense_items_mapped
 
 
 class PaymentCommonFunction:
