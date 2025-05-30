@@ -721,7 +721,7 @@ class ProductComponent(MasterDataAbstractModel):
     )
     order = models.IntegerField(default=1)
     component_name = models.CharField(max_length=150, blank=True)
-    component_des = models.CharField(max_length=250, blank=True)
+    component_des = models.CharField(max_length=500, blank=True)
     component_quantity = models.FloatField(default=0)
 
     class Meta:
