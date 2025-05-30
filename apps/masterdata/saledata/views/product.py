@@ -604,8 +604,8 @@ class ProductForSaleList(BaseListMixin):
         operation_description="Product Sale list",
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        label_code='saledata', model_code='product', perm_code='view',
+        login_require=True, auth_require=False,
+        # label_code='saledata', model_code='product', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
