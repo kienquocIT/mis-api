@@ -265,11 +265,13 @@ TRUSTED_DOMAIN_LINK = json.loads(os.environ.get('TRUSTED_DOMAIN_LINK', '[]'))
 FORM_MAX_SIZE_HTML_BYTES = int(os.environ.get('FORM_MAX_SIZE_HTML_BYTES', 300 * 1024))  # 500 kB = 512 000 bytes
 
 # UI of API
+UI_DOMAIN = os.environ.get('UI_DOMAIN', None)
 UI_DOMAIN_SUFFIX = os.environ.get('UI_DOMAIN_SUFFIX', None)
 UI_DOMAIN_PROTOCOL = os.environ.get('UI_DOMAIN_PROTOCOL', 'https')
 UI_DOMAIN_PATH_REVERSE = os.environ.get('UI_DOMAIN_PATH_REVERSE', '/form/r/g/rs-get')
 UI_DOMAIN_PATH_REVERSE_PAGE = os.environ.get('UI_DOMAIN_PATH_REVERSE', '/form/r/g/rs')
-UI_FIXED_DOMAIN = os.environ.get('UI_FIXED_DOMAIN', 'http://{sub_domain}.local.test:8001')
+UI_FULL_DOMAIN = os.environ.get('UI_FULL_DOMAIN', None)
+UI_FIXED_DOMAIN = os.environ.get('UI_FIXED_DOMAIN', None)
 
 # Mail config
 MAIL_CONFIG_OBJ_PK = os.environ.get('MAIL_CONFIG_OBJ_PK', '6db50f86-055d-4fc6-9235-208b0fbc0ef9')

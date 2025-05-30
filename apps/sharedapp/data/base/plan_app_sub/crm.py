@@ -245,7 +245,7 @@ OPPORTUNITY_APP_CONFIG = {
     "code": "opportunity",
     "model_code": "opportunity",
     "app_label": "opportunity",
-    "is_workflow": True,
+    "is_workflow": False,
     "app_depend_on": [
         "50348927-2c4f-4023-b638-445469c66953",  # Employee
         "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
