@@ -98,6 +98,8 @@ class MailDataResolver:
     def workflow_sub(cls, runtime_obj, tenant_obj, workflow_type):
         if runtime_obj and tenant_obj:
             full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{tenant_obj.code.lower()}{settings.UI_DOMAIN_SUFFIX}'
+            if settings.UI_FIXED_DOMAIN:
+                full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{settings.UI_DOMAIN}'
             wf_application_title = ''
             wf_application_url = ''
             doc_id = ''
@@ -126,6 +128,8 @@ class MailDataResolver:
     @classmethod
     def project_new(cls, tenant_obj, prj_owner, prj_member, prj_obj):
         full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{tenant_obj.code.lower()}{settings.UI_DOMAIN_SUFFIX}'
+        if settings.UI_FIXED_DOMAIN:
+            full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{settings.UI_DOMAIN}'
         prj_app_url = APP_MAP_DATA.get('project.project', {}).get('url', '')
         return {
             '_project': {
@@ -139,6 +143,8 @@ class MailDataResolver:
     @classmethod
     def new_contract(cls, tenant_obj, assignee, employee_created, contract, signature_runtime):
         full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{tenant_obj.code.lower()}{settings.UI_DOMAIN_SUFFIX}'
+        if settings.UI_FIXED_DOMAIN:
+            full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{settings.UI_DOMAIN}'
         app_url = APP_MAP_DATA.get('employeeinfo.EmployeeContractRuntime', {}).get('url', '')
         return {
             '_contract': {
@@ -152,6 +158,8 @@ class MailDataResolver:
     @classmethod
     def new_leave_approved(cls, tenant_obj, employee, day_off, date_back, link_id, employee_lead):
         full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{tenant_obj.code.lower()}{settings.UI_DOMAIN_SUFFIX}'
+        if settings.UI_FIXED_DOMAIN:
+            full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{settings.UI_DOMAIN}'
         app_url = APP_MAP_DATA.get('leave.leaverequest', {}).get('url', '')
         return {
             '_leave': {
