@@ -2089,6 +2089,9 @@ def hong_quang_delete_workflow():
 
 
 def hong_quang_delete_sales():
+    opportunities = Opportunity.objects.filter(company="0248237b-cb6b-46b1-82ad-9282115a0624")
+    if opportunities:
+        opportunities.delete()
     quotations = Quotation.objects.filter(company="0248237b-cb6b-46b1-82ad-9282115a0624")
     if quotations:
         quotations.delete()
