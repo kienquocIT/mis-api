@@ -2941,6 +2941,58 @@ GROUP_ORDER_APP_CONFIG = {
     "allow_opportunity": True,
 }
 
+PRODUCT_MODIFICATION_APP_CONFIG = {
+    "id": "f491fdf3-1384-4a82-b155-12ef6673c901",
+    "title": "Product Modification",
+    "code": "productmodification",
+    "model_code": "productmodification",
+    "app_label": "productmodification",
+    "is_workflow": True,
+    "app_depend_on": [
+        "a8badb2e-54ff-4654-b3fd-0d2d3c777538",  # Product
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {
+                    "view": "==",
+                },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {
+                    "view": "==",
+                },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_print": False,
+    "allow_process": False,
+    "allow_opportunity": False,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -3273,6 +3325,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "14662696-261f-4878-8765-56f17d738b66": ApplicationConfigFrame(**GROUP_ORDER_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "f491fdf3-1384-4a82-b155-12ef6673c901": ApplicationConfigFrame(**PRODUCT_MODIFICATION_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

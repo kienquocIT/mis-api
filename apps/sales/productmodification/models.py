@@ -4,9 +4,8 @@ from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 class ProductModification(DataAbstractModel):
     product_modified = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, related_name='product_modified')
-    product_modified_data = models.JSONField(default=dict)
-
     prd_wh = models.ForeignKey('saledata.ProductWareHouse', on_delete=models.CASCADE, null=True)
+    prd_wh_data = models.JSONField(default=dict)
 
     prd_wh_lot = models.ForeignKey('saledata.ProductWareHouseLot', on_delete=models.CASCADE, null=True)
     prd_wh_lot_data = models.JSONField(default=dict)
@@ -52,6 +51,7 @@ class CurrentComponent(SimpleAbstractModel):
         ordering = ('order',)
         default_permissions = ()
         permissions = ()
+
 
 class CurrentComponentDetail(SimpleAbstractModel):
     product_modified = models.ForeignKey(
