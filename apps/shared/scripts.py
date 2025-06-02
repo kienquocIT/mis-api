@@ -2099,6 +2099,19 @@ def hong_quang_delete_workflow():
     ])
     if workflows_delete:
         workflows_delete.delete()
+    workflow_runtimes = Runtime.objects.filter(flow_id__in=[
+        "d7f1d817-b469-4d6e-a9aa-82d45f9e96e2",
+        "1f7fb6a6-3fea-4c46-be3d-6750e604c575",
+        "32ccae59-ca45-4031-970e-0c5fa582ead4",
+        "8c809b77-8ab6-400b-ae49-21ef1b29fe1d",
+        "f452b3ca-8d1a-4449-bd44-7288242ee464",
+        "212dfc8c-e37f-4391-985b-2fd7629aaa5c",
+        "22f548e1-c040-41a5-9f80-94ecc9726341",
+        "8363ab8c-a4c7-4d1a-a5fa-c599567211f8",
+        "c5f6effd-1253-4d82-a648-d4b95de225d8",
+    ])
+    if workflow_runtimes:
+        workflow_runtimes.delete()
     workflow_config_opp = WorkflowConfigOfApp.objects.filter(id="e5706d30-50f3-413f-9a30-312fae49a307").first()
     if workflow_config_opp:
         workflow_config_opp.delete()
