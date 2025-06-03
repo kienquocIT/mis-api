@@ -217,6 +217,36 @@ class EmployeeImportReturnSerializer(serializers.ModelSerializer):
 
 class EmployeeImportSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=150)
+    user = serializers.CharField(required=False, allow_blank=True)
+    group = serializers.CharField(required=False, allow_blank=True)
+    role = serializers.CharField(required=False, allow_blank=True)
+    phone = serializers.CharField(max_length=25)
+    date_joined = serializers.DateField(input_formats=['%d-%m-%Y', 'iso-8601'], allow_null=True)
+    dob = serializers.DateField(input_formats=['%d-%m-%Y', 'iso-8601'], allow_null=True, required=False)
+    first_name = serializers.CharField(max_length=100)
+    last_name = serializers.CharField(max_length=100)
+    email = serializers.CharField(max_length=150)
+
+    def to_internal_value(self, data):
+        #return None if  frontend passes data['dob'] = ""
+        if 'dob' in data and data['dob'] == "":
+            data['dob'] = None
+        return super().to_internal_value(data)
+
+    class Meta:
+        model = Employee
+        fields = (
+            'code',
+            'user',
+            'first_name',
+            'last_name',
+            'email',
+            'phone',
+            'date_joined',
+            'dob',
+            'group',
+            'role',
+        )
 
     @classmethod
     def validate_code(cls, value):
@@ -225,8 +255,6 @@ class EmployeeImportSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"code": BaseMsg.CODE_IS_EXISTS})
             return value
         raise serializers.ValidationError({"code": BaseMsg.CODE_NOT_NULL})
-
-    user = serializers.CharField(required=False, allow_blank=True)
 
     @classmethod
     def validate_user(cls, value):
@@ -244,8 +272,6 @@ class EmployeeImportSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'user': AccountMsg.USER_NOT_EXIST})
         return None
 
-    group = serializers.CharField(required=False, allow_blank=True)
-
     @classmethod
     def validate_group(cls, value):
         if value:
@@ -254,8 +280,6 @@ class EmployeeImportSerializer(serializers.ModelSerializer):
             except Group.DoesNotExist:
                 raise serializers.ValidationError({'group': HRMsg.GROUP_NOT_EXIST})
         return None
-
-    role = serializers.CharField(required=False, allow_blank=True)
 
     @classmethod
     def validate_role(cls, value) -> list:
@@ -269,8 +293,6 @@ class EmployeeImportSerializer(serializers.ModelSerializer):
             })
         return []
 
-    phone = serializers.CharField(max_length=25)
-
     @classmethod
     def validate_phone(cls, attrs):
         if attrs:
@@ -281,11 +303,11 @@ class EmployeeImportSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"phone": AccountMsg.PHONE_FORMAT_VN_INCORRECT})
         return None
 
-    date_joined = serializers.DateField(input_formats=['%d-%m-%Y', 'iso-8601'], allow_null=True)
-    dob = serializers.DateField(input_formats=['%d-%m-%Y', 'iso-8601'], allow_null=True)
-    first_name = serializers.CharField(max_length=100)
-    last_name = serializers.CharField(max_length=100)
-    email = serializers.CharField(max_length=150)
+    @classmethod
+    def validate_dob(cls, attrs):
+        if attrs:
+            return attrs
+        return None
 
     def create(self, validated_data):
         """
@@ -311,18 +333,3 @@ class EmployeeImportSerializer(serializers.ModelSerializer):
                 ) for role_obj in role_objs
             )
         return employee
-
-    class Meta:
-        model = Employee
-        fields = (
-            'code',
-            'user',
-            'first_name',
-            'last_name',
-            'email',
-            'phone',
-            'date_joined',
-            'dob',
-            'group',
-            'role',
-        )
