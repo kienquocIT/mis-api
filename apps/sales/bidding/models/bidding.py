@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.cashoutflow.utils import AdvanceHandler
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, BastionFieldAbstractModel
 
@@ -121,48 +122,20 @@ class Bidding(DataAbstractModel, BastionFieldAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    @classmethod
-    def find_max_number(cls, codes):
-        num_max = None
-        for code in codes:
-            try:
-                if code != '':
-                    tmp = int(code.split('-', maxsplit=1)[0].split("BD")[1])
-                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
-                        num_max = tmp
-            except Exception as err:
-                print(err)
-        return num_max
-
-    @classmethod
-    def generate_code(cls, company_id):
-        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
-        num_max = cls.find_max_number(existing_codes)
-        if num_max is None:
-            code = 'BD0001'
-        elif num_max < 10000:
-            num_str = str(num_max + 1).zfill(4)
-            code = f'BD{num_str}'
-        else:
-            raise ValueError('Out of range: number exceeds 10000')
-        if cls.objects.filter(code=code, company_id=company_id).exists():
-            return cls.generate_code(company_id=company_id)
-        return code
-
-    @classmethod
-    def push_code(cls, instance, kwargs):
-        if not instance.code:
-            instance.code = cls.generate_code(company_id=instance.company_id)
-            kwargs['update_fields'].append('code')
-        return True
-
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
-            # check if date_approved then call related functions
-            if isinstance(kwargs['update_fields'], list):
-                if 'date_approved' in kwargs['update_fields']:
-                    # code
-                    self.push_code(instance=self, kwargs=kwargs)
+        if self.system_status in [2, 3]:
+            if not self.code:
+                code_generated = CompanyFunctionNumber.gen_auto_code(app_code='bidding')
+                if code_generated:
+                    self.code = code_generated
+                else:
+                    self.add_auto_generate_code_to_instance(self, 'BD[n4]', True)
+
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
 
         AdvanceHandler.push_opportunity_log(self)
         # hit DB

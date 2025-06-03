@@ -59,6 +59,11 @@ APP_MODEL_CODE = [
     'opportunity',
     'purchaserequest',
     'kmsdocumentapproval',
+    'bidding',
+    'fixedasset',
+    'fixedassetwriteoff',
+    'instrumenttool',
+    'instrumenttoolwriteoff'
     # thêm model_code của app đã cấu hình sinh code theo công thức vào đây
 ]
 
