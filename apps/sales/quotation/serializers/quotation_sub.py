@@ -297,7 +297,9 @@ class QuotationRuleValidate:
 # SUB SERIALIZERS
 class QuotationProductSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=False, allow_null=True)
-    unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
+    unit_of_measure_id = serializers.UUIDField(error_messages={
+        'required': 'product unit of measure is required.',
+    })
     tax_id = serializers.UUIDField(required=False, allow_null=True)
     promotion_id = serializers.UUIDField(required=False, allow_null=True)
     shipping_id = serializers.UUIDField(required=False, allow_null=True)
