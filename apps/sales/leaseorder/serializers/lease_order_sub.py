@@ -440,8 +440,12 @@ class LeaseOrderProductSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=True, allow_null=False)
     asset_type = serializers.IntegerField(required=True)
     offset_id = serializers.UUIDField(required=False, allow_null=True)
-    unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
-    uom_time_id = serializers.UUIDField(required=False, allow_null=True)
+    unit_of_measure_id = serializers.UUIDField(error_messages={
+        'required': SaleMsg.PRODUCT_UOM_REQUIRED,
+    })
+    uom_time_id = serializers.UUIDField(error_messages={
+        'required': SaleMsg.PRODUCT_UOM_REQUIRED,
+    })
     tax_id = serializers.UUIDField(required=False, allow_null=True)
     promotion_id = serializers.UUIDField(required=False, allow_null=True)
     shipping_id = serializers.UUIDField(required=False, allow_null=True)
@@ -669,7 +673,9 @@ class LeaseOrderCostSerializer(serializers.ModelSerializer):
 class LeaseOrderExpenseSerializer(serializers.ModelSerializer):
     expense_id = serializers.UUIDField(required=False, allow_null=True)
     expense_item_id = serializers.UUIDField(required=False, allow_null=True)
-    unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
+    unit_of_measure_id = serializers.UUIDField(error_messages={
+        'required': SaleMsg.EXPENSE_UOM_REQUIRED,
+    })
     tax_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
