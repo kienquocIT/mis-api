@@ -13,12 +13,10 @@ class ProductModification(DataAbstractModel):
     prd_wh_serial = models.ForeignKey('saledata.ProductWareHouseSerial', on_delete=models.CASCADE, null=True)
     prd_wh_serial_data = models.JSONField(default=dict)
 
-    detail_product_modified_info = models.CharField(max_length=200, null=True, default='')
-
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'PM[n4]', True)
+                self.add_auto_generate_code_to_instance(self, 'PRD-MOD-[n4]', True)
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):
                         kwargs['update_fields'].append('code')
@@ -40,7 +38,7 @@ class CurrentComponent(SimpleAbstractModel):
         ProductModification, on_delete=models.CASCADE, related_name='current_components'
     )
     order = models.IntegerField(default=1)
-    component_text_data = models.JSONField(default=dict)
+    component_text_data = models.JSONField(default=dict) # {'title': ...; 'description':...}
     component_product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     component_product_data = models.JSONField(default=dict)
     component_quantity = models.IntegerField()
@@ -54,13 +52,14 @@ class CurrentComponent(SimpleAbstractModel):
 
 
 class CurrentComponentDetail(SimpleAbstractModel):
-    product_modified = models.ForeignKey(
-        ProductModification, on_delete=models.CASCADE, related_name='current_components_detail'
+    current_component = models.ForeignKey(
+        CurrentComponent, on_delete=models.CASCADE, related_name='current_components_detail', null=True
     )
 
     component_prd_wh = models.ForeignKey(
         'saledata.ProductWareHouse', on_delete=models.CASCADE, null=True
     )
+    component_prd_wh_data = models.JSONField(default=dict)
     component_prd_wh_quantity = models.FloatField(default=0)
 
     component_prd_wh_lot = models.ForeignKey(
@@ -100,8 +99,8 @@ class RemovedComponent(SimpleAbstractModel):
 
 
 class RemovedComponentDetail(SimpleAbstractModel):
-    product_modified = models.ForeignKey(
-        ProductModification, on_delete=models.CASCADE, related_name='removed_components_detail'
+    removed_component = models.ForeignKey(
+        RemovedComponent, on_delete=models.CASCADE, related_name='removed_components_detail', null=True
     )
 
     component_prd_wh = models.ForeignKey(

@@ -34,7 +34,8 @@ class InventoryAdjustment(DataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        self.add_auto_generate_code_to_instance(self, 'IA[n4]', False)
+        if not self.code:
+            self.add_auto_generate_code_to_instance(self, 'IA[n4]', False)
         super().save(*args, **kwargs)
 
 

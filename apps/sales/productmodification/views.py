@@ -169,7 +169,8 @@ class ProductSerialList(BaseListMixin):
         'serial_number',
     ]
     filterset_fields = {
-        'product_warehouse_id': ['exact'],
+        'product_warehouse__product_id': ['exact'],
+        'product_warehouse__warehouse_id': ['exact'],
     }
     serializer_list = ProductSerialListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

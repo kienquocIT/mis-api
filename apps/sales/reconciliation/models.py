@@ -41,7 +41,8 @@ class Reconciliation(DataAbstractModel, AutoDocumentAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        self.add_auto_generate_code_to_instance(self, 'RECON[n4]', False)
+        if not self.code:
+            self.add_auto_generate_code_to_instance(self, 'RECON[n4]', False)
         # hit DB
         super().save(*args, **kwargs)
 

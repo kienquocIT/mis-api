@@ -472,7 +472,8 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             current_year, current_month = datetime.datetime.now().year, datetime.datetime.now().month
             data_calendar = datetime.date.today().isocalendar()
             new_latest_number = obj.latest_number
-            flag = False
+            is_reset = None
+            reset_type = None
             conditions = [
                 (0, obj.year_reset, current_year),
                 (1, obj.month_reset, f"{current_year}{current_month:02}"),
@@ -482,9 +483,10 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             for reset_frequency, reset_value, new_value in conditions:
                 if obj.reset_frequency == reset_frequency and reset_value < int(new_value):
                     setattr(obj, f"{obj.get_reset_field_name(reset_frequency)}", int(new_value))
-                    flag = True
+                    is_reset = new_value
+                    reset_type = reset_frequency
                     break
-            if flag:
+            if is_reset:
                 new_latest_number = obj.first_number - 1
 
             new_latest_number = new_latest_number + 1
@@ -504,8 +506,16 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                 result = result.replace(match, str(schema_item_list[int(match[1:-1])]))
 
             if obj.app_type == 0:
+                if reset_type == 0:
+                    obj.year_reset = is_reset
+                if reset_type == 1:
+                    obj.month_reset = is_reset
+                if reset_type == 2:
+                    obj.week_reset = is_reset
+                if reset_type == 3:
+                    obj.day_reset = is_reset
                 obj.latest_number = new_latest_number
-                obj.save(update_fields=['latest_number'])
+                obj.save(update_fields=['year_reset', 'month_reset', 'week_reset', 'day_reset', 'latest_number'])
 
             return result
         return None
