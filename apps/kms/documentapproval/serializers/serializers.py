@@ -24,8 +24,12 @@ def create_attached_document(document_appr, attached_list):
     new_list = []
     for item in attached_list:
         attachments = item.pop('attachment', [])
-        create_attachment(document_appr, attachments)
-        new_list.append(KSMAttachedDocuments(
+        total_attach = [str(val.id) for val in attachments.get('new', [])]
+        total_attach += [str(val.id) for val in attachments.get('keep', [])]
+
+        if 'id' not in item:
+            create_attachment(document_appr, attachments)
+        temp = KSMAttachedDocuments(
             title=item.get('title'),
             document_approval_id=str(document_appr.id),
             document_type_id=item.get('document_type'),
@@ -35,10 +39,11 @@ def create_attached_document(document_appr, attached_list):
             effective_date=item.get('effective_date'),
             expired_date=item.get('expired_date'),
             folder_id=item.get('folder'),
-            attachment=[str(val.id) for val in attachments.get('new', [])],
+            attachment=total_attach,
             company=document_appr.company,
             tenant=document_appr.tenant
-        ))
+        )
+        new_list.append(temp)
     KSMAttachedDocuments.objects.bulk_create(new_list)
 
 
@@ -230,7 +235,7 @@ class KMSDocumentApprovalDetailSerializer(AbstractDetailSerializerModel):
 
 
 class KMSDocumentApprovalUpdateSerializer(AbstractCreateSerializerModel):
-    attached_list = KMSAttachedDocumentSerializers(many=True)
+    attached_list = serializers.JSONField()
     internal_recipient = KMSInternalRecipientSerializers(many=True)
 
     class Meta:
@@ -243,10 +248,22 @@ class KMSDocumentApprovalUpdateSerializer(AbstractCreateSerializerModel):
             'internal_recipient',
         )
 
-    @classmethod
-    def validate_attached_list(cls, value):
+    def validate_attached_list(self, value):
         if not len(value) > 0:
             raise serializers.ValidationError({'detail': AttachmentMsg.FILE_NOT_FOUND})
+        user = self.context.get('user', None)
+        if not user:
+            raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+        for attach in value:
+            state, result = AttachDocumentMapAttachmentFile.valid_change(
+                current_ids=attach['attachment'],
+                employee_id=user.employee_current_id,
+                doc_id=self.instance.id
+            )
+            if state is True:
+                attach['attachment'] = result
+            else:
+                raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
         return value
 
     @classmethod
