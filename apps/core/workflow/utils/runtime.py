@@ -325,6 +325,9 @@ class RuntimeHandler:
             if 2 in assignee.action_perform:
                 rejected_count += 1
         if condition['min_collab'] != "else":
+            if not condition['min_collab']:
+                RuntimeHandler.close_assignee_waiting(rt_assignee=rt_assignee, action_code=action_code)
+                return True
             if rejected_count == int(condition['min_collab']):
                 RuntimeHandler.close_assignee_waiting(rt_assignee=rt_assignee, action_code=action_code)
                 return True
