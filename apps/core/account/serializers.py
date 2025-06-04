@@ -83,6 +83,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
+    def validate_email(cls, attrs):
+        if User.objects.filter_current(
+                email=attrs,
+                fill__tenant=True, fill__map_key={'fill__tenant': 'tenant_current_id'}
+        ).exists():
+            raise serializers.ValidationError({'email': AccountMsg.EMAIL_EXISTS})
+        return attrs
+
+    @classmethod
     def validate_phone(cls, attrs):
         if not attrs.isnumeric():
             raise serializers.ValidationError({"phone": AccountMsg.PHONE_CONTAIN_CHARACTER})
@@ -178,6 +187,15 @@ class UserCreateSerializer(serializers.ModelSerializer):
         ).exists():
             raise serializers.ValidationError({'username': AccountMsg.USERNAME_EXISTS})
         return username_slugify
+
+    @classmethod
+    def validate_email(cls, attrs):
+        if User.objects.filter_current(
+                email=attrs,
+                fill__tenant=True, fill__map_key={'fill__tenant': 'tenant_current_id'}
+        ).exists():
+            raise serializers.ValidationError({'email': AccountMsg.EMAIL_EXISTS})
+        return attrs
 
     @classmethod
     def validate_password(cls, attrs):
