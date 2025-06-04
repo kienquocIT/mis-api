@@ -2001,16 +2001,14 @@ def create_new_tenant(tenant_code, tenant_data, user_data):
 
 def reset_push_payment_plan():
     PaymentPlan.objects.all().delete()
-    for sale_order in SaleOrder.objects.filter(system_status=3):
+    for sale_order in SaleOrder.objects.filter(system_status=3, id="18335b46-7530-48f5-923f-f88edc26115a"):
         SOFinishHandler.push_to_payment_plan(instance=sale_order)
-    for purchase_order in PurchaseOrder.objects.filter(system_status=3):
-        POFinishHandler.push_to_payment_plan(instance=purchase_order)
-    # for ar_invoice in ARInvoice.objects.filter(system_status=3):
-    #     ARInvoiceFinishHandler.push_to_payment_plan(instance=ar_invoice)
-    for cash_in_flow in CashInflow.objects.filter(system_status=3):
+    # for purchase_order in PurchaseOrder.objects.filter(system_status=3):
+    #     POFinishHandler.push_to_payment_plan(instance=purchase_order)
+    for cash_in_flow in CashInflow.objects.filter(system_status=3, id__in=["6da06f79-1f1f-47ea-a37f-d08487744d7b", "53dadbee-ffd2-4e8c-899f-6c31cfd35a36"]):
         CashInFlowFinishHandler.push_to_payment_plan(instance=cash_in_flow)
-    for cash_out_flow in CashOutflow.objects.filter(system_status=3):
-        CashOutFlowFinishHandler.push_to_payment_plan(instance=cash_out_flow)
+    # for cash_out_flow in CashOutflow.objects.filter(system_status=3):
+    #     CashOutFlowFinishHandler.push_to_payment_plan(instance=cash_out_flow)
     print('reset_push_payment_plan done.')
     return True
 

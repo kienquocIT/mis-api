@@ -112,17 +112,16 @@ class PaymentPlan(DataAbstractModel):
             value_pay=0,
     ):
         if sale_order_id and payment_stage_id:
-            if ar_invoice_id:
-                plan_obj = cls.objects.filter(sale_order_id=sale_order_id, so_payment_stage_id=payment_stage_id).first()
-                if plan_obj:
-                    plan_obj.ar_invoice_id = ar_invoice_id
-                    plan_obj.ar_invoice_data = ar_invoice_data if ar_invoice_data else {}
-                    plan_obj.invoice_actual_date = invoice_actual_date
-                    plan_obj.value_balance = value_balance
-                    plan_obj.value_pay = value_pay
-                    plan_obj.save(update_fields=[
-                        'ar_invoice_id', 'ar_invoice_data', 'invoice_actual_date', 'value_balance', 'value_pay'
-                    ])
+            plan_obj = cls.objects.filter(sale_order_id=sale_order_id, so_payment_stage_id=payment_stage_id).first()
+            if plan_obj:
+                plan_obj.ar_invoice_id = ar_invoice_id if ar_invoice_id else None
+                plan_obj.ar_invoice_data = ar_invoice_data if ar_invoice_data else {}
+                plan_obj.invoice_actual_date = invoice_actual_date
+                plan_obj.value_balance = value_balance
+                plan_obj.value_pay = value_pay
+                plan_obj.save(update_fields=[
+                    'ar_invoice_id', 'ar_invoice_data', 'invoice_actual_date', 'value_balance', 'value_pay'
+                ])
         return True
 
     @classmethod
@@ -155,6 +154,6 @@ class PaymentPlan(DataAbstractModel):
     class Meta:
         verbose_name = 'Payment Plan'
         verbose_name_plural = 'Payment Plans'
-        ordering = ('-due_date',)
+        ordering = ('due_date',)
         default_permissions = ()
         permissions = ()
