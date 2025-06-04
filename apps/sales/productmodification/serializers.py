@@ -259,6 +259,13 @@ class ProductModificationDetailSerializer(AbstractDetailSerializerModel):
                 'component_text_data': item.component_text_data,
                 'component_product_data': item.component_product_data,
                 'component_quantity': item.component_quantity,
+                'component_product_none_detail': [{
+                    'warehouse_id': child.component_prd_wh.warehouse_id,
+                    'picked_quantity': child.component_prd_wh_quantity,
+                } for child in item.current_components_detail.filter(
+                    current_component=item,
+                    component_prd_wh__isnull=False
+                )],
                 'component_product_sn_detail': item.current_components_detail.filter(
                     current_component=item,
                     component_prd_wh_serial__isnull=False
@@ -349,9 +356,30 @@ class ProductModificationCommonFunction:
         bulk_info = []
         bulk_info_detail_sn = []
         for order, item in enumerate(current_component_data):
+            component_product_none_detail = item.pop('component_product_none_detail', [])
+            component_product_lot_detail = item.pop('component_product_lot_detail', [])
             component_product_sn_detail = item.pop('component_product_sn_detail', [])
+
             current_component_obj = CurrentComponent(product_modified=pm_obj, order=order, **item)
+            # none
             bulk_info.append(current_component_obj)
+            for child in component_product_none_detail:
+                wh_id = child.get('warehouse_id')
+                picked_quantity = child.get('picked_quantity', 0)
+                prd_wh_obj = ProductWareHouse.objects.filter(
+                    warehouse_id=wh_id, product_id=item.get('component_product_id')
+                ).first()
+                if prd_wh_obj:
+                    bulk_info_detail_sn.append(
+                        CurrentComponentDetail(
+                            current_component=current_component_obj,
+                            component_prd_wh=prd_wh_obj,
+                            component_prd_wh_quantity=picked_quantity
+                        )
+                    )
+            # lot
+
+            # sn
             for serial_id in component_product_sn_detail:
                 serial_obj = ProductWareHouseSerial.objects.filter(id=serial_id).first()
                 if serial_obj:

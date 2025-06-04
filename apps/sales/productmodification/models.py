@@ -42,6 +42,7 @@ class CurrentComponent(SimpleAbstractModel):
     component_product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     component_product_data = models.JSONField(default=dict)
     component_quantity = models.IntegerField()
+    is_root = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = 'Current Component'
@@ -59,7 +60,6 @@ class CurrentComponentDetail(SimpleAbstractModel):
     component_prd_wh = models.ForeignKey(
         'saledata.ProductWareHouse', on_delete=models.CASCADE, null=True
     )
-    component_prd_wh_data = models.JSONField(default=dict)
     component_prd_wh_quantity = models.FloatField(default=0)
 
     component_prd_wh_lot = models.ForeignKey(
