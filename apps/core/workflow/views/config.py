@@ -1,9 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
-# from rest_framework import serializers
+from rest_framework import serializers
 
 from apps.core.workflow.models import (
     WorkflowConfigOfApp, Workflow,
-    # Runtime,
+    Runtime,
 )
 from apps.core.workflow.serializers.config import (
     WorkflowListSerializer, WorkflowCreateSerializer,
@@ -13,7 +13,7 @@ from apps.core.workflow.serializers.config import (
 from apps.shared import (
     BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin,
     ResponseController, HttpMsg,
-    # WorkflowMsg,
+    WorkflowMsg,
 )
 
 __all__ = [
@@ -133,9 +133,9 @@ class WorkflowDetail(BaseRetrieveMixin, BaseUpdateMixin):
         instance = self.get_object()
 
         # check workflow have runtime exists. If exists, don't allow change.
-        # count = Runtime.check_document_in_progress(workflow_id=instance.id, state_or_count='count')
-        # if count > 0:
-        #     raise serializers.ValidationError({'detail': WorkflowMsg.WORKFLOW_NOT_ALLOW_CHANGE.format(str(count))})
+        count = Runtime.check_document_in_progress(workflow_id=instance.id, state_or_count='count')
+        if count > 0:
+            raise serializers.ValidationError({'detail': WorkflowMsg.WORKFLOW_NOT_ALLOW_CHANGE.format(str(count))})
 
         serializer = self.get_serializer_update(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)

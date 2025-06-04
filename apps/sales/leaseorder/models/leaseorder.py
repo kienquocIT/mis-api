@@ -389,6 +389,7 @@ class LeaseOrderProduct(MasterDataAbstractModel):
     product_unit_price = models.FloatField(default=0)
     product_discount_value = models.FloatField(default=0)
     product_discount_amount = models.FloatField(default=0)
+    product_discount_amount_total = models.FloatField(default=0)
     product_tax_title = models.CharField(max_length=100, blank=True, null=True)
     product_tax_value = models.FloatField(default=0)
     product_tax_amount = models.FloatField(default=0)

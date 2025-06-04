@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth.models import update_last_login
+from django.core.validators import EmailValidator
 from django.utils import timezone
 from slugify import slugify
 from rest_framework import serializers
@@ -11,7 +12,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from apps.core.tenant.models import Tenant
 from apps.core.company.models import Company, CompanyUserEmployee
-from apps.shared import ServerMsg, AccountMsg, BaseMsg
+# from apps.shared import ServerMsg, AccountMsg, BaseMsg
+from apps.shared import AccountMsg, BaseMsg
 from apps.core.account.models import User, ValidateUser, TOTPUser
 from apps.shared.translations import AuthMsg
 
@@ -46,7 +48,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):  # pylint: disable
 
 class AuthLoginSerializer(Serializer):  # pylint: disable=W0223 # noqa
     tenant_code = serializers.CharField(max_length=15)
-    username = serializers.SlugField(max_length=100)
+    # username = serializers.SlugField(max_length=100)
+    username = serializers.CharField(max_length=254)
     password = serializers.CharField(max_length=None)
 
     @classmethod
@@ -62,34 +65,64 @@ class AuthLoginSerializer(Serializer):  # pylint: disable=W0223 # noqa
                 err_msg = AuthMsg.TENANT_RETURN_MULTIPLE.format(code)
         raise serializers.ValidationError({'tenant_code': err_msg})
 
+    # @classmethod
+    # def validate_username(cls, attrs):
+    #     username = attrs.lower()
+    #     username_slugify = slugify(username)
+    #     if username_slugify == username:
+    #         return username_slugify
+    #     raise serializers.ValidationError({"username": AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
+
     @classmethod
     def validate_username(cls, attrs):
-        username = attrs.lower()
-        username_slugify = slugify(username)
-        if username_slugify == username:
+        email_validator = EmailValidator()
+        email_username = attrs.lower()
+        username_slugify = slugify(email_username)
+        if username_slugify == email_username:
             return username_slugify
+        valid_email = email_validator(email_username)
+        if valid_email is None:
+            return email_username
         raise serializers.ValidationError({"username": AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
 
     @classmethod
     def validate_password(cls, attrs):
         return attrs
 
+    # def validate(self, attrs):
+    #     try:
+    #         username_value = User.convert_username_field_data(attrs['username'], attrs['tenant_code'])
+    #         user_obj = User.objects.select_related(
+    #             'tenant_current', 'company_current', 'employee_current', 'space_current',
+    #         ).get(**{User.USERNAME_FIELD: username_value})
+    #         if user_obj:
+    #             if user_obj.check_password(attrs['password']):
+    #                 return user_obj
+    #             raise User.DoesNotExist()
+    #         raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
+    #     except User.DoesNotExist:
+    #         raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
+    #     except Exception as err:
+    #         print(err)
+    #         raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
+
     def validate(self, attrs):
-        try:
-            username_value = User.convert_username_field_data(attrs['username'], attrs['tenant_code'])
-            user_obj = User.objects.select_related(
-                'tenant_current', 'company_current', 'employee_current', 'space_current',
-            ).get(**{User.USERNAME_FIELD: username_value})
-            if user_obj:
-                if user_obj.check_password(attrs['password']):
-                    return user_obj
-                raise User.DoesNotExist()
-            raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
-        except User.DoesNotExist:
-            raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
-        except Exception as err:
-            print(err)
-            raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
+        username_value = User.convert_username_field_data(attrs['username'], attrs['tenant_code'])
+        user_obj = User.objects.select_related(
+            'tenant_current', 'company_current', 'employee_current', 'space_current',
+        ).filter(**{User.USERNAME_FIELD: username_value}).first()
+        if user_obj:
+            if user_obj.check_password(attrs['password']):
+                return user_obj
+            raise User.DoesNotExist()
+        user_obj = User.objects.select_related(
+            'tenant_current', 'company_current', 'employee_current', 'space_current',
+        ).filter(**{User.EMAIL_FIELD: attrs['username']}).first()
+        if user_obj:
+            if user_obj.check_password(attrs['password']):
+                return user_obj
+            raise User.DoesNotExist()
+        raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
 
 
 class SwitchCompanySerializer(Serializer):  # pylint: disable=W0223 # noqa
