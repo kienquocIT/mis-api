@@ -12,7 +12,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from apps.core.tenant.models import Tenant
 from apps.core.company.models import Company, CompanyUserEmployee
-from apps.shared import ServerMsg, AccountMsg, BaseMsg
+# from apps.shared import ServerMsg, AccountMsg, BaseMsg
+from apps.shared import AccountMsg, BaseMsg
 from apps.core.account.models import User, ValidateUser, TOTPUser
 from apps.shared.translations import AuthMsg
 
