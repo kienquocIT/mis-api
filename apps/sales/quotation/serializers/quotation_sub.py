@@ -323,6 +323,7 @@ class QuotationProductSerializer(serializers.ModelSerializer):
             'product_unit_price',
             'product_discount_value',
             'product_discount_amount',
+            'product_discount_amount_total',
             'product_tax_title',
             'product_tax_value',
             'product_tax_amount',
