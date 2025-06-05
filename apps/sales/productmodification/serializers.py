@@ -259,6 +259,7 @@ class ProductModificationDetailSerializer(AbstractDetailSerializerModel):
                 'component_text_data': item.component_text_data,
                 'component_product_data': item.component_product_data,
                 'component_quantity': item.component_quantity,
+                'is_added_component': item.is_added_component,
                 'component_product_none_detail': [{
                     'warehouse_id': child.component_prd_wh.warehouse_id,
                     'picked_quantity': child.component_prd_wh_quantity,

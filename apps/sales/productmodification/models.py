@@ -42,7 +42,7 @@ class CurrentComponent(SimpleAbstractModel):
     component_product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     component_product_data = models.JSONField(default=dict)
     component_quantity = models.IntegerField()
-    is_root = models.BooleanField(default=True)
+    is_added_component = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Current Component'
