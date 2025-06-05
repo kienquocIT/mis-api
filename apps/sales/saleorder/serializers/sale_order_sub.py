@@ -373,7 +373,9 @@ class SaleOrderRuleValidate:
 # SUB SERIALIZERS
 class SaleOrderProductSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=False, allow_null=True)
-    unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
+    unit_of_measure_id = serializers.UUIDField(error_messages={
+        'required': SaleMsg.PRODUCT_UOM_REQUIRED,
+    })
     tax_id = serializers.UUIDField(required=False, allow_null=True)
     promotion_id = serializers.UUIDField(required=False, allow_null=True)
     shipping_id = serializers.UUIDField(required=False, allow_null=True)
@@ -397,6 +399,7 @@ class SaleOrderProductSerializer(serializers.ModelSerializer):
             'product_unit_price',
             'product_discount_value',
             'product_discount_amount',
+            'product_discount_amount_total',
             'product_tax_title',
             'product_tax_value',
             'product_tax_amount',
@@ -593,7 +596,9 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
 class SaleOrderExpenseSerializer(serializers.ModelSerializer):
     expense_id = serializers.UUIDField(required=False, allow_null=True)
     expense_item_id = serializers.UUIDField(required=False, allow_null=True)
-    unit_of_measure_id = serializers.UUIDField(required=False, allow_null=True)
+    unit_of_measure_id = serializers.UUIDField(error_messages={
+        'required': SaleMsg.EXPENSE_UOM_REQUIRED,
+    })
     tax_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:

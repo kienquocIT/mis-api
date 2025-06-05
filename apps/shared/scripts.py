@@ -35,7 +35,7 @@ from ..core.hr.models import (
 from ..core.mailer.models import MailTemplateSystem
 from ..core.provisioning.utils import TenantController
 from ..eoffice.leave.leave_util import leave_available_map_employee
-from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig
+from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig, LeaveRequest
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
@@ -2053,20 +2053,106 @@ def update_pr_product_goods_receipt():
     return True
 
 
-def delete_employee_user():
+def hong_quang_delete_employee_user():
     employee_objs = Employee.objects.filter(id__in=[
-        "b9b84dce-0e37-4f53-85bd-52d0f6db82b3",
-        "d64c5a60-bbc5-44c7-a145-4806bb760985",
-        "3836328d-429d-4508-a509-60f52999a303"
+        "304b7593-1a55-40cc-9dc2-369b705e1495",
+        "7c3e8a58-5bfb-4f34-8ada-5ef1775672f8",
+        "bfcfe964-0927-4e32-b699-2986dde4a182",
+        "c57adf7d-df03-4e88-bcc6-2ef055c39f48",
+        "d8016733-a304-4bd9-9ea1-ad63fc7891ee",
+        "0e6d2ccf-fea2-455f-801e-23d9be7d62b8",
+        "47268955-c17f-4c55-a8dc-67429f78998b",
+        "a54bc784-e703-4dcf-8b9a-a7e515cf918d",
+        "72d2f1e8-4dbe-4c7c-b18c-a74e4af60465",
+        "c4bd21d8-1925-45b4-8740-e7f122b33b11",
     ], company_id="0248237b-cb6b-46b1-82ad-9282115a0624")
     if employee_objs:
         employee_objs.delete()
-    user_obj = User.objects.filter(id="837f0d6c-9e7c-481d-8ca5-e056c99da188").first()
-    if user_obj:
-        user_obj.delete()
-    print('delete_employee_user done')
+    user_objs = User.objects.filter(id__in=[
+        "c2270aaf-1a4c-4f5d-9a06-392466b90e65",
+        "5179ca9c-4cd3-4f69-8756-3c5efe7d244f",
+        "9ccc0add-284c-4cae-aa40-dda55d69ccda",
+        "1f11c595-a52c-466f-b590-85b207db4c45",
+        "845ae8ca-9468-4145-a01b-3e2ff86f591e",
+        "74cf4e11-59f5-481c-889e-9bdefb1bb22a",
+        "28d07573-b1c1-4311-be81-6aa1095e1e54",
+        "f29aeb76-745c-4a27-9796-0716b9ea0a95",
+        "29a51ae5-ab35-4811-85f4-64180a7d9430",
+        "4637c760-33c9-42ab-a70f-0eae47668ae2",
+    ])
+    if user_objs:
+        user_objs.delete()
+    print('hong_quang_delete_employee_user done')
 
 
-def delete_workflow():
-    print('delete_workflow done.')
+def hong_quang_delete_workflow():
+    workflows_delete = Workflow.objects.filter(company="0248237b-cb6b-46b1-82ad-9282115a0624").exclude(id__in=[
+        "d7f1d817-b469-4d6e-a9aa-82d45f9e96e2",
+        "1f7fb6a6-3fea-4c46-be3d-6750e604c575",
+        "32ccae59-ca45-4031-970e-0c5fa582ead4",
+        "8c809b77-8ab6-400b-ae49-21ef1b29fe1d",
+        "f452b3ca-8d1a-4449-bd44-7288242ee464",
+        "212dfc8c-e37f-4391-985b-2fd7629aaa5c",
+        "22f548e1-c040-41a5-9f80-94ecc9726341",
+        "8363ab8c-a4c7-4d1a-a5fa-c599567211f8",
+        "c5f6effd-1253-4d82-a648-d4b95de225d8",
+    ])
+    if workflows_delete:
+        workflows_delete.delete()
+    workflow_runtimes = Runtime.objects.filter(flow_id__in=[
+        "d7f1d817-b469-4d6e-a9aa-82d45f9e96e2",
+        "1f7fb6a6-3fea-4c46-be3d-6750e604c575",
+        "32ccae59-ca45-4031-970e-0c5fa582ead4",
+        "8c809b77-8ab6-400b-ae49-21ef1b29fe1d",
+        "f452b3ca-8d1a-4449-bd44-7288242ee464",
+        "212dfc8c-e37f-4391-985b-2fd7629aaa5c",
+        "22f548e1-c040-41a5-9f80-94ecc9726341",
+        "8363ab8c-a4c7-4d1a-a5fa-c599567211f8",
+        "c5f6effd-1253-4d82-a648-d4b95de225d8",
+    ])
+    if workflow_runtimes:
+        workflow_runtimes.delete()
+    workflow_config_opp = WorkflowConfigOfApp.objects.filter(id="e5706d30-50f3-413f-9a30-312fae49a307").first()
+    if workflow_config_opp:
+        workflow_config_opp.delete()
+    print("hong_quang_delete_workflow done.")
+    return True
+
+
+def hong_quang_delete_sales():
+    opportunities = Opportunity.objects.filter(company="0248237b-cb6b-46b1-82ad-9282115a0624")
+    if opportunities:
+        opportunities.delete()
+    quotations = Quotation.objects.filter(company="0248237b-cb6b-46b1-82ad-9282115a0624")
+    if quotations:
+        quotations.delete()
+    sale_orders = SaleOrder.objects.filter(company="0248237b-cb6b-46b1-82ad-9282115a0624")
+    if sale_orders:
+        sale_orders.delete()
+    advances = AdvancePayment.objects.filter(company="0248237b-cb6b-46b1-82ad-9282115a0624")
+    if advances:
+        advances.delete()
+    payments = Payment.objects.filter(company="0248237b-cb6b-46b1-82ad-9282115a0624")
+    if payments:
+        payments.delete()
+    purchases = PurchaseOrder.objects.filter(company="0248237b-cb6b-46b1-82ad-9282115a0624")
+    if purchases:
+        purchases.delete()
+    print("hong_quang_delete_sales done.")
+    return True
+
+
+def hong_quang_delete_offices():
+    leaves = LeaveRequest.objects.filter(company="0248237b-cb6b-46b1-82ad-9282115a0624")
+    if leaves:
+        leaves.delete()
+    print("hong_quang_delete_offices done.")
+    return True
+
+
+def hong_quang_set_user_password():
+    for user in User.objects.all():
+        user.password = "pbkdf2_sha256$600000$USCJmMvz9hwi6yx90CZZQu$L4om3uuO+h9nPdRaldB2tw4yzjrpRhUxWWGqKTWdRpE="
+        user.save(update_fields=['password'])
+    print('hong_quang_set_user_password done.')
     return True
