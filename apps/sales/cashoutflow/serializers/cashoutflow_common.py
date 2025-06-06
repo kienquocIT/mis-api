@@ -63,13 +63,20 @@ class CashOutflowSupplierListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_bank_accounts_mapped(cls, obj):
-        return [{
-            'id': str(item.id),
-            'bank_country_id': str(item.country_id),
-            'bank_name': item.bank_name,
-            'bank_code': item.bank_code,
-            'bank_account_name': item.bank_account_name,
-            'bank_account_number': item.bank_account_number,
-            'bic_swift_code': item.bic_swift_code,
-            'is_default': item.is_default
-        } for item in obj.account_banks_mapped.all()]
+        bank_accounts_mapped = []
+        for item in obj.account_banks_mapped.all():
+            data = {
+                'id': str(item.id),
+                'bank_country_id': str(item.country_id),
+                'bank_name': item.bank_name,
+                'bank_code': item.bank_code,
+                'bank_account_name': item.bank_account_name,
+                'bank_account_number': item.bank_account_number,
+                'bic_swift_code': item.bic_swift_code,
+                'is_default': item.is_default
+            }
+            if item.is_default:
+                bank_accounts_mapped.insert(0, data)
+            else:
+                bank_accounts_mapped.append(data)
+        return bank_accounts_mapped
