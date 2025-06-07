@@ -254,7 +254,7 @@ class ProductModificationDetailSerializer(AbstractDetailSerializerModel):
         current_component_data = []
         for item in obj.current_components.all():
             current_component_data.append({
-                'id': str(item.id),
+                'component_id': str(item.id),
                 'order': item.order,
                 'component_text_data': item.component_text_data,
                 'component_product_data': item.component_product_data,
@@ -461,6 +461,18 @@ class WarehouseListByProductSerializer(serializers.ModelSerializer):
             'warehouse_data',
             'uom_data',
             'stock_amount'
+        )
+
+
+class ProductLotListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductWareHouseLot
+        fields = (
+            'id',
+            'lot_number',
+            'quantity_import',
+            'expire_date',
+            'manufacture_date'
         )
 
 

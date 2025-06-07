@@ -1,11 +1,12 @@
 from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
-from apps.masterdata.saledata.models import ProductWareHouse, Product, ProductWareHouseSerial
+from apps.masterdata.saledata.models import ProductWareHouse, Product, ProductWareHouseSerial, ProductWareHouseLot
 from apps.sales.productmodification.models import ProductModification
 from apps.sales.productmodification.serializers import (
     WarehouseListByProductSerializer, ProductModifiedListSerializer,
     ProductComponentListSerializer, ProductSerialListSerializer, ProductModificationListSerializer,
-    ProductModificationCreateSerializer, ProductModificationDetailSerializer, ProductModificationUpdateSerializer
+    ProductModificationCreateSerializer, ProductModificationDetailSerializer, ProductModificationUpdateSerializer,
+    ProductLotListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -154,6 +155,32 @@ class WarehouseListByProduct(BaseListMixin):
     @swagger_auto_schema(
         operation_summary="Warehouse List By Product",
         operation_description="Warehouse List By Product",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductLotList(BaseListMixin):
+    queryset = ProductWareHouseLot.objects
+    search_fields = [
+        'lot_number',
+    ]
+    filterset_fields = {
+        'product_warehouse__product_id': ['exact'],
+        'product_warehouse__warehouse_id': ['exact'],
+    }
+    serializer_list = ProductLotListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    # def get_queryset(self):
+    #     return super().get_queryset()
+
+    @swagger_auto_schema(
+        operation_summary="Product Lot List",
+        operation_description="Product Lot List",
     )
     @mask_view(
         login_require=True, auth_require=False,
