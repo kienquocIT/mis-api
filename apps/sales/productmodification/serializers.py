@@ -360,69 +360,84 @@ class ProductModificationUpdateSerializer(AbstractCreateSerializerModel):
 
 class ProductModificationCommonFunction:
     @staticmethod
+    def create_current_component_data_sub(
+            current_component_obj, current_component_item,
+            component_product_none_detail, component_product_lot_detail, component_product_sn_detail
+    ):
+        bulk_info_detail_sub = []
+        # none
+        for child in component_product_none_detail:
+            prd_wh_obj = ProductWareHouse.objects.filter(
+                warehouse_id=child.get('warehouse_id'), product_id=current_component_item.get('component_product_id')
+            ).first()
+            if prd_wh_obj:
+                bulk_info_detail_sub.append(
+                    CurrentComponentDetail(
+                        current_component=current_component_obj,
+                        component_prd_wh=prd_wh_obj,
+                        component_prd_wh_quantity=child.get('picked_quantity', 0)
+                    )
+                )
+        # lot
+        for child in component_product_lot_detail:
+            lot_obj = ProductWareHouseLot.objects.filter(id=child.get('lot_id')).first()
+            if lot_obj:
+                bulk_info_detail_sub.append(
+                    CurrentComponentDetail(
+                        current_component=current_component_obj,
+                        component_prd_wh_lot=lot_obj,
+                        component_prd_wh_lot_data={
+                            'id': str(lot_obj.id),
+                            'lot_number': lot_obj.lot_number,
+                            'expire_date': str(lot_obj.expire_date),
+                            'manufacture_date': str(lot_obj.manufacture_date),
+                        },
+                        component_prd_wh_lot_quantity=child.get('picked_quantity', 0)
+                    )
+                )
+        # sn
+        for serial_id in component_product_sn_detail:
+            serial_obj = ProductWareHouseSerial.objects.filter(id=serial_id).first()
+            if serial_obj:
+                bulk_info_detail_sub.append(
+                    CurrentComponentDetail(
+                        current_component=current_component_obj,
+                        component_prd_wh_serial=serial_obj,
+                        component_prd_wh_serial_data={
+                            'id': str(serial_obj.id),
+                            'vendor_serial_number': serial_obj.vendor_serial_number,
+                            'serial_number': serial_obj.vendor_serial_number,
+                            'expire_date': str(serial_obj.expire_date),
+                            'manufacture_date': str(serial_obj.manufacture_date),
+                            'warranty_start': str(serial_obj.warranty_start),
+                            'warranty_end': str(serial_obj.warranty_end),
+                        }
+                    )
+                )
+        return bulk_info_detail_sub
+
+    @staticmethod
     def create_current_component_data(pm_obj, current_component_data):
         bulk_info = []
-        bulk_info_detail_lot = []
-        bulk_info_detail_sn = []
-        for order, item in enumerate(current_component_data):
-            component_product_none_detail = item.pop('component_product_none_detail', [])
-            component_product_lot_detail = item.pop('component_product_lot_detail', [])
-            component_product_sn_detail = item.pop('component_product_sn_detail', [])
+        bulk_info_detail = []
+        for order, current_component_item in enumerate(current_component_data):
+            component_product_none_detail = current_component_item.pop('component_product_none_detail', [])
+            component_product_lot_detail = current_component_item.pop('component_product_lot_detail', [])
+            component_product_sn_detail = current_component_item.pop('component_product_sn_detail', [])
 
-            current_component_obj = CurrentComponent(product_modified=pm_obj, order=order, **item)
-            # none
+            current_component_obj = CurrentComponent(product_modified=pm_obj, order=order, **current_component_item)
             bulk_info.append(current_component_obj)
-            for child in component_product_none_detail:
-                prd_wh_obj = ProductWareHouse.objects.filter(
-                    warehouse_id=child.get('warehouse_id'), product_id=item.get('component_product_id')
-                ).first()
-                if prd_wh_obj:
-                    bulk_info_detail_sn.append(
-                        CurrentComponentDetail(
-                            current_component=current_component_obj,
-                            component_prd_wh=prd_wh_obj,
-                            component_prd_wh_quantity=child.get('picked_quantity', 0)
-                        )
-                    )
-            # lot
-            for child in component_product_lot_detail:
-                lot_obj = ProductWareHouseLot.objects.filter(id=child.get('lot_id')).first()
-                if lot_obj:
-                    bulk_info_detail_lot.append(
-                        CurrentComponentDetail(
-                            current_component=current_component_obj,
-                            component_prd_wh_lot=lot_obj,
-                            component_prd_wh_lot_data={
-                                'id': str(lot_obj.id),
-                                'lot_number': lot_obj.lot_number,
-                                'expire_date': str(lot_obj.expire_date),
-                                'manufacture_date': str(lot_obj.manufacture_date),
-                            },
-                            component_prd_wh_lot_quantity=child.get('picked_quantity', 0)
-                        )
-                    )
-            # sn
-            for serial_id in component_product_sn_detail:
-                serial_obj = ProductWareHouseSerial.objects.filter(id=serial_id).first()
-                if serial_obj:
-                    bulk_info_detail_sn.append(
-                        CurrentComponentDetail(
-                            current_component=current_component_obj,
-                            component_prd_wh_serial=serial_obj,
-                            component_prd_wh_serial_data={
-                                'id': str(serial_obj.id),
-                                'vendor_serial_number': serial_obj.vendor_serial_number,
-                                'serial_number': serial_obj.vendor_serial_number,
-                                'expire_date': str(serial_obj.expire_date),
-                                'manufacture_date': str(serial_obj.manufacture_date),
-                                'warranty_start': str(serial_obj.warranty_start),
-                                'warranty_end': str(serial_obj.warranty_end),
-                            }
-                        )
-                    )
+            bulk_info_detail += ProductModificationCommonFunction.create_current_component_data_sub(
+                current_component_obj,
+                current_component_item,
+                component_product_none_detail,
+                component_product_lot_detail,
+                component_product_sn_detail
+            )
+
         CurrentComponent.objects.filter(product_modified=pm_obj).delete()
         CurrentComponent.objects.bulk_create(bulk_info)
-        CurrentComponentDetail.objects.bulk_create(bulk_info_detail_lot + bulk_info_detail_sn)
+        CurrentComponentDetail.objects.bulk_create(bulk_info_detail)
         return True
 
     @staticmethod
