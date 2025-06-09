@@ -334,6 +334,10 @@ msgstr "Cấn trừ"
 msgid "Document approval"
 msgstr "Công văn phê duyệt"
 
+# f491fdf3-1384-4a82-b155-12ef6673c901
+msgid "Product Modification"
+msgstr "Tháo-lắp thiết bị"
+
 #
 msgid "Does not exist"
 msgstr "Không tồn tại"

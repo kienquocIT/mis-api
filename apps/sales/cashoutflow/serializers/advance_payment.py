@@ -281,7 +281,6 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
             doc_id=None,
             validate_data=validate_data
         )
-
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
         opportunity_id = validate_data.get('opportunity_id', None)
@@ -289,19 +288,15 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
             ProcessRuntimeControl(process_obj=process_obj).validate_process(
                 process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id,
             )
-
         return validate_data
 
     @decorator_run_workflow
     def create(self, validated_data):
         ap_item_list = validated_data.pop('ap_item_list', [])
         attachment = validated_data.pop('attachment', [])
-
         ap_obj = AdvancePayment.objects.create(**validated_data)
-
         APCommonFunction.create_ap_items(ap_obj, ap_item_list)
         APCommonFunction.handle_attach_file(ap_obj, attachment)
-
         if ap_obj.process:
             ProcessRuntimeControl(process_obj=ap_obj.process).register_doc(
                 process_stage_app_obj=ap_obj.process_stage_app,
@@ -311,7 +306,6 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
                 employee_created_id=ap_obj.employee_created_id,
                 date_created=ap_obj.date_created,
             )
-
         return ap_obj
 
 
@@ -452,8 +446,24 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_supplier(cls, obj):
+        bank_accounts_mapped = []
+        for item in (obj.supplier.account_banks_mapped.all() if obj.supplier else []):
+            data = {
+                'id': str(item.id),
+                'bank_country_id': str(item.country_id),
+                'bank_name': item.bank_name,
+                'bank_code': item.bank_code,
+                'bank_account_name': item.bank_account_name,
+                'bank_account_number': item.bank_account_number,
+                'bic_swift_code': item.bic_swift_code,
+                'is_default': item.is_default
+            }
+            if item.is_default:
+                bank_accounts_mapped.insert(0, data)
+            else:
+                bank_accounts_mapped.append(data)
         return {
-            'id': str(obj.supplier.id),
+            'id': str(obj.supplier_id),
             'code': obj.supplier.code,
             'name': obj.supplier.name,
             'owner': {
@@ -464,15 +474,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
                 'id': str(obj.supplier.industry_id),
                 'title': obj.supplier.industry.title
             } if obj.supplier.industry else {},
-            'bank_accounts_mapped': [{
-                'bank_country_id': str(item.country_id),
-                'bank_name': item.bank_name,
-                'bank_code': item.bank_code,
-                'bank_account_name': item.bank_account_name,
-                'bank_account_number': item.bank_account_number,
-                'bic_swift_code': item.bic_swift_code,
-                'is_default': item.is_default
-            } for item in obj.supplier.account_banks_mapped.all()]
+            'bank_accounts_mapped': bank_accounts_mapped
         } if obj.supplier else {}
 
     @classmethod
@@ -575,7 +577,6 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
             doc_id=self.instance.id,
             validate_data=validate_data
         )
-
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
         opportunity_id = validate_data.get('opportunity_id', None)
@@ -583,21 +584,17 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
             ProcessRuntimeControl(process_obj=process_obj).validate_process(
                 process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id,
             )
-
         return validate_data
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
         ap_item_list = validated_data.pop('ap_item_list', [])
         attachment = validated_data.pop('attachment', [])
-
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
         APCommonFunction.create_ap_items(instance, ap_item_list)
         APCommonFunction.handle_attach_file(instance, attachment)
-
         if instance.process:
             ProcessRuntimeControl(process_obj=instance.process).register_doc(
                 process_stage_app_obj=instance.process_stage_app,
@@ -607,7 +604,6 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
                 employee_created_id=instance.employee_created_id,
                 date_created=instance.date_created,
             )
-
         return instance
 
 

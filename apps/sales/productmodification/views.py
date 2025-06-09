@@ -1,0 +1,219 @@
+from django.db.models import Q
+from drf_yasg.utils import swagger_auto_schema
+from apps.masterdata.saledata.models import ProductWareHouse, Product, ProductWareHouseSerial, ProductWareHouseLot
+from apps.sales.productmodification.models import ProductModification
+from apps.sales.productmodification.serializers import (
+    WarehouseListByProductSerializer, ProductModifiedListSerializer,
+    ProductComponentListSerializer, ProductSerialListSerializer, ProductModificationListSerializer,
+    ProductModificationCreateSerializer, ProductModificationDetailSerializer, ProductModificationUpdateSerializer,
+    ProductLotListSerializer
+)
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+
+__all__ = [
+    'ProductModificationList',
+    'ProductModificationDetail',
+    'ProductModifiedList',
+    'ProductComponentList',
+    'WarehouseListByProduct',
+    'ProductSerialList',
+]
+
+# main
+class ProductModificationList(BaseListMixin, BaseCreateMixin):
+    queryset = ProductModification.objects
+    search_fields = [
+        'title',
+        'code',
+    ]
+    serializer_list = ProductModificationListSerializer
+    serializer_create = ProductModificationCreateSerializer
+    serializer_detail = ProductModificationDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related().select_related('employee_created__group')
+
+    @swagger_auto_schema(
+        operation_summary="Product Modification list",
+        operation_description="Product Modification list",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='productmodification', model_code='productmodification', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Product Modification",
+        operation_description="Create new Product Modification",
+        request_body=ProductModificationCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='productmodification', model_code='productmodification', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class ProductModificationDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = ProductModification.objects  # noqa
+    serializer_detail = ProductModificationDetailSerializer
+    serializer_update = ProductModificationUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'current_components',
+            'current_components__current_components_detail',
+        ).select_related()
+
+    @swagger_auto_schema(operation_summary='Detail Product Modification')
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='productmodification', model_code='productmodification', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update Product Modification", request_body=ProductModificationUpdateSerializer
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='productmodification', model_code='productmodification', perm_code='edit',
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+# related
+class ProductModifiedList(BaseListMixin):
+    queryset = Product.objects
+    search_fields = [
+        'title',
+        'code',
+    ]
+    serializer_list = ProductModifiedListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(Q(general_product_types_mapped__is_service=False))
+
+    @swagger_auto_schema(
+        operation_summary="Product Modified List",
+        operation_description="Product Modified List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductComponentList(BaseListMixin):
+    queryset = Product.objects
+    search_fields = [
+        'title',
+        'code',
+    ]
+    filterset_fields = {
+        'id': ['exact'],
+    }
+    serializer_list = ProductComponentListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(Q(general_product_types_mapped__is_service=False))
+
+    @swagger_auto_schema(
+        operation_summary="Product Component List",
+        operation_description="Product Component List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class WarehouseListByProduct(BaseListMixin):
+    queryset = ProductWareHouse.objects
+    search_fields = [
+        'title',
+        'code',
+    ]
+    filterset_fields = {
+        'product_id': ['exact'],
+    }
+    serializer_list = WarehouseListByProductSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    # def get_queryset(self):
+    #     return super().get_queryset()
+
+    @swagger_auto_schema(
+        operation_summary="Warehouse List By Product",
+        operation_description="Warehouse List By Product",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductLotList(BaseListMixin):
+    queryset = ProductWareHouseLot.objects
+    search_fields = [
+        'lot_number',
+    ]
+    filterset_fields = {
+        'product_warehouse__product_id': ['exact'],
+        'product_warehouse__warehouse_id': ['exact'],
+    }
+    serializer_list = ProductLotListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    # def get_queryset(self):
+    #     return super().get_queryset()
+
+    @swagger_auto_schema(
+        operation_summary="Product Lot List",
+        operation_description="Product Lot List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductSerialList(BaseListMixin):
+    queryset = ProductWareHouseSerial.objects
+    search_fields = [
+        'vendor_serial_number',
+        'serial_number',
+    ]
+    filterset_fields = {
+        'product_warehouse__product_id': ['exact'],
+        'product_warehouse__warehouse_id': ['exact'],
+    }
+    serializer_list = ProductSerialListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    # def get_queryset(self):
+    #     return super().get_queryset()
+
+    @swagger_auto_schema(
+        operation_summary="Product Serial List",
+        operation_description="Product Serial List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

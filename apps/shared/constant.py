@@ -113,12 +113,12 @@ MAP_FIELD_TITLE = {
     'inventory.goodsrecovery': 'title',
     # haind
     'cashoutflow.advancepayment': 'title',
+    'cashoutflow.payment': 'title',
     'apinvoice.apinvoice': 'title',
     'arinvoice.arinvoice': 'title',
     'inventory.goodsissue': 'title',
     'inventory.goodsreturn': 'title',
     'inventory.goodstransfer': 'title',
-    'cashoutflow.payment': 'title',
     'purchasing.purchasequotation': 'title',
     'purchasing.purchasequotationrequest': 'title',
     'purchasing.purchaserequest': 'title',
@@ -127,6 +127,7 @@ MAP_FIELD_TITLE = {
     'production.bom': 'title',
     'financialcashflow.cashinflow': 'title',
     'financialcashflow.cashoutflow': 'title',
+    'productmodification.productmodification': 'title',
     #
     'bidding.bidding': 'title',
     'consulting.consulting': 'title',
