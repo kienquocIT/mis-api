@@ -2,7 +2,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 
 from apps.core.workflow.models import (
-    WorkflowConfigOfApp, Workflow, Runtime,
+    WorkflowConfigOfApp, Workflow,
+    Runtime,
 )
 from apps.core.workflow.serializers.config import (
     WorkflowListSerializer, WorkflowCreateSerializer,
@@ -11,7 +12,8 @@ from apps.core.workflow.serializers.config import (
 )
 from apps.shared import (
     BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin,
-    ResponseController, HttpMsg, WorkflowMsg,
+    ResponseController, HttpMsg,
+    WorkflowMsg,
 )
 
 __all__ = [

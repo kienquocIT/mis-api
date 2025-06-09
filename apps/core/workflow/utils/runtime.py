@@ -325,6 +325,9 @@ class RuntimeHandler:
             if 2 in assignee.action_perform:
                 rejected_count += 1
         if condition['min_collab'] != "else":
+            if not condition['min_collab']:
+                RuntimeHandler.close_assignee_waiting(rt_assignee=rt_assignee, action_code=action_code)
+                return True
             if rejected_count == int(condition['min_collab']):
                 RuntimeHandler.close_assignee_waiting(rt_assignee=rt_assignee, action_code=action_code)
                 return True
@@ -590,6 +593,8 @@ class RuntimeStageHandler:
                     DocHandler.force_added_with_runtime(self.runtime_obj)
                     # set next_association_id to doc (node completed)
                     if next_stage.node:
+                        if next_stage.node.transition_node_input.count() == 0:
+                            raise ValueError('Workflow does not define completed node.')
                         for associate in next_stage.node.transition_node_input.all():
                             DocHandler.force_update_next_node_collab(
                                 runtime_obj=self.runtime_obj,

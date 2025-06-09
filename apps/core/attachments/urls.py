@@ -2,12 +2,13 @@ from django.urls import path
 from .views import (
     FilesUpload, FilesUnused,
     ImageWebBuilderUpload, ImageWebBuilderList, FolderList, FolderDetail, FolderUploadFileList, FilesDownload,
-    FilesInformation, FolderListSharedToMe,
+    FilesInformation, PublicFilesUpload, FolderListSharedToMe
 )
 
 urlpatterns = [
     path('unused', FilesUnused.as_view(), name='FilesUnused'),
     path('upload', FilesUpload.as_view(), name='FilesUpload'),
+    path('public-upload', PublicFilesUpload.as_view(), name='PublicFilesUpload'),
     path('download/<str:pk>', FilesDownload.as_view(), name='FilesDownload'),
     path('info/<str:pk>', FilesInformation.as_view(), name='FilesInformation'),
     path('web-builder/upload', ImageWebBuilderUpload.as_view(), name='ImageWebBuilderUpload'),

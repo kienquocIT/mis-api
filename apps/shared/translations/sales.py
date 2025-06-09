@@ -46,6 +46,8 @@ class SaleMsg:
     LEASE_ORDER_NOT_EXIST = _('Lease order does not exist.')
     FROM_EMAIL_NOT_EXIST = _('From email does not exist.')
     DELIVERY_NOT_EXIST = _('Delivery does not exist.')
+    PRODUCT_UOM_REQUIRED = _('Product unit of measure is required.')
+    EXPENSE_UOM_REQUIRED = _('Expense unit of measure is required.')
 
 
 class SaleTask:

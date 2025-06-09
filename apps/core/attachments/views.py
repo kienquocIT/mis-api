@@ -19,7 +19,7 @@ from .serializers import (
     FilesUploadSerializer, FilesDetailSerializer, FilesListSerializer,
     DetailImageWebBuilderInPublicFileListSerializer, CreateImageWebBuilderInPublicFileListSerializer,
     FolderListSerializer, FolderCreateSerializer, FolderDetailSerializer, FolderUpdateSerializer,
-    FolderUploadFileSerializer,
+    FolderUploadFileSerializer, PublicFilesUploadSerializer, PublicFilesDetailSerializer, PublicFilesListSerializer,
 )
 
 
@@ -48,6 +48,39 @@ class FilesUpload(BaseListMixin, BaseCreateMixin):
         )
 
     @swagger_auto_schema(request_body=FilesUploadSerializer)
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user_obj': self.request.user
+        }
+        return self.create(request, *args, **kwargs)
+
+
+class PublicFilesUpload(BaseListMixin, BaseCreateMixin):
+    parser_classes = [MultiPartParser]
+    queryset = PublicFiles.objects
+    serializer_list = PublicFilesListSerializer
+    serializer_create = PublicFilesUploadSerializer
+    serializer_detail = PublicFilesDetailSerializer
+
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+
+    def write_log(self, *args, **kwargs):
+        doc_obj = kwargs['doc_obj']
+        change_partial: bool = kwargs.get('change_partial', False)
+        task_id = kwargs.get('task_id', None)
+
+        request_data = {
+            'id': str(doc_obj.id),
+            'file_name': doc_obj.file_name,
+            'file_type': doc_obj.file_type,
+            'file_size': doc_obj.file_size,
+        }
+        return super().write_log(
+            doc_obj=doc_obj, request_data=request_data, change_partial=change_partial, task_id=task_id
+        )
+
+    @swagger_auto_schema(request_body=PublicFilesUploadSerializer)
     @mask_view(login_require=True, auth_require=False, employee_require=True)
     def post(self, request, *args, **kwargs):
         self.ser_context = {

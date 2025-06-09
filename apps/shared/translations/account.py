@@ -18,3 +18,4 @@ class AccountMsg:
     TENANT_MANAGE_ADD_USER_TO_COMPANY = _(
         "Please go to the tenant management page feature to add a company for this user."
     )
+    EMAIL_EXISTS = _('Email already exists, please choose another one')

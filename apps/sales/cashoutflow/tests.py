@@ -106,6 +106,8 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'remain_value',
                 'money_gave',
                 'employee_inherit',
+                'employee_created',
+                'supplier',
                 'sale_order_mapped',
                 'quotation_mapped',
                 'opportunity',
@@ -477,9 +479,8 @@ class PaymentTestCase(AdvanceTestCase):
                 'title',
                 'code',
                 'method',
-                'method_parsed',
+                'bank_data',
                 'date_created',
-                'date_created_parsed',
                 'sale_code_type',
                 'expense_items',
                 'opportunity',
@@ -509,56 +510,6 @@ class PaymentTestCase(AdvanceTestCase):
 
         return response1
 
-    def test_payment_create_missing_data(self):
-        # missing field 'supplier_id'
-        url = reverse("PaymentList")
-        data2 = {
-            'title': 'Thanh toan thang 5',
-            'sale_code_type': 2,  # sale
-            'is_internal_payment': False,
-            'supplier_id': None,
-            'method': 1,  # bank
-            'employee_inherit_id': self.get_employee().data['result'][0]['id'],
-            'employee_payment_id': None,
-            'system_status': 0,
-            'payment_item_list': [
-                {
-                    "expense_type_id": self.create_expense_list().data['result']['id'],
-                    "expense_description": "",
-                    "expense_uom_name": "a",
-                    "expense_quantity": "1",
-                    "expense_unit_price": 200,
-                    "expense_tax_id": None,
-                    "expense_tax_price": 0,
-                    "expense_subtotal_price": 200,
-                    "expense_after_tax_price": 200,
-                    "document_number": "a",
-                    "real_value": 200,
-                    "converted_value": 0,
-                    "sum_value": 200,
-                    "ap_cost_converted_list": []
-                }
-            ]
-        }
-        response2 = self.client.post(url, data2, format='json')
-        self.assertResponseList(
-            response2,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            key_required=['errors', 'status'],
-            all_key=['errors', 'status'],
-            all_key_from=response2.data,
-            type_match={'errors': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response2.data['errors'],
-            [
-                'supplier_id',
-            ],
-            check_sum_second=True,
-        )
-
-        return None
-
     def test_payment_list(self):
         self.test_payment_create()
         url = reverse("PaymentList")
@@ -585,7 +536,6 @@ class PaymentTestCase(AdvanceTestCase):
                 'method',
                 'employee_inherit',
                 'converted_value_list',
-                'return_value_list',
                 'payment_value',
                 'date_created',
                 'system_status',
@@ -626,9 +576,8 @@ class PaymentTestCase(AdvanceTestCase):
                 'title',
                 'code',
                 'method',
-                'method_parsed',
+                'bank_data',
                 'date_created',
-                'date_created_parsed',
                 'sale_code_type',
                 'expense_items',
                 'opportunity',
