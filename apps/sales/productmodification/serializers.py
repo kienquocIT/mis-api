@@ -267,6 +267,13 @@ class ProductModificationDetailSerializer(AbstractDetailSerializerModel):
                     current_component=item,
                     component_prd_wh__isnull=False
                 )],
+                'component_product_lot_detail': [{
+                    'lot_id': child.component_prd_wh_lot_id,
+                    'picked_quantity': child.component_prd_wh_lot_quantity,
+                } for child in item.current_components_detail.filter(
+                    current_component=item,
+                    component_prd_wh_lot__isnull=False
+                )],
                 'component_product_sn_detail': item.current_components_detail.filter(
                     current_component=item,
                     component_prd_wh_serial__isnull=False
@@ -355,6 +362,7 @@ class ProductModificationCommonFunction:
     @staticmethod
     def create_current_component_data(pm_obj, current_component_data):
         bulk_info = []
+        bulk_info_detail_lot = []
         bulk_info_detail_sn = []
         for order, item in enumerate(current_component_data):
             component_product_none_detail = item.pop('component_product_none_detail', [])
@@ -379,7 +387,24 @@ class ProductModificationCommonFunction:
                         )
                     )
             # lot
-
+            for child in component_product_lot_detail:
+                lot_id = child.get('lot_id')
+                picked_quantity = child.get('picked_quantity', 0)
+                lot_obj = ProductWareHouseLot.objects.filter(id=lot_id).first()
+                if lot_obj:
+                    bulk_info_detail_lot.append(
+                        CurrentComponentDetail(
+                            current_component=current_component_obj,
+                            component_prd_wh_lot=lot_obj,
+                            component_prd_wh_lot_data={
+                                'id': str(lot_obj.id),
+                                'lot_number': lot_obj.lot_number,
+                                'expire_date': str(lot_obj.expire_date),
+                                'manufacture_date': str(lot_obj.manufacture_date),
+                            },
+                            component_prd_wh_lot_quantity=picked_quantity
+                        )
+                    )
             # sn
             for serial_id in component_product_sn_detail:
                 serial_obj = ProductWareHouseSerial.objects.filter(id=serial_id).first()
@@ -401,7 +426,7 @@ class ProductModificationCommonFunction:
                     )
         CurrentComponent.objects.filter(product_modified=pm_obj).delete()
         CurrentComponent.objects.bulk_create(bulk_info)
-        CurrentComponentDetail.objects.bulk_create(bulk_info_detail_sn)
+        CurrentComponentDetail.objects.bulk_create(bulk_info_detail_lot + bulk_info_detail_sn)
         return True
 
     @staticmethod
@@ -459,7 +484,6 @@ class WarehouseListByProductSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'warehouse_data',
-            'uom_data',
             'stock_amount'
         )
 
