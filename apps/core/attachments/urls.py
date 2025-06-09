@@ -1,8 +1,8 @@
 from django.urls import path
-from apps.core.attachments.views import (
+from .views import (
     FilesUpload, FilesUnused,
     ImageWebBuilderUpload, ImageWebBuilderList, FolderList, FolderDetail, FolderUploadFileList, FilesDownload,
-    FilesInformation,
+    FilesInformation, FolderListSharedToMe,
 )
 
 urlpatterns = [
@@ -12,7 +12,10 @@ urlpatterns = [
     path('info/<str:pk>', FilesInformation.as_view(), name='FilesInformation'),
     path('web-builder/upload', ImageWebBuilderUpload.as_view(), name='ImageWebBuilderUpload'),
     path('web-builder/list', ImageWebBuilderList.as_view(), name='ImageWebBuilderList'),
+
+    # KMS file and folder
     path('folder/list', FolderList.as_view(), name='FolderList'),
+    path('folder/list-share-to-me', FolderListSharedToMe.as_view(), name='FolderListSharedToMe'),
     path('folder/<str:pk>', FolderDetail.as_view(), name='FolderDetail'),
     path('folder-upload-file/list', FolderUploadFileList.as_view(), name='FolderUploadFileList'),
 ]

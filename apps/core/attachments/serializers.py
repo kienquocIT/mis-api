@@ -1,9 +1,34 @@
+from datetime import datetime
 import magic
-
 from django.conf import settings
 from rest_framework import serializers
-from apps.core.attachments.models import Files, PublicFiles, Folder
 from apps.shared import HrMsg, TypeCheck, AttMsg, FORMATTING
+from .models import Files, PublicFiles, Folder, FolderPermission
+
+
+def update_folder_permission(perm):
+    folder_id = str(perm['folder'].id)
+    default = {
+        'folder_id': folder_id,
+        'employee_list': perm['employee_list'],
+        'group_list': perm['group_list'],
+        'folder_perm_list': perm['folder_perm_list'],
+        'file_in_perm_list': perm['file_in_perm_list'],
+        'employee_or_group': perm['employee_or_group'],
+        'exp_date': perm.get('exp_date', None),
+        'capability_list': perm['capability_list'],
+        'is_apply_sub': perm.get('is_apply_sub', False),
+    }
+    _, _ = FolderPermission.objects.update_or_create(
+        folder_id=folder_id,
+        defaults={
+            **default,
+            'employee_created': perm['folder'].employee_created,
+            'date_created': datetime.now(),
+        }
+    )
+
+    return True
 
 
 class FilesUploadSerializer(serializers.ModelSerializer):
@@ -52,7 +77,7 @@ class FilesUploadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Files
-        fields = ('file', 'remarks')
+        fields = ('file', 'remarks', 'folder')
 
 
 class FilesDetailSerializer(serializers.ModelSerializer):
@@ -194,22 +219,56 @@ class DetailImageWebBuilderInPublicFileListSerializer(serializers.ModelSerialize
 
 # BEGIN FOLDER
 class FolderListSerializer(serializers.ModelSerializer):
+    employee_inherit = serializers.SerializerMethodField()
+    files = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            "full_name": obj.employee_inherit.get_full_name()
+        } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_files(cls, obj):
+        files = obj.files_folder.select_related('employee_created').all()
+        file_lst = []
+        for file in files:
+            file_lst.append({
+                'id': str(file.id),
+                'file_name': file.file_name,
+                'file_size': file.file_size,
+                'file_type': file.file_type,
+                'date_created': file.date_created,
+                'employee_created': {
+                    'id': str(file.employee_created),
+                    'full_name': file.employee_created.get_full_name()
+                } if file.employee_created else {},
+                'remarks': file.remarks,
+            })
+        return file_lst
+
+    @classmethod
+    def get_parent_n(cls, obj):
+        return {'id': obj.parent_n_id, 'title': obj.parent_n.title, 'code': obj.parent_n.code} if obj.parent_n else {}
 
     class Meta:
         model = Folder
         fields = (
             'id',
             'title',
-            'parent_n_id',
-            'date_created',
+            'parent_n',
+            'employee_inherit',
             'date_modified',
+            'files',
         )
 
 
 class FolderDetailSerializer(serializers.ModelSerializer):
     parent_n = serializers.SerializerMethodField()
     child_n = serializers.SerializerMethodField()
-    file = serializers.SerializerMethodField()
+    files = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = Folder
@@ -218,8 +277,18 @@ class FolderDetailSerializer(serializers.ModelSerializer):
             'title',
             'parent_n',
             'child_n',
-            'file',
+            'files',
+            'date_created',
+            'date_modified',
+            'employee_inherit',
         )
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'full_name': obj.employee_inherit.get_full_name()
+        } if obj.employee_inherit else {}
 
     @classmethod
     def get_parent_n(cls, obj):
@@ -228,18 +297,30 @@ class FolderDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_child_n(cls, obj):
         return [
-            {'id': child.id, 'title': child.title, 'code': child.code}
-            for child in obj.folder_parent_n.all()
+            {
+                'id': child.id, 'title': child.title,
+                'employee_inherit': {
+                    'id': child.employee_inherit_id,
+                    'full_name': child.employee_inherit.get_full_name()
+                } if child.employee_inherit else {},
+                'date_modified': child.date_modified,
+            }
+            for child in obj.folder_parent_n.select_related('employee_inherit').all()
         ]
 
     @classmethod
-    def get_file(cls, obj):
+    def get_files(cls, obj):
         return [
             {
-                'id': file.id, 'file_name': file.file_name,
-                'file_size': file.file_size, 'file_type': file.file_type,
-                'date_created': file.date_created, 'remarks': file.remarks,
-            } for file in obj.files_folder.all()
+                'id': f.id, 'file_name': f.file_name,
+                'file_size': f.file_size, 'file_type': f.file_type,
+                'date_created': f.date_created, 'remarks': f.remarks,
+                'employee_inherit': {
+                    'id': f.employee_created_id,
+                    'full_name': f.employee_created.get_full_name()
+                } if f.employee_created else {}
+            }
+            for f in obj.files_folder.select_related('employee_created').all()
         ]
 
 
@@ -268,15 +349,57 @@ class FolderCreateSerializer(serializers.ModelSerializer):
         return folder
 
 
+class PermissionFolderSerializer(serializers.ModelSerializer):
+
+    @classmethod
+    def validate_folder(cls, attrs):
+        if not attrs:
+            raise serializers.ValidationError({'folder': AttMsg.FOLDER_NOT_EXIST})
+        return attrs
+
+    @classmethod
+    def validate_employee_list(cls, attrs):
+        if not attrs:
+            raise serializers.ValidationError({'employee_list': AttMsg.EMPLOYEE_LIST_NOT_EXIST})
+        return attrs
+
+    @classmethod
+    def validate_group_list(cls, attrs):
+        if not attrs:
+            raise serializers.ValidationError({'employee_list': AttMsg.GROUP_LIST_NOT_EXIST})
+        return attrs
+
+    @classmethod
+    def validate_capability_list(cls, attrs):
+        if not attrs:
+            raise serializers.ValidationError({'capability_list': AttMsg.CAPABILITY_NOT_EXIST})
+        return attrs
+
+    class Meta:
+        model = FolderPermission
+        fields = (
+            'folder',
+            'employee_list',
+            'group_list',
+            'folder_perm_list',
+            'file_in_perm_list',
+            'employee_or_group',
+            'exp_date',
+            'capability_list',
+            'is_apply_sub'
+        )
+
+
 class FolderUpdateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(required=False, allow_blank=False)
     parent_n = serializers.UUIDField(required=False, allow_null=True)
+    permission_obj = PermissionFolderSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Folder
         fields = (
             'title',
             'parent_n',
+            'permission_obj',
         )
 
     @classmethod
@@ -289,7 +412,9 @@ class FolderUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'folder': AttMsg.FOLDER_NOT_EXIST})
 
     def update(self, instance, validated_data):
-        # update instance
+        permission_obj = validated_data.pop('permission_obj')
+        update_folder_permission(permission_obj)
+         # update instance
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()

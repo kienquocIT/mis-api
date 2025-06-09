@@ -15,3 +15,7 @@ class AttMsg:
     FILE_IS_NOT_IMAGE = _('The file is not images type.')
     WEB_BUILDER_USED_OVER_SIZE = _('This builder function has exhausted the allocated {used_size} license capacity')
     FOLDER_NOT_EXIST = _('Folder does not exist.')
+    EMPLOYEE_LIST_NOT_EXIST = _('Employee list does not exist')
+    GROUP_LIST_NOT_EXIST = _('Group list does not exist')
+    CAPABILITY_NOT_EXIST = _('Capability list does not exist')
+    FOLDER_PERMISSION_ERROR = _('Update permission error')

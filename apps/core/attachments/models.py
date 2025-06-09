@@ -1,6 +1,6 @@
 __all__ = [
     'Files', 'M2MFilesAbstractModel',
-    'PublicFiles', 'Folder',
+    'PublicFiles', 'Folder', 'FolderPermission'
 ]
 
 import json
@@ -33,6 +33,25 @@ CAPABILITY_LIST = (
     (2, 'Viewer'),
     (3, 'Editor'),
     (4, 'Custom')
+)
+
+FOLDER_LIST = (
+    (1, 'See'),
+    (2, 'Upload'),
+    (3, 'Download'),
+    (4, 'Create subfolders'),
+    (5, 'Delete'),
+    (6, 'Share'),
+)
+
+FILE_LIST = (
+    (1, 'Review'),
+    (2, 'Download'),
+    (3, 'Edit file attributes'),
+    (4, 'Share'),
+    (5, 'Upload version'),
+    (6, 'Duplicate'),
+    (6, 'Edit file'),
 )
 
 
@@ -597,8 +616,13 @@ class FilePermission(PermissionAbstractModel):
         default=dict
     )
     group_list = models.JSONField(
-        help_text='{"uuid": {"id":"uuid", "title": "Nguyen Van A", "parent_n": "uuid"}}',
+        help_text='{"uuid": {"id":"uuid", "title": "Group A", "parent_n": "uuid"}}',
         default=dict
+    )
+    file_perm_list = models.JSONField(
+        default=list,
+        help_text=json.dumps(FILE_LIST),
+        null=True,
     )
 
     class Meta:
@@ -616,13 +640,24 @@ class FolderPermission(PermissionAbstractModel):
         related_name="folder_permission_folder",
     )
     employee_list = models.JSONField(
-        help_text='{"uuid": {"id":"uuid", "full_name": "Nguyen Van A", "group": {}}}',
+        help_text=json.dumps({"uuid": {"id": "uuid", "full_name": "Nguyen Van A", "group": {}}}),
         default=dict
     )
     group_list = models.JSONField(
-        help_text='{"uuid": {"id":"uuid", "title": "Nguyen Van A", "parent_n": "uuid"}}',
+        help_text=json.dumps({"uuid": {"id": "uuid", "title": "Group A", "parent_n": "uuid"}}),
         default=dict
     )
+    folder_perm_list = models.JSONField(
+        default=list,
+        help_text=json.dumps(FOLDER_LIST),
+        null=True,
+    )
+    file_in_perm_list = models.JSONField(
+        default=list,
+        help_text=json.dumps(FILE_LIST),
+        null=True,
+    )
+    is_apply_sub = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Folder Permission'
