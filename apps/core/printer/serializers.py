@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from django.utils.translation import gettext_lazy as trans
+
 from apps.core.mailer.handle_html import HTMLController
 from apps.core.printer.models import PrintTemplates
 from apps.shared import BaseMsg
@@ -31,6 +33,7 @@ class PrintTemplateDetailSerializer(serializers.ModelSerializer):
         return {
             'id': obj.application.id,
             'title': obj.application.title,
+            'title_i18n': trans(obj.application.title),
         } if obj.application else {}
 
     class Meta:
