@@ -124,7 +124,7 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
                 component_text_data = item.get('component_text_data', {})
                 if not component_text_data:
                     raise serializers.ValidationError({'component_text_data': "Component text data is missing."})
-                elif 'title' not in component_text_data:
+                if 'title' not in component_text_data:
                     raise serializers.ValidationError({'title': "Component text data TITLE is missing."})
 
         return current_component_data
@@ -154,7 +154,7 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
                 component_text_data = item.get('component_text_data', {})
                 if not component_text_data:
                     raise serializers.ValidationError({'component_text_data': "Component text data is missing."})
-                elif 'title' not in component_text_data:
+                if 'title' not in component_text_data:
                     raise serializers.ValidationError({'title': "Component text data TITLE is missing."})
 
         return removed_component_data
@@ -373,24 +373,20 @@ class ProductModificationCommonFunction:
             # none
             bulk_info.append(current_component_obj)
             for child in component_product_none_detail:
-                wh_id = child.get('warehouse_id')
-                picked_quantity = child.get('picked_quantity', 0)
                 prd_wh_obj = ProductWareHouse.objects.filter(
-                    warehouse_id=wh_id, product_id=item.get('component_product_id')
+                    warehouse_id=child.get('warehouse_id'), product_id=item.get('component_product_id')
                 ).first()
                 if prd_wh_obj:
                     bulk_info_detail_sn.append(
                         CurrentComponentDetail(
                             current_component=current_component_obj,
                             component_prd_wh=prd_wh_obj,
-                            component_prd_wh_quantity=picked_quantity
+                            component_prd_wh_quantity=child.get('picked_quantity', 0)
                         )
                     )
             # lot
             for child in component_product_lot_detail:
-                lot_id = child.get('lot_id')
-                picked_quantity = child.get('picked_quantity', 0)
-                lot_obj = ProductWareHouseLot.objects.filter(id=lot_id).first()
+                lot_obj = ProductWareHouseLot.objects.filter(id=child.get('lot_id')).first()
                 if lot_obj:
                     bulk_info_detail_lot.append(
                         CurrentComponentDetail(
@@ -402,7 +398,7 @@ class ProductModificationCommonFunction:
                                 'expire_date': str(lot_obj.expire_date),
                                 'manufacture_date': str(lot_obj.manufacture_date),
                             },
-                            component_prd_wh_lot_quantity=picked_quantity
+                            component_prd_wh_lot_quantity=child.get('picked_quantity', 0)
                         )
                     )
             # sn

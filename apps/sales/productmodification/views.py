@@ -33,7 +33,7 @@ class ProductModificationList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related()
+        return super().get_queryset().prefetch_related().select_related('employee_created__group')
 
     @swagger_auto_schema(
         operation_summary="Product Modification list",
@@ -67,7 +67,10 @@ class ProductModificationDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related()
+        return super().get_queryset().prefetch_related(
+            'current_components',
+            'current_components__current_components_detail',
+        ).select_related()
 
     @swagger_auto_schema(operation_summary='Detail Product Modification')
     @mask_view(

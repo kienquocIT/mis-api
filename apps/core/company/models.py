@@ -463,6 +463,24 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         raise RuntimeError('[CompanyFunctionNumber.reset_frequency] Find Field Map returned null.')
 
     @classmethod
+    def parse_schema_result(cls, obj, result, new_latest_number, current_year, current_month, data_calendar):
+        schema_item_list = [
+            str(new_latest_number).zfill(obj.min_number_char) if obj.min_number_char else str(new_latest_number),
+            str(current_year % 100),
+            str(current_year),
+            str(calendar.month_name[current_month][0:3]),
+            str(calendar.month_name[current_month]),
+            str(current_month).zfill(2),
+            str(data_calendar[1]).zfill(2),
+            str(datetime.date.today().timetuple().tm_yday).zfill(3),
+            str(datetime.date.today().day).zfill(2),
+            str(data_calendar[2])
+        ]
+        for match in re.findall(r"\[.*?\]", result):
+            result = result.replace(match, str(schema_item_list[int(match[1:-1])]))
+        return result
+
+    @classmethod
     def gen_auto_code(cls, app_code):
         obj = cls.objects.filter_on_company(app_code=app_code).first()
         if obj and obj.schema is not None:
@@ -490,20 +508,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                 new_latest_number = obj.first_number - 1
 
             new_latest_number = new_latest_number + 1
-            schema_item_list = [
-                str(new_latest_number).zfill(obj.min_number_char) if obj.min_number_char else str(new_latest_number),
-                str(current_year % 100),
-                str(current_year),
-                str(calendar.month_name[current_month][0:3]),
-                str(calendar.month_name[current_month]),
-                str(current_month).zfill(2),
-                str(data_calendar[1]).zfill(2),
-                str(datetime.date.today().timetuple().tm_yday).zfill(3),
-                str(datetime.date.today().day).zfill(2),
-                str(data_calendar[2])
-            ]
-            for match in re.findall(r"\[.*?\]", result):
-                result = result.replace(match, str(schema_item_list[int(match[1:-1])]))
+            result = cls.parse_schema_result(obj, result, new_latest_number, current_year, current_month, data_calendar)
 
             if obj.app_type == 0:
                 if reset_type == 0:
