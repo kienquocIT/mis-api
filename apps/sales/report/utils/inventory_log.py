@@ -9,14 +9,14 @@ from apps.sales.report.models import (
 
 class ReportInvLog:
     @classmethod
-    def log(cls, doc_obj, doc_date, doc_data):
+    def log(cls, doc_obj, doc_date, doc_data, for_balance_init=False):
+        print('Start log...')
         if not doc_obj or not doc_date or len(doc_data) == 0:
             print(f'Not log (detail: {doc_obj.code}, {doc_date.date()}, {len(doc_data)})')
             return False
         try:
             tenant = doc_obj.tenant
             company = doc_obj.company
-            employee = doc_obj.employee_created if doc_obj.employee_created else doc_obj.employee_inherit
             with transaction.atomic():
                 # lấy pp tính giá cost (0_FIFO, 1_WA, 2_SIM)
                 cost_cfg = ReportInvCommonFunc.get_cost_config(company)
@@ -31,7 +31,11 @@ class ReportInvLog:
                     # kiểm tra và chạy tổng kết (các) tháng trước đó, sau đó đẩy số dư qua đầu kì tháng tiếp theo
                     for order in range(1, sub_period_order + 1):
                         run_state = ReportInvCommonFunc.check_and_push_to_this_sub(
-                            tenant, company, employee, period_obj, order
+                            tenant,
+                            company,
+                            doc_obj.employee_created if doc_obj.employee_created else doc_obj.employee_inherit,
+                            period_obj,
+                            order
                         )
                         if run_state is False:
                             break
@@ -42,7 +46,8 @@ class ReportInvLog:
                     # cập nhập giá cost cho từng log
                     for log in new_logs:
                         ReportStockLog.update_log_cost(log, period_obj, sub_period_order, cost_cfg)
-                    print('# Write to Inventory Report successfully!')
+                    print('# Add log for balance init successfully!\n'
+                          if for_balance_init else '# Write to Inventory Report successfully!\n')
                     return True
                 raise serializers.ValidationError({'period_obj': f'Fiscal year {doc_date.year} does not exist.'})
         except Exception as err:

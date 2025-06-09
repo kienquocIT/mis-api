@@ -4,6 +4,7 @@ from apps.masterdata.saledata.models import (
     ProductMeasurements, ProductProductType, ProductVariantAttribute, ProductVariant
 )
 from apps.masterdata.saledata.models.price import ProductPriceList, Price, Currency
+from apps.masterdata.saledata.models.product import ProductComponent
 from apps.shared import ProductMsg
 
 
@@ -133,6 +134,15 @@ class CommonCreateUpdateProduct:
         return True
 
     @classmethod
+    def create_component_mapped(cls, product_obj, component_list_data):
+        bulk_info = []
+        for item in component_list_data:
+            bulk_info.append(ProductComponent(product=product_obj, **item))
+        ProductComponent.objects.filter(product=product_obj).delete()
+        ProductComponent.objects.bulk_create(bulk_info)
+        return True
+
+    @classmethod
     def create_product_variant_attribute(cls, product_obj, product_variant_attribute_list):
         bulk_info = []
         for item in product_variant_attribute_list:
@@ -178,33 +188,27 @@ class CommonCreateUpdateProduct:
     @staticmethod
     def check_being_used_product(product_obj):
         """
-        Hàm kiểm tra SP có đang được sử dụng hay không?
-        => Có trả về True
+            Kiểm tra sản phẩm có đang được sử dụng bởi các model liên kết hay không.
+            Trả về True nếu có, False nếu không.
         """
-        related_objects = product_obj._meta.get_fields()
-        result = {}
-        for field in related_objects:
+        ignore_models = {
+            'productproducttype',
+            'productuomgroup',
+            'price',
+            'productpricelist',
+        }
+
+        related_fields = product_obj._meta.get_fields()
+        used_models = set()
+
+        for field in related_fields:
             if field.is_relation and field.auto_created and not field.concrete:
                 related_name = field.get_accessor_name()
                 related_manager = getattr(product_obj, related_name)
-                related_records = list(related_manager.all())
-                if related_records:
-                    result[related_name] = related_records
-        model_related = []
-        for related_name, record_list in result.items():
-            for record in record_list:
-                if record._meta.model_name not in model_related:
-                    model_related.append(record._meta.model_name)
-        if len(model_related) == 1:
-            if 'productproducttype' not in model_related:
-                return True
-        elif len(model_related) == 3:
-            if any([
-                'productproducttype' not in model_related,
-                'price' not in model_related,
-                'productpricelist' not in model_related
-            ]):
-                return True
-        else:
-            return True
-        return False
+                if related_manager.exists():
+                    first_record = related_manager.first()
+                    if first_record:
+                        used_models.add(first_record._meta.model_name)
+
+        # Nếu có ít nhất một model liên kết không nằm trong danh sách bỏ qua => đang được sử dụng
+        return any(model not in ignore_models for model in used_models)
