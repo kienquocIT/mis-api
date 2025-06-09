@@ -1669,3 +1669,7 @@ msgstr "Đơn vị sản phẩm là bắt buộc."
 #
 msgid "Expense unit of measure is required."
 msgstr "Đơn vị chi phí là bắt buộc."
+
+#
+msgid "Not allowed."
+msgstr "không được phép."
