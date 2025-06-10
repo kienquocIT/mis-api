@@ -25,8 +25,8 @@ class GoodsTransferProductSerializer(serializers.ModelSerializer):
     end_warehouse = serializers.UUIDField()
     uom = serializers.UUIDField()
     sale_order = serializers.UUIDField(required=False, allow_null=True)
-    sn_data = serializers.ListField(default=[])
-    lot_data = serializers.ListField(default=[])
+    sn_data = serializers.ListField(default=list)
+    lot_data = serializers.ListField(default=list)
 
     class Meta:
         model = GoodsTransferProduct

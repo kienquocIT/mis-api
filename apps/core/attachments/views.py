@@ -1,5 +1,6 @@
 import os
 from wsgiref.util import FileWrapper
+from django.db.models import Q
 
 from django.conf import settings
 from django.http import StreamingHttpResponse
@@ -13,8 +14,8 @@ from apps.shared import (
     ResponseController,
 )
 
-from apps.core.attachments.models import Files, PublicFiles, Folder
-from apps.core.attachments.serializers import (
+from .models import Files, PublicFiles, Folder, FolderPermission
+from .serializers import (
     FilesUploadSerializer, FilesDetailSerializer, FilesListSerializer,
     DetailImageWebBuilderInPublicFileListSerializer, CreateImageWebBuilderInPublicFileListSerializer,
     FolderListSerializer, FolderCreateSerializer, FolderDetailSerializer, FolderUpdateSerializer,
@@ -240,6 +241,14 @@ class FolderList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
+    def get_queryset(self):
+        user = self.request.user
+        employee_id = str(user.employee_current_id).replace('-', '')
+
+        return super().get_queryset().filter(employee_inherit_id=employee_id).select_related(
+            'employee_inherit', 'parent_n'
+        )
+
     @swagger_auto_schema(
         operation_summary="Folder List",
         operation_description="Get Folder List",
@@ -260,6 +269,42 @@ class FolderList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+
+class FolderListSharedToMe(BaseListMixin):
+    queryset = Folder.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'parent_n_id': ['exact', 'isnull'],
+        'employee_inherit_id': ['exact', 'isnull'],
+    }
+    serializer_list = FolderListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        user = self.request.user
+        employee_id = str(user.employee_current_id)
+
+        # Base queryset
+        queryset = super().get_queryset()
+
+        accessible_folder_ids = list(
+            FolderPermission.objects.filter(
+                Q(employee_list__icontains=f'"{employee_id}"') & Q(folder_perm_list__contains=[1])
+            ).values_list('folder_id', flat=True)
+        )
+
+        return queryset.filter(Q(id__in=accessible_folder_ids))
+
+    @swagger_auto_schema(
+        operation_summary="Folder List shared to me",
+        operation_description="Get Folder List shared to me",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class FolderDetail(
