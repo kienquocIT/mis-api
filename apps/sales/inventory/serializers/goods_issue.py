@@ -32,7 +32,6 @@ from apps.shared.translations.base import AttachmentMsg
 
 
 class GoodsIssueListSerializer(AbstractListSerializerModel):
-    goods_issue_type = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsIssue
@@ -41,12 +40,9 @@ class GoodsIssueListSerializer(AbstractListSerializerModel):
             'code',
             'title',
             'goods_issue_type',
-            'date_created'
+            'date_created',
+            'system_auto_create'
         )
-
-    @classmethod
-    def get_goods_issue_type(cls, obj):
-        return obj.goods_issue_type
 
 
 class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
@@ -113,11 +109,12 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
 
 class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
     inventory_adjustment = serializers.SerializerMethodField()
-    detail_data_ia = serializers.SerializerMethodField()
     production_order = serializers.SerializerMethodField()
-    detail_data_po = serializers.SerializerMethodField()
     work_order = serializers.SerializerMethodField()
+    detail_data_ia = serializers.SerializerMethodField()
+    detail_data_po = serializers.SerializerMethodField()
     detail_data_wo = serializers.SerializerMethodField()
+    detail_data_pm = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
 
     class Meta:
@@ -129,13 +126,15 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             'note',
             'goods_issue_type',
             'inventory_adjustment',
-            'detail_data_ia',
             'production_order',
-            'detail_data_po',
             'work_order',
+            'detail_data_ia',
+            'detail_data_po',
             'detail_data_wo',
+            'detail_data_pm',
             'date_created',
-            'attachment'
+            'attachment',
+            'system_auto_create'
         )
 
     @classmethod
@@ -145,6 +144,24 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             'title': obj.inventory_adjustment.title,
             'code': obj.inventory_adjustment.code,
         } if obj.inventory_adjustment else {}
+
+    @classmethod
+    def get_production_order(cls, obj):
+        return {
+            'id': obj.production_order_id,
+            'title': obj.production_order.title,
+            'code': obj.production_order.code,
+            'type': 0
+        } if obj.production_order else {}
+
+    @classmethod
+    def get_work_order(cls, obj):
+        return {
+            'id': obj.work_order_id,
+            'title': obj.work_order.title,
+            'code': obj.work_order.code,
+            'type': 1
+        } if obj.work_order else {}
 
     @classmethod
     def get_detail_data_ia(cls, obj):
@@ -184,15 +201,6 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
         return detail_data_ia
 
     @classmethod
-    def get_production_order(cls, obj):
-        return {
-            'id': obj.production_order_id,
-            'title': obj.production_order.title,
-            'code': obj.production_order.code,
-            'type': 0
-        } if obj.production_order else {}
-
-    @classmethod
     def get_detail_data_po(cls, obj):
         detail_data_po = []
         if obj.production_order:
@@ -230,15 +238,6 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
         return detail_data_po
 
     @classmethod
-    def get_work_order(cls, obj):
-        return {
-            'id': obj.work_order_id,
-            'title': obj.work_order.title,
-            'code': obj.work_order.code,
-            'type': 1
-        } if obj.work_order else {}
-
-    @classmethod
     def get_detail_data_wo(cls, obj):
         detail_data_wo = []
         if obj.work_order:
@@ -274,6 +273,26 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                         'sn_data': item.sn_data
                     })
         return detail_data_wo
+
+    @classmethod
+    def get_detail_data_pm(cls, obj):
+        detail_data_pm = []
+        if obj.product_modification:
+            for item in obj.goods_issue_product.filter(issued_quantity__gt=0):
+                pm_item = item.product_modification_item
+                detail_data_pm.append({
+                    'id': pm_item.id,
+                    'product_mapped': item.product_data,
+                    'uom_mapped': item.uom_data,
+                    'warehouse_mapped': item.warehouse_data,
+                    'sum_quantity': item.issued_quantity,
+                    'before_quantity': item.before_quantity,
+                    'remain_quantity': item.before_quantity,
+                    'issued_quantity': item.issued_quantity,
+                    'lot_data': item.lot_data,
+                    'sn_data': item.sn_data
+                })
+        return detail_data_pm
 
     @classmethod
     def get_attachment(cls, obj):

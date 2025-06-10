@@ -4,12 +4,12 @@ from django.db import transaction
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, ProductWareHouseSerial, ProductWareHouse
 from apps.sales.report.utils.log_for_goods_issue import IRForGoodsIssueHandler
-from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE
+from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE, AutoDocumentAbstractModel
 
 __all__ = ['GoodsIssue', 'GoodsIssueProduct']
 
 
-class GoodsIssue(DataAbstractModel):
+class GoodsIssue(DataAbstractModel, AutoDocumentAbstractModel):
     goods_issue_type = models.SmallIntegerField(
         default=0,
         choices=GOODS_ISSUE_TYPE,
@@ -31,6 +31,12 @@ class GoodsIssue(DataAbstractModel):
         'production.WorkOrder',
         on_delete=models.CASCADE,
         related_name='goods_issue_wo',
+        null=True,
+    )
+    product_modification = models.ForeignKey(
+        'productmodification.ProductModification',
+        on_delete=models.CASCADE,
+        related_name='goods_issue_pm',
         null=True,
     )
     note = models.CharField(
@@ -126,6 +132,9 @@ class GoodsIssue(DataAbstractModel):
                         cls.update_issued_quantity_work_order_item(
                             item.work_order_item, item.issued_quantity
                         )
+                elif instance.product_modification:
+                    for item in instance.goods_issue_product.all():
+                        cls.update_product_warehouse_data(item)
                 return True
         except Exception as err:
             print(err)
@@ -174,6 +183,12 @@ class GoodsIssueProduct(SimpleAbstractModel):
         'production.WorkOrderTask',
         on_delete=models.CASCADE,
         related_name='wo_item_goods_issue',
+        null=True,
+    )
+    product_modification_item = models.ForeignKey(
+        'productmodification.CurrentComponent',
+        on_delete=models.CASCADE,
+        related_name='pm_item_goods_issue',
         null=True,
     )
     product = models.ForeignKey(
