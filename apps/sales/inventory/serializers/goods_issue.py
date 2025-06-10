@@ -406,7 +406,7 @@ class GoodsIssueCommonFunction:
 
     @classmethod
     def validate_sn_data(cls, item, product_obj, selected_sn):
-        serial_list = ProductWareHouseSerial.objects.filter(id__in=item.get('sn_data', []), is_delete=False)
+        serial_list = ProductWareHouseSerial.objects.filter(id__in=item.get('sn_data', []), serial_status=0)
         if serial_list.count() != len(item.get('sn_data', [])):
             raise serializers.ValidationError(
                 {'sn_data': f"[{product_obj.title}] Some selected serials aren't currently in any warehouse."}

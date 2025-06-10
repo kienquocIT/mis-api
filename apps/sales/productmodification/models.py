@@ -132,6 +132,19 @@ class ProductModification(DataAbstractModel):
         gis_obj.system_status = 3
         gis_obj.save(update_fields=['code', 'system_status'])
         # action sau khi duyệt
+        if pm_obj.prd_wh:
+            pm_obj.prd_wh.sold_amount += 1
+            pm_obj.prd_wh.stock_amount = pm_obj.prd_wh.receipt_amount - 1
+            pm_obj.prd_wh.save(update_fields=['sold_amount', 'stock_amount'])
+
+        if pm_obj.prd_wh_serial_id:
+            pm_obj.prd_wh_serial.serial_status = 1
+            pm_obj.prd_wh_serial.save(update_fields=['serial_status'])
+
+        # if pm_obj.prd_wh_lot_id:
+        #     pm_obj.prd_wh_lot.serial_status = 1
+        #     pm_obj.prd_wh_lot.save(update_fields=['serial_status'])
+
         gis_obj.update_related_app_after_issue(gis_obj)
         IRForGoodsIssueHandler.push_to_inventory_report(gis_obj)
 

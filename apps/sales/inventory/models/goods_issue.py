@@ -75,9 +75,9 @@ class GoodsIssue(DataAbstractModel, AutoDocumentAbstractModel):
                 product_warehouse.stock_amount = product_warehouse.receipt_amount - product_warehouse.sold_amount
                 product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
             elif data.product.general_traceability_method == 2:
-                sn_list = ProductWareHouseSerial.objects.filter(id__in=data.sn_data, is_delete=False)
+                sn_list = ProductWareHouseSerial.objects.filter(id__in=data.sn_data, serial_status=0)
                 if len(data.sn_data) == sn_list.count():
-                    sn_list.update(is_delete=True)
+                    sn_list.update(serial_status=1)
                     product_warehouse.sold_amount += len(data.sn_data)
                     product_warehouse.stock_amount = product_warehouse.receipt_amount - product_warehouse.sold_amount
                     product_warehouse.save(update_fields=['sold_amount', 'stock_amount'])
