@@ -100,7 +100,8 @@ class TaxCreateSerializer(serializers.ModelSerializer):  # noqa
         if Tax.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
-                code=value
+                code=value,
+                is_delete=False
         ).exists():
             raise serializers.ValidationError({"code": PriceMsg.CODE_EXIST})
         return value
