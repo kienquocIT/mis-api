@@ -141,9 +141,9 @@ class ProductModification(DataAbstractModel):
             pm_obj.prd_wh_serial.serial_status = 1
             pm_obj.prd_wh_serial.save(update_fields=['serial_status'])
 
-        # if pm_obj.prd_wh_lot_id:
-        #     pm_obj.prd_wh_lot.serial_status = 1
-        #     pm_obj.prd_wh_lot.save(update_fields=['serial_status'])
+        if pm_obj.prd_wh_lot_id:
+            pm_obj.prd_wh_lot.quantity_import -= 1
+            pm_obj.prd_wh_lot.save(update_fields=['quantity_import'])
 
         gis_obj.update_related_app_after_issue(gis_obj)
         IRForGoodsIssueHandler.push_to_inventory_report(gis_obj)
