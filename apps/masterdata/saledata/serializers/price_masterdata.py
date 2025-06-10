@@ -1,9 +1,10 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.price import (
     TaxCategory, Tax, Currency
 )
 from apps.shared import PriceMsg
-from django.utils.translation import gettext_lazy as _
+
 
 
 
