@@ -20,13 +20,13 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
     queryset = Quotation.objects
     search_fields = ['title', 'code', 'customer__name']
     filterset_fields = {
+        'id': ['exact', 'in'],
         'opportunity': ['exact', 'isnull'],
         'employee_inherit': ['exact'],
         'opportunity__sale_order': ['exact', 'isnull'],
         'opportunity__is_close_lost': ['exact'],
         'opportunity__is_deal_close': ['exact'],
         'system_status': ['exact', 'in'],
-        'id': ['exact'],
     }
     serializer_list = QuotationListSerializer
     serializer_list_minimal = QuotationMinimalListSerializer

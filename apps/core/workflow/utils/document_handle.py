@@ -99,7 +99,9 @@ class DocHandler:
         if hasattr(obj, 'is_change'):
             if obj.is_change is False:
                 setattr(obj, 'document_root_id', obj.id)  # store obj.id to document_root_id for change
+                setattr(obj, 'document_change_order', 1)  # set document_change_order = 1 (document root)
                 update_fields.append('document_root_id')
+                update_fields.append('document_change_order')
         try:
             with transaction.atomic():
                 # cancel document root or previous document before finish new document

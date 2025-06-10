@@ -1,8 +1,9 @@
 __all__ = [
     'PlanAppDistributionController',
 ]
+from rest_framework import serializers
 
-from apps.shared import ListHandler
+from apps.shared import ListHandler, HRMsg
 
 from apps.core.tenant.models import TenantPlan
 
@@ -50,6 +51,14 @@ class PlanAppDistributionController:
                 tenant_id=tenant_id, company_id=company_id,
                 tenant_plan=tenant_plan_obj, is_active=True,
             ).count()
+            # kiem tra license su dung plan cua tenant
+            if plan_used > tenant_plan_obj.license_quantity:
+                plan_obj = tenant_plan_obj.plan
+                raise serializers.ValidationError(
+                    {
+                        'detail': HRMsg.EMPLOYEE_PLAN_APP_CHECK.format(plan_obj.title if plan_obj else "")
+                    }
+                )
             tenant_plan_obj.license_used = plan_used
             tenant_plan_obj.save()
 

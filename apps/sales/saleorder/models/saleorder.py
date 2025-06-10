@@ -266,6 +266,9 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
 
     @classmethod
     def check_change_document(cls, instance):
+        # check if there is CR not done
+        if cls.objects.filter_on_company(document_root_id=instance.document_root_id, system_status__in=[1, 2]).exists():
+            return False
         # check if SO was used for PR
         if instance.sale_order.filter(system_status__in=[1, 2, 3]).exists():
             return False
@@ -282,6 +285,9 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
 
     @classmethod
     def check_reject_document(cls, instance):
+        # check if there is CR not done
+        if cls.objects.filter_on_company(document_root_id=instance.document_root_id, system_status__in=[1, 2]).exists():
+            return False
         # check if SO was used for PR
         if instance.sale_order.filter(system_status__in=[1, 2, 3]).exists():
             return False
