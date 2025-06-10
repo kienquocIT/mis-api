@@ -221,6 +221,7 @@ class ProductWareHouseSerialList(BaseListMixin):
     queryset = ProductWareHouseSerial.objects
     search_fields = ['vendor_serial_number', 'serial_number']
     filterset_fields = {
+        "id": ["in", "exact"],
         "product_warehouse_id": ["exact"],
         "product_warehouse__product_id": ["exact"],
         "product_warehouse__warehouse_id": ["exact"],
