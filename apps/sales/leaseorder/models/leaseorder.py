@@ -294,12 +294,18 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
 
     @classmethod
     def check_change_document(cls, instance):
+        # check if there is CR not done
+        if cls.objects.filter_on_company(document_root_id=instance.document_root_id, system_status__in=[1, 2]).exists():
+            return False
         if not instance:
             return False
         return True
 
     @classmethod
     def check_reject_document(cls, instance):
+        # check if there is CR not done
+        if cls.objects.filter_on_company(document_root_id=instance.document_root_id, system_status__in=[1, 2]).exists():
+            return False
         if not instance:
             return False
         return True
