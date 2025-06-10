@@ -3,6 +3,8 @@ from apps.masterdata.saledata.models.price import (
     TaxCategory, Tax, Currency
 )
 from apps.shared import PriceMsg
+from django.utils.translation import gettext_lazy as _
+
 
 
 # Tax Category
@@ -192,11 +194,12 @@ class CurrencyUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Currency
-        fields = ()
+        fields = ('rate',)
 
-    def update(self, instance, validated_data):
-        instance.delete()
-        return True
+    def validate(self, validate_data):
+        if validate_data.get('rate') != 1 and self.instance.is_primary:
+            raise serializers.ValidationError({"rate": _("The primary Selling Rate must be 1.")})
+        return validate_data
 
 
 class CurrencySyncWithVCBSerializer(serializers.ModelSerializer):  # noqa
