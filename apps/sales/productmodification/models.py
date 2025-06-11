@@ -17,8 +17,72 @@ class ProductModification(DataAbstractModel):
     prd_wh_serial_data = models.JSONField(default=dict)
 
     @classmethod
-    def prepare_data_for_goods_issue(cls, pm_obj):
-        detail_data = []
+    def get_modified_product_data(cls, pm_obj):
+        modified_product_data = []
+        try:
+            uom = pm_obj.product_modified.general_uom_group.uom_reference
+        except AttributeError:
+            uom = None
+        if pm_obj.product_modified.general_traceability_method == 0:
+            modified_product_data.append({
+                'product_modification_item': None,
+                'product': pm_obj.prd_wh.product if pm_obj.prd_wh else None,
+                'product_data': pm_obj.prd_wh_data.get('product', {}) if pm_obj.prd_wh_data else {},
+                'warehouse': pm_obj.prd_wh.warehouse if pm_obj.prd_wh else None,
+                'warehouse_data': pm_obj.prd_wh_data.get('warehouse', {}) if pm_obj.prd_wh_data else {},
+                'uom': uom,
+                'uom_data': {
+                    'id': str(uom.id), 'code': uom.code, 'title': uom.title,
+                } if uom else {},
+                'before_quantity': 1,
+                'remain_quantity': 1,
+                'issued_quantity': 1,
+                'lot_data': [],
+                'sn_data': []
+            })
+        if pm_obj.product_modified.general_traceability_method == 1:
+            modified_product_data.append({
+                'product_modification_item': None,
+                'product': pm_obj.prd_wh.product if pm_obj.prd_wh else None,
+                'product_data': pm_obj.prd_wh_data.get('product', {}) if pm_obj.prd_wh_data else {},
+                'warehouse': pm_obj.prd_wh.warehouse if pm_obj.prd_wh else None,
+                'warehouse_data': pm_obj.prd_wh_data.get('warehouse', {}) if pm_obj.prd_wh_data else {},
+                'uom': uom,
+                'uom_data': {
+                    'id': str(uom.id), 'code': uom.code, 'title': uom.title,
+                } if uom else {},
+                'before_quantity': 1,
+                'remain_quantity': 1,
+                'issued_quantity': 1,
+                'lot_data': [{
+                    'lot_id': str(pm_obj.prd_wh_lot_id),
+                    'old_quantity': pm_obj.prd_wh_lot.quantity_import,
+                    'quantity': 1
+                }],
+                'sn_data': []
+            })
+        if pm_obj.product_modified.general_traceability_method == 2:
+            modified_product_data.append({
+                'product_modification_item': None,
+                'product': pm_obj.prd_wh.product if pm_obj.prd_wh else None,
+                'product_data': pm_obj.prd_wh_data.get('product', {}) if pm_obj.prd_wh_data else {},
+                'warehouse': pm_obj.prd_wh.warehouse if pm_obj.prd_wh else None,
+                'warehouse_data': pm_obj.prd_wh_data.get('warehouse', {}) if pm_obj.prd_wh_data else {},
+                'uom': uom,
+                'uom_data': {
+                    'id': str(uom.id), 'code': uom.code, 'title': uom.title,
+                } if uom else {},
+                'before_quantity': 1,
+                'remain_quantity': 1,
+                'issued_quantity': 1,
+                'lot_data': [],
+                'sn_data': [str(pm_obj.prd_wh_serial_id)]
+            })
+        return modified_product_data
+
+    @classmethod
+    def get_component_data(cls, pm_obj):
+        component_data = []
         for item in pm_obj.current_components.all():
             try:
                 uom = item.component_product.general_uom_group.uom_reference
@@ -30,7 +94,7 @@ class ProductModification(DataAbstractModel):
                         warehouse = child.component_prd_wh.warehouse
                     except AttributeError:
                         warehouse = None
-                    detail_data.append({
+                    component_data.append({
                         'product_modification_item': item,
                         'product': item.component_product,
                         'product_data': item.component_product_data,
@@ -53,7 +117,7 @@ class ProductModification(DataAbstractModel):
                         warehouse = child.component_prd_wh_lot.product_warehouse.warehouse
                     except AttributeError:
                         warehouse = None
-                    detail_data.append({
+                    component_data.append({
                         'product_modification_item': item,
                         'product': item.component_product,
                         'product_data': item.component_product_data,
@@ -80,7 +144,7 @@ class ProductModification(DataAbstractModel):
                         warehouse = child.component_prd_wh_serial.product_warehouse.warehouse
                     except AttributeError:
                         warehouse = None
-                    detail_data.append({
+                    component_data.append({
                         'product_modification_item': item,
                         'product': item.component_product,
                         'product_data': item.component_product_data,
@@ -98,6 +162,13 @@ class ProductModification(DataAbstractModel):
                         'lot_data': [],
                         'sn_data': [str(child.component_prd_wh_serial_id)]
                     })
+        return component_data
+
+    @classmethod
+    def auto_create_goods_issue(cls, pm_obj):
+        """
+        Phiếu Xuất kho được tạo từ chức năng này sẽ tự động duyệt mà không quan tâm quy trình như thế nào
+        """
         gis_data = {
             'title': f'Goods issue for {pm_obj.code}',
             'goods_issue_type': 3,
@@ -109,16 +180,8 @@ class ProductModification(DataAbstractModel):
             'employee_inherit': pm_obj.employee_inherit,
             'date_created': pm_obj.date_created,
             'date_approved': pm_obj.date_approved,
-            'detail_data': detail_data
+            'detail_data': cls.get_modified_product_data(pm_obj) + cls.get_component_data(pm_obj)
         }
-        return gis_data
-
-    @classmethod
-    def auto_create_goods_issue(cls, pm_obj):
-        """
-        Phiếu Xuất kho được tạo từ chức năng này sẽ tự động duyệt mà không quan tâm quy trình như thế nào
-        """
-        gis_data = cls.prepare_data_for_goods_issue(pm_obj)
         detail_data = gis_data.pop('detail_data', [])
         gis_obj = GoodsIssue.objects.create(**gis_data)
         bulk_info = []
@@ -132,18 +195,6 @@ class ProductModification(DataAbstractModel):
         gis_obj.system_status = 3
         gis_obj.save(update_fields=['code', 'system_status'])
         # action sau khi duyệt
-        if pm_obj.prd_wh:
-            pm_obj.prd_wh.sold_amount += 1
-            pm_obj.prd_wh.stock_amount = pm_obj.prd_wh.receipt_amount - 1
-            pm_obj.prd_wh.save(update_fields=['sold_amount', 'stock_amount'])
-
-        if pm_obj.prd_wh_serial_id:
-            pm_obj.prd_wh_serial.serial_status = 1
-            pm_obj.prd_wh_serial.save(update_fields=['serial_status'])
-
-        if pm_obj.prd_wh_lot_id:
-            pm_obj.prd_wh_lot.quantity_import -= 1
-            pm_obj.prd_wh_lot.save(update_fields=['quantity_import'])
 
         gis_obj.update_related_app_after_issue(gis_obj)
         IRForGoodsIssueHandler.push_to_inventory_report(gis_obj)

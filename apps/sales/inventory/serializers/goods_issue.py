@@ -279,9 +279,8 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
         detail_data_pm = []
         if obj.product_modification:
             for item in obj.goods_issue_product.filter(issued_quantity__gt=0):
-                pm_item = item.product_modification_item
                 detail_data_pm.append({
-                    'id': pm_item.id,
+                    'id': item.product_modification_item_id,
                     'product_mapped': item.product_data,
                     'uom_mapped': item.uom_data,
                     'warehouse_mapped': item.warehouse_data,
