@@ -14,6 +14,7 @@ class LeaseOrderList(BaseListMixin, BaseCreateMixin):
     queryset = LeaseOrder.objects
     search_fields = ['title', 'code', 'customer__name']
     filterset_fields = {
+        'id': ['exact', 'in'],
         'delivery_call': ['exact'],
         'system_status': ['exact', 'in'],
         'quotation_id': ['exact'],
@@ -24,6 +25,7 @@ class LeaseOrderList(BaseListMixin, BaseCreateMixin):
         'opportunity__is_deal_close': ['exact'],
         'has_regis': ['exact'],
         'is_recurring': ['exact'],
+        'document_root_id': ['exact'],
     }
     serializer_list = LeaseOrderListSerializer
     serializer_list_minimal = LeaseOrderMinimalListSerializer
