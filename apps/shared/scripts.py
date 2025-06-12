@@ -2157,3 +2157,11 @@ def hong_quang_set_user_password():
         user.save(update_fields=['password'])
     print('hong_quang_set_user_password done.')
     return True
+
+
+def hong_quang_delete_runtime_assignee():
+    assignees = RuntimeAssignee.objects.filter(stage__runtime__doc_id="3c975cb5-9a63-44dd-99e1-5b34a2ff8ca6")
+    if assignees:
+        assignees.delete()
+    print('hong_quang_delete_runtime_assignee done.')
+    return True
