@@ -1,9 +1,7 @@
 __all__ = [
     'PlanAppDistributionController',
 ]
-from rest_framework import serializers
-
-from apps.shared import ListHandler, HRMsg
+from apps.shared import ListHandler
 
 from apps.core.tenant.models import TenantPlan
 
