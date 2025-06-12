@@ -417,7 +417,7 @@ class ProductWareHouseListSerializerForGoodsTransfer(serializers.ModelSerializer
             'warranty_start': serial.warranty_start,
             'warranty_end': serial.warranty_end
         } for serial in obj.product_warehouse_serial_product_warehouse.filter(
-            is_delete=False
+            serial_status=0
         ).order_by('vendor_serial_number', 'serial_number')]
 
     @classmethod

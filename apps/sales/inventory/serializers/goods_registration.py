@@ -343,7 +343,7 @@ class ProjectProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_serial_detail(cls, obj):
         serial_detail = []
-        for serial in obj.gre_item_prd_wh_serial.filter(sn_registered__is_delete=False).order_by(
+        for serial in obj.gre_item_prd_wh_serial.filter(sn_registered__serial_status=0).order_by(
                 'sn_registered__vendor_serial_number', 'sn_registered__serial_number'
         ):
             serial_detail.append({

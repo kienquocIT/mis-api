@@ -1,4 +1,7 @@
 from django.db import models
+
+from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct
+from apps.sales.report.utils import IRForGoodsIssueHandler
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 
@@ -13,6 +16,191 @@ class ProductModification(DataAbstractModel):
     prd_wh_serial = models.ForeignKey('saledata.ProductWareHouseSerial', on_delete=models.CASCADE, null=True)
     prd_wh_serial_data = models.JSONField(default=dict)
 
+    @classmethod
+    def get_modified_product_data(cls, pm_obj):
+        modified_product_data = []
+        try:
+            uom = pm_obj.product_modified.general_uom_group.uom_reference
+        except AttributeError:
+            uom = None
+        if pm_obj.product_modified.general_traceability_method == 0:
+            modified_product_data.append({
+                'product_modification_item': None,
+                'product': pm_obj.prd_wh.product if pm_obj.prd_wh else None,
+                'product_data': pm_obj.prd_wh_data.get('product', {}) if pm_obj.prd_wh_data else {},
+                'warehouse': pm_obj.prd_wh.warehouse if pm_obj.prd_wh else None,
+                'warehouse_data': pm_obj.prd_wh_data.get('warehouse', {}) if pm_obj.prd_wh_data else {},
+                'uom': uom,
+                'uom_data': {
+                    'id': str(uom.id), 'code': uom.code, 'title': uom.title,
+                } if uom else {},
+                'before_quantity': 1,
+                'remain_quantity': 1,
+                'issued_quantity': 1,
+                'lot_data': [],
+                'sn_data': []
+            })
+        if pm_obj.product_modified.general_traceability_method == 1:
+            modified_product_data.append({
+                'product_modification_item': None,
+                'product': pm_obj.prd_wh.product if pm_obj.prd_wh else None,
+                'product_data': pm_obj.prd_wh_data.get('product', {}) if pm_obj.prd_wh_data else {},
+                'warehouse': pm_obj.prd_wh.warehouse if pm_obj.prd_wh else None,
+                'warehouse_data': pm_obj.prd_wh_data.get('warehouse', {}) if pm_obj.prd_wh_data else {},
+                'uom': uom,
+                'uom_data': {
+                    'id': str(uom.id), 'code': uom.code, 'title': uom.title,
+                } if uom else {},
+                'before_quantity': 1,
+                'remain_quantity': 1,
+                'issued_quantity': 1,
+                'lot_data': [{
+                    'lot_id': str(pm_obj.prd_wh_lot_id),
+                    'old_quantity': pm_obj.prd_wh_lot.quantity_import,
+                    'quantity': 1
+                }],
+                'sn_data': []
+            })
+        if pm_obj.product_modified.general_traceability_method == 2:
+            modified_product_data.append({
+                'product_modification_item': None,
+                'product': pm_obj.prd_wh.product if pm_obj.prd_wh else None,
+                'product_data': pm_obj.prd_wh_data.get('product', {}) if pm_obj.prd_wh_data else {},
+                'warehouse': pm_obj.prd_wh.warehouse if pm_obj.prd_wh else None,
+                'warehouse_data': pm_obj.prd_wh_data.get('warehouse', {}) if pm_obj.prd_wh_data else {},
+                'uom': uom,
+                'uom_data': {
+                    'id': str(uom.id), 'code': uom.code, 'title': uom.title,
+                } if uom else {},
+                'before_quantity': 1,
+                'remain_quantity': 1,
+                'issued_quantity': 1,
+                'lot_data': [],
+                'sn_data': [str(pm_obj.prd_wh_serial_id)]
+            })
+        return modified_product_data
+
+    @classmethod
+    def get_component_data(cls, pm_obj):
+        component_data = []
+        for item in pm_obj.current_components.all():
+            try:
+                uom = item.component_product.general_uom_group.uom_reference
+            except AttributeError:
+                uom = None
+            for child in item.current_components_detail.all():
+                if child.component_prd_wh:
+                    try:
+                        warehouse = child.component_prd_wh.warehouse
+                    except AttributeError:
+                        warehouse = None
+                    component_data.append({
+                        'product_modification_item': item,
+                        'product': item.component_product,
+                        'product_data': item.component_product_data,
+                        'warehouse': warehouse,
+                        'warehouse_data': {
+                            'id': str(warehouse.id), 'code': warehouse.code, 'title': warehouse.title,
+                        } if warehouse else {},
+                        'uom': uom,
+                        'uom_data': {
+                            'id': str(uom.id), 'code': uom.code, 'title': uom.title,
+                        } if uom else {},
+                        'before_quantity': child.component_prd_wh_quantity,
+                        'remain_quantity': child.component_prd_wh_quantity,
+                        'issued_quantity': child.component_prd_wh_quantity,
+                        'lot_data': [],
+                        'sn_data': []
+                    })
+                if child.component_prd_wh_lot:
+                    try:
+                        warehouse = child.component_prd_wh_lot.product_warehouse.warehouse
+                    except AttributeError:
+                        warehouse = None
+                    component_data.append({
+                        'product_modification_item': item,
+                        'product': item.component_product,
+                        'product_data': item.component_product_data,
+                        'warehouse': warehouse,
+                        'warehouse_data': {
+                            'id': str(warehouse.id), 'code': warehouse.code, 'title': warehouse.title,
+                        } if warehouse else {},
+                        'uom': uom,
+                        'uom_data': {
+                            'id': str(uom.id), 'code': uom.code, 'title': uom.title,
+                        } if uom else {},
+                        'before_quantity': child.component_prd_wh_lot_quantity,
+                        'remain_quantity': child.component_prd_wh_lot_quantity,
+                        'issued_quantity': child.component_prd_wh_lot_quantity,
+                        'lot_data': [{
+                            'lot_id': str(child.component_prd_wh_lot_id),
+                            'old_quantity': child.component_prd_wh_lot.quantity_import,
+                            'quantity': child.component_prd_wh_lot_quantity
+                        }],
+                        'sn_data': []
+                    })
+                if child.component_prd_wh_serial:
+                    try:
+                        warehouse = child.component_prd_wh_serial.product_warehouse.warehouse
+                    except AttributeError:
+                        warehouse = None
+                    component_data.append({
+                        'product_modification_item': item,
+                        'product': item.component_product,
+                        'product_data': item.component_product_data,
+                        'warehouse': warehouse,
+                        'warehouse_data': {
+                            'id': str(warehouse.id), 'code': warehouse.code, 'title': warehouse.title,
+                        } if warehouse else {},
+                        'uom': uom,
+                        'uom_data': {
+                            'id': str(uom.id), 'code': uom.code, 'title': uom.title,
+                        } if uom else {},
+                        'before_quantity': 1,
+                        'remain_quantity': 1,
+                        'issued_quantity': 1,
+                        'lot_data': [],
+                        'sn_data': [str(child.component_prd_wh_serial_id)]
+                    })
+        return component_data
+
+    @classmethod
+    def auto_create_goods_issue(cls, pm_obj):
+        """
+        Phiếu Xuất kho được tạo từ chức năng này sẽ tự động duyệt mà không quan tâm quy trình như thế nào
+        """
+        gis_data = {
+            'title': f'Goods issue for {pm_obj.code}',
+            'goods_issue_type': 3,
+            'product_modification': pm_obj,
+            'system_auto_create': True,
+            'tenant': pm_obj.tenant,
+            'company': pm_obj.company,
+            'employee_created': pm_obj.employee_created,
+            'employee_inherit': pm_obj.employee_inherit,
+            'date_created': pm_obj.date_created,
+            'date_approved': pm_obj.date_approved,
+            'detail_data': cls.get_modified_product_data(pm_obj) + cls.get_component_data(pm_obj)
+        }
+        detail_data = gis_data.pop('detail_data', [])
+        gis_obj = GoodsIssue.objects.create(**gis_data)
+        bulk_info = []
+        for item in detail_data:
+            bulk_info.append(GoodsIssueProduct(goods_issue=gis_obj, **item))
+        GoodsIssueProduct.objects.filter(goods_issue=gis_obj).delete()
+        GoodsIssueProduct.objects.bulk_create(bulk_info)
+
+        # duyệt tự động
+        gis_obj.add_auto_generate_code_to_instance(gis_obj, 'GI[n4]', True)
+        gis_obj.system_status = 3
+        gis_obj.save(update_fields=['code', 'system_status'])
+        # action sau khi duyệt
+
+        gis_obj.update_related_app_after_issue(gis_obj)
+        IRForGoodsIssueHandler.push_to_inventory_report(gis_obj)
+
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -22,6 +210,8 @@ class ProductModification(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
+
+                self.auto_create_goods_issue(self)
         # hit DB
         super().save(*args, **kwargs)
 
