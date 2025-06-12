@@ -1677,3 +1677,19 @@ msgstr "Đơn vị chi phí là bắt buộc."
 #
 msgid "Not allowed."
 msgstr "không được phép."
+
+#
+msgid "Lot number must be different."
+msgstr "Số lô sản phẩm phải khác nhau."
+
+#
+msgid "Lot number exist."
+msgstr "Số lô sản phẩm đã tồn tại."
+
+#
+msgid "Serial number must be different."
+msgstr "Số serial sản phẩm phải khác nhau."
+
+#
+msgid "Serial number exist."
+msgstr "Số serial sản phẩm đã tồn tại."
