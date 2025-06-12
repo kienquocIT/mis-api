@@ -28,7 +28,7 @@ class TaxCategoryList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(is_delete=False)
+        return super().get_queryset().filter_on_company()
 
     @swagger_auto_schema(
         operation_summary="TaxCategory list",
@@ -96,7 +96,7 @@ class TaxList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(is_delete=False).select_related('category')
+        return super().get_queryset().filter_on_company().select_related('category')
 
     @swagger_auto_schema(
         operation_summary="Tax list",
@@ -167,7 +167,7 @@ class CurrencyList(BaseListMixin, BaseCreateMixin):
     }
 
     def get_queryset(self):
-        return super().get_queryset().filter(is_delete=False)
+        return super().get_queryset().filter_on_company()
 
     @swagger_auto_schema(
         operation_summary="Currency list",
