@@ -215,7 +215,7 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
                     if prd_mapped_dt.get('type') == 'new':
                         cls.validate_product_mapped_data_new(prd_mapped_dt)
                     if prd_mapped_dt.get('type') == 'map':
-                        cls.validate_product_mapped_data_new(prd_mapped_dt)
+                        cls.validate_product_mapped_data_map(prd_mapped_dt)
                 else:
                     raise serializers.ValidationError({'product_mapped_data': "Product mapped data is missing."})
 
