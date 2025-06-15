@@ -1,5 +1,7 @@
 from django.db import models
 
+from apps.core.company.models import CompanyFunctionNumber
+from apps.masterdata.saledata.models import Product, ProductProductType
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct
 from apps.sales.report.utils import IRForGoodsIssueHandler
 from apps.shared import SimpleAbstractModel, DataAbstractModel
@@ -201,6 +203,60 @@ class ProductModification(DataAbstractModel):
 
         return True
 
+    @classmethod
+    def create_remove_component_product_mapped(cls, pm_obj):
+        for item in pm_obj.removed_components.all():
+            mapped_type = item.product_mapped_data.pop('type')
+            if mapped_type == 'new':
+                product_type = item.product_mapped_data.pop('product_type')
+                general_product_category = item.product_mapped_data.get('general_product_category')
+                general_uom_group = item.product_mapped_data.get('general_uom_group')
+                general_traceability_method = item.product_mapped_data.get('general_traceability_method')
+                inventory_uom = item.product_mapped_data.get('inventory_uom')
+                valuation_method = item.product_mapped_data.get('valuation_method')
+                prd_created_obj = Product.objects.create(
+                    code=item.product_mapped_data.get('code'),
+                    title=item.product_mapped_data.get('title'),
+                    description=item.product_mapped_data.get('description'),
+                    product_choice=[1],
+                    general_product_category_id=general_product_category,
+                    general_uom_group_id=general_uom_group,
+                    general_traceability_method=general_traceability_method,
+                    inventory_uom_id=inventory_uom,
+                    valuation_method=valuation_method,
+                    tenant=pm_obj.tenant,
+                    company=pm_obj.company,
+                    employee_created=pm_obj.employee_created,
+                    employee_inherit=pm_obj.employee_created,  # người thụ hưởng là người tạo phiếu luôn
+                )
+                CompanyFunctionNumber.auto_code_update_latest_number(app_code='product')
+                item.component_product_id = str(prd_created_obj.id)
+                item.fair_value = item.product_mapped_data.get('fair_value', 0)
+                item.is_mapped = True
+                ProductProductType.objects.create(product=prd_created_obj, product_type_id=product_type)
+                prd_obj = Product.objects.filter_on_company(id=item.product_mapped_data.get('product_mapped')).first()
+                item.component_product_data = {
+                    'id': str(prd_obj.id),
+                    'code': prd_obj.code,
+                    'title': prd_obj.title,
+                    'description': prd_obj.description,
+                    'general_traceability_method': prd_obj.general_traceability_method,
+                } if prd_obj else {}
+            if mapped_type == 'map':
+                item.component_product_id = item.product_mapped_data.get('product_mapped')
+                item.fair_value = item.product_mapped_data.get('fair_value', 0)
+                item.is_mapped = True
+                prd_obj = Product.objects.filter_on_company(id=item.product_mapped_data.get('product_mapped')).first()
+                item.component_product_data = {
+                    'id': str(prd_obj.id),
+                    'code': prd_obj.code,
+                    'title': prd_obj.title,
+                    'description': prd_obj.description,
+                    'general_traceability_method': prd_obj.general_traceability_method,
+                } if prd_obj else {}
+            item.save(update_fields=['component_product_id', 'component_product_data', 'fair_value', 'is_mapped'])
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -212,6 +268,7 @@ class ProductModification(DataAbstractModel):
                     kwargs.update({'update_fields': ['code']})
 
                 self.auto_create_goods_issue(self)
+                self.create_remove_component_product_mapped(self)
         # hit DB
         super().save(*args, **kwargs)
 
@@ -279,6 +336,9 @@ class RemovedComponent(SimpleAbstractModel):
     component_product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     component_product_data = models.JSONField(default=dict)
     component_quantity = models.IntegerField()
+    is_mapped = models.BooleanField(default=False)
+    product_mapped_data = models.JSONField(default=dict)
+    fair_value = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Removed Component'
