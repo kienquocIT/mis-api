@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.utils.translation import gettext_lazy as _
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Product, ProductProductType
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct
@@ -17,6 +17,9 @@ class ProductModification(DataAbstractModel):
 
     prd_wh_serial = models.ForeignKey('saledata.ProductWareHouseSerial', on_delete=models.CASCADE, null=True)
     prd_wh_serial_data = models.JSONField(default=dict)
+
+    created_goods_issue = models.BooleanField(default=False)
+    created_goods_receipt = models.BooleanField(default=False)
 
     @classmethod
     def get_modified_product_data(cls, pm_obj):
@@ -200,6 +203,9 @@ class ProductModification(DataAbstractModel):
 
         gis_obj.update_related_app_after_issue(gis_obj)
         IRForGoodsIssueHandler.push_to_inventory_report(gis_obj)
+
+        pm_obj.created_goods_issue = True
+        pm_obj.save(update_fields=['created_goods_issue'])
 
         return True
 

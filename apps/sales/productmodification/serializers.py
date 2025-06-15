@@ -30,6 +30,8 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
             'id',
             'title',
             'code',
+            'created_goods_issue',
+            'created_goods_receipt',
             'date_created',
             'employee_created'
         )
