@@ -23,6 +23,9 @@ __all__ = [
     'ProductComponentListSerializer',
     'WarehouseListByProductSerializer',
     'ProductSerialListSerializer',
+    'ProductLotListSerializer',
+    'ProductModificationDDListSerializer',
+    'ProductModificationProductGRListSerializer',
 ]
 
 # main
@@ -522,6 +525,7 @@ class ProductModificationCommonFunction:
     def create_removed_component_data(pm_obj, removed_component_data):
         bulk_info = []
         for order, item in enumerate(removed_component_data):
+            item.update({'gr_remain_quantity': item.get('component_quantity', 0)})
             bulk_info.append(RemovedComponent(product_modified=pm_obj, order=order, **item))
         RemovedComponent.objects.filter(product_modified=pm_obj).delete()
         RemovedComponent.objects.bulk_create(bulk_info)
@@ -601,3 +605,93 @@ class ProductSerialListSerializer(serializers.ModelSerializer):
             'warranty_start',
             'warranty_end'
         )
+
+
+class ProductModificationDDListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductModification
+        fields = (
+            'id',
+            'title',
+            'code',
+            'date_created',
+        )
+
+
+# SERIALIZERS USE FOR GOODS RECEIPT
+class ProductModificationProductGRListSerializer(serializers.ModelSerializer):
+    product_modification_product_id = serializers.SerializerMethodField()
+    product_data = serializers.SerializerMethodField()
+    uom_data = serializers.SerializerMethodField()
+    # tax_data = serializers.SerializerMethodField()
+    product_unit_price = serializers.SerializerMethodField()
+    product_quantity_order_actual = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RemovedComponent
+        fields = (
+            'id',
+            'product_modification_product_id',
+            'product_data',
+            'uom_data',
+            # 'tax_data',
+            'product_unit_price',
+            'product_quantity_order_actual',
+            'gr_remain_quantity',
+        )
+
+    @classmethod
+    def get_product_modification_product_id(cls, obj):
+        return obj.id
+
+    @classmethod
+    def get_product_data(cls, obj):
+        return {
+            'id': obj.component_product_id,
+            'title': obj.component_product.title,
+            'code': obj.component_product.code,
+            'general_traceability_method': obj.component_product.general_traceability_method,
+            'description': obj.component_product.description,
+            'product_choice': obj.component_product.product_choice,
+        } if obj.component_product else {}
+
+    @classmethod
+    def get_uom_data(cls, obj):
+        uom_obj = obj.component_product.inventory_uom
+        return {
+            'id': uom_obj.id,
+            'title': uom_obj.title,
+            'code': uom_obj.code,
+            'uom_group': {
+                'id': uom_obj.group_id,
+                'title': uom_obj.group.title,
+                'code': uom_obj.group.code,
+                'uom_reference': {
+                    'id': uom_obj.group.uom_reference_id,
+                    'title': uom_obj.group.uom_reference.title,
+                    'code': uom_obj.group.uom_reference.code,
+                    'ratio': uom_obj.group.uom_reference.ratio,
+                    'rounding': uom_obj.group.uom_reference.rounding,
+                } if uom_obj.group.uom_reference else {},
+            } if uom_obj.group else {},
+            'ratio': uom_obj.ratio,
+            'rounding': uom_obj.rounding,
+            'is_referenced_unit': uom_obj.is_referenced_unit,
+        } if uom_obj else {}
+
+    # @classmethod
+    # def get_tax_data(cls, obj):
+    #     return {
+    #         'id': obj.tax_id,
+    #         'title': obj.tax.title,
+    #         'code': obj.tax.code,
+    #         'rate': obj.tax.rate,
+    #     } if obj.tax else {}
+
+    @classmethod
+    def get_product_unit_price(cls, obj):
+        return obj.fair_value
+
+    @classmethod
+    def get_product_quantity_order_actual(cls, obj):
+        return obj.component_quantity
