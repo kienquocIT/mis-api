@@ -82,12 +82,11 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'is_admin_tenant',
         )
 
-    @classmethod
-    def validate_email(cls, attrs):
+    def validate_email(self, attrs):
         if User.objects.filter_current(
                 email=attrs,
                 fill__tenant=True, fill__map_key={'fill__tenant': 'tenant_current_id'}
-        ).exists():
+        ).exclude(email=self.instance.email).exists():
             raise serializers.ValidationError({'email': AccountMsg.EMAIL_EXISTS})
         return attrs
 
