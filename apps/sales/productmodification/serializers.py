@@ -512,6 +512,7 @@ class ProductModificationCommonFunction:
     def create_removed_component_data(pm_obj, removed_component_data):
         bulk_info = []
         for order, item in enumerate(removed_component_data):
+            item.update({'gr_remain_quantity': item.get('component_quantity', 0)})
             bulk_info.append(RemovedComponent(product_modified=pm_obj, order=order, **item))
         RemovedComponent.objects.filter(product_modified=pm_obj).delete()
         RemovedComponent.objects.bulk_create(bulk_info)

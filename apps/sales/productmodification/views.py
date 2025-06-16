@@ -248,7 +248,7 @@ class ProductModificationProductGRList(BaseListMixin):
     list_hidden_field = []
 
     def get_queryset(self):
-        return super().get_queryset().filter().select_related(
+        return super().get_queryset().filter(gr_remain_quantity__gt=0).select_related(
             'component_product',
         )
 
