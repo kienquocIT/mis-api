@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.serializers import PriceListItemCreateSerializerImportDB
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 from apps.masterdata.saledata.models import (
     TaxCategory, Tax, Currency, Price
 )
@@ -27,6 +27,9 @@ class TaxCategoryList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().filter_on_company()
+
     @swagger_auto_schema(
         operation_summary="TaxCategory list",
         operation_description="TaxCategory list",
@@ -50,7 +53,7 @@ class TaxCategoryList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class TaxCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
+class TaxCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = TaxCategory.objects
     serializer_detail = TaxCategoryDetailSerializer
     serializer_update = TaxCategoryUpdateSerializer
@@ -72,6 +75,16 @@ class TaxCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
+    @swagger_auto_schema(
+        operation_summary='Remove Tax Category'
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
 
 class TaxList(BaseListMixin, BaseCreateMixin):
     queryset = Tax.objects
@@ -83,7 +96,7 @@ class TaxList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('category')
+        return super().get_queryset().filter_on_company().select_related('category')
 
     @swagger_auto_schema(
         operation_summary="Tax list",
@@ -108,7 +121,7 @@ class TaxList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class TaxDetail(BaseRetrieveMixin, BaseUpdateMixin):
+class TaxDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = Tax.objects
     serializer_detail = TaxDetailSerializer
     serializer_update = TaxUpdateSerializer
@@ -133,6 +146,13 @@ class TaxDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
 
 class CurrencyList(BaseListMixin, BaseCreateMixin):
     queryset = Currency.objects
@@ -145,6 +165,9 @@ class CurrencyList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         "currency__code": ["exact"],
     }
+
+    def get_queryset(self):
+        return super().get_queryset().filter_on_company()
 
     @swagger_auto_schema(
         operation_summary="Currency list",
@@ -169,7 +192,7 @@ class CurrencyList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class CurrencyDetail(BaseRetrieveMixin, BaseUpdateMixin):
+class CurrencyDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = Currency.objects
     serializer_detail = CurrencyDetailSerializer
     serializer_update = CurrencyUpdateSerializer
@@ -190,6 +213,16 @@ class CurrencyDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary='Remove Currency'
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
 
 class SyncWithVCB(BaseUpdateMixin):

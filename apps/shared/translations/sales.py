@@ -48,6 +48,10 @@ class SaleMsg:
     DELIVERY_NOT_EXIST = _('Delivery does not exist.')
     PRODUCT_UOM_REQUIRED = _('Product unit of measure is required.')
     EXPENSE_UOM_REQUIRED = _('Expense unit of measure is required.')
+    LOT_MUST_DIFFERENT = _('Lot number must be different.')
+    LOT_EXIST = _('Lot number exist.')
+    SERIAL_MUST_DIFFERENT = _('Serial number must be different.')
+    SERIAL_EXIST = _('Serial number exist.')
 
 
 class SaleTask:
