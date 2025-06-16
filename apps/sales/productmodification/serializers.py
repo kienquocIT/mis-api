@@ -16,6 +16,9 @@ __all__ = [
     'ProductComponentListSerializer',
     'WarehouseListByProductSerializer',
     'ProductSerialListSerializer',
+    'ProductLotListSerializer',
+    'ProductModificationDDListSerializer',
+    'ProductModificationProductGRListSerializer',
 ]
 
 # main
@@ -523,3 +526,58 @@ class ProductSerialListSerializer(serializers.ModelSerializer):
             'warranty_start',
             'warranty_end'
         )
+
+
+class ProductModificationDDListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductModification
+        fields = (
+            'id',
+            'title',
+            'code',
+            'date_created',
+        )
+
+
+# SERIALIZERS USE FOR GOODS RECEIPT
+class ProductModificationProductGRListSerializer(serializers.ModelSerializer):
+    product_modification_product_id = serializers.SerializerMethodField()
+    product_data = serializers.SerializerMethodField()
+    product_quantity_order_actual = serializers.SerializerMethodField()
+    gr_remain_quantity = serializers.SerializerMethodField()
+    quantity_import = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RemovedComponent
+        fields = (
+            'id',
+            'product_modification_product_id',
+            'product_data',
+            'product_quantity_order_actual',
+            'gr_remain_quantity',
+            'quantity_import',
+        )
+
+    @classmethod
+    def get_product_modification_product_id(cls, obj):
+        return obj.id
+
+    @classmethod
+    def get_product_data(cls, obj):
+        return {
+            'id': obj.component_product_id,
+            'title': obj.component_product.title,
+            'code': obj.component_product.code,
+        } if obj.component_product else {}
+
+    @classmethod
+    def get_product_quantity_order_actual(cls, obj):
+        return obj.component_quantity
+
+    @classmethod
+    def get_gr_remain_quantity(cls, obj):
+        return obj.component_quantity
+
+    @classmethod
+    def get_quantity_import(cls, obj):
+        return obj.component_quantity

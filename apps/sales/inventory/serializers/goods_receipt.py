@@ -548,6 +548,7 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
     inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
     work_order_id = serializers.UUIDField(required=False, allow_null=True)
+    product_modification_id = serializers.UUIDField(required=False, allow_null=True)
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     gr_products_data = GoodsReceiptProductSerializer(many=True, required=False)
@@ -568,6 +569,8 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
             'production_order_data',
             'work_order_id',
             'work_order_data',
+            'product_modification_id',
+            'product_modification_data',
             'supplier_id',
             'supplier_data',
             'purchase_requests',
