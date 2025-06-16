@@ -8,6 +8,7 @@ from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceip
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustment, InventoryAdjustmentItem, \
     GoodsReceiptProductionReport
 from apps.sales.production.models import ProductionOrder, ProductionReport, WorkOrder
+from apps.sales.productmodification.models import ProductModification, RemovedComponent
 from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder, \
     PurchaseOrderRequestProduct
 from apps.shared import PurchaseRequestMsg, BaseMsg
@@ -162,9 +163,7 @@ class GoodsReceiptCommonValidate:
         if value is None:
             return value
         try:
-            return str(PurchaseOrder.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
+            return str(PurchaseOrder.objects.get_on_company(
                 id=value
             ).id)
         except PurchaseOrder.DoesNotExist:
@@ -175,9 +174,7 @@ class GoodsReceiptCommonValidate:
         if value is None:
             return value
         try:
-            return str(InventoryAdjustment.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
+            return str(InventoryAdjustment.objects.get_on_company(
                 id=value
             ).id)
         except InventoryAdjustment.DoesNotExist:
@@ -188,9 +185,7 @@ class GoodsReceiptCommonValidate:
         if value is None:
             return value
         try:
-            return str(Account.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
+            return str(Account.objects.get_on_company(
                 id=value
             ).id)
         except Account.DoesNotExist:
@@ -246,6 +241,26 @@ class GoodsReceiptCommonValidate:
         except WorkOrder.DoesNotExist:
             raise serializers.ValidationError({
                 'work_order_id': BaseMsg.NOT_EXIST
+            })
+
+    @classmethod
+    def validate_product_modification_id(cls, value):
+        if value is None:
+            return value
+        try:
+            return str(ProductModification.objects.get_on_company(
+                id=value
+            ).id)
+        except ProductModification.DoesNotExist:
+            raise serializers.ValidationError({'product_modification': BaseMsg.NOT_EXIST})
+
+    @classmethod
+    def validate_product_modification_product_id(cls, value):
+        try:
+            return str(RemovedComponent.objects.get(id=value).id)
+        except RemovedComponent.DoesNotExist:
+            raise serializers.ValidationError({
+                'product_modification_product': BaseMsg.NOT_EXIST
             })
 
     @classmethod

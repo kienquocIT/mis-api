@@ -322,7 +322,7 @@ class GoodsReceipt(DataAbstractModel):
                     self.push_code(instance=self, kwargs=kwargs)
                     GRFinishHandler.push_to_warehouse_stock(instance=self)
                     GRFinishHandler.push_product_info(instance=self)
-                    GRFinishHandler.push_gr_info_for_po_ia_production(instance=self)
+                    GRFinishHandler.push_relate_gr_info(instance=self)
 
                     # update lot_id in GoodsReceiptLot (for new LOT)
                     for item in self.goods_receipt_lot_goods_receipt.all():
