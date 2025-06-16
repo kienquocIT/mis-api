@@ -1,8 +1,11 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.price import (
     TaxCategory, Tax, Currency
 )
 from apps.shared import PriceMsg
+
+
 
 
 # Tax Category
@@ -97,7 +100,8 @@ class TaxCreateSerializer(serializers.ModelSerializer):  # noqa
         if Tax.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
-                code=value
+                code=value,
+                is_delete=False
         ).exists():
             raise serializers.ValidationError({"code": PriceMsg.CODE_EXIST})
         return value
@@ -192,11 +196,12 @@ class CurrencyUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Currency
-        fields = ()
+        fields = ('rate',)
 
-    def update(self, instance, validated_data):
-        instance.delete()
-        return True
+    def validate(self, validate_data):
+        if validate_data.get('rate') != 1 and self.instance.is_primary:
+            raise serializers.ValidationError({"rate": _("The primary Selling Rate must be 1.")})
+        return validate_data
 
 
 class CurrencySyncWithVCBSerializer(serializers.ModelSerializer):  # noqa

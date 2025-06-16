@@ -298,7 +298,6 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                     report_stock__sub_period_order=obj.sub_period_order,
                     **kw_parameter
             ):
-                print(1, log.trans_title)
                 if log.system_date.day in list(range(date_range[0], date_range[1] + 1)):
                     if log.stock_type == 1:
                         sum_in_quantity += log.quantity
@@ -308,7 +307,6 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                         sum_out_value += log.value
 
                     # lấy detail cho từng TH
-                    print(2, log.trans_title)
                     if log.trans_title in [
                         'Goods receipt', 'Goods receipt (IA)', 'Goods return',
                         'Goods transfer (in)', 'Balance init input'

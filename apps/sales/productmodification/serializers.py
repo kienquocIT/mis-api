@@ -1,11 +1,18 @@
 from rest_framework import serializers
-from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSerial, Product, ProductWareHouseLot, \
-    WareHouse
-from apps.sales.productmodification.models import ProductModification, CurrentComponent, RemovedComponent, \
-    CurrentComponentDetail
-from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel
 
+from apps.core.company.models import CompanyFunctionNumber
+from apps.core.workflow.tasks import decorator_run_workflow
+from apps.masterdata.saledata.models import (
+    ProductWareHouse, ProductWareHouseSerial, Product, ProductWareHouseLot,
+    WareHouse, ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure,
+)
+from apps.sales.productmodification.models import (
+    ProductModification, CurrentComponent, RemovedComponent, CurrentComponentDetail,
+)
+from apps.shared import (
+    AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel,
+    ProductMsg, BaseMsg
+)
 
 __all__ = [
     'ProductModificationListSerializer',
@@ -31,6 +38,8 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
             'id',
             'title',
             'code',
+            'created_goods_issue',
+            'created_goods_receipt',
             'date_created',
             'employee_created'
         )
@@ -132,6 +141,50 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
 
         return current_component_data
 
+    @staticmethod
+    def validate_product_mapped_data_new(prd_mapped_dt):
+        if prd_mapped_dt.get('code'):
+            if Product.objects.filter_on_company(code=prd_mapped_dt.get('code')).exists():
+                raise serializers.ValidationError({"code": ProductMsg.CODE_EXIST})
+        else:
+            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='product')
+            if not code_generated:
+                raise serializers.ValidationError({
+                    "code": f"{ProductMsg.CODE_NOT_NULL}. {BaseMsg.NO_CONFIG_AUTO_CODE}"
+                })
+            prd_mapped_dt['code'] = code_generated
+        if not prd_mapped_dt.get('title'):
+            raise serializers.ValidationError({'title': "Product mapping is missing title."})
+        if not ProductType.objects.filter_on_company(id=prd_mapped_dt.get('product_type')).exists():
+            raise serializers.ValidationError({
+                'product_type': "Product mapping is missing Product type."
+            })
+        if not ProductCategory.objects.filter_on_company(
+                id=prd_mapped_dt.get('general_product_category')
+        ).exists():
+            raise serializers.ValidationError({
+                'general_product_category': "Product mapping is missing Product category."
+            })
+        if not UnitOfMeasureGroup.objects.filter_on_company(
+                id=prd_mapped_dt.get('general_uom_group')
+        ).exists():
+            raise serializers.ValidationError({
+                'general_uom_group': "Product mapping is missing UOM group."
+            })
+        if not UnitOfMeasure.objects.filter_on_company(id=prd_mapped_dt.get('inventory_uom')).exists():
+            raise serializers.ValidationError({
+                'inventory_uom': "Product mapping is missing Inventory UOM."
+            })
+        return True
+
+    @staticmethod
+    def validate_product_mapped_data_map(prd_mapped_dt):
+        if not Product.objects.filter_on_company(id=prd_mapped_dt.get('product_mapped')).exists():
+            raise serializers.ValidationError({
+                'product_mapped': "Product mapping is missing product mapped."
+            })
+        return True
+
     @classmethod
     def validate_removed_component_data(cls, removed_component_data):
         for item in removed_component_data:
@@ -159,6 +212,15 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
                     raise serializers.ValidationError({'component_text_data': "Component text data is missing."})
                 if 'title' not in component_text_data:
                     raise serializers.ValidationError({'title': "Component text data TITLE is missing."})
+
+                prd_mapped_dt = item.get('product_mapped_data', {})
+                if len(prd_mapped_dt) > 0:
+                    if prd_mapped_dt.get('type') == 'new':
+                        cls.validate_product_mapped_data_new(prd_mapped_dt)
+                    if prd_mapped_dt.get('type') == 'map':
+                        cls.validate_product_mapped_data_map(prd_mapped_dt)
+                else:
+                    raise serializers.ValidationError({'product_mapped_data': "Product mapped data is missing."})
 
         return removed_component_data
 
@@ -294,6 +356,9 @@ class ProductModificationDetailSerializer(AbstractDetailSerializerModel):
                 'component_text_data': item.component_text_data,
                 'component_product_data': item.component_product_data,
                 'component_quantity': item.component_quantity,
+                'is_mapped': item.is_mapped,
+                'product_mapped_data': item.product_mapped_data,
+                'fair_value': item.fair_value,
             })
         return removed_component_data
 

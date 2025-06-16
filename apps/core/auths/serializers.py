@@ -108,20 +108,22 @@ class AuthLoginSerializer(Serializer):  # pylint: disable=W0223 # noqa
 
     def validate(self, attrs):
         username_value = User.convert_username_field_data(attrs['username'], attrs['tenant_code'])
-        user_obj = User.objects.select_related(
-            'tenant_current', 'company_current', 'employee_current', 'space_current',
-        ).filter(**{User.USERNAME_FIELD: username_value}).first()
-        if user_obj:
-            if user_obj.check_password(attrs['password']):
-                return user_obj
-            raise User.DoesNotExist()
-        user_obj = User.objects.select_related(
-            'tenant_current', 'company_current', 'employee_current', 'space_current',
-        ).filter(**{User.EMAIL_FIELD: attrs['username']}).first()
-        if user_obj:
-            if user_obj.check_password(attrs['password']):
-                return user_obj
-            raise User.DoesNotExist()
+        tenant_obj = attrs.get('tenant_code', None)
+        if tenant_obj:
+            user_obj = User.objects.select_related(
+                'tenant_current', 'company_current', 'employee_current', 'space_current',
+            ).filter(tenant_current=tenant_obj, **{User.USERNAME_FIELD: username_value}).first()
+            if user_obj:
+                if user_obj.check_password(attrs['password']):
+                    return user_obj
+                raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
+            user_obj = User.objects.select_related(
+                'tenant_current', 'company_current', 'employee_current', 'space_current',
+            ).filter(tenant_current=tenant_obj, **{User.EMAIL_FIELD: attrs['username']}).first()
+            if user_obj:
+                if user_obj.check_password(attrs['password']):
+                    return user_obj
+                raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
         raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
 
 

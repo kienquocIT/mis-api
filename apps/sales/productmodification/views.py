@@ -1,4 +1,3 @@
-from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import ProductWareHouse, Product, ProductWareHouseSerial, ProductWareHouseLot
 from apps.sales.productmodification.models import ProductModification, RemovedComponent
@@ -104,7 +103,7 @@ class ProductModifiedList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(Q(general_product_types_mapped__is_service=False))
+        return super().get_queryset().filter(general_product_types_mapped__is_service=False)
 
     @swagger_auto_schema(
         operation_summary="Product Modified List",
@@ -130,7 +129,7 @@ class ProductComponentList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(Q(general_product_types_mapped__is_service=False))
+        return super().get_queryset().filter(general_product_types_mapped__is_service=False)
 
     @swagger_auto_schema(
         operation_summary="Product Component List",
@@ -208,8 +207,8 @@ class ProductSerialList(BaseListMixin):
     serializer_list = ProductSerialListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
-    # def get_queryset(self):
-    #     return super().get_queryset()
+    def get_queryset(self):
+        return super().get_queryset().filter(serial_status=0)
 
     @swagger_auto_schema(
         operation_summary="Product Serial List",

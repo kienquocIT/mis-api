@@ -122,8 +122,8 @@ class GoodsTransfer(DataAbstractModel):
         for sn_id in item.sn_data:
             sn_src_obj = all_sn_src.filter(id=sn_id).first()
             if sn_src_obj and not sn_src_obj.is_delete:
-                sn_src_obj.is_delete = True
-                sn_src_obj.save(update_fields=['is_delete'])
+                sn_src_obj.serial_status = 1
+                sn_src_obj.save(update_fields=['serial_status'])
                 bulk_info.append(
                     ProductWareHouseSerial(
                         tenant_id=instance.tenant_id,
