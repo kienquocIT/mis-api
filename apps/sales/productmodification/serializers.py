@@ -144,12 +144,11 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
             if Product.objects.filter_on_company(code=prd_mapped_dt.get('code')).exists():
                 raise serializers.ValidationError({"code": ProductMsg.CODE_EXIST})
         else:
-            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='product')
-            if not code_generated:
+            # kiểm tra cấu hình tồn tại
+            if not CompanyFunctionNumber.objects.filter_on_company(app_code='product').exists():
                 raise serializers.ValidationError({
                     "code": f"{ProductMsg.CODE_NOT_NULL}. {BaseMsg.NO_CONFIG_AUTO_CODE}"
                 })
-            prd_mapped_dt['code'] = code_generated
         if not prd_mapped_dt.get('title'):
             raise serializers.ValidationError({'title': "Product mapping is missing title."})
         if not ProductType.objects.filter_on_company(id=prd_mapped_dt.get('product_type')).exists():
