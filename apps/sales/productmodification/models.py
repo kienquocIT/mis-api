@@ -293,7 +293,7 @@ class CurrentComponent(SimpleAbstractModel):
     component_text_data = models.JSONField(default=dict) # {'title': ...; 'description':...}
     component_product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     component_product_data = models.JSONField(default=dict)
-    component_quantity = models.IntegerField()
+    component_quantity = models.FloatField()
     is_added_component = models.BooleanField(default=False)
 
     class Meta:
@@ -340,7 +340,8 @@ class RemovedComponent(SimpleAbstractModel):
     component_text_data = models.JSONField(default=dict)
     component_product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     component_product_data = models.JSONField(default=dict)
-    component_quantity = models.IntegerField()
+    component_quantity = models.FloatField(default=0)
+    gr_remain_quantity = models.FloatField(default=0)
     is_mapped = models.BooleanField(default=False)
     product_mapped_data = models.JSONField(default=dict)
     fair_value = models.FloatField(default=0)
