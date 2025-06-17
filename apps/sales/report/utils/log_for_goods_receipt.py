@@ -152,7 +152,7 @@ class IRForGoodsReceiptHandler:
         """ Chuẩn bị data để ghi vào báo cáo tồn kho và tính giá Cost """
         all_lots = cls.get_all_lots(instance)
         doc_data = []
-        if instance.goods_receipt_type in [0, 1]:  # GR by PO/IA
+        if instance.goods_receipt_type in [0, 1, 3]:  # GR by PO/IA
             if instance.goods_receipt_pr_goods_receipt.count() == 0:
                 doc_data = cls.gr_has_no_pr(instance, doc_data, all_lots)
             else:
