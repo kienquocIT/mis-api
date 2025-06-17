@@ -2,7 +2,7 @@ from django.db import models
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Product, ProductProductType
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct
-from apps.sales.inventory.utils import GRHandler
+from apps.sales.inventory.utils import GRFromPMHandler
 from apps.sales.report.utils import IRForGoodsIssueHandler
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 
@@ -277,7 +277,7 @@ class ProductModification(DataAbstractModel):
                 self.create_remove_component_product_mapped(self)
 
                 if self.system_status == 3:
-                    GRHandler.create_from_product_modification(
+                    GRFromPMHandler.create_new(
                         pm_obj=self, issue_data=issue_data
                     )  # Create goods receipt
         # hit DB

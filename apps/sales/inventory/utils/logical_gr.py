@@ -53,23 +53,33 @@ class GRHandler:
                 )
         return True
 
+
+class GRFromPMHandler:
+
     @classmethod
-    def create_from_product_modification(cls, pm_obj, issue_data):
+    def create_new(cls, pm_obj, issue_data):
         model_cls = DisperseModel(app_model='inventory.goodsreceipt').get_model()
         if pm_obj and model_cls and hasattr(model_cls, 'objects'):
-            gr_products_data1 = GRHandler.setup_product_modification_product(pm_obj=pm_obj, issue_data=issue_data)
+            gr_products_data1 = GRFromPMHandler.setup_product(pm_obj=pm_obj, issue_data=issue_data)
             if gr_products_data1:
-                gr_products_data2 = GRHandler.setup_product_modification_component(pm_obj=pm_obj)
-                gr_products_data1 += gr_products_data2
-                GRHandler.run_create_from_product_modification(
+                GRFromPMHandler.run_create(
                     pm_obj=pm_obj,
                     gr_products_data=gr_products_data1,
                     model_cls=model_cls,
+                    system_status=4,
+                )
+            gr_products_data2 = GRFromPMHandler.setup_component(pm_obj=pm_obj)
+            if gr_products_data2:
+                GRFromPMHandler.run_create(
+                    pm_obj=pm_obj,
+                    gr_products_data=gr_products_data2,
+                    model_cls=model_cls,
+                    system_status=0,
                 )
         return True
 
     @classmethod
-    def setup_product_modification_product(cls, pm_obj, issue_data):
+    def setup_product(cls, pm_obj, issue_data):
         new_logs = issue_data.get('new_logs', [])
         if pm_obj.product_modified and new_logs:
             for log in new_logs:
@@ -112,11 +122,41 @@ class GRHandler:
                         } if uom_obj else {},
                         'product_unit_price': log.cost - price_minus,
                         'product_quantity_order_actual': 1,
+                        'gr_warehouse_data': GRFromPMHandler.setup_product_wh(pm_obj=pm_obj)
                     }]
         return []
 
     @classmethod
-    def setup_product_modification_component(cls, pm_obj):
+    def setup_product_wh(cls, pm_obj):
+        if pm_obj:
+            if pm_obj.prd_wh:
+                return [{
+                    'warehouse_id': str(pm_obj.prd_wh.warehouse_id),
+                    'warehouse_data': {
+                        'id': str(pm_obj.prd_wh.warehouse_id),
+                        'title': pm_obj.prd_wh.warehouse.title,
+                        'code': pm_obj.prd_wh.warehouse.code,
+                    } if pm_obj.prd_wh.warehouse else {},
+                    'quantity_import': 1,
+                    'serial_data': [{
+                        'expire_date': str(pm_obj.prd_wh_serial.expire_date),
+                        'manufacture_date': str(pm_obj.prd_wh_serial.manufacture_date),
+                        'serial_number': pm_obj.prd_wh_serial.serial_number,
+                        'vendor_serial_number': pm_obj.prd_wh_serial.vendor_serial_number,
+                        'warranty_start': str(pm_obj.prd_wh_serial.warranty_start),
+                        'warranty_end': str(pm_obj.prd_wh_serial.warranty_end),
+                    }] if pm_obj.prd_wh_serial else [],
+                    'lot_data': [{
+                        "lot_number": pm_obj.prd_wh_lot.lot_number,
+                        "expire_date": str(pm_obj.prd_wh_lot.expire_date),
+                        "manufacture_date": str(pm_obj.prd_wh_lot.manufacture_date),
+                        "quantity_import": 1,
+                    }] if pm_obj.prd_wh_lot else [],
+                }]
+        return []
+
+    @classmethod
+    def setup_component(cls, pm_obj):
         gr_products_data = []
         order = 1
         for pm_product_obj in pm_obj.removed_components.all():
@@ -162,7 +202,7 @@ class GRHandler:
         return gr_products_data
 
     @classmethod
-    def run_create_from_product_modification(cls, pm_obj, gr_products_data, model_cls):
+    def run_create(cls, pm_obj, gr_products_data, model_cls, system_status):
         data = {
             'title': pm_obj.code,
             'goods_receipt_type': 3,
@@ -179,8 +219,46 @@ class GRHandler:
             'company_id': pm_obj.company_id,
         }
         goods_receipt = model_cls.objects.create(**data)
+        if goods_receipt:
+            GRFromPMHandler.run_create_subs(goods_receipt=goods_receipt)
+            if system_status == 4:
+                goods_receipt.system_status = 4
+                goods_receipt.date_approved = timezone.now()
+                goods_receipt.save(update_fields=['system_status', 'date_approved'])
+        return True
+
+    @classmethod
+    def run_create_subs(cls, goods_receipt):
         model_product_cls = DisperseModel(app_model='inventory.goodsreceiptproduct').get_model()
-        if goods_receipt and model_product_cls and hasattr(model_product_cls, 'objects'):
+        if model_product_cls and hasattr(model_product_cls, 'objects'):
             for gr_product in goods_receipt.gr_products_data:
-                model_product_cls.objects.create(goods_receipt=goods_receipt, **gr_product)
+                new_gr_product = model_product_cls.objects.create(goods_receipt=goods_receipt, **gr_product)
+                gr_warehouse_data = gr_product.get('gr_warehouse_data', [])
+                for warehouse in gr_warehouse_data:
+                    lot_data = warehouse.get('lot_data', [])
+                    serial_data = warehouse.get('serial_data', [])
+                    model_warehouse_cls = DisperseModel(app_model='inventory.goodsreceiptwarehouse').get_model()
+                    if model_warehouse_cls and hasattr(model_warehouse_cls, 'objects'):
+                        new_warehouse = model_warehouse_cls.objects.create(
+                            goods_receipt=goods_receipt,
+                            goods_receipt_request_product=None,
+                            goods_receipt_product=new_gr_product,
+                            **warehouse
+                        )
+                        model_lot_cls = DisperseModel(app_model='inventory.goodsreceiptlot').get_model()
+                        if model_lot_cls and hasattr(model_lot_cls, 'objects'):
+                            for lot in lot_data:
+                                model_lot_cls.objects.create(
+                                    goods_receipt=goods_receipt,
+                                    goods_receipt_warehouse=new_warehouse,
+                                    **lot
+                                )
+                        model_serial_cls = DisperseModel(app_model='inventory.goodsreceiptserial').get_model()
+                        if model_serial_cls and hasattr(model_serial_cls, 'objects'):
+                            for serial in serial_data:
+                                model_serial_cls.objects.create(
+                                    goods_receipt=goods_receipt,
+                                    goods_receipt_warehouse=new_warehouse,
+                                    **serial
+                                )
         return True
