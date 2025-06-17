@@ -13,6 +13,7 @@ class ProductHandler:
             cls.by_receipt_po(instance=instance, update_info=update_info)
             cls.by_receipt_ia(instance=instance, update_info=update_info)
             cls.by_receipt_production(instance=instance, update_info=update_info)
+            cls.by_receipt_pm(instance=instance, update_info=update_info)
             cls.by_order(instance=instance, update_info=update_info)
             cls.by_delivery(instance=instance, update_info=update_info)
             cls.by_return(instance=instance, update_info=update_info)
@@ -68,6 +69,15 @@ class ProductHandler:
             if update_info['system_status'] == 4:
                 instance.production_amount += update_info['quantity_receipt_production']
                 instance.stock_amount -= update_info['quantity_receipt_actual']
+        return True
+
+    @classmethod
+    def by_receipt_pm(cls, instance, update_info):
+        if 'quantity_receipt_pm' in update_info:
+            if update_info['system_status'] == 3:
+                instance.stock_amount += update_info['quantity_receipt_pm']
+            if update_info['system_status'] == 4:
+                instance.stock_amount -= update_info['quantity_receipt_pm']
         return True
 
     @classmethod

@@ -1,11 +1,18 @@
 from rest_framework import serializers
-from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSerial, Product, ProductWareHouseLot, \
-    WareHouse
-from apps.sales.productmodification.models import ProductModification, CurrentComponent, RemovedComponent, \
-    CurrentComponentDetail
-from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel
 
+from apps.core.company.models import CompanyFunctionNumber
+from apps.core.workflow.tasks import decorator_run_workflow
+from apps.masterdata.saledata.models import (
+    ProductWareHouse, ProductWareHouseSerial, Product, ProductWareHouseLot,
+    WareHouse, ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure,
+)
+from apps.sales.productmodification.models import (
+    ProductModification, CurrentComponent, RemovedComponent, CurrentComponentDetail,
+)
+from apps.shared import (
+    AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel,
+    ProductMsg, BaseMsg
+)
 
 __all__ = [
     'ProductModificationListSerializer',
@@ -16,11 +23,16 @@ __all__ = [
     'ProductComponentListSerializer',
     'WarehouseListByProductSerializer',
     'ProductSerialListSerializer',
+    'ProductLotListSerializer',
+    'ProductModificationDDListSerializer',
+    'ProductModificationProductGRListSerializer',
 ]
 
 # main
 class ProductModificationListSerializer(AbstractListSerializerModel):
     employee_created = serializers.SerializerMethodField()
+    goods_issue_mapped = serializers.SerializerMethodField()
+    # goods_receipt_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductModification
@@ -28,6 +40,10 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
             'id',
             'title',
             'code',
+            'created_goods_issue',
+            'goods_issue_mapped',
+            'created_goods_receipt',
+            # 'goods_receipt_mapped',
             'date_created',
             'employee_created'
         )
@@ -44,6 +60,16 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
                 'code': obj.employee_created.group.code
             } if obj.employee_created.group else {}
         } if obj.employee_created else {}
+
+    @classmethod
+    def get_goods_issue_mapped(cls, obj):
+        goods_issue_mapped = obj.goods_issue_pm.first()
+        return goods_issue_mapped.id if goods_issue_mapped else ''
+
+    # @classmethod
+    # def get_goods_receipt_mapped(cls, obj):
+    #     goods_receipt_mapped = obj.goods_receipt_pm.first()
+    #     return goods_receipt_mapped.id if goods_receipt_mapped else ''
 
 
 class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
@@ -129,6 +155,49 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
 
         return current_component_data
 
+    @staticmethod
+    def validate_product_mapped_data_new(prd_mapped_dt):
+        if prd_mapped_dt.get('code'):
+            if Product.objects.filter_on_company(code=prd_mapped_dt.get('code')).exists():
+                raise serializers.ValidationError({"code": ProductMsg.CODE_EXIST})
+        else:
+            # kiểm tra cấu hình tồn tại
+            if not CompanyFunctionNumber.objects.filter_on_company(app_code='product').exists():
+                raise serializers.ValidationError({
+                    "code": f"{ProductMsg.CODE_NOT_NULL}. {BaseMsg.NO_CONFIG_AUTO_CODE}"
+                })
+        if not prd_mapped_dt.get('title'):
+            raise serializers.ValidationError({'title': "Product mapping is missing title."})
+        if not ProductType.objects.filter_on_company(id=prd_mapped_dt.get('product_type')).exists():
+            raise serializers.ValidationError({
+                'product_type': "Product mapping is missing Product type."
+            })
+        if not ProductCategory.objects.filter_on_company(
+                id=prd_mapped_dt.get('general_product_category')
+        ).exists():
+            raise serializers.ValidationError({
+                'general_product_category': "Product mapping is missing Product category."
+            })
+        if not UnitOfMeasureGroup.objects.filter_on_company(
+                id=prd_mapped_dt.get('general_uom_group')
+        ).exists():
+            raise serializers.ValidationError({
+                'general_uom_group': "Product mapping is missing UOM group."
+            })
+        if not UnitOfMeasure.objects.filter_on_company(id=prd_mapped_dt.get('inventory_uom')).exists():
+            raise serializers.ValidationError({
+                'inventory_uom': "Product mapping is missing Inventory UOM."
+            })
+        return True
+
+    @staticmethod
+    def validate_product_mapped_data_map(prd_mapped_dt):
+        if not Product.objects.filter_on_company(id=prd_mapped_dt.get('product_mapped')).exists():
+            raise serializers.ValidationError({
+                'product_mapped': "Product mapping is missing product mapped."
+            })
+        return True
+
     @classmethod
     def validate_removed_component_data(cls, removed_component_data):
         for item in removed_component_data:
@@ -156,6 +225,15 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
                     raise serializers.ValidationError({'component_text_data': "Component text data is missing."})
                 if 'title' not in component_text_data:
                     raise serializers.ValidationError({'title': "Component text data TITLE is missing."})
+
+                prd_mapped_dt = item.get('product_mapped_data', {})
+                if len(prd_mapped_dt) > 0:
+                    if prd_mapped_dt.get('type') == 'new':
+                        cls.validate_product_mapped_data_new(prd_mapped_dt)
+                    if prd_mapped_dt.get('type') == 'map':
+                        cls.validate_product_mapped_data_map(prd_mapped_dt)
+                else:
+                    raise serializers.ValidationError({'product_mapped_data': "Product mapped data is missing."})
 
         return removed_component_data
 
@@ -291,6 +369,9 @@ class ProductModificationDetailSerializer(AbstractDetailSerializerModel):
                 'component_text_data': item.component_text_data,
                 'component_product_data': item.component_product_data,
                 'component_quantity': item.component_quantity,
+                'is_mapped': item.is_mapped,
+                'product_mapped_data': item.product_mapped_data,
+                'fair_value': item.fair_value,
             })
         return removed_component_data
 
@@ -444,6 +525,7 @@ class ProductModificationCommonFunction:
     def create_removed_component_data(pm_obj, removed_component_data):
         bulk_info = []
         for order, item in enumerate(removed_component_data):
+            item.update({'gr_remain_quantity': item.get('component_quantity', 0)})
             bulk_info.append(RemovedComponent(product_modified=pm_obj, order=order, **item))
         RemovedComponent.objects.filter(product_modified=pm_obj).delete()
         RemovedComponent.objects.bulk_create(bulk_info)
@@ -523,3 +605,93 @@ class ProductSerialListSerializer(serializers.ModelSerializer):
             'warranty_start',
             'warranty_end'
         )
+
+
+class ProductModificationDDListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductModification
+        fields = (
+            'id',
+            'title',
+            'code',
+            'date_created',
+        )
+
+
+# SERIALIZERS USE FOR GOODS RECEIPT
+class ProductModificationProductGRListSerializer(serializers.ModelSerializer):
+    product_modification_product_id = serializers.SerializerMethodField()
+    product_data = serializers.SerializerMethodField()
+    uom_data = serializers.SerializerMethodField()
+    # tax_data = serializers.SerializerMethodField()
+    product_unit_price = serializers.SerializerMethodField()
+    product_quantity_order_actual = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RemovedComponent
+        fields = (
+            'id',
+            'product_modification_product_id',
+            'product_data',
+            'uom_data',
+            # 'tax_data',
+            'product_unit_price',
+            'product_quantity_order_actual',
+            'gr_remain_quantity',
+        )
+
+    @classmethod
+    def get_product_modification_product_id(cls, obj):
+        return obj.id
+
+    @classmethod
+    def get_product_data(cls, obj):
+        return {
+            'id': obj.component_product_id,
+            'title': obj.component_product.title,
+            'code': obj.component_product.code,
+            'general_traceability_method': obj.component_product.general_traceability_method,
+            'description': obj.component_product.description,
+            'product_choice': obj.component_product.product_choice,
+        } if obj.component_product else {}
+
+    @classmethod
+    def get_uom_data(cls, obj):
+        uom_obj = obj.component_product.inventory_uom
+        return {
+            'id': uom_obj.id,
+            'title': uom_obj.title,
+            'code': uom_obj.code,
+            'uom_group': {
+                'id': uom_obj.group_id,
+                'title': uom_obj.group.title,
+                'code': uom_obj.group.code,
+                'uom_reference': {
+                    'id': uom_obj.group.uom_reference_id,
+                    'title': uom_obj.group.uom_reference.title,
+                    'code': uom_obj.group.uom_reference.code,
+                    'ratio': uom_obj.group.uom_reference.ratio,
+                    'rounding': uom_obj.group.uom_reference.rounding,
+                } if uom_obj.group.uom_reference else {},
+            } if uom_obj.group else {},
+            'ratio': uom_obj.ratio,
+            'rounding': uom_obj.rounding,
+            'is_referenced_unit': uom_obj.is_referenced_unit,
+        } if uom_obj else {}
+
+    # @classmethod
+    # def get_tax_data(cls, obj):
+    #     return {
+    #         'id': obj.tax_id,
+    #         'title': obj.tax.title,
+    #         'code': obj.tax.code,
+    #         'rate': obj.tax.rate,
+    #     } if obj.tax else {}
+
+    @classmethod
+    def get_product_unit_price(cls, obj):
+        return obj.fair_value
+
+    @classmethod
+    def get_product_quantity_order_actual(cls, obj):
+        return obj.component_quantity

@@ -213,6 +213,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     ia_item_id = serializers.UUIDField(required=False, allow_null=True)
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
     work_order_id = serializers.UUIDField(required=False, allow_null=True)
+    product_modification_product_id = serializers.UUIDField(required=False, allow_null=True)
     product_id = serializers.UUIDField()
     uom_id = serializers.UUIDField(required=False, allow_null=True)
     tax_id = serializers.UUIDField(required=False, allow_null=True)
@@ -228,6 +229,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
             'ia_item_id',
             'production_order_id',
             'work_order_id',
+            'product_modification_product_id',
             'product_id',
             'product_data',
             'uom_id',
@@ -263,6 +265,10 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_work_order_id(cls, value):
         return GoodsReceiptCommonValidate.validate_work_order_id(value=value)
+
+    @classmethod
+    def validate_product_modification_product_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_product_modification_product_id(value=value)
 
     @classmethod
     def validate_product_id(cls, value):
@@ -477,6 +483,7 @@ class GoodsReceiptListSerializer(AbstractListSerializerModel):
             'purchase_order_data',
             'inventory_adjustment_data',
             'production_order_data',
+            'product_modification_data',
             'date_received',
             'system_status',
         )
@@ -503,6 +510,7 @@ class GoodsReceiptDetailSerializer(AbstractDetailSerializerModel):
             'production_report_type',
             'production_order_data',
             'work_order_data',
+            'product_modification_data',
             'supplier_data',
             'purchase_requests',
             'production_reports_data',
@@ -548,6 +556,7 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
     inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
     work_order_id = serializers.UUIDField(required=False, allow_null=True)
+    product_modification_id = serializers.UUIDField(required=False, allow_null=True)
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     gr_products_data = GoodsReceiptProductSerializer(many=True, required=False)
@@ -568,6 +577,8 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
             'production_order_data',
             'work_order_id',
             'work_order_data',
+            'product_modification_id',
+            'product_modification_data',
             'supplier_id',
             'supplier_data',
             'purchase_requests',
@@ -602,6 +613,10 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_work_order_id(cls, value):
         return GoodsReceiptCommonValidate.validate_work_order_id(value=value)
+
+    @classmethod
+    def validate_product_modification_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_product_modification_id(value=value)
 
     @classmethod
     def validate_supplier_id(cls, value):
@@ -643,6 +658,7 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
     inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
     work_order_id = serializers.UUIDField(required=False, allow_null=True)
+    product_modification_id = serializers.UUIDField(required=False, allow_null=True)
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     gr_products_data = GoodsReceiptProductSerializer(many=True, required=False)
@@ -663,6 +679,8 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
             'production_order_data',
             'work_order_id',
             'work_order_data',
+            'product_modification_id',
+            'product_modification_data',
             'supplier_id',
             'supplier_data',
             'purchase_requests',
@@ -697,6 +715,10 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_work_order_id(cls, value):
         return GoodsReceiptCommonValidate.validate_work_order_id(value=value)
+
+    @classmethod
+    def validate_product_modification_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_product_modification_id(value=value)
 
     @classmethod
     def validate_supplier_id(cls, value):
