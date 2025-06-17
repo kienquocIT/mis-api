@@ -221,7 +221,7 @@ class GRFromPMHandler:
         }
         goods_receipt = model_cls.objects.create(**data)
         if goods_receipt:
-            GRFromPMHandler.run_create_subs(goods_receipt=goods_receipt)
+            GRFromPMHandler.run_create_sub_product(goods_receipt=goods_receipt)
             if system_status == 3:
                 products_data = goods_receipt.gr_products_data
                 if len(products_data) == 1:
@@ -236,37 +236,44 @@ class GRFromPMHandler:
         return True
 
     @classmethod
-    def run_create_subs(cls, goods_receipt):
+    def run_create_sub_product(cls, goods_receipt):
         model_product_cls = DisperseModel(app_model='inventory.goodsreceiptproduct').get_model()
         if model_product_cls and hasattr(model_product_cls, 'objects'):
             for gr_product in goods_receipt.gr_products_data:
                 new_gr_product = model_product_cls.objects.create(goods_receipt=goods_receipt, **gr_product)
                 gr_warehouse_data = gr_product.get('gr_warehouse_data', [])
-                for warehouse in gr_warehouse_data:
-                    lot_data = warehouse.get('lot_data', [])
-                    serial_data = warehouse.get('serial_data', [])
-                    model_warehouse_cls = DisperseModel(app_model='inventory.goodsreceiptwarehouse').get_model()
-                    if model_warehouse_cls and hasattr(model_warehouse_cls, 'objects'):
-                        new_warehouse = model_warehouse_cls.objects.create(
+                GRFromPMHandler.run_create_sub_warehouse(
+                    goods_receipt=goods_receipt, new_gr_product=new_gr_product, gr_warehouse_data=gr_warehouse_data
+                )
+        return True
+
+    @classmethod
+    def run_create_sub_warehouse(cls, goods_receipt, new_gr_product, gr_warehouse_data):
+        for warehouse in gr_warehouse_data:
+            lot_data = warehouse.get('lot_data', [])
+            serial_data = warehouse.get('serial_data', [])
+            model_warehouse_cls = DisperseModel(app_model='inventory.goodsreceiptwarehouse').get_model()
+            if model_warehouse_cls and hasattr(model_warehouse_cls, 'objects'):
+                new_warehouse = model_warehouse_cls.objects.create(
+                    goods_receipt=goods_receipt,
+                    goods_receipt_request_product=None,
+                    goods_receipt_product=new_gr_product,
+                    **warehouse
+                )
+                model_lot_cls = DisperseModel(app_model='inventory.goodsreceiptlot').get_model()
+                if model_lot_cls and hasattr(model_lot_cls, 'objects'):
+                    for lot in lot_data:
+                        model_lot_cls.objects.create(
                             goods_receipt=goods_receipt,
-                            goods_receipt_request_product=None,
-                            goods_receipt_product=new_gr_product,
-                            **warehouse
+                            goods_receipt_warehouse=new_warehouse,
+                            **lot
                         )
-                        model_lot_cls = DisperseModel(app_model='inventory.goodsreceiptlot').get_model()
-                        if model_lot_cls and hasattr(model_lot_cls, 'objects'):
-                            for lot in lot_data:
-                                model_lot_cls.objects.create(
-                                    goods_receipt=goods_receipt,
-                                    goods_receipt_warehouse=new_warehouse,
-                                    **lot
-                                )
-                        model_serial_cls = DisperseModel(app_model='inventory.goodsreceiptserial').get_model()
-                        if model_serial_cls and hasattr(model_serial_cls, 'objects'):
-                            for serial in serial_data:
-                                model_serial_cls.objects.create(
-                                    goods_receipt=goods_receipt,
-                                    goods_receipt_warehouse=new_warehouse,
-                                    **serial
-                                )
+                model_serial_cls = DisperseModel(app_model='inventory.goodsreceiptserial').get_model()
+                if model_serial_cls and hasattr(model_serial_cls, 'objects'):
+                    for serial in serial_data:
+                        model_serial_cls.objects.create(
+                            goods_receipt=goods_receipt,
+                            goods_receipt_warehouse=new_warehouse,
+                            **serial
+                        )
         return True
