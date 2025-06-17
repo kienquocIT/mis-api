@@ -2,7 +2,7 @@ from django.db import models
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Product, ProductProductType
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct
-from apps.sales.inventory.utils import GRHandler
+from apps.sales.inventory.utils import GRFromPMHandler
 from apps.sales.report.utils import IRForGoodsIssueHandler
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 
@@ -202,12 +202,12 @@ class ProductModification(DataAbstractModel):
         # action sau khi duyệt
 
         gis_obj.update_related_app_after_issue(gis_obj)
-        IRForGoodsIssueHandler.push_to_inventory_report(gis_obj)
+        new_logs = IRForGoodsIssueHandler.push_to_inventory_report(gis_obj)
 
         pm_obj.created_goods_issue = True
         pm_obj.save(update_fields=['created_goods_issue'])
 
-        return True
+        return {'gis_obj': gis_obj, 'new_logs': new_logs}
 
     @classmethod
     def create_remove_component_product_mapped(cls, pm_obj):
@@ -275,11 +275,13 @@ class ProductModification(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
-                self.auto_create_goods_issue(self)
+                issue_data = self.auto_create_goods_issue(self)
                 self.create_remove_component_product_mapped(self)
 
                 if self.system_status == 3:
-                    GRHandler.create_from_product_modification(pm_obj=self)  # Create goods receipt
+                    GRFromPMHandler.create_new(
+                        pm_obj=self, issue_data=issue_data
+                    )  # Create goods receipt
         # hit DB
         super().save(*args, **kwargs)
 

@@ -479,4 +479,15 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
             company_id=company_id,
             product_warehouse_id=product_warehouse_id,
         ) for data in serial_data_valid])
+
+        for serial_old in cls.objects.filter(
+                serial_number__in=[serial.get('serial_number', '') for serial in serial_data],
+                product_warehouse__product_id=product_id,
+                serial_status=1,
+        ):
+            for serial in serial_data:
+                if serial_old.serial_number == serial.get('serial_number', ''):
+                    serial_old.serial_status = 0
+                    serial_old.save(update_fields=['serial_status'])
+                    break
         return True
