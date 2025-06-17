@@ -278,10 +278,11 @@ class ProductModification(DataAbstractModel):
                 issue_data = self.auto_create_goods_issue(self)
                 self.create_remove_component_product_mapped(self)
 
+                # Create goods receipt
                 if self.system_status == 3:
                     GRFromPMHandler.create_new(
                         pm_obj=self, issue_data=issue_data
-                    )  # Create goods receipt
+                    )
         # hit DB
         super().save(*args, **kwargs)
 
