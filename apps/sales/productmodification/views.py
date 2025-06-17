@@ -224,6 +224,9 @@ class ProductSerialList(BaseListMixin):
 class ProductModificationDDList(BaseListMixin):
     queryset = ProductModification.objects
     search_fields = ['title', 'code']
+    filterset_fields = {
+        'created_goods_receipt': ['exact'],
+    }
     serializer_list = ProductModificationDDListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
