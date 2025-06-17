@@ -13,7 +13,7 @@ class ReportInvLog:
         print('Start log...')
         if not doc_obj or not doc_date or len(doc_data) == 0:
             print(f'Not log (detail: {doc_obj.code}, {doc_date.date()}, {len(doc_data)})')
-            return False
+            return None
         try:
             tenant = doc_obj.tenant
             company = doc_obj.company
@@ -48,11 +48,11 @@ class ReportInvLog:
                         ReportStockLog.update_log_cost(log, period_obj, sub_period_order, cost_cfg)
                     print('# Add log for balance init successfully!\n'
                           if for_balance_init else '# Write to Inventory Report successfully!\n')
-                    return True
+                    return new_logs
                 raise serializers.ValidationError({'period_obj': f'Fiscal year {doc_date.year} does not exist.'})
         except Exception as err:
             print(err)
-            return False
+            return None
 
 
 class ReportInvCommonFunc:

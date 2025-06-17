@@ -54,35 +54,69 @@ class GRHandler:
         return True
 
     @classmethod
-    def create_from_product_modification(cls, pm_obj):
+    def create_from_product_modification(cls, pm_obj, issue_data):
         model_cls = DisperseModel(app_model='inventory.goodsreceipt').get_model()
         if pm_obj and model_cls and hasattr(model_cls, 'objects'):
-            gr_products_data = GRHandler.setup_product_modification_product(pm_obj=pm_obj)
-            if gr_products_data:
-                data = {
-                    'title': pm_obj.code,
-                    'goods_receipt_type': 3,
-                    'date_received': timezone.now(),
-                    'product_modification_id': pm_obj.id,
-                    'product_modification_data': {
-                        'id': str(pm_obj.id),
-                        'title': pm_obj.title,
-                        'code': pm_obj.code,
-                        'date_created': str(pm_obj.date_created),
-                    },
-                    'gr_products_data': gr_products_data,
-                    'tenant_id': pm_obj.tenant_id,
-                    'company_id': pm_obj.company_id,
-                }
-                goods_receipt = model_cls.objects.create(**data)
-                model_product_cls = DisperseModel(app_model='inventory.goodsreceiptproduct').get_model()
-                if goods_receipt and model_product_cls and hasattr(model_product_cls, 'objects'):
-                    for gr_product in goods_receipt.gr_products_data:
-                        model_product_cls.objects.create(goods_receipt=goods_receipt, **gr_product)
+            gr_products_data1 = GRHandler.setup_product_modification_product(pm_obj=pm_obj, issue_data=issue_data)
+            if gr_products_data1:
+                gr_products_data2 = GRHandler.setup_product_modification_component(pm_obj=pm_obj)
+                gr_products_data1 += gr_products_data2
+                GRHandler.run_create_from_product_modification(
+                    pm_obj=pm_obj,
+                    gr_products_data=gr_products_data1,
+                    model_cls=model_cls,
+                )
         return True
 
     @classmethod
-    def setup_product_modification_product(cls, pm_obj):
+    def setup_product_modification_product(cls, pm_obj, issue_data):
+        new_logs = issue_data.get('new_logs', [])
+        if pm_obj.product_modified and new_logs:
+            for log in new_logs:
+                if log.product_id == pm_obj.product_modified_id:
+                    uom_obj = pm_obj.product_modified.inventory_uom
+                    price_minus = 0
+                    for pm_product_obj in pm_obj.removed_components.all():
+                        price_minus += pm_product_obj.fair_value * pm_product_obj.component_quantity
+                    return [{
+                        'order': 1,
+                        'product_id': str(pm_obj.product_modified_id),
+                        'product_data': {
+                            'id': str(pm_obj.product_modified_id),
+                            'title': pm_obj.product_modified.title,
+                            'code': pm_obj.product_modified.code,
+                            'general_traceability_method': pm_obj.product_modified.general_traceability_method,
+                            'description': pm_obj.product_modified.description,
+                            'product_choice': pm_obj.product_modified.product_choice,
+                        },
+                        'uom_id': str(uom_obj.id) if uom_obj else None,
+                        'uom_data': {
+                            'id': str(uom_obj.id),
+                            'title': uom_obj.title,
+                            'code': uom_obj.code,
+                            'uom_group': {
+                                'id': str(uom_obj.group_id),
+                                'title': uom_obj.group.title,
+                                'code': uom_obj.group.code,
+                                'uom_reference': {
+                                    'id': str(uom_obj.group.uom_reference_id),
+                                    'title': uom_obj.group.uom_reference.title,
+                                    'code': uom_obj.group.uom_reference.code,
+                                    'ratio': uom_obj.group.uom_reference.ratio,
+                                    'rounding': uom_obj.group.uom_reference.rounding,
+                                } if uom_obj.group.uom_reference else {},
+                            } if uom_obj.group else {},
+                            'ratio': uom_obj.ratio,
+                            'rounding': uom_obj.rounding,
+                            'is_referenced_unit': uom_obj.is_referenced_unit,
+                        } if uom_obj else {},
+                        'product_unit_price': log.cost - price_minus,
+                        'product_quantity_order_actual': 1,
+                    }]
+        return []
+
+    @classmethod
+    def setup_product_modification_component(cls, pm_obj):
         gr_products_data = []
         order = 1
         for pm_product_obj in pm_obj.removed_components.all():
@@ -126,3 +160,27 @@ class GRHandler:
                 })
             order += 1
         return gr_products_data
+
+    @classmethod
+    def run_create_from_product_modification(cls, pm_obj, gr_products_data, model_cls):
+        data = {
+            'title': pm_obj.code,
+            'goods_receipt_type': 3,
+            'date_received': timezone.now(),
+            'product_modification_id': pm_obj.id,
+            'product_modification_data': {
+                'id': str(pm_obj.id),
+                'title': pm_obj.title,
+                'code': pm_obj.code,
+                'date_created': str(pm_obj.date_created),
+            },
+            'gr_products_data': gr_products_data,
+            'tenant_id': pm_obj.tenant_id,
+            'company_id': pm_obj.company_id,
+        }
+        goods_receipt = model_cls.objects.create(**data)
+        model_product_cls = DisperseModel(app_model='inventory.goodsreceiptproduct').get_model()
+        if goods_receipt and model_product_cls and hasattr(model_product_cls, 'objects'):
+            for gr_product in goods_receipt.gr_products_data:
+                model_product_cls.objects.create(goods_receipt=goods_receipt, **gr_product)
+        return True
