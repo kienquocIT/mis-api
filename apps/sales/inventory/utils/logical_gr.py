@@ -66,7 +66,7 @@ class GRFromPMHandler:
                     pm_obj=pm_obj,
                     gr_products_data=gr_products_data1,
                     model_cls=model_cls,
-                    system_status=4,
+                    system_status=3,
                 )
             gr_products_data2 = GRFromPMHandler.setup_component(pm_obj=pm_obj)
             if gr_products_data2:
@@ -122,7 +122,8 @@ class GRFromPMHandler:
                         } if uom_obj else {},
                         'product_unit_price': log.cost - price_minus,
                         'product_quantity_order_actual': 1,
-                        'gr_warehouse_data': GRFromPMHandler.setup_product_wh(pm_obj=pm_obj)
+                        'quantity_import': 1,
+                        'gr_warehouse_data': GRFromPMHandler.setup_product_wh(pm_obj=pm_obj),
                     }]
         return []
 
@@ -221,10 +222,17 @@ class GRFromPMHandler:
         goods_receipt = model_cls.objects.create(**data)
         if goods_receipt:
             GRFromPMHandler.run_create_subs(goods_receipt=goods_receipt)
-            if system_status == 4:
-                goods_receipt.system_status = 4
+            if system_status == 3:
+                products_data = goods_receipt.gr_products_data
+                if len(products_data) == 1:
+                    goods_receipt.total_pretax = products_data[0].get('product_unit_price', 0)
+                    goods_receipt.total = products_data[0].get('product_unit_price', 0)
+                    goods_receipt.total_revenue_before_tax = products_data[0].get('product_unit_price', 0)
+                goods_receipt.system_status = 3
                 goods_receipt.date_approved = timezone.now()
-                goods_receipt.save(update_fields=['system_status', 'date_approved'])
+                goods_receipt.save(update_fields=[
+                    'total_pretax', 'total', 'total_revenue_before_tax', 'system_status', 'date_approved'
+                ])
         return True
 
     @classmethod
