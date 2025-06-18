@@ -8,7 +8,7 @@ from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate
     QuotationProductSerializer, QuotationLogisticSerializer, QuotationCostSerializer, \
     QuotationExpenseSerializer, QuotationIndicatorSerializer, QuotationRuleValidate
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
-    AbstractListSerializerModel
+    AbstractListSerializerModel, AbstractCurrencyCreateSerializerModel, AbstractCurrencyDetailSerializerModel
 
 
 # QUOTATION BEGIN
@@ -63,7 +63,7 @@ class QuotationMinimalListSerializer(serializers.ModelSerializer):
         )
 
 
-class QuotationDetailSerializer(AbstractDetailSerializerModel):
+class QuotationDetailSerializer(AbstractDetailSerializerModel, AbstractCurrencyDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -166,7 +166,7 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
         return {}
 
 
-class QuotationCreateSerializer(AbstractCreateSerializerModel):
+class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     opportunity_id = serializers.UUIDField(
         required=False,

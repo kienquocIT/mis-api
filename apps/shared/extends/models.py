@@ -19,7 +19,8 @@ __all__ = [
     'RecurrenceAbstractModel',
     'DisperseModel',
     'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass',
-    'AutoDocumentAbstractModel'
+    'AutoDocumentAbstractModel',
+    'CurrencyAbstractModel',
 ]
 
 
@@ -424,6 +425,21 @@ class AutoDocumentAbstractModel(SimpleAbstractModel):  # use for applications in
         abstract = True
         verbose_name = 'Accounting Abstract'
         verbose_name_plural = 'Accounting Abstract'
+
+
+class CurrencyAbstractModel(SimpleAbstractModel):  # use for applications need exchange currency
+    currency_exchange = models.ForeignKey(
+        'saledata.Currency', null=True, on_delete=models.SET_NULL,
+        help_text='',
+        related_name='%(app_label)s_%(class)s_currency_exchange',
+    )
+    currency_exchange_data = models.JSONField(default=dict, help_text='data json of currency_exchange')
+    currency_exchange_rate = models.FloatField(default=1)
+
+    class Meta:
+        abstract = True
+        verbose_name = 'Currency Abstract'
+        verbose_name_plural = 'Currency Abstract'
 
 
 # Forwarder class model

@@ -4,7 +4,7 @@ from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.quotation.utils import QuotationHandler
 from apps.sales.quotation.utils.logical_finish import QuotationFinishHandler
 from apps.shared import (
-    DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel
+    DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel, CurrencyAbstractModel
 )
 
 
@@ -147,7 +147,7 @@ class ConfigLongSaleRole(SimpleAbstractModel):
 
 
 # BEGIN QUOTATION
-class Quotation(DataAbstractModel, BastionFieldAbstractModel):
+class Quotation(DataAbstractModel, BastionFieldAbstractModel, CurrencyAbstractModel):
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,

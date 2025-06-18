@@ -4,6 +4,8 @@ __all__ = [
     'AbstractListSerializerModel',
     'AbstractDetailSerializerModel',
     'AbstractCreateSerializerModel',
+    'AbstractCurrencyCreateSerializerModel',
+    'AbstractCurrencyDetailSerializerModel',
 ]
 
 
@@ -53,6 +55,32 @@ class AbstractCreateSerializerModel(serializers.ModelSerializer):
             'is_change': serializers.BooleanField(required=False, default=False),
             'document_root_id': serializers.UUIDField(required=False, allow_null=True),
             'document_change_order': serializers.IntegerField(required=False, allow_null=True),
+        }
+
+    class Meta:
+        abstract = True
+
+
+class AbstractCurrencyCreateSerializerModel(serializers.ModelSerializer):
+    def get_fields(self):
+        return {
+            **super().get_fields(),
+            'currency_exchange_id': serializers.UUIDField(required=False, allow_null=True),
+            'currency_exchange_data': serializers.JSONField(required=False, default=dict),
+            'currency_exchange_rate': serializers.FloatField(default=0),
+        }
+
+    class Meta:
+        abstract = True
+
+
+class AbstractCurrencyDetailSerializerModel(serializers.ModelSerializer):
+    def get_fields(self):
+        return {
+            **super().get_fields(),
+            'currency_exchange_id': serializers.UUIDField(),
+            'currency_exchange_data': serializers.JSONField(),
+            'currency_exchange_rate': serializers.FloatField(),
         }
 
     class Meta:

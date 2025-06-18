@@ -6,11 +6,13 @@ from .mask_view import mask_view, EmployeeAttribute
 from .models import (
     SimpleAbstractModel, DataAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel,
     DisperseModel,
-    SignalRegisterMetaClass, CoreSignalRegisterMetaClass, RecurrenceAbstractModel, AutoDocumentAbstractModel
+    SignalRegisterMetaClass, CoreSignalRegisterMetaClass, RecurrenceAbstractModel, AutoDocumentAbstractModel,
+    CurrencyAbstractModel
 )
 from .managers import NormalManager
 from .utils import LinkListHandler, StringHandler, ListHandler, CustomizeEncoder, TypeCheck, FORMATTING
-from .serializers import AbstractListSerializerModel, AbstractDetailSerializerModel, AbstractCreateSerializerModel
+from .serializers import AbstractListSerializerModel, AbstractDetailSerializerModel, AbstractCreateSerializerModel, \
+    AbstractCurrencyCreateSerializerModel, AbstractCurrencyDetailSerializerModel
 from .filters import BastionFieldAbstractListFilter
 from .push_notify import *
 from .cryptography import SimpleEncryptor
