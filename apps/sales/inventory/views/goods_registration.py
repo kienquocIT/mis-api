@@ -159,6 +159,7 @@ class GReItemProductWarehouseLotList(BaseListMixin):
         'gre_item_prd_wh__gre_item__so_item__sale_order_id': ['exact'],
         'gre_item_prd_wh__gre_item__product_id': ['exact'],
         'gre_item_prd_wh__warehouse_id': ['exact'],
+        'lot_registered_id': ['in', 'exact'],
     }
     serializer_list = GReItemProductWarehouseLotSerializer
 

@@ -193,6 +193,7 @@ class ProductWareHouseLotList(BaseListMixin):
     queryset = ProductWareHouseLot.objects
     search_fields = ['lot_number', ]
     filterset_fields = {
+        "id": ["in", "exact"],
         "product_warehouse_id": ["exact"],
         "product_warehouse__product_id": ["exact"],
         "product_warehouse__warehouse_id": ["exact"],

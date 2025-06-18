@@ -19,6 +19,7 @@ class GRFinishHandler:
         # Cho Product modification
         if instance.goods_receipt_type == 3:
             GRFinishSubHandler.gr_info_for_pm(instance=instance)
+            GRFinishSubHandler.receipt_status_pm(instance=instance)
 
     # PRODUCT_WAREHOUSE
     @classmethod
@@ -202,6 +203,16 @@ class GRFinishSubHandler:
                 gr_product.product_modification_product.gr_remain_quantity -= round(gr_product.quantity_import, 2)
                 if gr_product.product_modification_product.gr_remain_quantity >= 0:
                     gr_product.product_modification_product.save(update_fields=['gr_remain_quantity'])
+        return True
+
+    @classmethod
+    def receipt_status_pm(cls, instance):
+        if instance.product_modification:
+            pm_component = instance.product_modification.removed_components.all()
+            pm_component_done = instance.product_modification.removed_components.filter(gr_remain_quantity=0)
+            if pm_component.count() == pm_component_done.count():
+                instance.product_modification.created_goods_receipt = True
+                instance.product_modification.save(update_fields=['created_goods_receipt'])
         return True
 
     # Push product info
