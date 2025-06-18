@@ -218,6 +218,8 @@ class GRFromPMHandler:
             'gr_products_data': gr_products_data,
             'tenant_id': pm_obj.tenant_id,
             'company_id': pm_obj.company_id,
+            'employee_inherit_id': pm_obj.employee_inherit_id,
+            'employee_created_id': pm_obj.employee_created_id,
         }
         goods_receipt = model_cls.objects.create(**data)
         if goods_receipt:
