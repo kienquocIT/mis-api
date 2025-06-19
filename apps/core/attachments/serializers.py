@@ -2,7 +2,7 @@ from datetime import datetime
 import magic
 from django.conf import settings
 from rest_framework import serializers
-from apps.shared import HrMsg, TypeCheck, AttMsg, FORMATTING, ResponseController, BaseMsg
+from apps.shared import HrMsg, TypeCheck, AttMsg, FORMATTING, BaseMsg
 from .models import Files, PublicFiles, Folder, FolderPermission
 
 
@@ -501,20 +501,6 @@ class FolderUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         return instance
-
-
-class FolderDeleteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Folder
-
-    def delete(self, instance):  # noqa
-        if instance.is_owner or instance.is_admin:
-            print('folder id deleted', str(instance.id))
-            pass
-            # instance.delete()
-        else:
-            raise serializers.ValidationError({'detail': AttMsg.FOLDER_DELETE_ERROR})
-        return ResponseController.no_content_204()
 
 
 class FolderUploadFileSerializer(serializers.ModelSerializer):

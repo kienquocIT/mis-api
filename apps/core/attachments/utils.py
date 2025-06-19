@@ -4,9 +4,9 @@ from apps.shared import DisperseModel
 
 
 def check_folder_perm(lst, url_type, crt_empl):
-    Folder = DisperseModel(app_model='attachments.Folder').get_model()
-    FolderPermission = DisperseModel(app_model='attachments.FolderPermission').get_model()
-    folder_lst = Folder.objects.filter(id__in=lst)
+    folder = DisperseModel(app_model='attachments.Folder').get_model()
+    folder_permission = DisperseModel(app_model='attachments.FolderPermission').get_model()
+    folder_lst = folder.objects.filter(id__in=lst)
     if url_type == 'my_space':
         is_check = folder_lst.filter(is_owner=True, employee_inherit=crt_empl).count() == len(lst)
     elif url_type == 'my_shared':
@@ -18,7 +18,7 @@ def check_folder_perm(lst, url_type, crt_empl):
             file_in_perm_list__contains=[1]
         ) if group_id else Q()
 
-        accessible_folder_ids = FolderPermission.objects.filter(
+        accessible_folder_ids = folder_permission.objects.filter(
             employee_filter | group_filter
         ).values_list('folder_id', flat=True).distinct()
         accessible_folder_ids = list(accessible_folder_ids)
@@ -31,9 +31,9 @@ def check_folder_perm(lst, url_type, crt_empl):
 
 
 def check_file_perm(lst, url_type, crt_empl):
-    Files = DisperseModel(app_model='attachments.Files').get_model()
-    FilePermission = DisperseModel(app_model='attachments.FilePermission').get_model()
-    files_lst = Files.objects.filter(id__in=lst)
+    files = DisperseModel(app_model='attachments.Files').get_model()
+    file_permission = DisperseModel(app_model='attachments.FilePermission').get_model()
+    files_lst = files.objects.filter(id__in=lst)
     if url_type == 'my_space':
         # case 1: nếu file chưa approved và hiển thị trong my space
         is_check = files_lst.filter(is_approved=False, employee_created=crt_empl).count() == len(lst)
@@ -50,7 +50,7 @@ def check_file_perm(lst, url_type, crt_empl):
             file_in_perm_list__contains=[7]
         ) & Q(is_approved=False) if group_id else Q()
 
-        accessible_file_ids = FilePermission.objects.filter(
+        accessible_file_ids = file_permission.objects.filter(
             employee_filter | group_filter
         ).values_list('file_id', flat=True).distinct()
         accessible_file_ids = list(accessible_file_ids)
