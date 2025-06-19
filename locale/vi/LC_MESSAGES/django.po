@@ -1677,3 +1677,7 @@ msgstr "Đơn vị chi phí là bắt buộc."
 #
 msgid "Not allowed."
 msgstr "không được phép."
+
+#
+msgid "Some values in the list are incorrect"
+msgstr "Một số giá trị không đúng"
