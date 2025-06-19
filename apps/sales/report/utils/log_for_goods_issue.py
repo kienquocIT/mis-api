@@ -51,5 +51,5 @@ class IRForGoodsIssueHandler:
                     'value': 0,  # theo gia cost
                     'lot_data': {}
                 })
-        ReportInvLog.log(instance, instance.date_approved, doc_data)
-        return True
+        new_logs = ReportInvLog.log(instance, instance.date_approved, doc_data)
+        return new_logs

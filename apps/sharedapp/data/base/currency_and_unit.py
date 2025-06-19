@@ -60,6 +60,17 @@ Currency_data = {
         "code": "CNY",
         "symbol": "CNY",
     },
+    "686e88c6-4bc4-43ae-b0f1-250890029880": {'title': 'Danish Krone', 'code': 'DKK', 'symbol': 'kr'},
+    "f60794d7-f7c6-40ab-b40e-4eb919538492": {'title': 'HongKong Dollar', 'code': 'HKD', 'symbol': '$'},
+    "b996cea0-d953-4aba-a54e-23c5c5bcb82c": {'title': 'Korean Won', 'code': 'KRW', 'symbol': '₩'},
+    "ca09e04a-7c9f-4e8e-987b-32dfa968897f": {'title': 'Kuwaiti Dinar', 'code': 'KWD', 'symbol': 'د.ك'},
+    "3129171d-6e46-4fcd-b644-b8f0eead57a6": {'title': 'Malaysian Ringgit', 'code': 'MYR', 'symbol': 'RM'},
+    "c7ad02b0-6599-4a39-98d4-baa84ee6563b": {'title': 'Norwegian Kroner', 'code': 'NOK', 'symbol': 'kr'},
+    "8a132a41-f406-4455-9aa6-7727c96f1858": {'title': 'Russian Ruble', 'code': 'RUB', 'symbol': '₽'},
+    "4145d6f4-ac2d-434f-b661-b4efa2b19558": {'title': 'Saudi Rial', 'code': 'SAR', 'symbol': 'ر.س'},
+    "66382b2a-72d3-43bb-9156-694db525f04c": {'title': 'Swedish Krona', 'code': 'SEK', 'symbol': 'kr'},
+    "326511fc-28ef-41fa-9d98-c4b66bd2540b": {'title': 'Singapore Dollar', 'code': 'SGD', 'symbol': '$'},
+    "7703b830-3af2-4064-8ae7-07efed8b5bf7": {'title': 'Thailand Baht', 'code': 'THB', 'symbol': '฿'},
 }
 
 BaseItemUnit_data = {

@@ -6,7 +6,8 @@ from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSe
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, GoodsReceiptAttachment
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
-from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel, HRMsg
+from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel, \
+    HRMsg, SaleMsg
 from apps.shared.translations.base import AttachmentMsg
 
 
@@ -212,6 +213,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     ia_item_id = serializers.UUIDField(required=False, allow_null=True)
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
     work_order_id = serializers.UUIDField(required=False, allow_null=True)
+    product_modification_product_id = serializers.UUIDField(required=False, allow_null=True)
     product_id = serializers.UUIDField()
     uom_id = serializers.UUIDField(required=False, allow_null=True)
     tax_id = serializers.UUIDField(required=False, allow_null=True)
@@ -227,6 +229,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
             'ia_item_id',
             'production_order_id',
             'work_order_id',
+            'product_modification_product_id',
             'product_id',
             'product_data',
             'uom_id',
@@ -262,6 +265,10 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_work_order_id(cls, value):
         return GoodsReceiptCommonValidate.validate_work_order_id(value=value)
+
+    @classmethod
+    def validate_product_modification_product_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_product_modification_product_id(value=value)
 
     @classmethod
     def validate_product_id(cls, value):
@@ -302,13 +309,13 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
                 serial_number_list.append(serial.get('serial_number', None))
         # check serial
         cls.check_serial_exist(product_id=product_id, serial_number_list=serial_number_list)
-        return True
+        return serial_number_list
 
     @classmethod
     def check_lot_exist(cls, product_id, warehouse_id, lot_number_list):
         # check unique in data submit (in same warehouse)
         if len(lot_number_list) != len(set(lot_number_list)):
-            raise serializers.ValidationError({'lot_number': 'Lot number must be different.'})
+            raise serializers.ValidationError({'lot_number': SaleMsg.LOT_MUST_DIFFERENT})
         # check unique in db
         if product_id and warehouse_id:
             for product_wh_lot in ProductWareHouseLot.objects.filter(
@@ -317,22 +324,22 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
                 if product_wh_lot.product_warehouse:
                     pwh = product_wh_lot.product_warehouse
                     if pwh.product_id == product_id and pwh.warehouse_id == warehouse_id:
-                        raise serializers.ValidationError({'lot_number': 'Lot number is exist.'})
+                        raise serializers.ValidationError({'lot_number': SaleMsg.LOT_EXIST})
                     if pwh.product_id != product_id:
-                        raise serializers.ValidationError({'lot_number': 'Lot number is exist.'})
+                        raise serializers.ValidationError({'lot_number': SaleMsg.LOT_EXIST})
         return True
 
     @classmethod
     def check_serial_exist(cls, product_id, serial_number_list):
         # check unique in data submit
         if len(serial_number_list) != len(set(serial_number_list)):
-            raise serializers.ValidationError({'serial_number': 'Serial number must be different.'})
+            raise serializers.ValidationError({'serial_number': SaleMsg.SERIAL_MUST_DIFFERENT})
         # check unique in db
         if ProductWareHouseSerial.objects.filter(
                 product_warehouse__product_id=product_id,
                 serial_number__in=serial_number_list
         ).exists():
-            raise serializers.ValidationError({'serial_number': 'Serial number is exist.'})
+            raise serializers.ValidationError({'serial_number': SaleMsg.SERIAL_EXIST})
         return True
 
     def validate(self, validate_data):
@@ -340,12 +347,20 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
             gr_warehouse_data=validate_data.get('gr_warehouse_data', []),
             product_id=validate_data.get('product_id', None)
         )
+
+        serial_number_list = []
         for pr_product in validate_data.get('pr_products_data', []):
+            # Kiem tra trung lot va serial theo tung kho
             if 'gr_warehouse_data' in pr_product:
-                self.check_lot_serial_exist(
+                check_list = self.check_lot_serial_exist(
                     gr_warehouse_data=pr_product.get('gr_warehouse_data', []),
                     product_id=validate_data.get('product_id', None)
                 )
+                serial_number_list += check_list
+        # Kiem tra trung serial theo tat ca kho
+        self.check_serial_exist(
+            product_id=validate_data.get('product_id', None), serial_number_list=serial_number_list
+        )
         return validate_data
 
 
@@ -468,6 +483,7 @@ class GoodsReceiptListSerializer(AbstractListSerializerModel):
             'purchase_order_data',
             'inventory_adjustment_data',
             'production_order_data',
+            'product_modification_data',
             'date_received',
             'system_status',
         )
@@ -494,6 +510,7 @@ class GoodsReceiptDetailSerializer(AbstractDetailSerializerModel):
             'production_report_type',
             'production_order_data',
             'work_order_data',
+            'product_modification_data',
             'supplier_data',
             'purchase_requests',
             'production_reports_data',
@@ -539,6 +556,7 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
     inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
     work_order_id = serializers.UUIDField(required=False, allow_null=True)
+    product_modification_id = serializers.UUIDField(required=False, allow_null=True)
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     gr_products_data = GoodsReceiptProductSerializer(many=True, required=False)
@@ -559,6 +577,8 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
             'production_order_data',
             'work_order_id',
             'work_order_data',
+            'product_modification_id',
+            'product_modification_data',
             'supplier_id',
             'supplier_data',
             'purchase_requests',
@@ -593,6 +613,10 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_work_order_id(cls, value):
         return GoodsReceiptCommonValidate.validate_work_order_id(value=value)
+
+    @classmethod
+    def validate_product_modification_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_product_modification_id(value=value)
 
     @classmethod
     def validate_supplier_id(cls, value):
@@ -634,6 +658,7 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
     inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
     production_order_id = serializers.UUIDField(required=False, allow_null=True)
     work_order_id = serializers.UUIDField(required=False, allow_null=True)
+    product_modification_id = serializers.UUIDField(required=False, allow_null=True)
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     gr_products_data = GoodsReceiptProductSerializer(many=True, required=False)
@@ -654,6 +679,8 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
             'production_order_data',
             'work_order_id',
             'work_order_data',
+            'product_modification_id',
+            'product_modification_data',
             'supplier_id',
             'supplier_data',
             'purchase_requests',
@@ -688,6 +715,10 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_work_order_id(cls, value):
         return GoodsReceiptCommonValidate.validate_work_order_id(value=value)
+
+    @classmethod
+    def validate_product_modification_id(cls, value):
+        return GoodsReceiptCommonValidate.validate_product_modification_id(value=value)
 
     @classmethod
     def validate_supplier_id(cls, value):

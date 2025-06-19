@@ -96,6 +96,17 @@ class GoodsReceipt(DataAbstractModel):
     production_reports_data = models.JSONField(
         default=list, help_text='data json of production report, records in GoodsReceiptProductionReport'
     )
+    product_modification = models.ForeignKey(
+        'productmodification.ProductModification',
+        on_delete=models.CASCADE,
+        verbose_name="product modification",
+        related_name="goods_receipt_product_modification",
+        null=True,
+    )
+    product_modification_data = models.JSONField(
+        default=dict,
+        help_text="read data product_modification, use for get list or detail"
+    )
     # COMMON FIELDS
     remarks = models.TextField(
         blank=True,
@@ -311,7 +322,7 @@ class GoodsReceipt(DataAbstractModel):
                     self.push_code(instance=self, kwargs=kwargs)
                     GRFinishHandler.push_to_warehouse_stock(instance=self)
                     GRFinishHandler.push_product_info(instance=self)
-                    GRFinishHandler.push_gr_info_for_po_ia_production(instance=self)
+                    GRFinishHandler.push_relate_gr_info(instance=self)
 
                     # update lot_id in GoodsReceiptLot (for new LOT)
                     for item in self.goods_receipt_lot_goods_receipt.all():
@@ -411,6 +422,13 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="product",
         related_name="goods_receipt_product_product",
+        null=True
+    )
+    product_modification_product = models.ForeignKey(
+        'productmodification.RemovedComponent',
+        on_delete=models.SET_NULL,
+        verbose_name="pm product",
+        related_name="goods_receipt_product_pm_product",
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data JSON of product')

@@ -1,12 +1,11 @@
-from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import ProductWareHouse, Product, ProductWareHouseSerial, ProductWareHouseLot
-from apps.sales.productmodification.models import ProductModification
+from apps.sales.productmodification.models import ProductModification, RemovedComponent
 from apps.sales.productmodification.serializers import (
     WarehouseListByProductSerializer, ProductModifiedListSerializer,
     ProductComponentListSerializer, ProductSerialListSerializer, ProductModificationListSerializer,
     ProductModificationCreateSerializer, ProductModificationDetailSerializer, ProductModificationUpdateSerializer,
-    ProductLotListSerializer
+    ProductLotListSerializer, ProductModificationDDListSerializer, ProductModificationProductGRListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -17,6 +16,9 @@ __all__ = [
     'ProductComponentList',
     'WarehouseListByProduct',
     'ProductSerialList',
+    'ProductLotList',
+    'ProductModificationDDList',
+    'ProductModificationProductGRList',
 ]
 
 # main
@@ -101,7 +103,7 @@ class ProductModifiedList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(Q(general_product_types_mapped__is_service=False))
+        return super().get_queryset().filter(general_product_types_mapped__is_service=False)
 
     @swagger_auto_schema(
         operation_summary="Product Modified List",
@@ -127,7 +129,7 @@ class ProductComponentList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(Q(general_product_types_mapped__is_service=False))
+        return super().get_queryset().filter(general_product_types_mapped__is_service=False)
 
     @swagger_auto_schema(
         operation_summary="Product Component List",
@@ -215,5 +217,48 @@ class ProductSerialList(BaseListMixin):
     @mask_view(
         login_require=True, auth_require=False,
     )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductModificationDDList(BaseListMixin):
+    queryset = ProductModification.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'created_goods_receipt': ['exact'],
+    }
+    serializer_list = ProductModificationDDListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Product Modification DD List",
+        operation_description="Get Product Modification DD List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+# VIEWS USE FOR GOODS RECEIPT
+class ProductModificationProductGRList(BaseListMixin):
+    queryset = RemovedComponent.objects
+    filterset_fields = {
+        'product_modified_id': ['in', 'exact'],
+    }
+    serializer_list = ProductModificationProductGRListSerializer
+    list_hidden_field = []
+
+    def get_queryset(self):
+        return super().get_queryset().filter(gr_remain_quantity__gt=0).select_related(
+            'component_product',
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Product Modification Product GR List",
+        operation_description="Get Product Modification Product GR List",
+    )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

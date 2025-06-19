@@ -143,6 +143,8 @@ class QuotationCommonValidate:
     @classmethod
     def validate_unit_of_measure_id(cls, value):
         try:
+            if value is None:
+                return None
             return str(UnitOfMeasure.objects.get_on_company(id=value).id)
         except UnitOfMeasure.DoesNotExist:
             raise serializers.ValidationError({'unit_of_measure': BaseMsg.NOT_EXIST})
@@ -297,7 +299,7 @@ class QuotationRuleValidate:
 # SUB SERIALIZERS
 class QuotationProductSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=False, allow_null=True)
-    unit_of_measure_id = serializers.UUIDField(error_messages={
+    unit_of_measure_id = serializers.UUIDField(allow_null=True, error_messages={
         'required': SaleMsg.PRODUCT_UOM_REQUIRED,
     })
     tax_id = serializers.UUIDField(required=False, allow_null=True)

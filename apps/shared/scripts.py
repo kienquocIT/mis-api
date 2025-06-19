@@ -2004,11 +2004,15 @@ def create_new_tenant(tenant_code, tenant_data, user_data):
 
 def reset_push_payment_plan():
     PaymentPlan.objects.all().delete()
-    for sale_order in SaleOrder.objects.filter(system_status=3, id="18335b46-7530-48f5-923f-f88edc26115a"):
+    for sale_order in SaleOrder.objects.filter(system_status=3, id="a1a32f96-ad09-41ee-93b5-1344fb816434"):
         SOFinishHandler.push_to_payment_plan(instance=sale_order)
     # for purchase_order in PurchaseOrder.objects.filter(system_status=3):
     #     POFinishHandler.push_to_payment_plan(instance=purchase_order)
-    for cash_in_flow in CashInflow.objects.filter(system_status=3, id__in=["6da06f79-1f1f-47ea-a37f-d08487744d7b", "53dadbee-ffd2-4e8c-899f-6c31cfd35a36"]):
+    for cash_in_flow in CashInflow.objects.filter(system_status=3, id__in=[
+        "b53dc980-67f9-414c-ae76-5a2206ee7cb0",
+        "8593f949-761a-452e-bf96-b3a0ae523b84",
+        "966b3bb0-4a55-44f9-8a68-c3d33a2ce8ed",
+    ]):
         CashInFlowFinishHandler.push_to_payment_plan(instance=cash_in_flow)
     # for cash_out_flow in CashOutflow.objects.filter(system_status=3):
     #     CashOutFlowFinishHandler.push_to_payment_plan(instance=cash_out_flow)
@@ -2156,4 +2160,12 @@ def hong_quang_set_user_password():
         user.password = "pbkdf2_sha256$600000$USCJmMvz9hwi6yx90CZZQu$L4om3uuO+h9nPdRaldB2tw4yzjrpRhUxWWGqKTWdRpE="
         user.save(update_fields=['password'])
     print('hong_quang_set_user_password done.')
+    return True
+
+
+def hong_quang_delete_runtime_assignee():
+    assignees = RuntimeAssignee.objects.filter(stage__runtime__doc_id="3c975cb5-9a63-44dd-99e1-5b34a2ff8ca6")
+    if assignees:
+        assignees.delete()
+    print('hong_quang_delete_runtime_assignee done.')
     return True
