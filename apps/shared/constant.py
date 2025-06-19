@@ -506,15 +506,3 @@ SECURITY_LEVEL = (
     (1, 'Medium'),
     (2, 'High')
 )
-
-DOCUMENT_TYPE = (
-    (0, 'Official Letter'),
-    (1, 'Notification'),
-    (2, 'Regulation'),
-    (3, 'Rule'),
-    (4, 'Procedure'),
-    (5, 'Instruction'),
-    (6, 'Plan'),
-    (7, 'Project'),
-    (8, 'Submission Document')
-)
