@@ -196,6 +196,7 @@ class CommonCreateUpdateProduct:
             'productuomgroup',
             'price',
             'productpricelist',
+            'removedcomponent'
         }
 
         related_fields = product_obj._meta.get_fields()

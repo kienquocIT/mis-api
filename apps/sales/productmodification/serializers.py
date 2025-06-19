@@ -31,6 +31,8 @@ __all__ = [
 # main
 class ProductModificationListSerializer(AbstractListSerializerModel):
     employee_created = serializers.SerializerMethodField()
+    goods_issue_mapped = serializers.SerializerMethodField()
+    # goods_receipt_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductModification
@@ -39,7 +41,9 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
             'title',
             'code',
             'created_goods_issue',
+            'goods_issue_mapped',
             'created_goods_receipt',
+            # 'goods_receipt_mapped',
             'date_created',
             'employee_created'
         )
@@ -56,6 +60,16 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
                 'code': obj.employee_created.group.code
             } if obj.employee_created.group else {}
         } if obj.employee_created else {}
+
+    @classmethod
+    def get_goods_issue_mapped(cls, obj):
+        goods_issue_mapped = obj.goods_issue_pm.first()
+        return goods_issue_mapped.id if goods_issue_mapped else ''
+
+    # @classmethod
+    # def get_goods_receipt_mapped(cls, obj):
+    #     goods_receipt_mapped = obj.goods_receipt_pm.first()
+    #     return goods_receipt_mapped.id if goods_receipt_mapped else ''
 
 
 class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
@@ -147,12 +161,11 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
             if Product.objects.filter_on_company(code=prd_mapped_dt.get('code')).exists():
                 raise serializers.ValidationError({"code": ProductMsg.CODE_EXIST})
         else:
-            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='product')
-            if not code_generated:
+            # kiểm tra cấu hình tồn tại
+            if not CompanyFunctionNumber.objects.filter_on_company(app_code='product').exists():
                 raise serializers.ValidationError({
                     "code": f"{ProductMsg.CODE_NOT_NULL}. {BaseMsg.NO_CONFIG_AUTO_CODE}"
                 })
-            prd_mapped_dt['code'] = code_generated
         if not prd_mapped_dt.get('title'):
             raise serializers.ValidationError({'title': "Product mapping is missing title."})
         if not ProductType.objects.filter_on_company(id=prd_mapped_dt.get('product_type')).exists():
