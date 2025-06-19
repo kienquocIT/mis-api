@@ -491,3 +491,82 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
                     serial_old.save(update_fields=['serial_status'])
                     break
         return True
+
+
+class PWModified(MasterDataAbstractModel):
+    product_warehouse = models.ForeignKey(
+        ProductWareHouse,
+        on_delete=models.CASCADE,
+        related_name="pw_modified_pw",
+    )
+    product_warehouse_serial = models.ForeignKey(
+        ProductWareHouseSerial,
+        on_delete=models.CASCADE,
+        related_name="pw_modified_pw_serial",
+        null=True
+    )
+    product_warehouse_lot = models.ForeignKey(
+        ProductWareHouseLot,
+        on_delete=models.CASCADE,
+        related_name="pw_modified_pw_lot",
+        null=True
+    )
+    modified_number = models.CharField(max_length=100)
+
+    class Meta:
+        verbose_name = 'Product Warehouse Modified'
+        verbose_name_plural = 'Products Warehouses Modified'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class PWModifiedComponent(SimpleAbstractModel):
+    pw_modified = models.ForeignKey(
+        PWModified,
+        on_delete=models.CASCADE,
+        related_name="pw_modified_components",
+    )
+    order = models.IntegerField(default=1)
+    component_text_data = models.JSONField(default=dict)  # {'title': ...; 'description':...}
+    component_product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
+    component_product_data = models.JSONField(default=dict)
+    component_quantity = models.FloatField()
+
+    class Meta:
+        verbose_name = 'Product Warehouse Modified Component'
+        verbose_name_plural = 'Products Warehouses Modified Component'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class PWModifiedComponentDetail(SimpleAbstractModel):
+    pw_modified_component = models.ForeignKey(
+        PWModifiedComponent,
+        on_delete=models.CASCADE,
+        related_name='pw_modified_component_detail',
+    )
+
+    component_prd_wh = models.ForeignKey(
+        'saledata.ProductWareHouse', on_delete=models.CASCADE, null=True
+    )
+    component_prd_wh_quantity = models.FloatField(default=0)
+
+    component_prd_wh_lot = models.ForeignKey(
+        'saledata.ProductWareHouseLot', on_delete=models.CASCADE, null=True
+    )
+    component_prd_wh_lot_data = models.JSONField(default=dict)
+    component_prd_wh_lot_quantity = models.FloatField(default=0)
+
+    component_prd_wh_serial = models.ForeignKey(
+        'saledata.ProductWareHouseSerial', on_delete=models.CASCADE, null=True
+    )
+    component_prd_wh_serial_data = models.JSONField(default=dict)
+
+    class Meta:
+        verbose_name = 'Product Warehouse Modified Component Detail'
+        verbose_name_plural = 'Products Warehouses Modified Component Detail'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
