@@ -2435,6 +2435,20 @@ AppProp_SaleData_LeaseOrder_data = {
     # PRINT
 }
 
+AppProp_SaleData_PurchaseOrder_data = {
+    # 81a111ef-9c32-4cbd-8601-a3cce884badb # purchasing.purchaseorder
+    # WORKFLOW
+    '1d9a6cf4-3cef-4965-bb9e-8a72934cbc6e': {
+        'application_id': '81a111ef-9c32-4cbd-8601-a3cce884badb',
+        'title': 'Total value',
+        'code': 'total_product',
+        'remark': 'Total value of purchase order',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
+}
+
 # haind
 AppProp_SaleData_Advance_Payment_data = {
     "2142ad51-81b7-48a0-a073-58f516c40c88": {
@@ -3299,6 +3313,7 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Delivery_data,
     **AppProp_SaleData_Contract_Approval_data,
     **AppProp_SaleData_LeaseOrder_data,
+    **AppProp_SaleData_PurchaseOrder_data,
     # haind
     **AppProp_SaleData_Advance_Payment_data,
     **AppProp_SaleData_AP_Invoice_data,
