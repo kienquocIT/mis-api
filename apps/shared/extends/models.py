@@ -428,6 +428,12 @@ class AutoDocumentAbstractModel(SimpleAbstractModel):  # use for applications in
 
 
 class CurrencyAbstractModel(SimpleAbstractModel):  # use for applications need exchange currency
+    currency_company = models.ForeignKey(
+        'saledata.Currency', null=True, on_delete=models.SET_NULL,
+        help_text='',
+        related_name='%(app_label)s_%(class)s_currency_company',
+    )
+    currency_company_data = models.JSONField(default=dict, help_text='data json of currency_company')
     currency_exchange = models.ForeignKey(
         'saledata.Currency', null=True, on_delete=models.SET_NULL,
         help_text='',
