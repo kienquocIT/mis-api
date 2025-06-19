@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models import (
     ProductWareHouse, ProductWareHouseSerial, Product, ProductWareHouseLot,
     WareHouse, ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure,
 )
-from apps.masterdata.saledata.models.product_warehouse import PWModified, PWModifiedComponent
+from apps.masterdata.saledata.models.product_warehouse import PWModified
 from apps.sales.productmodification.models import (
     ProductModification, CurrentComponent, RemovedComponent, CurrentComponentDetail,
 )
@@ -33,8 +33,6 @@ __all__ = [
 # main
 class ProductModificationListSerializer(AbstractListSerializerModel):
     employee_created = serializers.SerializerMethodField()
-    goods_issue_mapped = serializers.SerializerMethodField()
-    # goods_receipt_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductModification
@@ -42,10 +40,6 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
             'id',
             'title',
             'code',
-            'created_goods_issue',
-            'goods_issue_mapped',
-            'created_goods_receipt',
-            # 'goods_receipt_mapped',
             'date_created',
             'employee_created'
         )
@@ -62,16 +56,6 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
                 'code': obj.employee_created.group.code
             } if obj.employee_created.group else {}
         } if obj.employee_created else {}
-
-    @classmethod
-    def get_goods_issue_mapped(cls, obj):
-        goods_issue_mapped = obj.goods_issue_pm.first()
-        return goods_issue_mapped.id if goods_issue_mapped else ''
-
-    # @classmethod
-    # def get_goods_receipt_mapped(cls, obj):
-    #     goods_receipt_mapped = obj.goods_receipt_pm.first()
-    #     return goods_receipt_mapped.id if goods_receipt_mapped else ''
 
 
 class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
