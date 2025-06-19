@@ -204,7 +204,7 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
     def get_goods_transfer_data_not_finished(cls, item, lot_detail, serial_detail):
         serial_exist = 0
         for serial in item.product_warehouse.product_warehouse_serial_product_warehouse.filter(
-                is_delete=False
+                serial_status=0
         ).order_by('vendor_serial_number', 'serial_number'):
             serial_exist += 1 if str(serial.id) in item.sn_data else 0
             serial_detail.append({

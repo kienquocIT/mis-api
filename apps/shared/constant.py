@@ -303,6 +303,7 @@ GOODS_ISSUE_TYPE = (
     (0, _('For Inventory Adjustment')),
     (1, _('Liquidation')),
     (2, _('For Production')),
+    (2, _('For Product Modification')),
 )
 
 RETURN_ADVANCE_MONEY_RECEIVED = (

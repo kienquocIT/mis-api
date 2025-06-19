@@ -714,7 +714,6 @@ class ReportInventorySubFunction:
             product=product, **kwargs
         ).first()
         latest_log = record.latest_log if record else None
-        print(ReportInventoryCostLatestLog.objects.count(), record)
         if latest_log:
             return {
                 'quantity': latest_log.perpetual_current_quantity,
