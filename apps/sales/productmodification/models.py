@@ -271,23 +271,21 @@ class ProductModification(DataAbstractModel):
         """
         Hàm này để cập nhập các component hiện tại cho SP đã đem đi Ráp - Rã.
         """
-        pw_modified_obj = PWModified.objects.filter_on_company(
+        PWModified.objects.filter_on_company(
             product_warehouse=pm_obj.prd_wh,
             product_warehouse_lot=pm_obj.prd_wh_lot,
             product_warehouse_serial=pm_obj.prd_wh_serial,
-            modified_number=pm_obj.code
-        ).first()
-        if not pw_modified_obj:
-            pw_modified_obj = PWModified.objects.create(
-                product_warehouse=pm_obj.prd_wh,
-                product_warehouse_lot=pm_obj.prd_wh_lot,
-                product_warehouse_serial=pm_obj.prd_wh_serial,
-                modified_number=pm_obj.code,
-                employee_created=pm_obj.employee_created,
-                date_created=pm_obj.date_created,
-                tenant=pm_obj.tenant,
-                company=pm_obj.company,
-            )
+        ).delete()
+        pw_modified_obj = PWModified.objects.create(
+            product_warehouse=pm_obj.prd_wh,
+            product_warehouse_lot=pm_obj.prd_wh_lot,
+            product_warehouse_serial=pm_obj.prd_wh_serial,
+            modified_number=pm_obj.code,
+            employee_created=pm_obj.employee_created,
+            date_created=pm_obj.date_created,
+            tenant=pm_obj.tenant,
+            company=pm_obj.company,
+        )
         PWModifiedComponent.objects.filter(pw_modified=pw_modified_obj).delete()
         bulk_info = []
         bulk_info_detail = []
