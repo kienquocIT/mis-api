@@ -4,8 +4,17 @@ from apps.core.base.models import Application
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.kms.incomingdocument.models import KMSIncomingDocument, IncomingAttachDocumentMapAttachFile, \
-    KMSAttachIncomingDocuments
+    KMSAttachIncomingDocuments, KMSInternalRecipientIncomingDocument
 from apps.shared import AbstractCreateSerializerModel, KMSMsg, AbstractDetailSerializerModel, AttachmentMsg, HRMsg
+
+
+__all__ = [
+    'KMSIncomingDocumentListSerializer',
+    'KMSAttachedIncomingDocumentSerializers',
+    'KMSInternalRecipientIncomingDocumentSerializers',
+    'KMSIncomingDocumentCreateSerializer',
+    'KMSIncomingDocumentDetailSerializer'
+]
 
 
 def create_attachment(doc_id, attachment_result):
@@ -37,6 +46,7 @@ def create_attached_incoming_document(incoming_doc, attached_list):
             incoming_document_id=str(incoming_doc.id),
             document_type_id=item.get('document_type'),
             content_group_id=item.get('content_group'),
+            sender=item.get('sender'),
             effective_date=item.get('effective_date'),
             expired_date=item.get('expired_date'),
             security_level=item.get('security_level'),
@@ -48,14 +58,42 @@ def create_attached_incoming_document(incoming_doc, attached_list):
     KMSAttachIncomingDocuments.objects.bulk_create(new_list)
 
 
+def create_internal_recipient(incoming_doc, internal_list):
+    KMSInternalRecipientIncomingDocument.objects.filter_on_company(incoming_document_id=str(incoming_doc.id)).delete()
+    new_list = []
+    for item in internal_list:
+        item_content = KMSInternalRecipientIncomingDocument(
+            title=item.get('title'),
+            incoming_document_id=str(incoming_doc.id),
+            kind=item.get('kind', 2),
+            employee_access=item.get('employee_access', {}),
+            group_access=item.get('group_access', {}),
+            document_permission_list=item['document_permission_list'],
+            expiration_date=item.get('expiration_date'),
+            company=incoming_doc.company,
+            tenant=incoming_doc.tenant,
+        )
+        new_list.append(item_content)
+    KMSInternalRecipientIncomingDocument.objects.bulk_create(new_list)
+
+
 class KMSIncomingDocumentListSerializer(serializers.ModelSerializer):
+    sender = serializers.SerializerMethodField()
+
     class Meta:
         model = KMSIncomingDocument
         fields = (
             'id',
             'title',
             'remark',
+            'sender'
         )
+
+    @classmethod
+    def get_sender(cls, obj):
+        for item in obj.kms_attach_incoming_documents.all():
+            return item.sender
+        return ''
 
 
 class KMSAttachedIncomingDocumentSerializers(serializers.Serializer):
@@ -81,9 +119,27 @@ class KMSAttachedIncomingDocumentSerializers(serializers.Serializer):
         raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
 
+class KMSInternalRecipientIncomingDocumentSerializers(serializers.Serializer):
+    title = serializers.CharField(required=False, allow_null=True)
+    kind = serializers.IntegerField()
+    employee_access = serializers.JSONField(required=False, allow_null=True)
+    group_access = serializers.JSONField(required=False, allow_null=True)
+    document_permission_list = serializers.JSONField()
+    expiration_date = serializers.DateField(required=False, allow_null=True)
+
+    @classmethod
+    def validate_document_permission_list(cls, attrs):
+        if len(attrs) > 0:
+            return attrs
+        raise serializers.ValidationError({
+            'document_permission_list': KMSMsg.RECIPIENT_PERMISSION_ERROR
+        })
+
+
 class KMSIncomingDocumentCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
     attached_list = KMSAttachedIncomingDocumentSerializers(many=True)
+    internal_recipient = KMSInternalRecipientIncomingDocumentSerializers(many=True)
 
     @classmethod
     def validate_attached_list(cls, value):
@@ -95,8 +151,10 @@ class KMSIncomingDocumentCreateSerializer(serializers.ModelSerializer):
     def create(self, validate_data):
         with transaction.atomic():
             attached_list = validate_data.pop('attached_list', None)
+            internal_list = validate_data.pop('internal_recipient', None)
             incoming_doc = KMSIncomingDocument.objects.create(**validate_data)
             create_attached_incoming_document(incoming_doc, attached_list)
+            create_internal_recipient(incoming_doc, internal_list)
             return incoming_doc
 
     class Meta:
@@ -105,6 +163,7 @@ class KMSIncomingDocumentCreateSerializer(serializers.ModelSerializer):
             'title',
             'attached_list',
             'remark',
+            'internal_recipient'
         )
 
 

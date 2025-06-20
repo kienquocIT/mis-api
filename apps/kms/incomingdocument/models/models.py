@@ -1,21 +1,8 @@
 import json
 
 from django.db import models
-from apps.core.company.models import CompanyFunctionNumber
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, SECURITY_LEVEL
-
-KIND = (
-    (1, 'employee'),
-    (2, 'group')
-)
-
-KIND_PERM = (
-    (1, 'preview'),
-    (2, 'viewer'),
-    (3, 'editor'),
-    (4, 'custom')
-)
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, SECURITY_LEVEL, KIND
 
 
 class KMSIncomingDocument(DataAbstractModel):
@@ -96,5 +83,50 @@ class IncomingAttachDocumentMapAttachFile(M2MFilesAbstractModel):
         default_permissions = ()
         permissions = ()
 
+
+class KMSInternalRecipientIncomingDocument(MasterDataAbstractModel):
+    incoming_document = models.ForeignKey(
+        KMSIncomingDocument,
+        on_delete=models.CASCADE,
+        verbose_name='Internal Recipient of KMS Incoming Document',
+        related_name='kms_kmsinternalrecipient_incoming_doc'
+    )
+    kind = models.SmallIntegerField(
+        default=1,
+        choices=KIND
+    )
+    employee_access = models.JSONField(
+        default=list,
+        null=True,
+        verbose_name="employee list has access this file",
+        help_text=json.dumps(["uuid4", "uuid4"])
+    )
+    group_access = models.JSONField(
+        default=list,
+        null=True,
+        verbose_name='Permission of Group',
+        help_text=json.dumps(["uuid4", "uuid4"])
+    )
+    document_permission_list = models.JSONField(
+        default=dict,
+        null=True,
+        verbose_name='Permission of Employee',
+        help_text=json.dumps(
+            {
+                "permission_kind": [i for i in range(1, 8)]
+            }
+        )
+    )
+    expiration_date = models.DateField(
+        null=True,
+        verbose_name='expiration date'
+    )
+
+    class Meta:
+        verbose_name = 'Internal recipient incoming document'
+        verbose_name_plural = 'Internal recipients incoming document'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
 
 

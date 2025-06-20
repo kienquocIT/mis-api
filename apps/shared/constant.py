@@ -506,3 +506,8 @@ SECURITY_LEVEL = (
     (1, 'Medium'),
     (2, 'High')
 )
+
+KIND = (
+    (1, 'employee'),
+    (2, 'group')
+)
