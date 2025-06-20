@@ -1,17 +1,19 @@
 import os
 from wsgiref.util import FileWrapper
 from django.db.models import Q
+from django.contrib.auth.models import AnonymousUser
 
 from django.conf import settings
 from django.http import StreamingHttpResponse
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import exceptions
+from rest_framework import exceptions, status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.views import APIView
+from rest_framework.response import Response
 
 from apps.shared import (
     BaseCreateMixin, mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck,
-    ResponseController,
+    ResponseController, BaseDestroyMixin, AttMsg, HttpMsg,
 )
 
 from .models import Files, PublicFiles, Folder, FolderPermission
@@ -20,7 +22,9 @@ from .serializers import (
     DetailImageWebBuilderInPublicFileListSerializer, CreateImageWebBuilderInPublicFileListSerializer,
     FolderListSerializer, FolderCreateSerializer, FolderDetailSerializer, FolderUpdateSerializer,
     FolderUploadFileSerializer, PublicFilesUploadSerializer, PublicFilesDetailSerializer, PublicFilesListSerializer,
+    FileDeleteAllSerializer, FolderDeleteAllSerializer
 )
+from .utils import check_folder_perm, check_file_perm
 
 
 class FilesUpload(BaseListMixin, BaseCreateMixin):
@@ -29,7 +33,6 @@ class FilesUpload(BaseListMixin, BaseCreateMixin):
     serializer_list = FilesListSerializer
     serializer_create = FilesUploadSerializer
     serializer_detail = FilesDetailSerializer
-
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     def write_log(self, *args, **kwargs):
@@ -54,6 +57,31 @@ class FilesUpload(BaseListMixin, BaseCreateMixin):
             'user_obj': self.request.user
         }
         return self.create(request, *args, **kwargs)
+
+
+class FilesEdit(BaseDestroyMixin):
+    queryset = Files.objects
+    serializer_delete_all = FileDeleteAllSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Delete file list",
+        operation_description="Delete file list",
+        request_body=FileDeleteAllSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def delete(self, request, *args, **kwargs):
+        if check_file_perm(request.data.get('id_list', None), 'my_space', request.user.employee_current) is False:
+            return Response(
+                data={
+                    "status": status.HTTP_403_FORBIDDEN,
+                    "detail": HttpMsg.FORBIDDEN,
+                }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+            )
+        kwargs['is_purge'] = True
+        kwargs['remove_file'] = True
+        return self.destroy_list(request, *args, **kwargs)
 
 
 class PublicFilesUpload(BaseListMixin, BaseCreateMixin):
@@ -243,11 +271,20 @@ class FolderList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         user = self.request.user
-        employee_id = str(user.employee_current_id).replace('-', '')
+        employee_id = str(user.employee_current_id)
+        # group_id = str(user.employee_current.group.id) if hasattr(user.employee_current, 'group') else None
+        # filter by parent and employee
 
-        return super().get_queryset().filter(employee_inherit_id=employee_id).select_related(
-            'employee_inherit', 'parent_n'
-        )
+        qs = super().get_queryset()
+        # if self.request.query_params.get('parent_n_id', None) is None and self.request.query_params.get(
+        #         'parent_n_id__isnull', None
+        # ) is None:
+        #     qs = qs.filter(parent_n_id__isnull=True)
+        if self.request.query_params.get('employee_inherit_id', None) is None and self.request.query_params.get(
+                'employee_inherit_id__isnull', None
+        ) is None:
+            qs = qs.filter(employee_inherit_id=employee_id)
+        return qs.select_related('employee_inherit', 'parent_n')
 
     @swagger_auto_schema(
         operation_summary="Folder List",
@@ -271,6 +308,58 @@ class FolderList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
+class FolderMySpaceList(BaseListMixin, BaseDestroyMixin):
+    queryset = Folder.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'parent_n_id': ['exact', 'isnull'],
+        'employee_inherit_id': ['exact', 'isnull'],
+    }
+    serializer_list = FolderListSerializer
+    serializer_delete_all = FolderDeleteAllSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        if not isinstance(self.request.user, AnonymousUser):
+            emp_crt = self.request.user.employee_current
+            qs = super().get_queryset()
+            if self.request.query_params.get('parent_n_id', None) is None and self.request.query_params.get(
+                    'parent_n_id__isnull', None
+            ) is None:
+                qs = qs.filter(parent_n_id__isnull=True)
+            return qs.filter(is_owner=True, employee_inherit=emp_crt)
+        return Folder.objects.none()
+
+    @swagger_auto_schema(
+        operation_summary="Folder List my space",
+        operation_description="Get Folder List my space",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Delete folder list my space",
+        operation_description="Delete folder list my space",
+        request_body=FolderDeleteAllSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def delete(self, request, *args, **kwargs):
+        if check_folder_perm(request.data.get('id_list', None), 'my_space', request.user.employee_current) is False:
+            return Response(
+                data={
+                    "status": status.HTTP_403_FORBIDDEN,
+                    "detail": HttpMsg.FORBIDDEN,
+                }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+            )
+        kwargs['is_purge'] = True
+        return self.destroy_list(request, *args, **kwargs)
+
+
 class FolderListSharedToMe(BaseListMixin):
     queryset = Folder.objects
     search_fields = ['title', 'code']
@@ -282,17 +371,26 @@ class FolderListSharedToMe(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
+        # query default filter by employee and group of user requests
+        # and permission has view
         user = self.request.user
         employee_id = str(user.employee_current_id)
+        group_id = str(user.employee_current.group.id) if hasattr(user.employee_current, 'group') else None
 
         # Base queryset
         queryset = super().get_queryset()
 
-        accessible_folder_ids = list(
-            FolderPermission.objects.filter(
-                Q(employee_list__icontains=f'"{employee_id}"') & Q(folder_perm_list__contains=[1])
-            ).values_list('folder_id', flat=True)
-        )
+        # filter employee/group has shared
+        employee_filter = Q(employee_list__icontains=f'"{employee_id}"') & Q(folder_perm_list__contains=[1])
+        group_filter = Q(group_list__icontains=f'"{group_id}"') & Q(
+            file_in_perm_list__contains=[1]
+        ) if group_id else Q()
+
+        accessible_folder_ids = FolderPermission.objects.filter(
+            employee_filter | group_filter
+        ).values_list('folder_id', flat=True).distinct()
+
+        accessible_folder_ids = list(accessible_folder_ids)
 
         return queryset.filter(Q(id__in=accessible_folder_ids))
 
@@ -309,7 +407,7 @@ class FolderListSharedToMe(BaseListMixin):
 
 class FolderDetail(
     BaseRetrieveMixin,
-    BaseUpdateMixin,
+    BaseUpdateMixin
 ):
     queryset = Folder.objects
     serializer_detail = FolderDetailSerializer
@@ -340,6 +438,37 @@ class FolderDetail(
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Delete folder",
+        operation_description="Delete Folder By ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=False
+    )
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.is_system:
+            raise ValueError(AttMsg.FOLDER_SYSTEM_ERROR)
+        folder_perm = instance.folder_permission_folder.all().first()
+        employee = request.user.employee_current
+        group = employee.group if hasattr(employee, 'group') else None
+        has_perm = False
+        if instance.employee_inherit_id == employee.id:
+            has_perm = True
+
+        if has_perm is False and folder_perm:
+            # nếu không phải user owner và có permission
+            has_permission = 5 in folder_perm.folder_perm_list
+            is_employee_allowed = str(employee.id) in folder_perm.employee_list
+            is_group_allowed = group and str(group.id) in folder_perm.group_list
+
+            if has_permission and (is_employee_allowed or is_group_allowed):
+                has_perm = True
+        if has_perm:
+            instance.delete()
+            return ResponseController.no_content_204()
+        return ResponseController.notfound_404(AttMsg.FOLDER_DELETE_ERROR)
 
 
 class FolderUploadFileList(BaseCreateMixin):

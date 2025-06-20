@@ -1693,3 +1693,7 @@ msgstr "Số serial sản phẩm phải khác nhau."
 #
 msgid "Serial number exist."
 msgstr "Số serial sản phẩm đã tồn tại."
+
+#
+msgid "Some values in the list are incorrect"
+msgstr "Một số giá trị không đúng"

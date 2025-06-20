@@ -6,6 +6,7 @@ from apps.masterdata.saledata.models import (
     ProductWareHouse, ProductWareHouseSerial, Product, ProductWareHouseLot,
     WareHouse, ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure,
 )
+from apps.masterdata.saledata.models.product_warehouse import PWModified
 from apps.sales.productmodification.models import (
     ProductModification, CurrentComponent, RemovedComponent, CurrentComponentDetail,
 )
@@ -13,6 +14,7 @@ from apps.shared import (
     AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel,
     ProductMsg, BaseMsg
 )
+
 
 __all__ = [
     'ProductModificationListSerializer',
@@ -31,8 +33,6 @@ __all__ = [
 # main
 class ProductModificationListSerializer(AbstractListSerializerModel):
     employee_created = serializers.SerializerMethodField()
-    goods_issue_mapped = serializers.SerializerMethodField()
-    # goods_receipt_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductModification
@@ -40,10 +40,6 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
             'id',
             'title',
             'code',
-            'created_goods_issue',
-            'goods_issue_mapped',
-            'created_goods_receipt',
-            # 'goods_receipt_mapped',
             'date_created',
             'employee_created'
         )
@@ -60,16 +56,6 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
                 'code': obj.employee_created.group.code
             } if obj.employee_created.group else {}
         } if obj.employee_created else {}
-
-    @classmethod
-    def get_goods_issue_mapped(cls, obj):
-        goods_issue_mapped = obj.goods_issue_pm.first()
-        return goods_issue_mapped.id if goods_issue_mapped else ''
-
-    # @classmethod
-    # def get_goods_receipt_mapped(cls, obj):
-    #     goods_receipt_mapped = obj.goods_receipt_pm.first()
-    #     return goods_receipt_mapped.id if goods_receipt_mapped else ''
 
 
 class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
@@ -545,6 +531,82 @@ class ProductModifiedListSerializer(serializers.ModelSerializer):
         )
 
 
+class ProductModifiedBeforeListSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
+    code = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    general_traceability_method = serializers.SerializerMethodField()
+    serial_number = serializers.SerializerMethodField()
+    lot_number = serializers.SerializerMethodField()
+    warehouse_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PWModified
+        fields = (
+            'id',
+            'code',
+            'title',
+            'description',
+            'general_traceability_method',
+            'product_warehouse_id',
+            'product_warehouse_lot_id',
+            'product_warehouse_serial_id',
+            'modified_number',
+            'serial_number',
+            'lot_number',
+            'warehouse_data'
+        )
+
+    @classmethod
+    def get_id(cls, obj):
+        return obj.product_warehouse.product_id if obj.product_warehouse else None
+
+    @classmethod
+    def get_code(cls, obj):
+        return obj.product_warehouse.product.code if obj.product_warehouse else None
+
+    @classmethod
+    def get_title(cls, obj):
+        title = ''
+        if obj.product_warehouse:
+            if obj.product_warehouse.product:
+                title = obj.product_warehouse.product.title
+        return title
+
+    @classmethod
+    def get_description(cls, obj):
+        description = ''
+        if obj.product_warehouse:
+            if obj.product_warehouse.product:
+                description = obj.product_warehouse.product.description
+        return description
+
+    @classmethod
+    def get_general_traceability_method(cls, obj):
+        general_traceability_method = None
+        if obj.product_warehouse:
+            if obj.product_warehouse.product:
+                general_traceability_method = obj.product_warehouse.product.general_traceability_method
+        return general_traceability_method
+
+    @classmethod
+    def get_serial_number(cls, obj):
+        if obj.product_warehouse_serial:
+            return obj.product_warehouse_serial.serial_number
+        return ''
+
+    @classmethod
+    def get_lot_number(cls, obj):
+        if obj.product_warehouse_lot:
+            return obj.product_warehouse_lot.lot_number
+        return ''
+
+    @classmethod
+    def get_warehouse_data(cls, obj):
+        return obj.product_warehouse.warehouse_data if obj.product_warehouse else {}
+
+
 class ProductComponentListSerializer(serializers.ModelSerializer):
     component_list_data = serializers.SerializerMethodField()
 
@@ -569,6 +631,51 @@ class ProductComponentListSerializer(serializers.ModelSerializer):
                 'component_quantity': item.component_quantity
             })
         return component_list_data
+
+
+class LatestComponentListSerializer(serializers.ModelSerializer):
+    current_component_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PWModified
+        fields = (
+            'id',
+            'code',
+            'title',
+            'current_component_data'
+        )
+
+    @classmethod
+    def get_current_component_data(cls, obj):
+        current_component_data = []
+        for item in obj.pw_modified_components.all():
+            current_component_data.append({
+                'component_id': str(item.id),
+                'order': item.order,
+                'component_text_data': item.component_text_data,
+                'component_product_data': item.component_product_data,
+                'component_quantity': item.component_quantity,
+                'is_added_component': False,
+                'component_product_none_detail': [{
+                    'warehouse_id': child.component_prd_wh.warehouse_id,
+                    'picked_quantity': child.component_prd_wh_quantity,
+                } for child in item.pw_modified_component_detail.filter(
+                    pw_modified_component=item,
+                    component_prd_wh__isnull=False
+                )],
+                'component_product_lot_detail': [{
+                    'lot_id': child.component_prd_wh_lot_id,
+                    'picked_quantity': child.component_prd_wh_lot_quantity,
+                } for child in item.pw_modified_component_detail.filter(
+                    pw_modified_component=item,
+                    component_prd_wh_lot__isnull=False
+                )],
+                'component_product_sn_detail': item.pw_modified_component_detail.filter(
+                    pw_modified_component=item,
+                    component_prd_wh_serial__isnull=False
+                ).values_list('component_prd_wh_serial_id', flat=True),
+            })
+        return current_component_data
 
 
 class WarehouseListByProductSerializer(serializers.ModelSerializer):

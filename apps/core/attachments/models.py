@@ -51,7 +51,7 @@ FILE_LIST = (
     (4, 'Share'),
     (5, 'Upload version'),
     (6, 'Duplicate'),
-    (6, 'Edit file'),
+    (7, 'Edit file'),
 )
 
 
@@ -176,6 +176,9 @@ class Files(BastionFiles):
         verbose_name='folder of file',
         related_name='files_folder',
         null=True,
+    )
+    is_approved = models.BooleanField(
+        default=False, help_text="This flag indicates that the file has been belong to system"
     )
 
     @classmethod
@@ -524,6 +527,8 @@ class Folder(MasterDataAbstractModel):
         related_name='folder_employee_inherit',
     )
     is_system = models.BooleanField(default=False, help_text="flag to know this folder auto created by system")
+    is_owner = models.BooleanField(default=False, help_text="flag to know this folder created by owner")
+    is_admin = models.BooleanField(default=False, help_text="flag to know this folder created by admin")
 
     class Meta:
         verbose_name = 'Folder'

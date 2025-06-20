@@ -19,3 +19,6 @@ class AttMsg:
     GROUP_LIST_NOT_EXIST = _('Group list does not exist')
     CAPABILITY_NOT_EXIST = _('Capability list does not exist')
     FOLDER_PERMISSION_ERROR = _('Update permission error')
+    FOLDER_DELETE_ERROR = _('Delete folder error')
+    FILE_DELETE_ERROR = _('Delete file error')
+    FOLDER_SYSTEM_ERROR = _('Can not delete system folder')
