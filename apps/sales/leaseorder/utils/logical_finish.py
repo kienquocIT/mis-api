@@ -1,7 +1,7 @@
 from apps.masterdata.saledata.models import AccountActivity
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.sales.delivery.models import OrderPickingSub, OrderPickingProduct
-from apps.sales.report.models import ReportCashflow, ReportCustomer, ReportProduct, ReportRevenue
+from apps.sales.report.models import ReportCashflow, ReportCustomer, ReportProduct, ReportRevenue, ReportLease
 from apps.shared import DisperseModel
 
 
@@ -111,6 +111,26 @@ class LOFinishHandler:
             gross_profit=instance.indicator_gross_profit,
             net_income=instance.indicator_net_income,
         )
+        return True
+
+    @classmethod
+    def push_to_report_lease(cls, instance):
+        ReportLease.push_from_lo(**{
+            'tenant_id': instance.tenant_id,
+            'company_id': instance.company_id,
+            'lease_order_id': instance.id,
+            'opportunity_id': instance.opportunity_id,
+            'customer_id': instance.customer_id,
+            'lease_from': instance.lease_from,
+            'lease_to': instance.lease_to,
+            'employee_created_id': instance.employee_created_id,
+            'employee_inherit_id': instance.employee_inherit_id,
+            'group_inherit_id': instance.employee_inherit.group_id if instance.employee_inherit else None,
+            'date_approved': instance.date_approved,
+            'revenue': instance.indicator_revenue,
+            'gross_profit': instance.indicator_gross_profit,
+            'net_income': instance.indicator_net_income,
+        })
         return True
 
     @classmethod

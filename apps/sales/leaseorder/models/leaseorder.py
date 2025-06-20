@@ -320,6 +320,7 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
                     LOFinishHandler.update_asset_status(instance=self)  # asset status => leased
                     LOFinishHandler.push_to_report_revenue(instance=self)  # reports
                     LOFinishHandler.push_to_report_customer(instance=self)
+                    LOFinishHandler.push_to_report_lease(instance=self)
 
                     LOFinishHandler.push_final_acceptance_lo(instance=self)  # final acceptance
                     LOFinishHandler.update_recurrence_task(instance=self)  # recurrence

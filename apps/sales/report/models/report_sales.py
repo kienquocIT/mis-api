@@ -322,3 +322,62 @@ class ReportCashflow(DataAbstractModel):
         ordering = ('-due_date',)
         default_permissions = ()
         permissions = ()
+
+
+# REPORT REVENUE
+class ReportLease(DataAbstractModel):
+    lease_order = models.OneToOneField(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        related_name='report_lease_lease_order',
+        null=True,
+    )
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE,
+        related_name='report_lease_opportunity',
+        null=True,
+    )
+    customer = models.ForeignKey(
+        'saledata.Account',
+        on_delete=models.CASCADE,
+        related_name='report_lease_customer',
+        null=True,
+    )
+    group_inherit = models.ForeignKey(
+        'hr.Group',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='report_lease_group_inherit',
+    )
+    lease_from = models.DateField(null=True)
+    lease_to = models.DateField(null=True)
+    revenue = models.FloatField(default=0)
+    gross_profit = models.FloatField(default=0)
+    net_income = models.FloatField(default=0)
+
+    @classmethod
+    def push_from_lo(
+            cls,
+            **kwargs
+    ):
+        lease_order_id = kwargs.get('lease_order_id', None)
+        tenant_id = kwargs.get('tenant_id', None)
+        company_id = kwargs.get('company_id', None)
+        if lease_order_id and tenant_id and company_id:
+            if lease_order_id:
+                if not cls.objects.filter(
+                        tenant_id=tenant_id,
+                        company_id=company_id,
+                        lease_order_id=lease_order_id,
+                ).exists():
+                    cls.objects.create(**kwargs)
+                    return True
+        return True
+
+    class Meta:
+        verbose_name = 'Report Lease'
+        verbose_name_plural = 'Report Leases'
+        ordering = ('-date_approved',)
+        default_permissions = ()
+        permissions = ()
