@@ -35,6 +35,9 @@ class KMSIncomingDocumentRequestList(BaseListMixin, BaseCreateMixin):
         label_code='incomingdocument', model_code='kmsincomingdocument', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user': request.user,
+        }
         return self.create(request, *args, **kwargs)
 
 

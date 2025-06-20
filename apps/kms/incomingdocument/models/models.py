@@ -19,13 +19,28 @@ KIND_PERM = (
 
 
 class KMSIncomingDocument(DataAbstractModel):
-    remark = models.TextField(blank=True)
+    remark = models.TextField(blank=True, null=True)
     attachment_m2m = models.ManyToManyField(
         'attachments.Files',
         through='IncomingAttachDocumentMapAttachFile',
         symmetrical=False,
         blank=True,
         related_name='kms_incoming_document_attachment_m2m'
+    )
+
+    class Meta:
+        verbose_name = 'Incoming document of KMS'
+        verbose_name_plural = 'Incoming documents of KMS'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class KMSAttachIncomingDocuments(MasterDataAbstractModel):
+    incoming_document = models.ForeignKey(
+        KMSIncomingDocument,
+        on_delete=models.CASCADE,
+        related_name='kms_attach_incoming_documents'
     )
     sender = models.CharField(max_length=250, blank=True)
     document_type = models.ForeignKey(
@@ -48,11 +63,16 @@ class KMSIncomingDocument(DataAbstractModel):
         default=0,
         choices=SECURITY_LEVEL
     )
+    attachment = models.JSONField(
+        default=list,
+        null=True,
+        verbose_name='Attachment File',
+        help_text=json.dumps(["uuid4", "uuid4"])
+    )
 
     class Meta:
-        verbose_name = 'Incoming document of KMS'
-        verbose_name_plural = 'Incoming documents of KMS'
-        ordering = ('-date_created',)
+        verbose_name = 'Attached Incoming Documents of KMS'
+        verbose_name_plural = 'list Attached Incoming Documents of KMS'
         default_permissions = ()
         permissions = ()
 
@@ -67,7 +87,7 @@ class IncomingAttachDocumentMapAttachFile(M2MFilesAbstractModel):
 
     @classmethod
     def get_doc_field_name(cls):
-        return 'incoming document'
+        return 'incoming_document'
 
     class Meta:
         verbose_name = 'KMS incoming document attachment'
