@@ -43,8 +43,9 @@ class GoodsDetailSerialDataSerializer(serializers.ModelSerializer):
             'manufacture_date',
             'warranty_start',
             'warranty_end',
-            'is_delete',
+            'serial_status',
             'purchase_request_id',
+            'goods_receipt_id',
             'date_created',
         )
 

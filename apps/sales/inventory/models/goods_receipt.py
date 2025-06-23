@@ -181,12 +181,17 @@ class GoodsReceipt(DataAbstractModel):
     @staticmethod
     def count_created_serial_data(good_receipt_obj, gr_prd_obj, gr_wh_obj, pr_data):
         count = 0
-        for serial in good_receipt_obj.pw_serial_goods_receipt.filter(
-                product_warehouse__product=gr_prd_obj.product,
-                product_warehouse__warehouse=gr_wh_obj.warehouse,
-        ).order_by('date_created'):
-            if serial.purchase_request_id:
-                if str(serial.purchase_request_id) == pr_data.get('id'):
+        for serial in good_receipt_obj.goods_receipt_serial_goods_receipt.filter(
+                goods_receipt_warehouse__goods_receipt_product__product=gr_prd_obj.product,
+                goods_receipt_warehouse__warehouse=gr_wh_obj.warehouse,
+        ):
+            if serial.goods_receipt_warehouse:
+                if serial.goods_receipt_warehouse.goods_receipt_request_product:
+                    sn_pr_prd = serial.goods_receipt_warehouse.goods_receipt_request_product.purchase_request_product
+                    if sn_pr_prd:
+                        if str(sn_pr_prd.purchase_request_id) == pr_data.get('id'):
+                            count += 1
+                if not serial.goods_receipt_warehouse.goods_receipt_request_product:
                     count += 1
             else:
                 count += 1
@@ -212,6 +217,7 @@ class GoodsReceipt(DataAbstractModel):
                                 'id': str(gr_prd_obj.product_id),
                                 'code': gr_prd_obj.product.code,
                                 'title': gr_prd_obj.product.title,
+                                'description': gr_prd_obj.product.description,
                                 'category': str(gr_prd_obj.product.general_product_category_id),
                                 'general_traceability_method': gr_prd_obj.product.general_traceability_method
                             } if gr_prd_obj.product else {},
@@ -265,6 +271,7 @@ class GoodsReceipt(DataAbstractModel):
                             'id': str(gr_prd_obj.product_id),
                             'code': gr_prd_obj.product.code,
                             'title': gr_prd_obj.product.title,
+                            'description': gr_prd_obj.product.description,
                             'category': str(gr_prd_obj.product.general_product_category_id),
                             'general_traceability_method': gr_prd_obj.product.general_traceability_method
                         } if gr_prd_obj.product else {},
