@@ -228,17 +228,17 @@ class DocHandler:
         document_target = None
         if all(hasattr(document_change, attr) for attr in ('document_change_order', 'document_root_id')):
             if document_change.document_change_order and document_change.document_root_id:
-                if document_change.document_change_order == 1:
-                    document_target = DocHandler(
-                        document_change.document_root_id, document_change._meta.label_lower
-                    ).get_obj(
-                        default_filter={
-                            'tenant_id': document_change.tenant_id,
-                            'company_id': document_change.company_id
-                        }
-                    )
+                # if document_change.document_change_order == 1:
+                #     document_target = DocHandler(
+                #         document_change.document_root_id, document_change.__class__.get_model_code()
+                #     ).get_obj(
+                #         default_filter={
+                #             'tenant_id': document_change.tenant_id,
+                #             'company_id': document_change.company_id
+                #         }
+                #     )
                 if document_change.document_change_order > 1:
-                    document_target = DocHandler(None, document_change._meta.label_lower).filter_first_obj(
+                    document_target = DocHandler(None, document_change.__class__.get_model_code()).filter_first_obj(
                         default_filter={
                             'tenant_id': document_change.tenant_id, 'company_id': document_change.company_id,
                             'document_change_order': document_change.document_change_order - 1,
