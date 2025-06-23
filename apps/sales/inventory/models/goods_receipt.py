@@ -187,8 +187,9 @@ class GoodsReceipt(DataAbstractModel):
         ):
             if serial.goods_receipt_warehouse:
                 if serial.goods_receipt_warehouse.goods_receipt_request_product:
-                    if serial.goods_receipt_warehouse.goods_receipt_request_product.purchase_request_product:
-                        if str(serial.goods_receipt_warehouse.goods_receipt_request_product.purchase_request_product.purchase_request_id) == pr_data.get('id'):
+                    sn_pr_prd = serial.goods_receipt_warehouse.goods_receipt_request_product.purchase_request_product
+                    if sn_pr_prd:
+                        if str(sn_pr_prd.purchase_request_id) == pr_data.get('id'):
                             count += 1
                 if not serial.goods_receipt_warehouse.goods_receipt_request_product:
                     count += 1
