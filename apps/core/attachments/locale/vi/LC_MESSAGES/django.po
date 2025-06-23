@@ -31,3 +31,12 @@ msgstr "Nhóm quyền không tồn tại"
 
 msgid "Update permission error"
 msgstr "Cập nhập quyền lỗi"
+
+msgid "Delete folder error"
+msgstr "Xóa thư mục lỗi"
+
+msgid "Delete file error"
+msgstr "Xóa tệp lỗi"
+
+msgid "Can not delete system folder"
+msgstr "Không thể xóa thư mục hệ thống"

@@ -196,7 +196,7 @@ class CommonCreateUpdateProduct:
             'productuomgroup',
             'price',
             'productpricelist',
-            'removedcomponent'
+            'productcomponent'
         }
 
         related_fields = product_obj._meta.get_fields()
@@ -211,5 +211,6 @@ class CommonCreateUpdateProduct:
                     if first_record:
                         used_models.add(first_record._meta.model_name)
 
+        print(used_models)
         # Nếu có ít nhất một model liên kết không nằm trong danh sách bỏ qua => đang được sử dụng
         return any(model not in ignore_models for model in used_models)

@@ -1,3 +1,5 @@
+import os
+from collections.abc import Iterable
 import re
 from copy import deepcopy
 from typing import Union
@@ -7,9 +9,8 @@ from uuid import UUID
 from django.conf import settings
 from django.core.exceptions import EmptyResultSet, ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Q, Model, ManyToOneRel, Count
+from django.db.models import Q, Model
 from django.utils import timezone
-from django.utils.datetime_safe import datetime
 
 from django_filters import rest_framework as filters
 
@@ -1167,6 +1168,24 @@ class BaseDestroyMixin(BaseMixin):
             print('[perform_destroy] ERR', err)
         raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
 
+    @classmethod
+    def perform_destroy_list(cls, instance_list, purge=False, remove_file=False):
+        try:
+            with transaction.atomic():
+                for instance in instance_list:
+                    if purge:
+                        if remove_file:
+                            if os.path.isfile(instance.file.path):
+                                os.remove(instance.file.path)
+                        instance.delete()
+                    else:
+                        instance.is_delete = True
+                        instance.save()
+            return True
+        except Exception as e:
+            print(e)
+        return False
+
     @staticmethod
     def perform_soft_delete(instance):
         """
@@ -1223,3 +1242,22 @@ class BaseDestroyMixin(BaseMixin):
             for related_name, records in result.items():
                 print(f"{related_name}: {[str(record) for record in records]}")
         return result
+
+    def destroy_list(self, request, *args, **kwargs):
+        is_purge = kwargs.pop('is_purge', False)
+        remove_file = kwargs.pop('remove_file', False)
+        serializer_delete_all = getattr(self, 'serializer_delete_all', None)
+        if serializer_delete_all and callable(serializer_delete_all):
+            ser_all = serializer_delete_all(data=request.data)
+            ser_all.is_valid(raise_exception=True)
+
+            # lấy danh sách id list và data
+            obj_list = ser_all.validated_data.get('id_list', [])
+            if obj_list and isinstance(obj_list, Iterable):
+                perform_update = self.perform_destroy_list(obj_list, is_purge, remove_file)
+                if perform_update is True:
+                    return ResponseController.no_content_204()
+            return ResponseController.internal_server_error_500(
+                msg='Raise some exception in processing. The change was not applied.'
+            )
+        return ResponseController.forbidden_403(msg=HttpMsg.OBJ_DONE_NO_EDIT)

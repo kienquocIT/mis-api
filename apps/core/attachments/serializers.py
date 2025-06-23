@@ -2,7 +2,7 @@ from datetime import datetime
 import magic
 from django.conf import settings
 from rest_framework import serializers
-from apps.shared import HrMsg, TypeCheck, AttMsg, FORMATTING
+from apps.shared import HrMsg, TypeCheck, AttMsg, FORMATTING, BaseMsg
 from .models import Files, PublicFiles, Folder, FolderPermission
 
 
@@ -82,6 +82,7 @@ class FilesUploadSerializer(serializers.ModelSerializer):
 
 class FilesDetailSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()  # Add a custom field for the file URL
+    employee_created = serializers.SerializerMethodField()  # Add a custom field for the file URL
 
     class Meta:
         model = Files
@@ -94,13 +95,20 @@ class FilesDetailSerializer(serializers.ModelSerializer):
             'file_size',
             'file_type',
             'remarks',
-            'url'
+            'url',
+            'date_modified',
+            'employee_created'
         )
 
     @classmethod
     def get_url(cls, obj):
         # Return the file's URL
         return obj.get_url()
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        # Return the file's URL
+        return {'id': str(obj.employee_created.id), 'full_name': obj.employee_created.get_full_name()}
 
 
 class FilesListSerializer(serializers.ModelSerializer):
@@ -116,6 +124,23 @@ class FilesListSerializer(serializers.ModelSerializer):
         )
 
 
+class FileDeleteAllSerializer(serializers.ModelSerializer):
+    id_list = serializers.ListField(
+        child=serializers.UUIDField(), help_text='ID list record delete data'
+    )
+
+    @staticmethod
+    def validate_id_list(attrs):
+        id_list = Files.objects.filter(id__in=attrs)
+        if id_list.count() == len(attrs):
+            return id_list
+        raise serializers.ValidationError({'file': AttMsg.FILE_DELETE_ERROR})
+
+    class Meta:
+        model = Files
+        fields = ('id_list',)
+
+
 class PublicFilesListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PublicFiles
@@ -127,6 +152,7 @@ class PublicFilesListSerializer(serializers.ModelSerializer):
             'date_created',
             'remarks',
         )
+
 
 class PublicFilesUploadSerializer(serializers.ModelSerializer):
     def validate_file(self, attrs):
@@ -190,6 +216,7 @@ class PublicFilesDetailSerializer(serializers.ModelSerializer):
     def get_url(cls, obj):
         # Return the file's URL
         return obj.get_url()
+
 
 class CreateImageWebBuilderInPublicFileListSerializer(PublicFilesUploadSerializer):
     def validate_file(self, attrs):
@@ -359,6 +386,23 @@ class FolderDetailSerializer(serializers.ModelSerializer):
         ]
 
 
+class FolderDeleteAllSerializer(serializers.ModelSerializer):
+    id_list = serializers.ListField(
+        child=serializers.UUIDField(), help_text='ID list record delete data'
+    )
+
+    @classmethod
+    def validate_id_list(cls, attrs):
+        id_list = Folder.objects.filter(id__in=attrs)
+        if id_list.count() == len(attrs):
+            return id_list
+        raise serializers.ValidationError({'folder': BaseMsg.VALUE_DELETE_LIST_ERROR})
+
+    class Meta:
+        model = Folder
+        fields = '__all__'
+
+
 class FolderCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
     parent_n = serializers.UUIDField(required=False, allow_null=True)
@@ -368,6 +412,8 @@ class FolderCreateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'parent_n',
+            'is_owner',
+            'is_admin'
         )
 
     @classmethod
@@ -447,9 +493,10 @@ class FolderUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'folder': AttMsg.FOLDER_NOT_EXIST})
 
     def update(self, instance, validated_data):
-        permission_obj = validated_data.pop('permission_obj')
-        update_folder_permission(permission_obj)
-         # update instance
+        permission_obj = validated_data.pop('permission_obj', None)
+        if permission_obj:
+            update_folder_permission(permission_obj)
+        # update instance
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()

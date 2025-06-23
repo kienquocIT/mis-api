@@ -1,6 +1,7 @@
 from django.db import models
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Product, ProductProductType
+from apps.masterdata.saledata.models.product_warehouse import PWModified, PWModifiedComponent, PWModifiedComponentDetail
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct
 from apps.sales.inventory.utils import GRFromPMHandler
 from apps.sales.report.utils import IRForGoodsIssueHandler
@@ -265,6 +266,56 @@ class ProductModification(DataAbstractModel):
             item.save(update_fields=['component_product_id', 'component_product_data', 'fair_value', 'is_mapped'])
         return True
 
+    @classmethod
+    def update_current_product_component(cls, pm_obj):
+        """
+        Hàm này để cập nhập các component hiện tại cho SP đã đem đi Ráp - Rã.
+        """
+        PWModified.objects.filter_on_company(
+            product_warehouse=pm_obj.prd_wh,
+            product_warehouse_lot=pm_obj.prd_wh_lot,
+            product_warehouse_serial=pm_obj.prd_wh_serial,
+        ).delete()
+        pw_modified_obj = PWModified.objects.create(
+            product_warehouse=pm_obj.prd_wh,
+            product_warehouse_lot=pm_obj.prd_wh_lot,
+            product_warehouse_serial=pm_obj.prd_wh_serial,
+            modified_number=pm_obj.code,
+            employee_created=pm_obj.employee_created,
+            date_created=pm_obj.date_created,
+            tenant=pm_obj.tenant,
+            company=pm_obj.company,
+        )
+        PWModifiedComponent.objects.filter(pw_modified=pw_modified_obj).delete()
+        bulk_info = []
+        bulk_info_detail = []
+        for order, item in enumerate(pm_obj.current_components.all()):
+            pw_modified_component = PWModifiedComponent(
+                pw_modified=pw_modified_obj,
+                order=order,
+                component_text_data=item.component_text_data,
+                component_product=item.component_product,
+                component_product_data=item.component_product_data,
+                component_quantity=item.component_quantity
+            )
+            bulk_info.append(pw_modified_component)
+            for detail_item in item.current_components_detail.all():
+                bulk_info_detail.append(
+                    PWModifiedComponentDetail(
+                        pw_modified_component=pw_modified_component,
+                        component_prd_wh=detail_item.component_prd_wh,
+                        component_prd_wh_quantity=detail_item.component_prd_wh_quantity,
+                        component_prd_wh_lot=detail_item.component_prd_wh_lot,
+                        component_prd_wh_lot_data=detail_item.component_prd_wh_lot_data,
+                        component_prd_wh_lot_quantity=detail_item.component_prd_wh_lot_quantity,
+                        component_prd_wh_serial=detail_item.component_prd_wh_serial,
+                        component_prd_wh_serial_data=detail_item.component_prd_wh_serial_data,
+                    )
+                )
+        PWModifiedComponent.objects.bulk_create(bulk_info)
+        PWModifiedComponentDetail.objects.bulk_create(bulk_info_detail)
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -275,14 +326,11 @@ class ProductModification(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
-                issue_data = self.auto_create_goods_issue(self)
-                self.create_remove_component_product_mapped(self)
-
-                # Create goods receipt
                 if self.system_status == 3:
-                    GRFromPMHandler.create_new(
-                        pm_obj=self, issue_data=issue_data
-                    )
+                    self.create_remove_component_product_mapped(self)
+                    issue_data = self.auto_create_goods_issue(self)
+                    GRFromPMHandler.create_new(pm_obj=self, issue_data=issue_data) # Create goods receipt
+                    self.update_current_product_component(self)
         # hit DB
         super().save(*args, **kwargs)
 
