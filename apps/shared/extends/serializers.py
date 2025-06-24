@@ -69,7 +69,7 @@ class AbstractCurrencyCreateSerializerModel(serializers.ModelSerializer):
             'currency_company_data': serializers.JSONField(required=False, default=dict),
             'currency_exchange_id': serializers.UUIDField(required=False, allow_null=True),
             'currency_exchange_data': serializers.JSONField(required=False, default=dict),
-            'currency_exchange_rate': serializers.FloatField(default=0),
+            'currency_exchange_rate': serializers.FloatField(default=1),
         }
 
     class Meta:
