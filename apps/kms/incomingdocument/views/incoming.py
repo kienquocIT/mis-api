@@ -41,34 +41,36 @@ class KMSIncomingDocumentRequestList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-# class KMSIncomingDocumentRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
-#     queryset = KMSIncomingDocument.objects
-#     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
-#     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
-#
-#     def get_queryset(self):
-#         return super().get_queryset().select_related()
-#
-#     @swagger_auto_schema(
-#         operation_summary="Incoming Document request detail",
-#         operation_description="get incoming document request detail",
-#     )
-#     @mask_view(
-#         login_require=True, auth_require=True,
-#         label_code='incomingdocument', model_code='kmsincomingdocument', perm_code='view'
-#     )
-#     def get(self, request, *args, **kwargs):
-#         return self.retrieve(request, *args, **kwargs)
-#
-#     @swagger_auto_schema(
-#         operation_summary="Incoming Document request update",
-#         operation_description="Incoming Document request update by ID",
-#         request_body=KMSDocumentApprovalUpdateSerializer,
-#     )
-#     @mask_view(
-#         login_require=True, auth_require=True,
-#         label_code='incomingdocument', model_code='kmsincomingdocument', perm_code='edit'
-#     )
-#     def put(self, request, *args, **kwargs):
-#         self.ser_context = {'user': request.user}
-#         return self.update(request, *args, **kwargs)
+class KMSIncomingDocumentRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = KMSIncomingDocument.objects
+    serializer_detail = KMSIncomingDocumentDetailSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('employee_inherit')
+
+    @swagger_auto_schema(
+        operation_summary="Incoming document request detail",
+        operation_description="Get Incoming document request detail"
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=False,
+        label_code="incomingdocument",
+        model_code='kmsincomingdocument',
+        perm_code='view'
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    @mask_view(
+        login_require=True,
+        auth_require=False,
+        label_code='incomingdocument',
+        model_code='kmsincomingdocument',
+        perm_code='edit'
+    )
+    def put(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
+        return self.update(request, *args, **kwargs)
+

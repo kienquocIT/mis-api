@@ -5,8 +5,8 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.kms.incomingdocument.models import KMSIncomingDocument, IncomingAttachDocumentMapAttachFile, \
     KMSAttachIncomingDocuments, KMSInternalRecipientIncomingDocument
-from apps.shared import AbstractCreateSerializerModel, KMSMsg, AbstractDetailSerializerModel, AttachmentMsg, HRMsg
-
+from apps.shared import AbstractCreateSerializerModel, KMSMsg, AbstractDetailSerializerModel, AttachmentMsg, HRMsg, \
+    SECURITY_LEVEL
 
 __all__ = [
     'KMSIncomingDocumentListSerializer',
@@ -167,8 +167,9 @@ class KMSIncomingDocumentCreateSerializer(serializers.ModelSerializer):
         )
 
 
-class KMSIncomingDocumentDetailSerializer(serializers.ModelSerializer):
+class KMSIncomingDocumentDetailSerializer(AbstractDetailSerializerModel):
     attached_list = serializers.SerializerMethodField()
+    internal_recipient = serializers.SerializerMethodField()
 
     @classmethod
     def get_attached_list(cls, obj):
@@ -177,13 +178,14 @@ class KMSIncomingDocumentDetailSerializer(serializers.ModelSerializer):
             'content_group',
         )
         attr_lst = []
-        att_objs = IncomingAttachDocumentMapAttachFile.objects.select_related('attachment')\
+        att_objs = IncomingAttachDocumentMapAttachFile.objects.select_related('attachment') \
             .filter(incoming_document=obj)
         for item in item_list:
             att_lst = att_objs.filter(attachment_id__in=item.attachment)
             attr_lst.append({
                 'id': item.id,
-                'title': item.title,
+                # 'title': item.title,
+                'sender': item.sender,
                 'document_type': {
                     'id': item.document_type.id,
                     'title': item.document_type.title
@@ -192,12 +194,35 @@ class KMSIncomingDocumentDetailSerializer(serializers.ModelSerializer):
                     'id': item.content_group.id,
                     'title': item.content_group.title
                 } if item.content_group else {},
-                'security_level': item.security_level,
+                'security_level': dict(SECURITY_LEVEL).get(item.security_level, 'Unknown'),
                 'effective_date': item.effective_date,
                 'expired_date': item.expired_date,
                 'attachment': [att.attachment.get_detail() for att in att_lst]
             })
         return attr_lst
+
+    @classmethod
+    def get_internal_recipient(cls, obj):
+        item_list = obj.kms_kmsinternalrecipient_incoming_doc.all()
+        res_list = []
+        for item in item_list:
+            res_list.append({
+                'id': item.id,
+                'title': item.title,
+                'kind': item.kind,
+                'employee_access': item.employee_access,
+                'group_access': item.group_access,
+                'document_permission_list': item.document_permission_list,
+                'expiration_date': item.expiration_date
+            })
+        return res_list
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'full_name': obj.employee_inherit.get_full_name()
+        } if obj.employee_inherit else {}
 
     class Meta:
         model = KMSIncomingDocument
@@ -205,5 +230,36 @@ class KMSIncomingDocumentDetailSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'remark',
+            'employee_inherit',
             'attached_list',
+            'internal_recipient',
         )
+
+
+class KMSIncomingDocumentUpdateSerializer(AbstractCreateSerializerModel):
+    attached_list = serializers.JSONField()
+    internal_recipient = KMSInternalRecipientIncomingDocumentSerializers(many=True)
+
+    @classmethod
+    def validate_attached_list(cls, value):
+        if not len(value) > 0:
+            raise serializers.ValidationError({'detail': AttachmentMsg.FILE_NOT_FOUND})
+        return value
+
+    @classmethod
+    def validate_internal_recipient(cls, value):
+        if not len(value) > 0:
+            raise serializers.ValidationError({'detail': KMSMsg.INTERNAL_RECIPIENT_NOT_FOUND})
+        return value
+
+    @decorator_run_workflow
+    def update(self, instance, validated_data):
+        with transaction.atomic():
+            attached_list = validated_data.pop('attached_list', None)
+            internal_list = validated_data.pop('internal_recipient', None)
+            for key, value in validated_data.items():
+                setattr(instance, key, value)
+            instance.save()
+            create_attached_incoming_document(instance, attached_list)
+            create_internal_recipient(instance, internal_list)
+            return instance
