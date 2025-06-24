@@ -7,7 +7,7 @@ from apps.sales.opportunity.models import Opportunity
 from apps.sales.leaseorder.serializers.lease_order_sub import LeaseOrderCommonCreate, LeaseOrderCommonValidate, \
     LeaseOrderProductSerializer, LeaseOrderCostSerializer, LeaseOrderExpenseSerializer, LeaseOrderIndicatorSerializer, \
     LeaseOrderPaymentStageSerializer, LeaseOrderRuleValidate, LeaseOrderLogisticSerializer, LeaseOrderInvoiceSerializer
-from apps.sales.leaseorder.models import LeaseOrder
+from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderCost
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
 
@@ -593,3 +593,31 @@ class LORecurrenceListSerializer(AbstractListSerializerModel):
             'id': recurrence.id,
             'title': recurrence.title,
         } for recurrence in Recurrence.objects.filter(doc_template_id=obj.id)]
+
+
+class LeaseOrderCostListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeaseOrderCost
+        fields = (
+            'id',
+            'product_data',
+            'offset_data',
+            'tool_data',
+            'asset_data',
+            'asset_type',
+            'product_cost_price',
+
+            'product_depreciation_subtotal',
+            'product_depreciation_price',
+            'product_depreciation_method',
+            'product_depreciation_adjustment',
+            'product_depreciation_time',
+            'product_depreciation_start_date',
+            'product_depreciation_end_date',
+
+            'product_lease_start_date',
+            'product_lease_end_date',
+
+            'depreciation_data',
+            'depreciation_lease_data',
+        )
