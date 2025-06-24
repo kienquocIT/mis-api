@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import ProductWareHouse, ProductWareHouseSerial
-from apps.sales.inventory.models import GoodsDetail
+from apps.sales.inventory.models import GoodsDetail, GoodsReceipt
 from apps.sales.inventory.serializers.goods_detail import (
     GoodsDetailListSerializer, GoodsDetailDataCreateSerializer, GoodsDetailDataDetailSerializer,
     GoodsDetailCreateSerializerImportDB, GoodsDetailDetailSerializerImportDB, GoodsDetailSerialDataSerializer
@@ -54,12 +54,18 @@ class GoodsDetailSerialDataList(BaseListMixin):
         goods_receipt_id = self.request.query_params.get('goods_receipt_id')
         purchase_request_id = self.request.query_params.get('purchase_request_id')
 
-        return super().get_queryset().filter(
+        queryset = super().get_queryset().filter(
             product_warehouse__product_id=product_id,
             product_warehouse__warehouse_id=warehouse_id,
             goods_receipt_id=goods_receipt_id,
             purchase_request_id=purchase_request_id
         ).select_related().prefetch_related().order_by('date_created')
+        if queryset.count() == 0:
+            gr_obj = GoodsReceipt.objects.filter_on_company(id=goods_receipt_id).first()
+            if gr_obj:
+                serial_mapped = gr_obj.goods_receipt_serial_goods_receipt.first()
+                return super().get_queryset().filter(serial_number=serial_mapped.serial_number)
+        return queryset
 
     @swagger_auto_schema(
         operation_summary="Goods detail Serial data List",

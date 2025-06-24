@@ -19,10 +19,10 @@ class ProductHandler:
             cls.by_return(instance=instance, update_info=update_info)
             cls.by_return_redelivery(instance=instance, update_info=update_info)
             # update product
-            stock = instance.stock_amount
-            sale = instance.wait_delivery_amount
-            purchase = instance.wait_receipt_amount
-            production = instance.production_amount
+            stock = instance.stock_amount if instance.stock_amount > 0 else 0
+            sale = instance.wait_delivery_amount if instance.wait_delivery_amount > 0 else 0
+            purchase = instance.wait_receipt_amount if instance.wait_receipt_amount > 0 else 0
+            production = instance.production_amount if instance.production_amount > 0 else 0
             instance.available_amount = stock - sale + purchase + production
         return kwargs
 

@@ -82,49 +82,55 @@ class GRFromPMHandler:
     def setup_product(cls, pm_obj, issue_data):
         new_logs = issue_data.get('new_logs', [])
         if pm_obj.product_modified and new_logs:
+            uom_obj = None
+            product_modified_value = 0
+            value_plus = 0
+            value_minus = 0
             for log in new_logs:
                 if log.product_id == pm_obj.product_modified_id:
                     uom_obj = pm_obj.product_modified.inventory_uom
-                    price_minus = 0
+                    product_modified_value = log.value
                     for pm_product_obj in pm_obj.removed_components.all():
-                        price_minus += pm_product_obj.fair_value * pm_product_obj.component_quantity
-                    return [{
-                        'order': 1,
-                        'product_id': str(pm_obj.product_modified_id),
-                        'product_data': {
-                            'id': str(pm_obj.product_modified_id),
-                            'title': pm_obj.product_modified.title,
-                            'code': pm_obj.product_modified.code,
-                            'general_traceability_method': pm_obj.product_modified.general_traceability_method,
-                            'description': pm_obj.product_modified.description,
-                            'product_choice': pm_obj.product_modified.product_choice,
-                        },
-                        'uom_id': str(uom_obj.id) if uom_obj else None,
-                        'uom_data': {
-                            'id': str(uom_obj.id),
-                            'title': uom_obj.title,
-                            'code': uom_obj.code,
-                            'uom_group': {
-                                'id': str(uom_obj.group_id),
-                                'title': uom_obj.group.title,
-                                'code': uom_obj.group.code,
-                                'uom_reference': {
-                                    'id': str(uom_obj.group.uom_reference_id),
-                                    'title': uom_obj.group.uom_reference.title,
-                                    'code': uom_obj.group.uom_reference.code,
-                                    'ratio': uom_obj.group.uom_reference.ratio,
-                                    'rounding': uom_obj.group.uom_reference.rounding,
-                                } if uom_obj.group.uom_reference else {},
-                            } if uom_obj.group else {},
-                            'ratio': uom_obj.ratio,
-                            'rounding': uom_obj.rounding,
-                            'is_referenced_unit': uom_obj.is_referenced_unit,
-                        } if uom_obj else {},
-                        'product_unit_price': log.cost - price_minus,
-                        'product_quantity_order_actual': 1,
-                        'quantity_import': 1,
-                        'gr_warehouse_data': GRFromPMHandler.setup_product_wh(pm_obj=pm_obj),
-                    }]
+                        value_minus += pm_product_obj.fair_value * pm_product_obj.component_quantity
+                if log.product_id != pm_obj.product_modified_id:
+                    value_plus += log.value
+            return [{
+                'order': 1,
+                'product_id': str(pm_obj.product_modified_id),
+                'product_data': {
+                    'id': str(pm_obj.product_modified_id),
+                    'title': pm_obj.product_modified.title,
+                    'code': pm_obj.product_modified.code,
+                    'general_traceability_method': pm_obj.product_modified.general_traceability_method,
+                    'description': pm_obj.product_modified.description,
+                    'product_choice': pm_obj.product_modified.product_choice,
+                },
+                'uom_id': str(uom_obj.id) if uom_obj else None,
+                'uom_data': {
+                    'id': str(uom_obj.id),
+                    'title': uom_obj.title,
+                    'code': uom_obj.code,
+                    'uom_group': {
+                        'id': str(uom_obj.group_id),
+                        'title': uom_obj.group.title,
+                        'code': uom_obj.group.code,
+                        'uom_reference': {
+                            'id': str(uom_obj.group.uom_reference_id),
+                            'title': uom_obj.group.uom_reference.title,
+                            'code': uom_obj.group.uom_reference.code,
+                            'ratio': uom_obj.group.uom_reference.ratio,
+                            'rounding': uom_obj.group.uom_reference.rounding,
+                        } if uom_obj.group.uom_reference else {},
+                    } if uom_obj.group else {},
+                    'ratio': uom_obj.ratio,
+                    'rounding': uom_obj.rounding,
+                    'is_referenced_unit': uom_obj.is_referenced_unit,
+                } if uom_obj else {},
+                'product_unit_price': product_modified_value - value_minus + value_plus,
+                'product_quantity_order_actual': 1,
+                'quantity_import': 1,
+                'gr_warehouse_data': GRFromPMHandler.setup_product_wh(pm_obj=pm_obj),
+            }]
         return []
 
     @classmethod

@@ -1609,14 +1609,16 @@ def reset_run_indicator_fields(kwargs):
     print('reset_run_indicator_fields done.')
 
 
-def update_serial_status():
-    for pw_serial in ProductWareHouseSerial.objects.filter():
-        if pw_serial.is_delete:
-            pw_serial.serial_status = 1
-        else:
-            pw_serial.serial_status = 0
+def update_product_warehouse_serial_status(product_id, warehouse_id, serial_number, serial_status):
+    pw_serial = ProductWareHouseSerial.objects.filter_on_company(
+        product_warehouse__product_id=product_id,
+        product_warehouse__warehouse_id=warehouse_id,
+        serial_number=serial_number,
+    ).first()
+    if pw_serial:
+        pw_serial.serial_status = serial_status
         pw_serial.save(update_fields=['serial_status'])
-    print('update_serial_status done.')
+    print('update_product_warehouse_serial_status done.')
 
 
 class DefaultSaleDataHandler:
