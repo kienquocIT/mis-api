@@ -6,7 +6,7 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.kms.incomingdocument.models import KMSIncomingDocument, IncomingAttachDocumentMapAttachFile, \
     KMSAttachIncomingDocuments, KMSInternalRecipientIncomingDocument
 from apps.shared import AbstractCreateSerializerModel, KMSMsg, AbstractDetailSerializerModel, AttachmentMsg, HRMsg, \
-    SECURITY_LEVEL
+    SECURITY_LEVEL, SerializerCommonValidate, SerializerCommonHandle
 
 __all__ = [
     'KMSIncomingDocumentListSerializer',
@@ -36,8 +36,6 @@ def create_attached_incoming_document(incoming_doc, attached_list):
     new_list = []
     for item in attached_list:
         incoming_doc_attachments = item.pop('attachment', [])
-        total_attach = [str(val.id) for val in incoming_doc_attachments.get('new', [])]
-        total_attach += [str(val.id) for val in incoming_doc_attachments.get('keep', [])]
 
         if 'id' not in item:
             create_attachment(incoming_doc.id, incoming_doc_attachments)
@@ -50,7 +48,6 @@ def create_attached_incoming_document(incoming_doc, attached_list):
             effective_date=item.get('effective_date'),
             expired_date=item.get('expired_date'),
             security_level=item.get('security_level'),
-            attachment=total_attach,
             company=incoming_doc.company,
             tenant=incoming_doc.tenant
         )
@@ -97,26 +94,12 @@ class KMSIncomingDocumentListSerializer(serializers.ModelSerializer):
 
 
 class KMSAttachedIncomingDocumentSerializers(serializers.Serializer):
-    attachment = serializers.ListSerializer(child=serializers.UUIDField())
     sender = serializers.CharField(max_length=100)
     document_type = serializers.UUIDField(required=False, allow_null=True)
     content_group = serializers.UUIDField(required=False, allow_null=True)
     effective_date = serializers.DateField(required=False, allow_null=True)
     expired_date = serializers.DateField(required=False, allow_null=True)
     security_level = serializers.IntegerField(required=False, allow_null=True)
-
-    # def validate_attachment(self, attrs):
-    #     user = self.context.get('user', None)
-    #     if user and hasattr(user, 'employee_current_id'):
-    #         state, result = IncomingAttachDocumentMapAttachFile.valid_change(
-    #             current_ids=[str(idx) for idx in attrs],
-    #             employee_id=user.employee_current_id,
-    #             doc_id=None
-    #         )
-    #         if state is True:
-    #             return result
-    #         raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-    #     raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
 
 class KMSInternalRecipientIncomingDocumentSerializers(serializers.Serializer):
@@ -140,49 +123,29 @@ class KMSIncomingDocumentCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
     attached_list = KMSAttachedIncomingDocumentSerializers(many=True)
     internal_recipient = KMSInternalRecipientIncomingDocumentSerializers(many=True)
-
-    # @classmethod
-    # def validate_attached_list(cls, value):
-    #     if not len(value) > 0:
-    #         raise serializers.ValidationError({'detail': AttachmentMsg.FILE_NOT_FOUND})
-    #     return value
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     def validate_attachment(self, value):
-        if not len(value) > 0:
-            raise serializers.ValidationError({'detail': AttachmentMsg.FILE_NOT_FOUND})
         user = self.context.get('user', None)
-        if user and hasattr(user, 'employee_current_id'):
-            state, result = IncomingAttachDocumentMapAttachFile.valid_change(
-                current_ids=value,
-                employee_id=user.employee_current_id,
-                doc_id=self.instance.id
-            )
-            if state is True:
-                return result
-            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
-
-    # def validate_attachment(self, attrs):
-    #     user = self.context.get('user', None)
-    #     if user and hasattr(user, 'employee_current_id'):
-    #         state, result = IncomingAttachDocumentMapAttachFile.valid_change(
-    #             current_ids=[str(idx) for idx in attrs],
-    #             employee_id=user.employee_current_id,
-    #             doc_id=None
-    #         )
-    #         if state is True:
-    #             return result
-    #         raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-    #     raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=IncomingAttachDocumentMapAttachFile, value=value
+        )
 
     @decorator_run_workflow
     def create(self, validate_data):
         with transaction.atomic():
             attached_list = validate_data.pop('attached_list', None)
             internal_list = validate_data.pop('internal_recipient', None)
+            attachment = validate_data.pop('attachment', [])
             incoming_doc = KMSIncomingDocument.objects.create(**validate_data)
             create_attached_incoming_document(incoming_doc, attached_list)
             create_internal_recipient(incoming_doc, internal_list)
+            SerializerCommonHandle.handle_attach_file(
+                relate_app=Application.objects.filter(id="6944d486-66a0-4521-bd28-681d5df42ff3").first(),
+                model_cls=IncomingAttachDocumentMapAttachFile,
+                instance=incoming_doc,
+                attachment_result=attachment,
+            )
             return incoming_doc
 
     class Meta:
@@ -191,13 +154,15 @@ class KMSIncomingDocumentCreateSerializer(serializers.ModelSerializer):
             'title',
             'attached_list',
             'remark',
-            'internal_recipient'
+            'internal_recipient',
+            'attachment',
         )
 
 
 class KMSIncomingDocumentDetailSerializer(AbstractDetailSerializerModel):
     attached_list = serializers.SerializerMethodField()
     internal_recipient = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     @classmethod
     def get_attached_list(cls, obj):
@@ -252,6 +217,10 @@ class KMSIncomingDocumentDetailSerializer(AbstractDetailSerializerModel):
             'full_name': obj.employee_inherit.get_full_name()
         } if obj.employee_inherit else {}
 
+    @classmethod
+    def get_attachment(cls, obj):
+        return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
+
     class Meta:
         model = KMSIncomingDocument
         fields = (
@@ -261,62 +230,14 @@ class KMSIncomingDocumentDetailSerializer(AbstractDetailSerializerModel):
             'employee_inherit',
             'attached_list',
             'internal_recipient',
+            'attachment',
         )
 
 
 class KMSIncomingDocumentUpdateSerializer(AbstractCreateSerializerModel):
     attached_list = KMSAttachedIncomingDocumentSerializers(many=True)
     internal_recipient = KMSInternalRecipientIncomingDocumentSerializers(many=True)
-
-    @classmethod
-    def validate_attached_list(cls, context_user, doc_id, validate_data):
-        if 'attached_list' in validate_data:
-            if validate_data.get('attached_list'):
-                if context_user and hasattr(context_user, 'employee_current_id'):
-                    state, result = IncomingAttachDocumentMapAttachFile.valid_change(
-                        current_ids=validate_data.get('attached_list', []),
-                        employee_id=context_user.employee_current_id,
-                        doc_id=doc_id
-                    )
-                    if state is True:
-                        validate_data['attached_list'] = result
-                    else:
-                        raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-                else:
-                    raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
-        print('11. validate_attachment --- ok')
-        return validate_data
-
-    # def validate_attached_list(self, value):
-    #     if not len(value) > 0:
-    #         raise serializers.ValidationError({'detail': AttachmentMsg.FILE_NOT_FOUND})
-    #
-    #     user = self.context.get('user', None)
-    #     if user and hasattr(user, 'employee_current_id'):
-    #         state, result = IncomingAttachDocumentMapAttachFile.valid_change(
-    #             current_ids=value,
-    #             employee_id=user.employee_current_id,
-    #             doc_id=self.instance.id
-    #         )
-    #         if state is True:
-    #             return result
-    #         raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-    #     raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
-
-
-    # def validate_attachment(self, attrs):
-    #     user = self.context.get('user', None)
-    #     if user and hasattr(user, 'employee_current_id'):
-    #         state, result = IncomingAttachDocumentMapAttachFile.valid_change(
-    #             current_ids=[str(idx) for idx in attrs],
-    #             employee_id=user.employee_current_id,
-    #             doc_id=None
-    #         )
-    #         if state is True:
-    #             return result
-    #         raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-    #     raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
-
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     @classmethod
     def validate_internal_recipient(cls, value):
@@ -324,16 +245,29 @@ class KMSIncomingDocumentUpdateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'detail': KMSMsg.INTERNAL_RECIPIENT_NOT_FOUND})
         return value
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=IncomingAttachDocumentMapAttachFile, value=value, doc_id=self.instance.id
+        )
+
     @decorator_run_workflow
     def update(self, instance, validated_data):
         with transaction.atomic():
             attached_list = validated_data.pop('attached_list', [])
             internal_list = validated_data.pop('internal_recipient', [])
+            attachment = validated_data.pop('attachment', [])
             for key, value in validated_data.items():
                 setattr(instance, key, value)
             instance.save()
             create_attached_incoming_document(instance, attached_list)
             create_internal_recipient(instance, internal_list)
+            SerializerCommonHandle.handle_attach_file(
+                relate_app=Application.objects.filter(id="6944d486-66a0-4521-bd28-681d5df42ff3").first(),
+                model_cls=IncomingAttachDocumentMapAttachFile,
+                instance=instance,
+                attachment_result=attachment,
+            )
             return instance
 
     class Meta:
@@ -342,5 +276,6 @@ class KMSIncomingDocumentUpdateSerializer(AbstractCreateSerializerModel):
             'title',
             'attached_list',
             'remark',
-            'internal_recipient'
+            'internal_recipient',
+            'attachment',
         )
