@@ -7,9 +7,8 @@ from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, Pu
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate, \
     PurchaseOrderCommonGet
 from apps.sales.quotation.models import QuotationAppConfig
-from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg, HRMsg, AbstractCreateSerializerModel, \
+from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg, AbstractCreateSerializerModel, \
     AbstractListSerializerModel, AbstractDetailSerializerModel, SerializerCommonValidate, SerializerCommonHandle
-from apps.shared.translations.base import AttachmentMsg
 
 
 class PurchaseQuotationSerializer(serializers.ModelSerializer):

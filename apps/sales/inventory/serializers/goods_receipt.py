@@ -7,8 +7,7 @@ from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, Goods
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, GoodsReceiptAttachment
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
 from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel, \
-    HRMsg, SaleMsg, SerializerCommonValidate, SerializerCommonHandle
-from apps.shared.translations.base import AttachmentMsg
+    SaleMsg, SerializerCommonValidate, SerializerCommonHandle
 
 
 class GoodsReceiptSerialSerializer(serializers.ModelSerializer):
