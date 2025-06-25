@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.quotation.utils import QuotationHandler
 from apps.sales.quotation.utils.logical_finish import QuotationFinishHandler
@@ -582,5 +583,25 @@ class QuotationExpense(MasterDataAbstractModel):
         verbose_name = 'Quotation Expense'
         verbose_name_plural = 'Quotation Expenses'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class QuotationAttachment(M2MFilesAbstractModel):
+    quotation = models.ForeignKey(
+        'quotation.Quotation',
+        on_delete=models.CASCADE,
+        verbose_name="quotation",
+        related_name="quotation_attachment_quotation",
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'quotation'
+
+    class Meta:
+        verbose_name = 'Quotation attachment'
+        verbose_name_plural = 'Quotation attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

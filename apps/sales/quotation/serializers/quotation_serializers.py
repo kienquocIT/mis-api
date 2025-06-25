@@ -1,14 +1,16 @@
 from rest_framework import serializers
 
+from apps.core.base.models import Application
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity
-from apps.sales.quotation.models import Quotation, QuotationExpense
+from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAttachment
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
     QuotationProductSerializer, QuotationLogisticSerializer, QuotationCostSerializer, \
     QuotationExpenseSerializer, QuotationIndicatorSerializer, QuotationRuleValidate
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
-    AbstractListSerializerModel, AbstractCurrencyCreateSerializerModel, AbstractCurrencyDetailSerializerModel
+    AbstractListSerializerModel, SerializerCommonValidate, SerializerCommonHandle, \
+    AbstractCurrencyCreateSerializerModel, AbstractCurrencyDetailSerializerModel
 
 
 # QUOTATION BEGIN
@@ -199,6 +201,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
     )
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
     process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     @classmethod
     def validate_process(cls, attrs):
@@ -255,6 +258,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
             'indicator_revenue',
             'indicator_gross_profit',
             'indicator_net_income',
+            'attachment',
         )
 
     @classmethod
@@ -305,6 +309,10 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
                             raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_QUOTATION_NOT_DONE})
         return True
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        SerializerCommonValidate.validate_attachment(user=user, model_cls=QuotationAttachment, value=value)
+
     def validate(self, validate_data):
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
@@ -319,8 +327,15 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
 
     @decorator_run_workflow
     def create(self, validated_data):
+        attachment = validated_data.pop('attachment', [])
         quotation = Quotation.objects.create(**validated_data)
         QuotationCommonCreate().create_quotation_sub_models(validated_data=validated_data, instance=quotation)
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id="b9650500-aba7-44e3-b6e0-2542622702a3").first(),
+            model_cls=QuotationAttachment,
+            instance=quotation,
+            attachment_result=attachment,
+        )
 
         # Check instance is change document => set is_change True for root
         if quotation.is_change is True and quotation.document_root_id:
