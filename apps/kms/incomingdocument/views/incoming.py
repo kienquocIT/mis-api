@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.kms.incomingdocument.models import KMSIncomingDocument
 from apps.kms.incomingdocument.serializers.serializers import KMSIncomingDocumentCreateSerializer, \
-    KMSIncomingDocumentListSerializer, KMSIncomingDocumentDetailSerializer
+    KMSIncomingDocumentListSerializer, KMSIncomingDocumentDetailSerializer, KMSIncomingDocumentUpdateSerializer
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -44,7 +44,9 @@ class KMSIncomingDocumentRequestList(BaseListMixin, BaseCreateMixin):
 class KMSIncomingDocumentRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = KMSIncomingDocument.objects
     serializer_detail = KMSIncomingDocumentDetailSerializer
+    serializer_update = KMSIncomingDocumentUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related('employee_inherit')
