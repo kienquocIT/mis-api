@@ -274,7 +274,7 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
             validate_data['prd_wh_serial_data'] = {
                 'id': str(prd_wh_serial_obj.id),
                 'vendor_serial_number': prd_wh_serial_obj.vendor_serial_number,
-                'serial_number': prd_wh_serial_obj.vendor_serial_number,
+                'serial_number': prd_wh_serial_obj.serial_number,
                 'expire_date': str(prd_wh_serial_obj.expire_date),
                 'manufacture_date': str(prd_wh_serial_obj.manufacture_date),
                 'warranty_start': str(prd_wh_serial_obj.warranty_start),
@@ -473,7 +473,7 @@ class ProductModificationCommonFunction:
                         component_prd_wh_serial_data={
                             'id': str(serial_obj.id),
                             'vendor_serial_number': serial_obj.vendor_serial_number,
-                            'serial_number': serial_obj.vendor_serial_number,
+                            'serial_number': serial_obj.serial_number,
                             'expire_date': str(serial_obj.expire_date),
                             'manufacture_date': str(serial_obj.manufacture_date),
                             'warranty_start': str(serial_obj.warranty_start),
