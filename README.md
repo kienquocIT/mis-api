@@ -501,43 +501,43 @@ Trong setUp(), ta đã tạo một đối tượng sản phẩm Product mới b�
 Trong các phương thức test, ta sử dụng các phương thức khác của APIClient như `get
 
 ---
-## Cách áp dụng WF cho chức năng:
+## CÁCH ÁP DỤNG WORKFLOW CHO CHỨC NĂNG
 #### API
 ```python
 # QUAN TRỌNG (search trong source code theo các keyword để hiểu rõ hơn)
 
-1/ SerializerList kế thừa class AbstractListSerializerModel
+BƯỚC 1: SerializerList kế thừa class AbstractListSerializerModel
    VD: class QuotationListSerializer(AbstractListSerializerModel):
       ...
    
-2/ SerializerDetail kế thừa class AbstractDetailSerializerModel
+BƯỚC 2: SerializerDetail kế thừa class AbstractDetailSerializerModel
    VD: class QuotationDetailSerializer(AbstractDetailSerializerModel):
       ...
       
-3/ SerializerCreate & SerializerUpdate kế thừa class AbstractCreateSerializerModel
+BƯỚC 3: SerializerCreate & SerializerUpdate kế thừa class AbstractCreateSerializerModel
    VD: class QuotationCreateSerializer(AbstractCreateSerializerModel):
       ...
    VD: class QuotationUpdateSerializer(AbstractCreateSerializerModel):
       ...
       
-4/ Thêm decorator @decorator_run_workflow ngay trên hàm def create() trong SerializerCreate
+BƯỚC 4: Thêm decorator @decorator_run_workflow ngay trên hàm def create() trong SerializerCreate
     VD: class QuotationCreateSerializer(AbstractCreateSerializerModel):
             @decorator_run_workflow
             def create(self, validated_data):
                ...
-5/ Thêm decorator @decorator_run_workflow ngay trên hàm def update() trong SerializerUpdate
+BƯỚC 5: Thêm decorator @decorator_run_workflow ngay trên hàm def update() trong SerializerUpdate
     VD: class QuotationCreateSerializer(AbstractCreateSerializerModel):
             @decorator_run_workflow
             def update(self, instance, validated_data):
                ...
             
-6/ Thêm MAP_FIELD_TITLE (apps/shared/constant.py)
+BƯỚC 6: Thêm MAP_FIELD_TITLE (apps/shared/constant.py)
     VD: MAP_FIELD_TITLE = {
              'quotation.quotation': 'title',
              '{app_label}.{model name}': 'title', # trường đại diện để lấy dữ liệu hiển thị title
          }
     
-# BỔ SUNG THÊM
+# MỞ RỘNG
 - Định nghĩa ApplicationProperty cho chức năng trong file (apps/sharedapp/data/base/application_properties.py)
     VD: AppProp_SaleData_Quotation_data = {
     # b9650500-aba7-44e3-b6e0-2542622702a3 # quotation.Quotation
@@ -553,6 +553,105 @@ Trong các phương thức test, ta sử dụng các phương thức khác của
 
 ```
 ---
+
+---
+## CÁCH ÁP DỤNG ATTACHMENT CHO CHỨC NĂNG
+```python
+
+BƯỚC 1: Model:
+- Thêm model quan hệ *-* giữa chức năng và file, kế thừa M2MFilesAbstractModel:
+VD:
+class QuotationAttachment(M2MFilesAbstractModel):
+    quotation = models.ForeignKey(
+        'quotation.Quotation',
+        on_delete=models.CASCADE,
+        verbose_name="quotation",
+        related_name="quotation_attachment_quotation",
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'quotation'
+
+    class Meta:
+        verbose_name = 'Quotation attachment'
+        verbose_name_plural = 'Quotation attachments'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+- Thêm filed m2m trong model chức năng through đến model *-* trên
+class Quotation(DataAbstractModel):
+   attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='QuotationAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_quotation',
+    )
+   
+BƯỚC 2: Serialier:
+- SerializerCrate:
+validate: Thêm validate_attachment với SerializerCommonValidate.validate_attachment()
+VD:
+def validate_attachment(self, value):
+  user = self.context.get('user', None)
+  return SerializerCommonValidate.validate_attachment(user=user, model_cls=QuotationAttachment, value=value)
+
+hàm def create(): Tạo biến attachment .pop() từ validated_data & thêm SerializerCommonHandle.handle_attach_file()
+Lưu ý: "b9650500-aba7-44e3-b6e0-2542622702a3" là "id" của chức năng mà ta khai báo trong 
+apps/sharedapp/data/base/plan_app_sub/crm.py (hoặc eoffice, kms,...)
+VD:
+def create(self, validated_data):
+  attachment = validated_data.pop('attachment', [])
+  instance = Quotation.objects.create(**validated_data)
+  SerializerCommonHandle.handle_attach_file(
+      relate_app=Application.objects.filter(id="b9650500-aba7-44e3-b6e0-2542622702a3").first(),
+      model_cls=QuotationAttachment,
+      instance=instance,
+      attachment_result=attachment,
+  )
+- SerializerUpdate:
+validate: Thêm validate_attachment với SerializerCommonValidate.validate_attachment() truyền thêm doc_id
+VD:
+def validate_attachment(self, value):
+  user = self.context.get('user', None)
+  return SerializerCommonValidate.validate_attachment(
+     user=user, model_cls=QuotationAttachment, value=value, doc_id=self.instance.id
+  )
+
+hàm def update(): Tạo biến attachment .pop() từ validated_data & thêm SerializerCommonHandle.handle_attach_file()
+Lưu ý: "b9650500-aba7-44e3-b6e0-2542622702a3" là "id" của chức năng mà ta khai báo trong 
+apps/sharedapp/data/base/plan_app_sub/crm.py (hoặc eoffice, kms,...)
+VD:
+def update(self, instance, validated_data):
+  attachment = validated_data.pop('attachment', [])
+  # update quotation
+  for key, value in validated_data.items():
+      setattr(instance, key, value)
+  instance.save()
+  SerializerCommonHandle.handle_attach_file(
+      relate_app=Application.objects.filter(id="b9650500-aba7-44e3-b6e0-2542622702a3").first(),
+      model_cls=QuotationAttachment,
+      instance=instance,
+      attachment_result=attachment,
+  )
+  
+BƯỚC 3: Views:
+- Thêm self.ser_context = {'user': request.user} trong def post() & def put() của API tạo/ update chức năng
+VD:
+def post(self, request, *args, **kwargs):
+  self.ser_context = {'user': request.user}
+  return self.create(request, *args, **kwargs)
+
+def put(self, request, *args, pk, **kwargs):
+  self.ser_context = {'user': request.user}
+  return self.update(request, *args, pk, **kwargs)
+
+
+```
+---
+
+
 #### MEDIA CLOUD Config
 <p style="font-weight: bold;color: red;">JSON trong value của .env luôn sử dunng `"`, không được sử dụng `'`.</p>
 
