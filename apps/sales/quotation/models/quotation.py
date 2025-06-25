@@ -1,10 +1,11 @@
 from django.db import models
 
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.quotation.utils import QuotationHandler
 from apps.sales.quotation.utils.logical_finish import QuotationFinishHandler
 from apps.shared import (
-    DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel
+    DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel, CurrencyAbstractModel
 )
 
 
@@ -147,7 +148,7 @@ class ConfigLongSaleRole(SimpleAbstractModel):
 
 
 # BEGIN QUOTATION
-class Quotation(DataAbstractModel, BastionFieldAbstractModel):
+class Quotation(DataAbstractModel, BastionFieldAbstractModel, CurrencyAbstractModel):
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
@@ -248,6 +249,13 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
     indicator_revenue = models.FloatField(default=0, help_text="value of indicator revenue (IN0001)")
     indicator_gross_profit = models.FloatField(default=0, help_text="value of indicator gross profit (IN0003)")
     indicator_net_income = models.FloatField(default=0, help_text="value of indicator net income (IN0006)")
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='QuotationAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_quotation',
+    )
 
     class Meta:
         verbose_name = 'Quotation'
@@ -582,5 +590,25 @@ class QuotationExpense(MasterDataAbstractModel):
         verbose_name = 'Quotation Expense'
         verbose_name_plural = 'Quotation Expenses'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class QuotationAttachment(M2MFilesAbstractModel):
+    quotation = models.ForeignKey(
+        'quotation.Quotation',
+        on_delete=models.CASCADE,
+        verbose_name="quotation",
+        related_name="quotation_attachment_quotation",
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'quotation'
+
+    class Meta:
+        verbose_name = 'Quotation attachment'
+        verbose_name_plural = 'Quotation attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

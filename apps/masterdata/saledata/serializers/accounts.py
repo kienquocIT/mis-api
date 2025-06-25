@@ -147,6 +147,7 @@ class AccountMinimalListSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'code',
+            'tax_code',
             'date_created',
         )
 

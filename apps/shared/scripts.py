@@ -52,6 +52,8 @@ from ..sales.inventory.models import (
 )
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler
 from ..sales.lead.models import Lead
+from ..sales.leaseorder.models import LeaseOrder
+from ..sales.leaseorder.utils.logical_finish import LOFinishHandler
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunitySaleTeamMember, OpportunityMeeting, OpportunityActivityLogs,
 )
@@ -64,7 +66,7 @@ from ..sales.purchasing.models import (
 from ..sales.purchasing.utils import POFinishHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.quotation.serializers import QuotationListSerializer
-from ..sales.report.models import ReportCashflow
+from ..sales.report.models import ReportCashflow, ReportLease
 from ..sales.report.scripts import InventoryReportRun
 from ..sales.report.utils import IRForGoodsReceiptHandler
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
@@ -491,10 +493,11 @@ def make_sure_asset_config():
 
 
 def reset_and_run_reports_sale(run_type=0):
-    if run_type == 0:  # run report revenue, customer, product
+    if run_type == 0:  # run report revenue, customer, product, lease
         ReportRevenue.objects.all().delete()
         ReportCustomer.objects.all().delete()
         ReportProduct.objects.all().delete()
+        ReportLease.objects.all().delete()
         for plan in RevenuePlanGroupEmployee.objects.all():
             if plan.revenue_plan_mapped:
                 ReportRevenue.push_from_plan(
@@ -510,6 +513,8 @@ def reset_and_run_reports_sale(run_type=0):
             SOFinishHandler.push_to_report_revenue(instance=sale_order)
             SOFinishHandler.push_to_report_product(instance=sale_order)
             SOFinishHandler.push_to_report_customer(instance=sale_order)
+        for lease_order in LeaseOrder.objects.filter(system_status=3):
+            LOFinishHandler.push_to_report_lease(instance=lease_order)
         for g_return in GoodsReturn.objects.filter(system_status=3):
             ReturnFinishHandler.update_report(instance=g_return)
     if run_type == 1:  # run report cashflow

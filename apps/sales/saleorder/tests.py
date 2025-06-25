@@ -310,6 +310,8 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 #
                 'process',
                 'process_stage_app',
+
+                'attachment',
             ],
             check_sum_second=True,
         )
@@ -453,6 +455,8 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'document_change_order',
                 'process',
                 'process_stage_app',
+
+                'attachment',
             ],
             check_sum_second=True,
         )

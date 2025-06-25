@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.inventory.models import GoodsRegistration
 from apps.sales.saleorder.utils import SOFinishHandler, DocumentChangeHandler, SOHandler
@@ -219,6 +220,13 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
     has_regis = models.BooleanField(
         default=False,
         help_text='is True if linked with registration else False',
+    )
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='SaleOrderAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_sale_order',
     )
 
     class Meta:
@@ -665,5 +673,25 @@ class SaleOrderInvoice(MasterDataAbstractModel):
         verbose_name = 'Sale Order Invoice'
         verbose_name_plural = 'Sale Order Invoices'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class SaleOrderAttachment(M2MFilesAbstractModel):
+    sale_order = models.ForeignKey(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE,
+        verbose_name="sale order",
+        related_name="sale_order_attachment_sale_order",
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'sale_order'
+
+    class Meta:
+        verbose_name = 'Sale order attachment'
+        verbose_name_plural = 'Sale order attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
