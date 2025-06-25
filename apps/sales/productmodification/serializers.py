@@ -41,7 +41,8 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
             'title',
             'code',
             'date_created',
-            'employee_created'
+            'employee_created',
+            'created_goods_receipt'
         )
 
     @classmethod
@@ -710,7 +711,8 @@ class ProductSerialListSerializer(serializers.ModelSerializer):
             'expire_date',
             'manufacture_date',
             'warranty_start',
-            'warranty_end'
+            'warranty_end',
+            'use_for_modification'
         )
 
 
