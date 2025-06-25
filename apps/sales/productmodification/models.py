@@ -331,6 +331,11 @@ class ProductModification(DataAbstractModel):
                     issue_data = self.auto_create_goods_issue(self)
                     GRFromPMHandler.create_new(pm_obj=self, issue_data=issue_data) # Create goods receipt
                     self.update_current_product_component(self)
+
+                    if self.prd_wh_serial:
+                        self.prd_wh_serial.use_for_modification = True
+                        self.prd_wh_serial.save(update_fields=['use_for_modification'])
+
         # hit DB
         super().save(*args, **kwargs)
 

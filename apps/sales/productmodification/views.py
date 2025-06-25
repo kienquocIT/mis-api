@@ -263,19 +263,6 @@ class ProductSerialList(BaseListMixin):
     serializer_list = ProductSerialListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
-    def get_queryset(self):
-        product_id = self.request.query_params.get('product_warehouse__product_id')
-        warehouse_id = self.request.query_params.get('product_warehouse__warehouse_id')
-        if product_id and warehouse_id:
-            return super().get_queryset().filter(serial_status=0).exclude(
-                id__in=ProductModification.objects.filter_on_company(
-                    prd_wh_serial__isnull=False,
-                    prd_wh__product_id=product_id,
-                    prd_wh__warehouse_id=warehouse_id,
-                ).values_list('prd_wh_serial', flat=True)
-            )
-        return super().get_queryset().none()
-
     @swagger_auto_schema(
         operation_summary="Product Serial List",
         operation_description="Product Serial List",
