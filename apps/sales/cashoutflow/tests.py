@@ -424,9 +424,11 @@ class PaymentTestCase(AdvanceTestCase):
                 'workflow_runtime_id',
                 'is_active',
                 'employee_inherit',
-                'is_change',
-                'document_root_id',
-                'document_change_order',
+                # process
+                'process',
+                'process_stage_app',
+
+                'attachment',
             ],
             check_sum_second=True,
         )

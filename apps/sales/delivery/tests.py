@@ -352,6 +352,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 #
                 'process',
                 'process_stage_app',
+
+                'attachment',
             ],
             check_sum_second=True,
         )
