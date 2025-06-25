@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.base.models import Application
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.recurrence.models import Recurrence
 from apps.core.workflow.tasks import decorator_run_workflow
@@ -7,9 +8,9 @@ from apps.sales.opportunity.models import Opportunity
 from apps.sales.leaseorder.serializers.lease_order_sub import LeaseOrderCommonCreate, LeaseOrderCommonValidate, \
     LeaseOrderProductSerializer, LeaseOrderCostSerializer, LeaseOrderExpenseSerializer, LeaseOrderIndicatorSerializer, \
     LeaseOrderPaymentStageSerializer, LeaseOrderRuleValidate, LeaseOrderLogisticSerializer, LeaseOrderInvoiceSerializer
-from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderCost
+from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderCost, LeaseOrderAttachment
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
-    AbstractListSerializerModel
+    AbstractListSerializerModel, SerializerCommonValidate, SerializerCommonHandle
 
 
 # LEASE ORDER BEGIN
@@ -91,6 +92,7 @@ class LeaseOrderDetailSerializer(AbstractDetailSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     @classmethod
     def get_process(cls, obj):
@@ -168,6 +170,8 @@ class LeaseOrderDetailSerializer(AbstractDetailSerializerModel):
             # process
             'process',
             'process_stage_app',
+
+            'attachment',
         )
 
     @classmethod
@@ -190,6 +194,10 @@ class LeaseOrderDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_employee_inherit(cls, obj):
         return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
+
+    @classmethod
+    def get_attachment(cls, obj):
+        return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
 
 
 class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
@@ -241,6 +249,7 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
 
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
     process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     @classmethod
     def validate_process(cls, attrs):
@@ -308,6 +317,7 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
             'is_recurrence_template',
             'is_recurring',
             'recurrence_task_id',
+            'attachment',
         )
 
     @classmethod
@@ -356,6 +366,10 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
                             raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
         return True
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(user=user, model_cls=LeaseOrderAttachment, value=value)
+
     def validate(self, validate_data):
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
@@ -372,8 +386,15 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
+        attachment = validated_data.pop('attachment', [])
         lease = LeaseOrder.objects.create(**validated_data)
         LeaseOrderCommonCreate().create_lease_sub_models(validated_data=validated_data, instance=lease)
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id="010404b3-bb91-4b24-9538-075f5f00ef14").first(),
+            model_cls=LeaseOrderAttachment,
+            instance=lease,
+            attachment_result=attachment,
+        )
 
         if lease.process:
             ProcessRuntimeControl(process_obj=lease.process).register_doc(
@@ -442,6 +463,7 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = LeaseOrder
@@ -490,6 +512,7 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
             # payment stage tab
             'lease_payment_stage',
             'lease_invoice',
+            'attachment',
         )
 
     @classmethod
@@ -545,6 +568,12 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
             'system_status': BaseMsg.SYSTEM_STATUS_INCORRECT,
         })
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=LeaseOrderAttachment, value=value, doc_id=self.instance.id
+        )
+
     def validate(self, validate_data):
         LeaseOrderRuleValidate.validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
@@ -554,11 +583,18 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
+        attachment = validated_data.pop('attachment', [])
         # update sale order
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         LeaseOrderCommonCreate().create_lease_sub_models(validated_data=validated_data, instance=instance)
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id="010404b3-bb91-4b24-9538-075f5f00ef14").first(),
+            model_cls=LeaseOrderAttachment,
+            instance=instance,
+            attachment_result=attachment,
+        )
         return instance
 
 

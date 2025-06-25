@@ -7,7 +7,7 @@ from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, Goods
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, GoodsReceiptAttachment
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
 from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, AbstractListSerializerModel, \
-    HRMsg, SaleMsg
+    HRMsg, SaleMsg, SerializerCommonValidate, SerializerCommonHandle
 from apps.shared.translations.base import AttachmentMsg
 
 
@@ -457,19 +457,6 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
 
 
 # GOODS RECEIPT BEGIN
-def handle_attach_file(instance, attachment_result):
-    if attachment_result and isinstance(attachment_result, dict):
-        relate_app = Application.objects.filter(id="dd16a86c-4aef-46ec-9302-19f30b101cf5").first()
-        if relate_app:
-            state = GoodsReceiptAttachment.resolve_change(
-                result=attachment_result, doc_id=instance.id, doc_app=relate_app,
-            )
-            if state:
-                return True
-        raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
-    return True
-
-
 class GoodsReceiptListSerializer(AbstractListSerializerModel):
     production_order_data = serializers.SerializerMethodField()
 
@@ -628,14 +615,9 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
-        if user and hasattr(user, 'employee_current_id'):
-            state, result = GoodsReceiptAttachment.valid_change(
-                current_ids=value, employee_id=user.employee_current_id, doc_id=None
-            )
-            if state is True:
-                return result
-            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=GoodsReceiptAttachment, value=value
+        )
 
     @decorator_run_workflow
     def create(self, validated_data):
@@ -649,7 +631,12 @@ class GoodsReceiptCreateSerializer(AbstractCreateSerializerModel):
             instance=goods_receipt,
             is_update=False
         )
-        handle_attach_file(goods_receipt, attachment)
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id="dd16a86c-4aef-46ec-9302-19f30b101cf5").first(),
+            model_cls=GoodsReceiptAttachment,
+            instance=goods_receipt,
+            attachment_result=attachment,
+        )
         return goods_receipt
 
 
@@ -730,14 +717,9 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
-        if user and hasattr(user, 'employee_current_id'):
-            state, result = GoodsReceiptAttachment.valid_change(
-                current_ids=value, employee_id=user.employee_current_id, doc_id=self.instance.id
-            )
-            if state is True:
-                return result
-            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=GoodsReceiptAttachment, value=value, doc_id=self.instance.id
+        )
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
@@ -753,5 +735,10 @@ class GoodsReceiptUpdateSerializer(AbstractCreateSerializerModel):
             instance=instance,
             is_update=True
         )
-        handle_attach_file(instance, attachment)
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id="dd16a86c-4aef-46ec-9302-19f30b101cf5").first(),
+            model_cls=GoodsReceiptAttachment,
+            instance=instance,
+            attachment_result=attachment,
+        )
         return instance

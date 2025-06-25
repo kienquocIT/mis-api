@@ -104,6 +104,7 @@ class AbstractCurrencyCreateSerializerModel(serializers.ModelSerializer):
     def get_fields(self):
         return {
             **super().get_fields(),
+            'is_currency_exchange': serializers.BooleanField(required=False, default=False),
             'currency_company_id': serializers.UUIDField(required=False, allow_null=True),
             'currency_company_data': serializers.JSONField(required=False, default=dict),
             'currency_exchange_id': serializers.UUIDField(required=False, allow_null=True),
@@ -119,6 +120,7 @@ class AbstractCurrencyDetailSerializerModel(serializers.ModelSerializer):
     def get_fields(self):
         return {
             **super().get_fields(),
+            'is_currency_exchange': serializers.BooleanField(),
             'currency_company_id': serializers.UUIDField(),
             'currency_company_data': serializers.JSONField(),
             'currency_exchange_id': serializers.UUIDField(),

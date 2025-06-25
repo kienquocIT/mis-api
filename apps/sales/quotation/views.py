@@ -76,6 +76,7 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
         opp_enabled=True, prj_enabled=True,
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
@@ -120,6 +121,7 @@ class QuotationDetail(
         opp_enabled=True, prj_enabled=True,
     )
     def put(self, request, *args, pk, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, pk, **kwargs)
 
 

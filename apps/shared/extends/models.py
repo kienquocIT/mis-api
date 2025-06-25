@@ -428,6 +428,7 @@ class AutoDocumentAbstractModel(SimpleAbstractModel):  # use for applications in
 
 
 class CurrencyAbstractModel(SimpleAbstractModel):  # use for applications need exchange currency
+    is_currency_exchange = models.BooleanField(default=False, help_text="flag to know allow currency exchange")
     currency_company = models.ForeignKey(
         'saledata.Currency', null=True, on_delete=models.SET_NULL,
         help_text='',

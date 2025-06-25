@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.leaseorder.utils.logical import LOHandler
 from apps.sales.leaseorder.utils.logical_finish import LOFinishHandler
@@ -247,6 +248,13 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
     has_regis = models.BooleanField(
         default=False,
         help_text='is True if linked with registration else False',
+    )
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='LeaseOrderAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_lease_order',
     )
 
     class Meta:
@@ -829,5 +837,25 @@ class LeaseOrderInvoice(MasterDataAbstractModel):
         verbose_name = 'Lease Order Invoice'
         verbose_name_plural = 'Lease Order Invoices'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class LeaseOrderAttachment(M2MFilesAbstractModel):
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="lease_order_attachment_lease_order",
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'lease_order'
+
+    class Meta:
+        verbose_name = 'Lease order attachment'
+        verbose_name_plural = 'Lease order attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

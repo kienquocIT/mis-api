@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.base.models import Application
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.recurrence.models import Recurrence
 from apps.core.workflow.tasks import decorator_run_workflow
@@ -7,9 +8,9 @@ from apps.sales.opportunity.models import Opportunity
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
     SaleOrderProductSerializer, SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, \
     SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer, SaleOrderRuleValidate, SaleOrderInvoiceSerializer
-from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
+from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder, SaleOrderAttachment
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
-    AbstractListSerializerModel
+    AbstractListSerializerModel, SerializerCommonValidate, SerializerCommonHandle
 
 
 # SALE ORDER BEGIN
@@ -113,6 +114,7 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     @classmethod
     def get_process(cls, obj):
@@ -187,6 +189,8 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
             # process
             'process',
             'process_stage_app',
+
+            'attachment',
         )
 
     @classmethod
@@ -209,6 +213,10 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_employee_inherit(cls, obj):
         return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
+
+    @classmethod
+    def get_attachment(cls, obj):
+        return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
 
 
 class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
@@ -260,6 +268,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
 
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
     process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     @classmethod
     def validate_process(cls, attrs):
@@ -325,6 +334,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
             'is_recurrence_template',
             'is_recurring',
             'recurrence_task_id',
+            'attachment',
         )
 
     @classmethod
@@ -373,6 +383,10 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
                             raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
         return True
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(user=user, model_cls=SaleOrderAttachment, value=value)
+
     def validate(self, validate_data):
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
@@ -389,8 +403,15 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
+        attachment = validated_data.pop('attachment', [])
         sale_order = SaleOrder.objects.create(**validated_data)
         SaleOrderCommonCreate().create_sale_order_sub_models(validated_data=validated_data, instance=sale_order)
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id="a870e392-9ad2-4fe2-9baa-298a38691cf2").first(),
+            model_cls=SaleOrderAttachment,
+            instance=sale_order,
+            attachment_result=attachment,
+        )
 
         # Check instance is change document => set is_change True for root
         if sale_order.is_change is True and sale_order.document_root_id:
@@ -466,6 +487,7 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = SaleOrder
@@ -512,6 +534,7 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
             # payment stage tab
             'sale_order_payment_stage',
             'sale_order_invoice',
+            'attachment',
         )
 
     @classmethod
@@ -567,6 +590,12 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
             'system_status': BaseMsg.SYSTEM_STATUS_INCORRECT,
         })
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=SaleOrderAttachment, value=value, doc_id=self.instance.id
+        )
+
     def validate(self, validate_data):
         SaleOrderRuleValidate.validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
@@ -576,11 +605,18 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
+        attachment = validated_data.pop('attachment', [])
         # update sale order
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         SaleOrderCommonCreate().create_sale_order_sub_models(validated_data=validated_data, instance=instance)
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id="a870e392-9ad2-4fe2-9baa-298a38691cf2").first(),
+            model_cls=SaleOrderAttachment,
+            instance=instance,
+            attachment_result=attachment,
+        )
         return instance
 
 

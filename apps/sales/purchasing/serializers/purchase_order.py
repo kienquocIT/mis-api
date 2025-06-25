@@ -8,7 +8,7 @@ from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommo
     PurchaseOrderCommonGet
 from apps.sales.quotation.models import QuotationAppConfig
 from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS, SaleMsg, HRMsg, AbstractCreateSerializerModel, \
-    AbstractListSerializerModel, AbstractDetailSerializerModel
+    AbstractListSerializerModel, AbstractDetailSerializerModel, SerializerCommonValidate, SerializerCommonHandle
 from apps.shared.translations.base import AttachmentMsg
 
 
@@ -431,19 +431,6 @@ class PurchaseOrderInvoiceSerializer(serializers.ModelSerializer):
         return PurchasingCommonValidate().validate_tax_id(value=value)
 
 
-def handle_attach_file(instance, attachment_result):
-    if attachment_result and isinstance(attachment_result, dict):
-        relate_app = Application.objects.filter(id="81a111ef-9c32-4cbd-8601-a3cce884badb").first()
-        if relate_app:
-            state = PurchaseOrderAttachmentFile.resolve_change(
-                result=attachment_result, doc_id=instance.id, doc_app=relate_app,
-            )
-            if state:
-                return True
-        raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
-    return True
-
-
 # BEGIN PURCHASE ORDER
 class PurchaseOrderListSerializer(AbstractListSerializerModel):
     supplier = serializers.SerializerMethodField()
@@ -671,14 +658,9 @@ class PurchaseOrderCreateSerializer(AbstractCreateSerializerModel):
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
-        if user and hasattr(user, 'employee_current_id'):
-            state, result = PurchaseOrderAttachmentFile.valid_change(
-                current_ids=value, employee_id=user.employee_current_id, doc_id=None
-            )
-            if state is True:
-                return result
-            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=PurchaseOrderAttachmentFile, value=value
+        )
 
     def validate(self, validate_data):
         self.validate_total_payment_term(validate_data=validate_data)
@@ -686,16 +668,18 @@ class PurchaseOrderCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
-        attachment = []
-        if 'attachment' in validated_data:
-            attachment = validated_data['attachment']
-            del validated_data['attachment']
+        attachment = validated_data.pop('attachment', [])
         purchase_order = PurchaseOrder.objects.create(**validated_data)
         PurchaseOrderCommonCreate().create_purchase_order_sub_models(
             validated_data=validated_data,
             instance=purchase_order
         )
-        handle_attach_file(purchase_order, attachment)
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id="81a111ef-9c32-4cbd-8601-a3cce884badb").first(),
+            model_cls=PurchaseOrderAttachmentFile,
+            instance=purchase_order,
+            attachment_result=attachment,
+        )
         return purchase_order
 
 
@@ -790,14 +774,9 @@ class PurchaseOrderUpdateSerializer(AbstractCreateSerializerModel):
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
-        if user and hasattr(user, 'employee_current_id'):
-            state, result = PurchaseOrderAttachmentFile.valid_change(
-                current_ids=value, employee_id=user.employee_current_id, doc_id=self.instance.id
-            )
-            if state is True:
-                return result
-            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=PurchaseOrderAttachmentFile, value=value, doc_id=self.instance.id
+        )
 
     def validate(self, validate_data):
         self.validate_total_payment_term(validate_data=validate_data)
@@ -805,10 +784,7 @@ class PurchaseOrderUpdateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
-        attachment = []
-        if 'attachment' in validated_data:
-            attachment = validated_data['attachment']
-            del validated_data['attachment']
+        attachment = validated_data.pop('attachment', [])
         # update purchase order
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -818,7 +794,12 @@ class PurchaseOrderUpdateSerializer(AbstractCreateSerializerModel):
             instance=instance,
             is_update=True,
         )
-        handle_attach_file(instance, attachment)
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id="81a111ef-9c32-4cbd-8601-a3cce884badb").first(),
+            model_cls=PurchaseOrderAttachmentFile,
+            instance=instance,
+            attachment_result=attachment,
+        )
         return instance
 
 

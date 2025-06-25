@@ -249,6 +249,13 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel, CurrencyAbstractMo
     indicator_revenue = models.FloatField(default=0, help_text="value of indicator revenue (IN0001)")
     indicator_gross_profit = models.FloatField(default=0, help_text="value of indicator gross profit (IN0003)")
     indicator_net_income = models.FloatField(default=0, help_text="value of indicator net income (IN0006)")
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='QuotationAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_quotation',
+    )
 
     class Meta:
         verbose_name = 'Quotation'
