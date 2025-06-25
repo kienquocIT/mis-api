@@ -432,8 +432,13 @@ class ReportLeaseListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_lease_status(cls, obj):
-        if obj.lease_to:
+        status = 1
+        if obj.lease_from and obj.lease_to:
             current = timezone.now()
-            if current.date() >= obj.lease_to:
-                return 1
-        return 0
+            if current.date() < obj.lease_from:
+                status = 1  # Prepare for lease
+            if obj.lease_from <= current.date() <= obj.lease_to:
+                status = 2  # Currently for lease
+            if current.date() > obj.lease_to:
+                status = 3  # Lease expires
+        return status
