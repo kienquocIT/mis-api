@@ -465,6 +465,8 @@ class ToolForLeaseListSerializer(serializers.ModelSerializer):
     tool_id = serializers.SerializerMethodField()
     origin_cost = serializers.SerializerMethodField()
     net_value = serializers.SerializerMethodField()
+    product_id = serializers.SerializerMethodField()
+    product_data = serializers.SerializerMethodField()
     depreciation_time = serializers.SerializerMethodField()
     quantity_leased = serializers.SerializerMethodField()
 
@@ -478,6 +480,9 @@ class ToolForLeaseListSerializer(serializers.ModelSerializer):
             'origin_cost',
             'net_value',
             'quantity',
+            'product_id',
+            'product_data',
+
             'depreciation_time',
             'depreciation_start_date',
             'depreciation_end_date',
@@ -496,6 +501,26 @@ class ToolForLeaseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_net_value(cls, obj):
         return 0 if obj else 0
+
+    @classmethod
+    def get_product_id(cls, obj):
+        return str(obj.product_id)
+
+    @classmethod
+    def get_product_data(cls, obj):
+        return {
+            'id': str(obj.product_id),
+            'title': obj.product.title,
+            'code': obj.product.code,
+            'sale_information': {
+                'default_uom': {
+                    'id': str(obj.product.sale_default_uom_id), 'title': obj.product.sale_default_uom.title,
+                    'code': obj.product.sale_default_uom.code, 'ratio': obj.product.sale_default_uom.ratio,
+                    'rounding': obj.product.sale_default_uom.rounding,
+                    'is_referenced_unit': obj.product.sale_default_uom.is_referenced_unit
+                } if obj.product.sale_default_uom else {},
+            }
+        } if obj.product else {}
 
     @classmethod
     def get_depreciation_time(cls, obj):
