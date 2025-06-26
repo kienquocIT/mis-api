@@ -632,12 +632,15 @@ class LORecurrenceListSerializer(AbstractListSerializerModel):
 
 
 class LeaseOrderCostListSerializer(serializers.ModelSerializer):
+    offset_to_asset_data = serializers.SerializerMethodField()
+
     class Meta:
         model = LeaseOrderCost
         fields = (
             'id',
             'product_data',
             'offset_data',
+            'offset_to_asset_data',
             'tool_data',
             'asset_data',
             'asset_type',
@@ -657,3 +660,15 @@ class LeaseOrderCostListSerializer(serializers.ModelSerializer):
             'depreciation_data',
             'depreciation_lease_data',
         )
+
+    @classmethod
+    def get_offset_to_asset_data(cls, obj):
+        if obj.asset_type == 1 and obj.offset and obj.lease_order:
+            delivery_product = obj.offset.delivery_product_offset.filter(
+                delivery_sub__order_delivery__lease_order_id=obj.lease_order_id
+            ).first()
+            if delivery_product:
+                delivery_asset = delivery_product.delivery_pa_delivery_product.first()
+                if delivery_asset:
+                    return delivery_asset.asset_data
+        return {}
