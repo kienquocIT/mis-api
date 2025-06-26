@@ -1,12 +1,16 @@
 from django.db import transaction
 from rest_framework import serializers
 from apps.core.base.models import Application
-
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.kms.incomingdocument.models import KMSIncomingDocument, IncomingAttachDocumentMapAttachFile, \
+from apps.kms.incomingdocument.models import (
+    KMSIncomingDocument, IncomingAttachDocumentMapAttachFile,
     KMSAttachIncomingDocuments, KMSInternalRecipientIncomingDocument
-from apps.shared import AbstractCreateSerializerModel, KMSMsg, AbstractDetailSerializerModel, AttachmentMsg, HRMsg, \
+)
+from apps.shared import (
+    AbstractCreateSerializerModel, KMSMsg, AbstractDetailSerializerModel, AttachmentMsg,
     SECURITY_LEVEL, SerializerCommonValidate, SerializerCommonHandle, AbstractListSerializerModel
+)
+
 
 __all__ = [
     'KMSIncomingDocumentListSerializer',

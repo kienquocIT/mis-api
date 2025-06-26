@@ -127,7 +127,7 @@ class KMSInternalRecipientIncomingDocument(MasterDataAbstractModel):
         verbose_name='Permission of Employee',
         help_text=json.dumps(
             {
-                "permission_kind": [i for i in range(1, 8)]
+                "permission_kind": list(range(1, 8))
             }
         )
     )
@@ -142,5 +142,3 @@ class KMSInternalRecipientIncomingDocument(MasterDataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-

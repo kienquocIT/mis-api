@@ -75,4 +75,3 @@ class KMSIncomingDocumentRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
-
