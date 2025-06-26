@@ -590,7 +590,11 @@ class Quotation(DataAbstractModel):
     )
    
 BƯỚC 2: Serialier:
-- SerializerCrate:
+- SerializerCreate:
+khai báo field attachment: 
+VD:
+attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+
 validate: Thêm validate_attachment với SerializerCommonValidate.validate_attachment()
 VD:
 def validate_attachment(self, value):
@@ -611,6 +615,10 @@ def create(self, validated_data):
       attachment_result=attachment,
   )
 - SerializerUpdate:
+khai báo field attachment: 
+VD:
+attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+
 validate: Thêm validate_attachment với SerializerCommonValidate.validate_attachment() truyền thêm doc_id
 VD:
 def validate_attachment(self, value):
@@ -635,6 +643,13 @@ def update(self, instance, validated_data):
       instance=instance,
       attachment_result=attachment,
   )
+  
+- SerializerDetail:
+Trả dữ liệu attachment:
+VD:
+@classmethod
+def get_attachment(cls, obj):
+  return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
   
 BƯỚC 3: Views:
 - Thêm self.ser_context = {'user': request.user} trong def post() & def put() của API tạo/ update chức năng
