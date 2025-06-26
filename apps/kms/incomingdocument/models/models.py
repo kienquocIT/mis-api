@@ -15,6 +15,20 @@ class KMSIncomingDocument(DataAbstractModel):
         related_name='kms_incoming_document_attachment_m2m'
     )
 
+    def save(self, *args, **kwargs):
+        if self.system_status in [2, 3]:
+            if not self.code:
+                self.add_auto_generate_code_to_instance(self, 'ID[n4]', True)
+
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+
+        # hit DB
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = 'Incoming document of KMS'
         verbose_name_plural = 'Incoming documents of KMS'

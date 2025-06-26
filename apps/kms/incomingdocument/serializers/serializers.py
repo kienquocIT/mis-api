@@ -6,7 +6,7 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.kms.incomingdocument.models import KMSIncomingDocument, IncomingAttachDocumentMapAttachFile, \
     KMSAttachIncomingDocuments, KMSInternalRecipientIncomingDocument
 from apps.shared import AbstractCreateSerializerModel, KMSMsg, AbstractDetailSerializerModel, AttachmentMsg, HRMsg, \
-    SECURITY_LEVEL, SerializerCommonValidate, SerializerCommonHandle
+    SECURITY_LEVEL, SerializerCommonValidate, SerializerCommonHandle, AbstractListSerializerModel
 
 __all__ = [
     'KMSIncomingDocumentListSerializer',
@@ -74,13 +74,14 @@ def create_internal_recipient(incoming_doc, internal_list):
     KMSInternalRecipientIncomingDocument.objects.bulk_create(new_list)
 
 
-class KMSIncomingDocumentListSerializer(serializers.ModelSerializer):
+class KMSIncomingDocumentListSerializer(AbstractListSerializerModel):
     sender = serializers.SerializerMethodField()
 
     class Meta:
         model = KMSIncomingDocument
         fields = (
             'id',
+            'code',
             'title',
             'remark',
             'sender'
@@ -119,7 +120,7 @@ class KMSInternalRecipientIncomingDocumentSerializers(serializers.Serializer):
         })
 
 
-class KMSIncomingDocumentCreateSerializer(serializers.ModelSerializer):
+class KMSIncomingDocumentCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     attached_list = KMSAttachedIncomingDocumentSerializers(many=True)
     internal_recipient = KMSInternalRecipientIncomingDocumentSerializers(many=True)

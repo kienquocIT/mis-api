@@ -3296,6 +3296,16 @@ AppProp_KMS_Document_data = {
     }
 }
 
+AppProp_KMS_IncomingDocument_data = {
+    "423a08ea-18da-4787-964b-7e6c4dcee6f2": {
+        "application_id": "6944d486-66a0-4521-bd28-681d5df42ff3",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    }
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -3340,5 +3350,6 @@ ApplicationProperty_data = {
     **AppProp_SaleData_FixedAssetWriteOff_data,
     **AppProp_SaleData_InstrumentToolWriteOff_data,
     #  KMS
-    **AppProp_KMS_Document_data
+    **AppProp_KMS_Document_data,
+    **AppProp_KMS_IncomingDocument_data,
 }

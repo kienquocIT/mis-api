@@ -19,7 +19,7 @@ class KMSIncomingDocumentRequestList(BaseListMixin, BaseCreateMixin):
         operation_description="get incoming document request list"
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='incomingdocument', model_code='kmsincomingdocument', perm_code='view'
     )
     def get(self, request, *args, **kwargs):
@@ -31,7 +31,7 @@ class KMSIncomingDocumentRequestList(BaseListMixin, BaseCreateMixin):
         request_body=KMSIncomingDocumentCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='incomingdocument', model_code='kmsincomingdocument', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
@@ -57,7 +57,7 @@ class KMSIncomingDocumentRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True,
-        auth_require=False,
+        auth_require=True,
         label_code="incomingdocument",
         model_code='kmsincomingdocument',
         perm_code='view'
@@ -67,7 +67,7 @@ class KMSIncomingDocumentRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @mask_view(
         login_require=True,
-        auth_require=False,
+        auth_require=True,
         label_code='incomingdocument',
         model_code='kmsincomingdocument',
         perm_code='edit'
