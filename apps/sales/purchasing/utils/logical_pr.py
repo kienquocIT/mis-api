@@ -29,6 +29,11 @@ class PRHandler:
                     'quantity': quantity,
                     'total': instance.pretax_amount,
                     'reference': reference,
+                    'supplier_data': {
+                        'id': str(instance.supplier_id),
+                        'title': str(instance.supplier.name),
+                        'code': str(instance.supplier.code),
+                    } if instance.supplier else {}
                 }
             )
         return True

@@ -61,9 +61,9 @@ from ..sales.partnercenter.models import DataObject
 from ..sales.paymentplan.models import PaymentPlan
 from ..sales.project.models import Project, ProjectMapMember
 from ..sales.purchasing.models import (
-    PurchaseRequestProduct, PurchaseOrderRequestProduct, PurchaseOrder,
+    PurchaseRequestProduct, PurchaseOrderRequestProduct, PurchaseOrder, PurchaseRequest,
 )
-from ..sales.purchasing.utils import POFinishHandler
+from ..sales.purchasing.utils import POFinishHandler, POHandler, PRHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.quotation.serializers import QuotationListSerializer
 from ..sales.report.models import ReportCashflow, ReportLease
@@ -72,7 +72,7 @@ from ..sales.report.utils import IRForGoodsReceiptHandler
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrder, SaleOrderIndicator
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
-from ..sales.saleorder.utils import SOFinishHandler
+from ..sales.saleorder.utils import SOFinishHandler, SOHandler
 from ..sales.task.models import OpportunityTaskStatus, OpportunityTask
 
 
@@ -2175,4 +2175,15 @@ def hong_quang_delete_runtime_assignee():
     if assignees:
         assignees.delete()
     print('hong_quang_delete_runtime_assignee done.')
+    return True
+
+
+def run_push_diagram():
+    for sale_order in SaleOrder.objects.all():
+        SOHandler.push_diagram(instance=sale_order)
+    for purchase_request in PurchaseRequest.objects.all():
+        PRHandler.push_diagram(instance=purchase_request)
+    for purchase_order in PurchaseOrder.objects.all():
+        POHandler.push_diagram(instance=purchase_order)
+    print('run_push_diagram done.')
     return True
