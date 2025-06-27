@@ -94,6 +94,8 @@ class InstrumentTool(DataAbstractModel):
         help_text='quantity of allocated instruments and tools'
     )
 
+    quantity_leased = models.FloatField(default=0, help_text="quantity that currently leased")
+
     class Meta:
         verbose_name = 'Instrument Tool'
         verbose_name_plural = 'Instrument Tools'
