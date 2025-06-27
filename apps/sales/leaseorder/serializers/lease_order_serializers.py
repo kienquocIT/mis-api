@@ -8,7 +8,7 @@ from apps.sales.opportunity.models import Opportunity
 from apps.sales.leaseorder.serializers.lease_order_sub import LeaseOrderCommonCreate, LeaseOrderCommonValidate, \
     LeaseOrderProductSerializer, LeaseOrderCostSerializer, LeaseOrderExpenseSerializer, LeaseOrderIndicatorSerializer, \
     LeaseOrderPaymentStageSerializer, LeaseOrderRuleValidate, LeaseOrderLogisticSerializer, LeaseOrderInvoiceSerializer
-from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderCost, LeaseOrderAttachment
+from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderAttachment
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel, SerializerCommonValidate, SerializerCommonHandle
 

@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderAppConfig, LeaseOrderCost
+from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderAppConfig
 from apps.sales.leaseorder.serializers import (
     LeaseOrderListSerializer, LeaseOrderCreateSerializer, LeaseOrderDetailSerializer, LeaseOrderUpdateSerializer,
     LeaseOrderMinimalListSerializer, LORecurrenceListSerializer,
