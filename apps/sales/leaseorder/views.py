@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderAppConfig, LeaseOrderCost
 from apps.sales.leaseorder.serializers import (
     LeaseOrderListSerializer, LeaseOrderCreateSerializer, LeaseOrderDetailSerializer, LeaseOrderUpdateSerializer,
-    LeaseOrderMinimalListSerializer, LORecurrenceListSerializer, LeaseOrderCostListSerializer,
+    LeaseOrderMinimalListSerializer, LORecurrenceListSerializer,
 )
 from apps.sales.leaseorder.serializers.lease_order_config import LeaseOrderConfigDetailSerializer, \
     LeaseOrderConfigUpdateSerializer
@@ -197,26 +197,5 @@ class LORecurrenceList(BaseListMixin, BaseCreateMixin):
         operation_description="Get LO Recurrence List",
     )
     @mask_view(login_require=True, auth_require=False)
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-
-class LeaseOrderCostList(BaseListMixin, BaseCreateMixin):
-    queryset = LeaseOrderCost.objects
-    search_fields = ['product__title', 'offset__title', 'tool__title', 'asset__title']
-    filterset_fields = {
-        'id': ['exact', 'in'],
-        'lease_order_id': ['exact', 'in'],
-    }
-    serializer_list = LeaseOrderCostListSerializer
-    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-
-    @swagger_auto_schema(
-        operation_summary="Lease Order Cost List",
-        operation_description="Get Lease Order Cost List",
-    )
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

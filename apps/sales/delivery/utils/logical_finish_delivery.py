@@ -388,6 +388,7 @@ class DeliFinishHandler:
                     "tool_id": str(tool_obj.id),
                     "net_value": 0,
                     "unit_price": tool_obj.unit_price,
+                    "origin_cost": tool_obj.unit_price,
                     "depreciation_time": tool_obj.depreciation_time,
                     "depreciation_start_date": str(tool_obj.depreciation_start_date),
                     "depreciation_end_date": str(tool_obj.depreciation_end_date),

@@ -489,3 +489,53 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
             }
             for deli_product in obj.delivery_product_delivery_sub.filter(quantity_remain_recovery__gt=0)
         ]
+
+
+class DeliveryProductLeaseListSerializer(serializers.ModelSerializer):
+    tool_asset_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderDeliveryProduct
+        fields = (
+            'id',
+            'tool_asset_data',
+        )
+
+    @classmethod
+    def get_tool_asset_data(cls, obj):
+        result = []
+        delivery_tools = obj.delivery_pt_delivery_product.all()
+        if delivery_tools:
+            for delivery_tool in delivery_tools:
+                data_custom = delivery_tool.tool_data
+                data_custom.update({
+                    'asset_type': 2,
+                    'offset_data': obj.offset_data,
+                    'tool_data': {
+                        'id': delivery_tool.tool_id, 'title': delivery_tool.tool.title
+                    } if delivery_tool.tool else {},
+                    'product_cost': delivery_tool.tool.unit_price if delivery_tool.tool else 0,
+                    'product_lease_start_date': delivery_tool.product_lease_start_date,
+                    'product_lease_end_date': delivery_tool.product_lease_end_date,
+                    'product_depreciation_time': delivery_tool.product_depreciation_time,
+                })
+                result.append(data_custom)
+
+        delivery_assets = obj.delivery_pa_delivery_product.all()
+        if delivery_assets:
+            for delivery_asset in delivery_assets:
+                data_custom = delivery_asset.asset_data
+                data_custom.update({
+                    'asset_type': 3,
+                    'offset_data': obj.offset_data,
+                    'asset_data': {
+                        'id': delivery_asset.asset_id, 'title': delivery_asset.asset.title
+                    } if delivery_asset.asset else {},
+                    'product_cost': delivery_asset.asset.original_cost if delivery_asset.asset else 0,
+                    'product_lease_start_date': delivery_asset.product_lease_start_date,
+                    'product_lease_end_date': delivery_asset.product_lease_end_date,
+                    'product_depreciation_time': delivery_asset.product_depreciation_time,
+                })
+                result.append(data_custom)
+
+        return result
