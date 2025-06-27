@@ -6,7 +6,7 @@ from apps.accounting.journalentry.utils.log_for_delivery import JEForDeliveryHan
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods
-from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
+from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler, DeliFinishAssetToolHandler
 from apps.sales.report.utils.log_for_delivery import IRForDeliveryHandler
 from apps.shared import (
     DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
@@ -416,9 +416,10 @@ class OrderDeliverySub(DataAbstractModel):
                     self.push_state(instance=self, kwargs=kwargs)  # state
                     DeliFinishHandler.create_new(instance=self)  # new sub + product
                     DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
-                    DeliFinishHandler.update_asset_status(instance=self)  # asset status => delivered
-                    DeliFinishHandler.force_create_new_asset(instance=self)  # create new asset
-                    DeliFinishHandler.force_create_new_tool(instance=self)  # create new tool
+                    DeliFinishAssetToolHandler.update_tool_status(instance=self)  # tool quantity_leased +=
+                    DeliFinishAssetToolHandler.update_asset_status(instance=self)  # asset status => delivered
+                    DeliFinishAssetToolHandler.force_create_new_asset(instance=self)  # create new asset
+                    DeliFinishAssetToolHandler.force_create_new_tool(instance=self)  # create new tool
                     DeliFinishHandler.push_product_info(instance=self)  # product
                     DeliFinishHandler.push_so_lo_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
