@@ -88,7 +88,8 @@ class KMSIncomingDocumentListSerializer(AbstractListSerializerModel):
             'code',
             'title',
             'remark',
-            'sender'
+            'sender',
+            'date_created',
         )
 
     @classmethod

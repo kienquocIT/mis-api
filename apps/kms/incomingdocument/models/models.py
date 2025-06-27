@@ -6,7 +6,7 @@ from apps.shared import DataAbstractModel, MasterDataAbstractModel, SECURITY_LEV
 
 
 class KMSIncomingDocument(DataAbstractModel):
-    remark = models.TextField(blank=True, null=True)
+    remark = models.TextField(blank=True)
     attachment_m2m = models.ManyToManyField(
         'attachments.Files',
         through='IncomingAttachDocumentMapAttachFile',
