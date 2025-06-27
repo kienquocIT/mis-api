@@ -13,7 +13,7 @@ from apps.sales.quotation.serializers.quotation_serializers import (
     QuotationListSerializer, QuotationCreateSerializer,
     QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer, QuotationMinimalListSerializer
 )
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 
 
 class QuotationList(BaseListMixin, BaseCreateMixin):
@@ -83,6 +83,7 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
 class QuotationDetail(
     BaseRetrieveMixin,
     BaseUpdateMixin,
+    BaseDestroyMixin,
 ):
     queryset = Quotation.objects
     serializer_detail = QuotationDetailSerializer
@@ -123,6 +124,17 @@ class QuotationDetail(
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {'user': request.user}
         return self.update(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Delete Quotation",
+        operation_description="Delete Quotation by ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='quotation', model_code='quotation', perm_code='delete',
+    )
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
 
 class QuotationExpenseList(BaseListMixin):
