@@ -749,6 +749,7 @@ class SaleDataAccountImportSerializer(serializers.ModelSerializer):
         shipping_address_dict = validated_data.pop('shipping_address_dict', [])
         billing_address_dict = validated_data.pop('billing_address_dict', [])
         account = Account.objects.create(**validated_data)
+        AccountCommonFunc.update_account_type_fields(account)
         AccountCommonFunc.add_employee_map_account(account)
         AccountCommonFunc.add_account_types(account)
         AccountCommonFunc.add_shipping_address(account, shipping_address_dict)

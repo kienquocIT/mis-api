@@ -121,7 +121,7 @@ class GoodsTransfer(DataAbstractModel):
         bulk_info = []
         for sn_id in item.sn_data:
             sn_src_obj = all_sn_src.filter(id=sn_id).first()
-            if sn_src_obj and not sn_src_obj.is_delete:
+            if sn_src_obj and not sn_src_obj.serial_status:
                 sn_src_obj.serial_status = 1
                 sn_src_obj.save(update_fields=['serial_status'])
                 bulk_info.append(
@@ -134,7 +134,8 @@ class GoodsTransfer(DataAbstractModel):
                         expire_date=sn_src_obj.expire_date,
                         manufacture_date=sn_src_obj.manufacture_date,
                         warranty_start=sn_src_obj.warranty_start,
-                        warranty_end=sn_src_obj.warranty_end
+                        warranty_end=sn_src_obj.warranty_end,
+                        use_for_modification=sn_src_obj.use_for_modification
                     )
                 )
             else:
