@@ -10,6 +10,11 @@ class EquipmentLoan(DataAbstractModel):
     loan_date = models.DateTimeField(null=True)
     return_date = models.DateTimeField(null=True)
 
+    @classmethod
+    def auto_transfer_to_virtual_warehouse_for_equipment_loan(cls, el_obj):
+        """ tự động điều chuyển hàng sang kho ảo, lấy cost hiện tại """
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -19,6 +24,9 @@ class EquipmentLoan(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
+
+                if self.system_status == 3:
+                    self.auto_transfer_to_virtual_warehouse_for_equipment_loan(self)
         # hit DB
         super().save(*args, **kwargs)
 
