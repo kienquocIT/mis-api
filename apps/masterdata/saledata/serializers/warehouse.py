@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models import (
     WarehouseEmployeeConfig, WarehouseEmployeeConfigDetail
 )
 from apps.masterdata.saledata.models.inventory import WarehouseShelf
-from apps.shared import TypeCheck, WarehouseMsg
+from apps.shared import TypeCheck
 
 
 __all__ = [

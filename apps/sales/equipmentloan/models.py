@@ -1,9 +1,5 @@
 from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.core.company.models import CompanyFunctionNumber
-from apps.masterdata.saledata.models import Product, ProductProductType
-from apps.masterdata.saledata.models.product_warehouse import PWModified, PWModifiedComponent, PWModifiedComponentDetail
-from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 
