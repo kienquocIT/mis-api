@@ -137,6 +137,7 @@ MAP_FIELD_TITLE = {
     'asset.instrumenttoolwriteoff': 'title',
     # KMS
     'documentapproval.kmsdocumentapproval': 'title',
+    'incomingdocument.kmsincomingdocument': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -498,4 +499,16 @@ STATUS_RECOVERY = (
 SERIAL_STATUS = (
     (0, _('Available')),
     (1, _('Delivered')),
+)
+
+# kms
+SECURITY_LEVEL = (
+    (0, 'Low'),
+    (1, 'Medium'),
+    (2, 'High')
+)
+
+KIND = (
+    (1, 'employee'),
+    (2, 'group')
 )

@@ -1,6 +1,7 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.sales.delivery.serializers.delivery import DeliveryProductLeaseListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
 from apps.sales.delivery.models import OrderDeliverySub, OrderDeliveryProduct
 from apps.sales.delivery.serializers import OrderDeliverySubDetailSerializer, \
@@ -107,6 +108,33 @@ class OrderDeliverySubRecoveryList(BaseListMixin):
 
     @swagger_auto_schema(
         operation_summary='Order Delivery Recovery List',
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class DeliveryProductLeaseList(BaseListMixin):
+    queryset = OrderDeliveryProduct.objects
+    filterset_fields = {
+        'id': ['exact', 'in'],
+        'delivery_sub__order_delivery__lease_order_id': ['exact', 'in'],
+        'delivery_sub__system_status': ['exact'],
+    }
+    serializer_list = DeliveryProductLeaseListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'delivery_pt_delivery_product',
+            'delivery_pa_delivery_product',
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Delivery Product Lease List",
+        operation_description="Get Delivery Product Lease List",
     )
     @mask_view(
         login_require=True, auth_require=False,

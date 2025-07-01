@@ -489,3 +489,63 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
             }
             for deli_product in obj.delivery_product_delivery_sub.filter(quantity_remain_recovery__gt=0)
         ]
+
+
+class DeliveryProductLeaseListSerializer(serializers.ModelSerializer):
+    tool_asset_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderDeliveryProduct
+        fields = (
+            'id',
+            'tool_asset_data',
+        )
+
+    @classmethod
+    def get_tool_asset_data(cls, obj):
+        result = []
+        delivery_tools = obj.delivery_pt_delivery_product.all()
+        if delivery_tools:
+            for delivery_tool in delivery_tools:
+                if delivery_tool.tool:
+                    data_custom = delivery_tool.tool_data
+                    data_custom.update({
+                        'id': delivery_tool.tool_id,
+                        'asset_type': 2,
+                        'offset_data': obj.offset_data,
+                        'tool_data': {
+                            'id': delivery_tool.tool_id, 'title': delivery_tool.tool.title
+                        },
+                        'product_cost': delivery_tool.tool.unit_price,
+                        'product_lease_start_date': delivery_tool.product_lease_start_date,
+                        'product_lease_end_date': delivery_tool.product_lease_end_date,
+                        'product_depreciation_time': delivery_tool.product_depreciation_time,
+                        'status': delivery_tool.tool.status,
+                        'quantity': delivery_tool.tool.quantity,
+                        'quantity_leased': delivery_tool.tool.quantity_leased,
+                    })
+                    result.append(data_custom)
+
+        delivery_assets = obj.delivery_pa_delivery_product.all()
+        if delivery_assets:
+            for delivery_asset in delivery_assets:
+                if delivery_asset.asset:
+                    data_custom = delivery_asset.asset_data
+                    data_custom.update({
+                        'id': delivery_asset.asset_id,
+                        'asset_type': 3,
+                        'offset_data': obj.offset_data,
+                        'asset_data': {
+                            'id': delivery_asset.asset_id, 'title': delivery_asset.asset.title
+                        },
+                        'product_cost': delivery_asset.asset.original_cost,
+                        'product_lease_start_date': delivery_asset.product_lease_start_date,
+                        'product_lease_end_date': delivery_asset.product_lease_end_date,
+                        'product_depreciation_time': delivery_asset.product_depreciation_time,
+                        'status': delivery_asset.asset.status,
+                        'quantity': 1,
+                        'quantity_leased': 1 if delivery_asset.asset.status == 2 else 0,
+                    })
+                    result.append(data_custom)
+
+        return result

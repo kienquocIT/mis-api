@@ -461,6 +461,10 @@ _PlanApplication_kms_data = {
         "plan_id": "02793f68-3548-45c1-98f5-89899a963091",  # KMS
         "application_id": "7505d5db-42fe-4cde-ae5e-dbba78e2df03",  # Document approval
     },
+    "6944d486-66a0-4521-bd28-681d5df42ff3": {
+        "plan_id": "02793f68-3548-45c1-98f5-89899a963091",  # KMS
+        "application_id": "6944d486-66a0-4521-bd28-681d5df42ff3",  # Document approval
+    },
 }
 
 PlanApplication_data = {
