@@ -34,7 +34,7 @@ class PickingHandler:
                     picked_unit = prod_id_temp[key_prod] * final_ratio
                     in_stock = prod_warehouse.stock_amount
                     in_stock = in_stock - prod_warehouse.picked_ready
-                    if in_stock > 0 and in_stock >= picked_unit:
+                    if in_stock >= 0 and in_stock >= picked_unit:
                         prod_warehouse.picked_ready += picked_unit
                         prod_wh_update.append(prod_warehouse)
                     else:
