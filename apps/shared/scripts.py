@@ -41,7 +41,8 @@ from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..sales.arinvoice.models import ARInvoice, ARInvoiceItems, ARInvoiceDelivery
 from ..sales.arinvoice.utils.logical_finish import ARInvoiceFinishHandler
-from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct, OrderPickingProduct
+from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct, OrderPickingProduct, \
+    OrderPickingSub
 from ..sales.delivery.models.delivery import OrderDeliverySerial, OrderDeliveryProductWarehouse
 from ..sales.delivery.utils import DeliFinishHandler
 from ..sales.financialcashflow.models import CashInflow, CashOutflow
@@ -2185,4 +2186,17 @@ def run_push_diagram():
     for purchase_order in PurchaseOrder.objects.all():
         POHandler.push_diagram(instance=purchase_order)
     print('run_push_diagram done.')
+    return True
+
+
+def reset_picking_delivery(picking_id, delivery_id):
+    picking_sub = OrderPickingSub.objects.filter(id=picking_id).first()
+    if picking_sub:
+        picking_sub.state = 0
+        picking_sub.save(update_fields=['state'])
+        delivery_sub = OrderDeliverySub.objects.filter(id=delivery_id).first()
+        if delivery_sub:
+            delivery_sub.ready_quantity = delivery_sub.ready_quantity - picking_sub.picked_quantity
+            delivery_sub.save(update_fields=['ready_quantity'])
+    print('reset_picking_delivery done.')
     return True
