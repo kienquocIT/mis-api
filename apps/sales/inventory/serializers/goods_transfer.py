@@ -10,6 +10,7 @@ from apps.shared import (
 )
 from apps.shared.translations.goods_transfer import GTMsg
 
+
 __all__ = [
     'GoodsTransferListSerializer',
     'GoodsTransferCreateSerializer',

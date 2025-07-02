@@ -2946,11 +2946,9 @@ PRODUCT_MODIFICATION_APP_CONFIG = {
     "title": "Product Modification",
     "code": "productmodification",
     "model_code": "productmodification",
-    "app_label": "productmodification",
+    "app_label": "inventory",
     "is_workflow": True,
-    "app_depend_on": [
-        "a8badb2e-54ff-4654-b3fd-0d2d3c777538",  # Product
-    ],
+    "app_depend_on": [],
     "permit_mapping": {
         "view": {
             "range": ["1", "2", "3", "4"],
@@ -2959,22 +2957,56 @@ PRODUCT_MODIFICATION_APP_CONFIG = {
         },
         "create": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {
-                    "view": "==",
-                },
-            },
+            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {
-                    "view": "==",
-                },
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
             },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_print": False,
+    "allow_process": False,
+    "allow_opportunity": False,
+}
+
+EQUIPMENT_LOAN_APP_CONFIG = {
+    "id": "3fc09568-e3ff-4fd3-a70d-4d069ac1521d",
+    "title": "Equipment Loan",
+    "code": "equipmentloan",
+    "model_code": "equipmentloan",
+    "app_label": "inventory",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
@@ -3329,6 +3361,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "f491fdf3-1384-4a82-b155-12ef6673c901": ApplicationConfigFrame(**PRODUCT_MODIFICATION_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "3fc09568-e3ff-4fd3-a70d-4d069ac1521d": ApplicationConfigFrame(**EQUIPMENT_LOAN_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

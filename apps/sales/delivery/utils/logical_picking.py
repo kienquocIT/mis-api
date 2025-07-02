@@ -34,7 +34,7 @@ class PickingHandler:
                     picked_unit = prod_id_temp[key_prod] * final_ratio
                     in_stock = prod_warehouse.stock_amount
                     in_stock = in_stock - prod_warehouse.picked_ready
-                    if in_stock > 0 and in_stock >= picked_unit:
+                    if in_stock >= 0 and in_stock >= picked_unit:
                         prod_warehouse.picked_ready += picked_unit
                         prod_wh_update.append(prod_warehouse)
                     else:
@@ -68,12 +68,13 @@ class PickingHandler:
                     for key, value in product_update.items():
                         delivery_data = value['delivery_data'][0]
                         key_prod = key.split('___')[0]
+                        picking_data = value.get('picking_data', [])
                         delivery_prod = delivery_sub.delivery_product_delivery_sub.filter(
                             product_id=key_prod,
                             uom_id=delivery_data['uom'],
                             order=key.split('___')[1]
                         ).first()
-                        if delivery_prod:
+                        if delivery_prod and len(picking_data) > 0:
                             # cộng vào stock cho delivery prod
                             delivery_prod.ready_quantity += value['stock']
                             delivery_prod.delivery_data.append(delivery_data)
@@ -105,8 +106,6 @@ class PickingHandler:
                 order=key.split('___')[1]
             ).first()
             if this_prod:
-                this_prod.picked_quantity = item['stock']
-
                 pickup_data_temp[key] = {
                     'remaining_quantity': this_prod.remaining_quantity,
                     'picked_quantity': item['stock'],
@@ -114,6 +113,9 @@ class PickingHandler:
                     'picked_quantity_before': this_prod.picked_quantity_before
                 }
                 this_prod.picking_data = item.get('picking_data', [])
+                if len(this_prod.picking_data) > 0:
+                    this_prod.picked_quantity = item['stock']
+
                 this_prod.save(update_fields=['picked_quantity', 'picking_data'])
 
         PickingHandler.update_picking_to_delivery_prod(instance, total_picked, prod_update)
@@ -181,7 +183,7 @@ class PickingHandler:
             update_fields=['picked_quantity', 'pickup_data', 'ware_house', 'ware_house_data', 'to_location', 'remarks',
                            'date_done', 'state', 'estimated_delivery_date']
         )
-        if total < instance.remaining_quantity:
+        if 0 < total < instance.remaining_quantity:
             # giao hàng nhiều lần
             # update current sub
             # tạo mới sub and tạo mới prod, gán sub cho prod picking

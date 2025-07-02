@@ -30,4 +30,5 @@ urlpatterns = [
     path('group-order/', include('apps.sales.grouporder.urls')),
     path('paymentplan/', include('apps.sales.paymentplan.urls')),
     path('product-modification/', include('apps.sales.productmodification.urls')),
+    path('equipment-loan/', include('apps.sales.equipmentloan.urls')),
 ]

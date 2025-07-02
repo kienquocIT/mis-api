@@ -140,7 +140,7 @@ class OrderPickingSubDetailSerializer(serializers.ModelSerializer):
 
 class ProductPickingUpdateSerializer(serializers.Serializer):  # noqa
     product_id = serializers.UUIDField()
-    done = serializers.IntegerField(min_value=1)
+    done = serializers.IntegerField(default=0)
     delivery_data = serializers.JSONField()
     order = serializers.IntegerField(min_value=1)
     picking_data = serializers.JSONField(required=False)
@@ -179,7 +179,9 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         if 'products' in validated_data and len(validated_data['products']) > 0:
             for item in validated_data['products']:
                 item_key = str(item['product_id']) + "___" + str(item['order'])
-                picked_quantity_total += item['done']
+                picking_data = item.get('picking_data', [])
+                if len(picking_data) > 0:
+                    picked_quantity_total += item['done']
                 product_done[item_key] = {
                     'stock': item['done'],
                     'delivery_data': item['delivery_data'],

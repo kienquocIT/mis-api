@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models import (
     WarehouseEmployeeConfig, WarehouseEmployeeConfigDetail
 )
 from apps.masterdata.saledata.models.inventory import WarehouseShelf
-from apps.shared import TypeCheck, WarehouseMsg
+from apps.shared import TypeCheck
 
 
 __all__ = [
@@ -36,9 +36,10 @@ class WareHouseListSerializer(serializers.ModelSerializer):
             'code',
             'remarks',
             'is_active',
-            'agency',
             'full_address',
             'is_dropship',
+            'is_virtual',
+            'use_for',
         )
 
 
@@ -53,17 +54,11 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
             'district',
             'ward',
             'address',
-            'agency',
             'full_address',
             'is_dropship',
             'is_bin_location',
-            'is_agency_location',
+            'is_virtual',
         )
-
-    def validate(self, validate_data):
-        if validate_data.get('is_agency_location') is True and validate_data.get('agency') is None:
-            raise serializers.ValidationError({'agency': WarehouseMsg.AGENCY_NOT_EXIST})
-        return validate_data
 
     def create(self, validated_data):
         warehouse_obj = WareHouse.objects.create(**validated_data)
@@ -72,7 +67,6 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
 
 
 class WareHouseDetailSerializer(serializers.ModelSerializer):
-    agency = serializers.SerializerMethodField()
     city = serializers.SerializerMethodField()
     district = serializers.SerializerMethodField()
     ward = serializers.SerializerMethodField()
@@ -93,19 +87,9 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             'district',
             'is_dropship',
             'is_bin_location',
-            'is_agency_location',
-            'agency',
+            'is_virtual',
             'shelf_data'
         )
-
-    @classmethod
-    def get_agency(cls, obj):
-        if obj.agency:
-            return {
-                'id': obj.agency_id,
-                'name': obj.agency.name,
-            }
-        return {}
 
     @classmethod
     def get_city(cls, obj):
@@ -157,17 +141,11 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
             'district',
             'ward',
             'address',
-            'agency',
             'full_address',
             'is_dropship',
             'is_bin_location',
-            'is_agency_location',
+            'is_virtual',
         )
-
-    def validate(self, validate_data):
-        if validate_data.get('is_agency_location') is True and validate_data.get('agency') is None:
-            raise serializers.ValidationError({'agency': WarehouseMsg.AGENCY_NOT_EXIST})
-        return validate_data
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
@@ -283,7 +261,6 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     warehouse = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
-    agency = serializers.SerializerMethodField()
     available_stock = serializers.SerializerMethodField()
     available_picked = serializers.SerializerMethodField()
 
@@ -298,7 +275,6 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
             'receipt_amount',
             'sold_amount',
             'picked_ready',
-            'agency',
             'available_stock',  # products that allowed to delivery (not include products for other projects)
             'available_picked',  # products that allowed to pick (not include products for other projects)
         )
@@ -329,9 +305,6 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
             'ratio': obj.uom.ratio
         } if obj.uom else {}
 
-    @classmethod
-    def get_agency(cls, obj):
-        return obj.warehouse.agency_id
 
     @classmethod
     def get_available_stock(cls, obj):
