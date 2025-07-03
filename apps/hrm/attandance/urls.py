@@ -1,5 +1,7 @@
 from django.urls import path
 
-urlpatterns = [
+from apps.hrm.attandance.views import ShiftMasterDataList
 
+urlpatterns = [
+    path('shift/list', ShiftMasterDataList.as_view(), name='ShiftMasterDataList'),
 ]
