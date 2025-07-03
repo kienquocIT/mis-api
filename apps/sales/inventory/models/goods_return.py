@@ -42,13 +42,12 @@ class GoodsReturn(DataAbstractModel):
                 if self.system_status == 3:
                     if hasattr(self.company, 'sales_delivery_config_detail'):
                         config = self.company.sales_delivery_config_detail
-                        if config:
-                            if config.is_picking is True:
-                                GoodsReturnSubSerializerForPicking.update_delivery(self)
-                            else:
-                                GoodsReturnSubSerializerForNonPicking.update_delivery(self)
-                        else:
+                        if not config:
                             raise serializers.ValidationError({"Config": 'Delivery Config Not Found.'})
+                        if config.is_picking is True:
+                            GoodsReturnSubSerializerForPicking.update_delivery(self)
+                        else:
+                            GoodsReturnSubSerializerForNonPicking.update_delivery(self)
 
                     # handle after finish
                     # product information

@@ -1,5 +1,4 @@
 from django.db import models
-from rest_framework import serializers
 from apps.masterdata.saledata.models import (
     ProductWareHouseLot,
     ProductWareHouse,
@@ -8,8 +7,9 @@ from apps.masterdata.saledata.models import (
 )
 from apps.sales.inventory.models.goods_registration import GReItemSub, GReItemProductWarehouse
 from apps.sales.report.utils.log_for_goods_transfer import IRForGoodsTransferHandler
-from apps.shared import DataAbstractModel, GOODS_TRANSFER_TYPE, MasterDataAbstractModel, AutoDocumentAbstractModel, \
-    SimpleAbstractModel
+from apps.shared import (
+    DataAbstractModel, GOODS_TRANSFER_TYPE, AutoDocumentAbstractModel, SimpleAbstractModel
+)
 
 __all__ = ['GoodsTransfer', 'GoodsTransferProduct']
 
