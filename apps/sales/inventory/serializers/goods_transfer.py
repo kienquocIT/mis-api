@@ -126,25 +126,15 @@ class GoodsTransferCreateSerializer(AbstractCreateSerializerModel):
     def validate_agency(cls, value):
         try:
             return Account.objects.get(id=value)
-        except ProductWareHouse.DoesNotExist:
+        except Account.DoesNotExist:
             raise serializers.ValidationError({'agency': GTMsg.AGENCY_NOT_EXIST})
-
-    @classmethod
-    def common_create_sub_goods_transfer(cls, instance, data):
-        bulk_data = []
-        for item in data:
-            obj = GoodsTransferProduct(goods_transfer=instance, **item)
-            bulk_data.append(obj)
-        GoodsTransferProduct.objects.filter(goods_transfer=instance).delete()
-        GoodsTransferProduct.objects.bulk_create(bulk_data)
-        return True
 
     @decorator_run_workflow
     def create(self, validated_data):
         goods_transfer_data = validated_data['goods_transfer_data']
         del validated_data['goods_transfer_data']
         instance = GoodsTransfer.objects.create(**validated_data, goods_transfer_type=0)
-        self.common_create_sub_goods_transfer(instance, goods_transfer_data)
+        common_create_sub_goods_transfer(instance, goods_transfer_data)
         return instance
 
 
@@ -306,8 +296,9 @@ class GoodsTransferUpdateSerializer(AbstractCreateSerializerModel):
             'goods_transfer_data'
         )
 
-    def validate(self, validated_data):
-        return validated_data
+    @classmethod
+    def validate_agency(cls, value):
+        GoodsTransferCreateSerializer.validate_agency(value)
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
@@ -316,5 +307,15 @@ class GoodsTransferUpdateSerializer(AbstractCreateSerializerModel):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        GoodsTransferCreateSerializer.common_create_sub_goods_transfer(instance, goods_transfer_data)
+        common_create_sub_goods_transfer(instance, goods_transfer_data)
         return instance
+
+
+def common_create_sub_goods_transfer(instance, data):
+    bulk_data = []
+    for item in data:
+        obj = GoodsTransferProduct(goods_transfer=instance, **item)
+        bulk_data.append(obj)
+    GoodsTransferProduct.objects.filter(goods_transfer=instance).delete()
+    GoodsTransferProduct.objects.bulk_create(bulk_data)
+    return True

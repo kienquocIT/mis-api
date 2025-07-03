@@ -206,7 +206,7 @@ class EquipmentLoanCommonFunction:
                     EquipmentLoanItemDetail(
                         equipment_loan_item=equipment_loan_item_obj,
                         loan_product_pw=pw_obj,
-                        loan_product_pw_quantity=child.get('loan_quantity', 0)
+                        loan_product_pw_quantity=child.get('picked_quantity', 0)
                     )
                 )
         # lot
