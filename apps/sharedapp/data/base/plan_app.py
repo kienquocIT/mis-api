@@ -421,7 +421,7 @@ _PlanApplication_sale_data = {
     },
     "3fc09568-e3ff-4fd3-a70d-4d069ac1521d": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
-        "application_id": "3fc09568-e3ff-4fd3-a70d-4d069ac1521d",  # Product Modification
+        "application_id": "3fc09568-e3ff-4fd3-a70d-4d069ac1521d",  # Equipment Loan
     },
 }
 

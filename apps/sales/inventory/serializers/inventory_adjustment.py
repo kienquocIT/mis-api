@@ -215,7 +215,7 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_unit_cost(cls, obj):
-        return obj.product_mapped.get_unit_cost_by_warehouse(obj.warehouse_mapped_id)
+        return obj.product_mapped.get_cost_info_by_warehouse(obj.warehouse_mapped_id)
 
 
 class IACommonFunc:
@@ -349,11 +349,11 @@ class IAGRListSerializer(serializers.ModelSerializer):
                     'quantity_import': difference,
                     'select_for_action': ia_product.select_for_action,
                     'action_status': ia_product.action_status,
-                    'product_unit_price': ia_product.product_mapped.get_unit_cost_by_warehouse(
+                    'product_unit_price': ia_product.product_mapped.get_cost_info_by_warehouse(
                         warehouse_id=ia_product.warehouse_mapped_id, get_type=1
                     ),
                     'product_subtotal_price': 0,
-                    'product_cost_price': ia_product.product_mapped.get_unit_cost_by_warehouse(
+                    'product_cost_price': ia_product.product_mapped.get_cost_info_by_warehouse(
                         warehouse_id=ia_product.warehouse_mapped_id, get_type=1
                     ),
                     'gr_completed_quantity': completed if completed > 0 else 0,

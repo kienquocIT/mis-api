@@ -2946,7 +2946,7 @@ PRODUCT_MODIFICATION_APP_CONFIG = {
     "title": "Product Modification",
     "code": "productmodification",
     "model_code": "productmodification",
-    "app_label": "inventory",
+    "app_label": "productmodification",
     "is_workflow": True,
     "app_depend_on": [],
     "permit_mapping": {
@@ -2988,7 +2988,7 @@ EQUIPMENT_LOAN_APP_CONFIG = {
     "title": "Equipment Loan",
     "code": "equipmentloan",
     "model_code": "equipmentloan",
-    "app_label": "inventory",
+    "app_label": "equipmentloan",
     "is_workflow": True,
     "app_depend_on": [],
     "permit_mapping": {
