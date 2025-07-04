@@ -28,6 +28,7 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
         'opportunity__is_close_lost': ['exact'],
         'opportunity__is_deal_close': ['exact'],
         'system_status': ['exact', 'in'],
+        'date_approved': ['lte', 'gte'],
         'is_delete': ['exact'],
     }
     serializer_list = QuotationListSerializer
@@ -45,14 +46,13 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         is_minimal = self.get_param(key='is_minimal')
         if is_minimal:
-            return super().get_queryset().filter_on_company()
+            return super().get_queryset()
 
         return super().get_queryset().select_related(
             "customer",
             "opportunity",
             "employee_inherit",
         )
-        # return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Quotation List",

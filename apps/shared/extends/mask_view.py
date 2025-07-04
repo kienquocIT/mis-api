@@ -672,7 +672,7 @@ class ViewAttribute:
                         case 'employee_inherit_id':
                             data = str(user.employee_current_id)
                         case 'is_delete':
-                            data = True
+                            data = False
                         case 'is_active':
                             data = True
                         case _:
