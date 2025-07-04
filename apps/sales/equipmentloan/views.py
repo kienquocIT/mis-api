@@ -43,7 +43,7 @@ class EquipmentLoanList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='inventory', model_code='equipmentloan', perm_code='view',
+        label_code='equipmentloan', model_code='equipmentloan', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -55,7 +55,7 @@ class EquipmentLoanList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='inventory', model_code='equipmentloan', perm_code='create',
+        label_code='equipmentloan', model_code='equipmentloan', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -74,7 +74,7 @@ class EquipmentLoanDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary='Detail Equipment Loan')
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='inventory', model_code='equipmentloan', perm_code='view',
+        label_code='equipmentloan', model_code='equipmentloan', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -84,7 +84,7 @@ class EquipmentLoanDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='inventory', model_code='equipmentloan', perm_code='edit',
+        label_code='equipmentloan', model_code='equipmentloan', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

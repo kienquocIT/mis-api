@@ -128,6 +128,7 @@ MAP_FIELD_TITLE = {
     'financialcashflow.cashinflow': 'title',
     'financialcashflow.cashoutflow': 'title',
     'productmodification.productmodification': 'title',
+    'equipmentloan.equipmentloan': 'title',
     #
     'bidding.bidding': 'title',
     'consulting.consulting': 'title',
@@ -289,6 +290,7 @@ TYPE_LIST = (
 GOODS_TRANSFER_TYPE = (
     (0, _('Goods transfer')),
     (1, _('Send/return consigned goods')),
+    (2, _('Equipment loan')),
 )
 
 # Inventory Adjustment Item action type

@@ -405,7 +405,7 @@ class ProductWareHouseListSerializerForGoodsTransfer(serializers.ModelSerializer
 
     @classmethod
     def get_unit_cost(cls, obj):
-        return obj.product.get_unit_cost_by_warehouse(obj.warehouse_id)
+        return obj.product.get_cost_info_by_warehouse(obj.warehouse_id)
 
 
 class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer):

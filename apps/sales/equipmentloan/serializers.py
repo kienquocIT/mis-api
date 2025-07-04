@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import (
-    Product, ProductWareHouseLot, ProductWareHouseSerial, ProductWareHouse, Account
+    Product, ProductWareHouseLot, ProductWareHouseSerial, ProductWareHouse, Account, WareHouse
 )
 from apps.sales.equipmentloan.models import EquipmentLoan, EquipmentLoanItemDetail, EquipmentLoanItem
 from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel
@@ -89,6 +89,12 @@ class EquipmentLoanCreateSerializer(AbstractCreateSerializerModel):
         return equipment_loan_item_list
 
     def validate(self, validate_data):
+        # kiểm tra cấu hình kho ảo cho mượn hàng
+        if not WareHouse.objects.filter_on_company(use_for=1).exists():
+            raise serializers.ValidationError({
+                'virtual_warehouse': "The virtual warehouse for Equipment Loan has not configured."
+            })
+
         if 'account_mapped' in validate_data:
             account_mapped = validate_data.get('account_mapped')
             validate_data['account_mapped_data'] = {
@@ -200,7 +206,7 @@ class EquipmentLoanCommonFunction:
                     EquipmentLoanItemDetail(
                         equipment_loan_item=equipment_loan_item_obj,
                         loan_product_pw=pw_obj,
-                        loan_product_pw_quantity=child.get('loan_quantity', 0)
+                        loan_product_pw_quantity=child.get('picked_quantity', 0)
                     )
                 )
         # lot

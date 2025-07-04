@@ -186,11 +186,10 @@ class ProductModification(DataAbstractModel):
             'employee_inherit': pm_obj.employee_inherit,
             'date_created': pm_obj.date_created,
             'date_approved': pm_obj.date_approved,
-            'detail_data': cls.get_modified_product_data(pm_obj) + cls.get_component_data(pm_obj)
         }
-        detail_data = gis_data.pop('detail_data', [])
         gis_obj = GoodsIssue.objects.create(**gis_data)
         bulk_info = []
+        detail_data = cls.get_modified_product_data(pm_obj) + cls.get_component_data(pm_obj)
         for item in detail_data:
             bulk_info.append(GoodsIssueProduct(goods_issue=gis_obj, **item))
         GoodsIssueProduct.objects.filter(goods_issue=gis_obj).delete()
@@ -201,7 +200,6 @@ class ProductModification(DataAbstractModel):
         gis_obj.system_status = 3
         gis_obj.save(update_fields=['code', 'system_status'])
         # action sau khi duyệt
-
         gis_obj.update_related_app_after_issue(gis_obj)
         new_logs = IRForGoodsIssueHandler.push_to_inventory_report(gis_obj)
 

@@ -298,7 +298,7 @@ class DeliFinishHandler:
 
     @classmethod
     def get_cost_by_warehouse(cls, product_obj, warehouse_id, sale_order_id):
-        return product_obj.get_current_unit_cost(
+        return product_obj.get_current_cost_info(
             get_type=1,
             **{
                 'warehouse_id': warehouse_id,

@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, Pro
 from apps.sales.report.utils.log_for_goods_issue import IRForGoodsIssueHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE, AutoDocumentAbstractModel
 
-__all__ = ['GoodsIssue', 'GoodsIssueProduct']
+__all__ = ['GoodsIssue', 'GoodsIssueProduct', 'GoodsIssueAttachmentFile']
 
 
 class GoodsIssue(DataAbstractModel, AutoDocumentAbstractModel):
@@ -154,9 +154,9 @@ class GoodsIssue(DataAbstractModel, AutoDocumentAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
-                self.update_related_app_after_issue(self)
-
-                IRForGoodsIssueHandler.push_to_inventory_report(self)
+                if self.system_status == 3:
+                    self.update_related_app_after_issue(self)
+                    IRForGoodsIssueHandler.push_to_inventory_report(self)
 
         super().save(*args, **kwargs)
 

@@ -26,7 +26,7 @@ class GoodsReturn(DataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        if not kwargs.get('skip_check_period', True):
+        if not kwargs.get('skip_check_period', False):
             SubPeriods.check_period(self.tenant_id, self.company_id)
 
         if self.system_status in [2, 3]:
@@ -39,25 +39,25 @@ class GoodsReturn(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
 
-            if hasattr(self.company, 'sales_delivery_config_detail'):
-                config = self.company.sales_delivery_config_detail
-                if config:
-                    if config.is_picking is True:
-                        GoodsReturnSubSerializerForPicking.update_delivery(self)
-                    else:
-                        GoodsReturnSubSerializerForNonPicking.update_delivery(self)
-                else:
-                    raise serializers.ValidationError({"Config": 'Delivery Config Not Found.'})
+                if self.system_status == 3:
+                    if hasattr(self.company, 'sales_delivery_config_detail'):
+                        config = self.company.sales_delivery_config_detail
+                        if not config:
+                            raise serializers.ValidationError({"Config": 'Delivery Config Not Found.'})
+                        if config.is_picking is True:
+                            GoodsReturnSubSerializerForPicking.update_delivery(self)
+                        else:
+                            GoodsReturnSubSerializerForNonPicking.update_delivery(self)
 
-            # handle after finish
-            # product information
-            ReturnFinishHandler.push_product_info(instance=self)
-            # final acceptance
-            ReturnFinishHandler.update_final_acceptance(instance=self)
-            # report
-            ReturnFinishHandler.update_report(instance=self)
+                    # handle after finish
+                    # product information
+                    ReturnFinishHandler.push_product_info(instance=self)
+                    # final acceptance
+                    ReturnFinishHandler.update_final_acceptance(instance=self)
+                    # report
+                    ReturnFinishHandler.update_report(instance=self)
 
-            IRForGoodsReturnHandler.push_to_inventory_report(self)
+                    IRForGoodsReturnHandler.push_to_inventory_report(self)
 
         # diagram
         ReturnHandler.push_diagram(instance=self)

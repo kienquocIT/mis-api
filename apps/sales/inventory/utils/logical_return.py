@@ -53,7 +53,7 @@ class ReturnHandler:
         if return_product.delivery_item:
             if return_product.delivery_item.product:
                 product_obj = return_product.delivery_item.product
-                cost = product_obj.get_unit_cost_by_warehouse(
+                cost = product_obj.get_cost_info_by_warehouse(
                     warehouse_id=return_product.return_to_warehouse_id, get_type=1
                 )
                 return return_product.default_return_number, cost * return_product.default_return_number
@@ -65,7 +65,7 @@ class ReturnHandler:
             if return_product.lot_no.product_warehouse:
                 product_obj = return_product.lot_no.product_warehouse.product
                 if product_obj:
-                    cost = product_obj.get_unit_cost_by_warehouse(
+                    cost = product_obj.get_cost_info_by_warehouse(
                         warehouse_id=return_product.lot_no.product_warehouse.warehouse_id, get_type=1
                     )
                     return return_product.lot_return_number, cost * return_product.lot_return_number
@@ -77,7 +77,7 @@ class ReturnHandler:
             if return_product.serial_no.product_warehouse:
                 product_obj = return_product.serial_no.product_warehouse.product
                 if product_obj:
-                    return 1, product_obj.get_unit_cost_by_warehouse(
+                    return 1, product_obj.get_cost_info_by_warehouse(
                         warehouse_id=return_product.serial_no.product_warehouse.warehouse_id, get_type=1
                     )
         return 0, 0
