@@ -23,10 +23,12 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
         'id': ['exact', 'in'],
         'opportunity': ['exact', 'isnull'],
         'employee_inherit': ['exact'],
+        'employee_inherit_id': ['exact', 'in'],
         'opportunity__sale_order': ['exact', 'isnull'],
         'opportunity__is_close_lost': ['exact'],
         'opportunity__is_deal_close': ['exact'],
         'system_status': ['exact', 'in'],
+        'is_delete': ['exact'],
     }
     serializer_list = QuotationListSerializer
     serializer_list_minimal = QuotationMinimalListSerializer
@@ -43,7 +45,7 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         is_minimal = self.get_param(key='is_minimal')
         if is_minimal:
-            return super().get_queryset()
+            return super().get_queryset().filter_on_company()
 
         return super().get_queryset().select_related(
             "customer",
@@ -92,7 +94,7 @@ class QuotationDetail(
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        return super().get_queryset().filter_on_company().select_related(
             "opportunity",
             "opportunity__customer",
             "employee_inherit",
@@ -130,8 +132,8 @@ class QuotationDetail(
         operation_description="Delete Quotation by ID",
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        label_code='quotation', model_code='quotation', perm_code='delete',
+        login_require=True, auth_require=False,
+        # label_code='quotation', model_code='quotation', perm_code='delete',
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
