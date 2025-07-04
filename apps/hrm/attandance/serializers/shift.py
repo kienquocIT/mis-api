@@ -12,18 +12,35 @@ class ShiftListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            'description'
+            'description',
+            'checkin_time',
+            'checkin_gr_start',
+            'checkin_gr_end',
+            'checkin_threshold',
+            'break_in_time',
+            'break_in_gr_start',
+            'break_in_gr_end',
+            'break_in_threshold',
+            'break_out_time',
+            'break_out_gr_start',
+            'break_out_gr_end',
+            'break_out_threshold',
+            'checkout_time',
+            'checkout_gr_start',
+            'checkout_gr_end',
+            'checkout_threshold',
+            'working_day_list',
         )
 
 
 class ShiftCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
 
-    def validate(self, attrs):
-        checkin_time = attrs.get('checkin_time')
-        break_in_time = attrs.get('break_in_time')
-        break_out_time = attrs.get('break_out_time')
-        checkout_time = attrs.get('checkout_time')
+    def validate(self, validate_data):
+        checkin_time = validate_data.get('checkin_time')
+        break_in_time = validate_data.get('break_in_time')
+        break_out_time = validate_data.get('break_out_time')
+        checkout_time = validate_data.get('checkout_time')
 
         # validate break in must be later than check in time
         if checkin_time and break_in_time and checkin_time >= break_in_time:
@@ -42,6 +59,7 @@ class ShiftCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'checkout_time': HRMMsg.CHECKOUT_TIME_ERROR
             })
+        return validate_data
 
     def create(self, validated_data):
         checkin_time_str = validated_data.get('checkin_time', '').strftime('%H:%M')
@@ -56,6 +74,63 @@ class ShiftCreateSerializer(serializers.ModelSerializer):
             active_days = []
         description = f'{checkin_time_str} - {checkout_time_str} {", ".join(active_days)}'
         return ShiftInfo.objects.create(**validated_data, description=description)
+
+    class Meta:
+        model = ShiftInfo
+        fields = (
+            'title',
+            'checkin_time',
+            'checkin_gr_start',
+            'checkin_gr_end',
+            'checkin_threshold',
+            'break_in_time',
+            'break_in_gr_start',
+            'break_in_gr_end',
+            'break_in_threshold',
+            'break_out_time',
+            'break_out_gr_start',
+            'break_out_gr_end',
+            'break_out_threshold',
+            'checkout_time',
+            'checkout_gr_start',
+            'checkout_gr_end',
+            'checkout_threshold',
+            'working_day_list',
+        )
+
+
+class ShiftDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShiftInfo
+        fields = (
+            'id',
+            'code',
+            'title',
+            'checkin_time',
+            'checkin_gr_start',
+            'checkin_gr_end',
+            'checkin_threshold',
+            'break_in_time',
+            'break_in_gr_start',
+            'break_in_gr_end',
+            'break_in_threshold',
+            'break_out_time',
+            'break_out_gr_start',
+            'break_out_gr_end',
+            'break_out_threshold',
+            'checkout_time',
+            'checkout_gr_start',
+            'checkout_gr_end',
+            'checkout_threshold',
+            'working_day_list',
+        )
+
+
+class ShiftUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
+
+    def validate(self, validate_data):
+        return ShiftCreateSerializer().validate(validate_data)
 
     class Meta:
         model = ShiftInfo

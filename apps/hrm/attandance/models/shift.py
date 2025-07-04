@@ -36,5 +36,6 @@ class ShiftInfo(MasterDataAbstractModel):
 
     def save(self, *args, **kwargs):
         if not self.code:
-            self.add_auto_generate_code_to_instance(self, 'SHIFT[n4]', False)
+            count = ShiftInfo.objects.filter_on_company().count() + 1
+            self.code = f'SH00{count}'
         super().save(*args, **kwargs)
