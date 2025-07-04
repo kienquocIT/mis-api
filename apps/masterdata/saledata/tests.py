@@ -2333,7 +2333,7 @@ class WareHouseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'title', 'code', 'remarks', 'is_active', 'full_address', 'is_dropship'],
+            ['id', 'title', 'code', 'remarks', 'is_active', 'full_address', 'is_dropship', 'is_virtual', 'use_for'],
             check_sum_second=True,
         )
         return response

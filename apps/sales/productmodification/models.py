@@ -10,6 +10,8 @@ from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 class ProductModification(DataAbstractModel):
     product_modified = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, related_name='product_modified')
+    new_description = models.TextField(null=True, blank=True)
+
     prd_wh = models.ForeignKey('saledata.ProductWareHouse', on_delete=models.CASCADE, null=True)
     prd_wh_data = models.JSONField(default=dict)
 
@@ -279,12 +281,12 @@ class ProductModification(DataAbstractModel):
             product_warehouse_lot=pm_obj.prd_wh_lot,
             product_warehouse_serial=pm_obj.prd_wh_serial,
             modified_number=pm_obj.code,
+            new_description=pm_obj.new_description,
             employee_created=pm_obj.employee_created,
             date_created=pm_obj.date_created,
             tenant=pm_obj.tenant,
             company=pm_obj.company,
         )
-        PWModifiedComponent.objects.filter(pw_modified=pw_modified_obj).delete()
         bulk_info = []
         bulk_info_detail = []
         for order, item in enumerate(pm_obj.current_components.all()):
@@ -310,6 +312,7 @@ class ProductModification(DataAbstractModel):
                         component_prd_wh_serial_data=detail_item.component_prd_wh_serial_data,
                     )
                 )
+        PWModifiedComponent.objects.filter(pw_modified=pw_modified_obj).delete()
         PWModifiedComponent.objects.bulk_create(bulk_info)
         PWModifiedComponentDetail.objects.bulk_create(bulk_info_detail)
         return True
