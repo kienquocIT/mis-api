@@ -1888,7 +1888,6 @@ def add_delivery_pw_serial(sub_product_id=None, pw_serial_id=None):
                     "title": "Cái"
                 },
                 "stock": 0,
-                "agency": None,
                 "uom_id": "02d31f81-313c-4be7-8839-f6088011afba",
                 "product": {
                     "id": "28b33b97-33ba-421f-bb95-799bc7b36692",

@@ -156,28 +156,6 @@ class GoodsReceipt(DataAbstractModel):
                 print(err)
         return num_max
 
-    @classmethod
-    def generate_code(cls, company_id):
-        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
-        num_max = cls.find_max_number(existing_codes)
-        if num_max is None:
-            code = 'GR0001'
-        elif num_max < 10000:
-            num_str = str(num_max + 1).zfill(4)
-            code = f'GR{num_str}'
-        else:
-            raise ValueError('Out of range: number exceeds 10000')
-        if cls.objects.filter(code=code, company_id=company_id).exists():
-            return cls.generate_code(company_id=company_id)
-        return code
-
-    @classmethod
-    def push_code(cls, instance, kwargs):
-        if not instance.code:
-            instance.code = cls.generate_code(company_id=instance.company_id)
-            kwargs['update_fields'].append('code')
-        return True
-
     @staticmethod
     def count_created_serial_data(good_receipt_obj, gr_prd_obj, gr_wh_obj, pr_data):
         count = 0
@@ -321,12 +299,17 @@ class GoodsReceipt(DataAbstractModel):
         if not kwargs.pop('skip_check_period', False):
             SubPeriods.check_period(self.tenant_id, self.company_id)
 
-        if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
-            # check if date_approved then call related functions
-            if isinstance(kwargs['update_fields'], list):
-                if 'date_approved' in kwargs['update_fields']:
-                    # code
-                    self.push_code(instance=self, kwargs=kwargs)
+        if self.system_status in [2, 3]:
+            if not self.code:
+                self.add_auto_generate_code_to_instance(self, 'GR[n4]', True)
+
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+
+                if self.system_status == 3:
                     GRFinishHandler.push_to_warehouse_stock(instance=self)
                     GRFinishHandler.push_product_info(instance=self)
                     GRFinishHandler.push_relate_gr_info(instance=self)

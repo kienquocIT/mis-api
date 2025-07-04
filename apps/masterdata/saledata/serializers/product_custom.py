@@ -162,4 +162,4 @@ class ProductForSaleDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_cost_list(cls, obj):
-        return obj.get_unit_cost_list_of_all_warehouse()
+        return obj.get_cost_info_of_all_warehouse()

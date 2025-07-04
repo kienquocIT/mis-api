@@ -175,7 +175,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
             'period_mapped',
             'sub_period_order',
             'stock_activities',
-            'for_balance',
+            'for_balance_init',
         )
 
     @classmethod

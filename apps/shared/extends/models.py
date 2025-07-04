@@ -101,9 +101,7 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
         """
         model_cls = DisperseModel(app_model=instance.get_model_code()).get_model()
         if model_cls and hasattr(model_cls, 'objects'):
-            number = model_cls.objects.filter(
-                tenant_id=instance.tenant_id,
-                company_id=instance.company_id,
+            number = model_cls.objects.filter_on_company(
                 is_delete=False,
                 system_status=3 if in_workflow else 1,
                 **filter_fields if filter_fields else {}

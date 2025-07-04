@@ -336,7 +336,11 @@ msgstr "Công văn phê duyệt"
 
 # f491fdf3-1384-4a82-b155-12ef6673c901
 msgid "Product Modification"
-msgstr "Tháo-lắp thiết bị"
+msgstr "Ráp-rã thiết bị"
+
+# 3fc09568-e3ff-4fd3-a70d-4d069ac1521d
+msgid "Equipment Loan"
+msgstr "Cho mượn hàng"
 
 #
 msgid "Does not exist"

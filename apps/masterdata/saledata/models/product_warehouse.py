@@ -518,6 +518,7 @@ class PWModified(MasterDataAbstractModel):
         null=True
     )
     modified_number = models.CharField(max_length=100)
+    new_description = models.TextField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'Product Warehouse Modified'
