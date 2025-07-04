@@ -51,8 +51,8 @@ class ShiftMasterDataDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
         login_require=True,
         auth_require=False,
     )
-    def get(self, request, pk, *args, **kwargs):
-        return self.retrieve(request, pk, *args, **kwargs)
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary='Update Shift')
     @mask_view(
@@ -61,7 +61,6 @@ class ShiftMasterDataDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
         allow_admin_tenant=True,
         allow_admin_company=True,
     )
-    def put(self, request, pk, *args, **kwargs):
-        return self.update(request, pk, *args, **kwargs)
-
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
