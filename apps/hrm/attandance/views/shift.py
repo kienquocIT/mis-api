@@ -63,4 +63,3 @@ class ShiftMasterDataDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
-
