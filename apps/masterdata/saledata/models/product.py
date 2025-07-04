@@ -319,21 +319,32 @@ class Product(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def get_current_unit_cost(self, get_type=1, **kwargs):
+    def get_current_cost_info(self, get_type=1, **kwargs):
+        """
+            Hàm lấy thông tin giá cost sản phẩm
+            * param 'get_type':
+                0: quantity
+                1: cost (default)
+                2: value
+                3: [quantity, cost, value]
+                else: 0
+        """
         company_config = getattr(self.company, 'company_config')
         if company_config.cost_per_warehouse and 'warehouse_id' in kwargs:
-            return self.get_unit_cost_by_warehouse(kwargs.get('warehouse_id'), get_type=get_type)
+            return self.get_cost_info_by_warehouse(kwargs.get('warehouse_id'), get_type=get_type)
         if company_config.cost_per_project and 'sale_order_id' in kwargs:
-            return self.get_unit_cost_by_project(kwargs.get('sale_order_id'), get_type=get_type)
+            return self.get_cost_info_by_project(kwargs.get('sale_order_id'), get_type=get_type)
         return 0
 
-    def get_unit_cost_by_warehouse(self, warehouse_id, get_type=1):
+    def get_cost_info_by_warehouse(self, warehouse_id, get_type=1):
         """
-        get_type = 0: get quantity
-        get_type = 1: get cost (default)
-        get_type = 2: get value
-        get_type = 3: get [quantity, cost, value]
-        else: return 0
+            Hàm lấy thông tin giá cost sản phẩm theo từng kho
+            * param 'get_type':
+                0: quantity
+                1: cost (default)
+                2: value
+                3: [quantity, cost, value]
+                else: 0
         """
         this_period = Periods.get_current_period(self.tenant_id, self.company_id)
         if this_period:
@@ -363,8 +374,9 @@ class Product(DataAbstractModel):
                     else:
                         value_list = [0, 0, 0]
             else:
+                # lấy SDDK, nếu cũng không có SDDK, trả về [0, 0, 0]
                 opening_value_list_obj = self.report_inventory_cost_product.filter(
-                    warehouse_id=warehouse_id, period_mapped=this_period, for_balance=True
+                    warehouse_id=warehouse_id, period_mapped=this_period, for_balance_init=True
                 ).first()
                 value_list = [
                     opening_value_list_obj.opening_balance_quantity,
@@ -376,13 +388,15 @@ class Product(DataAbstractModel):
             return value_list
         return 0
 
-    def get_unit_cost_by_project(self, sale_order_id, get_type=1):
+    def get_cost_info_by_project(self, sale_order_id, get_type=1):
         """
-        get_type = 0: get quantity
-        get_type = 1: get cost (default)
-        get_type = 2: get value
-        get_type = 3: get [quantity, cost, value]
-        else: return 0
+            Hàm lấy thông tin giá cost sản phẩm theo từng dự án
+            * param 'get_type':
+                0: quantity
+                1: cost (default)
+                2: value
+                3: [quantity, cost, value]
+                else: 0
         """
         this_period = Periods.get_current_period(self.tenant_id, self.company_id)
         if this_period:
@@ -413,7 +427,7 @@ class Product(DataAbstractModel):
                         value_list = [0, 0, 0]
             else:
                 opening_value_list_obj = self.report_inventory_cost_product.filter(
-                    sale_order_id=sale_order_id, period_mapped=this_period, for_balance=True
+                    sale_order_id=sale_order_id, period_mapped=this_period, for_balance_init=True
                 ).first()
                 value_list = [
                     opening_value_list_obj.opening_balance_quantity,
@@ -425,9 +439,9 @@ class Product(DataAbstractModel):
             return value_list
         return 0
 
-    def get_unit_cost_list_of_all_warehouse(self):
+    def get_cost_info_of_all_warehouse(self):
         unit_cost_list = []
-        warehouse_list = WareHouse.objects.filter(tenant_id=self.tenant_id, company_id=self.company_id)
+        warehouse_list = WareHouse.objects.filter_on_company()
         this_period = Periods.get_current_period(self.tenant_id, self.company_id)
         if this_period:
             sub_period_order = timezone.now().month - this_period.space_month

@@ -47,12 +47,20 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
         if 'interact' in self.request.query_params:
             if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
                 interact = self.request.user.employee_current.warehouse_employees_emp
-                return super().get_queryset().filter(id__in=interact.warehouse_list).order_by('code')
-        return super().get_queryset().order_by('code')
+                return super().get_queryset().filter(id__in=interact.warehouse_list)
+        if 'is_virtual' in self.request.query_params:
+            return super().get_queryset().filter(is_virtual=True)
+        return super().get_queryset()
 
     @swagger_auto_schema(operation_summary='WareHouse List')
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
+        if 'use_for' in self.request.query_params:
+            WareHouse.objects.filter_on_company(use_for=self.request.query_params.get('use_for', 0)).update(use_for=0)
+            if 'warehouse_id' in self.request.query_params:
+                WareHouse.objects.filter_on_company(id=self.request.query_params.get('warehouse_id')).update(
+                    use_for=self.request.query_params.get('use_for', 0)
+                )
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary='Create new WareHouse', request_body=WareHouseCreateSerializer)

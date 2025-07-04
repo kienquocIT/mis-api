@@ -1,5 +1,7 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
+
 
 __all__ = [
     'WareHouse',
@@ -50,14 +52,6 @@ class WareHouse(MasterDataAbstractModel):
         blank=True
     )
 
-    agency = models.ForeignKey(
-        'saledata.Account',
-        on_delete=models.CASCADE,
-        null=True,
-        default=None,
-        related_name='warehouse_agency'
-    )
-
     products = models.ManyToManyField(
         'saledata.Product',
         through='saledata.ProductWareHouse',
@@ -68,12 +62,14 @@ class WareHouse(MasterDataAbstractModel):
 
     is_dropship = models.BooleanField(default=False)
     is_bin_location = models.BooleanField(default=False)
-    is_agency_location = models.BooleanField(default=False)
+    is_virtual = models.BooleanField(default=False)
+
+    use_for = models.SmallIntegerField(choices=[(0, _('None')), (1, _('For Equipment Loan'))], default=0)
 
     class Meta:
         verbose_name = 'WareHouse storage'
         verbose_name_plural = 'WareHouse storage'
-        ordering = ()
+        ordering = ('-code',)
         default_permissions = ()
         permissions = ()
 

@@ -263,6 +263,9 @@ class ProductSerialList(BaseListMixin):
     serializer_list = ProductSerialListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().filter(serial_status=0)
+
     @swagger_auto_schema(
         operation_summary="Product Serial List",
         operation_description="Product Serial List",
