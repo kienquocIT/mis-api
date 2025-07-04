@@ -557,6 +557,7 @@ class ProductModifiedBeforeListSerializer(serializers.ModelSerializer):
             'product_warehouse_lot_id',
             'product_warehouse_serial_id',
             'modified_number',
+            'new_description',
             'serial_number',
             'lot_number',
             'warehouse_data'
