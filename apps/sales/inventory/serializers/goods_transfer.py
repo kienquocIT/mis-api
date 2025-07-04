@@ -102,7 +102,8 @@ class GoodsTransferListSerializer(AbstractListSerializerModel):
             'code',
             'title',
             'date_transfer',
-            'system_status'
+            'system_status',
+            'system_auto_create'
         )
 
 
