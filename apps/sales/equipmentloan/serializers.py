@@ -10,15 +10,16 @@ from apps.sales.equipmentloan.models import EquipmentLoan, EquipmentLoanItemDeta
 from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     SaleMsg, SerializerCommonHandle, SerializerCommonValidate
 
+
 __all__ = [
     'EquipmentLoanListSerializer',
     'EquipmentLoanCreateSerializer',
     'EquipmentLoanDetailSerializer',
     'EquipmentLoanUpdateSerializer',
     'LoanProductListSerializer',
-    'WarehouseListByProductSerializer',
-    'ProductLotListSerializer',
-    'ProductSerialListSerializer',
+    'ELWarehouseListByProductSerializer',
+    'ELProductLotListSerializer',
+    'ELProductSerialListSerializer',
 ]
 
 # main

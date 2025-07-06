@@ -7,7 +7,7 @@ from apps.sales.inventory.models import GoodsReceipt
 from apps.sales.apinvoice.models import APInvoice, APInvoiceItems, APInvoiceGoodsReceipt, APInvoiceAttachmentFile
 from apps.sales.purchasing.models import PurchaseOrder
 from apps.shared import (
-    SaleMsg, AbstractCreateSerializerModel, AbstractListSerializerModel, AbstractDetailSerializerModel,
+    AbstractCreateSerializerModel, AbstractListSerializerModel, AbstractDetailSerializerModel,
     SerializerCommonValidate, SerializerCommonHandle
 )
 

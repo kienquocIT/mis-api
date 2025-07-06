@@ -12,9 +12,8 @@ from apps.sales.quotation.models import Quotation
 from apps.sales.saleorder.models import SaleOrder
 from apps.shared import (
     AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg, AbstractCreateSerializerModel,
-    AbstractListSerializerModel, HRMsg, SerializerCommonValidate, SerializerCommonHandle
+    AbstractListSerializerModel, SerializerCommonValidate, SerializerCommonHandle
 )
-from apps.shared.translations.base import AttachmentMsg
 
 
 class PaymentListSerializer(AbstractListSerializerModel):
