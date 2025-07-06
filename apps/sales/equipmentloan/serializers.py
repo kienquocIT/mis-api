@@ -5,10 +5,13 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import (
     Product, ProductWareHouseLot, ProductWareHouseSerial, ProductWareHouse, Account, WareHouse
 )
-from apps.sales.equipmentloan.models import EquipmentLoan, EquipmentLoanItemDetail, EquipmentLoanItem, \
-    EquipmentLoanAttachmentFile
-from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
-    SaleMsg, SerializerCommonHandle, SerializerCommonValidate
+from apps.sales.equipmentloan.models import (
+    EquipmentLoan, EquipmentLoanItemDetail, EquipmentLoanItem, EquipmentLoanAttachmentFile
+)
+from apps.shared import (
+    AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel,
+    SerializerCommonHandle, SerializerCommonValidate
+)
 
 
 __all__ = [
