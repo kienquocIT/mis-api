@@ -1,8 +1,5 @@
 from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.masterdata.saledata.models import WareHouse
-from apps.sales.inventory.models import GoodsTransfer, GoodsTransferProduct
-from apps.sales.report.utils import IRForGoodsTransferHandler
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 
