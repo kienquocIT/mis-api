@@ -17,10 +17,10 @@ from apps.sales.arinvoice.models import (
 )
 from apps.sales.saleorder.models import SaleOrder
 from apps.shared import (
-    SaleMsg,
-    AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel, AttachmentMsg, HRMsg,
+    AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel,
     SerializerCommonValidate, SerializerCommonHandle
 )
+
 
 __all__ = [
     'ARInvoiceListSerializer',
