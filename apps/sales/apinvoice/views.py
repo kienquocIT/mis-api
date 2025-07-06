@@ -9,6 +9,7 @@ from apps.sales.apinvoice.serializers import (
 )
 from apps.sales.apinvoice.models import APInvoice
 
+
 __all__ = [
     'GoodsReceiptListForAPInvoice', 'APInvoiceList', 'APInvoiceDetail'
 ]
@@ -59,6 +60,7 @@ class APInvoiceList(BaseListMixin, BaseCreateMixin):
         label_code='apinvoice', model_code='apinvoice', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
@@ -95,7 +97,7 @@ class APInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='apinvoice', model_code='apinvoice', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
-        self.serializer_class = APInvoiceUpdateSerializer
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
 
 

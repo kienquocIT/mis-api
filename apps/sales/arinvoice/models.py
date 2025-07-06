@@ -54,6 +54,10 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
     note = models.TextField(blank=True)
 
     @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return '1d7291dd-1e59-4917-83a3-1cc07cfc4638'
+
+    @classmethod
     def push_final_acceptance_invoice(cls, instance):
         sale_order_id = None
         lease_order_id = None
@@ -163,6 +167,10 @@ class ARInvoiceDelivery(SimpleAbstractModel):
 
 class ARInvoiceAttachmentFile(M2MFilesAbstractModel):
     ar_invoice = models.ForeignKey('ARInvoice', on_delete=models.CASCADE, related_name='ar_invoice_attachments')
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'ar_invoice'
 
     class Meta:
         verbose_name = 'AR Invoice attachment'

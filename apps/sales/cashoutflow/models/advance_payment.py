@@ -1,13 +1,14 @@
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.cashoutflow.utils import AdvanceHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, BastionFieldAbstractModel
 
+
 __all__ = ['AdvancePayment', 'AdvancePaymentCost', 'AdvancePaymentAttachmentFile']
+
 
 SALE_CODE_TYPE = [
     (0, _('Sale')),
@@ -15,10 +16,12 @@ SALE_CODE_TYPE = [
     (2, _('None-sale'))
 ]
 
+
 ADVANCE_PAYMENT_TYPE = [
     (0, _('For Employee')),
     (1, _('For Supplier')),
 ]
+
 
 ADVANCE_PAYMENT_METHOD = [
     (0, _('Cash')),
@@ -27,10 +30,6 @@ ADVANCE_PAYMENT_METHOD = [
 
 
 class AdvancePayment(DataAbstractModel, BastionFieldAbstractModel):
-    @classmethod
-    def get_app_id(cls, raise_exception=True) -> str or None:
-        return '57725469-8b04-428a-a4b0-578091d0e4f5'
-
     quotation_mapped = models.ForeignKey(
         'quotation.Quotation',
         on_delete=models.CASCADE, null=True,
@@ -78,6 +77,10 @@ class AdvancePayment(DataAbstractModel, BastionFieldAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return '57725469-8b04-428a-a4b0-578091d0e4f5'
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:

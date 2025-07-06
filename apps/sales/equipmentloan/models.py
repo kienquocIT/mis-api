@@ -13,6 +13,10 @@ class EquipmentLoan(DataAbstractModel):
     loan_date = models.DateTimeField(null=True)
     return_date = models.DateTimeField(null=True)
 
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return '3fc09568-e3ff-4fd3-a70d-4d069ac1521d'
+
     @staticmethod
     def update_none_item_list(data_bulk_info, child, gtf_obj, end_warehouse):
         """
@@ -279,6 +283,10 @@ class EquipmentLoanAttachmentFile(M2MFilesAbstractModel):
     equipment_loan = models.ForeignKey(
         EquipmentLoan, on_delete=models.CASCADE, related_name='equipment_loan_attachments'
     )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'equipment_loan'
 
     class Meta:
         verbose_name = 'Equipment Loan attachment'

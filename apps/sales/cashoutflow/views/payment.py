@@ -8,7 +8,6 @@ from apps.sales.cashoutflow.serializers import (
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
-# Create your views here.
 class PaymentList(BaseListMixin, BaseCreateMixin):
     queryset = Payment.objects
     search_fields = [

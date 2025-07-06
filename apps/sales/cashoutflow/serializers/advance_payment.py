@@ -12,7 +12,7 @@ from apps.sales.quotation.models import Quotation
 from apps.sales.saleorder.models import SaleOrder
 from apps.shared import (
     AdvancePaymentMsg, SaleMsg, AbstractDetailSerializerModel,
-    AbstractListSerializerModel, AbstractCreateSerializerModel, HRMsg
+    AbstractListSerializerModel, AbstractCreateSerializerModel, HRMsg, SerializerCommonValidate, SerializerCommonHandle
 )
 from apps.shared.translations.base import AttachmentMsg
 
@@ -266,6 +266,12 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
             'attachment'
         )
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=AdvancePaymentAttachmentFile, value=value
+        )
+
     def validate(self, validate_data):
         APCommonFunction.validate_opportunity_id(validate_data)
         APCommonFunction.validate_quotation_mapped_id(validate_data)
@@ -276,11 +282,6 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
         APCommonFunction.validate_method(validate_data)
         APCommonFunction.validate_ap_item_list(validate_data)
         APCommonFunction.validate_common(validate_data)
-        APCommonFunction.validate_attachment(
-            context_user=self.context.get('user', None),
-            doc_id=None,
-            validate_data=validate_data
-        )
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
         opportunity_id = validate_data.get('opportunity_id', None)
@@ -293,10 +294,13 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
     @decorator_run_workflow
     def create(self, validated_data):
         ap_item_list = validated_data.pop('ap_item_list', [])
-        attachment = validated_data.pop('attachment', [])
+        attachment_list = validated_data.pop('attachment', [])
+
         ap_obj = AdvancePayment.objects.create(**validated_data)
+
         APCommonFunction.create_ap_items(ap_obj, ap_item_list)
-        APCommonFunction.handle_attach_file(ap_obj, attachment)
+        APCommonFunction.create_files_mapped(ap_obj, attachment_list)
+
         if ap_obj.process:
             ProcessRuntimeControl(process_obj=ap_obj.process).register_doc(
                 process_stage_app_obj=ap_obj.process_stage_app,
@@ -306,6 +310,7 @@ class AdvancePaymentCreateSerializer(AbstractCreateSerializerModel):
                 employee_created_id=ap_obj.employee_created_id,
                 date_created=ap_obj.date_created,
             )
+
         return ap_obj
 
 
@@ -513,8 +518,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_attachment(cls, obj):
-        att_objs = AdvancePaymentAttachmentFile.objects.select_related('attachment').filter(advance_payment=obj)
-        return [item.attachment.get_detail() for item in att_objs]
+        return [item.attachment.get_detail() for item in obj.payment_attachments.all()]
 
 
 class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
@@ -562,39 +566,27 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
             'attachment'
         )
 
-    def validate(self, validate_data):
-        APCommonFunction.validate_opportunity_id(validate_data)
-        APCommonFunction.validate_quotation_mapped_id(validate_data)
-        APCommonFunction.validate_sale_order_mapped_id(validate_data)
-        APCommonFunction.validate_sale_code_type(validate_data)
-        APCommonFunction.validate_employee_inherit_id(validate_data)
-        APCommonFunction.validate_advance_payment_type(validate_data)
-        APCommonFunction.validate_method(validate_data)
-        APCommonFunction.validate_ap_item_list(validate_data)
-        APCommonFunction.validate_common(validate_data)
-        APCommonFunction.validate_attachment(
-            context_user=self.context.get('user', None),
-            doc_id=self.instance.id,
-            validate_data=validate_data
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=AdvancePaymentAttachmentFile, value=value
         )
-        process_obj = validate_data.get('process', None)
-        process_stage_app_obj = validate_data.get('process_stage_app', None)
-        opportunity_id = validate_data.get('opportunity_id', None)
-        if process_obj:
-            ProcessRuntimeControl(process_obj=process_obj).validate_process(
-                process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id,
-            )
-        return validate_data
+
+    def validate(self, validate_data):
+        return AdvancePaymentCreateSerializer().validate(validate_data)
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
         ap_item_list = validated_data.pop('ap_item_list', [])
-        attachment = validated_data.pop('attachment', [])
+        attachment_list = validated_data.pop('attachment', [])
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
         APCommonFunction.create_ap_items(instance, ap_item_list)
-        APCommonFunction.handle_attach_file(instance, attachment)
+        APCommonFunction.create_files_mapped(instance, attachment_list)
+
         if instance.process:
             ProcessRuntimeControl(process_obj=instance.process).register_doc(
                 process_stage_app_obj=instance.process_stage_app,
@@ -604,6 +596,7 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
                 employee_created_id=instance.employee_created_id,
                 date_created=instance.date_created,
             )
+
         return instance
 
 
@@ -880,25 +873,6 @@ class APCommonFunction:
         return validate_data
 
     @classmethod
-    def validate_attachment(cls, context_user, doc_id, validate_data):
-        if 'attachment' in validate_data:
-            if validate_data.get('attachment'):
-                if context_user and hasattr(context_user, 'employee_current_id'):
-                    state, result = AdvancePaymentAttachmentFile.valid_change(
-                        current_ids=validate_data.get('attachment', []),
-                        employee_id=context_user.employee_current_id,
-                        doc_id=doc_id
-                    )
-                    if state is True:
-                        validate_data['attachment'] = result
-                    else:
-                        raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-                else:
-                    raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
-        print('11. validate_attachment --- ok')
-        return validate_data
-
-    @classmethod
     def read_money_vnd(cls, num):
         text1 = ' mươi'
         text2 = ' trăm'
@@ -981,15 +955,12 @@ class APCommonFunction:
                 ])
         return True
 
-    @classmethod
-    def handle_attach_file(cls, instance, attachment_result):
-        if attachment_result and isinstance(attachment_result, dict):
-            relate_app = Application.objects.filter(id="57725469-8b04-428a-a4b0-578091d0e4f5").first()
-            if relate_app:
-                state = AdvancePaymentAttachmentFile.resolve_change(
-                    result=attachment_result, doc_id=instance.id, doc_app=relate_app,
-                )
-                if state:
-                    return True
-            raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
+    @staticmethod
+    def create_files_mapped(advance_payment_obj, attachment_list):
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id=AdvancePayment.get_app_id()).first(),
+            model_cls=AdvancePaymentAttachmentFile,
+            instance=advance_payment_obj,
+            attachment_result=attachment_list,
+        )
         return True

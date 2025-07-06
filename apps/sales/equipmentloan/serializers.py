@@ -1,11 +1,14 @@
 from rest_framework import serializers
+
+from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import (
     Product, ProductWareHouseLot, ProductWareHouseSerial, ProductWareHouse, Account, WareHouse
 )
-from apps.sales.equipmentloan.models import EquipmentLoan, EquipmentLoanItemDetail, EquipmentLoanItem
-from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel
-
+from apps.sales.equipmentloan.models import EquipmentLoan, EquipmentLoanItemDetail, EquipmentLoanItem, \
+    EquipmentLoanAttachmentFile
+from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
+    SaleMsg, SerializerCommonHandle, SerializerCommonValidate
 
 __all__ = [
     'EquipmentLoanListSerializer',
@@ -51,6 +54,7 @@ class EquipmentLoanCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     account_mapped = serializers.UUIDField()
     equipment_loan_item_list = serializers.JSONField(default=list)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = EquipmentLoan
@@ -60,7 +64,8 @@ class EquipmentLoanCreateSerializer(AbstractCreateSerializerModel):
             'document_date',
             'loan_date',
             'return_date',
-            'equipment_loan_item_list'
+            'equipment_loan_item_list',
+            'attachment'
         )
 
     @classmethod
@@ -88,6 +93,12 @@ class EquipmentLoanCreateSerializer(AbstractCreateSerializerModel):
             }
         return equipment_loan_item_list
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=EquipmentLoanAttachmentFile, value=value
+        )
+
     def validate(self, validate_data):
         # kiểm tra cấu hình kho ảo cho mượn hàng
         if not WareHouse.objects.filter_on_company(use_for=1).exists():
@@ -108,13 +119,19 @@ class EquipmentLoanCreateSerializer(AbstractCreateSerializerModel):
     @decorator_run_workflow
     def create(self, validated_data):
         equipment_loan_item_list = validated_data.pop('equipment_loan_item_list', [])
+        attachment_list = validated_data.pop('attachment', [])
+
         el_obj = EquipmentLoan.objects.create(**validated_data)
+
         EquipmentLoanCommonFunction.create_equipment_loan_item(el_obj, equipment_loan_item_list)
+        EquipmentLoanCommonFunction.create_files_mapped(el_obj, attachment_list)
+
         return el_obj
 
 
 class EquipmentLoanDetailSerializer(AbstractDetailSerializerModel):
     equipment_loan_item_list = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = EquipmentLoan
@@ -128,6 +145,7 @@ class EquipmentLoanDetailSerializer(AbstractDetailSerializerModel):
             'loan_date',
             'return_date',
             'equipment_loan_item_list',
+            'attachment'
         )
 
     @classmethod
@@ -151,11 +169,16 @@ class EquipmentLoanDetailSerializer(AbstractDetailSerializerModel):
             })
         return equipment_loan_item_list
 
+    @classmethod
+    def get_attachment(cls, obj):
+        return [item.attachment.get_detail() for item in obj.equipment_loan_attachments.all()]
+
 
 class EquipmentLoanUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     account_mapped = serializers.UUIDField()
     equipment_loan_item_list = serializers.JSONField(default=list)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = EquipmentLoan
@@ -166,7 +189,8 @@ class EquipmentLoanUpdateSerializer(AbstractCreateSerializerModel):
             'loan_date',
             'return_date',
             'return_date',
-            'equipment_loan_item_list'
+            'equipment_loan_item_list',
+            'attachment'
         )
 
     @classmethod
@@ -177,18 +201,27 @@ class EquipmentLoanUpdateSerializer(AbstractCreateSerializerModel):
     def validate_equipment_loan_item_list(cls, equipment_loan_item_list):
         return EquipmentLoanCreateSerializer.validate_equipment_loan_item_list(equipment_loan_item_list)
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=EquipmentLoanAttachmentFile, value=value
+        )
+
     def validate(self, validate_data):
         return EquipmentLoanCreateSerializer().validate(validate_data)
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
         equipment_loan_item_list = validated_data.pop('equipment_loan_item_list', [])
+        attachment_list = validated_data.pop('attachment', [])
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
 
         EquipmentLoanCommonFunction.create_equipment_loan_item(instance, equipment_loan_item_list)
+        EquipmentLoanCommonFunction.create_files_mapped(instance, attachment_list)
+
         return instance
 
 
@@ -265,6 +298,16 @@ class EquipmentLoanCommonFunction:
         EquipmentLoanItem.objects.filter(equipment_loan=el_obj).delete()
         EquipmentLoanItem.objects.bulk_create(bulk_info)
         EquipmentLoanItemDetail.objects.bulk_create(bulk_info_detail)
+        return True
+
+    @staticmethod
+    def create_files_mapped(el_obj, attachment_list):
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id=EquipmentLoan.get_app_id()).first(),
+            model_cls=EquipmentLoanAttachmentFile,
+            instance=el_obj,
+            attachment_result=attachment_list,
+        )
         return True
 
 # related
