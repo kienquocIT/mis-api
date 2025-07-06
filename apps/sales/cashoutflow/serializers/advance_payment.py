@@ -517,7 +517,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_attachment(cls, obj):
-        return [item.attachment.get_detail() for item in obj.payment_attachments.all()]
+        return [item.attachment.get_detail() for item in obj.advance_payment_attachments.all()]
 
 
 class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
