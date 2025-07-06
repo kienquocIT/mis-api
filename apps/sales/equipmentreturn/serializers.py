@@ -319,7 +319,5 @@ class EREquipmentLoanListByAccountSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
-            'date_created',
             'loan_date',
-            'return_date',
         )
