@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models import (
 )
 from apps.sales.equipmentloan.models import EquipmentLoan
 from apps.sales.equipmentloan.serializers import (
-    LoanProductListSerializer, ELWarehouseListByProductSerializer,
+    ELProductListSerializer, ELWarehouseListByProductSerializer,
     ELProductLotListSerializer, ELProductSerialListSerializer,
     EquipmentLoanListSerializer, EquipmentLoanCreateSerializer,
     EquipmentLoanDetailSerializer, EquipmentLoanUpdateSerializer
@@ -15,7 +15,7 @@ from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseU
 __all__ = [
     'EquipmentLoanList',
     'EquipmentLoanDetail',
-    'LoanProductList',
+    'ELProductList',
     'ELWarehouseListByProduct',
     'ELProductLotList',
     'ELProductSerialList',
@@ -92,13 +92,13 @@ class EquipmentLoanDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 # related
-class LoanProductList(BaseListMixin):
+class ELProductList(BaseListMixin):
     queryset = Product.objects
     search_fields = [
         'title',
         'code',
     ]
-    serializer_list = LoanProductListSerializer
+    serializer_list = ELProductListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
