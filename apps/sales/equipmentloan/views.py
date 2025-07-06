@@ -4,8 +4,8 @@ from apps.masterdata.saledata.models import (
 )
 from apps.sales.equipmentloan.models import EquipmentLoan
 from apps.sales.equipmentloan.serializers import (
-    LoanProductListSerializer, WarehouseListByProductSerializer,
-    ProductLotListSerializer, ProductSerialListSerializer,
+    LoanProductListSerializer, ELWarehouseListByProductSerializer,
+    ELProductLotListSerializer, ELProductSerialListSerializer,
     EquipmentLoanListSerializer, EquipmentLoanCreateSerializer,
     EquipmentLoanDetailSerializer, EquipmentLoanUpdateSerializer
 )
@@ -16,9 +16,9 @@ __all__ = [
     'EquipmentLoanList',
     'EquipmentLoanDetail',
     'LoanProductList',
-    'WarehouseListByProduct',
-    'ProductLotList',
-    'ProductSerialList',
+    'ELWarehouseListByProduct',
+    'ELProductLotList',
+    'ELProductSerialList',
 ]
 
 # main
@@ -112,7 +112,7 @@ class LoanProductList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class WarehouseListByProduct(BaseListMixin):
+class ELWarehouseListByProduct(BaseListMixin):
     queryset = ProductWareHouse.objects
     search_fields = [
         'title',
@@ -121,7 +121,7 @@ class WarehouseListByProduct(BaseListMixin):
     filterset_fields = {
         'product_id': ['exact'],
     }
-    serializer_list = WarehouseListByProductSerializer
+    serializer_list = ELWarehouseListByProductSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
@@ -135,7 +135,7 @@ class WarehouseListByProduct(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class ProductLotList(BaseListMixin):
+class ELProductLotList(BaseListMixin):
     queryset = ProductWareHouseLot.objects
     search_fields = [
         'lot_number',
@@ -144,7 +144,7 @@ class ProductLotList(BaseListMixin):
         'product_warehouse__product_id': ['exact'],
         'product_warehouse__warehouse_id': ['exact'],
     }
-    serializer_list = ProductLotListSerializer
+    serializer_list = ELProductLotListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
@@ -158,7 +158,7 @@ class ProductLotList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class ProductSerialList(BaseListMixin):
+class ELProductSerialList(BaseListMixin):
     queryset = ProductWareHouseSerial.objects
     search_fields = [
         'vendor_serial_number',
@@ -168,7 +168,7 @@ class ProductSerialList(BaseListMixin):
         'product_warehouse__product_id': ['exact'],
         'product_warehouse__warehouse_id': ['exact'],
     }
-    serializer_list = ProductSerialListSerializer
+    serializer_list = ELProductSerialListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):

@@ -323,7 +323,7 @@ class LoanProductListSerializer(serializers.ModelSerializer):
         )
 
 
-class WarehouseListByProductSerializer(serializers.ModelSerializer):
+class ELWarehouseListByProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductWareHouse
         fields = (
@@ -333,7 +333,7 @@ class WarehouseListByProductSerializer(serializers.ModelSerializer):
         )
 
 
-class ProductLotListSerializer(serializers.ModelSerializer):
+class ELProductLotListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductWareHouseLot
         fields = (
@@ -345,7 +345,7 @@ class ProductLotListSerializer(serializers.ModelSerializer):
         )
 
 
-class ProductSerialListSerializer(serializers.ModelSerializer):
+class ELProductSerialListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductWareHouseSerial
         fields = (
