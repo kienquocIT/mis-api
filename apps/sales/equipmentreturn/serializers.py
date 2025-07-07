@@ -154,6 +154,7 @@ class EquipmentReturnDetailSerializer(AbstractDetailSerializerModel):
         equipment_loan_item_list = []
         for item in obj.equipment_loan_items.all():
             equipment_loan_item_list.append({
+                'id': item.id,
                 'loan_product_data': item.loan_product_data,
                 'loan_product_none_detail': [{
                     'product_warehouse_id': child.loan_product_pw_id,
@@ -313,6 +314,8 @@ class EquipmentReturnCommonFunction:
 
 # related
 class EREquipmentLoanListByAccountSerializer(serializers.ModelSerializer):
+    equipment_loan_item_list = serializers.SerializerMethodField()
+
     class Meta:
         model = EquipmentLoan
         fields = (
@@ -320,4 +323,27 @@ class EREquipmentLoanListByAccountSerializer(serializers.ModelSerializer):
             'title',
             'code',
             'loan_date',
+            'equipment_loan_item_list'
         )
+
+    @classmethod
+    def get_equipment_loan_item_list(cls, obj):
+        equipment_loan_item_list = []
+        for item in obj.equipment_loan_items.all():
+            equipment_loan_item_list.append({
+                'id': item.id,
+                'loan_product_data': item.loan_product_data,
+                'loan_product_none_detail': [{
+                    'product_warehouse_id': child.loan_product_pw_id,
+                    'picked_quantity': child.loan_product_pw_quantity
+                } for child in item.equipment_loan_item_detail.filter(loan_product_pw__isnull=False)],
+                'loan_product_lot_detail': [{
+                    'lot_id': child.loan_product_pw_lot_id,
+                    'picked_quantity': child.loan_product_pw_lot_quantity
+                } for child in item.equipment_loan_item_detail.filter(loan_product_pw_lot__isnull=False)],
+                'loan_product_sn_detail': item.equipment_loan_item_detail.filter(
+                    loan_product_pw_serial__isnull=False
+                ).values_list('loan_product_pw_serial_id', flat=True),
+                'loan_quantity': item.loan_quantity,
+            })
+        return equipment_loan_item_list

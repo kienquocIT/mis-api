@@ -96,7 +96,12 @@ class EREquipmentLoanListByAccount(BaseListMixin):
 
     def get_queryset(self):
         if 'account_mapped_id' in self.request.query_params:
-            return super().get_queryset().filter(account_mapped_id=self.request.query_params.get('account_mapped_id'))
+            return super().get_queryset().filter(
+                account_mapped_id=self.request.query_params.get('account_mapped_id')
+            ).prefetch_related(
+                'equipment_loan_items',
+                'equipment_loan_items__equipment_loan_item_detail',
+            )
         return super().get_queryset().none()
 
     @swagger_auto_schema(

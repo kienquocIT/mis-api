@@ -157,6 +157,7 @@ class EquipmentLoanDetailSerializer(AbstractDetailSerializerModel):
         equipment_loan_item_list = []
         for item in obj.equipment_loan_items.all():
             equipment_loan_item_list.append({
+                'id': item.id,
                 'loan_product_data': item.loan_product_data,
                 'loan_product_none_detail': [{
                     'product_warehouse_id': child.loan_product_pw_id,
