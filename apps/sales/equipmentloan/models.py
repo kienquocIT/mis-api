@@ -14,6 +14,159 @@ class EquipmentLoan(DataAbstractModel):
     return_date = models.DateTimeField(null=True)
 
     @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return '3fc09568-e3ff-4fd3-a70d-4d069ac1521d'
+
+    @staticmethod
+    def update_none_item_list(data_bulk_info, child, gtf_obj, end_warehouse):
+        """
+        Hàm kiểm tra none này đã thêm vào danh sách trước đó hay chưa.
+        Nếu có thì update item cũ, chưa thì thêm mới
+        """
+        product_warehouse = child.loan_product_pw
+        warehouse = product_warehouse.warehouse
+        product = product_warehouse.product
+        quantity = child.loan_product_pw_quantity
+        uom = product.general_uom_group.uom_reference if product.general_uom_group else None
+        unit_cost = product.get_cost_info_by_warehouse(
+            warehouse_id=warehouse.id if warehouse else None,
+            get_type=1,
+        )
+        for sub in data_bulk_info:
+            if all([
+                sub.get('product_warehouse') is not None,
+                sub.get('warehouse') is not None,
+                sub.get('product') is not None,
+                product_warehouse is not None,
+                warehouse is not None,
+                product is not None
+            ]):
+                if all([
+                    str(sub['product_warehouse'].id) == str(product_warehouse.id),
+                    str(sub['warehouse'].id) == str(warehouse.id),
+                    str(sub['product'].id) == str(product.id)
+                ]):
+                    sub['quantity'] += quantity
+                    sub['subtotal'] += quantity * unit_cost
+                    return data_bulk_info
+        data_bulk_info.append({
+            'goods_transfer': gtf_obj,
+            'product_warehouse': product_warehouse,
+            'warehouse': warehouse,
+            'product': product,
+            'end_warehouse': end_warehouse,
+            'uom': uom,
+            'lot_data': [],
+            'sn_data': [],
+            'quantity': quantity,
+            'unit_cost': unit_cost,
+            'subtotal': quantity * unit_cost,
+        })
+        return data_bulk_info
+
+    @staticmethod
+    def update_lot_item_list(data_bulk_info, child, gtf_obj, end_warehouse):
+        """
+        Hàm kiểm tra lot này đã thêm vào danh sách trước đó hay chưa.
+        Nếu có thì update item cũ, chưa thì thêm mới
+        """
+        product_warehouse = child.loan_product_pw_lot.product_warehouse
+        warehouse = product_warehouse.warehouse
+        product = product_warehouse.product
+        quantity = child.loan_product_pw_lot_quantity
+        uom = product.general_uom_group.uom_reference if product.general_uom_group else None
+        unit_cost = product.get_cost_info_by_warehouse(
+            warehouse_id=warehouse.id if warehouse else None,
+            get_type=1,
+        )
+        for sub in data_bulk_info:
+            if all([
+                sub.get('product_warehouse') is not None,
+                sub.get('warehouse') is not None,
+                sub.get('product') is not None,
+                product_warehouse is not None,
+                warehouse is not None,
+                product is not None
+            ]):
+                if all([
+                    str(sub['product_warehouse'].id) == str(product_warehouse.id),
+                    str(sub['warehouse'].id) == str(warehouse.id),
+                    str(sub['product'].id) == str(product.id)
+                ]):
+                    sub['lot_data'] += [{
+                        'lot_id': str(child.loan_product_pw_lot_id),
+                        'quantity': quantity
+                    }]
+                    sub['quantity'] += quantity
+                    sub['subtotal'] += quantity * unit_cost
+                    return data_bulk_info
+        data_bulk_info.append({
+            'goods_transfer': gtf_obj,
+            'product_warehouse': product_warehouse,
+            'warehouse': warehouse,
+            'product': product,
+            'end_warehouse': end_warehouse,
+            'uom': uom,
+            'lot_data': [{
+                'lot_id': str(child.loan_product_pw_lot_id),
+                'quantity': quantity
+            }],
+            'sn_data': [],
+            'quantity': quantity,
+            'unit_cost': unit_cost,
+            'subtotal': quantity * unit_cost,
+        })
+        return data_bulk_info
+
+    @staticmethod
+    def update_serial_item_list(data_bulk_info, child, gtf_obj, end_warehouse):
+        """
+        Hàm kiểm tra serial này đã thêm vào danh sách trước đó hay chưa.
+        Nếu có thì update item cũ, chưa thì thêm mới
+        """
+        product_warehouse = child.loan_product_pw_serial.product_warehouse
+        warehouse = product_warehouse.warehouse
+        product = product_warehouse.product
+        quantity = 1
+        uom = product.general_uom_group.uom_reference if product.general_uom_group else None
+        unit_cost = product.get_cost_info_by_warehouse(
+            warehouse_id=warehouse.id if warehouse else None,
+            get_type=1,
+        )
+        for sub in data_bulk_info:
+            if all([
+                sub.get('product_warehouse') is not None,
+                sub.get('warehouse') is not None,
+                sub.get('product') is not None,
+                product_warehouse is not None,
+                warehouse is not None,
+                product is not None
+            ]):
+                if all([
+                    str(sub['product_warehouse'].id) == str(product_warehouse.id),
+                    str(sub['warehouse'].id) == str(warehouse.id),
+                    str(sub['product'].id) == str(product.id)
+                ]):
+                    sub['sn_data'] += [str(child.loan_product_pw_serial_id)]
+                    sub['quantity'] += 1
+                    sub['subtotal'] += quantity * unit_cost
+                    return data_bulk_info
+        data_bulk_info.append({
+            'goods_transfer': gtf_obj,
+            'product_warehouse': product_warehouse,
+            'warehouse': warehouse,
+            'product': product,
+            'end_warehouse': end_warehouse,
+            'uom': uom,
+            'lot_data': [],
+            'sn_data': [str(child.loan_product_pw_serial_id)],
+            'quantity': quantity,
+            'unit_cost': unit_cost,
+            'subtotal': quantity * unit_cost,
+        })
+        return data_bulk_info
+
+    @classmethod
     def auto_create_goods_transfer_doc(cls, el_obj):
         """
         Phiếu Điều chuyển được tạo từ chức năng này sẽ tự động duyệt mà không quan tâm quy trình như thế nào
@@ -33,84 +186,18 @@ class EquipmentLoan(DataAbstractModel):
         }
         gtf_obj = GoodsTransfer.objects.create(**gtf_data)
         end_warehouse = WareHouse.objects.filter_on_company(use_for=1).first()
-        bulk_info = []
+        data_bulk_info = []
         for item in el_obj.equipment_loan_items.all():
             for child in item.equipment_loan_item_detail.all():
                 if child.loan_product_pw:  # none
-                    product_warehouse = child.loan_product_pw
-                    warehouse = product_warehouse.warehouse
-                    product = product_warehouse.product
-                    quantity = child.loan_product_pw_quantity
-                    uom = product.general_uom_group.uom_reference if product.general_uom_group else None
-                    unit_cost = product.get_cost_info_by_warehouse(
-                        warehouse_id=warehouse.id if warehouse else None,
-                        get_type=1,
-                    )
-                    bulk_info.append(GoodsTransferProduct(
-                        goods_transfer=gtf_obj,
-                        product_warehouse=product_warehouse,
-                        warehouse=warehouse,
-                        product=product,
-                        sale_order=None,
-                        end_warehouse=end_warehouse,
-                        uom=uom,
-                        lot_data=[],
-                        sn_data=[],
-                        quantity=quantity,
-                        unit_cost=unit_cost,
-                        subtotal=quantity * unit_cost,
-                    ))
+                    data_bulk_info = cls.update_none_item_list(data_bulk_info, child, gtf_obj, end_warehouse)
                 elif child.loan_product_pw_lot:  # lot
-                    product_warehouse = child.loan_product_pw_lot.product_warehouse
-                    warehouse = product_warehouse.warehouse
-                    product = product_warehouse.product
-                    quantity = child.loan_product_pw_lot_quantity
-                    uom = product.general_uom_group.uom_reference if product.general_uom_group else None
-                    unit_cost = product.get_cost_info_by_warehouse(
-                        warehouse_id=warehouse.id if warehouse else None,
-                        get_type=1,
-                    )
-                    bulk_info.append(GoodsTransferProduct(
-                        goods_transfer=gtf_obj,
-                        product_warehouse=product_warehouse,
-                        warehouse=warehouse,
-                        product=product,
-                        sale_order=None,
-                        end_warehouse=end_warehouse,
-                        uom=uom,
-                        lot_data=[{
-                            'lot_id': str(child.loan_product_pw_lot_id),
-                            'quantity': child.loan_product_pw_lot_quantity
-                        }],
-                        sn_data=[],
-                        quantity=quantity,
-                        unit_cost=unit_cost,
-                        subtotal=quantity * unit_cost,
-                    ))
+                    data_bulk_info = cls.update_lot_item_list(data_bulk_info, child, gtf_obj, end_warehouse)
                 elif child.loan_product_pw_serial:  # sn
-                    product_warehouse = child.loan_product_pw_serial.product_warehouse
-                    warehouse = product_warehouse.warehouse
-                    product = product_warehouse.product
-                    quantity = 1
-                    uom = product.general_uom_group.uom_reference if product.general_uom_group else None
-                    unit_cost = product.get_cost_info_by_warehouse(
-                        warehouse_id=warehouse.id if warehouse else None,
-                        get_type=1,
-                    )
-                    bulk_info.append(GoodsTransferProduct(
-                        goods_transfer=gtf_obj,
-                        product_warehouse=product_warehouse,
-                        warehouse=warehouse,
-                        product=product,
-                        sale_order=None,
-                        end_warehouse=end_warehouse,
-                        uom=uom,
-                        lot_data=[],
-                        sn_data=[str(child.loan_product_pw_serial_id)],
-                        quantity=quantity,
-                        unit_cost=unit_cost,
-                        subtotal=quantity * unit_cost,
-                    ))
+                    data_bulk_info = cls.update_serial_item_list(data_bulk_info, child, gtf_obj, end_warehouse)
+        bulk_info = []
+        for item in data_bulk_info:
+            bulk_info.append(GoodsTransferProduct(**item))
         GoodsTransferProduct.objects.filter(goods_transfer=gtf_obj).delete()
         GoodsTransferProduct.objects.bulk_create(bulk_info)
 
@@ -196,6 +283,10 @@ class EquipmentLoanAttachmentFile(M2MFilesAbstractModel):
     equipment_loan = models.ForeignKey(
         EquipmentLoan, on_delete=models.CASCADE, related_name='equipment_loan_attachments'
     )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'equipment_loan'
 
     class Meta:
         verbose_name = 'Equipment Loan attachment'

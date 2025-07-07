@@ -39,6 +39,10 @@ class APInvoice(DataAbstractModel):
         permissions = ()
 
     @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return 'c05a6cf4-efff-47e0-afcf-072017b8141a'
+
+    @classmethod
     def update_goods_receipt_has_ap_invoice_already(cls, instance):
         for item in instance.ap_invoice_goods_receipts.all():
             if item.goods_receipt_mapped:
@@ -105,6 +109,10 @@ class APInvoiceGoodsReceipt(SimpleAbstractModel):
 
 class APInvoiceAttachmentFile(M2MFilesAbstractModel):
     ap_invoice = models.ForeignKey('APInvoice', on_delete=models.CASCADE, related_name='ap_invoice_attachments')
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'ap_invoice'
 
     class Meta:
         verbose_name = 'AP Invoice attachment'
