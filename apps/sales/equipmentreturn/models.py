@@ -1,6 +1,5 @@
 from django.db import models
-from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import SimpleAbstractModel, DataAbstractModel
+from apps.shared import DataAbstractModel
 
 
 class EquipmentReturn(DataAbstractModel):
