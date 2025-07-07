@@ -43,6 +43,7 @@ class KMSDocumentApproval(DataAbstractModel):
                     code_generated = CompanyFunctionNumber.gen_auto_code(app_code='kmsdocumentapproval')
                     if code_generated:
                         self.code = code_generated
+                        kwargs['update_fields'].append('code')
                     else:
                         self.add_auto_generate_code_to_instance(self, 'KDA/[n6]', True, kwargs)
         super().save(*args, **kwargs)

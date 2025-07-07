@@ -55,6 +55,7 @@ class ReturnAdvance(DataAbstractModel):
                     code_generated = CompanyFunctionNumber.gen_auto_code(app_code='returnadvance')
                     if code_generated:
                         self.code = code_generated
+                        kwargs['update_fields'].append('code')
                     else:
                         self.add_auto_generate_code_to_instance(self, 'RP[n4]', True, kwargs)
 

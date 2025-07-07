@@ -129,6 +129,7 @@ class Bidding(DataAbstractModel, BastionFieldAbstractModel):
                     code_generated = CompanyFunctionNumber.gen_auto_code(app_code='bidding')
                     if code_generated:
                         self.code = code_generated
+                        kwargs['update_fields'].append('code')
                     else:
                         self.add_auto_generate_code_to_instance(self, 'BD[n4]', True, kwargs)
         AdvanceHandler.push_opportunity_log(self)

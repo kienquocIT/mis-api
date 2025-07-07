@@ -104,6 +104,7 @@ class PurchaseRequest(DataAbstractModel):
                     code_generated = CompanyFunctionNumber.gen_auto_code(app_code='purchaserequest')
                     if code_generated:
                         self.code = code_generated
+                        kwargs['update_fields'].append('code')
                     else:
                         self.add_auto_generate_code_to_instance(self, 'PR[n4]', True, kwargs)
                     self.update_remain_for_purchase_request_so(self)
