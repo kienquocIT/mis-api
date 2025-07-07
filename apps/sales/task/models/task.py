@@ -173,7 +173,6 @@ class OpportunityTask(DataAbstractModel):
             code_generated = CompanyFunctionNumber.gen_auto_code(app_code='opportunitytask')
             if code_generated:
                 self.code = code_generated
-                kwargs['update_fields'].append('code')
             else:
                 task = OpportunityTask.objects.filter_current(
                     fill__tenant=True, fill__company=True, is_delete=False
