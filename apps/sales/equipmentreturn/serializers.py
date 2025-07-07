@@ -116,11 +116,13 @@ class EREquipmentLoanListByAccountSerializer(serializers.ModelSerializer):
                 } for child in item.equipment_loan_item_detail.filter(loan_product_pw__isnull=False)],
                 'loan_product_lot_detail': [{
                     'lot_id': child.loan_product_pw_lot_id,
+                    'lot_data': child.loan_product_pw_lot_data,
                     'picked_quantity': child.loan_product_pw_lot_quantity
                 } for child in item.equipment_loan_item_detail.filter(loan_product_pw_lot__isnull=False)],
-                'loan_product_sn_detail': item.equipment_loan_item_detail.filter(
-                    loan_product_pw_serial__isnull=False
-                ).values_list('loan_product_pw_serial_id', flat=True),
+                'loan_product_sn_detail': [{
+                    'serial_id': child.loan_product_pw_serial_id,
+                    'serial_data': child.loan_product_pw_serial_data,
+                } for child in item.equipment_loan_item_detail.filter(loan_product_pw_serial__isnull=False)],
                 'loan_quantity': item.loan_quantity,
             })
         return equipment_loan_item_list
