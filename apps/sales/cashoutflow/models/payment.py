@@ -1,12 +1,13 @@
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.shared import DataAbstractModel, SimpleAbstractModel, BastionFieldAbstractModel
 from .advance_payment import AdvancePaymentCost
+from ..utils import PaymentHandler
+
 
 __all__ = [
     'Payment',
@@ -15,7 +16,6 @@ __all__ = [
     'PaymentAttachmentFile'
 ]
 
-from ..utils import PaymentHandler
 
 SALE_CODE_TYPE = [
     (0, _('Sale')),
@@ -23,6 +23,7 @@ SALE_CODE_TYPE = [
     (2, _('None-sale')),
     (3, _('Others'))
 ]
+
 
 PAYMENT_METHOD = [
     (0, _('None')),
@@ -32,10 +33,6 @@ PAYMENT_METHOD = [
 
 
 class Payment(DataAbstractModel, BastionFieldAbstractModel):
-    @classmethod
-    def get_app_id(cls, raise_exception=True) -> str or None:
-        return '1010563f-7c94-42f9-ba99-63d5d26a1aca'
-
     quotation_mapped = models.ForeignKey(
         'quotation.Quotation',
         on_delete=models.CASCADE, null=True,
@@ -82,6 +79,10 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return '1010563f-7c94-42f9-ba99-63d5d26a1aca'
 
     @classmethod
     def push_final_acceptance_payment(cls, instance):
@@ -147,21 +148,17 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                code_generated = CompanyFunctionNumber.gen_auto_code(app_code='payment')
-                if code_generated:
-                    self.code = code_generated
-                else:
-                    self.add_auto_generate_code_to_instance(self, 'PM[n4]', True)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    code_generated = CompanyFunctionNumber.gen_auto_code(app_code='payment')
+                    if code_generated:
+                        self.code = code_generated
                         kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-                self.push_final_acceptance_payment(self)
-                self.convert_ap_cost(self)
+                    else:
+                        self.add_auto_generate_code_to_instance(self, 'PM[n4]', True, kwargs)
+                    self.push_final_acceptance_payment(self)
+                    self.convert_ap_cost(self)
 
         # opportunity log
         PaymentHandler.push_opportunity_log(instance=self)

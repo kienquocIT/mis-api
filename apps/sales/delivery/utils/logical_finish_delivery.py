@@ -431,7 +431,8 @@ class DeliFinishAssetToolHandler:
                     ),
 
                     "product_lease_end_date": str(delivery_product.product_lease_end_date),
-                    "product_lease_start_date": str(delivery_product.product_lease_start_date),
+                    "product_lease_start_date": str(instance.actual_delivery_date.date())
+                    if instance.actual_delivery_date else None,
 
                     "depreciation_data": delivery_product.depreciation_data,
 

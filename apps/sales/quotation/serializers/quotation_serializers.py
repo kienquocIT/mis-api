@@ -31,6 +31,7 @@ class QuotationListSerializer(AbstractListSerializerModel):
             'indicator_revenue',
             'system_status',
             'opportunity',
+            'is_delete',
         )
 
     @classmethod

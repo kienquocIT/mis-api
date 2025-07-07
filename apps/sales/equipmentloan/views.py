@@ -4,8 +4,8 @@ from apps.masterdata.saledata.models import (
 )
 from apps.sales.equipmentloan.models import EquipmentLoan
 from apps.sales.equipmentloan.serializers import (
-    LoanProductListSerializer, WarehouseListByProductSerializer,
-    ProductLotListSerializer, ProductSerialListSerializer,
+    ELProductListSerializer, ELWarehouseListByProductSerializer,
+    ELProductLotListSerializer, ELProductSerialListSerializer,
     EquipmentLoanListSerializer, EquipmentLoanCreateSerializer,
     EquipmentLoanDetailSerializer, EquipmentLoanUpdateSerializer
 )
@@ -15,10 +15,10 @@ from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseU
 __all__ = [
     'EquipmentLoanList',
     'EquipmentLoanDetail',
-    'LoanProductList',
-    'WarehouseListByProduct',
-    'ProductLotList',
-    'ProductSerialList',
+    'ELProductList',
+    'ELWarehouseListByProduct',
+    'ELProductLotList',
+    'ELProductSerialList',
 ]
 
 # main
@@ -58,6 +58,7 @@ class EquipmentLoanList(BaseListMixin, BaseCreateMixin):
         label_code='equipmentloan', model_code='equipmentloan', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
@@ -87,16 +88,17 @@ class EquipmentLoanDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='equipmentloan', model_code='equipmentloan', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
 
 # related
-class LoanProductList(BaseListMixin):
+class ELProductList(BaseListMixin):
     queryset = Product.objects
     search_fields = [
         'title',
         'code',
     ]
-    serializer_list = LoanProductListSerializer
+    serializer_list = ELProductListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
@@ -110,7 +112,7 @@ class LoanProductList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class WarehouseListByProduct(BaseListMixin):
+class ELWarehouseListByProduct(BaseListMixin):
     queryset = ProductWareHouse.objects
     search_fields = [
         'title',
@@ -119,7 +121,7 @@ class WarehouseListByProduct(BaseListMixin):
     filterset_fields = {
         'product_id': ['exact'],
     }
-    serializer_list = WarehouseListByProductSerializer
+    serializer_list = ELWarehouseListByProductSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
@@ -133,7 +135,7 @@ class WarehouseListByProduct(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class ProductLotList(BaseListMixin):
+class ELProductLotList(BaseListMixin):
     queryset = ProductWareHouseLot.objects
     search_fields = [
         'lot_number',
@@ -142,7 +144,7 @@ class ProductLotList(BaseListMixin):
         'product_warehouse__product_id': ['exact'],
         'product_warehouse__warehouse_id': ['exact'],
     }
-    serializer_list = ProductLotListSerializer
+    serializer_list = ELProductLotListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
@@ -156,7 +158,7 @@ class ProductLotList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class ProductSerialList(BaseListMixin):
+class ELProductSerialList(BaseListMixin):
     queryset = ProductWareHouseSerial.objects
     search_fields = [
         'vendor_serial_number',
@@ -166,7 +168,7 @@ class ProductSerialList(BaseListMixin):
         'product_warehouse__product_id': ['exact'],
         'product_warehouse__warehouse_id': ['exact'],
     }
-    serializer_list = ProductSerialListSerializer
+    serializer_list = ELProductSerialListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):

@@ -54,6 +54,10 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
     note = models.TextField(blank=True)
 
     @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return '1d7291dd-1e59-4917-83a3-1cc07cfc4638'
+
+    @classmethod
     def push_final_acceptance_invoice(cls, instance):
         sale_order_id = None
         lease_order_id = None
@@ -94,19 +98,13 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'AR[n4]', True)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-
-                JEForARInvoiceHandler.push_to_journal_entry(self)
-                ReconForARInvoiceHandler.auto_create_recon_doc(self)
-                self.update_order_delivery_has_ar_invoice_already(self)
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    self.add_auto_generate_code_to_instance(self, 'AR[n4]', True, kwargs)
+                    JEForARInvoiceHandler.push_to_journal_entry(self)
+                    ReconForARInvoiceHandler.auto_create_recon_doc(self)
+                    self.update_order_delivery_has_ar_invoice_already(self)
 
         if self.invoice_status == 1:  # published
             self.push_final_acceptance_invoice(instance=self)
@@ -163,6 +161,10 @@ class ARInvoiceDelivery(SimpleAbstractModel):
 
 class ARInvoiceAttachmentFile(M2MFilesAbstractModel):
     ar_invoice = models.ForeignKey('ARInvoice', on_delete=models.CASCADE, related_name='ar_invoice_attachments')
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'ar_invoice'
 
     class Meta:
         verbose_name = 'AR Invoice attachment'
