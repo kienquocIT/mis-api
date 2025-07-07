@@ -94,24 +94,26 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
         permissions = ()
 
     @classmethod
-    def add_auto_generate_code_to_instance(cls, instance, code_rule, in_workflow=True, filter_fields=None):
+    def add_auto_generate_code_to_instance(cls, instance, code_rule, in_workflow=True, kwargs=None):
         """
-            Auto generate code following 'code_rule' parameter.
+            If instance.code is None: Auto generate code following 'code_rule' parameter.
             Example: LEAD-[n4]-2024 ([n4] will be parsed from 0001 to 9999)
         """
-        model_cls = DisperseModel(app_model=instance.get_model_code()).get_model()
-        if model_cls and hasattr(model_cls, 'objects'):
-            number = model_cls.objects.filter_on_company(
-                is_delete=False,
-                system_status=3 if in_workflow else 1,
-                **filter_fields if filter_fields else {}
-            ).count()
-            code_rule_number_format = re.search(r'\[(.*?)\]', code_rule)
-            if code_rule_number_format:
-                number_format = code_rule_number_format.group(1)
-                new_code = code_rule.replace(f'[{number_format}]', str(number+1).zfill(int(number_format[1])))
-                instance.code = new_code
-                return True
+        if not instance.code:
+            model_cls = DisperseModel(app_model=instance.get_model_code()).get_model()
+            if model_cls and hasattr(model_cls, 'objects'):
+                number = model_cls.objects.filter_on_company(
+                    is_delete=False,
+                    system_status=3 if in_workflow else 1,
+                ).count()
+                code_rule_number_format = re.search(r'\[(.*?)\]', code_rule)
+                if code_rule_number_format:
+                    number_format = code_rule_number_format.group(1)
+                    new_code = code_rule.replace(f'[{number_format}]', str(number+1).zfill(int(number_format[1])))
+                    instance.code = new_code
+                    if in_workflow and kwargs:
+                        kwargs['update_fields'].append('code')
+                    return True
         return False
 
 

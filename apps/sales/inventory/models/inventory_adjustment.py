@@ -35,7 +35,7 @@ class InventoryAdjustment(DataAbstractModel):
 
     def save(self, *args, **kwargs):
         if not self.code:
-            self.add_auto_generate_code_to_instance(self, 'IA[n4]', False)
+            self.add_auto_generate_code_to_instance(self, 'IA[n4]', False, kwargs)
         super().save(*args, **kwargs)
 
 

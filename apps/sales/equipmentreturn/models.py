@@ -12,14 +12,10 @@ class EquipmentReturn(DataAbstractModel):
         return 'f5954e02-6ad1-4ebf-a4f2-0b598820f5f0'
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'ER-[n4]', True)
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    self.add_auto_generate_code_to_instance(self, 'ER-[n4]', True, kwargs)
         # hit DB
         super().save(*args, **kwargs)
 

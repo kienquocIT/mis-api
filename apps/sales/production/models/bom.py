@@ -53,30 +53,24 @@ class BOM(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'BOM[n4]', False)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-
-                if self.product.has_bom:
-                    raise ValueError("This product is mapped with BOM")
-                self.product.has_bom = True
-                self.product.bom_data = {
-                    'id': str(self.id),
-                    'code': self.code,
-                    'title': self.title,
-                    'bom_type': self.bom_type,
-                    'for_outsourcing': self.for_outsourcing,
-                    'sum_price': self.sum_price,
-                    'sum_time': self.sum_time,
-                    'opp_data': self.opp_data,
-                }
-                self.product.save(update_fields=['has_bom', 'bom_data'])
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    self.add_auto_generate_code_to_instance(self, 'BOM[n4]', False, kwargs)
+                    if self.product.has_bom:
+                        raise ValueError("This product is mapped with BOM")
+                    self.product.has_bom = True
+                    self.product.bom_data = {
+                        'id': str(self.id),
+                        'code': self.code,
+                        'title': self.title,
+                        'bom_type': self.bom_type,
+                        'for_outsourcing': self.for_outsourcing,
+                        'sum_price': self.sum_price,
+                        'sum_time': self.sum_time,
+                        'opp_data': self.opp_data,
+                    }
+                    self.product.save(update_fields=['has_bom', 'bom_data'])
 
         # opportunity log
         AdvanceHandler.push_opportunity_log(instance=self)

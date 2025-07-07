@@ -89,18 +89,14 @@ class CashInflow(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'CIF[n4]', True)
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-                JEForCIFHandler.push_to_journal_entry(self)
-                ReconForCIFHandler.auto_create_recon_doc(self)
-                self.update_ar_invoice_cash_inflow_done()
-                self.update_so_stage_cash_inflow_done()
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    self.add_auto_generate_code_to_instance(self, 'CIF[n4]', True, kwargs)
+                    JEForCIFHandler.push_to_journal_entry(self)
+                    ReconForCIFHandler.auto_create_recon_doc(self)
+                    self.update_ar_invoice_cash_inflow_done()
+                    self.update_so_stage_cash_inflow_done()
         super().save(*args, **kwargs)
 
 

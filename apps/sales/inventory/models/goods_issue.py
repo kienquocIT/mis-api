@@ -144,20 +144,12 @@ class GoodsIssue(DataAbstractModel, AutoDocumentAbstractModel):
         if not kwargs.pop('skip_check_period', False):
             SubPeriods.check_period(self.tenant_id, self.company_id)
 
-        if self.system_status in [2, 3]:
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'GI[n4]', True)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-
-                if self.system_status == 3:
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    self.add_auto_generate_code_to_instance(self, 'GI[n4]', True, kwargs)
                     self.update_related_app_after_issue(self)
                     IRForGoodsIssueHandler.push_to_inventory_report(self)
-
         super().save(*args, **kwargs)
 
 

@@ -83,21 +83,15 @@ class AdvancePayment(DataAbstractModel, BastionFieldAbstractModel):
         return '57725469-8b04-428a-a4b0-578091d0e4f5'
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                code_generated = CompanyFunctionNumber.gen_auto_code(app_code='advancepayment')
-                if code_generated:
-                    self.code = code_generated
-                else:
-                    self.add_auto_generate_code_to_instance(self, 'AP[n4]', True)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    code_generated = CompanyFunctionNumber.gen_auto_code(app_code='advancepayment')
+                    if code_generated:
+                        self.code = code_generated
                         kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-                # self.update_money_gave(self)
-
+                    else:
+                        self.add_auto_generate_code_to_instance(self, 'AP[n4]', True, kwargs)
         # opportunity log
         AdvanceHandler.push_opportunity_log(instance=self)
         # hit DB
