@@ -829,8 +829,8 @@ class ReportLeaseList(BaseListMixin):
         operation_description="Get report lease List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='report', model_code='reportlease', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='report', model_code='reportlease', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
