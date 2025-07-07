@@ -374,16 +374,9 @@ class OrderDeliverySub(DataAbstractModel):
             SubPeriods.check_period(self.tenant_id, self.company_id)
 
         if self.system_status in [2, 3]:  # added, finish
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'DE[n4]', True)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-
-                if self.system_status == 3:
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    self.add_auto_generate_code_to_instance(self, 'DE[n4]', True, kwargs)
                     self.push_state(instance=self, kwargs=kwargs)  # state
                     DeliFinishHandler.create_new(instance=self)  # new sub + product
                     DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
@@ -395,7 +388,6 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliFinishHandler.push_so_lo_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
                     DeliHandler.push_diagram(instance=self)  # diagram
-
                     IRForDeliveryHandler.push_to_inventory_report(self)
                     JEForDeliveryHandler.push_to_journal_entry(self)
 

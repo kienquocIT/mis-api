@@ -117,21 +117,14 @@ class FixedAsset(DataAbstractModel):
         return 'fc552ebb-eb98-4d7b-81cd-e4b5813b7815'  # fixed asset's application id
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                code_generated = CompanyFunctionNumber.gen_auto_code(app_code='fixedasset')
-                if code_generated:
-                    self.code = code_generated
-                else:
-                    self.add_auto_generate_code_to_instance(self, 'FA[n4]', True)
-
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    code_generated = CompanyFunctionNumber.gen_auto_code(app_code='fixedasset')
+                    if code_generated:
+                        self.code = code_generated
+                    else:
+                        self.add_auto_generate_code_to_instance(self, 'FA[n4]', True, kwargs)
         # hit DB
         super().save(*args, **kwargs)
 
