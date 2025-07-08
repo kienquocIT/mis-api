@@ -465,7 +465,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
     @classmethod
     def parse_code_from_schema(cls, obj, schema):
         # check_reset_frequency
-        parsed_code = ''
+        parsed_code = schema
         current_year, current_month = datetime.datetime.now().year, datetime.datetime.now().month
         data_calendar = datetime.date.today().isocalendar()
         new_latest_number = obj.latest_number
@@ -503,7 +503,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             str(data_calendar[2])
         ]
         for match in re.findall(r"\[.*?\]", schema):
-            parsed_code = schema.replace(match, str(schema_item_list[int(match[1:-1])]))
+            parsed_code = parsed_code.replace(match, str(schema_item_list[int(match[1:-1])]))
 
         if obj.app_type == 0:
             if reset['reset_type'] == 0:
@@ -553,6 +553,8 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             'returnadvance': 'RP[n4]',
             'quotation': 'SQ[n4]',
             'saleorder': 'SO[n4]',
+            'consulting': 'CS[n4]',
+            'contract': 'CT[n4]',
         }
 
         parsed_code = ''
