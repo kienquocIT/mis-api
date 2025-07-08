@@ -86,12 +86,7 @@ class AdvancePayment(DataAbstractModel, BastionFieldAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    code_generated = CompanyFunctionNumber.gen_auto_code(app_code='advancepayment')
-                    if code_generated:
-                        self.code = code_generated
-                        kwargs['update_fields'].append('code')
-                    else:
-                        self.add_auto_generate_code_to_instance(self, 'AP[n4]', True, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('advancepayment', True, self, kwargs)
         # opportunity log
         AdvanceHandler.push_opportunity_log(instance=self)
         # hit DB

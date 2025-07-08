@@ -1,5 +1,6 @@
 from django.db import models
 from rest_framework import serializers
+from apps.core.company.models import CompanyFunctionNumber
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import SubPeriods
 from apps.sales.inventory.models.goods_return_sub import (
@@ -32,7 +33,7 @@ class GoodsReturn(DataAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.add_auto_generate_code_to_instance(self, 'GRT[n4]', True, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('goodsreturn', True, self, kwargs)
                     if hasattr(self.company, 'sales_delivery_config_detail'):
                         config = self.company.sales_delivery_config_detail
                         if not config:

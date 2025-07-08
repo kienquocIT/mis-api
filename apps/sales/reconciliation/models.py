@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import SimpleAbstractModel, DataAbstractModel, AutoDocumentAbstractModel
 
 
@@ -41,7 +43,7 @@ class Reconciliation(DataAbstractModel, AutoDocumentAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        self.add_auto_generate_code_to_instance(self, 'RECON[n4]', False, kwargs)
+        CompanyFunctionNumber.auto_gen_code_based_on_config('reconciliation', False, self, kwargs)
         # hit DB
         super().save(*args, **kwargs)
 

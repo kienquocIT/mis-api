@@ -318,7 +318,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             if Employee.objects.filter_on_company(code=value).exists():
                 raise serializers.ValidationError({"code": AccountMsg.CODE_EXIST})
             return value
-        code_generated = CompanyFunctionNumber.gen_auto_code(app_code='employee')
+        code_generated = CompanyFunctionNumber.auto_gen_code_based_on_config(app_code='employee')
         if code_generated:
             return code_generated
         raise serializers.ValidationError({"code": f"{AccountMsg.CODE_NOT_NULL}. {BaseMsg.NO_CONFIG_AUTO_CODE}"})

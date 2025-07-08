@@ -1,4 +1,6 @@
 from django.db import models
+
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import DataAbstractModel
 
 
@@ -15,7 +17,7 @@ class EquipmentReturn(DataAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.add_auto_generate_code_to_instance(self, 'ER-[n4]', True, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('equipmentreturn', True, self, kwargs)
         # hit DB
         super().save(*args, **kwargs)
 

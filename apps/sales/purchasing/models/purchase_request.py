@@ -101,12 +101,7 @@ class PurchaseRequest(DataAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    code_generated = CompanyFunctionNumber.gen_auto_code(app_code='purchaserequest')
-                    if code_generated:
-                        self.code = code_generated
-                        kwargs['update_fields'].append('code')
-                    else:
-                        self.add_auto_generate_code_to_instance(self, 'PR[n4]', True, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('purchaserequest', True, self, kwargs)
                     self.update_remain_for_purchase_request_so(self)
         # diagram
         PRHandler.push_diagram(instance=self)
