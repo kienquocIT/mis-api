@@ -548,7 +548,9 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             'productmodification': 'PRD-MOD-[n4]',
             'purchaserequest': 'PR[n4]',
             'reconciliation': 'RECON[n4]',
-            'returnadvance': 'RP[n4]'
+            'returnadvance': 'RP[n4]',
+            'quotation': 'SQ[n4]',
+            'saleorder': 'SO[n4]',
         }
 
         parsed_code = ''
