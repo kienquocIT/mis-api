@@ -468,6 +468,7 @@ class LeaseOrderProductSerializer(serializers.ModelSerializer):
             'offset_data',
             'tool_data',
             'asset_data',
+            'offset_show',
             'unit_of_measure_id',
             'uom_data',
             'uom_time_id',

@@ -369,6 +369,7 @@ class LeaseOrderProduct(MasterDataAbstractModel):
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
     tool_data = models.JSONField(default=list, help_text='data json of tool')
     asset_data = models.JSONField(default=list, help_text='data json of asset')
+    offset_show = models.TextField(verbose_name="offset show", blank=True)
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
