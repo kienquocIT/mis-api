@@ -76,10 +76,9 @@ class EquipmentReturnCreateSerializer(AbstractCreateSerializerModel):
             loan_item_obj = EquipmentLoanItem.objects.filter(id=item.get('loan_item_id')).first()
             if not loan_item_obj:
                 raise serializers.ValidationError({'loan_item_mapped': "Loan item does not exist."})
-            else:
-                item['loan_item_mapped_id'] = str(item.get('loan_item_id'))
-                item['return_product_id'] = str(loan_item_obj.loan_product_id)
-                item['return_product_data'] = loan_item_obj.loan_product_data
+            item['loan_item_mapped_id'] = str(item.get('loan_item_id'))
+            item['return_product_id'] = str(loan_item_obj.loan_product_id)
+            item['return_product_data'] = loan_item_obj.loan_product_data
 
             for lot_return in item.get('lot_return_list', []):
                 loan_item_detail_obj = EquipmentLoanItemDetail.objects.filter(
@@ -87,14 +86,13 @@ class EquipmentReturnCreateSerializer(AbstractCreateSerializerModel):
                 ).first()
                 if not loan_item_detail_obj:
                     raise serializers.ValidationError({'loan_item_detail_mapped': "Loan item detail does not exist."})
-                else:
-                    loan_remain_quantity = (loan_item_detail_obj.loan_product_pw_lot_quantity -
-                                            loan_item_detail_obj.lot_returned_quantity)
-                    if loan_remain_quantity < float(lot_return.get('picked_quantity', 0)):
-                        raise serializers.ValidationError({'err': "Return quantity > remain quantity."})
-                    lot_return['return_product_pw_lot_id'] = str(loan_item_detail_obj.loan_product_pw_lot_id)
-                    lot_return['return_product_pw_lot_data'] = loan_item_detail_obj.loan_product_pw_lot_data
-                    lot_return['loan_item_detail_mapped_id'] = lot_return.get('loan_item_detail_id')
+                loan_remain_quantity = (loan_item_detail_obj.loan_product_pw_lot_quantity -
+                                        loan_item_detail_obj.lot_returned_quantity)
+                if loan_remain_quantity < float(lot_return.get('picked_quantity', 0)):
+                    raise serializers.ValidationError({'err': "Return quantity > remain quantity."})
+                lot_return['return_product_pw_lot_id'] = str(loan_item_detail_obj.loan_product_pw_lot_id)
+                lot_return['return_product_pw_lot_data'] = loan_item_detail_obj.loan_product_pw_lot_data
+                lot_return['loan_item_detail_mapped_id'] = lot_return.get('loan_item_detail_id')
 
             for serial_return in item.get('serial_return_list', []):
                 loan_item_detail_obj = EquipmentLoanItemDetail.objects.filter(
@@ -102,12 +100,11 @@ class EquipmentReturnCreateSerializer(AbstractCreateSerializerModel):
                 ).first()
                 if not loan_item_detail_obj:
                     raise serializers.ValidationError({'loan_item_detail_mapped': "Loan item detail does not exist."})
-                else:
-                    if loan_item_detail_obj.is_returned_serial is True:
-                        raise serializers.ValidationError({'err': "This serial has been returned."})
-                    serial_return['return_product_pw_serial_id'] = str(loan_item_detail_obj.loan_product_pw_serial_id)
-                    serial_return['return_product_pw_serial_data'] = loan_item_detail_obj.loan_product_pw_serial_data
-                    serial_return['loan_item_detail_mapped_id'] = serial_return.get('loan_item_detail_id')
+                if loan_item_detail_obj.is_returned_serial is True:
+                    raise serializers.ValidationError({'err': "This serial has been returned."})
+                serial_return['return_product_pw_serial_id'] = str(loan_item_detail_obj.loan_product_pw_serial_id)
+                serial_return['return_product_pw_serial_data'] = loan_item_detail_obj.loan_product_pw_serial_data
+                serial_return['loan_item_detail_mapped_id'] = serial_return.get('loan_item_detail_id')
         return equipment_return_item_list
 
     @classmethod
