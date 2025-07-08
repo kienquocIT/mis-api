@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     FilesUpload, FilesUnused,
     ImageWebBuilderUpload, ImageWebBuilderList, FolderList, FolderDetail, FolderUploadFileList, FilesDownload,
-    FilesInformation, PublicFilesUpload, FolderListSharedToMe, FolderMySpaceList, FilesEdit
+    FilesInformation, PublicFilesUpload, FolderListSharedToMe, FolderMySpaceList, FilesEdit, FolderCheckPermList,
+    FileCheckPermList
 )
 
 urlpatterns = [
@@ -19,6 +20,12 @@ urlpatterns = [
     path('folder/list', FolderList.as_view(), name='FolderList'),
     path('folder/list-my-space', FolderMySpaceList.as_view(), name='FolderMySpaceList'),
     path('folder/list-share-to-me', FolderListSharedToMe.as_view(), name='FolderListSharedToMe'),
+
     path('folder/<str:pk>', FolderDetail.as_view(), name='FolderDetail'),
+
+    # File belong to folder (post)
     path('folder-upload-file/list', FolderUploadFileList.as_view(), name='FolderUploadFileList'),
+
+    path('folder-check-perm', FolderCheckPermList.as_view(), name='FolderCheckPermList'),
+    path('file-check-perm', FileCheckPermList.as_view(), name='FileCheckPermList'),
 ]

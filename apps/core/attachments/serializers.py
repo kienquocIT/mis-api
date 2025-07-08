@@ -3,10 +3,21 @@ import magic
 from django.conf import settings
 from rest_framework import serializers
 from apps.shared import HrMsg, TypeCheck, AttMsg, FORMATTING, BaseMsg
-from .models import Files, PublicFiles, Folder, FolderPermission
+from .models import Files, PublicFiles, Folder, FolderPermission, FilePermission
 
 
-def update_folder_permission(perm):
+def update_folder_permission(perm, current_employee):
+    has_perm = perm['folder'].folder_permission_folder.all().filter(
+        folder_perm_list__contains=6, employee_list__icontains=f'"{str(current_employee.id)}"', employee_or_group=True
+    )
+    if hasattr(current_employee, 'group') and not has_perm.exists():
+        has_perm = perm['folder'].folder_permission_folder.all().filter(
+            folder_perm_list__contains=6, group_list__icontains=f'"{str(current_employee.group.id)}"',
+            employee_or_group=False
+        )
+    if not has_perm.exists() and perm['folder'].employee_inherit != current_employee:
+        raise serializers.ValidationError({'permission': AttMsg.FOLDER_PERM_UPDATE_ERROR})
+
     folder_id = str(perm['folder'].id)
     default = {
         'folder_id': folder_id,
@@ -19,15 +30,22 @@ def update_folder_permission(perm):
         'capability_list': perm['capability_list'],
         'is_apply_sub': perm.get('is_apply_sub', False),
     }
-    _, _ = FolderPermission.objects.update_or_create(
-        folder_id=folder_id,
-        defaults={
-            **default,
-            'employee_created': perm['folder'].employee_created,
+    if perm.get('id', None):
+        default['date_modified'] = datetime.now()
+        obj_lst = FolderPermission.objects.filter(id=str(perm.get('id', None)))
+        if obj_lst.exists():
+            obj = obj_lst.first()
+            for key, value in default.items():
+                setattr(obj, key, value)
+            obj.save()
+    else:
+        new_values = {
+            'employee_created': current_employee,
             'date_created': datetime.now(),
         }
-    )
-
+        new_values.update(default)
+        obj = FolderPermission(**new_values)
+        obj.save()
     return True
 
 
@@ -61,6 +79,12 @@ class FilesUploadSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'file': AttMsg.FILE_NO_DETECT_SIZE})
             raise serializers.ValidationError({'file': HrMsg.EMPLOYEE_REQUIRED})
         raise serializers.ValidationError({'employee': HrMsg.EMPLOYEE_REQUIRED})
+
+    @classmethod
+    def validate_folder(cls, attrs):
+        if attrs:
+            return attrs
+        return None
 
     def validate(self, attrs):
         file_memory = attrs['file']
@@ -279,10 +303,28 @@ class DetailImageWebBuilderInPublicFileListSerializer(serializers.ModelSerialize
         )
 
 
+class FileCheckPermSerializer(serializers.ModelSerializer):
+    permission = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_permission(cls, attrs):
+        if attrs.file_perm_list:
+            return attrs.file_perm_list
+        return []
+
+    class Meta:
+        model = FilePermission
+        fields = (
+            'id',
+            'permission',
+        )
+
+
 # BEGIN FOLDER
 class FolderListSerializer(serializers.ModelSerializer):
     employee_inherit = serializers.SerializerMethodField()
     files = serializers.SerializerMethodField()
+    parent_n = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -293,7 +335,7 @@ class FolderListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_files(cls, obj):
-        files = obj.files_folder.select_related('employee_created').all()
+        files = obj.files_folder.all()
         file_lst = []
         for file in files:
             file_lst.append({
@@ -431,6 +473,7 @@ class FolderCreateSerializer(serializers.ModelSerializer):
 
 
 class PermissionFolderSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(required=False, allow_null=True)
 
     @classmethod
     def validate_folder(cls, attrs):
@@ -456,9 +499,21 @@ class PermissionFolderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'capability_list': AttMsg.CAPABILITY_NOT_EXIST})
         return attrs
 
+    def validate(self, attrs):
+        emp_crt = self.context.get('user', None)
+        folder_pk = attrs.get('id', None)
+        if folder_pk:
+            instance = FolderPermission.objects.filter(id=folder_pk)
+            if instance.exists():
+                obj = instance.first()
+                if emp_crt.employee_current != obj.employee_created:
+                    raise serializers.ValidationError({'Permission': AttMsg.FOLDER_PERM_UPDATE_ERROR})
+        return attrs
+
     class Meta:
         model = FolderPermission
         fields = (
+            'id',
             'folder',
             'employee_list',
             'group_list',
@@ -467,7 +522,7 @@ class PermissionFolderSerializer(serializers.ModelSerializer):
             'employee_or_group',
             'exp_date',
             'capability_list',
-            'is_apply_sub'
+            'is_apply_sub',
         )
 
 
@@ -483,19 +538,22 @@ class FolderUpdateSerializer(serializers.ModelSerializer):
             'permission_obj',
         )
 
-    @classmethod
-    def validate_parent_n(cls, value):
+    def validate_parent_n(self, value):
         try:
             if value is None:
                 return value
-            return Folder.objects.get(id=value)
+            parent = Folder.objects.get(id=value)
+            if parent.id == self.instance.id:
+                raise serializers.ValidationError({'folder': AttMsg.FOLDER_PARENT_ERROR})
+            return parent
         except Folder.DoesNotExist:
             raise serializers.ValidationError({'folder': AttMsg.FOLDER_NOT_EXIST})
 
     def update(self, instance, validated_data):
+        emp_crt = self.context.get('user', None)
         permission_obj = validated_data.pop('permission_obj', None)
-        if permission_obj:
-            update_folder_permission(permission_obj)
+        if permission_obj and emp_crt and hasattr(emp_crt, 'employee_current'):
+            update_folder_permission(permission_obj, emp_crt.employee_current)
         # update instance
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -556,3 +614,48 @@ class FolderUploadFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Files
         fields = ('file', 'remarks', 'folder')
+
+
+class FolderCheckPermDelAllSerializer(serializers.ModelSerializer):
+    id_list = serializers.ListField(
+        child=serializers.UUIDField(), help_text='ID list record delete data'
+    )
+
+    @classmethod
+    def validate_id_list(cls, attrs):
+        id_list = FolderPermission.objects.filter(id__in=attrs)
+        if id_list.count() == len(attrs):
+            return id_list
+        raise serializers.ValidationError({'folder': AttMsg.FOLDER_PERM_DELETE_ERROR})
+
+    class Meta:
+        model = FolderPermission
+        fields = (
+            'id_list',
+        )
+
+
+class FolderCheckPermSerializer(serializers.ModelSerializer):
+    employee_created = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee_created(cls, values):
+        return {
+            'id': str(values.employee_created.id),
+            'full_name': values.employee_created.get_full_name()
+        } if values.employee_created else {}
+
+    class Meta:
+        model = FolderPermission
+        fields = (
+            'id',
+            'employee_list',
+            'group_list',
+            'exp_date',
+            'folder_perm_list',
+            'file_in_perm_list',
+            'is_apply_sub',
+            'employee_or_group',
+            'capability_list',
+            'employee_created',
+        )
