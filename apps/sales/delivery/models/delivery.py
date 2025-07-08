@@ -364,7 +364,8 @@ class OrderDeliverySub(DataAbstractModel):
     def save(self, *args, **kwargs):
         if not kwargs.pop('skip_check_period', False):
             SubPeriods.check_period(self.tenant_id, self.company_id)
-        if self.system_status in [2, 3]:  # added, finish
+        if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
+            # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('orderdeliverysub', True, self, kwargs)

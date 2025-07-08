@@ -33,10 +33,11 @@ class ContractApproval(DataAbstractModel, BastionFieldAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:  # added, finish
+        if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
+            # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    CompanyFunctionNumber.auto_gen_code_based_on_config('contract', True, self, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('contractapproval', True, self, kwargs)
         # hit DB
         super().save(*args, **kwargs)
 

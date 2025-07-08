@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.production.utils.logical_finish_wo import WorkOrderHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, STATUS_PRODUCTION, \
     MasterDataAbstractModel, BastionFieldAbstractModel
@@ -72,50 +73,12 @@ class WorkOrder(DataAbstractModel, BastionFieldAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    @classmethod
-    def find_max_number(cls, codes):
-        num_max = None
-        for code in codes:
-            try:
-                if code != '':
-                    tmp = int(code.split('-', maxsplit=1)[0].split("WO")[1])
-                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
-                        num_max = tmp
-            except Exception as err:
-                print(err)
-        return num_max
-
-    @classmethod
-    def generate_code(cls, company_id):
-        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
-        num_max = cls.find_max_number(existing_codes)
-        if num_max is None:
-            code = 'WO0001'
-        elif num_max < 10000:
-            num_str = str(num_max + 1).zfill(4)
-            code = f'WO{num_str}'
-        else:
-            raise ValueError('Out of range: number exceeds 10000')
-        if cls.objects.filter(code=code, company_id=company_id).exists():
-            return cls.generate_code(company_id=company_id)
-        return code
-
-    @classmethod
-    def push_code(cls, instance, kwargs):
-        if not instance.code:
-            instance.code = cls.generate_code(company_id=instance.company_id)
-            instance.status_production = 1
-            kwargs['update_fields'].append('code')
-            kwargs['update_fields'].append('status_production')
-        return True
-
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    # code
-                    self.push_code(instance=self, kwargs=kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('workorder', True, self, kwargs)
                     WorkOrderHandler.wo_info_for_so(instance=self)
         # hit DB
         super().save(*args, **kwargs)
