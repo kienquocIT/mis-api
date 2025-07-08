@@ -65,13 +65,7 @@ class ShiftCreateSerializer(serializers.ModelSerializer):
         checkin_time_str = validated_data.get('checkin_time', '').strftime('%H:%M')
         checkout_time_str = validated_data.get('checkout_time', '').strftime('%H:%M')
         working_days = validated_data.get('working_day_list', [])
-        if working_days and all(isinstance(i, bool) for i in working_days):
-            active_days = [
-                day_label for i, (idx, day_label) in enumerate(WORKING_DAYS)
-                if i < len(working_days) and working_days[i]
-            ]
-        else:
-            active_days = []
+        active_days = [key for key, val in working_days.items() if val] if working_days else []
         description = f'{checkin_time_str} - {checkout_time_str} {", ".join(active_days)}'
         return ShiftInfo.objects.create(**validated_data, description=description)
 
@@ -131,6 +125,14 @@ class ShiftUpdateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         return ShiftCreateSerializer().validate(validate_data)
+
+    # def update(self, validated_data):
+    #     checkin_time_str = validated_data.get('checkin_time', '').strftime('%H:%M')
+    #     checkout_time_str = validated_data.get('checkout_time', '').strftime('%H:%M')
+    #     working_days = validated_data.get('working_day_list', [])
+    #     active_days = [key for key, val in working_days.items() if val] if working_days else []
+    #     description = f'{checkin_time_str} - {checkout_time_str} {", ".join(active_days)}'
+    #     return ShiftInfo.objects.create(**validated_data, description=description)
 
     class Meta:
         model = ShiftInfo

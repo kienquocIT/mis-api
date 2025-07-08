@@ -24,7 +24,12 @@ class ShiftInfo(MasterDataAbstractModel):
     checkout_gr_end = models.TimeField()
     checkout_threshold = models.FloatField()
 
-    working_day_list = models.JSONField(default=list)
+    working_day_list = models.JSONField(default=dict)
+    # working_day_list = {
+    #   'Mon': True,
+    #   'Tue': False,
+    #   ...
+    # }
     description = models.TextField(blank=True, null=True)
 
     class Meta:

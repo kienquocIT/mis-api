@@ -64,15 +64,12 @@ def create_internal_recipient(incoming_doc, internal_list):
     new_list = []
     for item in internal_list:
         item_content = KMSInternalRecipientIncomingDocument(
-            title=item.get('title'),
-            incoming_document_id=str(incoming_doc.id),
-            kind=item.get('kind', 2),
+            incoming_document=incoming_doc,
+            kind=item.get('kind', 1),
             employee_access=item.get('employee_access', {}),
             group_access=item.get('group_access', {}),
             document_permission_list=item['document_permission_list'],
             expiration_date=item.get('expiration_date'),
-            company=incoming_doc.company,
-            tenant=incoming_doc.tenant,
         )
         new_list.append(item_content)
     KMSInternalRecipientIncomingDocument.objects.bulk_create(new_list)
@@ -109,7 +106,6 @@ class KMSAttachedIncomingDocumentSerializers(serializers.Serializer):
 
 
 class KMSInternalRecipientIncomingDocumentSerializers(serializers.Serializer):
-    title = serializers.CharField(required=False, allow_null=True)
     kind = serializers.IntegerField()
     employee_access = serializers.JSONField(required=False, allow_null=True)
     group_access = serializers.JSONField(required=False, allow_null=True)
@@ -207,7 +203,6 @@ class KMSIncomingDocumentDetailSerializer(AbstractDetailSerializerModel):
         for item in item_list:
             res_list.append({
                 'id': item.id,
-                'title': item.title,
                 'kind': item.kind,
                 'employee_access': item.employee_access,
                 'group_access': item.group_access,

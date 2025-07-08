@@ -64,7 +64,7 @@ class EmployeeListAll(BaseListMixin):
     serializer_list = EmployeeListAllSerializer
     list_hidden_field = ('tenant_id', 'company_id')
     filterset_fields = {
-        "group_id": ["exact"]
+        "group_id": ["exact", "in"]
     }
 
     def get_queryset(self):

@@ -2,7 +2,7 @@ import json
 
 from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, SECURITY_LEVEL, KIND
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, SECURITY_LEVEL, KIND, SimpleAbstractModel
 
 
 class KMSIncomingDocument(DataAbstractModel):
@@ -98,7 +98,7 @@ class IncomingAttachDocumentMapAttachFile(M2MFilesAbstractModel):
         permissions = ()
 
 
-class KMSInternalRecipientIncomingDocument(MasterDataAbstractModel):
+class KMSInternalRecipientIncomingDocument(SimpleAbstractModel):
     incoming_document = models.ForeignKey(
         KMSIncomingDocument,
         on_delete=models.CASCADE,
@@ -110,19 +110,19 @@ class KMSInternalRecipientIncomingDocument(MasterDataAbstractModel):
         choices=KIND
     )
     employee_access = models.JSONField(
-        default=list,
+        default=dict,
         null=True,
         verbose_name="employee list has access this file",
         help_text=json.dumps(["uuid4", "uuid4"])
     )
     group_access = models.JSONField(
-        default=list,
+        default=dict,
         null=True,
         verbose_name='Permission of Group',
         help_text=json.dumps(["uuid4", "uuid4"])
     )
     document_permission_list = models.JSONField(
-        default=dict,
+        default=list,
         null=True,
         verbose_name='Permission of Employee',
         help_text=json.dumps(
@@ -139,6 +139,6 @@ class KMSInternalRecipientIncomingDocument(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Internal recipient incoming document'
         verbose_name_plural = 'Internal recipients incoming document'
-        ordering = ('-date_created',)
+        ordering = ()
         default_permissions = ()
         permissions = ()
