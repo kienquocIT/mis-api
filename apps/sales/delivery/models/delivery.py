@@ -200,9 +200,7 @@ class OrderDelivery(DataAbstractModel):
 
     @classmethod
     def push_code(cls, instance):
-        if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='orderdeliverysub')
-            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
+        CompanyFunctionNumber.auto_gen_code_based_on_config('orderdeliverysub', True, instance, kwargs)
         return True
 
     def save(self, *args, **kwargs):
@@ -376,7 +374,7 @@ class OrderDeliverySub(DataAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.add_auto_generate_code_to_instance(self, 'DE[n4]', True, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('orderdeliverysub', True, self, kwargs)
                     self.push_state(instance=self, kwargs=kwargs)  # state
                     DeliFinishHandler.create_new(instance=self)  # new sub + product
                     DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse

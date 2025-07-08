@@ -481,11 +481,48 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         return result
 
     @classmethod
-    def gen_auto_code(cls, app_code):
+    def auto_gen_code_based_on_config(cls, app_code=None, in_workflow=True, instance=None, kwargs=None):
+        code_rules = {
+            'advancepayment': 'AP[n4]',
+            'arinvoice': 'AR[n4]',
+            'bidding': 'BD[n4]',
+            'bom': 'BOM[n4]',
+            'cashinflow': 'CIF[n4]',
+            'cashoutflow': 'COF[n4]',
+            'distributionplan': 'DP[n4]',
+            'equipmentloan': 'EL-[n4]',
+            'equipmentreturn': 'ER-[n4]',
+            'fixedasset': 'FA[n4]',
+            'fixedassetwriteoff': 'FAW[n4]',
+            'goodsissue': 'GI[n4]',
+            'goodsreceipt': 'GR[n4]',
+            'goodsrecovery': 'GRC[n4]',
+            'goodsreturn': 'GRT[n4]',
+            'goodstransfer': 'GT[n4]',
+            'instrumenttool': 'IT[n4]',
+            'instrumenttoolwriteoff': 'ITW[n4]',
+            'inventoryadjustment': 'IA[n4]',
+            'kmsdocumentapproval': 'KDA[n4]',
+            'kmsincomingdocument': 'ID[n4]',
+            'lead': 'LEAD[n4]',
+            'opportunity': 'OPP[n4]',
+            'orderdeliverysub': 'DE[n4]',
+            'payment': 'PM[n4]',
+            'productmodification': 'PRD-MOD-[n4]',
+            'purchaserequest': 'PR[n4]',
+            'reconciliation': 'RECON[n4]',
+            'returnadvance': 'RP[n4]'
+        }
+
+        result = ''
+
+        # tạo auto trước
+        if instance and app_code in code_rules:
+            code_parsed = instance.auto_generate_code(instance, code_rules[app_code], in_workflow)
+
+        # kiểm tra nếu có cấu hình thì gen mới
         obj = cls.objects.filter_on_company(app_code=app_code).first()
         if obj and obj.schema is not None:
-            result = obj.schema
-
             # check_reset_frequency
             current_year, current_month = datetime.datetime.now().year, datetime.datetime.now().month
             data_calendar = datetime.date.today().isocalendar()
@@ -508,7 +545,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                 new_latest_number = obj.first_number - 1
 
             new_latest_number = new_latest_number + 1
-            result = cls.parse_schema_result(obj, result, new_latest_number, current_year, current_month, data_calendar)
+            code_parsed = cls.parse_schema_result(obj, obj.schema, new_latest_number, current_year, current_month, data_calendar)
 
             if obj.app_type == 0:
                 if reset_type == 0:
@@ -522,8 +559,11 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                 obj.latest_number = new_latest_number
                 obj.save(update_fields=['year_reset', 'month_reset', 'week_reset', 'day_reset', 'latest_number'])
 
-            return result
-        return None
+        if instance:
+            instance.code = code_parsed
+            if in_workflow and kwargs:
+                kwargs['update_fields'].append('code')
+        return code_parsed
 
     @classmethod
     def auto_code_update_latest_number(cls, app_code):

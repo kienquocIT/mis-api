@@ -2,6 +2,7 @@ from django.db import models
 from django.db import transaction
 
 from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, ProductWareHouseSerial, ProductWareHouse
 from apps.sales.report.utils.log_for_goods_issue import IRForGoodsIssueHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE, AutoDocumentAbstractModel
@@ -147,7 +148,7 @@ class GoodsIssue(DataAbstractModel, AutoDocumentAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.add_auto_generate_code_to_instance(self, 'GI[n4]', True, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('goodsissue', True, self, kwargs)
                     self.update_related_app_after_issue(self)
                     IRForGoodsIssueHandler.push_to_inventory_report(self)
         super().save(*args, **kwargs)

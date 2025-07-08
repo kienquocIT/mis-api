@@ -29,12 +29,7 @@ class FixedAssetWriteOff(DataAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    code_generated = CompanyFunctionNumber.gen_auto_code(app_code='fixedassetwriteoff')
-                    if code_generated:
-                        self.code = code_generated
-                        kwargs['update_fields'].append('code')
-                    else:
-                        self.add_auto_generate_code_to_instance(self, 'FAW[n4]', True, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('fixedassetwriteoff', True, self, kwargs)
         # hit DB
         super().save(*args, **kwargs)
 

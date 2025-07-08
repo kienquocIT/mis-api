@@ -94,7 +94,7 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
         permissions = ()
 
     @classmethod
-    def add_auto_generate_code_to_instance(cls, instance, code_rule, in_workflow=True, kwargs=None):
+    def auto_generate_code(cls, instance, code_rule, in_workflow=True):
         """
             If instance.code is None: Auto generate code following 'code_rule' parameter.
             Example: LEAD-[n4]-2024 ([n4] will be parsed from 0001 to 9999)
@@ -110,11 +110,8 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
                 if code_rule_number_format:
                     number_format = code_rule_number_format.group(1)
                     new_code = code_rule.replace(f'[{number_format}]', str(number+1).zfill(int(number_format[1])))
-                    instance.code = new_code
-                    if in_workflow and kwargs:
-                        kwargs['update_fields'].append('code')
-                    return True
-        return False
+                    return new_code
+        return ''
 
 
     @classmethod

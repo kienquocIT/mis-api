@@ -1,5 +1,6 @@
 from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import WareHouse
 from apps.sales.inventory.models import GoodsTransfer, GoodsTransferProduct
 from apps.sales.report.utils import IRForGoodsTransferHandler
@@ -202,7 +203,7 @@ class EquipmentLoan(DataAbstractModel):
         GoodsTransferProduct.objects.bulk_create(bulk_info)
 
         # duyệt tự động
-        gtf_obj.add_auto_generate_code_to_instance(gtf_obj, 'GT[n4]', True)
+        CompanyFunctionNumber.auto_gen_code_based_on_config('goodstransfer', True, gtf_obj)
         gtf_obj.system_status = 3
         gtf_obj.save(update_fields=['code', 'system_status'])
         # action sau khi duyệt
@@ -215,7 +216,7 @@ class EquipmentLoan(DataAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.add_auto_generate_code_to_instance(self, 'EL-[n4]', True, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('equipmentloan', True, self, kwargs)
                     self.auto_create_goods_transfer_doc(self)
         # hit DB
         super().save(*args, **kwargs)

@@ -1,5 +1,6 @@
 from django.db import models
 from apps.accounting.journalentry.utils.log_for_cash_inflow import JEForCIFHandler
+from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
@@ -92,7 +93,7 @@ class CashInflow(DataAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.add_auto_generate_code_to_instance(self, 'CIF[n4]', True, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('cashinflow', True, self, kwargs)
                     JEForCIFHandler.push_to_journal_entry(self)
                     ReconForCIFHandler.auto_create_recon_doc(self)
                     self.update_ar_invoice_cash_inflow_done()

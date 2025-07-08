@@ -1,8 +1,9 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
+from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.cashoutflow.utils import AdvanceHandler
 from apps.shared import DataAbstractModel, MasterDataAbstractModel
+
 
 BOM_TYPE = [
     (0, _('For production')),
@@ -56,7 +57,8 @@ class BOM(DataAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.add_auto_generate_code_to_instance(self, 'BOM[n4]', False, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('bom', False, self, kwargs)
+
                     if self.product.has_bom:
                         raise ValueError("This product is mapped with BOM")
                     self.product.has_bom = True

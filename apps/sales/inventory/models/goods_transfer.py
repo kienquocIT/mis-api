@@ -1,4 +1,6 @@
 from django.db import models
+
+from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
     ProductWareHouseLot,
     ProductWareHouse,
@@ -232,7 +234,7 @@ class GoodsTransfer(DataAbstractModel, AutoDocumentAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.add_auto_generate_code_to_instance(self, 'GT[n4]', True, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('goodstransfer', True, self, kwargs)
                     self.update_data_warehouse(self)
                     for item in self.goods_transfer.filter(sale_order__isnull=False):
                         self.check_and_create_gre_item_sub_if_transfer_in_project(self, item)
