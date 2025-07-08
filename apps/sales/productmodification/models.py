@@ -216,7 +216,9 @@ class ProductModification(DataAbstractModel):
             mapped_type = item.product_mapped_data.pop('type')
             if mapped_type == 'new':
                 if not item.product_mapped_data.get('code'):
-                    item.product_mapped_data['code'] = CompanyFunctionNumber.auto_gen_code_based_on_config(app_code='product')
+                    item.product_mapped_data['code'] = CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code='product'
+                    )
                 product_type = item.product_mapped_data.pop('product_type')
                 general_product_category = item.product_mapped_data.get('general_product_category')
                 general_uom_group = item.product_mapped_data.get('general_uom_group')

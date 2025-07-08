@@ -99,6 +99,7 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
             If instance.code is None: Auto generate code following 'code_rule' parameter.
             Example: LEAD-[n4]-2024 ([n4] will be parsed from 0001 to 9999)
         """
+        parsed_code = ''
         if not instance.code:
             model_cls = DisperseModel(app_model=instance.get_model_code()).get_model()
             if model_cls and hasattr(model_cls, 'objects'):
@@ -109,9 +110,8 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
                 code_rule_number_format = re.search(r'\[(.*?)\]', code_rule)
                 if code_rule_number_format:
                     number_format = code_rule_number_format.group(1)
-                    new_code = code_rule.replace(f'[{number_format}]', str(number+1).zfill(int(number_format[1])))
-                    return new_code
-        return ''
+                    parsed_code = code_rule.replace(f'[{number_format}]', str(number+1).zfill(int(number_format[1])))
+        return parsed_code
 
 
     @classmethod

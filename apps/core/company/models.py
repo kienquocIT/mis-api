@@ -463,7 +463,31 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         raise RuntimeError('[CompanyFunctionNumber.reset_frequency] Find Field Map returned null.')
 
     @classmethod
-    def parse_schema_result(cls, obj, result, new_latest_number, current_year, current_month, data_calendar):
+    def parse_code_from_schema(cls, obj, schema):
+        # check_reset_frequency
+        parsed_code = ''
+        current_year, current_month = datetime.datetime.now().year, datetime.datetime.now().month
+        data_calendar = datetime.date.today().isocalendar()
+        new_latest_number = obj.latest_number
+        is_reset = None
+        reset_type = None
+        conditions = [
+            (0, obj.year_reset, current_year),
+            (1, obj.month_reset, f"{current_year}{current_month:02}"),
+            (2, obj.week_reset, f"{data_calendar[0]}{data_calendar[1]:02}"),
+            (3, obj.day_reset, f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
+        ]
+        for reset_frequency, reset_value, new_value in conditions:
+            if obj.reset_frequency == reset_frequency and reset_value < int(new_value):
+                setattr(obj, f"{obj.get_reset_field_name(reset_frequency)}", int(new_value))
+                is_reset = new_value
+                reset_type = reset_frequency
+                break
+        if is_reset:
+            new_latest_number = obj.first_number - 1
+
+        new_latest_number = new_latest_number + 1
+
         schema_item_list = [
             str(new_latest_number).zfill(obj.min_number_char) if obj.min_number_char else str(new_latest_number),
             str(current_year % 100),
@@ -476,9 +500,22 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             str(datetime.date.today().day).zfill(2),
             str(data_calendar[2])
         ]
-        for match in re.findall(r"\[.*?\]", result):
-            result = result.replace(match, str(schema_item_list[int(match[1:-1])]))
-        return result
+        for match in re.findall(r"\[.*?\]", schema):
+            parsed_code = schema.replace(match, str(schema_item_list[int(match[1:-1])]))
+
+        if obj.app_type == 0:
+            if reset_type == 0:
+                obj.year_reset = is_reset
+            if reset_type == 1:
+                obj.month_reset = is_reset
+            if reset_type == 2:
+                obj.week_reset = is_reset
+            if reset_type == 3:
+                obj.day_reset = is_reset
+            obj.latest_number = new_latest_number
+            obj.save(update_fields=['year_reset', 'month_reset', 'week_reset', 'day_reset', 'latest_number'])
+
+        return parsed_code
 
     @classmethod
     def auto_gen_code_based_on_config(cls, app_code=None, in_workflow=True, instance=None, kwargs=None):
@@ -514,56 +551,23 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             'returnadvance': 'RP[n4]'
         }
 
-        result = ''
+        parsed_code = ''
 
         # tạo auto trước
         if instance and app_code in code_rules:
-            code_parsed = instance.auto_generate_code(instance, code_rules[app_code], in_workflow)
+            parsed_code = instance.auto_generate_code(instance, code_rules[app_code], in_workflow)
 
-        # kiểm tra nếu có cấu hình thì gen mới
+        # kiểm tra nếu có cấu hình người dùng thì gen mới
         obj = cls.objects.filter_on_company(app_code=app_code).first()
         if obj and obj.schema is not None:
-            # check_reset_frequency
-            current_year, current_month = datetime.datetime.now().year, datetime.datetime.now().month
-            data_calendar = datetime.date.today().isocalendar()
-            new_latest_number = obj.latest_number
-            is_reset = None
-            reset_type = None
-            conditions = [
-                (0, obj.year_reset, current_year),
-                (1, obj.month_reset, f"{current_year}{current_month:02}"),
-                (2, obj.week_reset, f"{data_calendar[0]}{data_calendar[1]:02}"),
-                (3, obj.day_reset, f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
-            ]
-            for reset_frequency, reset_value, new_value in conditions:
-                if obj.reset_frequency == reset_frequency and reset_value < int(new_value):
-                    setattr(obj, f"{obj.get_reset_field_name(reset_frequency)}", int(new_value))
-                    is_reset = new_value
-                    reset_type = reset_frequency
-                    break
-            if is_reset:
-                new_latest_number = obj.first_number - 1
-
-            new_latest_number = new_latest_number + 1
-            code_parsed = cls.parse_schema_result(obj, obj.schema, new_latest_number, current_year, current_month, data_calendar)
-
-            if obj.app_type == 0:
-                if reset_type == 0:
-                    obj.year_reset = is_reset
-                if reset_type == 1:
-                    obj.month_reset = is_reset
-                if reset_type == 2:
-                    obj.week_reset = is_reset
-                if reset_type == 3:
-                    obj.day_reset = is_reset
-                obj.latest_number = new_latest_number
-                obj.save(update_fields=['year_reset', 'month_reset', 'week_reset', 'day_reset', 'latest_number'])
+            parsed_code = cls.parse_code_from_schema(obj, obj.schema)
 
         if instance:
-            instance.code = code_parsed
+            instance.code = parsed_code
             if in_workflow and kwargs:
                 kwargs['update_fields'].append('code')
-        return code_parsed
+
+        return parsed_code
 
     @classmethod
     def auto_code_update_latest_number(cls, app_code):

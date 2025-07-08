@@ -198,14 +198,8 @@ class OrderDelivery(DataAbstractModel):
             return cls.generate_code(company_id=company_id)
         return code
 
-    @classmethod
-    def push_code(cls, instance):
-        CompanyFunctionNumber.auto_gen_code_based_on_config('orderdeliverysub', True, instance, kwargs)
-        return True
-
     def save(self, *args, **kwargs):
         self.put_backup_data()
-        # self.push_code(instance=self)  # code
         super().save(*args, **kwargs)
 
     class Meta:
