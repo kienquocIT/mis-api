@@ -8,7 +8,7 @@ from apps.core.hr.models import PermissionAbstractModel
 from apps.shared import (
     DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 )
-from .config import OpportunityConfigStage, OpportunityConfig
+from .config import OpportunityConfigStage
 
 TYPE_CUSTOMER = [
     (0, _('Direct Customer')),
