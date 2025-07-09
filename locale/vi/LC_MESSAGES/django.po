@@ -150,6 +150,10 @@ msgstr "Kiểm kê kho"
 msgid "Lease Order"
 msgstr "Đơn cho thuê"
 
+# e02cd98d-79a4-4462-8c1a-cf14fe8f7062
+msgid "Lease Report"
+msgstr "Báo cáo cho thuê"
+
 # baff033a-c416-47e1-89af-b6653534f06e
 msgid "Leave"
 msgstr "Nghỉ phép"
@@ -1705,3 +1709,7 @@ msgstr "Số serial sản phẩm đã tồn tại."
 #
 msgid "Some values in the list are incorrect"
 msgstr "Một số giá trị không đúng"
+
+#
+msgid "Opportunity is already used for lease order"
+msgstr "Đã có đơn cho thuê được tạo với cơ hội kinh doanh này"

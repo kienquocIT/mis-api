@@ -380,7 +380,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
                     is_change = validate_data.get('is_change', False)
                     if is_change is False:
                         if opportunity.sale_order_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
-                            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
+                            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
         return True
 
     def validate_attachment(self, value):

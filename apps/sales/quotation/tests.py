@@ -341,6 +341,7 @@ class TestCaseQuotation(AdvanceTestCase):
                 'is_change',
                 'document_root_id',
                 'document_change_order',
+                'is_delete',
             ],
             check_sum_second=True,
         )
@@ -444,6 +445,7 @@ class TestCaseQuotation(AdvanceTestCase):
                 'is_change',
                 'document_root_id',
                 'document_change_order',
+                'is_delete',
             ],
             check_sum_second=True,
         )
@@ -479,6 +481,7 @@ class TestCaseQuotation(AdvanceTestCase):
                 'is_change',
                 'document_root_id',
                 'document_change_order',
+                'is_delete',
             ],
             check_sum_second=True,
         )

@@ -324,7 +324,7 @@ class ReportCashflow(DataAbstractModel):
         permissions = ()
 
 
-# REPORT REVENUE
+# REPORT LEASE
 class ReportLease(DataAbstractModel):
     lease_order = models.OneToOneField(
         'leaseorder.LeaseOrder',

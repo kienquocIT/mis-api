@@ -535,7 +535,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             'fixedassetwriteoff': 'FAW[n4]',
             'goodsissue': 'GI[n4]',
             'goodsreceipt': 'GR[n4]',
-            'goodsrecovery': 'GRC[n4]',
+            'goodsrecovery': 'GR[n4]',
             'goodsreturn': 'GRT[n4]',
             'goodstransfer': 'GT[n4]',
             'instrumenttool': 'IT[n4]',
@@ -555,6 +555,11 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             'saleorder': 'SO[n4]',
             'consulting': 'CS[n4]',
             'contract': 'CT[n4]',
+            'purchaseorder': 'PO[n4]',
+            'leaseorder': 'LO[n4]',
+            'contractapproval': 'CA[n4]',
+            'productionorder': 'PO[n4]',
+            'workorder': 'WO[n4]',
         }
 
         parsed_code = ''

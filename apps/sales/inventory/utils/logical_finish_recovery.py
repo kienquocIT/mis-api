@@ -50,6 +50,14 @@ class RecoveryFinishHandler:
                 recovery_tool.tool.status = 0
                 recovery_tool.tool.quantity_leased -= recovery_tool.quantity_recovery
                 recovery_tool.tool.save(update_fields=['status', 'quantity_leased'])
+                # Update lease end date OrderDeliveryProductTool
+                if recovery_product.recovery_delivery:
+                    deli_tool = recovery_tool.tool.delivery_pt_tool.filter(
+                        delivery_sub_id=recovery_product.recovery_delivery.delivery_id
+                    ).first()
+                    if deli_tool:
+                        deli_tool.product_lease_end_date = recovery_tool.product_lease_end_date
+                        deli_tool.save(update_fields=['product_lease_end_date'])
         return True
 
     @classmethod
@@ -58,4 +66,12 @@ class RecoveryFinishHandler:
             if recovery_asset.asset and recovery_asset.quantity_recovery > 0:
                 recovery_asset.asset.status = 0
                 recovery_asset.asset.save(update_fields=['status'])
+                # Update lease end date OrderDeliveryProductAsset
+                if recovery_product.recovery_delivery:
+                    deli_asset = recovery_asset.asset.delivery_pa_asset.filter(
+                        delivery_sub_id=recovery_product.recovery_delivery.delivery_id
+                    ).first()
+                    if deli_asset:
+                        deli_asset.product_lease_end_date = recovery_asset.product_lease_end_date
+                        deli_asset.save(update_fields=['product_lease_end_date'])
         return True

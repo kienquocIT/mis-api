@@ -3025,6 +3025,45 @@ EQUIPMENT_LOAN_APP_CONFIG = {
     "allow_opportunity": False,
 }
 
+REPORT_LEASE_APP_CONFIG = {
+    "id": "e02cd98d-79a4-4462-8c1a-cf14fe8f7062",
+    "title": "Lease Report",
+    "code": "reportlease",
+    "model_code": "reportlease",
+    "app_label": "report",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 EQUIPMENT_RETURN_APP_CONFIG = {
     "id": "f5954e02-6ad1-4ebf-a4f2-0b598820f5f0",
     "title": "Equipment Return",
@@ -3407,6 +3446,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "3fc09568-e3ff-4fd3-a70d-4d069ac1521d": ApplicationConfigFrame(**EQUIPMENT_LOAN_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "e02cd98d-79a4-4462-8c1a-cf14fe8f7062": ApplicationConfigFrame(**REPORT_LEASE_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

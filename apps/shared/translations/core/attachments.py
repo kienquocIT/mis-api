@@ -22,3 +22,6 @@ class AttMsg:
     FOLDER_DELETE_ERROR = _('Delete folder error')
     FILE_DELETE_ERROR = _('Delete file error')
     FOLDER_SYSTEM_ERROR = _('Can not delete system folder')
+    FOLDER_PERM_UPDATE_ERROR = _('You do not have permission to update this shared record')
+    FOLDER_PERM_DELETE_ERROR = _('You do not have permission to delete')
+    FOLDER_PARENT_ERROR = _('A folder cannot reference itself as a parent')
