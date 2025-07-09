@@ -536,7 +536,12 @@ BƯỚC 6: Thêm MAP_FIELD_TITLE (apps/shared/constant.py)
              'quotation.quotation': 'title',
              '{app_label}.{model name}': 'title', # trường đại diện để lấy dữ liệu hiển thị title
          }
-    
+
+BƯỚC 7: Thêm đường dẫn redirect mail quy trình:
+- Trong file apps/core/mailer/mail_data.py, thêm chức năng của mình vào APP_MAP_DATA
+{app_label.model_code: {'title': tên chức năng, 'url': đường dẫn đến trang chi tiết trên UI}}
+    VD: {'quotation.quotation': {'title': 'Quotation', 'url': 'quotation/detail/'}},
+
 # MỞ RỘNG
 - Định nghĩa ApplicationProperty cho chức năng trong file (apps/sharedapp/data/base/application_properties.py)
     VD: AppProp_SaleData_Quotation_data = {
