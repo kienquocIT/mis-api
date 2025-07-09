@@ -1,6 +1,6 @@
 __all__ = [
     'Files', 'M2MFilesAbstractModel',
-    'PublicFiles', 'Folder', 'FolderPermission'
+    'PublicFiles', 'Folder', 'FolderPermission', 'FilePermission'
 ]
 
 import json
@@ -568,7 +568,6 @@ class PermissionAbstractModel(SimpleAbstractModel):
         abstract = True
         default_permissions = ()
         permissions = ()
-        ordering = ('-date_created',)
         indexes = [
             models.Index(fields=['id']),
         ]
@@ -632,7 +631,7 @@ class FilePermission(PermissionAbstractModel):
 
     class Meta:
         verbose_name = 'File Permission'
-        ordering = ()
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
@@ -666,6 +665,6 @@ class FolderPermission(PermissionAbstractModel):
 
     class Meta:
         verbose_name = 'Folder Permission'
-        ordering = ()
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

@@ -13,18 +13,20 @@ from rest_framework.response import Response
 
 from apps.shared import (
     BaseCreateMixin, mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck,
-    ResponseController, BaseDestroyMixin, AttMsg, HttpMsg,
+    ResponseController, BaseDestroyMixin, HttpMsg, AttachmentMsg,
 )
 
-from .models import Files, PublicFiles, Folder, FolderPermission
+from .models import Files, PublicFiles, Folder, FolderPermission, FilePermission
 from .serializers import (
     FilesUploadSerializer, FilesDetailSerializer, FilesListSerializer,
     DetailImageWebBuilderInPublicFileListSerializer, CreateImageWebBuilderInPublicFileListSerializer,
     FolderListSerializer, FolderCreateSerializer, FolderDetailSerializer, FolderUpdateSerializer,
     FolderUploadFileSerializer, PublicFilesUploadSerializer, PublicFilesDetailSerializer, PublicFilesListSerializer,
-    FileDeleteAllSerializer, FolderDeleteAllSerializer
+    FileDeleteAllSerializer, FolderDeleteAllSerializer, FolderCheckPermSerializer, FileCheckPermSerializer,
+    FolderCheckPermDelAllSerializer,
 )
-from .utils import check_folder_perm, check_file_perm
+
+from .utils import check_folder_perm, check_file_perm, check_perm_delete_access_list, check_create_sub_folder
 
 
 class FilesUpload(BaseListMixin, BaseCreateMixin):
@@ -53,9 +55,24 @@ class FilesUpload(BaseListMixin, BaseCreateMixin):
     @swagger_auto_schema(request_body=FilesUploadSerializer)
     @mask_view(login_require=True, auth_require=False, employee_require=True)
     def post(self, request, *args, **kwargs):
+        param = request.data.get('space', None)
+        space = 'None'
+        if param == 'my':
+            space = 'my_space'
+        elif param == 'shared':
+            space = 'my_shared'
         self.ser_context = {
             'user_obj': self.request.user
         }
+        folder = request.data.get('folder', None)
+        if folder:
+            if check_folder_perm([folder], space, request.user.employee_current, 2) is False:
+                return Response(
+                    data={
+                        "status": status.HTTP_403_FORBIDDEN,
+                        "detail": HttpMsg.FORBIDDEN,
+                    }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+                )
         return self.create(request, *args, **kwargs)
 
 
@@ -260,8 +277,8 @@ class FolderList(BaseListMixin, BaseCreateMixin):
     queryset = Folder.objects
     search_fields = ['title', 'code']
     filterset_fields = {
-        'parent_n_id': ['exact', 'isnull'],
-        'employee_inherit_id': ['exact', 'isnull'],
+        "parent_n_id": ["exact", "isnull"],
+        "employee_inherit_id": ["exact", "isnull"],
     }
     serializer_list = FolderListSerializer
     serializer_create = FolderCreateSerializer
@@ -272,17 +289,19 @@ class FolderList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         user = self.request.user
         employee_id = str(user.employee_current_id)
-        # group_id = str(user.employee_current.group.id) if hasattr(user.employee_current, 'group') else None
+        not_equal = self.request.query_params.get('ne', None)
         # filter by parent and employee
 
         qs = super().get_queryset()
+        if not_equal:
+            qs = qs.exclude(id=not_equal)
         # if self.request.query_params.get('parent_n_id', None) is None and self.request.query_params.get(
         #         'parent_n_id__isnull', None
         # ) is None:
         #     qs = qs.filter(parent_n_id__isnull=True)
         if self.request.query_params.get('employee_inherit_id', None) is None and self.request.query_params.get(
                 'employee_inherit_id__isnull', None
-        ) is None:
+        ) is None and self.request.query_params.get('isDropdown', None) is None:
             qs = qs.filter(employee_inherit_id=employee_id)
         return qs.select_related('employee_inherit', 'parent_n')
 
@@ -305,6 +324,15 @@ class FolderList(BaseListMixin, BaseCreateMixin):
         login_require=True, auth_require=False,
     )
     def post(self, request, *args, **kwargs):
+        if request.data.get('parent_n', None) is not None:
+            perm_check = check_create_sub_folder(request.data.get('parent_n', None), request.user.employee_current)
+            if perm_check is False:
+                return Response(
+                    data={
+                        "status": status.HTTP_403_FORBIDDEN,
+                        "detail": f'{HttpMsg.FORBIDDEN} {AttachmentMsg.REQUIRED_PERM_SUBFOLDER}',
+                    }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+                )
         return self.create(request, *args, **kwargs)
 
 
@@ -349,7 +377,7 @@ class FolderMySpaceList(BaseListMixin, BaseDestroyMixin):
         login_require=True, auth_require=False,
     )
     def delete(self, request, *args, **kwargs):
-        if check_folder_perm(request.data.get('id_list', None), 'my_space', request.user.employee_current) is False:
+        if check_folder_perm(request.data.get('id_list', None), 'my_space', request.user.employee_current, 5) is False:
             return Response(
                 data={
                     "status": status.HTTP_403_FORBIDDEN,
@@ -360,7 +388,7 @@ class FolderMySpaceList(BaseListMixin, BaseDestroyMixin):
         return self.destroy_list(request, *args, **kwargs)
 
 
-class FolderListSharedToMe(BaseListMixin):
+class FolderListSharedToMe(BaseListMixin, BaseDestroyMixin):
     queryset = Folder.objects
     search_fields = ['title', 'code']
     filterset_fields = {
@@ -368,14 +396,18 @@ class FolderListSharedToMe(BaseListMixin):
         'employee_inherit_id': ['exact', 'isnull'],
     }
     serializer_list = FolderListSerializer
+    serializer_delete_all = FolderDeleteAllSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         # query default filter by employee and group of user requests
         # and permission has view
-        user = self.request.user
+        user = self.request.user.__class__.objects.select_related(
+            'employee_current__group'
+        ).get(pk=self.request.user.pk)
         employee_id = str(user.employee_current_id)
-        group_id = str(user.employee_current.group.id) if hasattr(user.employee_current, 'group') else None
+        group_id = None
+        # group_id = str(user.employee_current.group.pk) if hasattr(user.employee_current, 'group') else None
 
         # Base queryset
         queryset = super().get_queryset()
@@ -392,7 +424,8 @@ class FolderListSharedToMe(BaseListMixin):
 
         accessible_folder_ids = list(accessible_folder_ids)
 
-        return queryset.filter(Q(id__in=accessible_folder_ids))
+        return queryset.filter(Q(id__in=accessible_folder_ids)).select_related('parent_n', 'employee_inherit')
+        # )
 
     @swagger_auto_schema(
         operation_summary="Folder List shared to me",
@@ -403,6 +436,25 @@ class FolderListSharedToMe(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Delete folder list my shared",
+        operation_description="Delete folder list my shared",
+        request_body=FolderDeleteAllSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def delete(self, request, *args, **kwargs):
+        if check_folder_perm(request.data.get('id_list', None), 'my_shared', request.user.employee_current, 5) is False:
+            return Response(
+                data={
+                    "status": status.HTTP_403_FORBIDDEN,
+                    "detail": HttpMsg.FORBIDDEN,
+                }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+            )
+        kwargs['is_purge'] = True
+        return self.destroy_list(request, *args, **kwargs)
 
 
 class FolderDetail(
@@ -426,6 +478,14 @@ class FolderDetail(
         login_require=True, auth_require=False,
     )
     def get(self, request, *args, pk, **kwargs):
+        space = 'my_space' if request.query_params.get('space', None) == 'my' else 'my_shared'
+        if check_folder_perm([pk], space, request.user.employee_current, 1) is False:
+            return Response(
+                data={
+                    "status": status.HTTP_403_FORBIDDEN,
+                    "detail": HttpMsg.FORBIDDEN,
+                }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+            )
         return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(
@@ -437,38 +497,16 @@ class FolderDetail(
         login_require=True, auth_require=False,
     )
     def put(self, request, *args, pk, **kwargs):
+        space = 'my_space' if request.data.get('space', None) == 'my' else 'my_shared'
+        if check_folder_perm([pk], space, request.user.employee_current, 1) is False:
+            return Response(
+                data={
+                    "status": status.HTTP_403_FORBIDDEN,
+                    "detail": HttpMsg.FORBIDDEN,
+                }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+            )
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, pk, **kwargs)
-
-    @swagger_auto_schema(
-        operation_summary="Delete folder",
-        operation_description="Delete Folder By ID",
-    )
-    @mask_view(
-        login_require=True, auth_require=False
-    )
-    def delete(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.is_system:
-            raise ValueError(AttMsg.FOLDER_SYSTEM_ERROR)
-        folder_perm = instance.folder_permission_folder.all().first()
-        employee = request.user.employee_current
-        group = employee.group if hasattr(employee, 'group') else None
-        has_perm = False
-        if instance.employee_inherit_id == employee.id:
-            has_perm = True
-
-        if has_perm is False and folder_perm:
-            # nếu không phải user owner và có permission
-            has_permission = 5 in folder_perm.folder_perm_list
-            is_employee_allowed = str(employee.id) in folder_perm.employee_list
-            is_group_allowed = group and str(group.id) in folder_perm.group_list
-
-            if has_permission and (is_employee_allowed or is_group_allowed):
-                has_perm = True
-        if has_perm:
-            instance.delete()
-            return ResponseController.no_content_204()
-        return ResponseController.notfound_404(AttMsg.FOLDER_DELETE_ERROR)
 
 
 class FolderUploadFileList(BaseCreateMixin):
@@ -499,3 +537,66 @@ class FolderUploadFileList(BaseCreateMixin):
             'user_obj': self.request.user
         }
         return self.create(request, *args, **kwargs)
+
+
+class FolderCheckPermList(BaseListMixin, BaseDestroyMixin):
+    queryset = FolderPermission.objects
+    serializer_list = FolderCheckPermSerializer
+    serializer_delete_all = FolderCheckPermDelAllSerializer
+    search_fields = ['title', 'code']
+    filterset_fields = ('id', 'folder')
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('employee_created')
+
+    @swagger_auto_schema(
+        operation_summary="Folder Detail permission",
+        operation_description="Get Permission Detail By ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Delete folder permission list",
+        operation_description="Delete folder permission by id list",
+        request_body=FolderDeleteAllSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def delete(self, request, *args, **kwargs):
+        if check_perm_delete_access_list(
+                request.data.get('id_list', None), request.user.employee_current
+        ) is False:
+            return Response(
+                data={
+                    "status": status.HTTP_403_FORBIDDEN,
+                    "detail": HttpMsg.FORBIDDEN,
+                },
+                status=status.HTTP_403_FORBIDDEN,
+                content_type="application/json"
+            )
+        kwargs['is_purge'] = True
+        return self.destroy_list(request, *args, **kwargs)
+
+
+class FileCheckPermList(BaseRetrieveMixin):
+    queryset = FilePermission.objects
+    serializer_detail = FileCheckPermSerializer
+
+    def get_queryset(self):
+        file_id = self.request.query_params.get('file', None)
+        return super().get_queryset().filter(file_id=file_id)
+
+    @swagger_auto_schema(
+        operation_summary="File Detail permission",
+        operation_description="Get Permission Detail filter By ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)

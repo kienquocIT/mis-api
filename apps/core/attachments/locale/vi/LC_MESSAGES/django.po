@@ -40,3 +40,18 @@ msgstr "Xóa tệp lỗi"
 
 msgid "Can not delete system folder"
 msgstr "Không thể xóa thư mục hệ thống"
+
+msgid "You do not have permission to update this shared record"
+msgstr "Bạn không có quyền cập nhập bản ghi chia sẻ này"
+
+msgid "You do not have permission to delete"
+msgstr "Bạn không có quyền xóa quyền truy cập này"
+
+msgid "You need the 'Create subfolders' permission to perform this action."
+msgstr "Bạn cần quyền 'Tạo thư mục con' để tiếp tục."
+
+msgid "Parent is not exists"
+msgstr "Thư mục cha không tồn tại"
+
+msgid "A folder cannot reference itself as a parent"
+msgstr "Thư mục không thể làm thư mục cha của chính nó"
