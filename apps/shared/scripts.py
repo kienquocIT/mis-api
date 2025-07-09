@@ -1320,7 +1320,7 @@ class SubScripts:
     @classmethod
     def update_opp_current_stage(cls):
         for obj in Opportunity.objects.all():
-            if obj.check_config_auto_update_stage():
+            if obj.check_config_auto_update_stage(obj=obj):
                 obj.win_rate, opp_stage_obj = obj.update_stage(obj=obj)
                 obj.current_stage = opp_stage_obj.stage
                 obj.current_stage_data = {
