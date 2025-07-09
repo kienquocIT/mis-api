@@ -36,7 +36,7 @@ APP_MAP_DATA = {
     },
     'leaseorder.leaseorder': {'title': 'Lease Order', 'url': 'leaseorder/detail/'},
     'bidding.bidding': {'title': 'Bidding', 'url': 'bidding/detail/'},
-    'consulting.consulting': {'title': 'Consulting', 'url': 'consulting/detail/'},
+    'productmodification.productmodification': {'title': 'Product Modification', 'url': 'product-modification/detail/'},
 }
 
 WORKFLOW_TYPE_MAP_TXT = {
