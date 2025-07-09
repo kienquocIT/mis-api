@@ -250,21 +250,20 @@ class EquipmentReturnUpdateSerializer(AbstractCreateSerializerModel):
 
 class EquipmentReturnCommonFunction:
     @staticmethod
-    def create_equipment_return_item_sub(
-            equipment_return_item_obj, lot_return_list, serial_return_list
-    ):
+    def create_equipment_return_item_sub(equipment_return_item_obj, lot_return_list, serial_return_list):
         bulk_info_detail_sub = []
         # lot
         for child in lot_return_list:
-            bulk_info_detail_sub.append(
-                EquipmentReturnItemDetail(
-                    equipment_return_item=equipment_return_item_obj,
-                    return_product_pw_lot_id=child.get('return_product_pw_lot_id'),
-                    return_product_pw_lot_data=child.get('return_product_pw_lot_data', {}),
-                    return_product_pw_lot_quantity=child.get('picked_quantity', 0),
-                    loan_item_detail_mapped_id=child.get('loan_item_detail_mapped_id'),
+            if float(child.get('picked_quantity', 0)) > 0:
+                bulk_info_detail_sub.append(
+                    EquipmentReturnItemDetail(
+                        equipment_return_item=equipment_return_item_obj,
+                        return_product_pw_lot_id=child.get('return_product_pw_lot_id'),
+                        return_product_pw_lot_data=child.get('return_product_pw_lot_data', {}),
+                        return_product_pw_lot_quantity=child.get('picked_quantity', 0),
+                        loan_item_detail_mapped_id=child.get('loan_item_detail_mapped_id'),
+                    )
                 )
-            )
         # sn
         for child in serial_return_list:
             bulk_info_detail_sub.append(
@@ -282,20 +281,21 @@ class EquipmentReturnCommonFunction:
         bulk_info = []
         bulk_info_detail = []
         for order, item in enumerate(equipment_return_item_list):
-            equipment_return_item_obj = EquipmentReturnItem(
-                equipment_return=er_obj,
-                order=order,
-                loan_item_mapped_id=item.get('loan_item_mapped_id'),
-                return_product_id=item.get('return_product_id'),
-                return_product_data=item.get('return_product_data', {}),
-                return_quantity=item.get('return_quantity', 0),
-                return_to_warehouse_id=warehouse_return_list[order].get('return_to_warehouse_id'),
-                return_to_warehouse_data=warehouse_return_list[order].get('return_to_warehouse_data'),
-            )
-            bulk_info.append(equipment_return_item_obj)
-            bulk_info_detail += EquipmentReturnCommonFunction.create_equipment_return_item_sub(
-                equipment_return_item_obj, item.get('lot_return_list', []), item.get('serial_return_list', [])
-            )
+            if float(item.get('return_quantity', 0)) > 0:
+                equipment_return_item_obj = EquipmentReturnItem(
+                    equipment_return=er_obj,
+                    order=order,
+                    loan_item_mapped_id=item.get('loan_item_mapped_id'),
+                    return_product_id=item.get('return_product_id'),
+                    return_product_data=item.get('return_product_data', {}),
+                    return_quantity=item.get('return_quantity', 0),
+                    return_to_warehouse_id=warehouse_return_list[order].get('return_to_warehouse_id'),
+                    return_to_warehouse_data=warehouse_return_list[order].get('return_to_warehouse_data'),
+                )
+                bulk_info.append(equipment_return_item_obj)
+                bulk_info_detail += EquipmentReturnCommonFunction.create_equipment_return_item_sub(
+                    equipment_return_item_obj, item.get('lot_return_list', []), item.get('serial_return_list', [])
+                )
 
         EquipmentReturnItem.objects.filter(equipment_return=er_obj).delete()
         EquipmentReturnItem.objects.bulk_create(bulk_info)

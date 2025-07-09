@@ -292,6 +292,7 @@ GOODS_TRANSFER_TYPE = (
     (0, _('Goods transfer')),
     (1, _('Send/return consigned goods')),
     (2, _('Equipment loan')),
+    (3, _('Equipment return')),
 )
 
 # Inventory Adjustment Item action type

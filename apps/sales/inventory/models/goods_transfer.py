@@ -13,6 +13,7 @@ from apps.shared import (
     DataAbstractModel, GOODS_TRANSFER_TYPE, AutoDocumentAbstractModel, SimpleAbstractModel
 )
 
+
 __all__ = ['GoodsTransfer', 'GoodsTransferProduct']
 
 
@@ -26,6 +27,12 @@ class GoodsTransfer(DataAbstractModel, AutoDocumentAbstractModel):
         'equipmentloan.EquipmentLoan',
         on_delete=models.CASCADE,
         related_name='goods_transfer_el',
+        null=True,
+    )
+    equipment_return = models.ForeignKey(
+        'equipmentreturn.EquipmentReturn',
+        on_delete=models.CASCADE,
+        related_name='goods_transfer_er',
         null=True,
     )
     note = models.CharField(
@@ -50,10 +57,10 @@ class GoodsTransfer(DataAbstractModel, AutoDocumentAbstractModel):
 
     @classmethod
     def update_product_warehouse(cls, item, tenant_id, company_id):
-        src_prd_wh = item.product.product_warehouse_product.filter_on_company(
+        src_prd_wh = item.product.product_warehouse_product.filter(
             warehouse=item.warehouse
         ).first() if item.product.product_warehouse_product else None
-        des_prd_wh = item.product.product_warehouse_product.filter_on_company(
+        des_prd_wh = item.product.product_warehouse_product.filter(
             warehouse=item.end_warehouse
         ).first() if item.product.product_warehouse_product else None
 
