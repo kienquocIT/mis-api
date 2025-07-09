@@ -1,13 +1,14 @@
 from django.urls import path
 from apps.sales.equipmentloan.views import (
-    LoanProductList, WarehouseListByProduct, ProductLotList, ProductSerialList, EquipmentLoanList, EquipmentLoanDetail
+    ELProductList, ELWarehouseListByProduct, ELProductLotList, ELProductSerialList,
+    EquipmentLoanList, EquipmentLoanDetail
 )
 
 urlpatterns = [
     path('list', EquipmentLoanList.as_view(), name='EquipmentLoanList'),
     path('detail/<str:pk>', EquipmentLoanDetail.as_view(), name='EquipmentLoanDetail'),
-    path('loan-product-list', LoanProductList.as_view(), name='LoanProductList'),
-    path('warehouse-list-by-product', WarehouseListByProduct.as_view(), name='WarehouseListByProduct'),
-    path('product-lot-list', ProductLotList.as_view(), name='ProductLotList'),
-    path('product-serial-list', ProductSerialList.as_view(), name='ProductSerialList'),
+    path('el-product-list', ELProductList.as_view(), name='ELProductList'),
+    path('el-warehouse-list-by-product', ELWarehouseListByProduct.as_view(), name='ELWarehouseListByProduct'),
+    path('el-product-lot-list', ELProductLotList.as_view(), name='ELProductLotList'),
+    path('el-product-serial-list', ELProductSerialList.as_view(), name='ELProductSerialList'),
 ]

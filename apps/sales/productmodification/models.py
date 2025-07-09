@@ -10,6 +10,8 @@ from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 class ProductModification(DataAbstractModel):
     product_modified = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, related_name='product_modified')
+    new_description = models.TextField(null=True, blank=True)
+
     prd_wh = models.ForeignKey('saledata.ProductWareHouse', on_delete=models.CASCADE, null=True)
     prd_wh_data = models.JSONField(default=dict)
 
@@ -196,7 +198,7 @@ class ProductModification(DataAbstractModel):
         GoodsIssueProduct.objects.bulk_create(bulk_info)
 
         # duyệt tự động
-        gis_obj.add_auto_generate_code_to_instance(gis_obj, 'GI[n4]', True)
+        CompanyFunctionNumber.auto_gen_code_based_on_config('goodsissue', True, gis_obj)
         gis_obj.system_status = 3
         gis_obj.save(update_fields=['code', 'system_status'])
         # action sau khi duyệt
@@ -214,7 +216,9 @@ class ProductModification(DataAbstractModel):
             mapped_type = item.product_mapped_data.pop('type')
             if mapped_type == 'new':
                 if not item.product_mapped_data.get('code'):
-                    item.product_mapped_data['code'] = CompanyFunctionNumber.gen_auto_code(app_code='product')
+                    item.product_mapped_data['code'] = CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code='product'
+                    )
                 product_type = item.product_mapped_data.pop('product_type')
                 general_product_category = item.product_mapped_data.get('general_product_category')
                 general_uom_group = item.product_mapped_data.get('general_uom_group')
@@ -279,12 +283,12 @@ class ProductModification(DataAbstractModel):
             product_warehouse_lot=pm_obj.prd_wh_lot,
             product_warehouse_serial=pm_obj.prd_wh_serial,
             modified_number=pm_obj.code,
+            new_description=pm_obj.new_description,
             employee_created=pm_obj.employee_created,
             date_created=pm_obj.date_created,
             tenant=pm_obj.tenant,
             company=pm_obj.company,
         )
-        PWModifiedComponent.objects.filter(pw_modified=pw_modified_obj).delete()
         bulk_info = []
         bulk_info_detail = []
         for order, item in enumerate(pm_obj.current_components.all()):
@@ -310,21 +314,16 @@ class ProductModification(DataAbstractModel):
                         component_prd_wh_serial_data=detail_item.component_prd_wh_serial_data,
                     )
                 )
+        PWModifiedComponent.objects.filter(pw_modified=pw_modified_obj).delete()
         PWModifiedComponent.objects.bulk_create(bulk_info)
         PWModifiedComponentDetail.objects.bulk_create(bulk_info_detail)
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'PRD-MOD-[n4]', True)
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-
-                if self.system_status == 3:
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('productmodification', True, self, kwargs)
                     self.create_remove_component_product_mapped(self)
                     issue_data = self.auto_create_goods_issue(self)
                     GRFromPMHandler.create_new(pm_obj=self, issue_data=issue_data) # Create goods receipt

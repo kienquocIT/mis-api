@@ -198,16 +198,8 @@ class OrderDelivery(DataAbstractModel):
             return cls.generate_code(company_id=company_id)
         return code
 
-    @classmethod
-    def push_code(cls, instance):
-        if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='orderdeliverysub')
-            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
-        return True
-
     def save(self, *args, **kwargs):
         self.put_backup_data()
-        # self.push_code(instance=self)  # code
         super().save(*args, **kwargs)
 
     class Meta:
@@ -372,18 +364,11 @@ class OrderDeliverySub(DataAbstractModel):
     def save(self, *args, **kwargs):
         if not kwargs.pop('skip_check_period', False):
             SubPeriods.check_period(self.tenant_id, self.company_id)
-
-        if self.system_status in [2, 3]:  # added, finish
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'DE[n4]', True)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-
-                if self.system_status == 3:
+        if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
+            # check if date_approved then call related functions
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('orderdeliverysub', True, self, kwargs)
                     self.push_state(instance=self, kwargs=kwargs)  # state
                     DeliFinishHandler.create_new(instance=self)  # new sub + product
                     DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
@@ -395,7 +380,6 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliFinishHandler.push_so_lo_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
                     DeliHandler.push_diagram(instance=self)  # diagram
-
                     IRForDeliveryHandler.push_to_inventory_report(self)
                     JEForDeliveryHandler.push_to_journal_entry(self)
 

@@ -48,7 +48,7 @@ class SOHandler:
                 'date_created': str(instance.date_created),
                 # custom
                 'quantity': quantity,
-                'total': instance.total_product_pretax_amount,
+                'total': instance.total_product_pretax_amount - instance.total_product_discount,
                 'reference': reference,
                 'customer_data': {
                     'id': str(instance.customer_id),

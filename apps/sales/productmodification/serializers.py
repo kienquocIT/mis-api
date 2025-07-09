@@ -73,6 +73,7 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'product_modified',
+            'new_description',
             'warehouse_id',
             'prd_wh_lot',
             'prd_wh_serial',
@@ -307,6 +308,7 @@ class ProductModificationDetailSerializer(AbstractDetailSerializerModel):
             'code',
             'title',
             'date_created',
+            'new_description',
             'prd_wh_data',
             'prd_wh_lot_data',
             'prd_wh_serial_data',
@@ -377,6 +379,7 @@ class ProductModificationUpdateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'product_modified',
+            'new_description',
             'warehouse_id',
             'prd_wh_lot',
             'prd_wh_serial',
@@ -554,6 +557,7 @@ class ProductModifiedBeforeListSerializer(serializers.ModelSerializer):
             'product_warehouse_lot_id',
             'product_warehouse_serial_id',
             'modified_number',
+            'new_description',
             'serial_number',
             'lot_number',
             'warehouse_data'

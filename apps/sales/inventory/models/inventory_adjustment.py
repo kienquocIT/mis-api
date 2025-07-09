@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, IA_ITEM_ACTION_TYPE
 
 
@@ -34,8 +36,7 @@ class InventoryAdjustment(DataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        if not self.code:
-            self.add_auto_generate_code_to_instance(self, 'IA[n4]', False)
+        CompanyFunctionNumber.auto_gen_code_based_on_config('inventoryadjustment', False, self, kwargs)
         super().save(*args, **kwargs)
 
 

@@ -12,9 +12,8 @@ from apps.sales.quotation.models import Quotation
 from apps.sales.saleorder.models import SaleOrder
 from apps.shared import (
     AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg, AbstractCreateSerializerModel,
-    AbstractListSerializerModel, HRMsg
+    AbstractListSerializerModel, SerializerCommonValidate, SerializerCommonHandle
 )
-from apps.shared.translations.base import AttachmentMsg
 
 
 class PaymentListSerializer(AbstractListSerializerModel):
@@ -166,6 +165,10 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
             'process_stage_app'
         )
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(user=user, model_cls=PaymentAttachmentFile, value=value)
+
     def validate(self, validate_data):
         if all(key in validate_data for key in ['is_internal_payment', 'supplier_id', 'employee_payment_id']):
             if validate_data.get('is_internal_payment') is True:
@@ -186,12 +189,6 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
         PaymentCommonFunction.validate_method(validate_data)
         PaymentCommonFunction.validate_payment_item_list(validate_data)
         PaymentCommonFunction.validate_common(validate_data)
-        PaymentCommonFunction.validate_attachment(
-            context_user=self.context.get('user', None),
-            doc_id=None,
-            validate_data=validate_data
-        )
-
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
         opportunity_id = validate_data.get('opportunity_id', None)
@@ -200,18 +197,17 @@ class PaymentCreateSerializer(AbstractCreateSerializerModel):
             process_cls.validate_process(
                 process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id,
             )
-
         return validate_data
 
     @decorator_run_workflow
     def create(self, validated_data):
         payment_item_list = validated_data.pop('payment_item_list', [])
-        attachment = validated_data.pop('attachment', [])
+        attachment_list = validated_data.pop('attachment', [])
 
         payment_obj = Payment.objects.create(**validated_data)
 
         PaymentCommonFunction.create_payment_items(payment_obj, payment_item_list)
-        PaymentCommonFunction.handle_attach_file(payment_obj, attachment)
+        PaymentCommonFunction.create_files_mapped(payment_obj, attachment_list)
 
         if payment_obj.process:
             ProcessRuntimeControl(process_obj=payment_obj.process).register_doc(
@@ -445,8 +441,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_attachment(cls, obj):
-        att_objs = PaymentAttachmentFile.objects.select_related('attachment').filter(payment=obj)
-        return [item.attachment.get_detail() for item in att_objs]
+        return [item.attachment.get_detail() for item in obj.payment_attachments.all()]
 
 
 class PaymentUpdateSerializer(AbstractCreateSerializerModel):
@@ -489,54 +484,24 @@ class PaymentUpdateSerializer(AbstractCreateSerializerModel):
             'process_stage_app'
         )
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(user=user, model_cls=PaymentAttachmentFile, value=value)
+
     def validate(self, validate_data):
-        if all(key in validate_data for key in ['is_internal_payment', 'supplier_id', 'employee_payment_id']):
-            if validate_data.get('is_internal_payment') is True:
-                validate_data.pop('supplier_id', None)
-                if not validate_data.get('employee_payment_id'):
-                    raise serializers.ValidationError({'employee_payment_id': "Employee payment is missing."})
-            else:
-                validate_data.pop('employee_payment_id', None)
-                if not validate_data.get('supplier_id'):
-                    raise serializers.ValidationError({'supplier_id': "Supplier payment is missing."})
-        PaymentCommonFunction.validate_opportunity_id(validate_data)
-        PaymentCommonFunction.validate_quotation_mapped_id(validate_data)
-        PaymentCommonFunction.validate_sale_order_mapped_id(validate_data)
-        PaymentCommonFunction.validate_sale_code_type(validate_data)
-        PaymentCommonFunction.validate_employee_inherit_id(validate_data)
-        PaymentCommonFunction.validate_supplier_id(validate_data)
-        PaymentCommonFunction.validate_employee_payment_id(validate_data)
-        PaymentCommonFunction.validate_method(validate_data)
-        PaymentCommonFunction.validate_payment_item_list(validate_data)
-        PaymentCommonFunction.validate_common(validate_data)
-        PaymentCommonFunction.validate_attachment(
-            context_user=self.context.get('user', None),
-            doc_id=self.instance.id,
-            validate_data=validate_data
-        )
-
-        process_obj = validate_data.get('process', None)
-        process_stage_app_obj = validate_data.get('process_stage_app', None)
-        opportunity_id = validate_data.get('opportunity_id', None)
-        if process_obj:
-            process_cls = ProcessRuntimeControl(process_obj=process_obj)
-            process_cls.validate_process(
-                process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id,
-            )
-
-        return validate_data
+        return PaymentCreateSerializer().validate(validate_data)
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
         payment_item_list = validated_data.pop('payment_item_list', [])
-        attachment = validated_data.pop('attachment', [])
+        attachment_list = validated_data.pop('attachment', [])
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
 
         PaymentCommonFunction.create_payment_items(instance, payment_item_list)
-        PaymentCommonFunction.handle_attach_file(instance, attachment)
+        PaymentCommonFunction.create_files_mapped(instance, attachment_list)
 
         if instance.process:
             ProcessRuntimeControl(process_obj=instance.process).register_doc(
@@ -802,25 +767,6 @@ class PaymentCommonFunction:
         return validate_data
 
     @classmethod
-    def validate_attachment(cls, context_user, doc_id, validate_data):
-        if 'attachment' in validate_data:
-            if validate_data.get('attachment'):
-                if context_user and hasattr(context_user, 'employee_current_id'):
-                    state, result = PaymentAttachmentFile.valid_change(
-                        current_ids=validate_data.get('attachment', []),
-                        employee_id=context_user.employee_current_id,
-                        doc_id=doc_id
-                    )
-                    if state is True:
-                        validate_data['attachment'] = result
-                    else:
-                        raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-                else:
-                    raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
-            print('11. validate_attachment --- ok')
-        return validate_data
-
-    @classmethod
     def read_money_vnd(cls, num):
         text1 = ' mươi'
         text2 = ' trăm'
@@ -909,17 +855,14 @@ class PaymentCommonFunction:
                 ])
         return True
 
-    @classmethod
-    def handle_attach_file(cls, instance, attachment_result):
-        if attachment_result and isinstance(attachment_result, dict):
-            relate_app = Application.objects.filter(id="1010563f-7c94-42f9-ba99-63d5d26a1aca").first()
-            if relate_app:
-                state = PaymentAttachmentFile.resolve_change(
-                    result=attachment_result, doc_id=instance.id, doc_app=relate_app,
-                )
-                if state:
-                    return True
-            raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
+    @staticmethod
+    def create_files_mapped(payment_obj, attachment_list):
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id=Payment.get_app_id()).first(),
+            model_cls=PaymentAttachmentFile,
+            instance=payment_obj,
+            attachment_result=attachment_list,
+        )
         return True
 
 

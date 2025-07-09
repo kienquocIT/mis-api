@@ -2,6 +2,7 @@ from django.db import models
 from django.db import transaction
 
 from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import ProductWareHouseLot, SubPeriods, ProductWareHouseSerial, ProductWareHouse
 from apps.sales.report.utils.log_for_goods_issue import IRForGoodsIssueHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_ISSUE_TYPE, AutoDocumentAbstractModel
@@ -144,20 +145,12 @@ class GoodsIssue(DataAbstractModel, AutoDocumentAbstractModel):
         if not kwargs.pop('skip_check_period', False):
             SubPeriods.check_period(self.tenant_id, self.company_id)
 
-        if self.system_status in [2, 3]:
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'GI[n4]', True)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-
-                if self.system_status == 3:
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('goodsissue', True, self, kwargs)
                     self.update_related_app_after_issue(self)
                     IRForGoodsIssueHandler.push_to_inventory_report(self)
-
         super().save(*args, **kwargs)
 
 

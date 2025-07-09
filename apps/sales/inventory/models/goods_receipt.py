@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.inventory.models.goods_detail import GoodsDetail
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
@@ -142,19 +143,6 @@ class GoodsReceipt(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-    @classmethod
-    def find_max_number(cls, codes):
-        num_max = None
-        for code in codes:
-            try:
-                if code != '':
-                    tmp = int(code.split('-', maxsplit=1)[0].split("GR")[1])
-                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
-                        num_max = tmp
-            except Exception as err:
-                print(err)
-        return num_max
 
     @staticmethod
     def count_created_serial_data(good_receipt_obj, gr_prd_obj, gr_wh_obj, pr_data):
@@ -299,17 +287,11 @@ class GoodsReceipt(DataAbstractModel):
         if not kwargs.pop('skip_check_period', False):
             SubPeriods.check_period(self.tenant_id, self.company_id)
 
-        if self.system_status in [2, 3]:
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'GR[n4]', True)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-
-                if self.system_status == 3:
+        if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
+            # check if date_approved then call related functions
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('goodsreceipt', True, self, kwargs)
                     GRFinishHandler.push_to_warehouse_stock(instance=self)
                     GRFinishHandler.push_product_info(instance=self)
                     GRFinishHandler.push_relate_gr_info(instance=self)

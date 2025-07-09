@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models.periods import Periods
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 
@@ -70,8 +71,7 @@ class Lead(DataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        if not self.code:
-            self.add_auto_generate_code_to_instance(self, 'LEAD[n4]', False)
+        CompanyFunctionNumber.auto_gen_code_based_on_config('lead', False, self, kwargs)
         # hit DB
         super().save(*args, **kwargs)
 

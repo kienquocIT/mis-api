@@ -1,5 +1,6 @@
 from django.db import models
 from rest_framework import serializers
+from apps.core.company.models import CompanyFunctionNumber
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.masterdata.saledata.models import SubPeriods
 from apps.sales.inventory.models.goods_return_sub import (
@@ -29,17 +30,10 @@ class GoodsReturn(DataAbstractModel):
         if not kwargs.get('skip_check_period', False):
             SubPeriods.check_period(self.tenant_id, self.company_id)
 
-        if self.system_status in [2, 3]:
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'GRT[n4]', True)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-
-                if self.system_status == 3:
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('goodsreturn', True, self, kwargs)
                     if hasattr(self.company, 'sales_delivery_config_detail'):
                         config = self.company.sales_delivery_config_detail
                         if not config:
@@ -56,7 +50,6 @@ class GoodsReturn(DataAbstractModel):
                     ReturnFinishHandler.update_final_acceptance(instance=self)
                     # report
                     ReturnFinishHandler.update_report(instance=self)
-
                     IRForGoodsReturnHandler.push_to_inventory_report(self)
 
         # diagram

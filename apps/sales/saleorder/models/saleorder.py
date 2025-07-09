@@ -237,42 +237,6 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
         permissions = ()
 
     @classmethod
-    def find_max_number(cls, codes):
-        num_max = None
-        for code in codes:
-            try:
-                if code != '':
-                    tmp = int(code.split('-', maxsplit=1)[0].split("OR")[1])
-                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
-                        num_max = tmp
-            except Exception as err:
-                print(err)
-        return num_max
-
-    @classmethod
-    def generate_code(cls, company_id):
-        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
-        num_max = cls.find_max_number(codes=existing_codes)
-        if num_max is None:
-            code = 'OR0001'
-        elif num_max < 10000:
-            num_str = str(num_max + 1).zfill(4)
-            code = f'OR{num_str}'
-        else:
-            raise ValueError('Out of range: number exceeds 10000')
-        if cls.objects.filter(code=code, company_id=company_id).exists():
-            return cls.generate_code(company_id=company_id)
-        return code
-
-    @classmethod
-    def push_code(cls, instance, kwargs):
-        if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='saleorder')
-            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
-            kwargs['update_fields'].append('code')
-        return True
-
-    @classmethod
     def check_change_document(cls, instance):
         # check if there is CR not done
         if cls.objects.filter_on_company(document_root_id=instance.document_root_id, system_status__in=[1, 2]).exists():
@@ -309,7 +273,7 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.push_code(instance=self, kwargs=kwargs)  # code
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('saleorder', True, self, kwargs)
                     if self.opportunity:  # registration
                         GoodsRegistration.check_and_create_goods_registration(self)
                     SOFinishHandler.push_product_info(instance=self)  # product info

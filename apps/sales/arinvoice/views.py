@@ -108,6 +108,7 @@ class ARInvoiceList(BaseListMixin, BaseCreateMixin):
         label_code='arinvoice', model_code='arinvoice', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
@@ -145,6 +146,7 @@ class ARInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='arinvoice', model_code='arinvoice', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
 
 

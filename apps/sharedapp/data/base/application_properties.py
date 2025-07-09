@@ -6,7 +6,7 @@ from .application_properties_params import (
     Payment_data__params,
     IA_data__params,
     Goods_Transfer_data__params,
-    Goods_Return_data__params, Delivery_data__params, Bidding_data__params
+    Goods_Return_data__params, Delivery_data__params, Bidding_data__params, LeaseOrder_data__params
 )
 
 __all__ = ["ApplicationProperty_data"]
@@ -2433,6 +2433,7 @@ AppProp_SaleData_LeaseOrder_data = {
         'date_created': '2025-01-01 00:00:00',
     },
     # PRINT
+    **LeaseOrder_data__params,
 }
 
 AppProp_SaleData_PurchaseOrder_data = {

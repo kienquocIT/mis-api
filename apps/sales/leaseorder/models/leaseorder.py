@@ -265,42 +265,6 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
         permissions = ()
 
     @classmethod
-    def find_max_number(cls, codes):
-        num_max = None
-        for code in codes:
-            try:
-                if code != '':
-                    tmp = int(code.split('-', maxsplit=1)[0].split("LO")[1])
-                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
-                        num_max = tmp
-            except Exception as err:
-                print(err)
-        return num_max
-
-    @classmethod
-    def generate_code(cls, company_id):
-        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
-        num_max = cls.find_max_number(codes=existing_codes)
-        if num_max is None:
-            code = 'LO0001'
-        elif num_max < 10000:
-            num_str = str(num_max + 1).zfill(4)
-            code = f'LO{num_str}'
-        else:
-            raise ValueError('Out of range: number exceeds 10000')
-        if cls.objects.filter(code=code, company_id=company_id).exists():
-            return cls.generate_code(company_id=company_id)
-        return code
-
-    @classmethod
-    def push_code(cls, instance, kwargs):
-        if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='leaseorder')
-            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
-            kwargs['update_fields'].append('code')
-        return True
-
-    @classmethod
     def check_change_document(cls, instance):
         # check if there is CR not done
         if cls.objects.filter_on_company(document_root_id=instance.document_root_id, system_status__in=[1, 2]).exists():
@@ -323,7 +287,7 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.push_code(instance=self, kwargs=kwargs)  # code
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('leaseorder', True, self, kwargs)
                     LOFinishHandler.push_product_info(instance=self)  # product info
                     LOFinishHandler.update_asset_status(instance=self)  # asset status => leased
                     LOFinishHandler.push_to_report_revenue(instance=self)  # reports
@@ -369,6 +333,7 @@ class LeaseOrderProduct(MasterDataAbstractModel):
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
     tool_data = models.JSONField(default=list, help_text='data json of tool')
     asset_data = models.JSONField(default=list, help_text='data json of asset')
+    offset_show = models.TextField(verbose_name="offset show", blank=True)
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,

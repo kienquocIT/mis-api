@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.inventory.utils.logical_finish_recovery import RecoveryFinishHandler
 from apps.shared import DataAbstractModel, STATUS_RECOVERY, MasterDataAbstractModel, ASSET_TYPE
 
@@ -39,17 +40,11 @@ class GoodsRecovery(DataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'GRC[n4]', True)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-
-                if self.system_status == 3:
+        if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
+            # check if date_approved then call related functions
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('goodsrecovery', True, self, kwargs)
                     RecoveryFinishHandler.run_logics(instance=self)
 
         # hit DB
