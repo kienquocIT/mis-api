@@ -60,7 +60,7 @@ def create_attached_incoming_document(incoming_doc, attached_list):
 
 
 def create_internal_recipient(incoming_doc, internal_list):
-    KMSInternalRecipientIncomingDocument.objects.filter_on_company(incoming_document_id=str(incoming_doc.id)).delete()
+    KMSInternalRecipientIncomingDocument.objects.filter(incoming_document_id=str(incoming_doc.id)).delete()
     new_list = []
     for item in internal_list:
         item_content = KMSInternalRecipientIncomingDocument(
