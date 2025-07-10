@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from apps.hrm.attandance.models import ShiftInfo
-from apps.shared import WORKING_DAYS
 from apps.shared.translations.hrm import HRMMsg
 
 
