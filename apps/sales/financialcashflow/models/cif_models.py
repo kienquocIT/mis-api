@@ -1,6 +1,7 @@
 from django.db import models
 from apps.accounting.journalentry.utils.log_for_cash_inflow import JEForCIFHandler
 from apps.core.company.models import CompanyFunctionNumber
+from apps.sales.financialcashflow.utils.logical_finish_cif import CashInFlowFinishHandler
 from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
@@ -98,6 +99,7 @@ class CashInflow(DataAbstractModel):
                     ReconForCIFHandler.auto_create_recon_doc(self)
                     self.update_ar_invoice_cash_inflow_done()
                     self.update_so_stage_cash_inflow_done()
+                    CashInFlowFinishHandler.push_to_payment_plan(instance=self)  # payment plan
         super().save(*args, **kwargs)
 
 
