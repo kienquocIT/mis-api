@@ -124,6 +124,12 @@ class ELWarehouseListByProduct(BaseListMixin):
     serializer_list = ELWarehouseListByProductSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            warehouse__is_virtual=False,
+            stock_amount__gt=0
+        )
+
     @swagger_auto_schema(
         operation_summary="Warehouse List By Product",
         operation_description="Warehouse List By Product",
@@ -146,6 +152,12 @@ class ELProductLotList(BaseListMixin):
     }
     serializer_list = ELProductLotListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        if ('product_warehouse__product_id' not in self.request.query_params
+                and 'product_warehouse__warehouse_id' not in self.request.query_params):
+            return super().get_queryset().none()
+        return super().get_queryset().filter(quantity_import__gt=0)
 
     @swagger_auto_schema(
         operation_summary="Product Lot List",
@@ -172,6 +184,9 @@ class ELProductSerialList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
+        if ('product_warehouse__product_id' not in self.request.query_params
+                and 'product_warehouse__warehouse_id' not in self.request.query_params):
+            return super().get_queryset().none()
         return super().get_queryset().filter(serial_status=0)
 
     @swagger_auto_schema(

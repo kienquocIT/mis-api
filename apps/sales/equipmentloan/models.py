@@ -255,6 +255,7 @@ class EquipmentLoanItemDetail(SimpleAbstractModel):
         'saledata.ProductWareHouse', on_delete=models.CASCADE, null=True
     )
     loan_product_pw_quantity = models.FloatField(default=0)
+    returned_quantity = models.FloatField(default=0)
 
     loan_product_pw_lot = models.ForeignKey(
         'saledata.ProductWareHouseLot', on_delete=models.CASCADE, null=True

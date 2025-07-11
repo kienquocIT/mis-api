@@ -325,8 +325,16 @@ class EREquipmentLoanListByAccountSerializer(serializers.ModelSerializer):
                 'loan_product_data': item.loan_product_data,
                 'loan_quantity': item.loan_quantity,
                 'sum_returned_quantity': item.sum_returned_quantity,
+                'loan_product_none_detail': [{
+                    'id': child.id,
+                    'product_warehouse_id': child.loan_product_pw_id,
+                    'warehouse_data': child.loan_product_pw.warehouse_data,
+                    'picked_quantity': child.loan_product_pw_quantity,
+                    'returned_quantity': child.returned_quantity,
+                } for child in item.equipment_loan_item_detail.filter(loan_product_pw__isnull=False)],
                 'loan_product_lot_detail': [{
                     'id': child.id,
+                    'warehouse_data': child.loan_product_pw_lot.product_warehouse.warehouse_data,
                     'lot_id': child.loan_product_pw_lot_id,
                     'lot_data': child.loan_product_pw_lot_data,
                     'picked_quantity': child.loan_product_pw_lot_quantity,
@@ -334,6 +342,7 @@ class EREquipmentLoanListByAccountSerializer(serializers.ModelSerializer):
                 } for child in item.equipment_loan_item_detail.filter(loan_product_pw_lot__isnull=False)],
                 'loan_product_sn_detail': [{
                     'id': child.id,
+                    'warehouse_data': child.loan_product_pw_serial.product_warehouse.warehouse_data,
                     'serial_id': child.loan_product_pw_serial_id,
                     'serial_data': child.loan_product_pw_serial_data,
                     'is_returned_serial': child.is_returned_serial,

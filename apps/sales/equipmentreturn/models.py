@@ -227,12 +227,27 @@ class EquipmentReturn(DataAbstractModel):
 
         return gtf_obj
 
+    @classmethod
+    def update_state_of_equipment_loan(cls, er_obj):
+        for item in er_obj.equipment_return_items.all():
+            item.loan_item_mapped.sum_returned_quantity += item.return_quantity
+            item.loan_item_mapped.save(update_fields=['sum_returned_quantity'])
+            for child in item.equipment_return_item_detail.all():
+                if child.return_product_pw_lot:
+                    child.loan_item_detail_mapped.lot_returned_quantity += child.return_product_pw_lot_quantity
+                    child.loan_item_detail_mapped.save(update_fields=['lot_returned_quantity'])
+                if child.return_product_pw_serial:
+                    child.loan_item_detail_mapped.is_returned_serial = True
+                    child.loan_item_detail_mapped.save(update_fields=['is_returned_serial'])
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('equipmentreturn', True, self, kwargs)
                     self.auto_create_goods_transfer_doc(self)
+                    self.update_state_of_equipment_loan(self)
         # hit DB
         super().save(*args, **kwargs)
 
