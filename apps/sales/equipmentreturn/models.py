@@ -2,7 +2,6 @@ from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import WareHouse
-from apps.sales.equipmentloan.models import EquipmentLoan
 from apps.sales.inventory.models import GoodsTransfer, GoodsTransferProduct
 from apps.sales.report.utils import IRForGoodsTransferHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel
@@ -218,22 +217,24 @@ class EquipmentReturn(DataAbstractModel):
     @classmethod
     def update_state_of_equipment_loan(cls, er_obj):
         for item in er_obj.equipment_return_items.all():
-            if item.return_product_pw and item.loan_item_detail_mapped:  # none
-                if item.loan_item_detail_mapped.equipment_loan_item:
-                    item.loan_item_detail_mapped.equipment_loan_item.sum_returned_quantity += item.return_product_pw_quantity
-                    item.loan_item_detail_mapped.equipment_loan_item.save(update_fields=['sum_returned_quantity'])
-            elif item.return_product_pw_lot and item.loan_item_detail_mapped:  # lot
-                if item.loan_item_detail_mapped.equipment_loan_item:
-                    item.loan_item_detail_mapped.equipment_loan_item.sum_returned_quantity += item.return_product_pw_lot_quantity
-                    item.loan_item_detail_mapped.equipment_loan_item.save(update_fields=['sum_returned_quantity'])
-                    item.loan_item_detail_mapped.lot_returned_quantity += item.return_product_pw_lot_quantity
-                    item.loan_item_detail_mapped.save(update_fields=['lot_returned_quantity'])
-            elif item.return_product_pw_serial and item.loan_item_detail_mapped:  # sn
-                if item.loan_item_detail_mapped.equipment_loan_item:
-                    item.loan_item_detail_mapped.equipment_loan_item.sum_returned_quantity += 1
-                    item.loan_item_detail_mapped.equipment_loan_item.save(update_fields=['sum_returned_quantity'])
-                    item.loan_item_detail_mapped.is_returned_serial = True
-                    item.loan_item_detail_mapped.save(update_fields=['is_returned_serial'])
+            lid_mapped = item.loan_item_detail_mapped
+            if lid_mapped:
+                if item.return_product_pw:  # none
+                    if lid_mapped.equipment_loan_item:
+                        lid_mapped.equipment_loan_item.sum_returned_quantity += item.return_product_pw_quantity
+                        lid_mapped.equipment_loan_item.save(update_fields=['sum_returned_quantity'])
+                elif item.return_product_pw_lot:  # lot
+                    if lid_mapped.equipment_loan_item:
+                        lid_mapped.equipment_loan_item.sum_returned_quantity += item.return_product_pw_lot_quantity
+                        lid_mapped.equipment_loan_item.save(update_fields=['sum_returned_quantity'])
+                        lid_mapped.lot_returned_quantity += item.return_product_pw_lot_quantity
+                        lid_mapped.save(update_fields=['lot_returned_quantity'])
+                elif item.return_product_pw_serial:  # sn
+                    if lid_mapped.equipment_loan_item:
+                        lid_mapped.equipment_loan_item.sum_returned_quantity += 1
+                        lid_mapped.equipment_loan_item.save(update_fields=['sum_returned_quantity'])
+                        lid_mapped.is_returned_serial = True
+                        lid_mapped.save(update_fields=['is_returned_serial'])
         return True
 
     def save(self, *args, **kwargs):

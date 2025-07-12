@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import Account, WareHouse, ProductWareHouse
-from apps.sales.equipmentloan.models import EquipmentLoan, EquipmentLoanItem, EquipmentLoanItemDetail
+from apps.masterdata.saledata.models import Account, WareHouse
+from apps.sales.equipmentloan.models import EquipmentLoan, EquipmentLoanItemDetail
 from apps.sales.equipmentreturn.models import (
     EquipmentReturn, EquipmentReturnItem,
 )
