@@ -2,6 +2,7 @@ from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import WareHouse
+from apps.sales.equipmentloan.models import EquipmentLoan
 from apps.sales.inventory.models import GoodsTransfer, GoodsTransferProduct
 from apps.sales.report.utils import IRForGoodsTransferHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel
@@ -11,20 +12,25 @@ class EquipmentReturn(DataAbstractModel):
     account_mapped = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
     account_mapped_data = models.JSONField(default=dict)
     document_date = models.DateTimeField(null=True)
+    none_loan_items_detail = models.JSONField(default=list)
+    lot_loan_items_detail = models.JSONField(default=list)
+    serial_loan_items_detail = models.JSONField(default=list)
 
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
         return 'f5954e02-6ad1-4ebf-a4f2-0b598820f5f0'
 
     @staticmethod
-    def update_none_item_list(data_bulk_info, item, gtf_obj, product_warehouse, end_warehouse):
+    def update_none_item_list(data_bulk_info, gtf_obj, item):
         """
         Hàm kiểm tra none này đã thêm vào danh sách trước đó hay chưa.
         Nếu có thì update item cũ, chưa thì thêm mới
         """
+        product_warehouse = item.return_product_pw
         source_warehouse = product_warehouse.warehouse
+        end_warehouse = item.return_to_warehouse
         product = product_warehouse.product
-        quantity = item.return_quantity
+        quantity = item.return_product_pw_quantity
         uom = product.general_uom_group.uom_reference if product.general_uom_group else None
         unit_cost = product.get_cost_info_by_warehouse(
             warehouse_id=source_warehouse.id if source_warehouse else None,
@@ -63,17 +69,19 @@ class EquipmentReturn(DataAbstractModel):
         return data_bulk_info
 
     @staticmethod
-    def update_lot_item_list(data_bulk_info, child, gtf_obj, product_warehouse, end_warehouse):
+    def update_lot_item_list(data_bulk_info, gtf_obj, item):
         """
         Hàm kiểm tra lot này đã thêm vào danh sách trước đó hay chưa.
         Nếu có thì update item cũ, chưa thì thêm mới
         """
-        warehouse = product_warehouse.warehouse
+        product_warehouse = item.return_product_pw_lot.product_warehouse
+        source_warehouse = product_warehouse.warehouse
+        end_warehouse = item.return_to_warehouse
         product = product_warehouse.product
-        quantity = child.return_product_pw_lot_quantity
+        quantity = item.return_product_pw_lot_quantity
         uom = product.general_uom_group.uom_reference if product.general_uom_group else None
         unit_cost = product.get_cost_info_by_warehouse(
-            warehouse_id=warehouse.id if warehouse else None,
+            warehouse_id=source_warehouse.id if source_warehouse else None,
             get_type=1,
         )
         for sub in data_bulk_info:
@@ -82,16 +90,16 @@ class EquipmentReturn(DataAbstractModel):
                 sub.get('warehouse') is not None,
                 sub.get('product') is not None,
                 product_warehouse is not None,
-                warehouse is not None,
+                source_warehouse is not None,
                 product is not None
             ]):
                 if all([
                     str(sub['product_warehouse'].id) == str(product_warehouse.id),
-                    str(sub['warehouse'].id) == str(warehouse.id),
+                    str(sub['warehouse'].id) == str(source_warehouse.id),
                     str(sub['product'].id) == str(product.id)
                 ]):
                     sub['lot_data'] += [{
-                        'lot_id': str(child.return_product_pw_lot_id),
+                        'lot_id': str(item.return_product_pw_lot_id),
                         'quantity': quantity
                     }]
                     sub['quantity'] += quantity
@@ -100,12 +108,12 @@ class EquipmentReturn(DataAbstractModel):
         data_bulk_info.append({
             'goods_transfer': gtf_obj,
             'product_warehouse': product_warehouse,
-            'warehouse': warehouse,
+            'warehouse': source_warehouse,
             'product': product,
             'end_warehouse': end_warehouse,
             'uom': uom,
             'lot_data': [{
-                'lot_id': str(child.return_product_pw_lot_id),
+                'lot_id': str(item.return_product_pw_lot_id),
                 'quantity': quantity
             }],
             'sn_data': [],
@@ -116,17 +124,19 @@ class EquipmentReturn(DataAbstractModel):
         return data_bulk_info
 
     @staticmethod
-    def update_serial_item_list(data_bulk_info, child, gtf_obj, product_warehouse, end_warehouse):
+    def update_serial_item_list(data_bulk_info, gtf_obj, item):
         """
         Hàm kiểm tra serial này đã thêm vào danh sách trước đó hay chưa.
         Nếu có thì update item cũ, chưa thì thêm mới
         """
-        warehouse = product_warehouse.warehouse
+        product_warehouse = item.return_product_pw_serial.product_warehouse
+        source_warehouse = product_warehouse.warehouse
+        end_warehouse = item.return_to_warehouse
         product = product_warehouse.product
         quantity = 1
         uom = product.general_uom_group.uom_reference if product.general_uom_group else None
         unit_cost = product.get_cost_info_by_warehouse(
-            warehouse_id=warehouse.id if warehouse else None,
+            warehouse_id=source_warehouse.id if source_warehouse else None,
             get_type=1,
         )
         for sub in data_bulk_info:
@@ -135,27 +145,27 @@ class EquipmentReturn(DataAbstractModel):
                 sub.get('warehouse') is not None,
                 sub.get('product') is not None,
                 product_warehouse is not None,
-                warehouse is not None,
+                source_warehouse is not None,
                 product is not None
             ]):
                 if all([
                     str(sub['product_warehouse'].id) == str(product_warehouse.id),
-                    str(sub['warehouse'].id) == str(warehouse.id),
+                    str(sub['warehouse'].id) == str(source_warehouse.id),
                     str(sub['product'].id) == str(product.id)
                 ]):
-                    sub['sn_data'] += [str(child.return_product_pw_serial_id)]
+                    sub['sn_data'] += [str(item.return_product_pw_serial_id)]
                     sub['quantity'] += 1
                     sub['subtotal'] += quantity * unit_cost
                     return data_bulk_info
         data_bulk_info.append({
             'goods_transfer': gtf_obj,
             'product_warehouse': product_warehouse,
-            'warehouse': warehouse,
+            'warehouse': source_warehouse,
             'product': product,
             'end_warehouse': end_warehouse,
             'uom': uom,
             'lot_data': [],
-            'sn_data': [str(child.return_product_pw_serial_id)],
+            'sn_data': [str(item.return_product_pw_serial_id)],
             'quantity': quantity,
             'unit_cost': unit_cost,
             'subtotal': quantity * unit_cost,
@@ -181,36 +191,14 @@ class EquipmentReturn(DataAbstractModel):
             'date_approved': er_obj.date_approved,
         }
         gtf_obj = GoodsTransfer.objects.create(**gtf_data)
-        source_warehouse = WareHouse.objects.filter_on_company(use_for=1).first()
         data_bulk_info = []
         for item in er_obj.equipment_return_items.all():
-            end_warehouse = item.return_to_warehouse
-            product_warehouse = item.return_product.product_warehouse_product.filter(warehouse=source_warehouse).first()
-            if item.return_product.general_traceability_method == 0:
-                data_bulk_info = cls.update_none_item_list(
-                    data_bulk_info,
-                    item,
-                    gtf_obj,
-                    product_warehouse,
-                    end_warehouse
-                )
-            for child in item.equipment_return_item_detail.all():
-                if child.return_product_pw_lot:  # lot
-                    data_bulk_info = cls.update_lot_item_list(
-                        data_bulk_info,
-                        child,
-                        gtf_obj,
-                        product_warehouse,
-                        end_warehouse
-                    )
-                elif child.return_product_pw_serial:  # sn
-                    data_bulk_info = cls.update_serial_item_list(
-                        data_bulk_info,
-                        child,
-                        gtf_obj,
-                        product_warehouse,
-                        end_warehouse
-                    )
+            if item.return_product_pw:  # none
+                data_bulk_info = cls.update_none_item_list(data_bulk_info, gtf_obj, item)
+            elif item.return_product_pw_lot:  # lot
+                data_bulk_info = cls.update_lot_item_list(data_bulk_info, gtf_obj, item)
+            elif item.return_product_pw_serial:  # sn
+                data_bulk_info = cls.update_serial_item_list(data_bulk_info, gtf_obj, item)
         bulk_info = []
         for item in data_bulk_info:
             bulk_info.append(GoodsTransferProduct(**item))
@@ -230,15 +218,22 @@ class EquipmentReturn(DataAbstractModel):
     @classmethod
     def update_state_of_equipment_loan(cls, er_obj):
         for item in er_obj.equipment_return_items.all():
-            item.loan_item_mapped.sum_returned_quantity += item.return_quantity
-            item.loan_item_mapped.save(update_fields=['sum_returned_quantity'])
-            for child in item.equipment_return_item_detail.all():
-                if child.return_product_pw_lot:
-                    child.loan_item_detail_mapped.lot_returned_quantity += child.return_product_pw_lot_quantity
-                    child.loan_item_detail_mapped.save(update_fields=['lot_returned_quantity'])
-                if child.return_product_pw_serial:
-                    child.loan_item_detail_mapped.is_returned_serial = True
-                    child.loan_item_detail_mapped.save(update_fields=['is_returned_serial'])
+            if item.return_product_pw and item.loan_item_detail_mapped:  # none
+                if item.loan_item_detail_mapped.equipment_loan_item:
+                    item.loan_item_detail_mapped.equipment_loan_item.sum_returned_quantity += item.return_product_pw_quantity
+                    item.loan_item_detail_mapped.equipment_loan_item.save(update_fields=['sum_returned_quantity'])
+            elif item.return_product_pw_lot and item.loan_item_detail_mapped:  # lot
+                if item.loan_item_detail_mapped.equipment_loan_item:
+                    item.loan_item_detail_mapped.equipment_loan_item.sum_returned_quantity += item.return_product_pw_lot_quantity
+                    item.loan_item_detail_mapped.equipment_loan_item.save(update_fields=['sum_returned_quantity'])
+                    item.loan_item_detail_mapped.lot_returned_quantity += item.return_product_pw_lot_quantity
+                    item.loan_item_detail_mapped.save(update_fields=['lot_returned_quantity'])
+            elif item.return_product_pw_serial and item.loan_item_detail_mapped:  # sn
+                if item.loan_item_detail_mapped.equipment_loan_item:
+                    item.loan_item_detail_mapped.equipment_loan_item.sum_returned_quantity += 1
+                    item.loan_item_detail_mapped.equipment_loan_item.save(update_fields=['sum_returned_quantity'])
+                    item.loan_item_detail_mapped.is_returned_serial = True
+                    item.loan_item_detail_mapped.save(update_fields=['is_returned_serial'])
         return True
 
     def save(self, *args, **kwargs):
@@ -259,6 +254,22 @@ class EquipmentReturn(DataAbstractModel):
         permissions = ()
 
 
+# class EquipmentReturnELMapped(SimpleAbstractModel):
+#     equipment_return = models.ForeignKey(
+#         EquipmentReturn, on_delete=models.CASCADE, related_name='equipment_return_el_mapped'
+#     )
+#     equipment_loan_mapped = models.ForeignKey(
+#         EquipmentLoan, on_delete=models.CASCADE, related_name='er_el_mapped'
+#     )
+#
+#     class Meta:
+#         verbose_name = 'Equipment Return EL Mapped'
+#         verbose_name_plural = 'Equipment Return ELs Mapped'
+#         ordering = ()
+#         default_permissions = ()
+#         permissions = ()
+
+
 class EquipmentReturnItem(SimpleAbstractModel):
     equipment_return = models.ForeignKey(
         EquipmentReturn, on_delete=models.CASCADE, related_name='equipment_return_items'
@@ -266,25 +277,11 @@ class EquipmentReturnItem(SimpleAbstractModel):
     order = models.IntegerField(default=1)
     return_product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     return_product_data = models.JSONField(default=dict)
-    return_quantity = models.FloatField(default=0)
 
-    return_to_warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE, null=True)
-    return_to_warehouse_data = models.JSONField(default=dict)
-
-    loan_item_mapped = models.ForeignKey('equipmentloan.EquipmentLoanItem', on_delete=models.SET_NULL, null=True)
-
-    class Meta:
-        verbose_name = 'Equipment Return Item'
-        verbose_name_plural = 'Equipment Return Items'
-        ordering = ('order',)
-        default_permissions = ()
-        permissions = ()
-
-
-class EquipmentReturnItemDetail(SimpleAbstractModel):
-    equipment_return_item = models.ForeignKey(
-        EquipmentReturnItem, on_delete=models.CASCADE, related_name='equipment_return_item_detail', null=True
+    return_product_pw = models.ForeignKey(
+        'saledata.ProductWareHouse', on_delete=models.CASCADE, null=True
     )
+    return_product_pw_quantity = models.FloatField(default=0)
 
     return_product_pw_lot = models.ForeignKey(
         'saledata.ProductWareHouseLot', on_delete=models.CASCADE, null=True
@@ -297,13 +294,23 @@ class EquipmentReturnItemDetail(SimpleAbstractModel):
     )
     return_product_pw_serial_data = models.JSONField(default=dict)
 
+    before_warehouse = models.ForeignKey(
+        'saledata.WareHouse', on_delete=models.CASCADE, null=True, related_name='er_item_before_warehouse'
+    )
+    before_warehouse_data = models.JSONField(default=dict)
+    return_to_warehouse = models.ForeignKey(
+        'saledata.WareHouse', on_delete=models.CASCADE, null=True, related_name='er_item_return_to_warehouse'
+    )
+    return_to_warehouse_data = models.JSONField(default=dict)
+
     loan_item_detail_mapped = models.ForeignKey(
         'equipmentloan.EquipmentLoanItemDetail', on_delete=models.SET_NULL, null=True
     )
 
     class Meta:
-        verbose_name = 'Equipment Return Item Detail'
-        verbose_name_plural = 'Equipment Return Items Detail'
+        verbose_name = 'Equipment Return Item'
+        verbose_name_plural = 'Equipment Return Items'
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 

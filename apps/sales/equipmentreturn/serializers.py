@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import Account, WareHouse
+from apps.masterdata.saledata.models import Account, WareHouse, ProductWareHouse
 from apps.sales.equipmentloan.models import EquipmentLoan, EquipmentLoanItem, EquipmentLoanItemDetail
 from apps.sales.equipmentreturn.models import (
-    EquipmentReturn, EquipmentReturnItem, EquipmentReturnItemDetail
+    EquipmentReturn, EquipmentReturnItem,
 )
 from apps.shared import (
     AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel
@@ -50,8 +50,9 @@ class EquipmentReturnListSerializer(AbstractListSerializerModel):
 class EquipmentReturnCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     account_mapped = serializers.UUIDField()
-    equipment_return_item_list = serializers.JSONField(default=list)
-    warehouse_return_list = serializers.JSONField(default=list)
+    none_loan_items_detail = serializers.JSONField(default=list)
+    lot_loan_items_detail = serializers.JSONField(default=list)
+    serial_loan_items_detail = serializers.JSONField(default=list)
 
     class Meta:
         model = EquipmentReturn
@@ -59,8 +60,9 @@ class EquipmentReturnCreateSerializer(AbstractCreateSerializerModel):
             'title',
             'account_mapped',
             'document_date',
-            'equipment_return_item_list',
-            'warehouse_return_list'
+            'none_loan_items_detail',
+            'lot_loan_items_detail',
+            'serial_loan_items_detail'
         )
 
     @classmethod
@@ -71,71 +73,156 @@ class EquipmentReturnCreateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'account_mapped': "Account does not exist."})
 
     @classmethod
-    def validate_equipment_return_item_list(cls, equipment_return_item_list):
-        for item in equipment_return_item_list:
-            loan_item_obj = EquipmentLoanItem.objects.filter(id=item.get('loan_item_id')).first()
-            if not loan_item_obj:
-                raise serializers.ValidationError({'loan_item_mapped': "Loan item does not exist."})
-            item['loan_item_mapped_id'] = str(item.get('loan_item_id'))
-            item['return_product_id'] = str(loan_item_obj.loan_product_id)
-            item['return_product_data'] = loan_item_obj.loan_product_data
+    def validate_none_loan_items_detail(cls, none_loan_items_detail):
+        # kiểm tra cấu hình kho ảo cho mượn hàng
+        virtual_warehouse_obj = WareHouse.objects.filter_on_company(use_for=1).first()
+        if not virtual_warehouse_obj:
+            raise serializers.ValidationError({'err': "Can not found virtual warehouse for Equipment Return."})
 
-            for lot_return in item.get('lot_return_list', []):
-                loan_item_detail_obj = EquipmentLoanItemDetail.objects.filter(
-                    id=lot_return.get('loan_item_detail_id')
-                ).first()
-                if not loan_item_detail_obj:
-                    raise serializers.ValidationError({'loan_item_detail_mapped': "Loan item detail does not exist."})
-                loan_remain_quantity = (loan_item_detail_obj.loan_product_pw_lot_quantity -
-                                        loan_item_detail_obj.lot_returned_quantity)
-                if loan_remain_quantity < float(lot_return.get('picked_quantity', 0)):
-                    raise serializers.ValidationError({'err': "Return quantity > remain quantity."})
-                lot_return['return_product_pw_lot_id'] = str(loan_item_detail_obj.loan_product_pw_lot_id)
-                lot_return['return_product_pw_lot_data'] = loan_item_detail_obj.loan_product_pw_lot_data
-                lot_return['loan_item_detail_mapped_id'] = lot_return.get('loan_item_detail_id')
+        for item in none_loan_items_detail:
+            loan_item_detail_obj = EquipmentLoanItemDetail.objects.filter(
+                id=item.get('loan_item_detail_mapped_id')).first()
+            if not loan_item_detail_obj:
+                raise serializers.ValidationError({'loan_item_detail_mapped': "Loan item detail does not exist."})
+            item['loan_item_mapped_detail_id'] = str(item.get('loan_item_detail_mapped_id'))
+            item['return_product_id'] = item.get('data_product', {}).get('id')
+            item['return_product_data'] = item.get('data_product', {})
 
-            for serial_return in item.get('serial_return_list', []):
-                loan_item_detail_obj = EquipmentLoanItemDetail.objects.filter(
-                    id=serial_return.get('loan_item_detail_id')
-                ).first()
-                if not loan_item_detail_obj:
-                    raise serializers.ValidationError({'loan_item_detail_mapped': "Loan item detail does not exist."})
-                if loan_item_detail_obj.is_returned_serial is True:
-                    raise serializers.ValidationError({'err': "This serial has been returned."})
-                serial_return['return_product_pw_serial_id'] = str(loan_item_detail_obj.loan_product_pw_serial_id)
-                serial_return['return_product_pw_serial_data'] = loan_item_detail_obj.loan_product_pw_serial_data
-                serial_return['loan_item_detail_mapped_id'] = serial_return.get('loan_item_detail_id')
-        return equipment_return_item_list
+            prd_wh_obj = virtual_warehouse_obj.product_warehouse_warehouse.filter(
+                product_id=item.get('data_product', {}).get('id')
+            ).first()
+            if not prd_wh_obj:
+                raise serializers.ValidationError({'err': "Can not found this product in virtual warehouse."})
+
+            item['return_product_pw_id'] = str(prd_wh_obj.id)
+
+            before_warehouse_obj = WareHouse.objects.filter_on_company(id=item.get('warehouse_before_id')).first()
+            if not before_warehouse_obj:
+                raise serializers.ValidationError({'err': "Can not found before warehouse."})
+            item['before_warehouse_id'] = str(before_warehouse_obj.id)
+            item['before_warehouse_data'] = {
+                'id': str(before_warehouse_obj.id),
+                'code': before_warehouse_obj.code,
+                'title': before_warehouse_obj.title,
+            }
+
+            return_to_warehouse_obj = WareHouse.objects.filter_on_company(id=item.get('return_to_warehouse')).first()
+            if not return_to_warehouse_obj:
+                raise serializers.ValidationError({'err': "Can not found return to warehouse."})
+            item['return_to_warehouse_id'] = str(return_to_warehouse_obj.id)
+            item['return_to_warehouse_data'] = {
+                'id': str(return_to_warehouse_obj.id),
+                'code': return_to_warehouse_obj.code,
+                'title': return_to_warehouse_obj.title,
+            }
+
+        return none_loan_items_detail
 
     @classmethod
-    def validate_warehouse_return_list(cls, warehouse_return_list):
-        warehouse_return_list_parsed = []
-        for item in warehouse_return_list:
-            warehouse_obj = WareHouse.objects.filter(id=item).first()
-            if not warehouse_obj:
-                raise serializers.ValidationError({'return_to_warehouse': "Warehouse does not exist."})
-            warehouse_return_list_parsed.append({
-                'return_to_warehouse_id': item,
-                'return_to_warehouse_data': {
-                    'id': str(warehouse_obj.id),
-                    'code': warehouse_obj.code,
-                    'title': warehouse_obj.title,
-                }
-            })
-        return warehouse_return_list_parsed
+    def validate_lot_loan_items_detail(cls, lot_loan_items_detail):
+        # kiểm tra cấu hình kho ảo cho mượn hàng
+        virtual_warehouse_obj = WareHouse.objects.filter_on_company(use_for=1).first()
+        if not virtual_warehouse_obj:
+            raise serializers.ValidationError({'err': "Can not found virtual warehouse for Equipment Return."})
+
+        for item in lot_loan_items_detail:
+            loan_item_detail_obj = EquipmentLoanItemDetail.objects.filter(
+                id=item.get('loan_item_detail_mapped_id')).first()
+            if not loan_item_detail_obj:
+                raise serializers.ValidationError({'loan_item_detail_mapped': "Loan item detail does not exist."})
+            item['loan_item_mapped_detail_id'] = str(item.get('loan_item_detail_mapped_id'))
+            item['return_product_id'] = item.get('data_product', {}).get('id')
+            item['return_product_data'] = item.get('data_product', {})
+
+            prd_wh_obj = virtual_warehouse_obj.product_warehouse_warehouse.filter(
+                product_id=item.get('data_product', {}).get('id')
+            ).first()
+            if not prd_wh_obj:
+                raise serializers.ValidationError({'err': "Can not found this product in virtual warehouse."})
+
+            prd_wh_lot_obj = prd_wh_obj.product_warehouse_lot_product_warehouse.filter(
+                lot_number=item.get('lot_number')
+            ).first()
+            if not prd_wh_lot_obj:
+                raise serializers.ValidationError({'err': "Can not found this lot in virtual warehouse."})
+            item['return_product_pw_lot_id'] = str(prd_wh_lot_obj.id)
+            item['return_product_pw_lot_data'] = loan_item_detail_obj.loan_product_pw_lot_data
+
+            before_warehouse_obj = WareHouse.objects.filter_on_company(id=item.get('warehouse_before_id')).first()
+            if not before_warehouse_obj:
+                raise serializers.ValidationError({'err': "Can not found before warehouse."})
+            item['before_warehouse_id'] = str(before_warehouse_obj.id)
+            item['before_warehouse_data'] = {
+                'id': str(before_warehouse_obj.id),
+                'code': before_warehouse_obj.code,
+                'title': before_warehouse_obj.title,
+            }
+
+            return_to_warehouse_obj = WareHouse.objects.filter_on_company(id=item.get('return_to_warehouse')).first()
+            if not return_to_warehouse_obj:
+                raise serializers.ValidationError({'err': "Can not found return to warehouse."})
+            item['return_to_warehouse_id'] = str(return_to_warehouse_obj.id)
+            item['return_to_warehouse_data'] = {
+                'id': str(return_to_warehouse_obj.id),
+                'code': return_to_warehouse_obj.code,
+                'title': return_to_warehouse_obj.title,
+            }
+
+        return lot_loan_items_detail
+
+    @classmethod
+    def validate_serial_loan_items_detail(cls, serial_loan_items_detail):
+        # kiểm tra cấu hình kho ảo cho mượn hàng
+        virtual_warehouse_obj = WareHouse.objects.filter_on_company(use_for=1).first()
+        if not virtual_warehouse_obj:
+            raise serializers.ValidationError({'err': "Can not found virtual warehouse for Equipment Return."})
+
+        for item in serial_loan_items_detail:
+            loan_item_detail_obj = EquipmentLoanItemDetail.objects.filter(
+                id=item.get('loan_item_detail_mapped_id')).first()
+            if not loan_item_detail_obj:
+                raise serializers.ValidationError({'loan_item_detail_mapped': "Loan item detail does not exist."})
+            item['loan_item_mapped_detail_id'] = str(item.get('loan_item_detail_mapped_id'))
+            item['return_product_id'] = item.get('data_product', {}).get('id')
+            item['return_product_data'] = item.get('data_product', {})
+
+            prd_wh_obj = virtual_warehouse_obj.product_warehouse_warehouse.filter(
+                product_id=item.get('data_product', {}).get('id')
+            ).first()
+            if not prd_wh_obj:
+                raise serializers.ValidationError({'err': "Can not found this product in virtual warehouse."})
+
+            prd_wh_sn_obj = prd_wh_obj.product_warehouse_serial_product_warehouse.filter(
+                serial_number=item.get('serial_number')
+            ).first()
+            if not prd_wh_sn_obj:
+                raise serializers.ValidationError({'err': "Can not found this serial in virtual warehouse."})
+            item['return_product_pw_serial_id'] = str(prd_wh_sn_obj.id)
+            item['return_product_pw_serial_data'] = loan_item_detail_obj.loan_product_pw_serial_data
+
+            before_warehouse_obj = WareHouse.objects.filter_on_company(id=item.get('warehouse_before_id')).first()
+            if not before_warehouse_obj:
+                raise serializers.ValidationError({'err': "Can not found before warehouse."})
+            item['before_warehouse_id'] = str(before_warehouse_obj.id)
+            item['before_warehouse_data'] = {
+                'id': str(before_warehouse_obj.id),
+                'code': before_warehouse_obj.code,
+                'title': before_warehouse_obj.title,
+            }
+
+            return_to_warehouse_obj = WareHouse.objects.filter_on_company(id=item.get('return_to_warehouse')).first()
+            if not return_to_warehouse_obj:
+                raise serializers.ValidationError({'err': "Can not found return to warehouse."})
+            item['return_to_warehouse_id'] = str(return_to_warehouse_obj.id)
+            item['return_to_warehouse_data'] = {
+                'id': str(return_to_warehouse_obj.id),
+                'code': return_to_warehouse_obj.code,
+                'title': return_to_warehouse_obj.title,
+            }
+
+        return serial_loan_items_detail
 
     def validate(self, validate_data):
-        len_equipment_return_item_list = len(validate_data.get('equipment_return_item_list', []))
-        len_warehouse_return_list = len(validate_data.get('warehouse_return_list', []))
-        if len_equipment_return_item_list != len_warehouse_return_list:
-            raise serializers.ValidationError({'err': "Missing data in line detail table."})
-
-        # kiểm tra cấu hình kho ảo cho mượn hàng
-        if not WareHouse.objects.filter_on_company(use_for=1).exists():
-            raise serializers.ValidationError({
-                'virtual_warehouse': "The virtual warehouse for Equipment Loan has not configured."
-            })
-
         if 'account_mapped' in validate_data:
             account_mapped = validate_data.get('account_mapped')
             validate_data['account_mapped_data'] = {
@@ -148,20 +235,18 @@ class EquipmentReturnCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
-        equipment_return_item_list = validated_data.pop('equipment_return_item_list', [])
-        warehouse_return_list = validated_data.pop('warehouse_return_list', [])
+        none_loan_items_detail = validated_data.get('none_loan_items_detail', [])
+        lot_loan_items_detail = validated_data.get('lot_loan_items_detail', [])
+        serial_loan_items_detail = validated_data.get('serial_loan_items_detail', [])
+        equipment_return_item_list = none_loan_items_detail + lot_loan_items_detail + serial_loan_items_detail
 
         er_obj = EquipmentReturn.objects.create(**validated_data)
 
-        EquipmentReturnCommonFunction.create_equipment_return_item(
-            er_obj, equipment_return_item_list, warehouse_return_list
-        )
+        EquipmentReturnCommonFunction.create_equipment_return_item(er_obj, equipment_return_item_list)
         return er_obj
 
 
 class EquipmentReturnDetailSerializer(AbstractDetailSerializerModel):
-    equipment_return_item_list = serializers.SerializerMethodField()
-
     class Meta:
         model = EquipmentReturn
         fields = (
@@ -171,41 +256,18 @@ class EquipmentReturnDetailSerializer(AbstractDetailSerializerModel):
             'account_mapped_data',
             'date_created',
             'document_date',
-            'equipment_return_item_list',
+            'none_loan_items_detail',
+            'lot_loan_items_detail',
+            'serial_loan_items_detail',
         )
-
-    @classmethod
-    def get_equipment_return_item_list(cls, obj):
-        equipment_return_item_list = []
-        for item in obj.equipment_return_items.all():
-            equipment_return_item_list.append({
-                'id': item.id,
-                'data_product': item.return_product_data,
-                'return_quantity': item.return_quantity,
-                'lot_return_list': [{
-                    'lot_number': child.return_product_pw_lot_data.get(
-                        'lot_number'
-                    ) if child.return_product_pw_lot_data else '',
-                    'picked_quantity': child.return_product_pw_lot_quantity,
-                    'loan_item_detail_id': child.loan_item_detail_mapped_id
-                } for child in item.equipment_return_item_detail.filter(return_product_pw_lot__isnull=False)],
-                'serial_return_list': [{
-                    'serial_number': child.return_product_pw_serial_data.get(
-                        'serial_number'
-                    ) if child.return_product_pw_serial_data else '',
-                    'loan_item_detail_id': child.loan_item_detail_mapped_id
-                } for child in item.equipment_return_item_detail.filter(return_product_pw_serial__isnull=False)],
-                'loan_item_id': item.loan_item_mapped_id,
-                'return_to_warehouse_data': item.return_to_warehouse_data,
-            })
-        return equipment_return_item_list
 
 
 class EquipmentReturnUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     account_mapped = serializers.UUIDField()
-    equipment_return_item_list = serializers.JSONField(default=list)
-    warehouse_return_list = serializers.JSONField(default=list)
+    none_loan_items_detail = serializers.JSONField(default=list)
+    lot_loan_items_detail = serializers.JSONField(default=list)
+    serial_loan_items_detail = serializers.JSONField(default=list)
 
     class Meta:
         model = EquipmentReturn
@@ -213,8 +275,9 @@ class EquipmentReturnUpdateSerializer(AbstractCreateSerializerModel):
             'title',
             'account_mapped',
             'document_date',
-            'equipment_return_item_list',
-            'warehouse_return_list'
+            'none_loan_items_detail',
+            'lot_loan_items_detail',
+            'serial_loan_items_detail'
         )
 
     @classmethod
@@ -222,84 +285,63 @@ class EquipmentReturnUpdateSerializer(AbstractCreateSerializerModel):
         return EquipmentReturnCreateSerializer.validate_account_mapped(value)
 
     @classmethod
-    def validate_equipment_return_item_list(cls, equipment_return_item_list):
-        return EquipmentReturnCreateSerializer.validate_equipment_return_item_list(equipment_return_item_list)
+    def validate_none_loan_items_detail(cls, none_loan_items_detail):
+        return EquipmentReturnCreateSerializer.validate_none_loan_items_detail(none_loan_items_detail)
 
     @classmethod
-    def validate_warehouse_return_list(cls, warehouse_return_list):
-        return EquipmentReturnCreateSerializer.validate_warehouse_return_list(warehouse_return_list)
+    def validate_lot_loan_items_detail(cls, lot_loan_items_detail):
+        return EquipmentReturnCreateSerializer.validate_none_loan_items_detail(lot_loan_items_detail)
+
+    @classmethod
+    def validate_serial_loan_items_detail(cls, serial_loan_items_detail):
+        return EquipmentReturnCreateSerializer.validate_none_loan_items_detail(serial_loan_items_detail)
 
     def validate(self, validate_data):
         return EquipmentReturnCreateSerializer().validate(validate_data)
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
-        equipment_return_item_list = validated_data.pop('equipment_return_item_list', [])
-        warehouse_return_list = validated_data.pop('warehouse_return_list', [])
+        none_loan_items_detail = validated_data.get('none_loan_items_detail', [])
+        lot_loan_items_detail = validated_data.get('lot_loan_items_detail', [])
+        serial_loan_items_detail = validated_data.get('serial_loan_items_detail', [])
+        equipment_return_item_list = none_loan_items_detail + lot_loan_items_detail + serial_loan_items_detail
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
 
-        EquipmentReturnCommonFunction.create_equipment_return_item(
-            instance, equipment_return_item_list, warehouse_return_list
-        )
+        EquipmentReturnCommonFunction.create_equipment_return_item(instance, equipment_return_item_list)
 
         return instance
 
 
 class EquipmentReturnCommonFunction:
     @staticmethod
-    def create_equipment_return_item_sub(equipment_return_item_obj, lot_return_list, serial_return_list):
-        bulk_info_detail_sub = []
-        # lot
-        for child in lot_return_list:
-            if float(child.get('picked_quantity', 0)) > 0:
-                bulk_info_detail_sub.append(
-                    EquipmentReturnItemDetail(
-                        equipment_return_item=equipment_return_item_obj,
-                        return_product_pw_lot_id=child.get('return_product_pw_lot_id'),
-                        return_product_pw_lot_data=child.get('return_product_pw_lot_data', {}),
-                        return_product_pw_lot_quantity=child.get('picked_quantity', 0),
-                        loan_item_detail_mapped_id=child.get('loan_item_detail_mapped_id'),
-                    )
-                )
-        # sn
-        for child in serial_return_list:
-            bulk_info_detail_sub.append(
-                EquipmentReturnItemDetail(
-                    equipment_return_item=equipment_return_item_obj,
-                    return_product_pw_serial_id=child.get('return_product_pw_serial_id'),
-                    return_product_pw_serial_data=child.get('return_product_pw_serial_data'),
-                    loan_item_detail_mapped_id=child.get('loan_item_detail_mapped_id'),
-                )
-            )
-        return bulk_info_detail_sub
-
-    @staticmethod
-    def create_equipment_return_item(er_obj, equipment_return_item_list, warehouse_return_list):
+    def create_equipment_return_item(er_obj, equipment_return_item_list):
         bulk_info = []
-        bulk_info_detail = []
         for order, item in enumerate(equipment_return_item_list):
-            if float(item.get('return_quantity', 0)) > 0:
-                equipment_return_item_obj = EquipmentReturnItem(
-                    equipment_return=er_obj,
-                    order=order,
-                    loan_item_mapped_id=item.get('loan_item_mapped_id'),
-                    return_product_id=item.get('return_product_id'),
-                    return_product_data=item.get('return_product_data', {}),
-                    return_quantity=item.get('return_quantity', 0),
-                    return_to_warehouse_id=warehouse_return_list[order].get('return_to_warehouse_id'),
-                    return_to_warehouse_data=warehouse_return_list[order].get('return_to_warehouse_data'),
-                )
-                bulk_info.append(equipment_return_item_obj)
-                bulk_info_detail += EquipmentReturnCommonFunction.create_equipment_return_item_sub(
-                    equipment_return_item_obj, item.get('lot_return_list', []), item.get('serial_return_list', [])
-                )
+            equipment_return_item_obj = EquipmentReturnItem(
+                equipment_return=er_obj,
+                order=order,
+                return_product_id=item.get('return_product_id'),
+                return_product_data=item.get('return_product_data', {}),
+                return_product_pw_id=item.get('return_product_pw_id'),
+                return_product_pw_quantity=item.get('return_product_pw_quantity', 0),
+                return_product_pw_lot_id=item.get('return_product_pw_lot_id'),
+                return_product_pw_lot_data=item.get('return_product_pw_lot_data', {}),
+                return_product_pw_lot_quantity=item.get('return_product_pw_lot_quantity', 0),
+                return_product_pw_serial_id=item.get('return_product_pw_serial_id'),
+                return_product_pw_serial_data=item.get('return_product_pw_serial_data', {}),
+                before_warehouse_id=item.get('before_warehouse_id'),
+                before_warehouse_data=item.get('before_warehouse_data', {}),
+                return_to_warehouse_id=item.get('return_to_warehouse_id'),
+                return_to_warehouse_data=item.get('return_to_warehouse_data', {}),
+                loan_item_detail_mapped_id=item.get('loan_item_detail_mapped_id'),
+            )
+            bulk_info.append(equipment_return_item_obj)
 
         EquipmentReturnItem.objects.filter(equipment_return=er_obj).delete()
         EquipmentReturnItem.objects.bulk_create(bulk_info)
-        EquipmentReturnItemDetail.objects.bulk_create(bulk_info_detail)
         return True
 
 # related

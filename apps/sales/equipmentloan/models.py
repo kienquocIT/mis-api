@@ -251,6 +251,7 @@ class EquipmentLoanItemDetail(SimpleAbstractModel):
     equipment_loan_item = models.ForeignKey(
         EquipmentLoanItem, on_delete=models.CASCADE, related_name='equipment_loan_item_detail', null=True
     )
+
     loan_product_pw = models.ForeignKey(
         'saledata.ProductWareHouse', on_delete=models.CASCADE, null=True
     )
