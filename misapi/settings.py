@@ -141,6 +141,7 @@ INSTALLED_APPS = \
         'django_otp',
     ] + [  # HRM
         'apps.hrm.employeeinfo',
+        'apps.hrm.attandance',
     ] + [
         'apps.sales.financialcashflow',
         'apps.sales.reconciliation',

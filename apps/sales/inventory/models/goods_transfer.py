@@ -13,6 +13,7 @@ from apps.shared import (
     DataAbstractModel, GOODS_TRANSFER_TYPE, AutoDocumentAbstractModel, SimpleAbstractModel
 )
 
+
 __all__ = ['GoodsTransfer', 'GoodsTransferProduct']
 
 
@@ -26,6 +27,12 @@ class GoodsTransfer(DataAbstractModel, AutoDocumentAbstractModel):
         'equipmentloan.EquipmentLoan',
         on_delete=models.CASCADE,
         related_name='goods_transfer_el',
+        null=True,
+    )
+    equipment_return = models.ForeignKey(
+        'equipmentreturn.EquipmentReturn',
+        on_delete=models.CASCADE,
+        related_name='goods_transfer_er',
         null=True,
     )
     note = models.CharField(
@@ -99,44 +106,68 @@ class GoodsTransfer(DataAbstractModel, AutoDocumentAbstractModel):
 
     @classmethod
     def update_prd_wh_lot(cls, src_prd_wh, des_prd_wh, lot_data, tenant_id, company_id):
+        # tìm tất cả lot ở kho gốc và đích
         all_lot_src = src_prd_wh.product_warehouse_lot_product_warehouse.all()
         all_lot_des = des_prd_wh.product_warehouse_lot_product_warehouse.all()
         bulk_info = []
         for lot_item in lot_data:
             lot_src_obj = all_lot_src.filter(id=lot_item['lot_id']).first()
-            if lot_src_obj and lot_src_obj.quantity_import >= lot_item['quantity']:
-                lot_src_obj.quantity_import -= lot_item['quantity']
-                lot_src_obj.save(update_fields=['quantity_import'])
-                lot_des_obj = all_lot_des.filter(lot_number=lot_src_obj.lot_number).first()
-                if lot_des_obj:
-                    lot_des_obj.quantity_import += lot_item['quantity']
-                    lot_des_obj.save(update_fields=['quantity_import'])
+            # nếu lot này có ở kho gốc
+            if lot_src_obj:
+                # nếu SL xuất đi <= SL còn lại của Lot đó, không thì lỗi
+                if lot_src_obj.quantity_import >= lot_item['quantity']:
+                    # trừ bớt SL của lot đó trong kho gốc
+                    lot_src_obj.quantity_import -= lot_item['quantity']
+                    lot_src_obj.save(update_fields=['quantity_import'])
                 else:
-                    bulk_info.append(
-                        ProductWareHouseLot(
-                            tenant_id=tenant_id,
-                            company_id=company_id,
-                            product_warehouse=des_prd_wh,
-                            lot_number=lot_src_obj.lot_number,
-                            quantity_import=lot_item['quantity'],
-                            expire_date=lot_src_obj.expire_date,
-                            manufacture_date=lot_src_obj.manufacture_date
-                        )
-                    )
+                    print('Error. Quantity out is > current quantity.')
             else:
-                print('Update Lot failed.')
+                print('Error. This Lot does not exist in source warehouse.')
+
+            lot_des_obj = all_lot_des.filter(lot_number=lot_src_obj.lot_number).first()
+            # nếu Lot đã có trong kho đích thì cộng thêm, không thì tạo mới
+            if lot_des_obj:
+                lot_des_obj.quantity_import += lot_item['quantity']
+                lot_des_obj.save(update_fields=['quantity_import'])
+            else:
+                bulk_info.append(
+                    ProductWareHouseLot(
+                        tenant_id=tenant_id,
+                        company_id=company_id,
+                        product_warehouse=des_prd_wh,
+                        lot_number=lot_src_obj.lot_number,
+                        quantity_import=lot_item['quantity'],
+                        expire_date=lot_src_obj.expire_date,
+                        manufacture_date=lot_src_obj.manufacture_date
+                    )
+                )
         ProductWareHouseLot.objects.bulk_create(bulk_info)
         return True
 
     @classmethod
     def update_prd_wh_serial(cls, src_prd_wh, des_prd_wh, sn_data, tenant_id, company_id):
-        all_sn_src = src_prd_wh.product_warehouse_serial_product_warehouse.all()
+        # tìm tất cả serial đang tồn tại trong kho gốc
+        all_sn_src = src_prd_wh.product_warehouse_serial_product_warehouse.filter(serial_status=0)
+        for item in all_sn_src:
+            print(item.id, item.serial_number, item.product_warehouse.warehouse.title)
+        # tìm tất cả serial trong kho đich
+        all_sn_des = des_prd_wh.product_warehouse_serial_product_warehouse.all()
         bulk_info = []
         for sn_id in sn_data:
+            print(sn_id)
+            # nếu serial này đang tồn tại trong kho gốc thì tắt nó đi, không thì là lỗi
             sn_src_obj = all_sn_src.filter(id=sn_id).first()
-            if sn_src_obj and not sn_src_obj.serial_status:
+            if sn_src_obj:
                 sn_src_obj.serial_status = 1
                 sn_src_obj.save(update_fields=['serial_status'])
+            else:
+                print('Error. This serial does not exist in source warehouse.')
+            # nếu serial này đã từng tồn tại trong kho đích thì bật lên lại, không thì tạo mới
+            sn_des_obj = all_sn_des.filter(serial_number=sn_src_obj.serial_number).first()
+            if sn_des_obj:
+                sn_des_obj.serial_status = 0
+                sn_des_obj.save(update_fields=['serial_status'])
+            else:
                 bulk_info.append(
                     ProductWareHouseSerial(
                         tenant_id=tenant_id,
@@ -151,8 +182,6 @@ class GoodsTransfer(DataAbstractModel, AutoDocumentAbstractModel):
                         use_for_modification=sn_src_obj.use_for_modification
                     )
                 )
-            else:
-                print('Update Serial failed.')
         ProductWareHouseSerial.objects.bulk_create(bulk_info)
         return True
 

@@ -3064,6 +3064,48 @@ REPORT_LEASE_APP_CONFIG = {
     "allow_permit": True,
 }
 
+EQUIPMENT_RETURN_APP_CONFIG = {
+    "id": "f5954e02-6ad1-4ebf-a4f2-0b598820f5f0",
+    "title": "Equipment Return",
+    "code": "equipmentreturn",
+    "model_code": "equipmentreturn",
+    "app_label": "equipmentreturn",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_print": False,
+    "allow_process": False,
+    "allow_opportunity": False,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -3408,6 +3450,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "e02cd98d-79a4-4462-8c1a-cf14fe8f7062": ApplicationConfigFrame(**REPORT_LEASE_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "f5954e02-6ad1-4ebf-a4f2-0b598820f5f0": ApplicationConfigFrame(**EQUIPMENT_RETURN_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

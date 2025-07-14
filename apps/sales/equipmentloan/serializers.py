@@ -238,32 +238,34 @@ class EquipmentLoanCommonFunction:
         bulk_info_detail_sub = []
         # none
         for child in loan_product_none_detail:
-            pw_obj = ProductWareHouse.objects.filter(id=child.get('product_warehouse_id')).first()
-            if pw_obj:
-                bulk_info_detail_sub.append(
-                    EquipmentLoanItemDetail(
-                        equipment_loan_item=equipment_loan_item_obj,
-                        loan_product_pw=pw_obj,
-                        loan_product_pw_quantity=child.get('picked_quantity', 0)
+            if float(child.get('picked_quantity', 0)) > 0:
+                pw_obj = ProductWareHouse.objects.filter(id=child.get('product_warehouse_id')).first()
+                if pw_obj:
+                    bulk_info_detail_sub.append(
+                        EquipmentLoanItemDetail(
+                            equipment_loan_item=equipment_loan_item_obj,
+                            loan_product_pw=pw_obj,
+                            loan_product_pw_quantity=child.get('picked_quantity', 0)
+                        )
                     )
-                )
         # lot
         for child in loan_product_lot_detail:
-            pw_lot_obj = ProductWareHouseLot.objects.filter(id=child.get('lot_id')).first()
-            if pw_lot_obj:
-                bulk_info_detail_sub.append(
-                    EquipmentLoanItemDetail(
-                        equipment_loan_item=equipment_loan_item_obj,
-                        loan_product_pw_lot=pw_lot_obj,
-                        loan_product_pw_lot_data={
-                            'id': str(pw_lot_obj.id),
-                            'lot_number': pw_lot_obj.lot_number,
-                            'expire_date': str(pw_lot_obj.expire_date),
-                            'manufacture_date': str(pw_lot_obj.manufacture_date),
-                        },
-                        loan_product_pw_lot_quantity=child.get('picked_quantity', 0)
+            if float(child.get('picked_quantity', 0)) > 0:
+                pw_lot_obj = ProductWareHouseLot.objects.filter(id=child.get('lot_id')).first()
+                if pw_lot_obj:
+                    bulk_info_detail_sub.append(
+                        EquipmentLoanItemDetail(
+                            equipment_loan_item=equipment_loan_item_obj,
+                            loan_product_pw_lot=pw_lot_obj,
+                            loan_product_pw_lot_data={
+                                'id': str(pw_lot_obj.id),
+                                'lot_number': pw_lot_obj.lot_number,
+                                'expire_date': str(pw_lot_obj.expire_date),
+                                'manufacture_date': str(pw_lot_obj.manufacture_date),
+                            },
+                            loan_product_pw_lot_quantity=child.get('picked_quantity', 0)
+                        )
                     )
-                )
         # sn
         for serial_id in loan_product_sn_detail:
             pw_serial_obj = ProductWareHouseSerial.objects.filter(id=serial_id).first()

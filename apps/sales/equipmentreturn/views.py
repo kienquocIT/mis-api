@@ -102,7 +102,7 @@ class EREquipmentLoanListByAccount(BaseListMixin):
             ).prefetch_related(
                 'equipment_loan_items',
                 'equipment_loan_items__equipment_loan_item_detail',
-            )
+            ).reverse()
         return super().get_queryset().none()
 
     @swagger_auto_schema(

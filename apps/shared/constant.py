@@ -129,6 +129,7 @@ MAP_FIELD_TITLE = {
     'financialcashflow.cashoutflow': 'title',
     'productmodification.productmodification': 'title',
     'equipmentloan.equipmentloan': 'title',
+    'equipmentreturn.equipmentreturn': 'title',
     #
     'bidding.bidding': 'title',
     'consulting.consulting': 'title',
@@ -291,6 +292,7 @@ GOODS_TRANSFER_TYPE = (
     (0, _('Goods transfer')),
     (1, _('Send/return consigned goods')),
     (2, _('Equipment loan')),
+    (3, _('Equipment return')),
 )
 
 # Inventory Adjustment Item action type
@@ -510,7 +512,14 @@ SECURITY_LEVEL = (
     (2, 'High')
 )
 
-KIND = (
-    (1, 'employee'),
-    (2, 'group')
+
+# shift master data
+WORKING_DAYS = (
+    (0, 'Mon'),
+    (1, 'Tue'),
+    (2, 'Wed'),
+    (3, 'Thu'),
+    (4, 'Fri'),
+    (5, 'Sat'),
+    (6, 'Sun'),
 )

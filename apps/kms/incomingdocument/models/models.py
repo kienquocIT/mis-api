@@ -2,8 +2,8 @@ import json
 
 from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, SECURITY_LEVEL, SimpleAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, SECURITY_LEVEL, KIND
 
 
 class KMSIncomingDocument(DataAbstractModel):
@@ -93,47 +93,29 @@ class IncomingAttachDocumentMapAttachFile(M2MFilesAbstractModel):
         permissions = ()
 
 
-class KMSInternalRecipientIncomingDocument(MasterDataAbstractModel):
+class KMSInternalRecipientIncomingDocument(SimpleAbstractModel):
     incoming_document = models.ForeignKey(
         KMSIncomingDocument,
         on_delete=models.CASCADE,
         verbose_name='Internal Recipient of KMS Incoming Document',
         related_name='kms_kmsinternalrecipient_incoming_doc'
     )
-    kind = models.SmallIntegerField(
-        default=1,
-        choices=KIND
+    employee = models.ForeignKey(
+        'hr.Employee',
+        null=True,
+        on_delete=models.CASCADE,
+        verbose_name='Employee',
+        related_name='kms_kmsinternalrecipient_employee'
     )
     employee_access = models.JSONField(
-        default=list,
-        null=True,
-        verbose_name="employee list has access this file",
-        help_text=json.dumps(["uuid4", "uuid4"])
-    )
-    group_access = models.JSONField(
-        default=list,
-        null=True,
-        verbose_name='Permission of Group',
-        help_text=json.dumps(["uuid4", "uuid4"])
-    )
-    document_permission_list = models.JSONField(
         default=dict,
-        null=True,
-        verbose_name='Permission of Employee',
-        help_text=json.dumps(
-            {
-                "permission_kind": list(range(1, 8))
-            }
-        )
-    )
-    expiration_date = models.DateField(
-        null=True,
-        verbose_name='expiration date'
+        verbose_name="employee list has access this file",
+        help_text='store json data of employee'
     )
 
     class Meta:
         verbose_name = 'Internal recipient incoming document'
         verbose_name_plural = 'Internal recipients incoming document'
-        ordering = ('-date_created',)
+        ordering = ()
         default_permissions = ()
         permissions = ()
