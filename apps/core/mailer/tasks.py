@@ -387,7 +387,7 @@ def send_mail_otp(  # pylint: disable=R0911,R1702,R0914
             return 'OTP ID NOT FOUND: ' + str(otp_id)
 
         if config_obj and template_obj and user_obj and otp_obj:
-            cls = SendMailController(mail_config=config_obj, timeout=3)
+            cls = SendMailController(mail_config=config_obj, timeout=10)
             if cls.is_active is True:
                 if template_obj.contents:
                     if user_obj.email:
@@ -458,7 +458,7 @@ def send_mail_form(tenant_id, company_id, subject, to_main, contents):
     obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=None, system_code=1)
     if isinstance(obj_got, list) and len(obj_got) == 3:
         [config_obj, _template_obj, _user_obj] = obj_got
-        cls = SendMailController(mail_config=config_obj, timeout=3)
+        cls = SendMailController(mail_config=config_obj, timeout=10)
         if cls.is_active is True:
             log_cls = MailLogController(
                 tenant_id=tenant_id, company_id=company_id,
