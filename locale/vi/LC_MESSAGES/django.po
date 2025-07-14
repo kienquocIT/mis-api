@@ -350,6 +350,10 @@ msgstr "Ráp-rã thiết bị"
 msgid "Equipment Loan"
 msgstr "Cho mượn hàng"
 
+# f5954e02-6ad1-4ebf-a4f2-0b598820f5f0
+msgid "Equipment Return"
+msgstr "Thu hồi hàng cho mượn"
+
 #
 msgid "Does not exist"
 msgstr "Không tồn tại"

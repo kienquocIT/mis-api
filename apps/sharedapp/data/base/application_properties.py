@@ -2862,6 +2862,16 @@ AppProp_SaleData_Equipment_Loan_data = {
         'is_wf_zone': True,
     },
 }
+
+AppProp_SaleData_Equipment_Return_data = {
+    "fd8f5f04-114a-40ee-a98c-4aa5d3a923ba": {
+        "application_id": "f5954e02-6ad1-4ebf-a4f2-0b598820f5f0",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+}
 ####
 
 AppProp_SaleData_Contract_Approval_data = {
@@ -3363,6 +3373,7 @@ ApplicationProperty_data = {
     **AppProp_SaleData_FinancialRecon_Recon_data,
     **AppProp_SaleData_Product_Modification_data,
     **AppProp_SaleData_Equipment_Loan_data,
+    **AppProp_SaleData_Equipment_Return_data,
 
     **AppProp_SaleData_Bidding_data,
     **AppProp_SaleData_IA_data,

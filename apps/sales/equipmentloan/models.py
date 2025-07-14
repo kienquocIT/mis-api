@@ -236,7 +236,8 @@ class EquipmentLoanItem(SimpleAbstractModel):
     order = models.IntegerField(default=1)
     loan_product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     loan_product_data = models.JSONField(default=dict)
-    loan_quantity = models.FloatField()
+    loan_quantity = models.FloatField(default=0)
+    sum_returned_quantity = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Equipment Loan Item'
@@ -255,17 +256,20 @@ class EquipmentLoanItemDetail(SimpleAbstractModel):
         'saledata.ProductWareHouse', on_delete=models.CASCADE, null=True
     )
     loan_product_pw_quantity = models.FloatField(default=0)
+    returned_quantity = models.FloatField(default=0)
 
     loan_product_pw_lot = models.ForeignKey(
         'saledata.ProductWareHouseLot', on_delete=models.CASCADE, null=True
     )
     loan_product_pw_lot_data = models.JSONField(default=dict)
     loan_product_pw_lot_quantity = models.FloatField(default=0)
+    lot_returned_quantity = models.FloatField(default=0)
 
     loan_product_pw_serial = models.ForeignKey(
         'saledata.ProductWareHouseSerial', on_delete=models.CASCADE, null=True
     )
     loan_product_pw_serial_data = models.JSONField(default=dict)
+    is_returned_serial = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Equipment Loan Item Detail'

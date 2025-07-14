@@ -239,7 +239,7 @@ class ReportStockLog(DataAbstractModel):
             item['value'] = item['cost'] * item['quantity']
 
             if len(item.get('lot_data', {})) != 0:   # update Lot
-                item['lot_data']['quantity'] = item['quantity']
+                item['lot_data']['lot_quantity'] = item['quantity']
                 item['lot_data']['lot_value'] = item['value']
 
             if float(item['quantity']) > 0:

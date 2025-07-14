@@ -44,13 +44,16 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
     }
 
     def get_queryset(self):
+        queryset = super().get_queryset()
         if 'interact' in self.request.query_params:
             if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
                 interact = self.request.user.employee_current.warehouse_employees_emp
-                return super().get_queryset().filter(id__in=interact.warehouse_list)
+                queryset = queryset.filter(id__in=interact.warehouse_list)
         if 'is_virtual' in self.request.query_params:
-            return super().get_queryset().filter(is_virtual=True)
-        return super().get_queryset()
+            return queryset.filter(is_virtual=True)
+        if 'is_not_virtual' in self.request.query_params:
+            return queryset.filter(is_virtual=False)
+        return queryset
 
     @swagger_auto_schema(operation_summary='WareHouse List')
     @mask_view(login_require=True, auth_require=False)
