@@ -510,10 +510,6 @@ SECURITY_LEVEL = (
     (2, 'High')
 )
 
-KIND = (
-    (1, 'employee'),
-    (2, 'group')
-)
 
 # shift master data
 WORKING_DAYS = (
