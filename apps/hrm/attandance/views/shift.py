@@ -1,11 +1,10 @@
 # from drf_yasg.utils import swagger_auto_schema
-#
 # from apps.hrm.attandance.models.shift import ShiftInfo
 # from apps.hrm.attandance.serializers import ShiftListSerializer, ShiftCreateSerializer, ShiftDetailSerializer, \
 #     ShiftUpdateSerializer
-# from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
-#
-#
+# from apps.shared import (BaseListMixin,
+# BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin)
+
 # class ShiftMasterDataList(BaseListMixin, BaseCreateMixin):
 #     queryset = ShiftInfo.objects
 #     serializer_list = ShiftListSerializer
