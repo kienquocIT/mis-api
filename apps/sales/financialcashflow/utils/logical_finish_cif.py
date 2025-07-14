@@ -18,7 +18,6 @@ class CashInFlowFinishHandler:
                             'code': payment.ar_invoice.code,
                         } if payment.ar_invoice else {},
                         invoice_actual_date=payment.ar_invoice.invoice_date if payment.ar_invoice else None,
-                        value_balance=payment_item.balance_value,
                         value_pay=payment_item.payment_value,
                     )
             if payment.has_ar_invoice is False:
@@ -32,7 +31,6 @@ class CashInFlowFinishHandler:
                         'code': payment.ar_invoice.code,
                     } if payment.ar_invoice else {},
                     invoice_actual_date=payment.ar_invoice.invoice_date if payment.ar_invoice else None,
-                    value_balance=payment.sum_balance_value,
                     value_pay=payment.sum_payment_value,
                 )
         return True
