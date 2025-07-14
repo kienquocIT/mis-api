@@ -8,6 +8,7 @@ from apps.core.company.models import (
     Company, CompanyConfig, CompanyFunctionNumber, CompanyUserEmployee,
 )
 from apps.core.hr.models import Employee, PlanEmployee
+from apps.hrm.attandance.models import ShiftInfo
 from apps.masterdata.saledata.models import Periods, Currency
 from apps.sales.report.models import ReportStockLog
 from apps.shared import AttMsg, FORMATTING, BaseMsg
@@ -47,7 +48,9 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
             'cost_per_lot',
             'cost_per_project',
             'accounting_policies',
-            'applicable_circular'
+            'applicable_circular',
+            'shift_mode',
+            'shift_data'
         )
 
     @classmethod
@@ -77,6 +80,7 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
     sub_domain = serializers.CharField(max_length=35, required=False)
     definition_inventory_valuation = serializers.BooleanField(default=False)
     default_inventory_value_method = serializers.IntegerField(default=1)
+    shift = serializers.UUIDField(allow_null=True)
 
     class Meta:
         model = CompanyConfig
@@ -89,7 +93,9 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'default_inventory_value_method',
             'cost_per_warehouse',
             'cost_per_lot',
-            'cost_per_project'
+            'cost_per_project',
+            'shift_mode',
+            'shift'
         )
 
     @classmethod
@@ -172,6 +178,26 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
                     'cost': CompanyMsg.CANNOT_UPDATE_COMPANY_CFG
                 })
         ####
+
+        # validate shift
+        if int(validate_data.get('shift_mode', 1)) not in [0, 1]:
+            raise serializers.ValidationError({"shift_mode": "Shift mode must be 0 or 1"})
+
+        if int(validate_data.get('shift_mode', 1)) == 0:
+            try:
+                shift_obj = ShiftInfo.objects.get(id=validate_data.get('shift'))
+                validate_data['shift'] = shift_obj
+                validate_data['shift_data'] = {
+                    'id': str(shift_obj.id),
+                    'title': shift_obj.title,
+                    'code': shift_obj.code
+                } if shift_obj else {}
+            except ShiftInfo.DoesNotExist:
+                raise serializers.ValidationError({"shift": "Shift object does not exist."})
+        else:
+            validate_data['shift'] = None
+            validate_data['shift_data'] = {}
+
         return validate_data
 
     def update(self, instance, validated_data):
@@ -190,7 +216,10 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             'default_inventory_value_method',
             'cost_per_warehouse',
             'cost_per_lot',
-            'cost_per_project'
+            'cost_per_project',
+            'shift_mode',
+            'shift',
+            'shift_data'
         ])
 
         this_period.definition_inventory_valuation = instance.definition_inventory_valuation
