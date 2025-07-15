@@ -128,6 +128,7 @@ MAP_FIELD_TITLE = {
     'financialcashflow.cashinflow': 'title',
     'financialcashflow.cashoutflow': 'title',
     'productmodification.productmodification': 'title',
+    'productmodificationbom.productmodificationbom': 'title',
     'equipmentloan.equipmentloan': 'title',
     'equipmentreturn.equipmentreturn': 'title',
     #

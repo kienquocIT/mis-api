@@ -419,6 +419,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "f491fdf3-1384-4a82-b155-12ef6673c901",  # Product Modification
     },
+    "b1d60043-ba66-4a52-8080-172b110cdd35": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "b1d60043-ba66-4a52-8080-172b110cdd35",  # Product Modification BOM
+    },
     "3fc09568-e3ff-4fd3-a70d-4d069ac1521d": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "3fc09568-e3ff-4fd3-a70d-4d069ac1521d",  # Equipment Loan

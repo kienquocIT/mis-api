@@ -132,6 +132,7 @@ INSTALLED_APPS = \
         'apps.sales.partnercenter',
         'apps.sales.grouporder',
         'apps.sales.productmodification',
+        'apps.sales.productmodificationbom',
         'apps.sales.equipmentloan',
         'apps.sales.equipmentreturn',
     ] + [  # Tools improvement from dev team
