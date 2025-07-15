@@ -147,6 +147,7 @@ class AccountMinimalListSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'code',
+            'tax_code',
             'date_created',
         )
 
@@ -187,7 +188,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             if Account.objects.filter_on_company(code=value).exists():
                 raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
             return value
-        code_generated = CompanyFunctionNumber.gen_auto_code(app_code='account')
+        code_generated = CompanyFunctionNumber.auto_gen_code_based_on_config(app_code='account')
         if code_generated:
             return code_generated
         raise serializers.ValidationError({"code": f"{AccountsMsg.CODE_NOT_NULL}. {BaseMsg.NO_CONFIG_AUTO_CODE}"})

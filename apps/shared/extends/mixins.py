@@ -1134,20 +1134,52 @@ class BaseDestroyMixin(BaseMixin):
         """
         return None
 
+    # def destroy(self, request, *args, **kwargs):
+    #     is_purge = kwargs.pop('is_purge', False)
+    #     instance = self.get_object()
+    #     if self.check_obj_change_or_delete(instance):  # check doc not have system_status == 3 (finished)
+    #         state_check = self.manual_check_obj_destroy(instance=instance)
+    #         if state_check is None:
+    #             state_check = self.check_perm_by_obj_or_body_data(
+    #                 obj=instance,
+    #                 hidden_field=self.retrieve_hidden_field,
+    #             )  # check permission
+    #         if state_check is True:
+    #             return self.perform_destroy(instance, is_purge, self.get_state_transaction())
+    #         return ResponseController.forbidden_403()
+    #     return ResponseController.forbidden_403(msg=HttpMsg.OBJ_DONE_NO_EDIT)
+
     def destroy(self, request, *args, **kwargs):
         is_purge = kwargs.pop('is_purge', False)
         instance = self.get_object()
-        if self.check_obj_change_or_delete(instance):  # check doc not have system_status == 3 (finished)
-            state_check = self.manual_check_obj_destroy(instance=instance)
-            if state_check is None:
-                state_check = self.check_perm_by_obj_or_body_data(
-                    obj=instance,
-                    hidden_field=self.retrieve_hidden_field,
-                )  # check permission
-            if state_check is True:
-                return self.perform_destroy(instance, is_purge, self.get_state_transaction())
-            return ResponseController.forbidden_403()
+        state_check = self.manual_check_obj_destroy(instance=instance)
+        if state_check is None:
+            state_check = self.check_perm_by_obj_or_body_data(
+                obj=instance,
+                hidden_field=self.retrieve_hidden_field,
+            )  # check permission
+        if state_check is True:
+            return self.perform_destroy(instance, is_purge, self.get_state_transaction())
         return ResponseController.forbidden_403(msg=HttpMsg.OBJ_DONE_NO_EDIT)
+
+    # @staticmethod
+    # def perform_destroy(instance, is_purge, state_transaction):
+    #     # is_purge: False -> instance.is_delete() = True | True -> instance.delete()
+    #     try:
+    #         if state_transaction:
+    #             with transaction.atomic():
+    #                 if BaseDestroyMixin.has_related_records(instance):  # check relation
+    #                     return ResponseController.bad_request_400(msg=HttpMsg.RELATION_EXISTS_ERR)
+    #                 if is_purge:
+    #                     return BaseDestroyMixin.perform_purge(instance)
+    #                 return BaseDestroyMixin.perform_soft_delete(instance)
+    #         else:
+    #             pass
+    #     except serializers.ValidationError as err:
+    #         raise err
+    #     except Exception as err:
+    #         print('[perform_destroy] ERR', err)
+    #     raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
 
     @staticmethod
     def perform_destroy(instance, is_purge, state_transaction):
@@ -1155,8 +1187,6 @@ class BaseDestroyMixin(BaseMixin):
         try:
             if state_transaction:
                 with transaction.atomic():
-                    if BaseDestroyMixin.has_related_records(instance):  # check relation
-                        return ResponseController.bad_request_400(msg=HttpMsg.RELATION_EXISTS_ERR)
                     if is_purge:
                         return BaseDestroyMixin.perform_purge(instance)
                     return BaseDestroyMixin.perform_soft_delete(instance)

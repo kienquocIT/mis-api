@@ -46,6 +46,11 @@ class POHandler:
                         'quantity': data_push.get(str(purchase_request.sale_order_id), {}).get('quantity', 0),
                         'total': data_push.get(str(purchase_request.sale_order_id), {}).get('total', 0),
                         'reference': reference,
+                        'supplier_data': {
+                            'id': str(instance.supplier_id),
+                            'title': str(instance.supplier.name),
+                            'code': str(instance.supplier.code),
+                        } if instance.supplier else {}
                     }
                 )
         return True

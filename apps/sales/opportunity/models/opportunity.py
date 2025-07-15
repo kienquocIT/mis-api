@@ -8,7 +8,7 @@ from apps.core.hr.models import PermissionAbstractModel
 from apps.shared import (
     DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 )
-from .config import OpportunityConfigStage, OpportunityConfig
+from .config import OpportunityConfigStage
 
 TYPE_CUSTOMER = [
     (0, _('Direct Customer')),
@@ -468,33 +468,28 @@ class Opportunity(DataAbstractModel):
         OpportunityStage.objects.bulk_create(bulk_data)
         return win_rate, bulk_data[-1]
 
-    @classmethod
-    def check_config_auto_update_stage(cls):
-        config = OpportunityConfig.objects.filter_current(fill__company=True).first()
-        if config.is_select_stage:
-            return False
-        return True
+    # @classmethod
+    # def check_config_auto_update_stage(cls, obj):
+    #     if hasattr(obj, 'company_id'):
+    #         config = OpportunityConfig.objects.filter(company_id=obj.company_id).first()
+    #         if config.is_select_stage:
+    #             return False
+    #     return True
 
     @classmethod
     def handle_stage_win_rate(cls, obj):
-        if obj.check_config_auto_update_stage():
-            obj.win_rate, opp_stage_obj = obj.update_stage(obj=obj)
-            obj.current_stage = opp_stage_obj.stage
-            obj.current_stage_data = {
-                'id': str(obj.current_stage.id),
-                'indicator': obj.current_stage.indicator,
-                'win_rate': obj.current_stage.win_rate
-            } if obj.current_stage else {}
-            obj.save(update_fields=['win_rate', 'current_stage', 'current_stage_data'])
+        obj.win_rate, opp_stage_obj = obj.update_stage(obj=obj)
+        obj.current_stage = opp_stage_obj.stage
+        obj.current_stage_data = {
+            'id': str(obj.current_stage.id),
+            'indicator': obj.current_stage.indicator,
+            'win_rate': obj.current_stage.win_rate
+        } if obj.current_stage else {}
+        obj.save(update_fields=['win_rate', 'current_stage', 'current_stage_data'])
         return True
 
     def save(self, *args, **kwargs):
-        if not self.code:
-            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='opportunity')
-            if code_generated:
-                self.code = code_generated
-            else:
-                self.add_auto_generate_code_to_instance(self, 'OPP[n4]', False)
+        CompanyFunctionNumber.auto_gen_code_based_on_config('opportunity', False, self, kwargs)
         # hit DB
         super().save(*args, **kwargs)
 

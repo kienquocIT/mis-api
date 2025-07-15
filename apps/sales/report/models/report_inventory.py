@@ -239,7 +239,7 @@ class ReportStockLog(DataAbstractModel):
             item['value'] = item['cost'] * item['quantity']
 
             if len(item.get('lot_data', {})) != 0:   # update Lot
-                item['lot_data']['quantity'] = item['quantity']
+                item['lot_data']['lot_quantity'] = item['quantity']
                 item['lot_data']['lot_value'] = item['value']
 
             if float(item['quantity']) > 0:
@@ -588,7 +588,7 @@ class ReportInventoryCost(DataAbstractModel):
 
     periodic_closed = models.BooleanField(default=False, help_text='is True if sub has closed')
 
-    for_balance = models.BooleanField(default=False, help_text='is True if it has balance')
+    for_balance_init = models.BooleanField(default=False, help_text='is True if it has balance')
     sub_latest_log = models.ForeignKey(
         ReportStockLog,
         on_delete=models.CASCADE,
@@ -776,7 +776,7 @@ class ReportInventorySubFunction:
     @classmethod
     def get_opening_cost_dict(cls, product_id, data_type=1, **kwargs):
         """ Hàm tìm số dư đầu kì """
-        this_record = ReportInventoryCost.objects.filter(product_id=product_id, for_balance=True, **kwargs).first()
+        this_record = ReportInventoryCost.objects.filter(product_id=product_id, for_balance_init=True, **kwargs).first()
         if this_record:
             if data_type == 0:
                 return this_record.opening_balance_quantity

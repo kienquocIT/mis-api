@@ -13,7 +13,7 @@ from apps.sales.quotation.serializers.quotation_serializers import (
     QuotationListSerializer, QuotationCreateSerializer,
     QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer, QuotationMinimalListSerializer
 )
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 
 
 class QuotationList(BaseListMixin, BaseCreateMixin):
@@ -23,10 +23,13 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
         'id': ['exact', 'in'],
         'opportunity': ['exact', 'isnull'],
         'employee_inherit': ['exact'],
+        'employee_inherit_id': ['exact', 'in'],
         'opportunity__sale_order': ['exact', 'isnull'],
         'opportunity__is_close_lost': ['exact'],
         'opportunity__is_deal_close': ['exact'],
         'system_status': ['exact', 'in'],
+        'date_approved': ['lte', 'gte'],
+        'is_delete': ['exact'],
     }
     serializer_list = QuotationListSerializer
     serializer_list_minimal = QuotationMinimalListSerializer
@@ -50,7 +53,6 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
             "opportunity",
             "employee_inherit",
         )
-        # return self.get_queryset_custom_direct_page(main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Quotation List",
@@ -76,12 +78,14 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
         opp_enabled=True, prj_enabled=True,
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
 class QuotationDetail(
     BaseRetrieveMixin,
     BaseUpdateMixin,
+    BaseDestroyMixin,
 ):
     queryset = Quotation.objects
     serializer_detail = QuotationDetailSerializer
@@ -90,7 +94,7 @@ class QuotationDetail(
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
+        return super().get_queryset().filter_on_company().select_related(
             "opportunity",
             "opportunity__customer",
             "employee_inherit",
@@ -120,7 +124,19 @@ class QuotationDetail(
         opp_enabled=True, prj_enabled=True,
     )
     def put(self, request, *args, pk, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Delete Quotation",
+        operation_description="Delete Quotation by ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='quotation', model_code='quotation', perm_code='delete',
+    )
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
 
 class QuotationExpenseList(BaseListMixin):

@@ -104,6 +104,12 @@ class AssetForLeaseList(BaseListMixin, BaseCreateMixin):
     serializer_list = AssetForLeaseListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "product",
+            "product__sale_default_uom",
+        )
+
     @swagger_auto_schema(
         operation_summary="Fixed Asset For Lease List",
         operation_description="Get Fixed Asset For Lease List",

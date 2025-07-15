@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from apps.core.company.models import CompanyFunctionNumber
 # from apps.accounting.journalentry.utils.log_for_cash_inflow import JEForCIFHandler
 # from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel
@@ -128,18 +129,14 @@ class CashOutflow(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'COF[n4]', True)
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-                # JEForCIFHandler.push_to_journal_entry(self)
-                # ReconForCIFHandler.auto_create_recon_doc(self)
-                self.update_ap_invoice_cash_outflow_done()
-                self.update_po_stage_cash_outflow_done()
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('cashoutflow', True, self, kwargs)
+                    # JEForCIFHandler.push_to_journal_entry(self)
+                    # ReconForCIFHandler.auto_create_recon_doc(self)
+                    self.update_ap_invoice_cash_outflow_done()
+                    self.update_po_stage_cash_outflow_done()
         super().save(*args, **kwargs)
 
 

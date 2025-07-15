@@ -128,6 +128,8 @@ MAP_FIELD_TITLE = {
     'financialcashflow.cashinflow': 'title',
     'financialcashflow.cashoutflow': 'title',
     'productmodification.productmodification': 'title',
+    'equipmentloan.equipmentloan': 'title',
+    'equipmentreturn.equipmentreturn': 'title',
     #
     'bidding.bidding': 'title',
     'consulting.consulting': 'title',
@@ -137,6 +139,7 @@ MAP_FIELD_TITLE = {
     'asset.instrumenttoolwriteoff': 'title',
     # KMS
     'documentapproval.kmsdocumentapproval': 'title',
+    'incomingdocument.kmsincomingdocument': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -288,6 +291,8 @@ TYPE_LIST = (
 GOODS_TRANSFER_TYPE = (
     (0, _('Goods transfer')),
     (1, _('Send/return consigned goods')),
+    (2, _('Equipment loan')),
+    (3, _('Equipment return')),
 )
 
 # Inventory Adjustment Item action type
@@ -498,4 +503,23 @@ STATUS_RECOVERY = (
 SERIAL_STATUS = (
     (0, _('Available')),
     (1, _('Delivered')),
+)
+
+# kms
+SECURITY_LEVEL = (
+    (0, 'Low'),
+    (1, 'Medium'),
+    (2, 'High')
+)
+
+
+# shift master data
+WORKING_DAYS = (
+    (0, 'Mon'),
+    (1, 'Tue'),
+    (2, 'Wed'),
+    (3, 'Thu'),
+    (4, 'Fri'),
+    (5, 'Sat'),
+    (6, 'Sun'),
 )

@@ -184,6 +184,9 @@ class NormalManager(models.Manager):
     def filter_on_tenant(self, *args, **kwargs):
         if hasattr(self.model, "is_delete"):
             kwargs.setdefault("is_delete", False)
+        if hasattr(self, 'core_filters'):
+            if isinstance(self.core_filters, dict):
+                kwargs.update(self.core_filters)
         return EntryQuerySet(self.model, using=self._db).filter_current(
             *args,
             fill__tenant=True, fill__company=False,
@@ -194,6 +197,9 @@ class NormalManager(models.Manager):
     def filter_on_company(self, *args, **kwargs):
         if hasattr(self.model, "is_delete"):
             kwargs.setdefault("is_delete", False)
+        if hasattr(self, 'core_filters'):
+            if isinstance(self.core_filters, dict):
+                kwargs.update(self.core_filters)
         return EntryQuerySet(self.model, using=self._db).filter_current(
             *args,
             fill__tenant=True, fill__company=True,

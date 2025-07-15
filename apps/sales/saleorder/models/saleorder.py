@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.inventory.models import GoodsRegistration
 from apps.sales.saleorder.utils import SOFinishHandler, DocumentChangeHandler, SOHandler
@@ -220,6 +221,13 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
         default=False,
         help_text='is True if linked with registration else False',
     )
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='SaleOrderAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_sale_order',
+    )
 
     class Meta:
         verbose_name = 'Sale Order'
@@ -227,42 +235,6 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-    @classmethod
-    def find_max_number(cls, codes):
-        num_max = None
-        for code in codes:
-            try:
-                if code != '':
-                    tmp = int(code.split('-', maxsplit=1)[0].split("OR")[1])
-                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
-                        num_max = tmp
-            except Exception as err:
-                print(err)
-        return num_max
-
-    @classmethod
-    def generate_code(cls, company_id):
-        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
-        num_max = cls.find_max_number(codes=existing_codes)
-        if num_max is None:
-            code = 'OR0001'
-        elif num_max < 10000:
-            num_str = str(num_max + 1).zfill(4)
-            code = f'OR{num_str}'
-        else:
-            raise ValueError('Out of range: number exceeds 10000')
-        if cls.objects.filter(code=code, company_id=company_id).exists():
-            return cls.generate_code(company_id=company_id)
-        return code
-
-    @classmethod
-    def push_code(cls, instance, kwargs):
-        if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='saleorder')
-            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
-            kwargs['update_fields'].append('code')
-        return True
 
     @classmethod
     def check_change_document(cls, instance):
@@ -301,7 +273,7 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.push_code(instance=self, kwargs=kwargs)  # code
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('saleorder', True, self, kwargs)
                     if self.opportunity:  # registration
                         GoodsRegistration.check_and_create_goods_registration(self)
                     SOFinishHandler.push_product_info(instance=self)  # product info
@@ -665,5 +637,25 @@ class SaleOrderInvoice(MasterDataAbstractModel):
         verbose_name = 'Sale Order Invoice'
         verbose_name_plural = 'Sale Order Invoices'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class SaleOrderAttachment(M2MFilesAbstractModel):
+    sale_order = models.ForeignKey(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE,
+        verbose_name="sale order",
+        related_name="sale_order_attachment_sale_order",
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'sale_order'
+
+    class Meta:
+        verbose_name = 'Sale order attachment'
+        verbose_name_plural = 'Sale order attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

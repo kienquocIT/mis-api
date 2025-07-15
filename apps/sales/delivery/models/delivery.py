@@ -6,7 +6,7 @@ from apps.accounting.journalentry.utils.log_for_delivery import JEForDeliveryHan
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods
-from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler
+from apps.sales.delivery.utils import DeliFinishHandler, DeliHandler, DeliFinishAssetToolHandler
 from apps.sales.report.utils.log_for_delivery import IRForDeliveryHandler
 from apps.shared import (
     DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
@@ -198,16 +198,8 @@ class OrderDelivery(DataAbstractModel):
             return cls.generate_code(company_id=company_id)
         return code
 
-    @classmethod
-    def push_code(cls, instance):
-        if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='orderdeliverysub')
-            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
-        return True
-
     def save(self, *args, **kwargs):
         self.put_backup_data()
-        # self.push_code(instance=self)  # code
         super().save(*args, **kwargs)
 
     class Meta:
@@ -364,42 +356,6 @@ class OrderDeliverySub(DataAbstractModel):
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
 
     @classmethod
-    def find_max_number(cls, codes):
-        num_max = None
-        for code in codes:
-            try:
-                if code != '':
-                    tmp = int(code.split('-', maxsplit=1)[0].split("D")[1])
-                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
-                        num_max = tmp
-            except Exception as err:
-                print(err)
-        return num_max
-
-    @classmethod
-    def generate_code(cls, company_id):
-        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
-        num_max = cls.find_max_number(existing_codes)
-        if num_max is None:
-            code = 'D0001'
-        elif num_max < 10000:
-            num_str = str(num_max + 1).zfill(4)
-            code = f'D{num_str}'
-        else:
-            raise ValueError('Out of range: number exceeds 10000')
-        if cls.objects.filter(code=code, company_id=company_id).exists():
-            return cls.generate_code(company_id=company_id)
-        return code
-
-    @classmethod
-    def push_code(cls, instance, kwargs):
-        if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='orderdeliverysub')
-            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
-            kwargs['update_fields'].append('code')
-        return True
-
-    @classmethod
     def push_state(cls, instance, kwargs):
         instance.state = 2
         kwargs['update_fields'].append('state')
@@ -412,18 +368,18 @@ class OrderDeliverySub(DataAbstractModel):
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.push_code(instance=self, kwargs=kwargs)  # code
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('orderdeliverysub', True, self, kwargs)
                     self.push_state(instance=self, kwargs=kwargs)  # state
                     DeliFinishHandler.create_new(instance=self)  # new sub + product
                     DeliFinishHandler.push_product_warehouse(instance=self)  # product warehouse
-                    DeliFinishHandler.update_asset_status(instance=self)  # asset status => delivered
-                    DeliFinishHandler.force_create_new_asset(instance=self)  # create new asset
-                    DeliFinishHandler.force_create_new_tool(instance=self)  # create new tool
+                    DeliFinishAssetToolHandler.update_tool_status(instance=self)  # tool quantity_leased +=
+                    DeliFinishAssetToolHandler.update_asset_status(instance=self)  # asset status => delivered
+                    DeliFinishAssetToolHandler.force_create_new_asset(instance=self)  # create new asset
+                    DeliFinishAssetToolHandler.force_create_new_tool(instance=self)  # create new tool
                     DeliFinishHandler.push_product_info(instance=self)  # product
                     DeliFinishHandler.push_so_lo_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
                     DeliHandler.push_diagram(instance=self)  # diagram
-
                     IRForDeliveryHandler.push_to_inventory_report(self)
                     JEForDeliveryHandler.push_to_journal_entry(self)
 

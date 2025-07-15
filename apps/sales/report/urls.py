@@ -4,7 +4,7 @@ from .views import (
     ReportStockList, BalanceInitializationList, ReportInventoryCostList, ReportGeneralList,
     PurchaseOrderListReport, WarehouseAvailableProductList, BudgetReportCompanyList, PaymentListForBudgetReport,
     BudgetReportGroupList, BalanceInitializationListImportDB, ReportProductListForDashBoard, AdvanceFilterList,
-    AdvanceFilterDetail, WarehouseAvailableProductDetail
+    AdvanceFilterDetail, WarehouseAvailableProductDetail, ReportLeaseList
 )
 
 urlpatterns = [
@@ -18,8 +18,8 @@ urlpatterns = [
     path('customer/list', ReportCustomerList.as_view(), name='ReportCustomerList'),
     path('pipeline/list', ReportPipelineList.as_view(), name='ReportPipelineList'),
     path('cashflow/list', ReportCashflowList.as_view(), name='ReportCashflowList'),
-
     path('general/list', ReportGeneralList.as_view(), name='ReportGeneralList'),
+    path('lease/list', ReportLeaseList.as_view(), name='ReportLeaseList'),
 
     # Report inventory
     path('balance-init/list', BalanceInitializationList.as_view(), name='BalanceInitializationList'),

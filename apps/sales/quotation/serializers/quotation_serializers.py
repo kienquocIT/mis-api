@@ -1,14 +1,16 @@
 from rest_framework import serializers
 
+from apps.core.base.models import Application
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity
-from apps.sales.quotation.models import Quotation, QuotationExpense
+from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAttachment
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
     QuotationProductSerializer, QuotationLogisticSerializer, QuotationCostSerializer, \
     QuotationExpenseSerializer, QuotationIndicatorSerializer, QuotationRuleValidate
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
-    AbstractListSerializerModel
+    AbstractListSerializerModel, SerializerCommonValidate, SerializerCommonHandle, \
+    AbstractCurrencyCreateSerializerModel, AbstractCurrencyDetailSerializerModel
 
 
 # QUOTATION BEGIN
@@ -29,6 +31,7 @@ class QuotationListSerializer(AbstractListSerializerModel):
             'indicator_revenue',
             'system_status',
             'opportunity',
+            'is_delete',
         )
 
     @classmethod
@@ -63,12 +66,13 @@ class QuotationMinimalListSerializer(serializers.ModelSerializer):
         )
 
 
-class QuotationDetailSerializer(AbstractDetailSerializerModel):
+class QuotationDetailSerializer(AbstractDetailSerializerModel, AbstractCurrencyDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = Quotation
@@ -119,6 +123,8 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             # process
             'process',
             'process_stage_app',
+
+            'attachment',
         )
 
     @classmethod
@@ -165,8 +171,12 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel):
             }
         return {}
 
+    @classmethod
+    def get_attachment(cls, obj):
+        return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
 
-class QuotationCreateSerializer(AbstractCreateSerializerModel):
+
+class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     opportunity_id = serializers.UUIDField(
         required=False,
@@ -199,6 +209,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
     )
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
     process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     @classmethod
     def validate_process(cls, attrs):
@@ -255,6 +266,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
             'indicator_revenue',
             'indicator_gross_profit',
             'indicator_net_income',
+            'attachment',
         )
 
     @classmethod
@@ -305,6 +317,10 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
                             raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_QUOTATION_NOT_DONE})
         return True
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(user=user, model_cls=QuotationAttachment, value=value)
+
     def validate(self, validate_data):
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
@@ -319,8 +335,15 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
+        attachment = validated_data.pop('attachment', [])
         quotation = Quotation.objects.create(**validated_data)
         QuotationCommonCreate().create_quotation_sub_models(validated_data=validated_data, instance=quotation)
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id="b9650500-aba7-44e3-b6e0-2542622702a3").first(),
+            model_cls=QuotationAttachment,
+            instance=quotation,
+            attachment_result=attachment,
+        )
 
         # Check instance is change document => set is_change True for root
         if quotation.is_change is True and quotation.document_root_id:
@@ -383,6 +406,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
         many=True,
         required=False
     )
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = Quotation
@@ -425,6 +449,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
             'indicator_revenue',
             'indicator_gross_profit',
             'indicator_net_income',
+            'attachment',
         )
 
     @classmethod
@@ -476,6 +501,12 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
             'system_status': BaseMsg.SYSTEM_STATUS_INCORRECT,
         })
 
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=QuotationAttachment, value=value, doc_id=self.instance.id
+        )
+
     def validate(self, validate_data):
         QuotationRuleValidate().validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
@@ -484,11 +515,18 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
+        attachment = validated_data.pop('attachment', [])
         # update quotation
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         QuotationCommonCreate().create_quotation_sub_models(validated_data=validated_data, instance=instance)
+        SerializerCommonHandle.handle_attach_file(
+            relate_app=Application.objects.filter(id="b9650500-aba7-44e3-b6e0-2542622702a3").first(),
+            model_cls=QuotationAttachment,
+            instance=instance,
+            attachment_result=attachment,
+        )
         return instance
 
 

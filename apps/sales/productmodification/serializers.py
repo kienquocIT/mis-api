@@ -41,7 +41,8 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
             'title',
             'code',
             'date_created',
-            'employee_created'
+            'employee_created',
+            'created_goods_receipt'
         )
 
     @classmethod
@@ -72,6 +73,7 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'product_modified',
+            'new_description',
             'warehouse_id',
             'prd_wh_lot',
             'prd_wh_serial',
@@ -274,7 +276,7 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
             validate_data['prd_wh_serial_data'] = {
                 'id': str(prd_wh_serial_obj.id),
                 'vendor_serial_number': prd_wh_serial_obj.vendor_serial_number,
-                'serial_number': prd_wh_serial_obj.vendor_serial_number,
+                'serial_number': prd_wh_serial_obj.serial_number,
                 'expire_date': str(prd_wh_serial_obj.expire_date),
                 'manufacture_date': str(prd_wh_serial_obj.manufacture_date),
                 'warranty_start': str(prd_wh_serial_obj.warranty_start),
@@ -306,6 +308,7 @@ class ProductModificationDetailSerializer(AbstractDetailSerializerModel):
             'code',
             'title',
             'date_created',
+            'new_description',
             'prd_wh_data',
             'prd_wh_lot_data',
             'prd_wh_serial_data',
@@ -376,6 +379,7 @@ class ProductModificationUpdateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'product_modified',
+            'new_description',
             'warehouse_id',
             'prd_wh_lot',
             'prd_wh_serial',
@@ -473,7 +477,7 @@ class ProductModificationCommonFunction:
                         component_prd_wh_serial_data={
                             'id': str(serial_obj.id),
                             'vendor_serial_number': serial_obj.vendor_serial_number,
-                            'serial_number': serial_obj.vendor_serial_number,
+                            'serial_number': serial_obj.serial_number,
                             'expire_date': str(serial_obj.expire_date),
                             'manufacture_date': str(serial_obj.manufacture_date),
                             'warranty_start': str(serial_obj.warranty_start),
@@ -553,6 +557,7 @@ class ProductModifiedBeforeListSerializer(serializers.ModelSerializer):
             'product_warehouse_lot_id',
             'product_warehouse_serial_id',
             'modified_number',
+            'new_description',
             'serial_number',
             'lot_number',
             'warehouse_data'
@@ -710,7 +715,8 @@ class ProductSerialListSerializer(serializers.ModelSerializer):
             'expire_date',
             'manufacture_date',
             'warranty_start',
-            'warranty_end'
+            'warranty_end',
+            'use_for_modification'
         )
 
 

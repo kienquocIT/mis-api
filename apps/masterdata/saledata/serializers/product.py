@@ -142,7 +142,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             if Product.objects.filter_on_company(code=value).exists():
                 raise serializers.ValidationError({"code": ProductMsg.CODE_EXIST})
             return value
-        code_generated = CompanyFunctionNumber.gen_auto_code(app_code='product')
+        code_generated = CompanyFunctionNumber.auto_gen_code_based_on_config(app_code='product')
         if code_generated:
             return code_generated
         raise serializers.ValidationError({"code": f"{ProductMsg.CODE_NOT_NULL}. {BaseMsg.NO_CONFIG_AUTO_CODE}"})
@@ -577,7 +577,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                             'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
                         } if item.warehouse else {},
                         'stock_amount': casted_stock_amount,
-                        'cost': obj.get_unit_cost_by_warehouse(
+                        'cost': obj.get_cost_info_by_warehouse(
                             warehouse_id=item.warehouse_id, get_type=2
                         ) / casted_stock_amount if cost_cfg == [1] else None
                     })

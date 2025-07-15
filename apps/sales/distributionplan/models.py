@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils import timezone
+
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 # Create your models here.
 
@@ -24,15 +26,10 @@ class DistributionPlan(DataAbstractModel):
     purchase_request_number = models.FloatField(default=0)
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'DP[n4]', True)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('distributionplan', True, self, kwargs)
         # hit DB
         super().save(*args, **kwargs)
 

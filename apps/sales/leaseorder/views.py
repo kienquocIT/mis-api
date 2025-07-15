@@ -73,6 +73,7 @@ class LeaseOrderList(BaseListMixin, BaseCreateMixin):
         label_code='leaseorder', model_code='leaseorder', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
@@ -141,6 +142,7 @@ class LeaseOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='leaseorder', model_code='leaseorder', perm_code='edit',
     )
     def put(self, request, *args, pk, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, pk, **kwargs)
 
 

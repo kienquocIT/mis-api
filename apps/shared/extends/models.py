@@ -19,7 +19,8 @@ __all__ = [
     'RecurrenceAbstractModel',
     'DisperseModel',
     'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass',
-    'AutoDocumentAbstractModel'
+    'AutoDocumentAbstractModel',
+    'CurrencyAbstractModel',
 ]
 
 
@@ -93,27 +94,24 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
         permissions = ()
 
     @classmethod
-    def add_auto_generate_code_to_instance(cls, instance, code_rule, in_workflow=True, filter_fields=None):
+    def auto_generate_code(cls, instance, code_rule, in_workflow=True):
         """
-            Auto generate code following 'code_rule' parameter.
+            If instance.code is None: Auto generate code following 'code_rule' parameter.
             Example: LEAD-[n4]-2024 ([n4] will be parsed from 0001 to 9999)
         """
-        model_cls = DisperseModel(app_model=instance.get_model_code()).get_model()
-        if model_cls and hasattr(model_cls, 'objects'):
-            number = model_cls.objects.filter(
-                tenant_id=instance.tenant_id,
-                company_id=instance.company_id,
-                is_delete=False,
-                system_status=3 if in_workflow else 1,
-                **filter_fields if filter_fields else {}
-            ).count()
-            code_rule_number_format = re.search(r'\[(.*?)\]', code_rule)
-            if code_rule_number_format:
-                number_format = code_rule_number_format.group(1)
-                new_code = code_rule.replace(f'[{number_format}]', str(number+1).zfill(int(number_format[1])))
-                instance.code = new_code
-                return True
-        return False
+        parsed_code = ''
+        if not instance.code:
+            model_cls = DisperseModel(app_model=instance.get_model_code()).get_model()
+            if model_cls and hasattr(model_cls, 'objects'):
+                number = model_cls.objects.filter_on_company(
+                    is_delete=False,
+                    system_status=3 if in_workflow else 1,
+                ).count()
+                code_rule_number_format = re.search(r'\[(.*?)\]', code_rule)
+                if code_rule_number_format:
+                    number_format = code_rule_number_format.group(1)
+                    parsed_code = code_rule.replace(f'[{number_format}]', str(number+1).zfill(int(number_format[1])))
+        return parsed_code
 
 
     @classmethod
@@ -424,6 +422,28 @@ class AutoDocumentAbstractModel(SimpleAbstractModel):  # use for applications in
         abstract = True
         verbose_name = 'Accounting Abstract'
         verbose_name_plural = 'Accounting Abstract'
+
+
+class CurrencyAbstractModel(SimpleAbstractModel):  # use for applications need exchange currency
+    is_currency_exchange = models.BooleanField(default=False, help_text="flag to know allow currency exchange")
+    currency_company = models.ForeignKey(
+        'saledata.Currency', null=True, on_delete=models.SET_NULL,
+        help_text='',
+        related_name='%(app_label)s_%(class)s_currency_company',
+    )
+    currency_company_data = models.JSONField(default=dict, help_text='data json of currency_company')
+    currency_exchange = models.ForeignKey(
+        'saledata.Currency', null=True, on_delete=models.SET_NULL,
+        help_text='',
+        related_name='%(app_label)s_%(class)s_currency_exchange',
+    )
+    currency_exchange_data = models.JSONField(default=dict, help_text='data json of currency_exchange')
+    currency_exchange_rate = models.FloatField(default=1)
+
+    class Meta:
+        abstract = True
+        verbose_name = 'Currency Abstract'
+        verbose_name_plural = 'Currency Abstract'
 
 
 # Forwarder class model

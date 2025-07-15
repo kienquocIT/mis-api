@@ -454,6 +454,7 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
     )
     # Status of serial
     serial_status = models.SmallIntegerField(choices=SERIAL_STATUS, default=0, help_text="Flag to know current status")
+    use_for_modification = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Product Warehouse Serial'
@@ -486,6 +487,7 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
 
         for serial_old in cls.objects.filter(
                 serial_number__in=[serial.get('serial_number', '') for serial in serial_data],
+                product_warehouse_id=product_warehouse_id,
                 product_warehouse__product_id=product_id,
                 serial_status=1,
         ):
@@ -516,11 +518,12 @@ class PWModified(MasterDataAbstractModel):
         null=True
     )
     modified_number = models.CharField(max_length=100)
+    new_description = models.TextField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'Product Warehouse Modified'
         verbose_name_plural = 'Products Warehouses Modified'
-        ordering = ()
+        ordering = ('-modified_number',)
         default_permissions = ()
         permissions = ()
 

@@ -1,9 +1,14 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 
 __all__ = [
     'AbstractListSerializerModel',
     'AbstractDetailSerializerModel',
     'AbstractCreateSerializerModel',
+    'SerializerCommonValidate',
+    'SerializerCommonHandle',
+    'AbstractCurrencyCreateSerializerModel',
+    'AbstractCurrencyDetailSerializerModel',
 ]
 
 
@@ -53,6 +58,74 @@ class AbstractCreateSerializerModel(serializers.ModelSerializer):
             'is_change': serializers.BooleanField(required=False, default=False),
             'document_root_id': serializers.UUIDField(required=False, allow_null=True),
             'document_change_order': serializers.IntegerField(required=False, allow_null=True),
+        }
+
+    class Meta:
+        abstract = True
+
+
+class SerializerCommonValidate:
+
+    @classmethod
+    def validate_attachment(cls, user, model_cls, value, doc_id=None):
+        if user and hasattr(user, 'employee_current_id'):
+            if model_cls and hasattr(model_cls, 'objects') and hasattr(model_cls, 'valid_change'):
+                state, result = model_cls.valid_change(
+                    current_ids=value, employee_id=user.employee_current_id, doc_id=doc_id
+                )
+                if state is True:
+                    return result
+                raise serializers.ValidationError({
+                    'attachment': _('Some attachments are being used by another document or do not exist')
+                })
+        raise serializers.ValidationError({
+            'employee_id': _('Employee does not exist.')
+        })
+
+
+class SerializerCommonHandle:
+
+    @classmethod
+    def handle_attach_file(cls, relate_app, model_cls, instance, attachment_result):
+        if attachment_result and isinstance(attachment_result, dict):
+            if relate_app:
+                state = model_cls.resolve_change(
+                    result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+                )
+                if state:
+                    return True
+            raise serializers.ValidationError({
+                'attachment': _('Attachment can not verify please try again or contact your admin')
+            })
+        return True
+
+
+class AbstractCurrencyCreateSerializerModel(serializers.ModelSerializer):
+    def get_fields(self):
+        return {
+            **super().get_fields(),
+            'is_currency_exchange': serializers.BooleanField(required=False, default=False),
+            'currency_company_id': serializers.UUIDField(required=False, allow_null=True),
+            'currency_company_data': serializers.JSONField(required=False, default=dict),
+            'currency_exchange_id': serializers.UUIDField(required=False, allow_null=True),
+            'currency_exchange_data': serializers.JSONField(required=False, default=dict),
+            'currency_exchange_rate': serializers.FloatField(default=1),
+        }
+
+    class Meta:
+        abstract = True
+
+
+class AbstractCurrencyDetailSerializerModel(serializers.ModelSerializer):
+    def get_fields(self):
+        return {
+            **super().get_fields(),
+            'is_currency_exchange': serializers.BooleanField(),
+            'currency_company_id': serializers.UUIDField(),
+            'currency_company_data': serializers.JSONField(),
+            'currency_exchange_id': serializers.UUIDField(),
+            'currency_exchange_data': serializers.JSONField(),
+            'currency_exchange_rate': serializers.FloatField(),
         }
 
     class Meta:

@@ -41,7 +41,8 @@ from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..sales.arinvoice.models import ARInvoice, ARInvoiceItems, ARInvoiceDelivery
 from ..sales.arinvoice.utils.logical_finish import ARInvoiceFinishHandler
-from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct, OrderPickingProduct
+from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct, OrderPickingProduct, \
+    OrderPickingSub
 from ..sales.delivery.models.delivery import OrderDeliverySerial, OrderDeliveryProductWarehouse
 from ..sales.delivery.utils import DeliFinishHandler
 from ..sales.financialcashflow.models import CashInflow, CashOutflow
@@ -52,6 +53,8 @@ from ..sales.inventory.models import (
 )
 from ..sales.inventory.utils import GRFinishHandler, ReturnFinishHandler
 from ..sales.lead.models import Lead
+from ..sales.leaseorder.models import LeaseOrder
+from ..sales.leaseorder.utils.logical_finish import LOFinishHandler
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunitySaleTeamMember, OpportunityMeeting, OpportunityActivityLogs,
 )
@@ -59,18 +62,18 @@ from ..sales.partnercenter.models import DataObject
 from ..sales.paymentplan.models import PaymentPlan
 from ..sales.project.models import Project, ProjectMapMember
 from ..sales.purchasing.models import (
-    PurchaseRequestProduct, PurchaseOrderRequestProduct, PurchaseOrder,
+    PurchaseRequestProduct, PurchaseOrderRequestProduct, PurchaseOrder, PurchaseRequest,
 )
-from ..sales.purchasing.utils import POFinishHandler
+from ..sales.purchasing.utils import POFinishHandler, POHandler, PRHandler
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.quotation.serializers import QuotationListSerializer
-from ..sales.report.models import ReportCashflow
+from ..sales.report.models import ReportCashflow, ReportLease
 from ..sales.report.scripts import InventoryReportRun
 from ..sales.report.utils import IRForGoodsReceiptHandler
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrder, SaleOrderIndicator
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
-from ..sales.saleorder.utils import SOFinishHandler
+from ..sales.saleorder.utils import SOFinishHandler, SOHandler
 from ..sales.task.models import OpportunityTaskStatus, OpportunityTask
 
 
@@ -491,10 +494,11 @@ def make_sure_asset_config():
 
 
 def reset_and_run_reports_sale(run_type=0):
-    if run_type == 0:  # run report revenue, customer, product
+    if run_type == 0:  # run report revenue, customer, product, lease
         ReportRevenue.objects.all().delete()
         ReportCustomer.objects.all().delete()
         ReportProduct.objects.all().delete()
+        ReportLease.objects.all().delete()
         for plan in RevenuePlanGroupEmployee.objects.all():
             if plan.revenue_plan_mapped:
                 ReportRevenue.push_from_plan(
@@ -510,6 +514,8 @@ def reset_and_run_reports_sale(run_type=0):
             SOFinishHandler.push_to_report_revenue(instance=sale_order)
             SOFinishHandler.push_to_report_product(instance=sale_order)
             SOFinishHandler.push_to_report_customer(instance=sale_order)
+        for lease_order in LeaseOrder.objects.filter(system_status=3):
+            LOFinishHandler.push_to_report_lease(instance=lease_order)
         for g_return in GoodsReturn.objects.filter(system_status=3):
             ReturnFinishHandler.update_report(instance=g_return)
     if run_type == 1:  # run report cashflow
@@ -1314,7 +1320,7 @@ class SubScripts:
     @classmethod
     def update_opp_current_stage(cls):
         for obj in Opportunity.objects.all():
-            if obj.check_config_auto_update_stage():
+            if obj.check_config_auto_update_stage(obj=obj):
                 obj.win_rate, opp_stage_obj = obj.update_stage(obj=obj)
                 obj.current_stage = opp_stage_obj.stage
                 obj.current_stage_data = {
@@ -1609,14 +1615,16 @@ def reset_run_indicator_fields(kwargs):
     print('reset_run_indicator_fields done.')
 
 
-def update_serial_status():
-    for pw_serial in ProductWareHouseSerial.objects.filter():
-        if pw_serial.is_delete:
-            pw_serial.serial_status = 1
-        else:
-            pw_serial.serial_status = 0
+def update_product_warehouse_serial_status(product_id, warehouse_id, serial_number, serial_status):
+    pw_serial = ProductWareHouseSerial.objects.filter_on_company(
+        product_warehouse__product_id=product_id,
+        product_warehouse__warehouse_id=warehouse_id,
+        serial_number=serial_number,
+    ).first()
+    if pw_serial:
+        pw_serial.serial_status = serial_status
         pw_serial.save(update_fields=['serial_status'])
-    print('update_serial_status done.')
+    print('update_product_warehouse_serial_status done.')
 
 
 class DefaultSaleDataHandler:
@@ -1880,7 +1888,6 @@ def add_delivery_pw_serial(sub_product_id=None, pw_serial_id=None):
                     "title": "Cái"
                 },
                 "stock": 0,
-                "agency": None,
                 "uom_id": "02d31f81-313c-4be7-8839-f6088011afba",
                 "product": {
                     "id": "28b33b97-33ba-421f-bb95-799bc7b36692",
@@ -2168,4 +2175,28 @@ def hong_quang_delete_runtime_assignee():
     if assignees:
         assignees.delete()
     print('hong_quang_delete_runtime_assignee done.')
+    return True
+
+
+def run_push_diagram():
+    for sale_order in SaleOrder.objects.all():
+        SOHandler.push_diagram(instance=sale_order)
+    for purchase_request in PurchaseRequest.objects.all():
+        PRHandler.push_diagram(instance=purchase_request)
+    for purchase_order in PurchaseOrder.objects.all():
+        POHandler.push_diagram(instance=purchase_order)
+    print('run_push_diagram done.')
+    return True
+
+
+def reset_picking_delivery(picking_id, delivery_id):
+    picking_sub = OrderPickingSub.objects.filter(id=picking_id).first()
+    if picking_sub:
+        picking_sub.state = 0
+        picking_sub.save(update_fields=['state'])
+        delivery_sub = OrderDeliverySub.objects.filter(id=delivery_id).first()
+        if delivery_sub:
+            delivery_sub.ready_quantity = delivery_sub.ready_quantity - picking_sub.picked_quantity
+            delivery_sub.save(update_fields=['ready_quantity'])
+    print('reset_picking_delivery done.')
     return True

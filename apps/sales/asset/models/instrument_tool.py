@@ -94,6 +94,8 @@ class InstrumentTool(DataAbstractModel):
         help_text='quantity of allocated instruments and tools'
     )
 
+    quantity_leased = models.FloatField(default=0, help_text="quantity that currently leased")
+
     class Meta:
         verbose_name = 'Instrument Tool'
         verbose_name_plural = 'Instrument Tools'
@@ -102,20 +104,10 @@ class InstrumentTool(DataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                code_generated = CompanyFunctionNumber.gen_auto_code(app_code='instrumenttool')
-                if code_generated:
-                    self.code = code_generated
-                else:
-                    self.add_auto_generate_code_to_instance(self, 'IT[n4]', True)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('instrumenttool', True, self, kwargs)
         # hit DB
         super().save(*args, **kwargs)
 

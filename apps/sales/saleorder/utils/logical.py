@@ -48,8 +48,13 @@ class SOHandler:
                 'date_created': str(instance.date_created),
                 # custom
                 'quantity': quantity,
-                'total': instance.total_product_pretax_amount,
+                'total': instance.total_product_pretax_amount - instance.total_product_discount,
                 'reference': reference,
+                'customer_data': {
+                    'id': str(instance.customer_id),
+                    'title': str(instance.customer.name),
+                    'code': str(instance.customer.code),
+                } if instance.customer else {}
             }
         )
         if instance.quotation:
@@ -72,6 +77,11 @@ class SOHandler:
                     # custom
                     'quantity': quantity,
                     'total': instance.quotation.total_product_pretax_amount,
+                    'customer_data': {
+                        'id': str(instance.quotation.customer_id),
+                        'title': str(instance.quotation.customer.name),
+                        'code': str(instance.quotation.customer.code),
+                    } if instance.quotation.customer else {}
                 }
             )
         return True

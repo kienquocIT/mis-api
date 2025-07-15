@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
 from apps.sales.inventory.models.goods_detail import GoodsDetail
 from apps.sales.inventory.utils import GRFinishHandler, GRHandler
@@ -143,50 +144,20 @@ class GoodsReceipt(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    @classmethod
-    def find_max_number(cls, codes):
-        num_max = None
-        for code in codes:
-            try:
-                if code != '':
-                    tmp = int(code.split('-', maxsplit=1)[0].split("GR")[1])
-                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
-                        num_max = tmp
-            except Exception as err:
-                print(err)
-        return num_max
-
-    @classmethod
-    def generate_code(cls, company_id):
-        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
-        num_max = cls.find_max_number(existing_codes)
-        if num_max is None:
-            code = 'GR0001'
-        elif num_max < 10000:
-            num_str = str(num_max + 1).zfill(4)
-            code = f'GR{num_str}'
-        else:
-            raise ValueError('Out of range: number exceeds 10000')
-        if cls.objects.filter(code=code, company_id=company_id).exists():
-            return cls.generate_code(company_id=company_id)
-        return code
-
-    @classmethod
-    def push_code(cls, instance, kwargs):
-        if not instance.code:
-            instance.code = cls.generate_code(company_id=instance.company_id)
-            kwargs['update_fields'].append('code')
-        return True
-
     @staticmethod
     def count_created_serial_data(good_receipt_obj, gr_prd_obj, gr_wh_obj, pr_data):
         count = 0
-        for serial in good_receipt_obj.pw_serial_goods_receipt.filter(
-                product_warehouse__product=gr_prd_obj.product,
-                product_warehouse__warehouse=gr_wh_obj.warehouse,
-        ).order_by('date_created'):
-            if serial.purchase_request_id:
-                if str(serial.purchase_request_id) == pr_data.get('id'):
+        for serial in good_receipt_obj.goods_receipt_serial_goods_receipt.filter(
+                goods_receipt_warehouse__goods_receipt_product__product=gr_prd_obj.product,
+                goods_receipt_warehouse__warehouse=gr_wh_obj.warehouse,
+        ):
+            if serial.goods_receipt_warehouse:
+                if serial.goods_receipt_warehouse.goods_receipt_request_product:
+                    sn_pr_prd = serial.goods_receipt_warehouse.goods_receipt_request_product.purchase_request_product
+                    if sn_pr_prd:
+                        if str(sn_pr_prd.purchase_request_id) == pr_data.get('id'):
+                            count += 1
+                if not serial.goods_receipt_warehouse.goods_receipt_request_product:
                     count += 1
             else:
                 count += 1
@@ -212,6 +183,7 @@ class GoodsReceipt(DataAbstractModel):
                                 'id': str(gr_prd_obj.product_id),
                                 'code': gr_prd_obj.product.code,
                                 'title': gr_prd_obj.product.title,
+                                'description': gr_prd_obj.product.description,
                                 'category': str(gr_prd_obj.product.general_product_category_id),
                                 'general_traceability_method': gr_prd_obj.product.general_traceability_method
                             } if gr_prd_obj.product else {},
@@ -265,6 +237,7 @@ class GoodsReceipt(DataAbstractModel):
                             'id': str(gr_prd_obj.product_id),
                             'code': gr_prd_obj.product.code,
                             'title': gr_prd_obj.product.title,
+                            'description': gr_prd_obj.product.description,
                             'category': str(gr_prd_obj.product.general_product_category_id),
                             'general_traceability_method': gr_prd_obj.product.general_traceability_method
                         } if gr_prd_obj.product else {},
@@ -318,8 +291,7 @@ class GoodsReceipt(DataAbstractModel):
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    # code
-                    self.push_code(instance=self, kwargs=kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('goodsreceipt', True, self, kwargs)
                     GRFinishHandler.push_to_warehouse_stock(instance=self)
                     GRFinishHandler.push_product_info(instance=self)
                     GRFinishHandler.push_relate_gr_info(instance=self)

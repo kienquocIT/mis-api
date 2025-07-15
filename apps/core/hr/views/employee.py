@@ -64,7 +64,7 @@ class EmployeeListAll(BaseListMixin):
     serializer_list = EmployeeListAllSerializer
     list_hidden_field = ('tenant_id', 'company_id')
     filterset_fields = {
-        "group_id": ["exact"]
+        "group_id": ["exact", "in"]
     }
 
     def get_queryset(self):
@@ -330,6 +330,8 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         skip_filter_employee=True,
     )
     def get(self, request, *args, **kwargs):
+        if 'get_all' in self.request.query_params:
+            self.pagination_class.page_size = -1
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(

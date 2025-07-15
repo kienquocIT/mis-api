@@ -13,7 +13,7 @@ from apps.sales.purchasing.models import PurchaseOrder
 from apps.sales.report.utils.inventory_log import ReportInvCommonFunc
 from apps.sales.report.models import (
     ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow,
-    ReportStock, ReportInventoryCost, ReportStockLog, ReportInventorySubFunction, BalanceInitialization
+    ReportStock, ReportInventoryCost, ReportStockLog, ReportInventorySubFunction, BalanceInitialization, ReportLease
 )
 from apps.sales.report.serializers import (
     ReportStockListSerializer, ReportInventoryCostListSerializer, WarehouseAvailableProductListSerializer,
@@ -32,7 +32,7 @@ from apps.sales.report.serializers.report_purchasing import PurchaseOrderListRep
 from apps.sales.report.serializers.report_sales import (
     ReportRevenueListSerializer, ReportProductListSerializer, ReportCustomerListSerializer,
     ReportPipelineListSerializer, ReportCashflowListSerializer, ReportGeneralListSerializer,
-    ReportProductListSerializerForDashBoard
+    ReportProductListSerializerForDashBoard, ReportLeaseListSerializer
 )
 from apps.sales.revenue_plan.models import RevenuePlanGroupEmployee
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseUpdateMixin, ResponseController, HttpMsg
@@ -799,3 +799,38 @@ class AdvanceFilterDetail(BaseUpdateMixin):
         instance = self.get_object()
         instance.delete()
         return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+
+
+# REPORT LEASE
+class ReportLeaseList(BaseListMixin):
+    queryset = ReportLease.objects
+    search_fields = ['lease_order__title']
+    filterset_fields = {
+        'group_inherit_id': ['exact', 'in'],
+        'employee_inherit_id': ['exact', 'in'],
+        'employee_inherit__group_id': ['exact', 'in'],
+        'lease_from': ['lte', 'gte'],
+        'lease_to': ['lte', 'gte'],
+        'lease_order_id': ['exact', 'in'],
+        'customer_id': ['exact', 'in'],
+    }
+    serializer_list = ReportLeaseListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "lease_order",
+            "customer",
+            "employee_inherit",
+        ).filter(group_inherit__is_delete=False, lease_order__system_status=3)
+
+    @swagger_auto_schema(
+        operation_summary="Report lease List",
+        operation_description="Get report lease List",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='report', model_code='reportlease', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

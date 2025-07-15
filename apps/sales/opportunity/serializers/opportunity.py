@@ -1160,7 +1160,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_order(cls, obj):
         if obj.sale_order:
-            try:
+            if hasattr(obj.sale_order, 'delivery_of_sale_order'):
                 delivery = obj.sale_order.delivery_of_sale_order
                 return {
                     'id': obj.sale_order_id,
@@ -1172,8 +1172,6 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                         'code': delivery.code,
                     }
                 }
-            except Exception as err:
-                print(err)
             return {
                 'id': obj.sale_order_id,
                 'code': obj.sale_order.code,

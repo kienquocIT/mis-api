@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.leaseorder.utils.logical import LOHandler
 from apps.sales.leaseorder.utils.logical_finish import LOFinishHandler
@@ -248,6 +249,13 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
         default=False,
         help_text='is True if linked with registration else False',
     )
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='LeaseOrderAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_lease_order',
+    )
 
     class Meta:
         verbose_name = 'Lease Order'
@@ -255,42 +263,6 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-    @classmethod
-    def find_max_number(cls, codes):
-        num_max = None
-        for code in codes:
-            try:
-                if code != '':
-                    tmp = int(code.split('-', maxsplit=1)[0].split("LO")[1])
-                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
-                        num_max = tmp
-            except Exception as err:
-                print(err)
-        return num_max
-
-    @classmethod
-    def generate_code(cls, company_id):
-        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
-        num_max = cls.find_max_number(codes=existing_codes)
-        if num_max is None:
-            code = 'LO0001'
-        elif num_max < 10000:
-            num_str = str(num_max + 1).zfill(4)
-            code = f'LO{num_str}'
-        else:
-            raise ValueError('Out of range: number exceeds 10000')
-        if cls.objects.filter(code=code, company_id=company_id).exists():
-            return cls.generate_code(company_id=company_id)
-        return code
-
-    @classmethod
-    def push_code(cls, instance, kwargs):
-        if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='leaseorder')
-            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
-            kwargs['update_fields'].append('code')
-        return True
 
     @classmethod
     def check_change_document(cls, instance):
@@ -315,11 +287,12 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.push_code(instance=self, kwargs=kwargs)  # code
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('leaseorder', True, self, kwargs)
                     LOFinishHandler.push_product_info(instance=self)  # product info
                     LOFinishHandler.update_asset_status(instance=self)  # asset status => leased
                     LOFinishHandler.push_to_report_revenue(instance=self)  # reports
                     LOFinishHandler.push_to_report_customer(instance=self)
+                    LOFinishHandler.push_to_report_lease(instance=self)
 
                     LOFinishHandler.push_final_acceptance_lo(instance=self)  # final acceptance
                     LOFinishHandler.update_recurrence_task(instance=self)  # recurrence
@@ -360,6 +333,7 @@ class LeaseOrderProduct(MasterDataAbstractModel):
     offset_data = models.JSONField(default=dict, help_text='data json of offset')
     tool_data = models.JSONField(default=list, help_text='data json of tool')
     asset_data = models.JSONField(default=list, help_text='data json of asset')
+    offset_show = models.TextField(verbose_name="offset show", blank=True)
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -828,5 +802,25 @@ class LeaseOrderInvoice(MasterDataAbstractModel):
         verbose_name = 'Lease Order Invoice'
         verbose_name_plural = 'Lease Order Invoices'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class LeaseOrderAttachment(M2MFilesAbstractModel):
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="lease_order_attachment_lease_order",
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'lease_order'
+
+    class Meta:
+        verbose_name = 'Lease order attachment'
+        verbose_name_plural = 'Lease order attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

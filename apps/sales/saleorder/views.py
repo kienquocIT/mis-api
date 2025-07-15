@@ -81,6 +81,7 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
         label_code='saleorder', model_code='saleorder', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
@@ -149,6 +150,7 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='saleorder', model_code='saleorder', perm_code='edit',
     )
     def put(self, request, *args, pk, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, pk, **kwargs)
 
 

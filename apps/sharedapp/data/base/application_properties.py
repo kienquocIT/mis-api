@@ -6,7 +6,7 @@ from .application_properties_params import (
     Payment_data__params,
     IA_data__params,
     Goods_Transfer_data__params,
-    Goods_Return_data__params, Delivery_data__params, Bidding_data__params
+    Goods_Return_data__params, Delivery_data__params, Bidding_data__params, LeaseOrder_data__params
 )
 
 __all__ = ["ApplicationProperty_data"]
@@ -2433,6 +2433,7 @@ AppProp_SaleData_LeaseOrder_data = {
         'date_created': '2025-01-01 00:00:00',
     },
     # PRINT
+    **LeaseOrder_data__params,
 }
 
 AppProp_SaleData_PurchaseOrder_data = {
@@ -2835,6 +2836,36 @@ AppProp_SaleData_FinancialCashflow_CashInflow_data = {
 AppProp_SaleData_FinancialRecon_Recon_data = {
     "355c278c-7901-4f6d-8330-76eb9082b40f": {
         "application_id": "b690b9ff-670a-474b-8ae2-2c17d7c30f40",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+}
+
+AppProp_SaleData_Product_Modification_data = {
+    "c9c48d4a-3f7e-410b-bca8-9c1b78a455f9": {
+        "application_id": "f491fdf3-1384-4a82-b155-12ef6673c901",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+}
+
+AppProp_SaleData_Equipment_Loan_data = {
+    "2ced7ac3-8e95-48b5-a9ba-d41b40a1300f": {
+        "application_id": "3fc09568-e3ff-4fd3-a70d-4d069ac1521d",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+}
+
+AppProp_SaleData_Equipment_Return_data = {
+    "fd8f5f04-114a-40ee-a98c-4aa5d3a923ba": {
+        "application_id": "f5954e02-6ad1-4ebf-a4f2-0b598820f5f0",
         "title": "Title",
         "code": "title",
         "type": 1,
@@ -3296,6 +3327,16 @@ AppProp_KMS_Document_data = {
     }
 }
 
+AppProp_KMS_IncomingDocument_data = {
+    "423a08ea-18da-4787-964b-7e6c4dcee6f2": {
+        "application_id": "6944d486-66a0-4521-bd28-681d5df42ff3",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    }
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -3330,6 +3371,9 @@ ApplicationProperty_data = {
     **AppProp_SaleData_BOM_data,
     **AppProp_SaleData_FinancialCashflow_CashInflow_data,
     **AppProp_SaleData_FinancialRecon_Recon_data,
+    **AppProp_SaleData_Product_Modification_data,
+    **AppProp_SaleData_Equipment_Loan_data,
+    **AppProp_SaleData_Equipment_Return_data,
 
     **AppProp_SaleData_Bidding_data,
     **AppProp_SaleData_IA_data,
@@ -3340,5 +3384,6 @@ ApplicationProperty_data = {
     **AppProp_SaleData_FixedAssetWriteOff_data,
     **AppProp_SaleData_InstrumentToolWriteOff_data,
     #  KMS
-    **AppProp_KMS_Document_data
+    **AppProp_KMS_Document_data,
+    **AppProp_KMS_IncomingDocument_data,
 }

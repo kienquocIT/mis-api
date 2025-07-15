@@ -24,3 +24,10 @@ msgstr "Nhân viên nội bộ không tìm thấy"
 #
 msgid "Document approval"
 msgstr "Công văn phê duyệt"
+
+#
+msgid "Incoming document"
+msgstr "Văn bản đến"
+
+
+

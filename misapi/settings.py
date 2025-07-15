@@ -132,6 +132,8 @@ INSTALLED_APPS = \
         'apps.sales.partnercenter',
         'apps.sales.grouporder',
         'apps.sales.productmodification',
+        'apps.sales.equipmentloan',
+        'apps.sales.equipmentreturn',
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ] + [
@@ -139,6 +141,7 @@ INSTALLED_APPS = \
         'django_otp',
     ] + [  # HRM
         'apps.hrm.employeeinfo',
+        'apps.hrm.attandance',
     ] + [
         'apps.sales.financialcashflow',
         'apps.sales.reconciliation',
@@ -148,7 +151,8 @@ INSTALLED_APPS = \
         'apps.accounting.accountingsettings',
         'apps.accounting.journalentry'
     ] + [  # KMS
-        'apps.kms.documentapproval'
+        'apps.kms.documentapproval',
+        'apps.kms.incomingdocument',
     ]
 
 MIDDLEWARE = [

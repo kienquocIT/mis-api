@@ -1,7 +1,9 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 # from apps.sales.opportunity.models import OpportunityConfigStage
-from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow
+from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow, \
+    ReportLease
 
 
 class ReportCommonGet:
@@ -368,3 +370,75 @@ class ReportGeneralListSerializer(serializers.ModelSerializer):
                                 'group_id': obj.employee_inherit.group_id,
                             })
         return result
+
+
+# REPORT REVENUE
+class ReportLeaseListSerializer(serializers.ModelSerializer):
+    lease_order = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
+    customer = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+    lease_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReportLease
+        fields = (
+            'id',
+            'lease_order',
+            'opportunity',
+            'customer',
+            'lease_from',
+            'lease_to',
+            'date_approved',
+            'revenue',
+            'gross_profit',
+            'net_income',
+            'employee_inherit',
+            'lease_status',
+        )
+
+    @classmethod
+    def get_lease_order(cls, obj):
+        return {
+            'id': obj.lease_order_id,
+            'title': obj.lease_order.title,
+            'code': obj.lease_order.code,
+            'customer': {
+                'id': obj.lease_order.customer_id,
+                'title': obj.lease_order.customer.name,
+                'code': obj.lease_order.customer.code,
+            } if obj.lease_order.customer else {},
+        } if obj.lease_order else {}
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        return {
+            'id': obj.opportunity_id,
+            'title': obj.opportunity.title,
+            'code': obj.opportunity.code,
+        } if obj.opportunity else {}
+
+    @classmethod
+    def get_customer(cls, obj):
+        return {
+            'id': obj.customer_id,
+            'title': obj.customer.name,
+            'code': obj.customer.code,
+        } if obj.customer else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return ReportCommonGet.get_employee(employee_obj=obj.employee_inherit)
+
+    @classmethod
+    def get_lease_status(cls, obj):
+        status = 1
+        if obj.lease_from and obj.lease_to:
+            current = timezone.now()
+            if current.date() < obj.lease_from:
+                status = 1  # Prepare for lease
+            if obj.lease_from <= current.date() <= obj.lease_to:
+                status = 2  # Currently for lease
+            if current.date() > obj.lease_to:
+                status = 3  # Lease expires
+        return status

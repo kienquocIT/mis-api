@@ -1,10 +1,11 @@
 from django.db import models
 
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.quotation.utils import QuotationHandler
 from apps.sales.quotation.utils.logical_finish import QuotationFinishHandler
 from apps.shared import (
-    DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel
+    DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel, CurrencyAbstractModel
 )
 
 
@@ -147,7 +148,7 @@ class ConfigLongSaleRole(SimpleAbstractModel):
 
 
 # BEGIN QUOTATION
-class Quotation(DataAbstractModel, BastionFieldAbstractModel):
+class Quotation(DataAbstractModel, BastionFieldAbstractModel, CurrencyAbstractModel):
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,
@@ -248,6 +249,13 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
     indicator_revenue = models.FloatField(default=0, help_text="value of indicator revenue (IN0001)")
     indicator_gross_profit = models.FloatField(default=0, help_text="value of indicator gross profit (IN0003)")
     indicator_net_income = models.FloatField(default=0, help_text="value of indicator net income (IN0006)")
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='QuotationAttachment',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_quotation',
+    )
 
     class Meta:
         verbose_name = 'Quotation'
@@ -259,42 +267,6 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
         return 'b9650500-aba7-44e3-b6e0-2542622702a3'
-
-    @classmethod
-    def find_max_number(cls, codes):
-        num_max = None
-        for code in codes:
-            try:
-                if code != '':
-                    tmp = int(code.split('-', maxsplit=1)[0].split("SQ")[1])
-                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
-                        num_max = tmp
-            except Exception as err:
-                print(err)
-        return num_max
-
-    @classmethod
-    def generate_code(cls, company_id):
-        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
-        num_max = cls.find_max_number(codes=existing_codes)
-        if num_max is None:
-            code = 'SQ0001'
-        elif num_max < 10000:
-            num_str = str(num_max + 1).zfill(4)
-            code = f'SQ{num_str}'
-        else:
-            raise ValueError('Out of range: number exceeds 10000')
-        if cls.objects.filter(code=code, company_id=company_id).exists():
-            return cls.generate_code(company_id=company_id)
-        return code
-
-    @classmethod
-    def push_code(cls, instance, kwargs):
-        if not instance.code:
-            code_generated = CompanyFunctionNumber.gen_auto_code(app_code='quotation')
-            instance.code = code_generated if code_generated else cls.generate_code(company_id=instance.company_id)
-            kwargs['update_fields'].append('code')
-        return True
 
     @classmethod
     def check_change_document(cls, instance):
@@ -319,7 +291,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    self.push_code(instance=self, kwargs=kwargs)  # code
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('quotation', True, self, kwargs)
                     QuotationFinishHandler.update_opportunity(instance=self)  # opportunity
                     QuotationFinishHandler.push_to_customer_activity(instance=self)  # customer
         if self.system_status in [4]:  # cancel
@@ -582,5 +554,25 @@ class QuotationExpense(MasterDataAbstractModel):
         verbose_name = 'Quotation Expense'
         verbose_name_plural = 'Quotation Expenses'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class QuotationAttachment(M2MFilesAbstractModel):
+    quotation = models.ForeignKey(
+        'quotation.Quotation',
+        on_delete=models.CASCADE,
+        verbose_name="quotation",
+        related_name="quotation_attachment_quotation",
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'quotation'
+
+    class Meta:
+        verbose_name = 'Quotation attachment'
+        verbose_name_plural = 'Quotation attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

@@ -419,6 +419,18 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "f491fdf3-1384-4a82-b155-12ef6673c901",  # Product Modification
     },
+    "3fc09568-e3ff-4fd3-a70d-4d069ac1521d": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "3fc09568-e3ff-4fd3-a70d-4d069ac1521d",  # Equipment Loan
+    },
+    "e02cd98d-79a4-4462-8c1a-cf14fe8f7062": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "e02cd98d-79a4-4462-8c1a-cf14fe8f7062",  # Report Lease
+    },
+    "f5954e02-6ad1-4ebf-a4f2-0b598820f5f0": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "f5954e02-6ad1-4ebf-a4f2-0b598820f5f0",  # Equipment Return
+    },
 }
 
 _PlanApplication_eOffice_data = {
@@ -456,6 +468,10 @@ _PlanApplication_kms_data = {
     "7505d5db-42fe-4cde-ae5e-dbba78e2df03": {
         "plan_id": "02793f68-3548-45c1-98f5-89899a963091",  # KMS
         "application_id": "7505d5db-42fe-4cde-ae5e-dbba78e2df03",  # Document approval
+    },
+    "6944d486-66a0-4521-bd28-681d5df42ff3": {
+        "plan_id": "02793f68-3548-45c1-98f5-89899a963091",  # KMS
+        "application_id": "6944d486-66a0-4521-bd28-681d5df42ff3",  # Document approval
     },
 }
 

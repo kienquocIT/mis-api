@@ -1,5 +1,6 @@
 from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 
@@ -39,6 +40,10 @@ class APInvoice(DataAbstractModel):
         permissions = ()
 
     @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return 'c05a6cf4-efff-47e0-afcf-072017b8141a'
+
+    @classmethod
     def update_goods_receipt_has_ap_invoice_already(cls, instance):
         for item in instance.ap_invoice_goods_receipts.all():
             if item.goods_receipt_mapped:
@@ -47,17 +52,11 @@ class APInvoice(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
-            if not self.code:
-                self.add_auto_generate_code_to_instance(self, 'AP[n4]', True)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-
-                self.update_goods_receipt_has_ap_invoice_already(self)
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('apinvoice', True, self, kwargs)
+                    self.update_goods_receipt_has_ap_invoice_already(self)
         # hit DB
         super().save(*args, **kwargs)
 
@@ -105,6 +104,10 @@ class APInvoiceGoodsReceipt(SimpleAbstractModel):
 
 class APInvoiceAttachmentFile(M2MFilesAbstractModel):
     ap_invoice = models.ForeignKey('APInvoice', on_delete=models.CASCADE, related_name='ap_invoice_attachments')
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'ap_invoice'
 
     class Meta:
         verbose_name = 'AP Invoice attachment'
