@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 import magic
 from django.conf import settings
@@ -16,8 +17,9 @@ def update_folder_permission(perm, current_employee):
             employee_or_group=False
         )
     if not has_perm.exists() and perm['folder'].employee_inherit != current_employee:
-        raise serializers.ValidationError({'permission': AttMsg.FOLDER_PERM_UPDATE_ERROR})
-
+        raise serializers.ValidationError(
+            {'permission': AttMsg.FOLDER_PERM_UPDATE_ERROR if perm.get('id', None) else AttMsg.FOLDER_PERM_CREATE_ERROR}
+        )
     folder_id = str(perm['folder'].id)
     default = {
         'folder_id': folder_id,
@@ -457,6 +459,10 @@ class FolderCreateSerializer(serializers.ModelSerializer):
             'is_owner',
             'is_admin'
         )
+
+    @classmethod
+    def validate_title(cls, value):
+        return re.sub(r"/", "-", value)
 
     @classmethod
     def validate_parent_n(cls, value):
