@@ -483,6 +483,8 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
             try:
                 with transaction.atomic():
                     if new_objs:
+                        folder_obj = Folder.objects().filter_on_company(application=doc_app, is_system=True)
+                        has_folder = folder_obj.exists()
                         # install m2m and update relate data of Files
                         counter = len(new_objs) + 1
                         m2m_bulk = []
@@ -491,6 +493,9 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
                             m2m_bulk.append(tmp_obj)
                             counter += 1
                             obj.link(doc_id=doc_id, doc_app=doc_app)
+                            if has_folder:
+                                obj.folder = folder_obj.first()
+                                obj.save(update_fields=['folder'])
                         cls.objects.bulk_create(m2m_bulk)
 
                     if remove_objs:

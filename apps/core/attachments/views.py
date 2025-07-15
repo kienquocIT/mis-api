@@ -279,6 +279,8 @@ class FolderList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         "parent_n_id": ["exact", "isnull"],
         "employee_inherit_id": ["exact", "isnull"],
+        "is_system": ["exact"],
+        "is_admin": ["exact"],
     }
     serializer_list = FolderListSerializer
     serializer_create = FolderCreateSerializer
@@ -287,6 +289,10 @@ class FolderList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
+
+        if getattr(self, 'swagger_fake_view', False):
+            return Folder.objects.none()  # or any dummy queryset
+
         user = self.request.user
         employee_id = str(user.employee_current_id)
         not_equal = self.request.query_params.get('ne', None)

@@ -24,7 +24,7 @@ from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, SQIndicatorDefaultData,
 )
-from apps.core.base.models import Currency as BaseCurrency, PlanApplication, BaseItemUnit
+from apps.core.base.models import Currency as BaseCurrency, PlanApplication, BaseItemUnit, Application
 from apps.core.company.models import Company, CompanyConfig
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency, UnitOfMeasure,
@@ -53,6 +53,7 @@ from apps.core.forms.tasks import notifications_form_with_new, notifications_for
 from apps.sales.project.extend_func import calc_rate_project, calc_update_task, re_calc_work_group
 from .models import DisperseModel
 from .. import ProjectMsg
+from ...core.attachments.models import Folder
 from ...sales.leaseorder.models import LeaseOrderAppConfig
 from ...sales.project.tasks import create_project_news
 
@@ -1156,6 +1157,28 @@ class ConfigDefaultData:
             tenant=self.company_obj.tenant
         )
 
+    def create_new_folder_system(self):
+        company = self.company_obj
+        tenant = company.tenant
+        plan_ids = TenantPlan.objects.filter(tenant=tenant).values_list('plan_id', flat=True)
+        app_objs = [x.application for x in
+                    PlanApplication.objects.select_related('application').filter(plan_id__in=plan_ids)]
+        for p_app in app_objs:
+            Folder.objects.get_or_create(
+                company=company,
+                tenant=tenant,
+                application=p_app,
+                is_system=True,
+                defaults={
+                    'title': p_app.title,
+                    'company': company,
+                    'tenant': tenant,
+                    'application': p_app,
+                    'is_system': True
+                }
+            )
+        return True
+
     def call_new(self):
         config = self.company_config()
         self.delivery_config()
@@ -1175,6 +1198,7 @@ class ConfigDefaultData:
         self.make_sure_workflow_apps()
         self.project_config()
         self.lease_order_config()
+        self.create_new_folder_system()
         return True
 
 
@@ -1540,4 +1564,22 @@ def append_permission_managers_account(sender, instance, created, **kwargs):
             perm_code='edit',
             doc_id=str(instance.id),
             tenant_id=instance.tenant_id,
+        )
+
+
+@receiver(post_save, sender=Application)
+def new_app_new_folder(sender, instance, created, **kwargs):
+    if created:
+        Folder.objects.get_or_create(
+            application=instance,
+            company=instance.company,
+            tenant=instance.tenant,
+            is_system=True,
+            defaults={
+                'title': instance.title,
+                'application': instance,
+                'company': instance.company,
+                'tenant': instance.tenant,
+                'is_system': True,
+            },
         )
