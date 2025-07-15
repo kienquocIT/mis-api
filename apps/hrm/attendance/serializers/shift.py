@@ -2,7 +2,7 @@ from datetime import datetime, time
 
 from rest_framework import serializers
 
-from apps.hrm.attandance.models.shift import ShiftInfo
+from apps.hrm.attendance.models.shift import ShiftInfo
 from apps.shared.translations.hrm import HRMMsg
 
 

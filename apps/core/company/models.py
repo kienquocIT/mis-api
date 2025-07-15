@@ -11,7 +11,7 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.attachments.storages.aws.storages_backend import PublicMediaStorage
-from apps.hrm.attandance.models import ShiftInfo
+from apps.hrm.attendance.models import ShiftInfo
 from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY
 from apps.core.models import CoreAbstractModel
 

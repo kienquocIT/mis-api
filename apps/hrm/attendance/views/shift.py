@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.hrm.attandance.models.shift import ShiftInfo
-from apps.hrm.attandance.serializers import ShiftListSerializer, ShiftCreateSerializer, ShiftDetailSerializer, \
+from apps.hrm.attendance.models.shift import ShiftInfo
+from apps.hrm.attendance.serializers import ShiftListSerializer, ShiftCreateSerializer, ShiftDetailSerializer, \
     ShiftUpdateSerializer
 from apps.shared import (
     mask_view,
