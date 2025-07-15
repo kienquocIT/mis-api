@@ -9,9 +9,7 @@ from jsonfield import JSONField
 from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-
 from apps.core.attachments.storages.aws.storages_backend import PublicMediaStorage
-from apps.hrm.attendance.models import ShiftInfo
 from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY
 from apps.core.models import CoreAbstractModel
 
@@ -224,7 +222,7 @@ class CompanyConfig(SimpleAbstractModel):
     applicable_circular = models.SmallIntegerField(choices=APPLICABLE_CIRCULAR_CHOICES, default=0)
 
     shift_mode = models.SmallIntegerField(choices=SHIFT_MODE, default=1)
-    shift = models.ForeignKey(ShiftInfo, on_delete=models.SET_NULL, null=True)
+    shift = models.ForeignKey('attendance.ShiftInfo', on_delete=models.SET_NULL, null=True)
     shift_data = models.JSONField(default=dict)
 
     class Meta:
