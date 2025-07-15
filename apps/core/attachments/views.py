@@ -1,5 +1,8 @@
 import os
 from wsgiref.util import FileWrapper
+from datetime import datetime
+from stat import S_IFDIR
+
 from django.db.models import Q
 from django.contrib.auth.models import AnonymousUser
 
@@ -9,12 +12,15 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import exceptions, status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.views import APIView
-from rest_framework.response import Response
+
+
+from stream_zip import ZIP_32, stream_zip
 
 from apps.shared import (
     BaseCreateMixin, mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck,
-    ResponseController, BaseDestroyMixin, HttpMsg, AttachmentMsg,
+    ResponseController, BaseDestroyMixin, HttpMsg, AttachmentMsg, DisperseModel,
 )
+from apps.shared.extends.response import cus_response
 
 from .models import Files, PublicFiles, Folder, FolderPermission, FilePermission
 from .serializers import (
@@ -55,23 +61,17 @@ class FilesUpload(BaseListMixin, BaseCreateMixin):
     @swagger_auto_schema(request_body=FilesUploadSerializer)
     @mask_view(login_require=True, auth_require=False, employee_require=True)
     def post(self, request, *args, **kwargs):
-        param = request.data.get('space', None)
-        space = 'None'
-        if param == 'my':
-            space = 'my_space'
-        elif param == 'shared':
-            space = 'my_shared'
         self.ser_context = {
             'user_obj': self.request.user
         }
         folder = request.data.get('folder', None)
         if folder:
-            if check_folder_perm([folder], space, request.user.employee_current, 2) is False:
-                return Response(
-                    data={
+            if check_folder_perm([folder], request.user.employee_current, 2) is False:
+                return cus_response(
+                    {
                         "status": status.HTTP_403_FORBIDDEN,
                         "detail": HttpMsg.FORBIDDEN,
-                    }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+                    }, status.HTTP_403_FORBIDDEN, is_errors=True
                 )
         return self.create(request, *args, **kwargs)
 
@@ -89,12 +89,12 @@ class FilesEdit(BaseDestroyMixin):
         login_require=True, auth_require=False,
     )
     def delete(self, request, *args, **kwargs):
-        if check_file_perm(request.data.get('id_list', None), 'my_space', request.user.employee_current) is False:
-            return Response(
+        if check_file_perm(request.data.get('id_list', None), request.user.employee_current, 7) is False:
+            return cus_response(
                 data={
                     "status": status.HTTP_403_FORBIDDEN,
                     "detail": HttpMsg.FORBIDDEN,
-                }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+                }, status=status.HTTP_403_FORBIDDEN, is_errors=True
             )
         kwargs['is_purge'] = True
         kwargs['remove_file'] = True
@@ -327,11 +327,11 @@ class FolderList(BaseListMixin, BaseCreateMixin):
         if request.data.get('parent_n', None) is not None:
             perm_check = check_create_sub_folder(request.data.get('parent_n', None), request.user.employee_current)
             if perm_check is False:
-                return Response(
+                return cus_response(
                     data={
                         "status": status.HTTP_403_FORBIDDEN,
                         "detail": f'{HttpMsg.FORBIDDEN} {AttachmentMsg.REQUIRED_PERM_SUBFOLDER}',
-                    }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+                    }, status=status.HTTP_403_FORBIDDEN, is_errors=True
                 )
         return self.create(request, *args, **kwargs)
 
@@ -377,12 +377,12 @@ class FolderMySpaceList(BaseListMixin, BaseDestroyMixin):
         login_require=True, auth_require=False,
     )
     def delete(self, request, *args, **kwargs):
-        if check_folder_perm(request.data.get('id_list', None), 'my_space', request.user.employee_current, 5) is False:
-            return Response(
+        if check_folder_perm(request.data.get('id_list', None), request.user.employee_current, 5) is False:
+            return cus_response(
                 data={
                     "status": status.HTTP_403_FORBIDDEN,
                     "detail": HttpMsg.FORBIDDEN,
-                }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+                }, status=status.HTTP_403_FORBIDDEN, is_errors=True
             )
         kwargs['is_purge'] = True
         return self.destroy_list(request, *args, **kwargs)
@@ -446,12 +446,12 @@ class FolderListSharedToMe(BaseListMixin, BaseDestroyMixin):
         login_require=True, auth_require=False,
     )
     def delete(self, request, *args, **kwargs):
-        if check_folder_perm(request.data.get('id_list', None), 'my_shared', request.user.employee_current, 5) is False:
-            return Response(
+        if check_folder_perm(request.data.get('id_list', None), request.user.employee_current, 5) is False:
+            return cus_response(
                 data={
                     "status": status.HTTP_403_FORBIDDEN,
                     "detail": HttpMsg.FORBIDDEN,
-                }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+                }, status=status.HTTP_403_FORBIDDEN, is_errors=True
             )
         kwargs['is_purge'] = True
         return self.destroy_list(request, *args, **kwargs)
@@ -478,13 +478,12 @@ class FolderDetail(
         login_require=True, auth_require=False,
     )
     def get(self, request, *args, pk, **kwargs):
-        space = 'my_space' if request.query_params.get('space', None) == 'my' else 'my_shared'
-        if check_folder_perm([pk], space, request.user.employee_current, 1) is False:
-            return Response(
+        if check_folder_perm([pk], request.user.employee_current, 1) is False:
+            return cus_response(
                 data={
                     "status": status.HTTP_403_FORBIDDEN,
                     "detail": HttpMsg.FORBIDDEN,
-                }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+                }, status=status.HTTP_403_FORBIDDEN, is_errors=True
             )
         return self.retrieve(request, *args, pk, **kwargs)
 
@@ -497,13 +496,12 @@ class FolderDetail(
         login_require=True, auth_require=False,
     )
     def put(self, request, *args, pk, **kwargs):
-        space = 'my_space' if request.data.get('space', None) == 'my' else 'my_shared'
-        if check_folder_perm([pk], space, request.user.employee_current, 1) is False:
-            return Response(
+        if check_folder_perm([pk], request.user.employee_current, 1) is False:
+            return cus_response(
                 data={
                     "status": status.HTTP_403_FORBIDDEN,
                     "detail": HttpMsg.FORBIDDEN,
-                }, status=status.HTTP_403_FORBIDDEN, content_type="application/json"
+                }, status=status.HTTP_403_FORBIDDEN, is_errors=True
             )
         self.ser_context = {'user': request.user}
         return self.update(request, *args, pk, **kwargs)
@@ -571,13 +569,13 @@ class FolderCheckPermList(BaseListMixin, BaseDestroyMixin):
         if check_perm_delete_access_list(
                 request.data.get('id_list', None), request.user.employee_current
         ) is False:
-            return Response(
-                data={
+            return cus_response(
+                {
                     "status": status.HTTP_403_FORBIDDEN,
                     "detail": HttpMsg.FORBIDDEN,
                 },
                 status=status.HTTP_403_FORBIDDEN,
-                content_type="application/json"
+                is_errors=True
             )
         kwargs['is_purge'] = True
         return self.destroy_list(request, *args, **kwargs)
@@ -600,3 +598,98 @@ class FileCheckPermList(BaseRetrieveMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+
+class FolderDownload(APIView):
+
+    def collect_faf(self, folder, parent_rel="", lst_data=None, fol_lst=None):
+        if lst_data is None:
+            lst_data = []
+        if fol_lst is None:
+            fol_lst = []
+        folder_obj = DisperseModel(app_model='attachments.Folder').get_model()
+        file_obj = DisperseModel(app_model='attachments.Files').get_model()
+
+        current_rel = f'{parent_rel}{folder.title}/'
+        # tạo folder path rỗng
+        fol_lst.append(current_rel)
+
+        # Lấy file trực tiếp thuộc folder này
+        for file in file_obj.objects.filter(folder=folder):
+            str_path = f'{current_rel}{file.file_name}'
+            lst_data.append((str_path, file.file.path))
+        # Gọi tiếp với các thư mục con
+        for sub in folder_obj.objects.filter(parent_n=folder):
+            self.collect_faf(sub, current_rel, lst_data, fol_lst)
+        return lst_data, fol_lst
+
+    @swagger_auto_schema(operation_summary='Download folder')
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, pk, **kwargs):
+        """
+        ý tưởng: lấy folder gốc, lấy danh sách cây thư mục + đệ quy add vào biến items
+        tạo folder list and file thông qua items
+        loop trong danh sách items add folder và file vào zip rồi Stream.
+        """
+
+        if check_folder_perm([pk], request.user.employee_current, 3) is False:
+            return cus_response(
+                data={
+                    "status": status.HTTP_403_FORBIDDEN,
+                    "detail": HttpMsg.FORBIDDEN,
+                }, status=status.HTTP_403_FORBIDDEN, is_errors=True
+            )
+
+        # 1. Lấy folder gốc
+        root = Folder.objects.get(id=pk)
+        file_entries, folder_entries = self.collect_faf(root, "")
+
+        def file_chunk_generator(abs_path, chunk_size=8192):
+            with open(abs_path, 'rb') as file:
+                while True:
+                    chunk = file.read(chunk_size)
+                    if not chunk:
+                        break
+                    yield chunk
+
+        def files_to_zip(file_list, flr_list):
+            """
+            file_entries: iterable of (arc_name: str, abs_path: str)
+            """
+            for folder_path in sorted(set(flr_list)):
+                yield (
+                    folder_path,
+                    datetime.now(),  # Or use folder metadata
+                    S_IFDIR | 0o700,  # Mode = directory
+                    ZIP_32,  # No need to compress
+                    iter([b""])  # Empty body
+                )
+
+            for file_path, abs_path in file_list:
+                try:
+                    stat_info = os.stat(abs_path)
+                    mtime = datetime.fromtimestamp(stat_info.st_mtime)
+                    permissions = stat_info.st_mode & 0o777
+                except Exception as err:
+                    print('err', err)
+                    mtime = datetime.now()
+                    permissions = 0o644
+
+                yield (
+                    file_path,
+                    mtime,
+                    permissions,
+                    ZIP_32,
+                    file_chunk_generator(abs_path)
+                )
+
+        zip_gen = files_to_zip(file_entries, folder_entries)
+
+        # 4. Trả về HTTP streaming response
+        response = StreamingHttpResponse(
+            streaming_content=stream_zip(zip_gen),
+            content_type='application/zip'
+        )
+        response['Content-Disposition'] = f"attachment; filename={root.title}.zip"
+
+        return response

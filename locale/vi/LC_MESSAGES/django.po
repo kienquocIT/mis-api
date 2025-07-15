@@ -138,6 +138,10 @@ msgstr "Điều chuyển hàng hoá"
 msgid "Group"
 msgstr "Nhóm"
 
+# 6944d486-66a0-4521-bd28-681d5df42ff3
+msgid "Incoming document"
+msgstr "Công văn đến"
+
 # 022375ce-c99c-4f11-8841-0a26c85f2fc2
 msgid "Internal labor item"
 msgstr "Chi phí nhân công nội bộ"

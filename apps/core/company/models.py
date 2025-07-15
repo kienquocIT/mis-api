@@ -9,7 +9,6 @@ from jsonfield import JSONField
 from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-
 from apps.core.attachments.storages.aws.storages_backend import PublicMediaStorage
 from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY
 from apps.core.models import CoreAbstractModel
@@ -41,6 +40,11 @@ RESET_FREQUENCY_CHOICES = [
     (2, _('Weekly')),
     (3, _('Daily')),
     (4, _('Never')),
+]
+
+SHIFT_MODE = [
+    (0, _('Single')),
+    (1, _('Multiple')),
 ]
 
 
@@ -216,6 +220,10 @@ class CompanyConfig(SimpleAbstractModel):
     cost_per_project = models.BooleanField(default=False)
     accounting_policies = models.SmallIntegerField(choices=ACCOUNTING_POLICIES_CHOICES, default=0)
     applicable_circular = models.SmallIntegerField(choices=APPLICABLE_CIRCULAR_CHOICES, default=0)
+
+    shift_mode = models.SmallIntegerField(choices=SHIFT_MODE, default=1)
+    shift = models.ForeignKey('attendance.ShiftInfo', on_delete=models.SET_NULL, null=True)
+    shift_data = models.JSONField(default=dict)
 
     class Meta:
         verbose_name = 'Company Config'
