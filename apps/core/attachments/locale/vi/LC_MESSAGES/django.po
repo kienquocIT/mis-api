@@ -55,3 +55,6 @@ msgstr "Thư mục cha không tồn tại"
 
 msgid "A folder cannot reference itself as a parent"
 msgstr "Thư mục không thể làm thư mục cha của chính nó"
+
+msgid "You do not have permission to create this shared record"
+msgstr "Bạn không có quyển chia sẻ thư mục này"

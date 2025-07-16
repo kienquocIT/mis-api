@@ -105,16 +105,24 @@ class BankDetailSerializer(serializers.ModelSerializer):
 
 # Bank Account
 class BankAccountListSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+
     class Meta:
         model = BankAccount
         fields = (
             'id',
+            'title',
             'bank_mapped_data',
             'bank_account_number',
             'bank_account_owner',
             'brand_name',
             'brand_address'
         )
+
+    @classmethod
+    def get_title(cls, obj):
+        return (f"{obj.bank_account_number} ({obj.bank_account_owner}) - "
+                f"{obj.bank_mapped.bank_name} ({obj.bank_mapped.bank_abbreviation})")
 
 
 class BankAccountCreateSerializer(serializers.ModelSerializer):

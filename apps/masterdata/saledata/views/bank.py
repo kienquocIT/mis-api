@@ -4,8 +4,8 @@ from apps.masterdata.saledata.serializers import (
     BankListSerializer, BankCreateSerializer, BankDetailSerializer,
     BankAccountListSerializer, BankAccountDetailSerializer, BankAccountCreateSerializer
 )
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseDestroyMixin
-
+from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseDestroyMixin, \
+    ResponseController
 
 __all__ = [
     'BankList',
@@ -70,6 +70,10 @@ class BankDetail(BaseRetrieveMixin, BaseDestroyMixin):
         allow_admin_tenant=True, allow_admin_company=True,
     )
     def delete(self, request, *args, pk, **kwargs):
+        if BankAccount.objects.filter(bank_mapped_id=pk).exists():
+            return ResponseController.bad_request_400(
+                msg="This bank cannot be deleted due to existing mapped accounts."
+            )
         return self.destroy(request, *args, pk, **kwargs)
 
 

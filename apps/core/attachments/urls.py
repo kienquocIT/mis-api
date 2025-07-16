@@ -3,7 +3,7 @@ from .views import (
     FilesUpload, FilesUnused,
     ImageWebBuilderUpload, ImageWebBuilderList, FolderList, FolderDetail, FolderUploadFileList, FilesDownload,
     FilesInformation, PublicFilesUpload, FolderListSharedToMe, FolderMySpaceList, FilesEdit, FolderCheckPermList,
-    FileCheckPermList
+    FileCheckPermList, FolderDownload
 )
 
 urlpatterns = [
@@ -28,4 +28,7 @@ urlpatterns = [
 
     path('folder-check-perm', FolderCheckPermList.as_view(), name='FolderCheckPermList'),
     path('file-check-perm', FileCheckPermList.as_view(), name='FileCheckPermList'),
+    # download folder
+    path('folder/download/<str:pk>', FolderDownload.as_view(), name='FolderDownload'),
+
 ]

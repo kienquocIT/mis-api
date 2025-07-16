@@ -132,6 +132,7 @@ INSTALLED_APPS = \
         'apps.sales.partnercenter',
         'apps.sales.grouporder',
         'apps.sales.productmodification',
+        'apps.sales.productmodificationbom',
         'apps.sales.equipmentloan',
         'apps.sales.equipmentreturn',
     ] + [  # Tools improvement from dev team
@@ -141,7 +142,7 @@ INSTALLED_APPS = \
         'django_otp',
     ] + [  # HRM
         'apps.hrm.employeeinfo',
-        'apps.hrm.attandance',
+        'apps.hrm.attendance',
     ] + [
         'apps.sales.financialcashflow',
         'apps.sales.reconciliation',
