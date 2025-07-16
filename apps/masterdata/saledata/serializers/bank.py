@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-from apps.core.base.models import Country, District, City, Ward, NProvince, NWard
+from apps.core.base.models import Country, NProvince, NWard
 from apps.masterdata.saledata.models import Bank, BankAccount, Currency
 
 __all__ = [
