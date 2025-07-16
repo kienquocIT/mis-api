@@ -10,7 +10,8 @@ from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.recurrence.models import Recurrence
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import Account, Product, UnitOfMeasure, Tax, AccountBillingAddress, AccountBanks
+from apps.masterdata.saledata.models import Account, Product, UnitOfMeasure, Tax, AccountBillingAddress, AccountBanks, \
+    BankAccount
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import (
     ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile, ARInvoiceSign
@@ -77,7 +78,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     customer_mapped = serializers.UUIDField()
     billing_address_id = serializers.UUIDField()
-    bank_account_id = serializers.UUIDField(allow_null=True)
+    company_bank_account = serializers.UUIDField(allow_null=True)
     sale_order_mapped = serializers.UUIDField(allow_null=True)
     delivery_mapped_list = serializers.JSONField(default=list)
     data_item_list = serializers.JSONField(default=list)
@@ -89,7 +90,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
             'title',
             'customer_mapped',
             'billing_address_id',
-            'bank_account_id',
+            'company_bank_account',
             'buyer_name',
             'invoice_method',
             'sale_order_mapped',
@@ -126,6 +127,15 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
         return None
 
     @classmethod
+    def validate_company_bank_account(cls, value):
+        if value:
+            try:
+                return BankAccount.objects.get(id=value)
+            except BankAccount.DoesNotExist:
+                raise serializers.ValidationError({'company_bank_account': "Company bank account does not exist."})
+        return None
+
+    @classmethod
     def validate_delivery_mapped_list(cls, delivery_mapped_list):
         try:
             parse_data_delivery_mapped_list = []
@@ -148,22 +158,17 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
 
     def validate(self, validate_data):
         billing_address_id = validate_data.pop('billing_address_id')
-        bank_account_id = validate_data.pop('bank_account_id')
         # parse data customer_mapped
         customer_mapped = validate_data.get('customer_mapped')
         if customer_mapped:
             if not AccountBillingAddress.objects.filter(id=billing_address_id).exists():
                 raise serializers.ValidationError({'billing_address_id': "Billing address does not exist."})
-            if bank_account_id is not None:
-                if not AccountBanks.objects.filter(id=bank_account_id).exists():
-                    raise serializers.ValidationError({'bank_account_id': "Bank account does not exist."})
             validate_data['customer_mapped_data'] = {
                 'id': str(customer_mapped.id),
                 'code': customer_mapped.code,
                 'name': customer_mapped.name,
                 'tax_code': customer_mapped.tax_code,
                 'billing_address_id': str(billing_address_id),
-                'bank_account_id': str(bank_account_id),
             }
         # parse data sale_order_mapped
         sale_order_mapped = validate_data.get('sale_order_mapped')
@@ -174,9 +179,17 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                 'title': sale_order_mapped.title,
                 'sale_order_payment_stage': sale_order_mapped.sale_order_payment_stage
             }
+        # parse data sale_order_mapped
+        bank_account = validate_data.get('company_bank_account')
+        if bank_account:
+            validate_data['company_bank_account_data'] = {
+                'id': str(bank_account.id),
+                'title': (f"{bank_account.bank_account_number} ({bank_account.bank_account_owner}) - "
+                          f"{bank_account.bank_mapped.bank_name} ({bank_account.bank_mapped.bank_abbreviation})")
+            }
         # check valid data bank number
-        if validate_data.get('invoice_method') == 2 and not bank_account_id:
-            raise serializers.ValidationError({'bank_account_id': "Bank account is not null."})
+        if validate_data.get('invoice_method') == 2 and not validate_data.get('company_bank_account'):
+            raise serializers.ValidationError({'company_bank_account': "Company bank account is not null."})
         # check valid data data_item_list
         for item in validate_data.get('data_item_list', []):
             if item.get('ar_product_des'):
@@ -251,6 +264,7 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
             'buyer_name',
             'invoice_method',
             'sale_order_mapped_data',
+            'company_bank_account_data',
             'posting_date',
             'document_date',
             'invoice_date',
@@ -341,7 +355,7 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     customer_mapped = serializers.UUIDField()
     billing_address_id = serializers.UUIDField()
-    bank_account_id = serializers.UUIDField(allow_null=True)
+    company_bank_account = serializers.UUIDField(allow_null=True)
     sale_order_mapped = serializers.UUIDField(allow_null=True)
     delivery_mapped_list = serializers.JSONField(default=list)
     data_item_list = serializers.JSONField(default=list)
@@ -353,7 +367,7 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
             'title',
             'customer_mapped',
             'billing_address_id',
-            'bank_account_id',
+            'company_bank_account',
             'buyer_name',
             'invoice_method',
             'sale_order_mapped',
@@ -376,6 +390,10 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_sale_order_mapped(cls, value):
         return ARInvoiceCreateSerializer.validate_sale_order_mapped(value)
+
+    @classmethod
+    def validate_company_bank_account(cls, value):
+        return ARInvoiceCreateSerializer.validate_company_bank_account(value)
 
     @classmethod
     def validate_delivery_mapped_list(cls, delivery_mapped_list):
