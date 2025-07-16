@@ -13,6 +13,7 @@ class PaymentPlanList(BaseListMixin):
         'purchase_order_id': ['exact', 'in'],
         'customer_id': ['exact', 'in'],
         'supplier_id': ['exact', 'in'],
+        'value_balance': ['exact', 'gt', 'gte', 'lt', 'lte'],
         'due_date': ['exact', 'lte', 'gte'],
         'date_approved': ['exact', 'lte', 'gte'],
     }
