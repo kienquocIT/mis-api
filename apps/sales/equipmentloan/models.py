@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy as _
 from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
@@ -13,6 +14,8 @@ class EquipmentLoan(DataAbstractModel):
     document_date = models.DateTimeField(null=True)
     loan_date = models.DateTimeField(null=True)
     return_date = models.DateTimeField(null=True)
+    product_loan_data = models.JSONField(default=list)
+    return_status = models.SmallIntegerField(choices=[(0, _('Wait')), (1, _('Partially')), (2, _('Done'))], default=0)
 
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
