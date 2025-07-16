@@ -556,6 +556,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             'orderdeliverysub': 'DE[n4]',
             'payment': 'PM[n4]',
             'productmodification': 'PRD-MOD-[n4]',
+            'productmodificationbom': 'PMB-[n4]',
             'purchaserequest': 'PR[n4]',
             'reconciliation': 'RECON[n4]',
             'returnadvance': 'RP[n4]',
