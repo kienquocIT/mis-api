@@ -8,6 +8,7 @@ from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
+
 __all__ = [
     'AccountType',
     'AccountGroup',
@@ -393,22 +394,16 @@ class AccountAccountTypes(SimpleAbstractModel):
 # AccountShippingAddress
 class AccountShippingAddress(SimpleAbstractModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="account_mapped_shipping_address")
-    country = models.ForeignKey('base.Country', on_delete=models.CASCADE)
-    detail_address = models.CharField(
-        verbose_name='Detail address',
-        blank=True,
-        null=True,
-        max_length=150
-    )
-    city = models.ForeignKey('base.City', on_delete=models.CASCADE)
-    district = models.ForeignKey('base.District', on_delete=models.CASCADE)
-    ward = models.ForeignKey('base.Ward', on_delete=models.CASCADE, null=True)
-    full_address = models.CharField(
-        verbose_name='Full address',
-        blank=True,
-        max_length=500
-    )
+    address_data = models.JSONField(default=dict)
+    full_address = models.CharField(verbose_name='Full address', blank=True, null=True, max_length=500)
     is_default = models.BooleanField(default=False)
+    # {
+    # country_id:
+    # province_id:
+    # ward_id:
+    # detail_address:
+    # is_default
+    # }
 
     class Meta:
         verbose_name = 'Account Shipping Address'

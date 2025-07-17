@@ -202,10 +202,10 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_tax_code(cls, value):
         if value:
-            if Account.objects.filter_on_company(tax_code=value).exists():
+            if Account.objects.filter_on_company(tax_code=value).exclude(tax_code='#').exists():
                 raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
             return value
-        return ''
+        return '#'
 
     @classmethod
     def validate_account_type(cls, value):
@@ -274,9 +274,9 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                 validate_data['email'] = contact_mapped_obj.email
             else:
                 raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
-        else:
-            if not validate_data.get('tax_code'):
-                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
+        # else:
+            # if not validate_data.get('tax_code'):
+                # raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         try:
             validate_data['price_list_mapped'] = Price.objects.filter_on_company(is_default=True).first()
         except Price.DoesNotExist:
@@ -431,13 +431,9 @@ class AccountDetailSerializer(serializers.ModelSerializer):
     def get_shipping_address(cls, obj):
         return [{
             'id': item.id,
-            'country_id': item.country_id,
-            'city_id': item.city_id,
-            'district_id': item.district_id,
-            'ward_id': item.ward_id,
-            'detail_address': item.detail_address,
             'full_address': item.full_address,
-            'is_default': item.is_default
+            'is_default': item.is_default,
+            **item.address_data
         } for item in obj.account_mapped_shipping_address.all()]
 
     @classmethod
@@ -557,10 +553,10 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
 
     def validate_tax_code(self, value):
         if value:
-            if Account.objects.filter_on_company(tax_code=value).exclude(id=self.instance.id).count() > 0:
+            if Account.objects.filter_on_company(tax_code=value).exclude(id=self.instance.id, tax_code='#').count() > 0:
                 raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
             return value
-        return ''
+        return '#'
 
     @classmethod
     def validate_account_type(cls, value):
@@ -665,9 +661,9 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                 validate_data['email'] = contact_mapped_obj.email
             else:
                 raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
-        else:
-            if not validate_data.get('tax_code'):
-                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
+        # else:
+        #     if not validate_data.get('tax_code'):
+        #         raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         return validate_data
 
     def update(self, instance, validated_data):
@@ -797,7 +793,7 @@ class AccountCommonFunc:
     def add_shipping_address(account, shipping_address_list):
         AccountShippingAddress.objects.filter(account=account).delete()
         AccountShippingAddress.objects.bulk_create(
-            AccountShippingAddress(**item, account=account) for item in shipping_address_list
+            AccountShippingAddress(account=account, **item) for item in shipping_address_list
         )
         return True
 

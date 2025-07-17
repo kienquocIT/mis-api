@@ -2204,12 +2204,13 @@ def reset_picking_delivery(picking_id, delivery_id):
 class VietnamAdministrativeAddress:
     @staticmethod
     def load_province():
-        with open('apps/shared/new_address_json/province.json', 'r', encoding='utf-8') as f:
+        with open('apps/shared/new_address_json/province_with_uuid.json', 'r', encoding='utf-8') as f:
             province_data = json.load(f)
 
         bulk_info = []
         for province_id, province_info in province_data.items():
             bulk_info.append(NProvince(
+                id=province_info.get('uuid', ''),
                 country_id='bbf52b7b-77ed-4e8c-af0a-86ca00771d83',
                 code=province_info.get('code', ''),
                 slug=province_info.get('slug', ''),
@@ -2217,20 +2218,21 @@ class VietnamAdministrativeAddress:
                 name=province_info.get('name', ''),
                 fullname=province_info.get('name_with_type', ''),
             ))
-        NWard.objects.all().delete()
+        NProvince.objects.all().delete()
         NProvince.objects.bulk_create(bulk_info)
         print('Done :))')
         return True
 
     @staticmethod
     def load_ward():
-        with open('apps/shared/new_address_json/ward.json', 'r', encoding='utf-8') as f:
+        with open('apps/shared/new_address_json/ward_with_uuid.json', 'r', encoding='utf-8') as f:
             ward_data = json.load(f)
 
         bulk_info = []
         for ward_id, ward_info in ward_data.items():
             province_obj = NProvince.objects.filter(code=ward_info.get('parent_code', '')).first()
             bulk_info.append(NWard(
+                id=ward_info.get('uuid', ''),
                 province=province_obj,
                 province_code=province_obj.code,
                 code=ward_info.get('code', ''),
