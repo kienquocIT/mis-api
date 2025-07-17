@@ -16,11 +16,10 @@ class Bank(MasterDataAbstractModel):
     vietqr_json_data = models.JSONField(default=dict)
     head_office_address = models.TextField(null=True, blank=True)
     head_office_address_data = models.JSONField(default=dict)
-    # head_office_full_address_json_data = {
+    # head_office_address_data = {
     #   country_data: {id, title},
-    #   city_data: {id, title},
-    #   district_data: {id, title},
-    #   ward_data: {id, title},
+    #   province_data: {id, fullname},
+    #   ward_data: {id, fullname},
     #   address: str
     # }
 
@@ -58,9 +57,8 @@ class BankAccount(MasterDataAbstractModel):
     brand_address_data = models.JSONField(default=dict)
     # brand_address_data = {
     #   country_data: {id, title},
-    #   city_data: {id, title},
-    #   district_data: {id, title},
-    #   ward_data: {id, title},
+    #   province_data: {id, fullname},
+    #   ward_data: {id, fullname},
     #   address: str
     # }
 

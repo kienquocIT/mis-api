@@ -192,9 +192,6 @@ class ProductModificationBOMUpdateSerializer(AbstractCreateSerializerModel):
     def validate_product_mapped(cls, value):
         return ProductModificationBOMCreateSerializer.validate_product_mapped(value)
 
-    def validate(self, validate_data):
-        return ProductModificationBOMCreateSerializer().validate(validate_data)
-
     @classmethod
     def validate_current_component_data(cls, current_component_data):
         return ProductModificationBOMCreateSerializer().validate_current_component_data(current_component_data)
@@ -202,6 +199,9 @@ class ProductModificationBOMUpdateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_added_component_data(cls, added_component_data):
         return ProductModificationBOMCreateSerializer().validate_added_component_data(added_component_data)
+
+    def validate(self, validate_data):
+        return ProductModificationBOMCreateSerializer().validate(validate_data)
 
     @decorator_run_workflow
     def update(self, instance, validated_data):

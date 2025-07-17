@@ -13,6 +13,7 @@ class EquipmentReturn(DataAbstractModel):
     none_loan_items_detail = models.JSONField(default=list)
     lot_loan_items_detail = models.JSONField(default=list)
     serial_loan_items_detail = models.JSONField(default=list)
+    product_return_data = models.JSONField(default=list)
 
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:

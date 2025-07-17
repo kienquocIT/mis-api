@@ -10,7 +10,7 @@ from apps.shared import ResponseController, BaseListMixin, mask_view, BaseRetrie
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
     Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication, Zones,
-    ApplicationEmpConfig
+    ApplicationEmpConfig, NProvince, NWard
 )
 
 from apps.core.base.serializers import (
@@ -20,6 +20,7 @@ from apps.core.base.serializers import (
     BaseItemUnitListSerializer, IndicatorParamListSerializer, ApplicationPropertyForPrintListSerializer,
     ApplicationPropertyForMailListSerializer, ZonesCreateUpdateSerializer, ZonesListSerializer,
     ApplicationZonesListSerializer, AppEmpConfigListSerializer, AppEmpConfigCreateUpdateSerializer,
+    NProvinceListSerializer, NWardListSerializer,
 )
 
 
@@ -566,3 +567,41 @@ class AppEmpConfigList(BaseListMixin, BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
+
+# New address
+class NProvinceList(BaseListMixin):
+    queryset = NProvince.objects
+    search_fields = ('fullname',)
+    filterset_fields = {
+        "country_id": ["exact", "in"],
+    }
+    serializer_list = NProvinceListSerializer
+
+    def get_queryset(self):
+        if 'country_id' not in self.request.query_params:
+            return super().get_queryset().none()
+        return super().get_queryset()
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class NWardList(BaseListMixin):
+    queryset = NWard.objects
+    search_fields = ('fullname',)
+    filterset_fields = {
+        "province_id": ["exact", "in"],
+    }
+    serializer_list = NWardListSerializer
+
+    def get_queryset(self):
+        if 'province_id' not in self.request.query_params:
+            return super().get_queryset().none()
+        return super().get_queryset()
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
