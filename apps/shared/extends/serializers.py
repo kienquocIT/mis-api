@@ -48,6 +48,7 @@ class AbstractCreateSerializerModel(serializers.ModelSerializer):
     def get_fields(self):
         return {
             **super().get_fields(),
+            'code': serializers.CharField(required=False, allow_blank=True, max_length=100),
             'system_status': serializers.ChoiceField(
                 choices=[0, 1],
                 help_text='0: draft, 1: created',
