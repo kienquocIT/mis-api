@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.core.company.models import CompanyFunctionNumber
+from apps.sales.financialcashflow.utils.logical_finish_cof import CashOutFlowFinishHandler
 # from apps.accounting.journalentry.utils.log_for_cash_inflow import JEForCIFHandler
 # from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel
@@ -137,6 +138,7 @@ class CashOutflow(DataAbstractModel):
                     # ReconForCIFHandler.auto_create_recon_doc(self)
                     self.update_ap_invoice_cash_outflow_done()
                     self.update_po_stage_cash_outflow_done()
+                    CashOutFlowFinishHandler.push_to_payment_plan(instance=self)  # payment plan
         super().save(*args, **kwargs)
 
 

@@ -121,7 +121,7 @@ def send_mail_welcome(tenant_id: UUID or str, company_id: UUID or str, user_id: 
     obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=1)
     if isinstance(obj_got, list) and len(obj_got) == 3:
         [config_obj, template_obj, user_obj] = obj_got
-        cls = SendMailController(mail_config=config_obj, timeout=3)
+        cls = SendMailController(mail_config=config_obj, timeout=10)
         if cls.is_active is True:
             if template_obj.contents:
                 if user_obj.email:
@@ -387,7 +387,7 @@ def send_mail_otp(  # pylint: disable=R0911,R1702,R0914
             return 'OTP ID NOT FOUND: ' + str(otp_id)
 
         if config_obj and template_obj and user_obj and otp_obj:
-            cls = SendMailController(mail_config=config_obj, timeout=3)
+            cls = SendMailController(mail_config=config_obj, timeout=10)
             if cls.is_active is True:
                 if template_obj.contents:
                     if user_obj.email:
@@ -458,7 +458,7 @@ def send_mail_form(tenant_id, company_id, subject, to_main, contents):
     obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=None, system_code=1)
     if isinstance(obj_got, list) and len(obj_got) == 3:
         [config_obj, _template_obj, _user_obj] = obj_got
-        cls = SendMailController(mail_config=config_obj, timeout=3)
+        cls = SendMailController(mail_config=config_obj, timeout=10)
         if cls.is_active is True:
             log_cls = MailLogController(
                 tenant_id=tenant_id, company_id=company_id,
@@ -564,7 +564,7 @@ def send_mail_workflow(
     obj_got = get_config_template_user(tenant_id=tenant_id, company_id=company_id, user_id=user_id, system_code=6)
     if isinstance(obj_got, list) and len(obj_got) == 3:
         [config_obj, template_obj, user_obj] = obj_got
-        cls = SendMailController(mail_config=config_obj, timeout=3)
+        cls = SendMailController(mail_config=config_obj, timeout=10)
         employee_obj = get_employee_obj(employee_id=employee_id, tenant_id=tenant_id, company_id=company_id)
         if cls.is_active is True and template_obj and user_obj and employee_obj:
             if template_obj.contents and user_obj.email and employee_obj.email:
@@ -605,7 +605,7 @@ def send_mail_new_project_member(tenant_id, company_id, prj_owner, prj_member, p
     if isinstance(obj_got, list) and len(obj_got) == 3:
         [config_obj, template_obj, user_obj] = obj_got
         print('user_obj', user_obj)
-        cls = SendMailController(mail_config=config_obj, timeout=3)
+        cls = SendMailController(mail_config=config_obj, timeout=10)
         prj_owner_obj = get_employee_obj(employee_id=prj_owner, tenant_id=tenant_id, company_id=company_id)
         prj_member_obj = get_employee_obj(employee_id=prj_member, tenant_id=tenant_id, company_id=company_id)
 
@@ -652,7 +652,7 @@ def send_mail_new_contract_submit(
 
     config_obj, template_obj, _ = obj_got
 
-    cls = SendMailController(mail_config=config_obj, timeout=3)
+    cls = SendMailController(mail_config=config_obj, timeout=10)
 
     if not cls.is_active or not template_obj:
         return 'MAIL_CONFIG_DEACTIVATE'
@@ -759,7 +759,7 @@ def send_mail_annual_leave(leave_id, tenant_id, company_id, employee_id, email_l
 
     config_obj, template_obj, _ = obj_got
 
-    cls = SendMailController(mail_config=config_obj, timeout=3)
+    cls = SendMailController(mail_config=config_obj, timeout=10)
 
     if not cls.is_active or not template_obj:
         return 'MAIL_CONFIG_DEACTIVATE'

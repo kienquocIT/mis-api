@@ -2011,15 +2011,11 @@ def create_new_tenant(tenant_code, tenant_data, user_data):
 
 def reset_push_payment_plan():
     PaymentPlan.objects.all().delete()
-    for sale_order in SaleOrder.objects.filter(system_status=3, id="a1a32f96-ad09-41ee-93b5-1344fb816434"):
+    for sale_order in SaleOrder.objects.filter(system_status=3):
         SOFinishHandler.push_to_payment_plan(instance=sale_order)
     # for purchase_order in PurchaseOrder.objects.filter(system_status=3):
     #     POFinishHandler.push_to_payment_plan(instance=purchase_order)
-    for cash_in_flow in CashInflow.objects.filter(system_status=3, id__in=[
-        "b53dc980-67f9-414c-ae76-5a2206ee7cb0",
-        "8593f949-761a-452e-bf96-b3a0ae523b84",
-        "966b3bb0-4a55-44f9-8a68-c3d33a2ce8ed",
-    ]):
+    for cash_in_flow in CashInflow.objects.filter(system_status=3):
         CashInFlowFinishHandler.push_to_payment_plan(instance=cash_in_flow)
     # for cash_out_flow in CashOutflow.objects.filter(system_status=3):
     #     CashOutFlowFinishHandler.push_to_payment_plan(instance=cash_out_flow)

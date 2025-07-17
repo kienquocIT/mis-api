@@ -377,24 +377,5 @@ class LatestComponentListSerializer(serializers.ModelSerializer):
                 'component_text_data': item.component_text_data,
                 'component_product_data': item.component_product_data,
                 'component_quantity': item.component_quantity,
-                'is_added_component': False,
-                'component_product_none_detail': [{
-                    'warehouse_id': child.component_prd_wh.warehouse_id,
-                    'picked_quantity': child.component_prd_wh_quantity,
-                } for child in item.pw_modified_component_detail.filter(
-                    pw_modified_component=item,
-                    component_prd_wh__isnull=False
-                )],
-                'component_product_lot_detail': [{
-                    'lot_id': child.component_prd_wh_lot_id,
-                    'picked_quantity': child.component_prd_wh_lot_quantity,
-                } for child in item.pw_modified_component_detail.filter(
-                    pw_modified_component=item,
-                    component_prd_wh_lot__isnull=False
-                )],
-                'component_product_sn_detail': item.pw_modified_component_detail.filter(
-                    pw_modified_component=item,
-                    component_prd_wh_serial__isnull=False
-                ).values_list('component_prd_wh_serial_id', flat=True),
             })
         return current_component_data
