@@ -532,6 +532,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         code_rules = {
             'advancepayment': 'AP[n4]',
             'arinvoice': 'AR[n4]',
+            'apinvoice': 'AP[n4]',
             'bidding': 'BD[n4]',
             'bom': 'BOM[n4]',
             'cashinflow': 'CIF[n4]',

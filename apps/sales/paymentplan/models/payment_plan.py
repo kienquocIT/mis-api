@@ -108,7 +108,6 @@ class PaymentPlan(DataAbstractModel):
             ar_invoice_id=None,
             ar_invoice_data=None,
             invoice_actual_date=None,
-            value_balance=0,
             value_pay=0,
     ):
         if sale_order_id and payment_stage_id:
@@ -117,8 +116,8 @@ class PaymentPlan(DataAbstractModel):
                 plan_obj.ar_invoice_id = ar_invoice_id if ar_invoice_id else None
                 plan_obj.ar_invoice_data = ar_invoice_data if ar_invoice_data else {}
                 plan_obj.invoice_actual_date = invoice_actual_date
-                plan_obj.value_balance = value_balance
-                plan_obj.value_pay = value_pay
+                plan_obj.value_balance = plan_obj.value_balance - value_pay
+                plan_obj.value_pay = plan_obj.value_pay - value_pay
                 plan_obj.save(update_fields=[
                     'ar_invoice_id', 'ar_invoice_data', 'invoice_actual_date', 'value_balance', 'value_pay'
                 ])
@@ -132,7 +131,6 @@ class PaymentPlan(DataAbstractModel):
             ap_invoice_id=None,
             ap_invoice_data=None,
             invoice_actual_date=None,
-            value_balance=0,
             value_pay=0,
     ):
         if purchase_order_id and payment_stage_id:
@@ -144,8 +142,8 @@ class PaymentPlan(DataAbstractModel):
                     plan_obj.ap_invoice_id = ap_invoice_id
                     plan_obj.ap_invoice_data = ap_invoice_data if ap_invoice_data else {}
                     plan_obj.invoice_actual_date = invoice_actual_date
-                    plan_obj.value_balance = value_balance
-                    plan_obj.value_pay = value_pay
+                    plan_obj.value_balance = plan_obj.value_balance - value_pay
+                    plan_obj.value_pay = plan_obj.value_pay - value_pay
                     plan_obj.save(update_fields=[
                         'ap_invoice_id', 'ap_invoice_data', 'invoice_actual_date', 'value_balance', 'value_pay'
                     ])
