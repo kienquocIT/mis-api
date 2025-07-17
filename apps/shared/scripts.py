@@ -2217,7 +2217,7 @@ class VietnamAdministrativeAddress:
                 country_id='bbf52b7b-77ed-4e8c-af0a-86ca00771d83',
                 code=province_info.get('code', ''),
                 slug=province_info.get('slug', ''),
-                type=province_info.get('type', ''),
+                ptype=province_info.get('type', ''),
                 name=province_info.get('name', ''),
                 fullname=province_info.get('name_with_type', ''),
             ))
@@ -2239,7 +2239,7 @@ class VietnamAdministrativeAddress:
                 province_code=province_obj.code,
                 code=ward_info.get('code', ''),
                 slug=ward_info.get('slug', ''),
-                type=ward_info.get('type', ''),
+                wtype=ward_info.get('type', ''),
                 name=ward_info.get('name', ''),
                 fullname=ward_info.get('name_with_type', ''),
                 path=ward_info.get('path', ''),
