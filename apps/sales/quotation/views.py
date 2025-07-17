@@ -27,6 +27,8 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
         'opportunity__sale_order': ['exact', 'isnull'],
         'opportunity__is_close_lost': ['exact'],
         'opportunity__is_deal_close': ['exact'],
+        'customer_id': ['exact', 'in'],
+        'indicator_revenue': ['exact', 'gt', 'lt', 'gte', 'lte'],
         'system_status': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
         'is_delete': ['exact'],
