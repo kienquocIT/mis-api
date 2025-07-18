@@ -14,13 +14,13 @@ class Bank(MasterDataAbstractModel):
     bank_foreign_name = models.CharField(max_length=150, blank=True)
     is_default = models.BooleanField(default=False)
     vietqr_json_data = models.JSONField(default=dict)
-    head_office_address = models.TextField(null=True, blank=True)
+    head_office_address = models.CharField(blank=True, null=True, max_length=500)
     head_office_address_data = models.JSONField(default=dict)
-    # head_office_address_data = {
-    #   country_data: {id, title},
-    #   province_data: {id, fullname},
-    #   ward_data: {id, fullname},
-    #   address: str
+    # {
+    # country_id:
+    # province_id:
+    # ward_id:
+    # detail_address:
     # }
 
     class Meta:
