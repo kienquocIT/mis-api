@@ -63,7 +63,7 @@ class APInvoice(DataAbstractModel):
 
 class APInvoiceItems(SimpleAbstractModel):
     ap_invoice = models.ForeignKey('APInvoice', on_delete=models.CASCADE, related_name='ap_invoice_items')
-    item_index = models.IntegerField(default=0)
+    order = models.IntegerField(default=0)
 
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     product_data = models.JSONField(default=dict)
@@ -71,6 +71,9 @@ class APInvoiceItems(SimpleAbstractModel):
     product_uom_data = models.JSONField(default=dict)
     product_quantity = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
+
+    ap_product_des = models.TextField(null=True, blank=True)
+
     product_subtotal = models.FloatField(default=0)
     product_tax = models.ForeignKey('saledata.Tax', on_delete=models.CASCADE, null=True)
     product_tax_data = models.JSONField(default=dict)
@@ -84,7 +87,7 @@ class APInvoiceItems(SimpleAbstractModel):
     class Meta:
         verbose_name = 'AP Invoice Item'
         verbose_name_plural = 'AP Invoice Items'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
