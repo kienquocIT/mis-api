@@ -395,8 +395,6 @@ class AccountAccountTypes(SimpleAbstractModel):
 class AccountShippingAddress(SimpleAbstractModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="account_mapped_shipping_address")
     address_data = models.JSONField(default=dict)
-    full_address = models.CharField(verbose_name='Full address', blank=True, null=True, max_length=500)
-    is_default = models.BooleanField(default=False)
     # {
     # country_id:
     # province_id:
@@ -404,6 +402,8 @@ class AccountShippingAddress(SimpleAbstractModel):
     # detail_address:
     # is_default
     # }
+    full_address = models.CharField(blank=True, null=True, max_length=500)
+    is_default = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Account Shipping Address'
