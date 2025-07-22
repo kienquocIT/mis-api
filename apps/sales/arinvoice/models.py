@@ -105,9 +105,9 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('arinvoice', True, self, kwargs)
+                    self.update_order_delivery_has_ar_invoice_already(self)
                     JEForARInvoiceHandler.push_to_journal_entry(self)
                     ReconForARInvoiceHandler.auto_create_recon_doc(self)
-                    self.update_order_delivery_has_ar_invoice_already(self)
 
         if self.invoice_status == 1:  # published
             self.push_final_acceptance_invoice(instance=self)

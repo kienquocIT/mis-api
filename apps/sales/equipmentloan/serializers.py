@@ -37,6 +37,8 @@ class EquipmentLoanListSerializer(AbstractListSerializerModel):
             'code',
             'account_mapped_data',
             'date_created',
+            'loan_date',
+            'return_date',
             'employee_created',
             'product_loan_data'
         )
@@ -303,7 +305,10 @@ class EquipmentLoanCommonFunction:
             bulk_info_detail += EquipmentLoanCommonFunction.create_equipment_loan_item_sub(
                 equipment_loan_item_obj, loan_product_none_detail, loan_product_lot_detail, loan_product_sn_detail
             )
-            product_loan_data.append(equipment_loan_item.get('loan_product_data', {}))
+            product_loan_data.append({
+                **equipment_loan_item.get('loan_product_data', {}),
+                'quantity': equipment_loan_item.get('loan_quantity', 0)
+            })
 
         EquipmentLoanItem.objects.filter(equipment_loan=el_obj).delete()
         EquipmentLoanItem.objects.bulk_create(bulk_info)
