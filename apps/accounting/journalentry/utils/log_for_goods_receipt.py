@@ -10,17 +10,17 @@ logger = logging.getLogger(__name__)
 
 class JEForGoodsReceiptHandler:
     @classmethod
-    def get_je_item_data(cls, goods_receipt_obj):
+    def get_je_item_data(cls, gr_obj):
         debit_rows_data = []
         credit_rows_data = []
         sum_cost = 0
-        for gr_prd_obj in goods_receipt_obj.goods_receipt_product_goods_receipt.all():
+        for gr_prd_obj in gr_obj.goods_receipt_product_goods_receipt.all():
             for gr_wh_obj in gr_prd_obj.goods_receipt_warehouse_gr_product.all():
                 # lấy cost hiện tại của sp
                 stock_log_item = ReportStockLog.objects.filter(
                     product=gr_prd_obj.product,
-                    trans_code=goods_receipt_obj.code,
-                    trans_id=str(goods_receipt_obj.id)
+                    trans_code=gr_obj.code,
+                    trans_id=str(gr_obj.id)
                 ).first()
                 cost = stock_log_item.value if stock_log_item else 0
                 sum_cost += cost
@@ -39,8 +39,8 @@ class JEForGoodsReceiptHandler:
                         'taxable_value': 0,
                     })
         for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
-            tenant_id=goods_receipt_obj.tenant_id,
-            company_id=goods_receipt_obj.company_id,
+            tenant_id=gr_obj.tenant_id,
+            company_id=gr_obj.company_id,
             foreign_title='Customer overpayment'
         ):
             credit_rows_data.append({
@@ -58,24 +58,24 @@ class JEForGoodsReceiptHandler:
         return debit_rows_data, credit_rows_data
 
     @classmethod
-    def push_to_journal_entry(cls, goods_receipt_obj):
+    def push_to_journal_entry(cls, gr_obj):
         """ Chuẩn bị data để tự động tạo Bút Toán """
         try:
             with transaction.atomic():
-                debit_rows_data, credit_rows_data = cls.get_je_item_data(goods_receipt_obj)
+                debit_rows_data, credit_rows_data = cls.get_je_item_data(gr_obj)
                 kwargs = {
-                    'je_transaction_app_code': goods_receipt_obj.get_model_code(),
-                    'je_transaction_id': str(goods_receipt_obj.id),
+                    'je_transaction_app_code': gr_obj.get_model_code(),
+                    'je_transaction_id': str(gr_obj.id),
                     'je_transaction_data': {
-                        'id': str(goods_receipt_obj.id),
-                        'code': goods_receipt_obj.code,
-                        'title': goods_receipt_obj.title,
-                        'date_created': str(goods_receipt_obj.date_created),
-                        'date_approved': str(goods_receipt_obj.date_approved),
+                        'id': str(gr_obj.id),
+                        'code': gr_obj.code,
+                        'title': gr_obj.title,
+                        'date_created': str(gr_obj.date_created),
+                        'date_approved': str(gr_obj.date_approved),
                     },
-                    'tenant_id': goods_receipt_obj.tenant_id,
-                    'company_id': goods_receipt_obj.company_id,
-                    'employee_created_id': goods_receipt_obj.employee_created_id or goods_receipt_obj.employee_inherit_id,
+                    'tenant_id': gr_obj.tenant_id,
+                    'company_id': gr_obj.company_id,
+                    'employee_created_id': gr_obj.employee_created_id or gr_obj.employee_inherit_id,
                     'je_item_data': {
                         'debit_rows': debit_rows_data,
                         'credit_rows': credit_rows_data
