@@ -651,6 +651,14 @@ class AccountingMasterData:
             new_acc_name='Giao hàng nhưng chưa xuất hóa đơn bán hàng',
             new_foreign_acc_name='Delivered but no AR Invoice yet'
         )
+        # thêm 33881: Nhập hàng nhưng chưa nhập hóa đơn mua hàng
+        ChartOfAccounts.add_account(
+            parent_acc_type=1,
+            parent_acc_code=3388,
+            new_acc_code=33881,
+            new_acc_name='Nhập hàng nhưng chưa nhập hóa đơn mua hàng',
+            new_foreign_acc_name='Receipted but no AP Invoice yet'
+        )
         print('Done :))')
         return True
 
@@ -705,7 +713,7 @@ class AccountingMasterData:
                     'foreign_title': 'Customer overpayment',
                     'title': 'Khách hàng thanh toán thừa',
                     'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='3388').first()
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='33881').first()
                     ]
                 },
                 {

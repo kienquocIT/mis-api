@@ -252,6 +252,42 @@ class CashInflowCommonFunction:
         raise serializers.ValidationError({'customer_id': CashInflowMsg.CUSTOMER_NOT_NULL})
 
     @staticmethod
+    def common_valid_cash_in_customer_advance_data(item):
+        # check so
+        sale_order_stage = SaleOrderPaymentStage.objects.filter(id=item.get('sale_order_stage_id')).first()
+        if not sale_order_stage:
+            raise serializers.ValidationError({'sale_order_stage_id': CashInflowMsg.SALE_ORDER_STAGE_NOT_EXIST})
+        item['sale_order_stage_id'] = str(sale_order_stage.id)
+        item['sale_order_stage_data'] = {
+            'id': str(sale_order_stage.id),
+            'remark': sale_order_stage.remark,
+            'term_data': sale_order_stage.term_data,
+            'date': str(sale_order_stage.date),
+            'date_type': sale_order_stage.date_type,
+            'ratio': sale_order_stage.ratio,
+            'value_before_tax': sale_order_stage.value_before_tax,
+            'invoice': sale_order_stage.invoice,
+            'invoice_data': sale_order_stage.invoice_data,
+            'value_total': sale_order_stage.value_total,
+            'due_date': str(sale_order_stage.due_date),
+            'is_ar_invoice': sale_order_stage.is_ar_invoice,
+            'order': sale_order_stage.order,
+        }
+        if sale_order_stage.sale_order:
+            item['sale_order_id'] = str(sale_order_stage.sale_order_id)
+            item['sale_order_data'] = {
+                'id': str(sale_order_stage.sale_order_id),
+                'code': sale_order_stage.sale_order.code,
+                'title': sale_order_stage.sale_order.title
+            }
+        else:
+            raise serializers.ValidationError({'sale_order_id': CashInflowMsg.SALE_ORDER_NOT_EXIST})
+
+        item['sum_balance_value'] = float(item.get('sum_balance_value', 0))
+        item['sum_payment_value'] = float(item.get('sum_payment_value', 0))
+        return True
+
+    @staticmethod
     def common_valid_cash_in_ar_invoice_data(item):
         # check so
         ar_invoice_obj = ARInvoice.objects.filter(id=item.get('ar_invoice_id')).first()
@@ -286,42 +322,6 @@ class CashInflowCommonFunction:
                 'is_ar_invoice': sale_order_stage.is_ar_invoice,
                 'order': sale_order_stage.order,
             }
-
-        item['sum_balance_value'] = float(item.get('sum_balance_value', 0))
-        item['sum_payment_value'] = float(item.get('sum_payment_value', 0))
-        return True
-
-    @staticmethod
-    def common_valid_cash_in_customer_advance_data(item):
-        # check so
-        sale_order_stage = SaleOrderPaymentStage.objects.filter(id=item.get('sale_order_stage_id')).first()
-        if not sale_order_stage:
-            raise serializers.ValidationError({'sale_order_stage_id': CashInflowMsg.SALE_ORDER_STAGE_NOT_EXIST})
-        item['sale_order_stage_id'] = str(sale_order_stage.id)
-        item['sale_order_stage_data'] = {
-            'id': str(sale_order_stage.id),
-            'remark': sale_order_stage.remark,
-            'term_data': sale_order_stage.term_data,
-            'date': str(sale_order_stage.date),
-            'date_type': sale_order_stage.date_type,
-            'ratio': sale_order_stage.ratio,
-            'value_before_tax': sale_order_stage.value_before_tax,
-            'invoice': sale_order_stage.invoice,
-            'invoice_data': sale_order_stage.invoice_data,
-            'value_total': sale_order_stage.value_total,
-            'due_date': str(sale_order_stage.due_date),
-            'is_ar_invoice': sale_order_stage.is_ar_invoice,
-            'order': sale_order_stage.order,
-        }
-        if sale_order_stage.sale_order:
-            item['sale_order_id'] = str(sale_order_stage.sale_order_id)
-            item['sale_order_data'] = {
-                'id': str(sale_order_stage.sale_order_id),
-                'code': sale_order_stage.sale_order.code,
-                'title': sale_order_stage.sale_order.title
-            }
-        else:
-            raise serializers.ValidationError({'sale_order_id': CashInflowMsg.SALE_ORDER_NOT_EXIST})
 
         item['sum_balance_value'] = float(item.get('sum_balance_value', 0))
         item['sum_payment_value'] = float(item.get('sum_payment_value', 0))
