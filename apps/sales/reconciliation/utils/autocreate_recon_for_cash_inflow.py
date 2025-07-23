@@ -25,7 +25,7 @@ class ReconForCIFHandler:
                         } if cif_obj.customer else {},
                         posting_date=str(cif_obj.posting_date),
                         document_date=str(cif_obj.document_date),
-                        system_status=1,
+                        system_status=3,
                         company_id=str(cif_obj.company_id),
                         tenant_id=str(cif_obj.tenant_id),
                         system_auto_create=True

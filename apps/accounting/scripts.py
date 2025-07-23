@@ -653,7 +653,7 @@ class AccountingMasterData:
         )
         # thêm 33881: Nhập hàng nhưng chưa nhập hóa đơn mua hàng
         ChartOfAccounts.add_account(
-            parent_acc_type=1,
+            parent_acc_type=2,
             parent_acc_code=3388,
             new_acc_code=33881,
             new_acc_name='Nhập hàng nhưng chưa nhập hóa đơn mua hàng',
@@ -788,6 +788,13 @@ class AccountingMasterData:
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='521').first()
                     ]
                 },
+                {
+                    'foreign_title': 'Purchases tax',
+                    'title': 'Thuế GTGT mua hàng',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1331').first()
+                    ]
+                },
             ]
             account_mapped_data_inventory = [
                 {
@@ -822,7 +829,7 @@ class AccountingMasterData:
 
             for item in account_mapped_data_sale + account_mapped_data_purchasing + account_mapped_data_inventory:
                 if None in item.get('account', []):
-                    print(f'Create data failed in {company.title}: None in account list')
+                    print(f'Create data failed in {company.title}: None in account list ({item.get("foreign_title")})')
                     return False
                 if len(item.get('account', [])) != 1:
                     print(f'Create data failed in {company.title}: Account list length is not single')
