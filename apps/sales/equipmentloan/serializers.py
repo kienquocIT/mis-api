@@ -39,6 +39,7 @@ class EquipmentLoanListSerializer(AbstractListSerializerModel):
             'date_created',
             'loan_date',
             'return_date',
+            'return_status',
             'employee_created',
             'product_loan_data'
         )
