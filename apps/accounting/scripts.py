@@ -912,7 +912,6 @@ class AccountingMasterData:
             DefaultAccountDetermination.objects.bulk_create(bulk_info)
             DefaultAccountDeterminationSub.objects.bulk_create(bulk_info_sub)
             print(f'Done for {company.title}')
-        print('Done :))')
         return True
 
 
