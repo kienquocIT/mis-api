@@ -522,6 +522,67 @@ class Ward(SimpleAbstractModel):
         verbose_name = 'Ward'
         verbose_name_plural = 'Ward'
 
+# New Base Viet Nam info
+class NProvince(SimpleAbstractModel):
+    """
+    Example:
+        "name": "Hà Nội",
+        "slug": "ha-noi",
+        "type": "thanh-pho",
+        "fullname": "Thành phố Hà Nội",
+        "code": "11"
+    """
+    country = models.ForeignKey(
+        'Country',
+        on_delete=models.CASCADE,
+        related_name='n_provinces_of_country',
+    )
+    code = models.CharField(max_length=20)
+    slug = models.CharField(max_length=50)
+    ptype = models.CharField(max_length=50)
+    name = models.CharField(max_length=50)
+    fullname = models.CharField(max_length=100)
+
+    class Meta:
+        default_permissions = ()
+        permissions = ()
+        ordering = ('fullname',)
+        verbose_name = 'NProvince'
+        verbose_name_plural = 'NProvinces'
+
+
+class NWard(SimpleAbstractModel):
+    """
+    Example:
+        "name": "Minh Châu",
+        "type": "xa",
+        "slug": "minh-chau",
+        "fullname": "Xã Minh Châu",
+        "path": "Minh Châu, Hà Nội",
+        "fullpath": "Xã Minh Châu, Thành phố Hà Nội",
+        "code": "267",
+        "province_code": "11"
+    """
+    province = models.ForeignKey(
+        'NProvince',
+        on_delete=models.CASCADE,
+        related_name='n_wards_of_province'
+    )
+    province_code = models.CharField(max_length=20)
+    code = models.CharField(max_length=20)
+    slug = models.CharField(max_length=50)
+    wtype = models.CharField(max_length=50)
+    name = models.CharField(max_length=50)
+    fullname = models.CharField(max_length=100)
+    path = models.CharField(max_length=100)
+    fullpath = models.CharField(max_length=150)
+
+    class Meta:
+        default_permissions = ()
+        permissions = ()
+        ordering = ('fullname',)
+        verbose_name = 'NWard'
+        verbose_name_plural = 'NWards'
 
 # Currency
 class Currency(SimpleAbstractModel):

@@ -22,7 +22,6 @@ __all__ = [
     'APInvoiceListForCashOutflowSerializer',
 ]
 
-
 # main serializers
 class CashOutflowListSerializer(AbstractListSerializerModel):
     class Meta:
@@ -383,7 +382,7 @@ class CashOutflowCommonFunction:
     def validate_payment_method_data(cls, validate_data):
         payment_method_data = validate_data.pop('payment_method_data', {})
         if all(key in payment_method_data for key in ['cash_value', 'bank_value']):
-            # check cof total value == cash_value + bank_value ?
+            # check cof total_value == cash_value + bank_value ?
             validate_data['cash_value'] = float(payment_method_data.get('cash_value', 0))
             validate_data['bank_value'] = float(payment_method_data.get('bank_value', 0))
             validate_data['total_value'] = float(validate_data.get('total_value', 0))
@@ -439,7 +438,6 @@ class CashOutflowCommonFunction:
         CashOutflowItemDetail.objects.bulk_create(bulk_info_detail)
         print('* create_cof_item --- ok')
         return True
-
 
 # related serializers
 class AdvanceForSupplierForCashOutflowSerializer(serializers.ModelSerializer):

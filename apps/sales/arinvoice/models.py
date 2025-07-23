@@ -105,9 +105,9 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('arinvoice', True, self, kwargs)
+                    self.update_order_delivery_has_ar_invoice_already(self)
                     JEForARInvoiceHandler.push_to_journal_entry(self)
                     ReconForARInvoiceHandler.auto_create_recon_doc(self)
-                    self.update_order_delivery_has_ar_invoice_already(self)
 
         if self.invoice_status == 1:  # published
             self.push_final_acceptance_invoice(instance=self)
@@ -124,15 +124,17 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
 
 class ARInvoiceItems(SimpleAbstractModel):
     ar_invoice = models.ForeignKey('ARInvoice', on_delete=models.CASCADE, related_name='ar_invoice_items')
-    item_index = models.IntegerField(default=0)
+    order = models.IntegerField(default=0)
 
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     product_data = models.JSONField(default=dict)
-    ar_product_des = models.TextField(null=True, blank=True, default='')
     product_uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.SET_NULL, null=True)
     product_uom_data = models.JSONField(default=dict)
     product_quantity = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
+
+    ar_product_des = models.TextField(null=True, blank=True)
+
     product_subtotal = models.FloatField(default=0)
     product_discount_value = models.FloatField(default=0)
     product_tax = models.ForeignKey('saledata.Tax', on_delete=models.SET_NULL, null=True)
@@ -144,7 +146,7 @@ class ARInvoiceItems(SimpleAbstractModel):
     class Meta:
         verbose_name = 'AR Invoice Item'
         verbose_name_plural = 'AR Invoice Items'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 

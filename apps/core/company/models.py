@@ -583,7 +583,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         if obj and obj.schema is not None:
             parsed_code = cls.parse_code_from_schema(obj, obj.schema)
 
-        if instance:
+        if instance and not instance.code:
             instance.code = parsed_code
             if in_workflow and kwargs:
                 kwargs['update_fields'].append('code')

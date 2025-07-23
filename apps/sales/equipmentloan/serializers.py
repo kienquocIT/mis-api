@@ -37,7 +37,10 @@ class EquipmentLoanListSerializer(AbstractListSerializerModel):
             'code',
             'account_mapped_data',
             'date_created',
+            'loan_date',
+            'return_date',
             'employee_created',
+            'product_loan_data'
         )
 
     @classmethod
@@ -291,6 +294,7 @@ class EquipmentLoanCommonFunction:
     def create_equipment_loan_item(el_obj, equipment_loan_item_list):
         bulk_info = []
         bulk_info_detail = []
+        product_loan_data = []
         for order, equipment_loan_item in enumerate(equipment_loan_item_list):
             loan_product_none_detail = equipment_loan_item.pop('loan_product_none_detail', [])
             loan_product_lot_detail = equipment_loan_item.pop('loan_product_lot_detail', [])
@@ -301,10 +305,16 @@ class EquipmentLoanCommonFunction:
             bulk_info_detail += EquipmentLoanCommonFunction.create_equipment_loan_item_sub(
                 equipment_loan_item_obj, loan_product_none_detail, loan_product_lot_detail, loan_product_sn_detail
             )
+            product_loan_data.append({
+                **equipment_loan_item.get('loan_product_data', {}),
+                'quantity': equipment_loan_item.get('loan_quantity', 0)
+            })
 
         EquipmentLoanItem.objects.filter(equipment_loan=el_obj).delete()
         EquipmentLoanItem.objects.bulk_create(bulk_info)
         EquipmentLoanItemDetail.objects.bulk_create(bulk_info_detail)
+        el_obj.product_loan_data = product_loan_data
+        el_obj.save(update_fields=['product_loan_data'])
         return True
 
     @staticmethod

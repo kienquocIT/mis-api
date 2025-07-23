@@ -94,9 +94,23 @@ class Contact(DataAbstractModel):
     #   "work_address": "Số 2/8, Xã Định An, Huyện Dầu Tiếng, Bình Dương",
     #   "home_address": "Số 22/20, Phường Lê Hồng Phong, Thành Phố Phủ Lý, Hà Nam"
     # }
-    address_information = models.JSONField(
-        default=dict,
-    )
+    address_information = models.JSONField(default=dict)
+    home_detail_address = models.CharField(blank=True, null=True, max_length=500)
+    home_address_data = models.JSONField(default=dict)
+    # {
+    # country_id:
+    # province_id:
+    # ward_id:
+    # detail_address:
+    # }
+    work_detail_address = models.CharField(blank=True, null=True, max_length=500)
+    work_address_data = models.JSONField(default=dict)
+    # {
+    # country_id:
+    # province_id:
+    # ward_id:
+    # detail_address:
+    # }
 
     # {
     #   'facebook': 'nva.facebook.com',
@@ -112,74 +126,6 @@ class Contact(DataAbstractModel):
     is_primary = models.BooleanField(
         help_text='is account owner',
         default=False
-    )
-
-    # home address fields
-    home_country = models.ForeignKey(
-        'base.Country',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='home_country'
-    )
-    home_detail_address = models.TextField(
-        verbose_name='Detail home address',
-        blank=True,
-        null=True,
-    )
-    home_city = models.ForeignKey(
-        'base.City',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='home_city'
-    )
-    home_district = models.ForeignKey(
-        'base.District',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='home_district'
-    )
-    home_ward = models.ForeignKey(
-        'base.Ward',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='home_ward'
-    )
-    home_address_data = models.JSONField(
-        default=dict,
-    )
-
-    # work address fields
-    work_country = models.ForeignKey(
-        'base.Country',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='work_country'
-    )
-    work_detail_address = models.TextField(
-        verbose_name='Detail work address',
-        blank=True,
-        null=True,
-    )
-    work_city = models.ForeignKey(
-        'base.City',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='work_city'
-    )
-    work_district = models.ForeignKey(
-        'base.District',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='work_district'
-    )
-    work_ward = models.ForeignKey(
-        'base.Ward',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='work_ward'
-    )
-    work_address_data = models.JSONField(
-        default=dict,
     )
 
     class Meta:

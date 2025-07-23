@@ -310,12 +310,13 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_item_mapped(cls, obj):
         return [{
-            'item_index': item.item_index,
+            'id': item.id,
+            'order': item.order,
             'product_data': item.product_data,
-            'ar_product_des': item.ar_product_des,
             'product_uom_data': item.product_uom_data,
             'product_quantity': item.product_quantity,
             'product_unit_price': item.product_unit_price,
+            'ar_product_des': item.ar_product_des,
             'product_subtotal': item.product_subtotal,
             'product_discount_value': item.product_discount_value,
             'product_tax_data': item.product_tax_data,
@@ -440,8 +441,8 @@ class ARInvoiceCommonFunc:
         sum_discount_value = 0
         sum_tax_value = 0
         sum_after_tax_value = 0
-        for item in data_item_list:
-            bulk_data.append(ARInvoiceItems(ar_invoice=ar_invoice_obj, **item))
+        for order, item in enumerate(data_item_list):
+            bulk_data.append(ARInvoiceItems(ar_invoice=ar_invoice_obj, order=order, **item))
             sum_pretax_value += float(item.get('product_subtotal', 0))
             sum_discount_value += float(item.get('product_discount_value', 0))
             sum_tax_value += float(item.get('product_tax_value', 0))

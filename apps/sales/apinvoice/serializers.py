@@ -126,35 +126,44 @@ class APInvoiceCreateSerializer(AbstractCreateSerializerModel):
             }
         # check valid data data_item_list
         for item in validate_data.get('data_item_list', []):
-            product_obj = Product.objects.filter(id=item.get('product_id')).first()
-            uom_obj = UnitOfMeasure.objects.filter(id=item.get('product_uom_id')).first()
-            tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
-            if any([
-                product_obj is None,
-                uom_obj is None,
-                float(item.get('product_quantity', 0)) <= 0,
-                float(item.get('product_unit_price', 0)) <= 0,
-                float(item.get('product_subtotal', 0)) <= 0,
-            ]):
-                raise serializers.ValidationError({'data_item_list': "Data items are not valid."})
-            item['product_data'] = {
-                'id': str(product_obj.id),
-                'code': product_obj.code,
-                'title': product_obj.title,
-                'description': product_obj.description,
-            } if product_obj else {}
-            item['product_uom_data'] = {
-                'id': str(uom_obj.id),
-                'code': uom_obj.code,
-                'title': uom_obj.title,
-                'group_id': str(uom_obj.group_id)
-            } if uom_obj else {}
-            item['product_tax_data'] = {
-                'id': str(tax_obj.id),
-                'code': tax_obj.code,
-                'title': tax_obj.title,
-                'rate': tax_obj.rate,
-            } if tax_obj else {}
+            if item.get('ap_product_des'):
+                tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
+                item['product_tax_data'] = {
+                    'id': str(tax_obj.id),
+                    'code': tax_obj.code,
+                    'title': tax_obj.title,
+                    'rate': tax_obj.rate,
+                } if tax_obj else {}
+            else:
+                product_obj = Product.objects.filter(id=item.get('product_id')).first()
+                uom_obj = UnitOfMeasure.objects.filter(id=item.get('product_uom_id')).first()
+                tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
+                if any([
+                    product_obj is None,
+                    uom_obj is None,
+                    float(item.get('product_quantity', 0)) <= 0,
+                    float(item.get('product_unit_price', 0)) <= 0,
+                    float(item.get('product_subtotal', 0)) <= 0,
+                ]):
+                    raise serializers.ValidationError({'data_item_list': "Data items are not valid."})
+                item['product_data'] = {
+                    'id': str(product_obj.id),
+                    'code': product_obj.code,
+                    'title': product_obj.title,
+                    'description': product_obj.description,
+                } if product_obj else {}
+                item['product_uom_data'] = {
+                    'id': str(uom_obj.id),
+                    'code': uom_obj.code,
+                    'title': uom_obj.title,
+                    'group_id': str(uom_obj.group_id)
+                } if uom_obj else {}
+                item['product_tax_data'] = {
+                    'id': str(tax_obj.id),
+                    'code': tax_obj.code,
+                    'title': tax_obj.title,
+                    'rate': tax_obj.rate,
+                } if tax_obj else {}
         return validate_data
 
     @decorator_run_workflow
@@ -199,21 +208,18 @@ class APInvoiceDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_goods_receipt_mapped(cls, obj):
-        return [{
-            'id': item.goods_receipt_mapped_id,
-            'code': item.goods_receipt_mapped.code,
-            'title': item.goods_receipt_mapped.title,
-        } for item in obj.ap_invoice_goods_receipts.all()]
+        return [item.goods_receipt_mapped_data for item in obj.ap_invoice_goods_receipts.all()]
 
     @classmethod
     def get_item_mapped(cls, obj):
         return [{
             'id': item.id,
-            'item_index': item.item_index,
+            'order': item.order,
             'product_data': item.product_data,
             'product_uom_data': item.product_uom_data,
             'product_quantity': item.product_quantity,
             'product_unit_price': item.product_unit_price,
+            'ap_product_des': item.ap_product_des,
             'product_subtotal': item.product_subtotal,
             'product_tax_data': item.product_tax_data,
             'product_tax_value': item.product_tax_value,
@@ -305,8 +311,8 @@ class APInvoiceCommonFunc:
         sum_pretax_value = 0
         sum_tax_value = 0
         sum_after_tax_value = 0
-        for item in data_item_list:
-            bulk_data.append(APInvoiceItems(ap_invoice=ap_invoice_obj, **item))
+        for order, item in enumerate(data_item_list):
+            bulk_data.append(APInvoiceItems(ap_invoice=ap_invoice_obj, order=order, **item))
             sum_pretax_value += float(item.get('product_subtotal', 0))
             sum_tax_value += float(item.get('product_tax_value', 0))
             sum_after_tax_value += float(item.get('product_subtotal_final', 0))
@@ -329,7 +335,6 @@ class APInvoiceCommonFunc:
             attachment_result=attachment_list,
         )
         return True
-
 
 # related serializers
 class PurchaseOrderListSerializerForAPInvoice(serializers.ModelSerializer):

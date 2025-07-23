@@ -1,6 +1,8 @@
 from django.db import models
+# from apps.accounting.journalentry.utils import JEForAPInvoiceHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
+# from apps.sales.reconciliation.utils import ReconForAPInvoiceHandler
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 
@@ -57,13 +59,15 @@ class APInvoice(DataAbstractModel):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('apinvoice', True, self, kwargs)
                     self.update_goods_receipt_has_ap_invoice_already(self)
+                    # JEForAPInvoiceHandler.push_to_journal_entry(self)
+                    # ReconForAPInvoiceHandler.auto_create_recon_doc(self)
         # hit DB
         super().save(*args, **kwargs)
 
 
 class APInvoiceItems(SimpleAbstractModel):
     ap_invoice = models.ForeignKey('APInvoice', on_delete=models.CASCADE, related_name='ap_invoice_items')
-    item_index = models.IntegerField(default=0)
+    order = models.IntegerField(default=0)
 
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     product_data = models.JSONField(default=dict)
@@ -71,6 +75,9 @@ class APInvoiceItems(SimpleAbstractModel):
     product_uom_data = models.JSONField(default=dict)
     product_quantity = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
+
+    ap_product_des = models.TextField(null=True, blank=True)
+
     product_subtotal = models.FloatField(default=0)
     product_tax = models.ForeignKey('saledata.Tax', on_delete=models.CASCADE, null=True)
     product_tax_data = models.JSONField(default=dict)
@@ -84,7 +91,7 @@ class APInvoiceItems(SimpleAbstractModel):
     class Meta:
         verbose_name = 'AP Invoice Item'
         verbose_name_plural = 'AP Invoice Items'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 

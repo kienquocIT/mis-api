@@ -15,10 +15,10 @@ __all__ = [
     'ProductModificationBOMCreateSerializer',
     'ProductModificationBOMDetailSerializer',
     'ProductModificationBOMUpdateSerializer',
-    'ProductModifiedListSerializer',
-    'ProductModifiedBeforeListSerializer',
-    'ProductComponentListSerializer',
-    'LatestComponentListSerializer',
+    'PMBOMProductModifiedListSerializer',
+    'PMBOMProductModifiedBeforeListSerializer',
+    'PMBOMProductComponentListSerializer',
+    'PMBOMLatestComponentListSerializer',
 ]
 
 # main
@@ -192,9 +192,6 @@ class ProductModificationBOMUpdateSerializer(AbstractCreateSerializerModel):
     def validate_product_mapped(cls, value):
         return ProductModificationBOMCreateSerializer.validate_product_mapped(value)
 
-    def validate(self, validate_data):
-        return ProductModificationBOMCreateSerializer().validate(validate_data)
-
     @classmethod
     def validate_current_component_data(cls, current_component_data):
         return ProductModificationBOMCreateSerializer().validate_current_component_data(current_component_data)
@@ -202,6 +199,9 @@ class ProductModificationBOMUpdateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_added_component_data(cls, added_component_data):
         return ProductModificationBOMCreateSerializer().validate_added_component_data(added_component_data)
+
+    def validate(self, validate_data):
+        return ProductModificationBOMCreateSerializer().validate(validate_data)
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
@@ -240,7 +240,7 @@ class ProductModificationBOMCommonFunction:
 
 
 # related
-class ProductModifiedListSerializer(serializers.ModelSerializer):
+class PMBOMProductModifiedListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
@@ -252,7 +252,7 @@ class ProductModifiedListSerializer(serializers.ModelSerializer):
         )
 
 
-class ProductModifiedBeforeListSerializer(serializers.ModelSerializer):
+class PMBOMProductModifiedBeforeListSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
     code = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()
@@ -329,7 +329,7 @@ class ProductModifiedBeforeListSerializer(serializers.ModelSerializer):
         return obj.product_warehouse.warehouse_data if obj.product_warehouse else {}
 
 
-class ProductComponentListSerializer(serializers.ModelSerializer):
+class PMBOMProductComponentListSerializer(serializers.ModelSerializer):
     component_list_data = serializers.SerializerMethodField()
 
     class Meta:
@@ -355,7 +355,7 @@ class ProductComponentListSerializer(serializers.ModelSerializer):
         return component_list_data
 
 
-class LatestComponentListSerializer(serializers.ModelSerializer):
+class PMBOMLatestComponentListSerializer(serializers.ModelSerializer):
     current_component_data = serializers.SerializerMethodField()
 
     class Meta:
