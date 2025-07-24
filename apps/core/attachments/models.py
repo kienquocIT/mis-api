@@ -1,6 +1,6 @@
 __all__ = [
     'Files', 'M2MFilesAbstractModel',
-    'PublicFiles', 'Folder', 'FolderPermission', 'FilePermission'
+    'PublicFiles', 'Folder', 'FolderPermission', 'FilePermission', 'update_files_is_approved'
 ]
 
 import json
@@ -82,6 +82,15 @@ def generate_path_public_file(instance, filename):
             return f"{company_path}/{now_str.year}/{now_str.month}/{now_str.day}/{make_sure_filename_length(filename)}"
         raise ValueError('Attachment require employee related')
     raise ValueError('Attachment require company related')
+
+
+def update_files_is_approved(doc_files_list):
+    bulk_files_update = []
+    for file in doc_files_list:
+        file.attachment.is_approved = True
+        bulk_files_update.append(file.attachment)
+    if bulk_files_update:
+        Files.objects.bulk_update(bulk_files_update, fields=['is_approved'])
 
 
 class BastionFiles(MasterDataAbstractModel):
@@ -483,18 +492,33 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
             try:
                 with transaction.atomic():
                     if new_objs:
-                        folder_obj = Folder.objects().filter_on_company(application=doc_app, is_system=True)
+                        folder_obj = Folder.objects.filter_on_company(application=doc_app, is_system=True)
                         has_folder = folder_obj.exists()
-                        # install m2m and update relate data of Files
+                        # create new if folder not exists
+                        if not has_folder:
+                            has_folder, _ = Folder.objects.get_or_create(
+                                application=doc_app,
+                                is_system=True,
+                                defaults={
+                                    'title': doc_app.title,
+                                    'company': new_objs[0].company,
+                                    'tenant': new_objs[0].tenant,
+                                    'application': doc_app,
+                                    'is_system': True
+                                }
+                            )
+                            folder_obj = has_folder
+                        else:
+                            folder_obj = folder_obj.first()
+
                         counter = len(new_objs) + 1
                         m2m_bulk = []
                         for obj in new_objs:
-                            tmp_obj = cls(attachment=obj, order=counter, **{doc_field_name + '_id': doc_id})
-                            m2m_bulk.append(tmp_obj)
+                            m2m_bulk.append(cls(attachment=obj, order=counter, **{doc_field_name + '_id': doc_id}))
                             counter += 1
                             obj.link(doc_id=doc_id, doc_app=doc_app)
                             if has_folder:
-                                obj.folder = folder_obj.first()
+                                obj.folder = folder_obj
                                 obj.save(update_fields=['folder'])
                         cls.objects.bulk_create(m2m_bulk)
 

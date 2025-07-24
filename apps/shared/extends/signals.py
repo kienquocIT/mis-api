@@ -1157,28 +1157,6 @@ class ConfigDefaultData:
             tenant=self.company_obj.tenant
         )
 
-    def create_new_folder_system(self):
-        company = self.company_obj
-        tenant = company.tenant
-        plan_ids = TenantPlan.objects.filter(tenant=tenant).values_list('plan_id', flat=True)
-        app_objs = [x.application for x in
-                    PlanApplication.objects.select_related('application').filter(plan_id__in=plan_ids)]
-        for p_app in app_objs:
-            Folder.objects.get_or_create(
-                company=company,
-                tenant=tenant,
-                application=p_app,
-                is_system=True,
-                defaults={
-                    'title': p_app.title,
-                    'company': company,
-                    'tenant': tenant,
-                    'application': p_app,
-                    'is_system': True
-                }
-            )
-        return True
-
     def call_new(self):
         config = self.company_config()
         self.delivery_config()
@@ -1198,7 +1176,6 @@ class ConfigDefaultData:
         self.make_sure_workflow_apps()
         self.project_config()
         self.lease_order_config()
-        self.create_new_folder_system()
         return True
 
 
@@ -1569,6 +1546,7 @@ def append_permission_managers_account(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Application)
 def new_app_new_folder(sender, instance, created, **kwargs):
+    request.user.language
     if created:
         Folder.objects.get_or_create(
             application=instance,

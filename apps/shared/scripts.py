@@ -2200,9 +2200,3 @@ def reset_picking_delivery(picking_id, delivery_id):
             delivery_sub.save(update_fields=['ready_quantity'])
     print('reset_picking_delivery done.')
     return True
-
-
-def make_sure_folder_already():
-    for obj in Company.objects.all():
-        ConfigDefaultData(obj).create_new_folder_system()
-    print('Folder system is ready!')
