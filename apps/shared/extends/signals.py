@@ -1542,22 +1542,3 @@ def append_permission_managers_account(sender, instance, created, **kwargs):
             doc_id=str(instance.id),
             tenant_id=instance.tenant_id,
         )
-
-
-@receiver(post_save, sender=Application)
-def new_app_new_folder(sender, instance, created, **kwargs):
-    request.user.language
-    if created:
-        Folder.objects.get_or_create(
-            application=instance,
-            company=instance.company,
-            tenant=instance.tenant,
-            is_system=True,
-            defaults={
-                'title': instance.title,
-                'application': instance,
-                'company': instance.company,
-                'tenant': instance.tenant,
-                'is_system': True,
-            },
-        )
