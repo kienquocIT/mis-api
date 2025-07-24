@@ -175,7 +175,6 @@ class ReconCommonFunction:
                     }
         return recon_item_data
 
-
 # related features
 class ARInvoiceListForReconSerializer(serializers.ModelSerializer):
     document_type = serializers.SerializerMethodField()
