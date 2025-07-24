@@ -4,6 +4,7 @@ from apps.accounting.journalentry.models import JournalEntry
 
 
 class JournalEntryListSerializer(serializers.ModelSerializer):
+    employee_created = serializers.SerializerMethodField()
     original_transaction = serializers.SerializerMethodField()
 
     class Meta:
@@ -14,9 +15,14 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
             'je_transaction_data',
             'original_transaction',
             'date_created',
+            'employee_created',
             'system_status',
             'system_auto_create'
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
     def get_original_transaction(cls, obj):
@@ -26,6 +32,12 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
             return _('AR Invoice')
         if obj.je_transaction_app_code == 'financialcashflow.cashinflow':
             return _('Cash Inflow')
+        if obj.je_transaction_app_code == 'inventory.goodsreceipt':
+            return _('Goods Receipt')
+        if obj.je_transaction_app_code == 'apinvoice.apinvoice':
+            return _('AP Invoice')
+        if obj.je_transaction_app_code == 'financialcashflow.cashoutflow':
+            return _('Cash Outflow')
         return ''
 
 
@@ -62,6 +74,12 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
             return 1
         if obj.je_transaction_app_code == 'financialcashflow.cashinflow':
             return 2
+        if obj.je_transaction_app_code == 'inventory.goodsreceipt':
+            return 3
+        if obj.je_transaction_app_code == 'apinvoice.apinvoice':
+            return 4
+        if obj.je_transaction_app_code == 'financialcashflow.cashoutflow':
+            return 5
         return None
 
     @classmethod

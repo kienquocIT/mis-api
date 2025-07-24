@@ -55,7 +55,7 @@ class JEForAPInvoiceHandler:
                 'is_fc': False,
                 'taxable_value': 0,
                 'use_for_recon': True,
-                'use_for_recon_type': 'ap-cof'
+                'use_for_recon_type': 'ap-gr'
             })
         for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
             tenant_id=ap_invoice_obj.tenant_id,
@@ -90,9 +90,10 @@ class JEForAPInvoiceHandler:
                         'date_created': str(ap_invoice_obj.date_created),
                         'date_approved': str(ap_invoice_obj.date_approved),
                     },
-                    'tenant_id': ap_invoice_obj.tenant_id,
-                    'company_id': ap_invoice_obj.company_id,
-                    'employee_created_id': ap_invoice_obj.employee_created_id,
+                    'tenant_id': str(ap_invoice_obj.tenant_id),
+                    'company_id': str(ap_invoice_obj.company_id),
+                    'employee_created_id': str(ap_invoice_obj.employee_created_id),
+                    'employee_inherit_id': str(ap_invoice_obj.employee_inherit_id),
                     'je_item_data': {
                         'debit_rows': debit_rows_data,
                         'credit_rows': credit_rows_data

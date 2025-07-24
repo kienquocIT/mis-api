@@ -920,11 +920,20 @@ class AccountingScripts:
     def push_default_account_determination_200():
         """ Đẩy các tài khoản kế toán xác định mặc định (TT200) vào KHO - PRODUCT TYPE - PRODUCT """
         for warehouse_obj in WareHouse.objects.all():
-            AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj)
+            AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 0)
+            AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 1)
+            AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 2)
+            AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 3)
         for product_type_obj in ProductType.objects.all():
-            AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj)
+            AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 0)
+            AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 1)
+            AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 2)
+            AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 3)
         for product_obj in Product.objects.all():
-            AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj)
+            AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 0)
+            AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 1)
+            AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 2)
+            AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 3)
         print(f'Done :))')
         return True
 

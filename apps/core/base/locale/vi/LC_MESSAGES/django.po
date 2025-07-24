@@ -55,7 +55,7 @@ msgstr "Xuất hàng"
 
 #
 msgid "APP_Goods Receipt"
-msgstr "Nhập kho"
+msgstr "Nhập hàng"
 
 #
 msgid "APP_Goods Return"

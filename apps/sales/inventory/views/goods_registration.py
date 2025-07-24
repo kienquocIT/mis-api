@@ -143,8 +143,8 @@ class GReItemProductWarehouseList(BaseListMixin):
         return super().get_queryset().none()
 
     @swagger_auto_schema(
-        operation_summary="Goods registration Lot List",
-        operation_description="Get Goods registration Lot List",
+        operation_summary="Goods registration None List",
+        operation_description="Get Goods registration None List",
     )
     @mask_view(
         login_require=True, auth_require=False,

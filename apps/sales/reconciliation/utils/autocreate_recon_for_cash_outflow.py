@@ -26,6 +26,8 @@ class ReconForCOFHandler:
                         posting_date=str(cof_obj.posting_date),
                         document_date=str(cof_obj.document_date),
                         system_status=3,
+                        employee_created_id=str(cof_obj.employee_created_id),
+                        employee_inherit_id=str(cof_obj.employee_inherit_id),
                         company_id=str(cof_obj.company_id),
                         tenant_id=str(cof_obj.tenant_id),
                         system_auto_create=True

@@ -49,11 +49,7 @@ class RevenuePlanListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_employee_created(cls, obj):
-        return {
-            'id': obj.employee_created_id,
-            'code': obj.employee_created.code,
-            'full_name': obj.employee_created.get_full_name(2),
-        } if obj.employee_created else {}
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
     def get_status(cls, obj):

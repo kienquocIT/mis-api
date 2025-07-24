@@ -5,7 +5,7 @@ from apps.accounting.accountingsettings.models.prd_account_deter import ProductA
 
 class AccountDeterminationForProductHandler:
     @classmethod
-    def create_account_determination_for_product(cls, product_obj):
+    def create_account_determination_for_product(cls, product_obj, default_account_determination_type):
         """ Gắn TK mặc định cho kho vừa tạo """
         if product_obj.account_deter_referenced_by == 2:
             company = product_obj.company
@@ -13,7 +13,7 @@ class AccountDeterminationForProductHandler:
             bulk_info_prd = []
             bulk_info_wh_sub = []
             for default_account in DefaultAccountDetermination.objects.filter(
-                company=company, tenant=tenant, default_account_determination_type=2
+                company=company, tenant=tenant, default_account_determination_type=default_account_determination_type
             ):
                 prd_account_deter_obj = ProductAccountDetermination(
                     company=company,
@@ -21,7 +21,7 @@ class AccountDeterminationForProductHandler:
                     foreign_title=default_account.foreign_title,
                     product_mapped=product_obj,
                     title=default_account.title,
-                    account_determination_type=default_account.default_account_determination_type,
+                    account_determination_type=default_account_determination_type,
                     can_change_account=True
                 )
                 bulk_info_prd.append(prd_account_deter_obj)
@@ -33,7 +33,10 @@ class AccountDeterminationForProductHandler:
                             account_mapped_data=item.account_mapped_data,
                         )
                     )
-            ProductAccountDetermination.objects.filter(product_mapped=product_obj).delete()
+            ProductAccountDetermination.objects.filter(
+                product_mapped=product_obj,
+                account_determination_type=default_account_determination_type,
+            ).delete()
             ProductAccountDetermination.objects.bulk_create(bulk_info_prd)
             ProductAccountDeterminationSub.objects.bulk_create(bulk_info_wh_sub)
         return True

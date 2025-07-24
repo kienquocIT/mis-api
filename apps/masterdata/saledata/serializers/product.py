@@ -339,7 +339,10 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         CommonCreateUpdateProduct.create_product_variant_item(
             product_obj, self.initial_data.get('product_variant_item_list', [])
         )
-        AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj)
+        AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 0)
+        AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 1)
+        AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 2)
+        AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 3)
         CompanyFunctionNumber.auto_code_update_latest_number(app_code='product')
         return product_obj
 
@@ -831,7 +834,10 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         CommonCreateUpdateProduct.update_product_variant_item(
             instance, self.initial_data.get('product_variant_item_list', [])
         )
-        AccountDeterminationForProductHandler.create_account_determination_for_product(instance)
+        AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 0)
+        AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 1)
+        AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 2)
+        AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 3)
         return instance
 
 

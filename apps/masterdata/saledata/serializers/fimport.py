@@ -725,7 +725,10 @@ class ProductProductTypeImportSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         product_type_obj = ProductType.objects.create(**validated_data)
-        AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj)
+        AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 0)
+        AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 1)
+        AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 2)
+        AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 3)
         return product_type_obj
 
 class ProductProductTypeImportReturnSerializer(serializers.ModelSerializer):

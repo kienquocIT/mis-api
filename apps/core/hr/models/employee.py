@@ -276,6 +276,22 @@ class Employee(TenantAbstractModel):
             'role': [role.id for role in self.role.all()],
         }
 
+    def get_detail_with_group(self):
+        return {
+            'id': self.id,
+            'code': self.code,
+            'full_name': self.get_full_name(2),
+            'email': self.email,
+            'phone': self.phone,
+            'is_delete': self.is_delete,
+            'is_admin_company': self.is_admin_company,
+            'group': {
+                'id': self.group_id,
+                'title': self.group.title,
+                'code': self.group.code
+            } if self.group else {}
+        }
+
     def get_full_name(self, order_arrange=2):
         """
         order_arrange: The ways arrange full name from first_name and last_name

@@ -43,16 +43,7 @@ class DistributionPlanListSerializer(AbstractListSerializerModel):
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        return {
-            "id": obj.employee_inherit_id,
-            "code": obj.employee_inherit.code,
-            "full_name": obj.employee_inherit.get_full_name(2),
-            "group": {
-                "id": str(obj.employee_inherit.group_id),
-                "title": obj.employee_inherit.group.title,
-                "code": obj.employee_inherit.group.code
-            } if obj.employee_inherit.group_id else {}
-        } if obj.employee_inherit else {}
+        return obj.employee_inherit.get_detail_with_group() if obj.employee_inherit else {}
 
 
 class DistributionPlanCreateSerializer(AbstractCreateSerializerModel):

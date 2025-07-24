@@ -15,9 +15,10 @@ __all__ = [
     'CashInflowListForReconSerializer',
 ]
 
-
 # main serializers
 class ReconListSerializer(serializers.ModelSerializer):
+    employee_created = serializers.SerializerMethodField()
+
     class Meta:
         model = Reconciliation
         fields = (
@@ -26,8 +27,14 @@ class ReconListSerializer(serializers.ModelSerializer):
             'title',
             'business_partner_data',
             'date_created',
-            'system_status'
+            'employee_created',
+            'system_status',
+            'system_auto_create',
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
 
 class ReconCreateSerializer(serializers.ModelSerializer):
