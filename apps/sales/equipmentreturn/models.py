@@ -216,25 +216,31 @@ class EquipmentReturn(DataAbstractModel):
 
     @classmethod
     def update_state_of_equipment_loan(cls, er_obj):
+        return_status = 2
         for item in er_obj.equipment_return_items.all():
-            lid_mapped = item.loan_item_detail_mapped
-            if lid_mapped:
+            lid = item.loan_item_detail_mapped
+            el_item = item.loan_item_detail_mapped.equipment_loan_item if item.loan_item_detail_mapped else None
+            if el_item:
                 if item.return_product_pw:  # none
-                    if lid_mapped.equipment_loan_item:
-                        lid_mapped.equipment_loan_item.sum_returned_quantity += item.return_product_pw_quantity
-                        lid_mapped.equipment_loan_item.save(update_fields=['sum_returned_quantity'])
+                    el_item.sum_returned_quantity += item.return_product_pw_quantity
+                    el_item.save(update_fields=['sum_returned_quantity'])
                 elif item.return_product_pw_lot:  # lot
-                    if lid_mapped.equipment_loan_item:
-                        lid_mapped.equipment_loan_item.sum_returned_quantity += item.return_product_pw_lot_quantity
-                        lid_mapped.equipment_loan_item.save(update_fields=['sum_returned_quantity'])
-                        lid_mapped.lot_returned_quantity += item.return_product_pw_lot_quantity
-                        lid_mapped.save(update_fields=['lot_returned_quantity'])
+                    el_item.sum_returned_quantity += item.return_product_pw_lot_quantity
+                    el_item.save(update_fields=['sum_returned_quantity'])
+                    lid.lot_returned_quantity += item.return_product_pw_lot_quantity
+                    lid.save(update_fields=['lot_returned_quantity'])
                 elif item.return_product_pw_serial:  # sn
-                    if lid_mapped.equipment_loan_item:
-                        lid_mapped.equipment_loan_item.sum_returned_quantity += 1
-                        lid_mapped.equipment_loan_item.save(update_fields=['sum_returned_quantity'])
-                        lid_mapped.is_returned_serial = True
-                        lid_mapped.save(update_fields=['is_returned_serial'])
+                    el_item.sum_returned_quantity += 1
+                    el_item.save(update_fields=['sum_returned_quantity'])
+                    lid.is_returned_serial = True
+                    lid.save(update_fields=['is_returned_serial'])
+
+                if el_item.sum_returned_quantity != el_item.loan_quantity:
+                    return_status = 1
+
+                if el_item.equipment_loan:
+                    el_item.equipment_loan.return_status = return_status
+                    el_item.equipment_loan.save(update_fields=['return_status'])
         return True
 
     def save(self, *args, **kwargs):
@@ -253,22 +259,6 @@ class EquipmentReturn(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-
-# class EquipmentReturnELMapped(SimpleAbstractModel):
-#     equipment_return = models.ForeignKey(
-#         EquipmentReturn, on_delete=models.CASCADE, related_name='equipment_return_el_mapped'
-#     )
-#     equipment_loan_mapped = models.ForeignKey(
-#         EquipmentLoan, on_delete=models.CASCADE, related_name='er_el_mapped'
-#     )
-#
-#     class Meta:
-#         verbose_name = 'Equipment Return EL Mapped'
-#         verbose_name_plural = 'Equipment Return ELs Mapped'
-#         ordering = ()
-#         default_permissions = ()
-#         permissions = ()
 
 
 class EquipmentReturnItem(SimpleAbstractModel):
