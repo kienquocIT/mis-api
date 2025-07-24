@@ -1,6 +1,7 @@
 from django.db import models
 from apps.accounting.journalentry.utils.log_for_cash_inflow import JEForCIFHandler
 from apps.core.company.models import CompanyFunctionNumber
+from apps.sales.financialcashflow.utils.logical_finish_cif import CashInFlowFinishHandler
 from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
@@ -15,12 +16,7 @@ class CashInflow(DataAbstractModel):
         related_name="cash_inflow_customer",
         null=True
     )
-    customer_data = models.JSONField(default=dict)
-    # customer_data = {
-    #     'id': uuid,
-    #     'code': str,
-    #     'title': str
-    # }
+    customer_data = models.JSONField(default=dict)  # {'id', 'code', 'name', 'tax_code'}
     posting_date = models.DateTimeField()
     document_date = models.DateTimeField()
     description = models.TextField(blank=True, null=True)
@@ -94,10 +90,11 @@ class CashInflow(DataAbstractModel):
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('cashinflow', True, self, kwargs)
-                    JEForCIFHandler.push_to_journal_entry(self)
-                    ReconForCIFHandler.auto_create_recon_doc(self)
                     self.update_ar_invoice_cash_inflow_done()
                     self.update_so_stage_cash_inflow_done()
+                    CashInFlowFinishHandler.push_to_payment_plan(instance=self)  # payment plan
+                    JEForCIFHandler.push_to_journal_entry(self)
+                    ReconForCIFHandler.auto_create_recon_doc(self)
         super().save(*args, **kwargs)
 
 
@@ -107,12 +104,7 @@ class CashInflowItem(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name="cash_inflow_item_cash_inflow",
     )
-    cash_inflow_data = models.JSONField(default=dict)
-    # cash_inflow_data = {
-    #     'id': uuid,
-    #     'code': str,
-    #     'title': str
-    # }
+    cash_inflow_data = models.JSONField(default=dict)  # # {'id', 'code', title'}
     has_ar_invoice = models.BooleanField(default=False)
     ar_invoice = models.ForeignKey(
         'arinvoice.ARInvoice',
@@ -122,13 +114,18 @@ class CashInflowItem(SimpleAbstractModel):
     )
     ar_invoice_data = models.JSONField(default=dict)
     # ar_invoice_data = {
-    #     'id': uuid,
-    #     'code': str,
-    #     'title': str,
+    #     'id', 'code', title',
     #     'type_doc': str,
     #     'document_date': str,
     #     'sum_total_value': number
     # }
+
+    sale_order = models.ForeignKey(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE,
+        related_name="cash_inflow_item_sale_order",
+    )
+    sale_order_data = models.JSONField(default=dict)  # {'id', 'code', title'}
     sale_order_stage = models.ForeignKey(
         'saleorder.SaleOrderPaymentStage',
         on_delete=models.CASCADE,
@@ -150,17 +147,6 @@ class CashInflowItem(SimpleAbstractModel):
     #     'due_date': str,
     #     'is_ar_invoice': bool,
     #     'order': number,
-    # }
-    sale_order = models.ForeignKey(
-        'saleorder.SaleOrder',
-        on_delete=models.CASCADE,
-        related_name="cash_inflow_item_sale_order",
-    )
-    sale_order_data = models.JSONField(default=dict)
-    # sale_order_data = {
-    #     'id': uuid,
-    #     'code': str,
-    #     'title': str
     # }
     sum_balance_value = models.FloatField(default=0)
     sum_payment_value = models.FloatField(default=0)

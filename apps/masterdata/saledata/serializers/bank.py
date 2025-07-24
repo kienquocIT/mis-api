@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-from apps.core.base.models import Country, District, City, Ward
+from apps.core.base.models import Country, NProvince, NWard
 from apps.masterdata.saledata.models import Bank, BankAccount, Currency
 
 __all__ = [
@@ -32,7 +32,6 @@ class BankCreateSerializer(serializers.ModelSerializer):
     bank_abbreviation = serializers.CharField(max_length=150, allow_blank=True)
     bank_name = serializers.CharField(max_length=150, allow_blank=True)
     bank_foreign_name = serializers.CharField(max_length=150, allow_blank=True, allow_null=True)
-    head_office_address_data = serializers.JSONField(default=dict)
 
     class Meta:
         model = Bank
@@ -40,6 +39,7 @@ class BankCreateSerializer(serializers.ModelSerializer):
             'bank_abbreviation',
             'bank_name',
             'bank_foreign_name',
+            'head_office_address',
             'head_office_address_data',
             'vietqr_json_data'
         )
@@ -62,33 +62,6 @@ class BankCreateSerializer(serializers.ModelSerializer):
             return value
         return ''
 
-    @classmethod
-    def validate_head_office_address_data(cls, head_office_address_data):
-        country_obj = Country.objects.filter(id=head_office_address_data.get('country_id')).first()
-        city_obj = City.objects.filter(id=head_office_address_data.get('city_id')).first()
-        district_obj = District.objects.filter(id=head_office_address_data.get('district_id')).first()
-        ward_obj = Ward.objects.filter(id=head_office_address_data.get('ward_id')).first()
-        return {
-            'country_data': {'id': str(country_obj.id), 'title': country_obj.title} if country_obj else {},
-            'city_data': {'id': str(city_obj.id), 'title': city_obj.title} if city_obj else {},
-            'district_data': {'id': str(district_obj.id), 'title': district_obj.title} if district_obj else {},
-            'ward_data': {'id': str(ward_obj.id), 'title': ward_obj.title} if ward_obj else {},
-            'address': head_office_address_data.get('address', '')
-        }
-
-    def validate(self, validate_data):
-        head_office_address_data = validate_data.get('head_office_address_data', {})
-        validate_data['head_office_address'] = ', '.join(
-            filter(None, [
-                head_office_address_data.get('address', ''),
-                head_office_address_data.get('ward_data', {}).get('title'),
-                head_office_address_data.get('district_data', {}).get('title'),
-                head_office_address_data.get('city_data', {}).get('title'),
-                head_office_address_data.get('country_data', {}).get('title'),
-            ])
-        )
-        return validate_data
-
 
 class BankDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -105,16 +78,24 @@ class BankDetailSerializer(serializers.ModelSerializer):
 
 # Bank Account
 class BankAccountListSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+
     class Meta:
         model = BankAccount
         fields = (
             'id',
+            'title',
             'bank_mapped_data',
             'bank_account_number',
             'bank_account_owner',
             'brand_name',
             'brand_address'
         )
+
+    @classmethod
+    def get_title(cls, obj):
+        return (f"{obj.bank_account_number} ({obj.bank_account_owner}) - "
+                f"{obj.bank_mapped.bank_name} ({obj.bank_mapped.bank_abbreviation})")
 
 
 class BankAccountCreateSerializer(serializers.ModelSerializer):
@@ -155,14 +136,12 @@ class BankAccountCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_brand_address_data(cls, brand_address_data):
         country_obj = Country.objects.filter(id=brand_address_data.get('country_id')).first()
-        city_obj = City.objects.filter(id=brand_address_data.get('city_id')).first()
-        district_obj = District.objects.filter(id=brand_address_data.get('district_id')).first()
-        ward_obj = Ward.objects.filter(id=brand_address_data.get('ward_id')).first()
+        province_obj = NProvince.objects.filter(id=brand_address_data.get('province_id')).first()
+        ward_obj = NWard.objects.filter(id=brand_address_data.get('ward_id')).first()
         return {
             'country_data': {'id': str(country_obj.id), 'title': country_obj.title} if country_obj else {},
-            'city_data': {'id': str(city_obj.id), 'title': city_obj.title} if city_obj else {},
-            'district_data': {'id': str(district_obj.id), 'title': district_obj.title} if district_obj else {},
-            'ward_data': {'id': str(ward_obj.id), 'title': ward_obj.title} if ward_obj else {},
+            'province_data': {'id': str(province_obj.id), 'fullname': province_obj.fullname} if province_obj else {},
+            'ward_data': {'id': str(ward_obj.id), 'fullname': ward_obj.fullname} if ward_obj else {},
             'address': brand_address_data.get('address', '')
         }
 
@@ -174,9 +153,8 @@ class BankAccountCreateSerializer(serializers.ModelSerializer):
             brand_address_data_concat = ', '.join(
                 filter(None, [
                     brand_address_data.get('address', ''),
-                    brand_address_data.get('ward_data', {}).get('title'),
-                    brand_address_data.get('district_data', {}).get('title'),
-                    brand_address_data.get('city_data', {}).get('title'),
+                    brand_address_data.get('ward_data', {}).get('fullname'),
+                    brand_address_data.get('province_data', {}).get('fullname'),
                     brand_address_data.get('country_data', {}).get('title'),
                 ])
             )

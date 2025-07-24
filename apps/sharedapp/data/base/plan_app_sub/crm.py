@@ -2983,6 +2983,48 @@ PRODUCT_MODIFICATION_APP_CONFIG = {
     "allow_opportunity": False,
 }
 
+PRODUCT_MODIFICATION_BOM_APP_CONFIG = {
+    "id": "b1d60043-ba66-4a52-8080-172b110cdd35",
+    "title": "Product Modification BOM",
+    "code": "productmodificationbom",
+    "model_code": "productmodificationbom",
+    "app_label": "productmodificationbom",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_print": False,
+    "allow_process": False,
+    "allow_opportunity": False,
+}
+
 EQUIPMENT_LOAN_APP_CONFIG = {
     "id": "3fc09568-e3ff-4fd3-a70d-4d069ac1521d",
     "title": "Equipment Loan",
@@ -3442,6 +3484,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "f491fdf3-1384-4a82-b155-12ef6673c901": ApplicationConfigFrame(**PRODUCT_MODIFICATION_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "b1d60043-ba66-4a52-8080-172b110cdd35": ApplicationConfigFrame(**PRODUCT_MODIFICATION_BOM_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

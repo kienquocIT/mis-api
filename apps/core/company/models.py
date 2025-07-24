@@ -532,6 +532,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         code_rules = {
             'advancepayment': 'AP[n4]',
             'arinvoice': 'AR[n4]',
+            'apinvoice': 'AP[n4]',
             'bidding': 'BD[n4]',
             'bom': 'BOM[n4]',
             'cashinflow': 'CIF[n4]',
@@ -556,6 +557,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             'orderdeliverysub': 'DE[n4]',
             'payment': 'PM[n4]',
             'productmodification': 'PRD-MOD-[n4]',
+            'productmodificationbom': 'PMB-[n4]',
             'purchaserequest': 'PR[n4]',
             'reconciliation': 'RECON[n4]',
             'returnadvance': 'RP[n4]',
@@ -581,7 +583,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         if obj and obj.schema is not None:
             parsed_code = cls.parse_code_from_schema(obj, obj.schema)
 
-        if instance:
+        if instance and not instance.code:
             instance.code = parsed_code
             if in_workflow and kwargs:
                 kwargs['update_fields'].append('code')

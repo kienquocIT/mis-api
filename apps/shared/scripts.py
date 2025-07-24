@@ -1,3 +1,4 @@
+import json
 from apps.masterdata.saledata.models.periods import Periods
 from apps.core.company.models import Company, CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import (
@@ -10,7 +11,7 @@ from apps.masterdata.saledata.models.accounts import (
     Account, AccountCreditCards, AccountActivity, AccountContacts
 )
 from apps.core.base.models import (
-    PlanApplication, ApplicationProperty, Application, SubscriptionPlan
+    PlanApplication, ApplicationProperty, Application, SubscriptionPlan, NProvince, NWard
 )
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
@@ -45,6 +46,8 @@ from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliv
     OrderPickingSub
 from ..sales.delivery.models.delivery import OrderDeliverySerial, OrderDeliveryProductWarehouse
 from ..sales.delivery.utils import DeliFinishHandler
+from ..sales.equipmentloan.models import EquipmentLoan
+from ..sales.equipmentreturn.models import EquipmentReturn
 from ..sales.financialcashflow.models import CashInflow, CashOutflow
 from ..sales.financialcashflow.utils.logical_finish_cif import CashInFlowFinishHandler
 from ..sales.financialcashflow.utils.logical_finish_cof import CashOutFlowFinishHandler
@@ -2011,15 +2014,11 @@ def create_new_tenant(tenant_code, tenant_data, user_data):
 
 def reset_push_payment_plan():
     PaymentPlan.objects.all().delete()
-    for sale_order in SaleOrder.objects.filter(system_status=3, id="a1a32f96-ad09-41ee-93b5-1344fb816434"):
+    for sale_order in SaleOrder.objects.filter(system_status=3):
         SOFinishHandler.push_to_payment_plan(instance=sale_order)
     # for purchase_order in PurchaseOrder.objects.filter(system_status=3):
     #     POFinishHandler.push_to_payment_plan(instance=purchase_order)
-    for cash_in_flow in CashInflow.objects.filter(system_status=3, id__in=[
-        "b53dc980-67f9-414c-ae76-5a2206ee7cb0",
-        "8593f949-761a-452e-bf96-b3a0ae523b84",
-        "966b3bb0-4a55-44f9-8a68-c3d33a2ce8ed",
-    ]):
+    for cash_in_flow in CashInflow.objects.filter(system_status=3):
         CashInFlowFinishHandler.push_to_payment_plan(instance=cash_in_flow)
     # for cash_out_flow in CashOutflow.objects.filter(system_status=3):
     #     CashOutFlowFinishHandler.push_to_payment_plan(instance=cash_out_flow)
@@ -2199,4 +2198,71 @@ def reset_picking_delivery(picking_id, delivery_id):
             delivery_sub.ready_quantity = delivery_sub.ready_quantity - picking_sub.picked_quantity
             delivery_sub.save(update_fields=['ready_quantity'])
     print('reset_picking_delivery done.')
+    return True
+
+
+class VietnamAdministrativeAddress:
+    @staticmethod
+    def load_province():
+        with open('apps/shared/new_address_json/province_with_uuid.json', 'r', encoding='utf-8') as f:
+            province_data = json.load(f)
+
+        bulk_info = []
+        for province_id, province_info in province_data.items():
+            bulk_info.append(NProvince(
+                id=province_info.get('uuid', ''),
+                country_id='bbf52b7b-77ed-4e8c-af0a-86ca00771d83',
+                code=province_info.get('code', ''),
+                slug=province_info.get('slug', ''),
+                ptype=province_info.get('type', ''),
+                name=province_info.get('name', ''),
+                fullname=province_info.get('name_with_type', ''),
+            ))
+        NProvince.objects.all().delete()
+        NProvince.objects.bulk_create(bulk_info)
+        print('Done :))')
+        return True
+
+    @staticmethod
+    def load_ward():
+        with open('apps/shared/new_address_json/ward_with_uuid.json', 'r', encoding='utf-8') as f:
+            ward_data = json.load(f)
+
+        bulk_info = []
+        for ward_id, ward_info in ward_data.items():
+            province_obj = NProvince.objects.filter(code=ward_info.get('parent_code', '')).first()
+            bulk_info.append(NWard(
+                id=ward_info.get('uuid', ''),
+                province=province_obj,
+                province_code=province_obj.code,
+                code=ward_info.get('code', ''),
+                slug=ward_info.get('slug', ''),
+                wtype=ward_info.get('type', ''),
+                name=ward_info.get('name', ''),
+                fullname=ward_info.get('name_with_type', ''),
+                path=ward_info.get('path', ''),
+                fullpath=ward_info.get('path_with_type', ''),
+            ))
+        NWard.objects.all().delete()
+        NWard.objects.bulk_create(bulk_info)
+        print('Done :))')
+        return True
+
+
+def update_loan_product():
+    for obj in EquipmentLoan.objects.all():
+        product_loan_data = []
+        for item in obj.equipment_loan_items.all():
+            product_loan_data.append(item.loan_product_data)
+        obj.product_loan_data = product_loan_data
+        obj.save(update_fields=['product_loan_data'])
+
+    for obj in EquipmentReturn.objects.all():
+        product_return_data = []
+        for item in obj.equipment_return_items.all():
+            product_return_data.append(item.return_product_data)
+        obj.product_return_data = product_return_data
+        obj.save(update_fields=['product_return_data'])
+
+    print('Done :))')
     return True

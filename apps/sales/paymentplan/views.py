@@ -7,12 +7,13 @@ from apps.shared import BaseListMixin, mask_view
 
 class PaymentPlanList(BaseListMixin):
     queryset = PaymentPlan.objects
-    search_fields = []
+    search_fields = ["sale_order__title", "purchase_order__title", "customer__name", "supplier__name"]
     filterset_fields = {
         'sale_order_id': ['exact', 'in'],
         'purchase_order_id': ['exact', 'in'],
         'customer_id': ['exact', 'in'],
         'supplier_id': ['exact', 'in'],
+        'value_balance': ['exact', 'gt', 'gte', 'lt', 'lte'],
         'due_date': ['exact', 'lte', 'gte'],
         'date_approved': ['exact', 'lte', 'gte'],
     }

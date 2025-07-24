@@ -1,12 +1,14 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.core.company.models import CompanyFunctionNumber
-# from apps.accounting.journalentry.utils.log_for_cash_inflow import JEForCIFHandler
-# from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
+from apps.sales.financialcashflow.utils.logical_finish_cof import CashOutFlowFinishHandler
+# from apps.accounting.journalentry.utils.log_for_cash_outflow import JEForCOFHandler
+# from apps.sales.reconciliation.utils.autocreate_recon_for_cash_outflow import ReconForCOFHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
 __all__ = ['CashOutflow', 'CashOutflowItem', 'CashOutflowItemDetail']
+
 
 CASH_OUT_FLOW_TYPE = [
     (0, _('Payment to supplier')),
@@ -24,24 +26,14 @@ class CashOutflow(DataAbstractModel):
         related_name="cash_outflow_supplier",
         null=True
     )
-    supplier_data = models.JSONField(default=dict)
-    # supplier_data = {
-    #     'id': uuid,
-    #     'code': str,
-    #     'title': str
-    # }
+    supplier_data = models.JSONField(default=dict)  # {'id', 'code', title'}
     customer = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
         related_name="cash_outflow_customer",
         null=True
     )
-    customer_data = models.JSONField(default=dict)
-    # customer_data = {
-    #     'id': uuid,
-    #     'code': str,
-    #     'title': str
-    # }
+    customer_data = models.JSONField(default=dict)  # {'id', 'code', title'}
     employee = models.ForeignKey(
         'hr.Employee',
         on_delete=models.CASCADE,
@@ -65,7 +57,7 @@ class CashOutflow(DataAbstractModel):
     advance_for_employee_value = models.FloatField(default=0)  # tiền tạm ứng cho Nhân viên
     advance_for_supplier_value = models.FloatField(default=0)  # tiền tạm ứng cho NCC (không theo PO)
     no_ap_invoice_value = models.FloatField(default=0)  # tổng tiền nhận của NCC không hóa đơn (theo PO)
-    has_ap_invoice_value = models.FloatField(default=0)  # tổng tiền nhận của NCC có hóa đơn (theo PO)
+    has_ap_invoice_value = models.FloatField(default=0)  # tổng tiền nhận của NCC có hóa đơn (theo AP)
     total_value = models.FloatField(
         default=0,
         help_text="total_value = advance_for_supplier_value + no_ap_invoice_value + has_ap_invoice_value"
@@ -104,9 +96,9 @@ class CashOutflow(DataAbstractModel):
             ap_invoice_obj = item.ap_invoice
             if ap_invoice_obj:
                 if sum(
-                        CashOutflowItem.objects.filter(
-                            ap_invoice=ap_invoice_obj
-                        ).values_list('sum_payment_value', flat=True)
+                        CashOutflowItem.objects.filter(ap_invoice=ap_invoice_obj).values_list(
+                            'sum_payment_value', flat=True
+                        )
                 ) == ap_invoice_obj.sum_after_tax_value:
                     ap_invoice_obj.cash_outflow_done = True
                     ap_invoice_obj.save(update_fields=['cash_outflow_done'])
@@ -133,10 +125,11 @@ class CashOutflow(DataAbstractModel):
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('cashoutflow', True, self, kwargs)
-                    # JEForCIFHandler.push_to_journal_entry(self)
-                    # ReconForCIFHandler.auto_create_recon_doc(self)
                     self.update_ap_invoice_cash_outflow_done()
                     self.update_po_stage_cash_outflow_done()
+                    CashOutFlowFinishHandler.push_to_payment_plan(instance=self)  # payment plan
+                    # JEForCOFHandler.push_to_journal_entry(self)
+                    # ReconForCOFHandler.auto_create_recon_doc(self)
         super().save(*args, **kwargs)
 
 
@@ -146,12 +139,7 @@ class CashOutflowItem(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name="cash_outflow_item_cash_outflow",
     )
-    cash_outflow_data = models.JSONField(default=dict)
-    # cash_outflow_data = {
-    #     'id': uuid,
-    #     'code': str,
-    #     'title': str
-    # }
+    cash_outflow_data = models.JSONField(default=dict)  # {'id', 'code', title'}
     has_ap_invoice = models.BooleanField(default=False)
     ap_invoice = models.ForeignKey(
         'apinvoice.APInvoice',
@@ -194,12 +182,7 @@ class CashOutflowItem(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name="cash_outflow_item_purchase_order",
     )
-    purchase_order_data = models.JSONField(default=dict)
-    # purchase_order_data = {
-    #     'id': uuid,
-    #     'code': str,
-    #     'title': str
-    # }
+    purchase_order_data = models.JSONField(default=dict)  # {'id', 'code', title'}
     sum_balance_value = models.FloatField(default=0)
     sum_payment_value = models.FloatField(default=0)
     discount_payment = models.FloatField(default=0, help_text='%')

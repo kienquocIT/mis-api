@@ -124,7 +124,7 @@ msgstr "Nhập kho"
 
 # a196c182-01d4-4450-a4ef-86c16b536daa
 msgid "Goods Recovery"
-msgstr "Thu hồi"
+msgstr "Thu hồi hàng cho thuê"
 
 # 0242ba77-8b02-4589-8ed9-239788083f2b
 msgid "Goods Return"
@@ -345,6 +345,10 @@ msgstr "Công văn phê duyệt"
 # f491fdf3-1384-4a82-b155-12ef6673c901
 msgid "Product Modification"
 msgstr "Ráp-rã thiết bị"
+
+# b1d60043-ba66-4a52-8080-172b110cdd35
+msgid "Product Modification BOM"
+msgstr "BOM ráp-rã thiết bị"
 
 # 3fc09568-e3ff-4fd3-a70d-4d069ac1521d
 msgid "Equipment Loan"

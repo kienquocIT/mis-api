@@ -31,6 +31,7 @@ class EquipmentReturnListSerializer(AbstractListSerializerModel):
             'account_mapped_data',
             'date_created',
             'employee_created',
+            'product_return_data'
         )
 
     @classmethod
@@ -319,6 +320,7 @@ class EquipmentReturnCommonFunction:
     @staticmethod
     def create_equipment_return_item(er_obj, equipment_return_item_list):
         bulk_info = []
+        product_return_data = []
         for order, item in enumerate(equipment_return_item_list):
             equipment_return_item_obj = EquipmentReturnItem(
                 equipment_return=er_obj,
@@ -339,9 +341,12 @@ class EquipmentReturnCommonFunction:
                 loan_item_detail_mapped_id=item.get('loan_item_detail_mapped_id'),
             )
             bulk_info.append(equipment_return_item_obj)
+            product_return_data.append(item.get('return_product_data', {}))
 
         EquipmentReturnItem.objects.filter(equipment_return=er_obj).delete()
         EquipmentReturnItem.objects.bulk_create(bulk_info)
+        er_obj.product_return_data = product_return_data
+        er_obj.save(update_fields=['product_return_data'])
         return True
 
 # related

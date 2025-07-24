@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as trans
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
     Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, Zones, ZonesProperties,
-    ApplicationEmpConfig, AppEmpConfigZonesHidden, AppEmpConfigZonesEditing
+    ApplicationEmpConfig, AppEmpConfigZonesHidden, AppEmpConfigZonesEditing, NProvince, NWard
 )
 from apps.core.hr.models import Employee
 from apps.shared import BaseMsg
@@ -413,3 +413,16 @@ class AppEmpConfigCreateUpdateSerializer(serializers.ModelSerializer):
                         ])
                         app_emp_config = new_app_emp_config
         return app_emp_config
+
+
+# New Address
+class NProvinceListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NProvince
+        fields = ('id', 'fullname')
+
+
+class NWardListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NWard
+        fields = ('id', 'fullname')

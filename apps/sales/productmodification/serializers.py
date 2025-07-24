@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from apps.core.company.models import CompanyFunctionNumber
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import (
@@ -22,7 +21,9 @@ __all__ = [
     'ProductModificationDetailSerializer',
     'ProductModificationUpdateSerializer',
     'ProductModifiedListSerializer',
+    'ProductModifiedBeforeListSerializer',
     'ProductComponentListSerializer',
+    'LatestComponentListSerializer',
     'WarehouseListByProductSerializer',
     'ProductSerialListSerializer',
     'ProductLotListSerializer',
