@@ -33,6 +33,7 @@ class ShiftAssignmentListSerializer(serializers.ModelSerializer):
 
 class ShiftAssignmentCreateSerializer(serializers.ModelSerializer):
     group_list = serializers.ListSerializer(child=serializers.UUIDField())
+    group_employee_exclude_list = serializers.ListSerializer(child=serializers.UUIDField())
     employee_list = serializers.ListSerializer(child=serializers.UUIDField())
     shift = serializers.UUIDField()
     date_list = serializers.ListSerializer(child=serializers.DateField())
@@ -41,6 +42,7 @@ class ShiftAssignmentCreateSerializer(serializers.ModelSerializer):
         model = ShiftAssignment
         fields = (
             'group_list',
+            'group_employee_exclude_list',
             'employee_list',
             'shift',
             'date_list',
@@ -56,6 +58,17 @@ class ShiftAssignmentCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'group': BaseMsg.NOT_EXIST})
             return value
         raise serializers.ValidationError({'group': BaseMsg.MUST_BE_ARRAY})
+
+    @classmethod
+    def validate_group_employee_exclude_list(cls, value):
+        if isinstance(value, list):
+            if value:
+                objs = Employee.objects.filter_on_company(id__in=value)
+                if objs.count() == len(value):
+                    return objs
+                raise serializers.ValidationError({'employee': BaseMsg.NOT_EXIST})
+            return value
+        raise serializers.ValidationError({'employee': BaseMsg.MUST_BE_ARRAY})
 
     @classmethod
     def validate_employee_list(cls, value):
@@ -77,14 +90,25 @@ class ShiftAssignmentCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         group_list = validated_data.pop('group_list')
+        group_employee_exclude_list = validated_data.pop('group_employee_exclude_list')
         employee_list = validated_data.pop('employee_list')
         shift = validated_data.pop('shift')
         date_list = validated_data.pop('date_list')
         bulk_data = []
-        group_list_employee = Employee.objects.filter_on_company(group_id__in=group_list)
+        group_list_employee = Employee.objects.filter_on_company(group_id__in=group_list).exclude(
+            id__in=group_employee_exclude_list
+        )
         if group_list_employee:
-            employee_list = employee_list | group_list_employee
+            if employee_list:
+                employee_list = employee_list | group_list_employee
+            else:
+                employee_list = group_list_employee
         for employee in employee_list:
+            # delete old
+            olds = ShiftAssignment.objects.filter_on_company(employee=employee, date__in=date_list)
+            if olds:
+                olds.delete()
+            # append bulk data
             for date in date_list:
                 bulk_data.append(ShiftAssignment(
                     employee=employee,
