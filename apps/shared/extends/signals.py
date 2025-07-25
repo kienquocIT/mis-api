@@ -24,7 +24,7 @@ from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, SQIndicatorDefaultData,
 )
-from apps.core.base.models import Currency as BaseCurrency, PlanApplication, BaseItemUnit
+from apps.core.base.models import Currency as BaseCurrency, PlanApplication, BaseItemUnit, Application
 from apps.core.company.models import Company, CompanyConfig
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup, PriceListCurrency, UnitOfMeasure,
@@ -53,6 +53,7 @@ from apps.core.forms.tasks import notifications_form_with_new, notifications_for
 from apps.sales.project.extend_func import calc_rate_project, calc_update_task, re_calc_work_group
 from .models import DisperseModel
 from .. import ProjectMsg
+from ...core.attachments.models import Folder
 from ...sales.leaseorder.models import LeaseOrderAppConfig
 from ...sales.project.tasks import create_project_news
 
