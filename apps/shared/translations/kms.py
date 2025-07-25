@@ -10,3 +10,4 @@ class KMSMsg:
 
     # incoming document
     CREATE_INCOMING_DOC_ERROR = _("Can not create incoming document, please verify again.")
+    EXPIRED_DATE_ERROR = _('Expired date must be later than effective date.')
