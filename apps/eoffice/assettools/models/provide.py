@@ -3,7 +3,7 @@ __all__ = ['AssetToolsProvide', 'AssetToolsProvideProduct', 'AssetToolsProvideAt
 import json
 from django.db import models
 
-from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.attachments.models import M2MFilesAbstractModel, update_files_is_approved
 from apps.shared import DataAbstractModel
 
 
@@ -69,6 +69,11 @@ class AssetToolsProvide(DataAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status >= 2:
             self.before_save()
+            update_files_is_approved(
+                AssetToolsProvideAttachmentFile.objects.filter(
+                    asset_tools_provide=self, attachment__is_approved=False
+                )
+            )
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
                     kwargs['update_fields'].append('code')

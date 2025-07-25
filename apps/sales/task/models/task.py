@@ -5,7 +5,7 @@ from django.db import models
 from django.db.models import Count
 from django.utils import timezone
 
-from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.attachments.models import M2MFilesAbstractModel, update_files_is_approved
 from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import (
     MasterDataAbstractModel, DataAbstractModel, SimpleAbstractModel,
@@ -204,6 +204,12 @@ class OpportunityTask(DataAbstractModel):
             "title": str(self.project.title),
             "code": str(self.project.code),
         } if self.project else {}
+        if self.task_status.is_finish or self.percent_completed == 100:
+            update_files_is_approved(
+                TaskAttachmentFile.objects.filter(
+                    task=self, attachment__is_approved=False
+                )
+            )
 
     def save(self, *args, **kwargs):
         self.before_save()

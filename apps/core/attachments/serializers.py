@@ -1,7 +1,10 @@
 import re
 from datetime import datetime
 import magic
+
 from django.conf import settings
+from django.utils.translation import gettext_lazy as trans
+
 from rest_framework import serializers
 from apps.shared import HrMsg, TypeCheck, AttMsg, FORMATTING, BaseMsg
 from .models import Files, PublicFiles, Folder, FolderPermission, FilePermission
@@ -327,6 +330,7 @@ class FolderListSerializer(serializers.ModelSerializer):
     employee_inherit = serializers.SerializerMethodField()
     files = serializers.SerializerMethodField()
     parent_n = serializers.SerializerMethodField()
+    title_i18n = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -358,15 +362,22 @@ class FolderListSerializer(serializers.ModelSerializer):
     def get_parent_n(cls, obj):
         return {'id': obj.parent_n_id, 'title': obj.parent_n.title, 'code': obj.parent_n.code} if obj.parent_n else {}
 
+    @classmethod
+    def get_title_i18n(cls, obj):
+        return trans(obj.title)
+
     class Meta:
         model = Folder
         fields = (
             'id',
             'title',
+            'title_i18n',
             'parent_n',
             'employee_inherit',
             'date_modified',
             'files',
+            'is_admin',
+            'is_system'
         )
 
 
@@ -416,18 +427,21 @@ class FolderDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_files(cls, obj):
-        return [
-            {
-                'id': f.id, 'file_name': f.file_name,
-                'file_size': f.file_size, 'file_type': f.file_type,
-                'date_created': f.date_created, 'remarks': f.remarks,
-                'employee_inherit': {
-                    'id': f.employee_created_id,
-                    'full_name': f.employee_created.get_full_name()
-                } if f.employee_created else {}
-            }
-            for f in obj.files_folder.select_related('employee_created').all()
-        ]
+        file_list = []
+        for file in obj.files_folder.select_related('employee_created').all():
+            if (file.is_approved and (obj.is_system or obj.is_admin)) or obj.is_owner:
+                file_list.append(
+                    {
+                        'id': file.id, 'file_name': file.file_name,
+                        'file_size': file.file_size, 'file_type': file.file_type,
+                        'date_created': file.date_created, 'remarks': file.remarks,
+                        'employee_inherit': {
+                            'id': file.employee_created_id,
+                            'full_name': file.employee_created.get_full_name()
+                        } if file.employee_created else {}
+                    }
+                )
+        return file_list
 
 
 class FolderDeleteAllSerializer(serializers.ModelSerializer):
@@ -450,6 +464,7 @@ class FolderDeleteAllSerializer(serializers.ModelSerializer):
 class FolderCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
     parent_n = serializers.UUIDField(required=False, allow_null=True)
+    is_admin = serializers.BooleanField(required=False, allow_null=True)
 
     class Meta:
         model = Folder
