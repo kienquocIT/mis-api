@@ -45,8 +45,8 @@ def create_attached_incoming_document(incoming_doc, attached_list):
             create_attachment(incoming_doc.id, incoming_doc_attachments)
 
         # validate date
-        effective_date = item.get('effective_date', '')
-        expired_date = item.get('expired_date', '')
+        effective_date = item.get('effective_date', None)
+        expired_date = item.get('expired_date', None)
         if effective_date and expired_date and expired_date <= effective_date:
             raise serializers.ValidationError({
                 'expired_date': KMSMsg.EXPIRED_DATE_ERROR
