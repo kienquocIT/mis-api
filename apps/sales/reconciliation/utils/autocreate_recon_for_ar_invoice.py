@@ -24,7 +24,9 @@ class ReconForARInvoiceHandler:
                     } if ar_invoice_obj.customer_mapped else {},
                     posting_date=str(ar_invoice_obj.posting_date),
                     document_date=str(ar_invoice_obj.document_date),
-                    system_status=1,
+                    system_status=3,
+                    employee_created_id=str(ar_invoice_obj.employee_created_id),
+                    employee_inherit_id=str(ar_invoice_obj.employee_inherit_id),
                     company_id=str(ar_invoice_obj.company_id),
                     tenant_id=str(ar_invoice_obj.tenant_id),
                     system_auto_create=True

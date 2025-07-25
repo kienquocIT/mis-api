@@ -7,14 +7,14 @@ from apps.accounting.accountingsettings.models.wh_account_deter import (
 
 class AccountDeterminationForWarehouseHandler:
     @classmethod
-    def create_account_determination_for_warehouse(cls, warehouse_obj):
+    def create_account_determination_for_warehouse(cls, warehouse_obj, default_account_determination_type):
         """ Gắn TK mặc định cho kho vừa tạo """
         company = warehouse_obj.company
         tenant = warehouse_obj.tenant
         bulk_info_wh = []
         bulk_info_wh_sub = []
         for default_account in DefaultAccountDetermination.objects.filter(
-            company=company, tenant=tenant, default_account_determination_type=2
+            company=company, tenant=tenant, default_account_determination_type=default_account_determination_type
         ):
             wh_account_deter_obj = WarehouseAccountDetermination(
                 company=company,
@@ -22,7 +22,7 @@ class AccountDeterminationForWarehouseHandler:
                 warehouse_mapped=warehouse_obj,
                 title=default_account.title,
                 foreign_title=default_account.foreign_title,
-                account_determination_type=default_account.default_account_determination_type,
+                account_determination_type=default_account_determination_type,
                 can_change_account=True
             )
             bulk_info_wh.append(wh_account_deter_obj)
@@ -34,7 +34,10 @@ class AccountDeterminationForWarehouseHandler:
                         account_mapped_data=item.account_mapped_data,
                     )
                 )
-        WarehouseAccountDetermination.objects.filter(warehouse_mapped=warehouse_obj).delete()
+        WarehouseAccountDetermination.objects.filter(
+            warehouse_mapped=warehouse_obj,
+            account_determination_type=default_account_determination_type,
+        ).delete()
         WarehouseAccountDetermination.objects.bulk_create(bulk_info_wh)
         WarehouseAccountDeterminationSub.objects.bulk_create(bulk_info_wh_sub)
         return True

@@ -120,7 +120,7 @@ msgstr "Xuất hàng"
 
 # dd16a86c-4aef-46ec-9302-19f30b101cf5
 msgid "Goods Receipt"
-msgstr "Nhập kho"
+msgstr "Nhập hàng"
 
 # a196c182-01d4-4450-a4ef-86c16b536daa
 msgid "Goods Recovery"
@@ -1064,11 +1064,11 @@ msgstr "Đợi"
 
 #
 msgid "Partially received"
-msgstr "Nhập kho một phần"
+msgstr "Nhập hàng một phần"
 
 #
 msgid "Received"
-msgstr "Đã nhập kho"
+msgstr "Đã nhập hàng"
 
 #
 msgid "Received money"

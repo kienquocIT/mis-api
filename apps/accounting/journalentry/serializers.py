@@ -4,6 +4,7 @@ from apps.accounting.journalentry.models import JournalEntry
 
 
 class JournalEntryListSerializer(serializers.ModelSerializer):
+    employee_created = serializers.SerializerMethodField()
     original_transaction = serializers.SerializerMethodField()
 
     class Meta:
@@ -14,19 +15,25 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
             'je_transaction_data',
             'original_transaction',
             'date_created',
+            'employee_created',
             'system_status',
             'system_auto_create'
         )
 
     @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
+
+    @classmethod
     def get_original_transaction(cls, obj):
-        if obj.je_transaction_app_code == 'delivery.orderdeliverysub':
-            return _('Delivery')
-        if obj.je_transaction_app_code == 'arinvoice.arinvoice':
-            return _('AR Invoice')
-        if obj.je_transaction_app_code == 'financialcashflow.cashinflow':
-            return _('Cash Inflow')
-        return ''
+        return {
+            'delivery.orderdeliverysub': _('Delivery'),
+            'arinvoice.arinvoice': _('AR Invoice'),
+            'financialcashflow.cashinflow': _('Cash Inflow'),
+            'inventory.goodsreceipt': _('Goods Receipt'),
+            'apinvoice.apinvoice': _('AP Invoice'),
+            'financialcashflow.cashoutflow': _('Cash Outflow'),
+        }.get(obj.je_transaction_app_code, '')
 
 
 class JournalEntryCreateSerializer(serializers.ModelSerializer):
@@ -56,13 +63,14 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_original_transaction(cls, obj):
-        if obj.je_transaction_app_code == 'delivery.orderdeliverysub':
-            return 0
-        if obj.je_transaction_app_code == 'arinvoice.arinvoice':
-            return 1
-        if obj.je_transaction_app_code == 'financialcashflow.cashinflow':
-            return 2
-        return None
+        return {
+            'delivery.orderdeliverysub': 0,
+            'arinvoice.arinvoice': 1,
+            'financialcashflow.cashinflow': 2,
+            'inventory.goodsreceipt': 3,
+            'apinvoice.apinvoice': 4,
+            'financialcashflow.cashoutflow': 5,
+        }.get(obj.je_transaction_app_code, None)
 
     @classmethod
     def get_je_items(cls, obj):

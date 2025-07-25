@@ -58,7 +58,6 @@ class ChartOfAccounts(MasterDataAbstractModel):
     @classmethod
     def add_account(cls, parent_acc_type, parent_acc_code, new_acc_code, new_acc_name, new_foreign_acc_name):
         for company in Company.objects.all():
-            print(f'Add for {company.title}')
             # get parent account
             parent_account_obj = ChartOfAccounts.objects.filter(
                 acc_type=parent_acc_type, acc_code=parent_acc_code, company=company
@@ -81,7 +80,7 @@ class ChartOfAccounts(MasterDataAbstractModel):
                     is_default=False,
                     is_added=True
                 )
-                print('Done :))')
+                print(f'Added {new_acc_code} for {company.title}')
             else:
                 print('Can not found parent account || existed account')
 

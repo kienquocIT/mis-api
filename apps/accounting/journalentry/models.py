@@ -57,12 +57,12 @@ class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
                 JournalEntry.objects.filter(
                     tenant_id=kwargs.get('tenant_id'),
                     company_id=kwargs.get('company_id'),
-                    system_status=1
+                    system_status=3
                 ).count() + 1
             ),
             je_posting_date=timezone.now(),
             je_document_date=timezone.now(),
-            system_status=1,
+            system_status=3,
             system_auto_create=True
         )
         state = JournalEntryItem.create_je_item_mapped(je_obj, je_item_data)

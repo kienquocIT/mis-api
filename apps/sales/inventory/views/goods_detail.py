@@ -64,7 +64,8 @@ class GoodsDetailSerialDataList(BaseListMixin):
             gr_obj = GoodsReceipt.objects.filter_on_company(id=goods_receipt_id).first()
             if gr_obj:
                 serial_mapped = gr_obj.goods_receipt_serial_goods_receipt.first()
-                return super().get_queryset().filter(serial_number=serial_mapped.serial_number)
+                if serial_mapped:
+                    return super().get_queryset().filter(serial_number=serial_mapped.serial_number)
         return queryset
 
     @swagger_auto_schema(
