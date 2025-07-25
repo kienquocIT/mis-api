@@ -97,11 +97,13 @@ class ReconDetailSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
+            'type',
             'posting_date',
             'document_date',
             'business_partner_data',
             'recon_items_data',
-            'system_status'
+            'system_status',
+            'system_auto_create',
         )
 
     @classmethod

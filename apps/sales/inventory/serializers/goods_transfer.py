@@ -152,6 +152,7 @@ class GoodsTransferDetailSerializer(AbstractDetailSerializerModel):
             'goods_transfer_type',
             'date_transfer',
             'system_status',
+            'system_auto_create',
             'agency',
             'note',
             'goods_transfer_data'
