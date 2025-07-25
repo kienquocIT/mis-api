@@ -32,7 +32,7 @@ def create_attachment(doc_id, attachment_result):
         )
         if state:
             return True
-        raise serializers.ValidationError({'attchment': AttachmentMsg.ERROR_VERIFY})
+        raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
     return True
 
 
@@ -43,14 +43,23 @@ def create_attached_incoming_document(incoming_doc, attached_list):
 
         if 'id' not in item:
             create_attachment(incoming_doc.id, incoming_doc_attachments)
+
+        # validate date
+        effective_date = item.get('effective_date', None)
+        expired_date = item.get('expired_date', None)
+        if effective_date and expired_date and expired_date <= effective_date:
+            raise serializers.ValidationError({
+                'expired_date': KMSMsg.EXPIRED_DATE_ERROR
+            })
+
         temp = KMSAttachIncomingDocuments(
             title='',
             incoming_document_id=str(incoming_doc.id),
             document_type_id=item.get('document_type'),
             content_group_id=item.get('content_group'),
             sender=item.get('sender'),
-            effective_date=item.get('effective_date'),
-            expired_date=item.get('expired_date'),
+            effective_date=effective_date,
+            expired_date=expired_date,
             security_level=item.get('security_level'),
             company=incoming_doc.company,
             tenant=incoming_doc.tenant
