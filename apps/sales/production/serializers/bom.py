@@ -155,29 +155,11 @@ class BOMListSerializer(AbstractListSerializerModel):
 
     @classmethod
     def get_employee_created(cls, obj):
-        return {
-            'id': obj.employee_created_id,
-            'code': obj.employee_created.code,
-            'full_name': obj.employee_created.get_full_name(2),
-            'group': {
-                'id': obj.employee_created.group_id,
-                'title': obj.employee_created.group.title,
-                'code': obj.employee_created.group.code
-            } if obj.employee_created.group else {}
-        } if obj.employee_created else {}
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        return {
-            'id': obj.employee_inherit_id,
-            'code': obj.employee_inherit.code,
-            'full_name': obj.employee_inherit.get_full_name(2),
-            'group': {
-                'id': obj.employee_inherit.group_id,
-                'title': obj.employee_inherit.group.title,
-                'code': obj.employee_inherit.group.code
-            } if obj.employee_inherit.group else {}
-        } if obj.employee_inherit else {}
+        return obj.employee_inherit.get_detail_with_group() if obj.employee_inherit else {}
 
 
 class BOMCreateSerializer(AbstractCreateSerializerModel):

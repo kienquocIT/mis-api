@@ -2,7 +2,7 @@ import json
 
 from django.db import models
 
-from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.attachments.models import M2MFilesAbstractModel, update_files_is_approved
 from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import DataAbstractModel, MasterDataAbstractModel
 
@@ -38,6 +38,11 @@ class KMSDocumentApproval(DataAbstractModel):
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
+            update_files_is_approved(
+                AttachDocumentMapAttachmentFile.objects.filter(
+                    document_approval=self, attachment__is_approved=False
+                )
+            )
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('kmsdocumentapproval', True, self, kwargs)

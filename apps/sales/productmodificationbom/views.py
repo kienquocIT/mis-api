@@ -3,9 +3,10 @@ from apps.masterdata.saledata.models import Product
 from apps.masterdata.saledata.models.product_warehouse import PWModified
 from apps.sales.productmodificationbom.models import ProductModificationBOM
 from apps.sales.productmodificationbom.serializers import (
-    ProductModifiedListSerializer, ProductComponentListSerializer, ProductModificationBOMListSerializer,
-    ProductModificationBOMCreateSerializer, ProductModificationBOMDetailSerializer,
-    ProductModificationBOMUpdateSerializer, ProductModifiedBeforeListSerializer, LatestComponentListSerializer
+    ProductModificationBOMListSerializer, ProductModificationBOMCreateSerializer,
+    ProductModificationBOMDetailSerializer, ProductModificationBOMUpdateSerializer,
+    PMBOMProductModifiedBeforeListSerializer, PMBOMLatestComponentListSerializer,
+    PMBOMProductModifiedListSerializer, PMBOMProductComponentListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -97,15 +98,15 @@ class PMBOMProductModifiedList(BaseListMixin):
         'title',
         'code',
     ]
-    serializer_list = ProductModifiedListSerializer
+    serializer_list = PMBOMProductModifiedListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().filter(general_product_types_mapped__is_service=False)
 
     @swagger_auto_schema(
-        operation_summary="Product Modified List",
-        operation_description="Product Modified List",
+        operation_summary="PM BOM Product Modified List",
+        operation_description="PM BOM Product Modified List",
     )
     @mask_view(
         login_require=True, auth_require=False,
@@ -119,7 +120,7 @@ class PMBOMProductModifiedBeforeList(BaseListMixin):
     search_fields = [
         'modified_number',
     ]
-    serializer_list = ProductModifiedBeforeListSerializer
+    serializer_list = PMBOMProductModifiedBeforeListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
@@ -128,8 +129,8 @@ class PMBOMProductModifiedBeforeList(BaseListMixin):
         )
 
     @swagger_auto_schema(
-        operation_summary="Product Modified Before List",
-        operation_description="Product Modified Before List",
+        operation_summary="PM BOM Product Modified Before List",
+        operation_description="PM BOM Product Modified Before List",
     )
     @mask_view(
         login_require=True, auth_require=False,
@@ -147,15 +148,15 @@ class PMBOMProductComponentList(BaseListMixin):
     filterset_fields = {
         'id': ['exact'],
     }
-    serializer_list = ProductComponentListSerializer
+    serializer_list = PMBOMProductComponentListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().filter(general_product_types_mapped__is_service=False)
 
     @swagger_auto_schema(
-        operation_summary="Product Component List",
-        operation_description="Product Component List",
+        operation_summary="PM BOM Product Component List",
+        operation_description="PM BOM Product Component List",
     )
     @mask_view(
         login_require=True, auth_require=False,
@@ -174,7 +175,7 @@ class PMBOMLatestComponentList(BaseListMixin):
         'product_warehouse__product_id': ['exact'],
         'modified_number': ['exact'],
     }
-    serializer_list = LatestComponentListSerializer
+    serializer_list = PMBOMLatestComponentListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
@@ -184,8 +185,8 @@ class PMBOMLatestComponentList(BaseListMixin):
         )
 
     @swagger_auto_schema(
-        operation_summary="Latest Component List",
-        operation_description="Latest Component List",
+        operation_summary="PM BOM Latest Component List",
+        operation_description="PM BOM Latest Component List",
     )
     @mask_view(
         login_require=True, auth_require=False,

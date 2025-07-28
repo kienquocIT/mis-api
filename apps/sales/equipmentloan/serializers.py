@@ -37,22 +37,16 @@ class EquipmentLoanListSerializer(AbstractListSerializerModel):
             'code',
             'account_mapped_data',
             'date_created',
+            'loan_date',
+            'return_date',
+            'return_status',
             'employee_created',
             'product_loan_data'
         )
 
     @classmethod
     def get_employee_created(cls, obj):
-        return {
-            'id': obj.employee_created_id,
-            'code': obj.employee_created.code,
-            'full_name': obj.employee_created.get_full_name(2),
-            'group': {
-                'id': obj.employee_created.group_id,
-                'title': obj.employee_created.group.title,
-                'code': obj.employee_created.group.code
-            } if obj.employee_created.group else {}
-        } if obj.employee_created else {}
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
 
 class EquipmentLoanCreateSerializer(AbstractCreateSerializerModel):
@@ -303,7 +297,10 @@ class EquipmentLoanCommonFunction:
             bulk_info_detail += EquipmentLoanCommonFunction.create_equipment_loan_item_sub(
                 equipment_loan_item_obj, loan_product_none_detail, loan_product_lot_detail, loan_product_sn_detail
             )
-            product_loan_data.append(equipment_loan_item.get('loan_product_data', {}))
+            product_loan_data.append({
+                **equipment_loan_item.get('loan_product_data', {}),
+                'quantity': equipment_loan_item.get('loan_quantity', 0)
+            })
 
         EquipmentLoanItem.objects.filter(equipment_loan=el_obj).delete()
         EquipmentLoanItem.objects.bulk_create(bulk_info)

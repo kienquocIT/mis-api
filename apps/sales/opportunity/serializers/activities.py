@@ -60,37 +60,11 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_employee_created(cls, obj):
-        return {
-            'id': obj.employee_created_id,
-            'first_name': obj.employee_created.first_name,
-            'last_name': obj.employee_created.last_name,
-            'email': obj.employee_created.email,
-            'full_name': obj.employee_created.get_full_name(2),
-            'code': obj.employee_created.code,
-            'is_active': obj.employee_created.is_active,
-            'group': {
-                'id': obj.employee_created.group_id,
-                'title': obj.employee_created.group.title,
-                'code': obj.employee_created.group.code
-            } if obj.employee_created.group else {}
-        } if obj.employee_created else {}
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        return {
-            'id': obj.employee_inherit_id,
-            'first_name': obj.employee_inherit.first_name,
-            'last_name': obj.employee_inherit.last_name,
-            'email': obj.employee_inherit.email,
-            'full_name': obj.employee_inherit.get_full_name(2),
-            'code': obj.employee_inherit.code,
-            'is_active': obj.employee_inherit.is_active,
-            'group': {
-                'id': obj.employee_inherit.group_id,
-                'title': obj.employee_inherit.group.title,
-                'code': obj.employee_inherit.group.code
-            } if obj.employee_inherit.group else {}
-        } if obj.employee_inherit else {}
+        return obj.employee_inherit.get_detail_with_group() if obj.employee_inherit else {}
 
     @classmethod
     def get_contact(cls, obj):
@@ -331,37 +305,11 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_employee_created(cls, obj):
-        return {
-            'id': obj.employee_created_id,
-            'first_name': obj.employee_created.first_name,
-            'last_name': obj.employee_created.last_name,
-            'email': obj.employee_created.email,
-            'full_name': obj.employee_created.get_full_name(2),
-            'code': obj.employee_created.code,
-            'is_active': obj.employee_created.is_active,
-            'group': {
-                'id': obj.employee_created.group_id,
-                'title': obj.employee_created.group.title,
-                'code': obj.employee_created.group.code
-            } if obj.employee_created.group else {}
-        } if obj.employee_created else {}
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        return {
-            'id': obj.employee_inherit_id,
-            'first_name': obj.employee_inherit.first_name,
-            'last_name': obj.employee_inherit.last_name,
-            'email': obj.employee_inherit.email,
-            'full_name': obj.employee_inherit.get_full_name(2),
-            'code': obj.employee_inherit.code,
-            'is_active': obj.employee_inherit.is_active,
-            'group': {
-                'id': obj.employee_inherit.group_id,
-                'title': obj.employee_inherit.group.title,
-                'code': obj.employee_inherit.group.code
-            } if obj.employee_inherit.group else {}
-        } if obj.employee_inherit else {}
+        return obj.employee_inherit.get_detail_with_group() if obj.employee_inherit else {}
 
     @classmethod
     def get_process(cls, obj):
@@ -600,37 +548,11 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_employee_created(cls, obj):
-        return {
-            'id': obj.employee_created_id,
-            'first_name': obj.employee_created.first_name,
-            'last_name': obj.employee_created.last_name,
-            'email': obj.employee_created.email,
-            'full_name': obj.employee_created.get_full_name(2),
-            'code': obj.employee_created.code,
-            'is_active': obj.employee_created.is_active,
-            'group': {
-                'id': obj.employee_created.group_id,
-                'title': obj.employee_created.group.title,
-                'code': obj.employee_created.group.code
-            } if obj.employee_created.group else {}
-        } if obj.employee_created else {}
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        return {
-            'id': obj.employee_inherit_id,
-            'first_name': obj.employee_inherit.first_name,
-            'last_name': obj.employee_inherit.last_name,
-            'email': obj.employee_inherit.email,
-            'full_name': obj.employee_inherit.get_full_name(2),
-            'code': obj.employee_inherit.code,
-            'is_active': obj.employee_inherit.is_active,
-            'group': {
-                'id': obj.employee_inherit.group_id,
-                'title': obj.employee_inherit.group.title,
-                'code': obj.employee_inherit.group.code
-            } if obj.employee_inherit.group else {}
-        } if obj.employee_inherit else {}
+        return obj.employee_inherit.get_detail_with_group() if obj.employee_inherit else {}
 
     @classmethod
     def get_employee_attended_list(cls, obj):

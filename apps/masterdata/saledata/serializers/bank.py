@@ -32,7 +32,6 @@ class BankCreateSerializer(serializers.ModelSerializer):
     bank_abbreviation = serializers.CharField(max_length=150, allow_blank=True)
     bank_name = serializers.CharField(max_length=150, allow_blank=True)
     bank_foreign_name = serializers.CharField(max_length=150, allow_blank=True, allow_null=True)
-    head_office_address_data = serializers.JSONField(default=dict)
 
     class Meta:
         model = Bank
@@ -40,6 +39,7 @@ class BankCreateSerializer(serializers.ModelSerializer):
             'bank_abbreviation',
             'bank_name',
             'bank_foreign_name',
+            'head_office_address',
             'head_office_address_data',
             'vietqr_json_data'
         )
@@ -61,30 +61,6 @@ class BankCreateSerializer(serializers.ModelSerializer):
         if value:
             return value
         return ''
-
-    @classmethod
-    def validate_head_office_address_data(cls, head_office_address_data):
-        country_obj = Country.objects.filter(id=head_office_address_data.get('country_id')).first()
-        province_obj = NProvince.objects.filter(id=head_office_address_data.get('province_id')).first()
-        ward_obj = NWard.objects.filter(id=head_office_address_data.get('ward_id')).first()
-        return {
-            'country_data': {'id': str(country_obj.id), 'title': country_obj.title} if country_obj else {},
-            'province_data': {'id': str(province_obj.id), 'fullname': province_obj.fullname} if province_obj else {},
-            'ward_data': {'id': str(ward_obj.id), 'fullname': ward_obj.fullname} if ward_obj else {},
-            'address': head_office_address_data.get('address', '')
-        }
-
-    def validate(self, validate_data):
-        head_office_address_data = validate_data.get('head_office_address_data', {})
-        validate_data['head_office_address'] = ', '.join(
-            filter(None, [
-                head_office_address_data.get('address', ''),
-                head_office_address_data.get('ward_data', {}).get('fullname'),
-                head_office_address_data.get('province_data', {}).get('fullname'),
-                head_office_address_data.get('country_data', {}).get('title'),
-            ])
-        )
-        return validate_data
 
 
 class BankDetailSerializer(serializers.ModelSerializer):

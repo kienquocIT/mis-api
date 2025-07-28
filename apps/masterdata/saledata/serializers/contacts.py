@@ -165,16 +165,7 @@ class ContactListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_employee_created(cls, obj):
-        return {
-            'id': obj.employee_created_id,
-            'code': obj.employee_created.code,
-            'full_name': obj.employee_created.get_full_name(2),
-            'group': {
-                'id': obj.employee_created.group_id,
-                'title': obj.employee_created.group.title,
-                'code': obj.employee_created.group.code
-            } if obj.employee_created.group else {}
-        } if obj.employee_created else {}
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
 
 class ContactCreateSerializer(serializers.ModelSerializer):
@@ -197,18 +188,12 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             "email",
             "report_to",
             "address_information",
+            'home_detail_address',
+            'home_address_data',
+            'work_detail_address',
+            'work_address_data',
             "additional_information",
             'account_name',
-            'work_detail_address',
-            'work_country',
-            'work_city',
-            'work_district',
-            'work_ward',
-            'home_detail_address',
-            'home_country',
-            'home_city',
-            'home_district',
-            'home_ward',
         )
 
     @classmethod
@@ -247,8 +232,6 @@ class ContactCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         num = Contact.objects.filter_current(fill__tenant=True, fill__company=True).count()
         validate_data['code'] = f"C00{num + 1}"
-        validate_data['home_address_data'] = ContactCommonFunc.get_home_address_data(validate_data)
-        validate_data['work_address_data'] = ContactCommonFunc.get_work_address_data(validate_data)
         if 'lead' in self.context:
             lead_obj = self.context.get('lead')
             if not lead_obj:
@@ -318,8 +301,6 @@ class ContactDetailSerializer(serializers.ModelSerializer):
             "address_information",
             "additional_information",
             "account_name",
-            'home_address_data',
-            'work_address_data',
         )
 
     @classmethod
@@ -383,18 +364,12 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             "email",
             "report_to",
             "address_information",
+            'home_detail_address',
+            'home_address_data',
+            'work_detail_address',
+            'work_address_data',
             "additional_information",
             'account_name',
-            'work_detail_address',
-            'work_country',
-            'work_city',
-            'work_district',
-            'work_ward',
-            'home_detail_address',
-            'home_country',
-            'home_city',
-            'home_district',
-            'home_ward',
         )
 
     @classmethod
@@ -423,11 +398,6 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"mobile": AccountsMsg.MOBILE_EXIST})
             return value
         return None
-
-    def validate(self, validate_data):
-        validate_data['home_address_data'] = ContactCommonFunc.get_home_address_data(validate_data)
-        validate_data['work_address_data'] = ContactCommonFunc.get_work_address_data(validate_data)
-        return validate_data
 
     def update(self, instance, validated_data):
         if not validated_data.get('account_name'):
@@ -469,51 +439,3 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
             'code': obj.owner.code,
             'fullname': obj.owner.get_full_name(2)
         } if obj.owner else {}
-
-
-class ContactCommonFunc:
-    @staticmethod
-    def get_home_address_data(validate_data):
-        home_address_data = {
-            'home_country': {
-                'id': str(validate_data.get('home_country').id),
-                'title': validate_data.get('home_country').title
-            } if validate_data.get('home_country') else {},
-            'home_detail_address': validate_data.get('home_detail_address', ''),
-            'home_city': {
-                'id': str(validate_data.get('home_city').id),
-                'title': validate_data.get('home_city').title
-            } if validate_data.get('home_city') else {},
-            'home_district': {
-                'id': str(validate_data.get('home_district').id),
-                'title': validate_data.get('home_district').title
-            } if validate_data.get('home_district') else {},
-            'home_ward': {
-                'id': str(validate_data.get('home_ward').id),
-                'title': validate_data.get('home_ward').title
-            } if validate_data.get('home_ward') else {},
-        }
-        return home_address_data
-
-    @staticmethod
-    def get_work_address_data(validate_data):
-        work_address_data = {
-            'work_country': {
-                'id': str(validate_data.get('work_country').id),
-                'title': validate_data.get('work_country').title
-            } if validate_data.get('work_country') else {},
-            'work_detail_address': validate_data.get('work_detail_address', ''),
-            'work_city': {
-                'id': str(validate_data.get('work_city').id),
-                'title': validate_data.get('work_city').title
-            } if validate_data.get('work_city') else {},
-            'work_district': {
-                'id': str(validate_data.get('work_district').id),
-                'title': validate_data.get('work_district').title
-            } if validate_data.get('work_district') else {},
-            'work_ward': {
-                'id': str(validate_data.get('work_ward').id),
-                'title': validate_data.get('work_ward').title
-            } if validate_data.get('work_ward') else {},
-        }
-        return work_address_data

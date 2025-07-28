@@ -2,7 +2,7 @@ import json
 
 from django.db import models
 
-from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.attachments.models import M2MFilesAbstractModel, update_files_is_approved
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 __all__ = ['BusinessRequest', 'ExpenseItemMapBusinessRequest', 'BusinessRequestAttachmentFile',
@@ -129,6 +129,9 @@ class BusinessRequest(DataAbstractModel):
 
     def before_save(self):
         self.code_generator()
+        update_files_is_approved(BusinessRequestAttachmentFile.objects.filter(
+            business_request=self, attachment__is_approved=False
+        ))
 
     def save(self, *args, **kwargs):
         if self.system_status > 2:

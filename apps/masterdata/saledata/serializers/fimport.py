@@ -411,35 +411,6 @@ class SaleDataAccountImportReturnSerializer(serializers.ModelSerializer):
         model = Account
         fields = ('id', 'title', 'code')
 
-# ['Tinh/ThanhPho', 'Quan/Huyen', 'Xa/Phuong', 'Address', 'Default'],
-class AddressDictSerializer(serializers.Serializer):  # noqa
-    city = serializers.CharField()
-    district = serializers.CharField()
-    ward = serializers.CharField()
-    address = serializers.CharField()
-    is_default = serializers.BooleanField(default=False)
-
-class AddressListAbstractSerializer(serializers.Serializer):  # noqa
-    data = AddressDictSerializer(many=True)
-    KEY_RAISING = None
-
-    def validate(self, validate_data):
-        default_amount = 0
-        for item in validate_data['data']:
-            if item.get('is_default', False) is True:
-                default_amount += 1
-
-        if default_amount > 1:
-            raise serializers.ValidationError({self.KEY_RAISING: AccountsMsg.ADDRESS_ONLY_ONE_DEFAULT})
-
-        return validate_data
-
-class ShippingAddressListSerializer(AddressListAbstractSerializer):  # noqa
-    KEY_RAISING = 'shipping_address_dict'
-
-class BillingAddressListSerializer(AddressListAbstractSerializer):  # noqa
-    KEY_RAISING = 'billing_address_dict'
-
 class SaleDataAccountImportSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     tax_code = serializers.CharField(max_length=150, required=False, allow_null=True, allow_blank=True)
@@ -475,10 +446,10 @@ class SaleDataAccountImportSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_tax_code(cls, value):
         if value:
-            if Account.objects.filter_on_company(tax_code=value).exists():
+            if Account.objects.filter_on_company(tax_code=value).exclude(tax_code='#').exists():
                 raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
             return value
-        return ''
+        return '#'
 
     @classmethod
     def validate_account_group(cls, value):
@@ -531,75 +502,6 @@ class SaleDataAccountImportSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"industry": AccountsMsg.INDUSTRY_NOT_EXIST})
         return None
 
-    # shipping_address_dict = serializers.CharField(allow_null=True, allow_blank=True)
-
-    @classmethod
-    def validate_shipping_address_dict(cls, value):
-        if value:
-            # [
-            #     ['Tinh/ThanhPho', 'Quan/Huyen', 'Xa/Phuong', 'Address', 'Default'],
-            #     ['Tinh/ThanhPho', 'Quan/Huyen', 'Xa/Phuong', 'Address', 'Default'],
-            # ]
-            try:
-                arr_data = json.loads(value)
-            except json.JSONDecodeError:
-                raise serializers.ValidationError({'shipping_address_dict': BaseMsg.FORMAT_NOT_MATCH})
-            except Exception:
-                raise serializers.ValidationError({'shipping_address_dict': BaseMsg.FORMAT_NOT_MATCH})
-
-            ser = ShippingAddressListSerializer(
-                data={
-                    'data': [
-                        {
-                            'city': item[0],
-                            'district': item[1],
-                            'ward': item[2],
-                            'address': item[3],
-                            'is_default': item[4] in ['1', 1],
-                        } for item in arr_data
-                    ]
-                }
-            )
-            ser.is_valid(raise_exception=True)
-
-            return [dict(item) for item in ser.validated_data['data']]
-        return []
-
-    # billing_address_dict = serializers.CharField()
-
-    @classmethod
-    def validate_billing_address_dict(cls, value):
-        if value:
-            # [
-            #     ['Tinh/ThanhPho', 'Quan/Huyen', 'Xa/Phuong', 'Address', 'Default'],
-            #     ['Tinh/ThanhPho', 'Quan/Huyen', 'Xa/Phuong', 'Address', 'Default'],
-            # ]
-            try:
-                arr_data = json.loads(value)
-            except json.JSONDecodeError:
-                raise serializers.ValidationError({'shipping_address_dict': BaseMsg.FORMAT_NOT_MATCH})
-            except Exception:
-                raise serializers.ValidationError({'shipping_address_dict': BaseMsg.FORMAT_NOT_MATCH})
-
-            ser = BillingAddressListSerializer(
-                data={
-                    'data': [
-                        {
-                            'city': item[0],
-                            'district': item[1],
-                            'ward': item[2],
-                            'address': item[3],
-                            'is_default': item[4] in ['1', 1],
-                        } for item in arr_data
-                    ]
-                }
-            )
-            ser.is_valid(raise_exception=True)
-
-            return [dict(item) for item in ser.validated_data['data']]
-
-        return []
-
     def validate(self, validate_data):
         try:
             validate_data['price_list_mapped'] = Price.objects.get_current(fill__company=True, is_default=True)
@@ -612,17 +514,17 @@ class SaleDataAccountImportSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"currency": AccountsMsg.CURRENCY_DEFAULT_NOT_EXIST})
 
         account_type_selection = validate_data.get('account_type_selection', None)
-        tax_code = validate_data.get('tax_code', None)
+        # tax_code = validate_data.get('tax_code', None)
         total_employees = validate_data.get('total_employees', None)
         if account_type_selection:
             # if account is organization
             if account_type_selection == 1:
-                if not tax_code:
-                    raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
+                # if not tax_code:
+                #     raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
                 if not total_employees:
                     raise serializers.ValidationError({"total_employees": AccountsMsg.TOTAL_EMPLOYEES_NOT_NONE})
         else:
-            validate_data['tax_code'] = None
+            # validate_data['tax_code'] = None
             validate_data['total_employees'] = None
 
         # validate contact_mapped
@@ -746,14 +648,10 @@ class SaleDataAccountImportSerializer(serializers.ModelSerializer):
                 'is_account_owner': item.get('is_account_owner'),
             })
 
-        shipping_address_dict = validated_data.pop('shipping_address_dict', [])
-        billing_address_dict = validated_data.pop('billing_address_dict', [])
         account = Account.objects.create(**validated_data)
         AccountCommonFunc.update_account_type_fields(account)
         AccountCommonFunc.add_employee_map_account(account)
         AccountCommonFunc.add_account_types(account)
-        AccountCommonFunc.add_shipping_address(account, shipping_address_dict)
-        AccountCommonFunc.add_billing_address(account, billing_address_dict)
         AccountCommonFunc.add_contact_mapped(account, new_contact_mapped)
         return account
 
@@ -827,7 +725,10 @@ class ProductProductTypeImportSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         product_type_obj = ProductType.objects.create(**validated_data)
-        AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj)
+        AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 0)
+        AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 1)
+        AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 2)
+        AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 3)
         return product_type_obj
 
 class ProductProductTypeImportReturnSerializer(serializers.ModelSerializer):

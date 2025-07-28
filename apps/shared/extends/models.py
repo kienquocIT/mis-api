@@ -105,7 +105,7 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
             if model_cls and hasattr(model_cls, 'objects'):
                 number = model_cls.objects.filter_on_company(
                     is_delete=False,
-                    system_status=3 if in_workflow else 1,
+                    system_status__in=[3, 4] if in_workflow else [1],
                 ).count()
                 code_rule_number_format = re.search(r'\[(.*?)\]', code_rule)
                 if code_rule_number_format:

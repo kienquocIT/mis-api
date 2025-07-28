@@ -571,7 +571,7 @@ class AppEmpConfigList(BaseListMixin, BaseCreateMixin):
 # New address
 class NProvinceList(BaseListMixin):
     queryset = NProvince.objects
-    search_fields = ('fullname',)
+    search_fields = ('fullname', 'name')
     filterset_fields = {
         "country_id": ["exact", "in"],
     }
@@ -590,7 +590,7 @@ class NProvinceList(BaseListMixin):
 
 class NWardList(BaseListMixin):
     queryset = NWard.objects
-    search_fields = ('fullname',)
+    search_fields = ('fullname', 'name')
     filterset_fields = {
         "province_id": ["exact", "in"],
     }

@@ -651,6 +651,14 @@ class AccountingMasterData:
             new_acc_name='Giao hàng nhưng chưa xuất hóa đơn bán hàng',
             new_foreign_acc_name='Delivered but no AR Invoice yet'
         )
+        # thêm 33881: Nhập hàng nhưng chưa nhập hóa đơn mua hàng
+        ChartOfAccounts.add_account(
+            parent_acc_type=2,
+            parent_acc_code=3388,
+            new_acc_code=33881,
+            new_acc_name='Nhập hàng nhưng chưa nhập hóa đơn mua hàng',
+            new_foreign_acc_name='Receipted but no AP Invoice yet'
+        )
         print('Done :))')
         return True
 
@@ -705,7 +713,7 @@ class AccountingMasterData:
                     'foreign_title': 'Customer overpayment',
                     'title': 'Khách hàng thanh toán thừa',
                     'account': [
-                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='3388').first()
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='33881').first()
                     ]
                 },
                 {
@@ -780,6 +788,13 @@ class AccountingMasterData:
                         ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='521').first()
                     ]
                 },
+                {
+                    'foreign_title': 'Purchases tax',
+                    'title': 'Thuế GTGT mua hàng',
+                    'account': [
+                        ChartOfAccounts.objects.filter(company=company, tenant=company.tenant, acc_code='1331').first()
+                    ]
+                },
             ]
             account_mapped_data_inventory = [
                 {
@@ -814,7 +829,7 @@ class AccountingMasterData:
 
             for item in account_mapped_data_sale + account_mapped_data_purchasing + account_mapped_data_inventory:
                 if None in item.get('account', []):
-                    print(f'Create data failed in {company.title}: None in account list')
+                    print(f'Create data failed in {company.title}: None in account list ({item.get("foreign_title")})')
                     return False
                 if len(item.get('account', [])) != 1:
                     print(f'Create data failed in {company.title}: Account list length is not single')
@@ -897,7 +912,6 @@ class AccountingMasterData:
             DefaultAccountDetermination.objects.bulk_create(bulk_info)
             DefaultAccountDeterminationSub.objects.bulk_create(bulk_info_sub)
             print(f'Done for {company.title}')
-        print('Done :))')
         return True
 
 
@@ -906,11 +920,20 @@ class AccountingScripts:
     def push_default_account_determination_200():
         """ Đẩy các tài khoản kế toán xác định mặc định (TT200) vào KHO - PRODUCT TYPE - PRODUCT """
         for warehouse_obj in WareHouse.objects.all():
-            AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj)
+            AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 0)
+            AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 1)
+            AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 2)
+            AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 3)
         for product_type_obj in ProductType.objects.all():
-            AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj)
+            AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 0)
+            AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 1)
+            AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 2)
+            AccountDeterminationForProductTypeHandler.create_account_determination_for_product_type(product_type_obj, 3)
         for product_obj in Product.objects.all():
-            AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj)
+            AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 0)
+            AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 1)
+            AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 2)
+            AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 3)
         print(f'Done :))')
         return True
 
