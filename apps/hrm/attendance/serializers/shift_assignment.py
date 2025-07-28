@@ -32,15 +32,24 @@ class ShiftAssignmentListSerializer(serializers.ModelSerializer):
 
 
 class ShiftAssignmentCreateSerializer(serializers.ModelSerializer):
-    group_list = serializers.ListSerializer(child=serializers.UUIDField())
-    group_employee_exclude_list = serializers.ListSerializer(child=serializers.UUIDField())
-    employee_list = serializers.ListSerializer(child=serializers.UUIDField())
-    shift = serializers.UUIDField()
-    date_list = serializers.ListSerializer(child=serializers.DateField())
+    all_company = serializers.BooleanField(required=False)
+    group_list = serializers.ListSerializer(child=serializers.UUIDField(required=False), required=False)
+    group_employee_exclude_list = serializers.ListSerializer(
+        child=serializers.UUIDField(required=False), required=False
+    )
+    employee_list = serializers.ListSerializer(child=serializers.UUIDField(required=False), required=False)
+    shift = serializers.UUIDField(error_messages={
+        'required': 'Must select shift to apply',
+        'allow_null': 'Must select shift to apply',
+    })
+    date_list = serializers.ListSerializer(child=serializers.DateField(), error_messages={
+        'required': 'Must select date to apply',
+    })
 
     class Meta:
         model = ShiftAssignment
         fields = (
+            'all_company',
             'group_list',
             'group_employee_exclude_list',
             'employee_list',
@@ -88,21 +97,33 @@ class ShiftAssignmentCreateSerializer(serializers.ModelSerializer):
         except ShiftInfo.DoesNotExist:
             raise serializers.ValidationError({'shift': BaseMsg.NOT_EXIST})
 
+    def validate(self, validate_data):
+        all_company = validate_data.get('all_company', False)
+        group_list = validate_data.get('group_list', [])
+        employee_list = validate_data.get('employee_list', [])
+        if all_company is False and len(group_list) == 0 and len(employee_list) == 0:
+            raise serializers.ValidationError({'detail': "Must select object to apply"})
+        return validate_data
+
     def create(self, validated_data):
+        all_company = validated_data.pop('all_company')
         group_list = validated_data.pop('group_list')
         group_employee_exclude_list = validated_data.pop('group_employee_exclude_list')
         employee_list = validated_data.pop('employee_list')
         shift = validated_data.pop('shift')
         date_list = validated_data.pop('date_list')
         bulk_data = []
-        group_list_employee = Employee.objects.filter_on_company(group_id__in=group_list).exclude(
-            id__in=group_employee_exclude_list
-        )
-        if group_list_employee:
-            if employee_list:
-                employee_list = employee_list | group_list_employee
-            else:
-                employee_list = group_list_employee
+        if all_company is True:
+            employee_list = Employee.objects.filter_on_company()
+        if all_company is False:
+            group_list_employee = Employee.objects.filter_on_company(group_id__in=group_list).exclude(
+                id__in=group_employee_exclude_list
+            )
+            if group_list_employee:
+                if employee_list:
+                    employee_list = employee_list | group_list_employee
+                else:
+                    employee_list = group_list_employee
         for employee in employee_list:
             # delete old
             olds = ShiftAssignment.objects.filter_on_company(employee=employee, date__in=date_list)
