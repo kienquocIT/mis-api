@@ -125,38 +125,32 @@ class LeaveRequestCreateSerializer(AbstractCreateSerializerModel):
     def create(self, validated_data):
         company_id = self.context.get('company_id', None)
         tenant_id = self.context.get('tenant_id', None)
-        try:
-            with transaction.atomic():
-                date_list = validated_data['detail_data']
-                leave = LeaveRequest.objects.create(**validated_data)
-                if leave:
-                    list_date_res = []
-                    for item in date_list:
-                        leave_available = item["leave_available"]
-                        if isinstance(leave_available['leave_type'], dict):
-                            leave_type_id = leave_available["leave_type"]['id']
-                        list_date_res.append(
-                            LeaveRequestDateListRegister(
-                                company_id=company_id,
-                                tenant_id=tenant_id,
-                                employee_inherit=leave.employee_inherit,
-                                order=item["order"],
-                                leave_type_id=leave_type_id,
-                                date_from=item["date_from"],
-                                morning_shift_f=item["morning_shift_f"],
-                                date_to=item["date_to"],
-                                morning_shift_t=item["morning_shift_t"],
-                                subtotal=float(item["subtotal"]),
-                                remark=item["remark"],
-                                leave_id=str(leave.id)
-                            )
-                        )
-                    LeaveRequestDateListRegister.objects.bulk_create(list_date_res)
-                    return leave
-        except Exception as create_error:
-            print('error save leave request', create_error)
-            raise serializers.ValidationError({'detail': LeaveMsg.ERROR_EMP_DAYOFF})
-        return False
+        date_list = validated_data['detail_data']
+        leave = LeaveRequest.objects.create(**validated_data)
+        if leave:
+            list_date_res = []
+            for item in date_list:
+                leave_available = item.get("leave_available", {})
+                leave_type = leave_available.get("leave_type")
+                leave_type_id = leave_type.get('id') if isinstance(leave_type, dict) else None
+                list_date_res.append(
+                    LeaveRequestDateListRegister(
+                        company_id=company_id,
+                        tenant_id=tenant_id,
+                        employee_inherit=leave.employee_inherit,
+                        order=item["order"],
+                        leave_type_id=leave_type_id,
+                        date_from=item["date_from"],
+                        morning_shift_f=item["morning_shift_f"],
+                        date_to=item["date_to"],
+                        morning_shift_t=item["morning_shift_t"],
+                        subtotal=float(item["subtotal"]),
+                        remark=item["remark"],
+                        leave_id=str(leave.id)
+                    )
+                )
+            LeaveRequestDateListRegister.objects.bulk_create(list_date_res)
+        return leave
 
 
 class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
