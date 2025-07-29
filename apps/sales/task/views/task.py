@@ -113,7 +113,7 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
         opp_enabled=True, prj_enabled=False,
     )
     def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
+        return self.destroy(request, *args, is_purge=True, **kwargs)
 
 
 class OpportunityTaskSwitchSTT(BaseUpdateMixin):
