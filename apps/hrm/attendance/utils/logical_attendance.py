@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, time
 from apps.shared import DisperseModel
 
 
@@ -11,7 +11,7 @@ class AttendanceHandler:
                 "card_number": "00034567",
                 "device_id": "HIK-01",
                 "device_name": "HIKVISION_GATE1",
-                "timestamp": "2025-07-25 08:19:42",
+                "timestamp": "2025-07-25 08:15:42",
                 "event_type": "IN",
                 "status": "success"
             },
@@ -20,7 +20,7 @@ class AttendanceHandler:
                 "card_number": "00034567",
                 "device_id": "HIK-01",
                 "device_name": "HIKVISION_GATE1",
-                "timestamp": "2025-07-25 17:48:14",
+                "timestamp": "2025-07-25 17:25:14",
                 "event_type": "OUT",
                 "status": "success"
             },
@@ -118,8 +118,10 @@ class AttendanceHandler:
                 data_push = {}
                 shift_check = shift_assign.shift
                 if shift_check:
-                    checkin_time = shift_check.checkin_time
-                    checkout_time = shift_check.checkout_time
+                    checkin_time, checkout_time = AttendanceHandler.parse_checkin_checkout(
+                        shift_check=shift_check,
+                        check_type=0,
+                    )
 
                     data_push = {
                         'employee_id': employee_id,
@@ -230,8 +232,11 @@ class AttendanceHandler:
                 print(f"[{date}] Leave")
             if leave.subtotal == 0.5:
                 if leave.morning_shift_f is True and leave.morning_shift_t is True:
-                    checkin_time = shift_check.break_out_time
-                    checkout_time = shift_check.checkout_time
+                    checkin_time, checkout_time = AttendanceHandler.parse_checkin_checkout(
+                        shift_check=shift_check,
+                        check_type=1,
+                        is_first_shift=True,
+                    )
                     data_push = AttendanceHandler.run_check_normal(
                         date=date,
                         logs_on_day=logs_on_day,
@@ -239,8 +244,11 @@ class AttendanceHandler:
                         checkout_time=checkout_time
                     )
                 if leave.morning_shift_f is False and leave.morning_shift_t is False:
-                    checkin_time = shift_check.break_out_time
-                    checkout_time = shift_check.break_in_time
+                    checkin_time, checkout_time = AttendanceHandler.parse_checkin_checkout(
+                        shift_check=shift_check,
+                        check_type=1,
+                        is_second_shift=True,
+                    )
                     data_push = AttendanceHandler.run_check_normal(
                         date=date,
                         logs_on_day=logs_on_day,
@@ -268,3 +276,43 @@ class AttendanceHandler:
                 })
                 print(f"[{date}] Business")
         return data_push
+
+    @classmethod
+    def parse_checkin_checkout(cls, shift_check, check_type, is_first_shift=False, is_second_shift=False):
+        checkin_time = None
+        checkout_time = None
+        if check_type == 0:
+            checkin_time = (
+                    datetime.combine(
+                        datetime.today(), shift_check.checkin_time
+                    ) + timedelta(minutes=shift_check.checkin_threshold)
+            ).time()
+            checkout_time = (
+                    datetime.combine(
+                        datetime.today(), shift_check.checkout_time
+                    ) - timedelta(minutes=shift_check.checkout_threshold)
+            ).time()
+        if check_type == 1:
+            if is_first_shift is True:
+                checkin_time = (
+                        datetime.combine(
+                            datetime.today(), shift_check.break_out_time
+                        ) + timedelta(minutes=shift_check.break_out_threshold)
+                ).time()
+                checkout_time = (
+                        datetime.combine(
+                            datetime.today(), shift_check.checkout_time
+                        ) - timedelta(minutes=shift_check.checkout_threshold)
+                ).time()
+            if is_second_shift is True:
+                checkin_time = (
+                        datetime.combine(
+                            datetime.today(), shift_check.checkin_time
+                        ) + timedelta(minutes=shift_check.checkin_threshold)
+                ).time()
+                checkout_time = (
+                        datetime.combine(
+                            datetime.today(), shift_check.break_in_time
+                        ) - timedelta(minutes=shift_check.break_in_threshold)
+                ).time()
+        return checkin_time, checkout_time
