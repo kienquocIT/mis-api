@@ -7,22 +7,22 @@ class ShiftInfo(MasterDataAbstractModel):
     checkin_time = models.TimeField(verbose_name='The start time')
     checkin_gr_start = models.TimeField(null=True)
     checkin_gr_end = models.TimeField(null=True)
-    checkin_threshold = models.FloatField(default=0, null=True)
+    checkin_threshold = models.IntegerField(default=0)
 
-    break_in_time = models.TimeField(verbose_name='The break start time')
+    break_in_time = models.TimeField(null=True, verbose_name='The break start time')
     break_in_gr_start = models.TimeField(null=True)
     break_in_gr_end = models.TimeField(null=True)
-    break_in_threshold = models.FloatField(default=0, null=True)
+    break_in_threshold = models.IntegerField(default=0)
 
-    break_out_time = models.TimeField(verbose_name='The break end time')
+    break_out_time = models.TimeField(null=True, verbose_name='The break end time')
     break_out_gr_start = models.TimeField(null=True)
     break_out_gr_end = models.TimeField(null=True)
-    break_out_threshold = models.FloatField(default=0, null=True)
+    break_out_threshold = models.IntegerField(default=0)
 
     checkout_time = models.TimeField(verbose_name='The end time')
     checkout_gr_start = models.TimeField(null=True)
     checkout_gr_end = models.TimeField(null=True)
-    checkout_threshold = models.FloatField(default=0, null=True)
+    checkout_threshold = models.IntegerField(default=0)
 
     working_day_list = models.JSONField(default=dict)
     # working_day_list = {
