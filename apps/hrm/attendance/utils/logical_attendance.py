@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, time
+from datetime import datetime
 from apps.shared import DisperseModel
 
 
@@ -11,7 +11,7 @@ class AttendanceHandler:
                 "card_number": "00034567",
                 "device_id": "HIK-01",
                 "device_name": "HIKVISION_GATE1",
-                "timestamp": "2025-07-25 08:15:42",
+                "timestamp": "2025-07-25 08:35:42",
                 "event_type": "IN",
                 "status": "success"
             },
@@ -20,7 +20,16 @@ class AttendanceHandler:
                 "card_number": "00034567",
                 "device_id": "HIK-01",
                 "device_name": "HIKVISION_GATE1",
-                "timestamp": "2025-07-25 17:25:14",
+                "timestamp": "2025-07-25 08:21:42",
+                "event_type": "IN",
+                "status": "success"
+            },
+            {
+                "employee_id": "e37c69ca-c5a0-45ff-9c55-dc0bc37b476e",
+                "card_number": "00034567",
+                "device_id": "HIK-01",
+                "device_name": "HIKVISION_GATE1",
+                "timestamp": "2025-07-25 17:50:00",
                 "event_type": "OUT",
                 "status": "success"
             },
@@ -29,7 +38,7 @@ class AttendanceHandler:
                 "card_number": "00034567",
                 "device_id": "HIK-01",
                 "device_name": "HIKVISION_GATE1",
-                "timestamp": "2025-07-29 12:59:42",
+                "timestamp": "2025-07-29 11:29:42",
                 "event_type": "IN",
                 "status": "success"
             },
@@ -38,7 +47,7 @@ class AttendanceHandler:
                 "card_number": "00034567",
                 "device_id": "HIK-01",
                 "device_name": "HIKVISION_GATE1",
-                "timestamp": "2025-07-29 17:28:14",
+                "timestamp": "2025-07-29 18:28:14",
                 "event_type": "OUT",
                 "status": "success"
             },
@@ -106,7 +115,7 @@ class AttendanceHandler:
     def active_check(cls, date, employee_id, data_logs, leaves, businesses, shift_assigns):
         data_push_list = []
         if not shift_assigns:
-            print(f"[{date}] Không có ca áp dụng")
+            print(f"[{date}] Weekend")
             return True
         if shift_assigns:
             # Lọc logs theo ngày và employee_id
@@ -118,11 +127,6 @@ class AttendanceHandler:
                 data_push = {}
                 shift_check = shift_assign.shift
                 if shift_check:
-                    checkin_time, checkout_time = AttendanceHandler.parse_checkin_checkout(
-                        shift_check=shift_check,
-                        check_type=0,
-                    )
-
                     data_push = {
                         'employee_id': employee_id,
                         'date': date,
@@ -143,6 +147,10 @@ class AttendanceHandler:
                             businesses=businesses
                         )
                     if not leaves and not businesses:
+                        checkin_time, checkout_time = AttendanceHandler.parse_checkin_checkout_grace(
+                            shift_check=shift_check,
+                            check_type=0,
+                        )
                         data_push = AttendanceHandler.run_check_normal(
                             date=date,
                             logs_on_day=logs_on_day,
@@ -157,27 +165,69 @@ class AttendanceHandler:
     def run_check_normal(cls, date, logs_on_day, checkin_time, checkout_time):
         checkin_log = None
         checkout_log = None
-        for log in logs_on_day:
-            log_time = datetime.strptime(log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
-            if log['event_type'] == "IN" and log_time <= checkin_time:
-                if checkin_log is None:
-                    checkin_log = log
-                else:
-                    prev_time = datetime.strptime(checkin_log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
-                    if log_time > prev_time:
-                        checkin_log = log
-            if log['event_type'] == "OUT" and log_time >= checkout_time:
-                if checkout_log is None:
-                    checkout_log = log
-                else:
-                    prev_time = datetime.strptime(checkout_log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
-                    if log_time < prev_time:
-                        checkout_log = log
+        if checkin_time and checkout_time:
+            keys = ['from', 'to']
+            if all(key in checkin_time for key in keys) and all(key in checkout_time for key in keys):
+                checkin_time_from = checkin_time['from']
+                checkin_time_to = checkin_time['to']
+                checkout_time_from = checkout_time['from']
+                checkout_time_to = checkout_time['to']
+
+                for log in logs_on_day:
+                    is_checkin = False
+                    is_checkout = False
+                    log_time = datetime.strptime(log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
+                    if log['event_type'] == "IN":
+                        is_checkin = AttendanceHandler.check_normal_checkin(
+                            log_time=log_time,
+                            checkin_time_from=checkin_time_from,
+                            checkin_time_to=checkin_time_to,
+                        )
+                    if log['event_type'] == "OUT":
+                        is_checkout = AttendanceHandler.check_normal_checkout(
+                            log_time=log_time,
+                            checkout_time_from=checkout_time_from,
+                            checkout_time_to=checkout_time_to,
+                        )
+                    if is_checkin is True:
+                        if checkin_log is None:
+                            checkin_log = log
+                        else:
+                            prev_time = datetime.strptime(checkin_log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
+                            if log_time > prev_time:
+                                checkin_log = log
+                    if is_checkout is True:
+                        if checkout_log is None:
+                            checkout_log = log
+                        else:
+                            prev_time = datetime.strptime(checkout_log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
+                            if log_time < prev_time:
+                                checkout_log = log
         return AttendanceHandler.check_normal(
             date=date,
             checkin_log=checkin_log,
             checkout_log=checkout_log
         )
+
+    @classmethod
+    def check_normal_checkin(cls, log_time, checkin_time_from, checkin_time_to):
+        if checkin_time_from == checkin_time_to:
+            if log_time <= checkin_time_from:
+                return True
+        if checkin_time_from != checkin_time_to:
+            if checkin_time_from <= log_time <= checkin_time_to:
+                return True
+        return False
+
+    @classmethod
+    def check_normal_checkout(cls, log_time, checkout_time_from, checkout_time_to):
+        if checkout_time_from == checkout_time_to:
+            if log_time >= checkout_time_from:
+                return True
+        if checkout_time_from != checkout_time_to:
+            if checkout_time_to >= log_time >= checkout_time_from:
+                return True
+        return False
 
     @classmethod
     def check_normal(cls, date, checkin_log, checkout_log):
@@ -232,7 +282,7 @@ class AttendanceHandler:
                 print(f"[{date}] Leave")
             if leave.subtotal == 0.5:
                 if leave.morning_shift_f is True and leave.morning_shift_t is True:
-                    checkin_time, checkout_time = AttendanceHandler.parse_checkin_checkout(
+                    checkin_time, checkout_time = AttendanceHandler.parse_checkin_checkout_grace(
                         shift_check=shift_check,
                         check_type=1,
                         is_first_shift=True,
@@ -244,7 +294,7 @@ class AttendanceHandler:
                         checkout_time=checkout_time
                     )
                 if leave.morning_shift_f is False and leave.morning_shift_t is False:
-                    checkin_time, checkout_time = AttendanceHandler.parse_checkin_checkout(
+                    checkin_time, checkout_time = AttendanceHandler.parse_checkin_checkout_grace(
                         shift_check=shift_check,
                         check_type=1,
                         is_second_shift=True,
@@ -255,6 +305,17 @@ class AttendanceHandler:
                         checkin_time=checkin_time,
                         checkout_time=checkout_time
                     )
+                data_push.update({
+                    'leave_id': leave.id,
+                    'leave_data': {
+                        'id': str(leave.id),
+                        'title': str(leave.title),
+                        'code': str(leave.code),
+                        'date_from': str(leave.date_from),
+                        'date_to': str(leave.date_to),
+                        'total_day': leave.subtotal,
+                    },
+                })
         return data_push
 
     @classmethod
@@ -277,42 +338,88 @@ class AttendanceHandler:
                 print(f"[{date}] Business")
         return data_push
 
+    # @classmethod
+    # def parse_checkin_checkout(cls, shift_check, check_type, is_first_shift=False, is_second_shift=False):
+    #     checkin_time = None
+    #     checkout_time = None
+    #     if check_type == 0:
+    #         checkin_time = (
+    #                 datetime.combine(
+    #                     datetime.today(), shift_check.checkin_time
+    #                 ) + timedelta(minutes=shift_check.checkin_threshold)
+    #         ).time()
+    #         checkout_time = (
+    #                 datetime.combine(
+    #                     datetime.today(), shift_check.checkout_time
+    #                 ) - timedelta(minutes=shift_check.checkout_threshold)
+    #         ).time()
+    #     if check_type == 1:
+    #         if is_first_shift is True:
+    #             checkin_time = (
+    #                     datetime.combine(
+    #                         datetime.today(), shift_check.break_out_time
+    #                     ) + timedelta(minutes=shift_check.break_out_threshold)
+    #             ).time()
+    #             checkout_time = (
+    #                     datetime.combine(
+    #                         datetime.today(), shift_check.checkout_time
+    #                     ) - timedelta(minutes=shift_check.checkout_threshold)
+    #             ).time()
+    #         if is_second_shift is True:
+    #             checkin_time = (
+    #                     datetime.combine(
+    #                         datetime.today(), shift_check.checkin_time
+    #                     ) + timedelta(minutes=shift_check.checkin_threshold)
+    #             ).time()
+    #             checkout_time = (
+    #                     datetime.combine(
+    #                         datetime.today(), shift_check.break_in_time
+    #                     ) - timedelta(minutes=shift_check.break_in_threshold)
+    #             ).time()
+    #     return checkin_time, checkout_time
+
     @classmethod
     def parse_checkin_checkout(cls, shift_check, check_type, is_first_shift=False, is_second_shift=False):
         checkin_time = None
         checkout_time = None
         if check_type == 0:
-            checkin_time = (
-                    datetime.combine(
-                        datetime.today(), shift_check.checkin_time
-                    ) + timedelta(minutes=shift_check.checkin_threshold)
-            ).time()
-            checkout_time = (
-                    datetime.combine(
-                        datetime.today(), shift_check.checkout_time
-                    ) - timedelta(minutes=shift_check.checkout_threshold)
-            ).time()
+            checkin_time = shift_check.checkin_time
+            checkout_time = shift_check.checkout_time
         if check_type == 1:
             if is_first_shift is True:
-                checkin_time = (
-                        datetime.combine(
-                            datetime.today(), shift_check.break_out_time
-                        ) + timedelta(minutes=shift_check.break_out_threshold)
-                ).time()
-                checkout_time = (
-                        datetime.combine(
-                            datetime.today(), shift_check.checkout_time
-                        ) - timedelta(minutes=shift_check.checkout_threshold)
-                ).time()
+                checkin_time = shift_check.break_out_time
+                checkout_time = shift_check.checkout_time
             if is_second_shift is True:
-                checkin_time = (
-                        datetime.combine(
-                            datetime.today(), shift_check.checkin_time
-                        ) + timedelta(minutes=shift_check.checkin_threshold)
-                ).time()
-                checkout_time = (
-                        datetime.combine(
-                            datetime.today(), shift_check.break_in_time
-                        ) - timedelta(minutes=shift_check.break_in_threshold)
-                ).time()
+                checkin_time = shift_check.checkin_time
+                checkout_time = shift_check.break_in_time
+        return checkin_time, checkout_time
+
+    @classmethod
+    def parse_checkin_checkout_grace(cls, shift_check, check_type, is_first_shift=False, is_second_shift=False):
+        checkin_time = None
+        checkout_time = None
+        # Kiểm tra bình thường
+        if check_type == 0:
+            checkin_time = {'from': shift_check.checkin_time, 'to': shift_check.checkin_time}
+            checkout_time = {'from': shift_check.checkout_time, 'to': shift_check.checkout_time}
+            if shift_check.checkin_gr_start and shift_check.checkin_gr_end:
+                checkin_time = {'from': shift_check.checkin_gr_start, 'to': shift_check.checkin_gr_end}
+            if shift_check.checkout_gr_start and shift_check.checkout_gr_end:
+                checkout_time = {'from': shift_check.checkout_gr_start, 'to': shift_check.checkout_gr_end}
+        # Kiểm tra có nghỉ phép
+        if check_type == 1:
+            if is_first_shift is True:
+                checkin_time = {'from': shift_check.break_out_time, 'to': shift_check.break_out_time}
+                checkout_time = {'from': shift_check.checkout_time, 'to': shift_check.checkout_time}
+                if shift_check.break_out_gr_start and shift_check.break_out_gr_end:
+                    checkin_time = {'from': shift_check.break_out_gr_start, 'to': shift_check.break_out_gr_end}
+                if shift_check.checkout_gr_start and shift_check.checkout_gr_end:
+                    checkout_time = {'from': shift_check.checkout_gr_start, 'to': shift_check.checkout_gr_end}
+            if is_second_shift is True:
+                checkin_time = {'from': shift_check.checkin_time, 'to': shift_check.checkin_time}
+                checkout_time = {'from': shift_check.break_in_time, 'to': shift_check.break_in_time}
+                if shift_check.checkin_gr_start and shift_check.checkin_gr_end:
+                    checkin_time = {'from': shift_check.checkin_gr_start, 'to': shift_check.checkin_gr_end}
+                if shift_check.break_in_gr_start and shift_check.break_in_gr_end:
+                    checkout_time = {'from': shift_check.break_in_gr_start, 'to': shift_check.break_in_gr_end}
         return checkin_time, checkout_time
