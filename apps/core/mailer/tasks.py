@@ -766,7 +766,7 @@ def send_mail_annual_leave(leave_id, tenant_id, company_id, employee_id, email_l
 
     employee_off = get_employee_obj(employee_id=employee_id, tenant_id=tenant_id, company_id=company_id)
     employee_lead = employee_off.group.first_manager or employee_off.group.second_manager
-    if not (employee_off and employee_off.email and template_obj.contents):
+    if not (employee_off and hasattr(employee_off, 'email') and template_obj.contents):
         return 'TEMPLATE_HAS_NOT_CONTENTS_VALUE OR USER_EMAIL_IS_NOT_CORRECT'
 
     log_cls = write_log(cls, tenant_id, company_id, leave_id, template_obj.subject, employee_off)
@@ -783,8 +783,8 @@ def send_mail_annual_leave(leave_id, tenant_id, company_id, employee_id, email_l
             reply_to=cls.kwargs['reply_email'],
         ).send(
             as_name="No Reply",
-            mail_to=list({employee_off.email, *email_lst}),
-            mail_cc=[],
+            mail_to=[employee_off.email],
+            mail_cc=email_lst,
             mail_bcc=[],
             template=template_obj.contents,
             data=MailDataResolver.new_leave_approved(
@@ -804,6 +804,7 @@ def send_mail_annual_leave(leave_id, tenant_id, company_id, employee_id, email_l
     except Exception as err:
         state_send = False
         log_cls.update(errors_data=str(err))
+        print('send mail error', err)
 
     log_cls.update(status_code=1 if state_send else 2, status_remark=state_send)
     log_cls.save()

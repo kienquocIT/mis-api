@@ -230,7 +230,7 @@ class WorkingCalendarConfigListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_years(cls, obj):
-        filter_list = WorkingYearConfig.objects.filter(working_calendar=obj.id).order_by('config_year')
+        filter_list = WorkingYearConfig.objects.filter(working_calendar=obj).order_by('config_year')
         if filter_list.exists():
             list_year = [
                 {
