@@ -27,14 +27,14 @@ class CommonFunction:
 
         if time_val and gr_end_val:
             try:
-                t1 = datetime.strptime(gr_end_val, fmt)
-                t2 = datetime.strptime(time_val, fmt)
+                gr_end_time = datetime.strptime(gr_end_val, fmt)
+                standard_time = datetime.strptime(time_val, fmt)
             except ValueError:
                 errors[f'{field_prefix}_time'] = "Time must be in HH:MM format."
                 errors[f'{field_prefix}_gr_end'] = "Time must be in HH:MM format."
                 return
 
-            diff_minutes = (t1 - t2).total_seconds() / 60
+            diff_minutes = (gr_end_time - standard_time).total_seconds() / 60
             try:
                 threshold_val = float(threshold_val)
             except ValueError:
