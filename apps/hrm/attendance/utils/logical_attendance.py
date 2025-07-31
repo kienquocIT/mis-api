@@ -123,12 +123,12 @@ class AttendanceHandler:
         }
         if date in HOLIDAY:
             print(f"[{date}] Holiday")
-            data_push.update({'attendance_status': 4})
+            data_push.update({'attendance_status': 5})
             data_push_list.append(data_push)
             return data_push_list
         if not shift_assigns:
             print(f"[{date}] Weekend")
-            data_push.update({'attendance_status': 5})
+            data_push.update({'attendance_status': 4})
             data_push_list.append(data_push)
             return data_push_list
         if shift_assigns:
