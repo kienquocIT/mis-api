@@ -55,15 +55,15 @@ class AttendanceHandler:
                 if log['employee_id'] == employee_id and log['timestamp'].startswith(date)
             ]
             for shift_assign in shift_assigns:
-                data_push = {}
+                data_check = {}
                 shift_check = shift_assign.shift
                 if shift_check:
                     data_push.update({
-                        'shift_id': shift_check.id,
+                        'shift_id': str(shift_check.id),
                     })
                     # Kiểm tra nghỉ phép
                     if leaves:
-                        data_push = AttendanceHandler.run_check_leave(
+                        data_check = AttendanceHandler.run_check_leave(
                             date=date,
                             logs_on_day=logs_on_day,
                             leaves=leaves,
@@ -71,7 +71,7 @@ class AttendanceHandler:
                         )
                     # Kiểm tra công tác
                     if businesses:
-                        data_push = AttendanceHandler.run_check_business(
+                        data_check = AttendanceHandler.run_check_business(
                             date=date,
                             businesses=businesses
                         )
@@ -80,12 +80,15 @@ class AttendanceHandler:
                             shift_check=shift_check,
                             check_type=0,
                         )
-                        data_push = AttendanceHandler.run_check_normal(
+                        data_check = AttendanceHandler.run_check_normal(
                             date=date,
                             logs_on_day=logs_on_day,
                             checkin_time=checkin_time,
                             checkout_time=checkout_time
                         )
+                    for key in data_check:
+                        if key not in data_push:
+                            data_push.update({key: data_check[key]})
                 if data_push:
                     data_push_list.append(data_push)
         return data_push_list
@@ -171,20 +174,22 @@ class AttendanceHandler:
     def check_normal_push_data(cls, date, checkin_log, checkout_log):
         data_push = {}
         if checkin_log:
+            checkin_time = datetime.strptime(checkin_log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
             data_push.update({
-                'is_checkin': True,
-                'checkin_time': checkin_log['timestamp'],
+                # 'is_checkin': True,
+                'checkin_time': checkin_time,
             })
-            print(f"[{date}] Check-in OK: {checkin_log['timestamp']}")
+            print(f"[{date}] Check-in OK: {checkin_time}")
         else:
             print(f"[{date}] ❌ Không có check-in đúng giờ")
 
         if checkout_log:
+            checkout_time = datetime.strptime(checkout_log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
             data_push.update({
-                'is_checkout': True,
-                'checkout_time': checkout_log['timestamp'],
+                # 'is_checkout': True,
+                'checkout_time': checkout_time,
             })
-            print(f"[{date}] Check-out OK: {checkout_log['timestamp']}")
+            print(f"[{date}] Check-out OK: {checkout_time}")
         else:
             print(f"[{date}] ❌ Không có check-out đúng giờ")
 
