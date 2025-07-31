@@ -11,7 +11,7 @@ class AttendanceHandler:
                 "card_number": "00034567",
                 "device_id": "HIK-01",
                 "device_name": "HIKVISION_GATE1",
-                "timestamp": "2025-07-25 08:35:42",
+                "timestamp": "2025-07-25 08:15:42",
                 "event_type": "IN",
                 "status": "success"
             },
@@ -29,7 +29,7 @@ class AttendanceHandler:
                 "card_number": "00034567",
                 "device_id": "HIK-01",
                 "device_name": "HIKVISION_GATE1",
-                "timestamp": "2025-07-25 17:50:00",
+                "timestamp": "2025-07-25 18:50:00",
                 "event_type": "OUT",
                 "status": "success"
             },
@@ -168,49 +168,44 @@ class AttendanceHandler:
         if checkin_time and checkout_time:
             keys = ['from', 'to']
             if all(key in checkin_time for key in keys) and all(key in checkout_time for key in keys):
-                checkin_time_from = checkin_time['from']
-                checkin_time_to = checkin_time['to']
-                checkout_time_from = checkout_time['from']
-                checkout_time_to = checkout_time['to']
-
                 for log in logs_on_day:
                     is_checkin = False
                     is_checkout = False
                     log_time = datetime.strptime(log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
                     if log['event_type'] == "IN":
-                        is_checkin = AttendanceHandler.check_normal_checkin(
+                        is_checkin = AttendanceHandler.check_normal_is_checkin(
                             log_time=log_time,
-                            checkin_time_from=checkin_time_from,
-                            checkin_time_to=checkin_time_to,
+                            checkin_time_from=checkin_time['from'],
+                            checkin_time_to=checkin_time['to'],
                         )
                     if log['event_type'] == "OUT":
-                        is_checkout = AttendanceHandler.check_normal_checkout(
+                        is_checkout = AttendanceHandler.check_normal_is_checkout(
                             log_time=log_time,
-                            checkout_time_from=checkout_time_from,
-                            checkout_time_to=checkout_time_to,
+                            checkout_time_from=checkout_time['from'],
+                            checkout_time_to=checkout_time['to'],
                         )
                     if is_checkin is True:
-                        if checkin_log is None:
-                            checkin_log = log
-                        else:
-                            prev_time = datetime.strptime(checkin_log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
-                            if log_time > prev_time:
-                                checkin_log = log
+                        checkin_log = AttendanceHandler.check_normal_set_log(
+                            check_log=checkin_log,
+                            log_time=log_time,
+                            log=log,
+                            check_type='in',
+                        )
                     if is_checkout is True:
-                        if checkout_log is None:
-                            checkout_log = log
-                        else:
-                            prev_time = datetime.strptime(checkout_log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
-                            if log_time < prev_time:
-                                checkout_log = log
-        return AttendanceHandler.check_normal(
+                        checkout_log = AttendanceHandler.check_normal_set_log(
+                            check_log=checkout_log,
+                            log_time=log_time,
+                            log=log,
+                            check_type='out',
+                        )
+        return AttendanceHandler.check_normal_push_data(
             date=date,
             checkin_log=checkin_log,
             checkout_log=checkout_log
         )
 
     @classmethod
-    def check_normal_checkin(cls, log_time, checkin_time_from, checkin_time_to):
+    def check_normal_is_checkin(cls, log_time, checkin_time_from, checkin_time_to):
         if checkin_time_from == checkin_time_to:
             if log_time <= checkin_time_from:
                 return True
@@ -220,7 +215,7 @@ class AttendanceHandler:
         return False
 
     @classmethod
-    def check_normal_checkout(cls, log_time, checkout_time_from, checkout_time_to):
+    def check_normal_is_checkout(cls, log_time, checkout_time_from, checkout_time_to):
         if checkout_time_from == checkout_time_to:
             if log_time >= checkout_time_from:
                 return True
@@ -230,7 +225,21 @@ class AttendanceHandler:
         return False
 
     @classmethod
-    def check_normal(cls, date, checkin_log, checkout_log):
+    def check_normal_set_log(cls, check_log, log_time, log, check_type):
+        if check_log is None:
+            check_log = log
+        else:
+            prev_time = datetime.strptime(check_log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
+            if check_type == 'in':
+                if log_time > prev_time:
+                    check_log = log
+            if check_type == 'out':
+                if log_time < prev_time:
+                    check_log = log
+        return check_log
+
+    @classmethod
+    def check_normal_push_data(cls, date, checkin_log, checkout_log):
         data_push = {}
         if checkin_log:
             data_push.update({
@@ -252,12 +261,12 @@ class AttendanceHandler:
 
         if checkin_log and checkout_log:
             data_push.update({
-                'status_attendance': 1,
+                'attendance_status': 1,
             })
             print(f"[{date}] Present")
         else:
             data_push.update({
-                'status_attendance': 0,
+                'attendance_status': 0,
             })
             print(f"[{date}] Absent")
         return data_push
@@ -268,16 +277,16 @@ class AttendanceHandler:
         for leave in leaves:
             if leave.subtotal >= 1:
                 data_push.update({
-                    'status_attendance': 2,
-                    'leave_id': leave.id,
+                    'attendance_status': 2,
+                    'leave_id': leave.leave_id,
                     'leave_data': {
-                        'id': str(leave.id),
-                        'title': str(leave.title),
-                        'code': str(leave.code),
+                        'id': str(leave.leave_id),
+                        'title': str(leave.leave.title),
+                        'code': str(leave.leave.code),
                         'date_from': str(leave.date_from),
                         'date_to': str(leave.date_to),
                         'total_day': leave.subtotal,
-                    },
+                    } if leave.leave else {},
                 })
                 print(f"[{date}] Leave")
             if leave.subtotal == 0.5:
@@ -306,15 +315,15 @@ class AttendanceHandler:
                         checkout_time=checkout_time
                     )
                 data_push.update({
-                    'leave_id': leave.id,
+                    'leave_id': leave.leave_id,
                     'leave_data': {
-                        'id': str(leave.id),
-                        'title': str(leave.title),
-                        'code': str(leave.code),
+                        'id': str(leave.leave_id),
+                        'title': str(leave.leave.title),
+                        'code': str(leave.leave.code),
                         'date_from': str(leave.date_from),
                         'date_to': str(leave.date_to),
                         'total_day': leave.subtotal,
-                    },
+                    } if leave.leave else {},
                 })
         return data_push
 
@@ -324,7 +333,7 @@ class AttendanceHandler:
         for business in businesses:
             if business.total_day >= 1:
                 data_push.update({
-                    'status_attendance': 3,
+                    'attendance_status': 3,
                     'business_id': business.id,
                     'business_data': {
                         'id': str(business.id),
