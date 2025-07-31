@@ -26,6 +26,7 @@ class BaseMsg:
     DOES_NOT_EXIST = _("Does not exist")
     NO_CONFIG_AUTO_CODE = _('Can not found auto code generator config')
     VALUE_DELETE_LIST_ERROR = _('Some values in the list are incorrect')
+    MUST_BE_ARRAY = _('Must be array.')
 
 
 class PermissionMsg:

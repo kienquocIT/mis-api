@@ -1,8 +1,8 @@
 from django.db import models
-# from apps.accounting.journalentry.utils import JEForAPInvoiceHandler
+from apps.accounting.journalentry.utils import JEForAPInvoiceHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
-# from apps.sales.reconciliation.utils import ReconForAPInvoiceHandler
+from apps.sales.reconciliation.utils import ReconForAPInvoiceHandler
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 
@@ -59,8 +59,8 @@ class APInvoice(DataAbstractModel):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('apinvoice', True, self, kwargs)
                     self.update_goods_receipt_has_ap_invoice_already(self)
-                    # JEForAPInvoiceHandler.push_to_journal_entry(self)
-                    # ReconForAPInvoiceHandler.auto_create_recon_doc(self)
+                    JEForAPInvoiceHandler.push_to_journal_entry(self)
+                    ReconForAPInvoiceHandler.auto_create_recon_doc(self)
         # hit DB
         super().save(*args, **kwargs)
 

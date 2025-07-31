@@ -1,8 +1,11 @@
 from django.urls import path
 
-from apps.hrm.attendance.views import ShiftMasterDataList, ShiftMasterDataDetail
+from apps.hrm.attendance.views import ShiftMasterDataList, ShiftMasterDataDetail, ShiftAssignmentList
 
 urlpatterns = [
-    path('attendance-data/shift/list', ShiftMasterDataList.as_view(), name='ShiftMasterDataList'),
-    path('attendance-data/shift/detail/<str:pk>', ShiftMasterDataDetail.as_view(), name='ShiftMasterDataDetail'),
+    path('shift/list', ShiftMasterDataList.as_view(), name='ShiftMasterDataList'),
+    path('shift/detail/<str:pk>', ShiftMasterDataDetail.as_view(), name='ShiftMasterDataDetail'),
+
+    # shift assignment
+    path('shift-assignment/list', ShiftAssignmentList.as_view(), name='ShiftAssignmentList'),
 ]

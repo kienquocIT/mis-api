@@ -10,18 +10,18 @@ logger = logging.getLogger(__name__)
 
 class JEForDeliveryHandler:
     @classmethod
-    def get_je_item_data(cls, delivery_obj):
+    def get_je_item_data(cls, dlvr_obj):
         debit_rows_data = []
         credit_rows_data = []
         sum_cost = 0
-        for deli_product in delivery_obj.delivery_product_delivery_sub.all():
+        for deli_product in dlvr_obj.delivery_product_delivery_sub.all():
             if deli_product.product:
                 for pw_data in deli_product.delivery_pw_delivery_product.all():
                     # lấy cost hiện tại của sp
                     stock_log_item = ReportStockLog.objects.filter(
                         product=deli_product.product,
-                        trans_code=delivery_obj.code,
-                        trans_id=str(delivery_obj.id)
+                        trans_code=dlvr_obj.code,
+                        trans_id=str(dlvr_obj.id)
                     ).first()
                     cost = stock_log_item.value if stock_log_item else 0
                     sum_cost += cost
@@ -40,8 +40,8 @@ class JEForDeliveryHandler:
                             'taxable_value': 0,
                         })
         for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
-            tenant_id=delivery_obj.tenant_id,
-            company_id=delivery_obj.company_id,
+            tenant_id=dlvr_obj.tenant_id,
+            company_id=dlvr_obj.company_id,
             foreign_title='Customer underpayment'
         ):
             debit_rows_data.append({
@@ -59,24 +59,25 @@ class JEForDeliveryHandler:
         return debit_rows_data, credit_rows_data
 
     @classmethod
-    def push_to_journal_entry(cls, delivery_obj):
+    def push_to_journal_entry(cls, dlvr_obj):
         """ Chuẩn bị data để tự động tạo Bút Toán """
         try:
             with transaction.atomic():
-                debit_rows_data, credit_rows_data = cls.get_je_item_data(delivery_obj)
+                debit_rows_data, credit_rows_data = cls.get_je_item_data(dlvr_obj)
                 kwargs = {
-                    'je_transaction_app_code': delivery_obj.get_model_code(),
-                    'je_transaction_id': str(delivery_obj.id),
+                    'je_transaction_app_code': dlvr_obj.get_model_code(),
+                    'je_transaction_id': str(dlvr_obj.id),
                     'je_transaction_data': {
-                        'id': str(delivery_obj.id),
-                        'code': delivery_obj.code,
-                        'title': delivery_obj.title,
-                        'date_created': str(delivery_obj.date_created),
-                        'date_approved': str(delivery_obj.date_approved),
+                        'id': str(dlvr_obj.id),
+                        'code': dlvr_obj.code,
+                        'title': dlvr_obj.title,
+                        'date_created': str(dlvr_obj.date_created),
+                        'date_approved': str(dlvr_obj.date_approved),
                     },
-                    'tenant_id': delivery_obj.tenant_id,
-                    'company_id': delivery_obj.company_id,
-                    'employee_created_id': delivery_obj.employee_created_id or delivery_obj.employee_inherit_id,
+                    'tenant_id': str(dlvr_obj.tenant_id),
+                    'company_id': str(dlvr_obj.company_id),
+                    'employee_created_id': str(dlvr_obj.employee_created_id),
+                    'employee_inherit_id': str(dlvr_obj.employee_inherit_id),
                     'je_item_data': {
                         'debit_rows': debit_rows_data,
                         'credit_rows': credit_rows_data

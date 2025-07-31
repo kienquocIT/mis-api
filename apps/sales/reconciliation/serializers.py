@@ -15,9 +15,10 @@ __all__ = [
     'CashInflowListForReconSerializer',
 ]
 
-
 # main serializers
 class ReconListSerializer(serializers.ModelSerializer):
+    employee_created = serializers.SerializerMethodField()
+
     class Meta:
         model = Reconciliation
         fields = (
@@ -26,31 +27,37 @@ class ReconListSerializer(serializers.ModelSerializer):
             'title',
             'business_partner_data',
             'date_created',
-            'system_status'
+            'employee_created',
+            'system_status',
+            'system_auto_create',
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
 
 class ReconCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100)
-    customer_id = serializers.UUIDField()
+    business_partner = serializers.UUIDField()
     posting_date = serializers.DateTimeField()
     document_date = serializers.DateTimeField()
-    type = serializers.CharField()
+    recon_type = serializers.CharField()
     recon_item_data = serializers.JSONField(default=list)
 
     class Meta:
         model = Reconciliation
         fields = (
             'title',
-            'customer_id',
+            'business_partner',
             'posting_date',
             'document_date',
-            'type',
+            'recon_type',
             'recon_item_data'
         )
 
     def validate(self, validate_data):
-        ReconCommonFunction.validate_customer_id(validate_data)
+        ReconCommonFunction.validate_business_partner(validate_data)
         ReconCommonFunction.validate_recon_item_data(validate_data)
         return validate_data
 
@@ -90,11 +97,13 @@ class ReconDetailSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
+            'recon_type',
             'posting_date',
             'document_date',
             'business_partner_data',
             'recon_items_data',
-            'system_status'
+            'system_status',
+            'system_auto_create',
         )
 
     @classmethod
@@ -116,25 +125,23 @@ class ReconDetailSerializer(serializers.ModelSerializer):
 
 class ReconCommonFunction:
     @classmethod
-    def validate_customer_id(cls, validate_data):
-        if 'customer_id' in validate_data:
-            if validate_data.get('customer_id'):
-                try:
-                    customer = Account.objects.get(id=validate_data.get('customer_id'))
-                    if not customer.is_customer_account:
-                        raise serializers.ValidationError({'customer_id': ReconMsg.ACCOUNT_NOT_CUSTOMER})
-                    validate_data['customer_id'] = str(customer.id)
-                    validate_data['customer_data'] = {
-                        'id': str(customer.id),
-                        'code': customer.code,
-                        'name': customer.name,
-                        'tax_code': customer.tax_code,
-                    }
-                    print('1. validate_customer_id --- ok')
-                    return validate_data
-                except Account.DoesNotExist:
-                    raise serializers.ValidationError({'customer_id': ReconMsg.CUSTOMER_NOT_EXIST})
-        raise serializers.ValidationError({'customer_id': ReconMsg.CUSTOMER_NOT_NULL})
+    def validate_business_partner(cls, validate_data):
+        if 'business_partner' in validate_data:
+            try:
+                business_partner_obj = Account.objects.get(id=validate_data.get('business_partner'))
+                if not business_partner_obj.is_customer_account:
+                    raise serializers.ValidationError({'business_partner': ReconMsg.ACCOUNT_NOT_CUSTOMER})
+                validate_data['business_partner_data'] = {
+                    'id': str(business_partner_obj.id),
+                    'code': business_partner_obj.code,
+                    'name': business_partner_obj.name,
+                    'tax_code': business_partner_obj.tax_code,
+                }
+                print('1. validate_business_partner --- ok')
+                return validate_data
+            except Account.DoesNotExist:
+                raise serializers.ValidationError({'business_partner': ReconMsg.CUSTOMER_NOT_EXIST})
+        return None
 
     @classmethod
     def validate_recon_item_data(cls, validate_data):
@@ -167,7 +174,6 @@ class ReconCommonFunction:
                         'sum_total_value': cif_obj.total_value
                     }
         return recon_item_data
-
 
 # related features
 class ARInvoiceListForReconSerializer(serializers.ModelSerializer):

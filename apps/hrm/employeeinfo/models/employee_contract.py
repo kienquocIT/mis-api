@@ -6,7 +6,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.attachments.models import M2MFilesAbstractModel, update_files_is_approved
 from apps.core.log.tasks import force_new_notify_many
 from apps.core.mailer.tasks import send_mail_new_contract_submit
 from apps.shared import MasterDataAbstractModel, CONTRACT_TYPE, call_task_background
@@ -100,6 +100,12 @@ class EmployeeContract(MasterDataAbstractModel):
     def save(self, *args, **kwargs):
         if self.sign_status == 0:
             self.before_save()
+        if self.sign_status == 2:
+            update_files_is_approved(
+                EmployeeContractMapAttachment.objects.filter(
+                    employee_contract=self, attachment__is_approved=False
+                )
+            )
         super().save(*args, **kwargs)
 
     class Meta:

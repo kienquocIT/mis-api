@@ -277,8 +277,8 @@ class FolderList(BaseListMixin, BaseCreateMixin):
     queryset = Folder.objects
     search_fields = ['title', 'code']
     filterset_fields = {
-        "parent_n_id": ["exact", "isnull"],
-        "employee_inherit_id": ["exact", "isnull"],
+        "parent_n": ["exact", "isnull"],
+        "employee_inherit": ["exact", "in"],
     }
     serializer_list = FolderListSerializer
     serializer_create = FolderCreateSerializer
@@ -287,22 +287,19 @@ class FolderList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        user = self.request.user
-        employee_id = str(user.employee_current_id)
+        if getattr(self, 'swagger_fake_view', False):
+            return Folder.objects.none()  # or any dummy queryset
+
+        # user = self.request.user
+        # employee_id = str(user.employee_current_id)
         not_equal = self.request.query_params.get('ne', None)
-        # filter by parent and employee
 
         qs = super().get_queryset()
         if not_equal:
             qs = qs.exclude(id=not_equal)
-        # if self.request.query_params.get('parent_n_id', None) is None and self.request.query_params.get(
-        #         'parent_n_id__isnull', None
-        # ) is None:
-        #     qs = qs.filter(parent_n_id__isnull=True)
-        if self.request.query_params.get('employee_inherit_id', None) is None and self.request.query_params.get(
-                'employee_inherit_id__isnull', None
-        ) is None and self.request.query_params.get('isDropdown', None) is None:
-            qs = qs.filter(employee_inherit_id=employee_id)
+
+        if self.request.query_params.get('is_system', None):
+            qs = qs.filter(Q(is_system=True) | Q(is_admin=True))
         return qs.select_related('employee_inherit', 'parent_n')
 
     @swagger_auto_schema(
@@ -340,8 +337,8 @@ class FolderMySpaceList(BaseListMixin, BaseDestroyMixin):
     queryset = Folder.objects
     search_fields = ['title', 'code']
     filterset_fields = {
-        'parent_n_id': ['exact', 'isnull'],
-        'employee_inherit_id': ['exact', 'isnull'],
+        'parent_n': ['exact', 'isnull'],
+        'employee_inherit': ['exact', 'isnull'],
     }
     serializer_list = FolderListSerializer
     serializer_delete_all = FolderDeleteAllSerializer
@@ -392,7 +389,7 @@ class FolderListSharedToMe(BaseListMixin, BaseDestroyMixin):
     queryset = Folder.objects
     search_fields = ['title', 'code']
     filterset_fields = {
-        'parent_n_id': ['exact', 'isnull'],
+        'parent_n': ['exact', 'isnull'],
         'employee_inherit_id': ['exact', 'isnull'],
     }
     serializer_list = FolderListSerializer
@@ -400,6 +397,9 @@ class FolderListSharedToMe(BaseListMixin, BaseDestroyMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Folder.objects.none()  # or any dummy queryset
+
         # query default filter by employee and group of user requests
         # and permission has view
         user = self.request.user.__class__.objects.select_related(

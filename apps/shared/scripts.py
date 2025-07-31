@@ -2016,12 +2016,12 @@ def reset_push_payment_plan():
     PaymentPlan.objects.all().delete()
     for sale_order in SaleOrder.objects.filter(system_status=3):
         SOFinishHandler.push_to_payment_plan(instance=sale_order)
-    # for purchase_order in PurchaseOrder.objects.filter(system_status=3):
-    #     POFinishHandler.push_to_payment_plan(instance=purchase_order)
+    for purchase_order in PurchaseOrder.objects.filter(system_status=3):
+        POFinishHandler.push_to_payment_plan(instance=purchase_order)
     for cash_in_flow in CashInflow.objects.filter(system_status=3):
         CashInFlowFinishHandler.push_to_payment_plan(instance=cash_in_flow)
-    # for cash_out_flow in CashOutflow.objects.filter(system_status=3):
-    #     CashOutFlowFinishHandler.push_to_payment_plan(instance=cash_out_flow)
+    for cash_out_flow in CashOutflow.objects.filter(system_status=3):
+        CashOutFlowFinishHandler.push_to_payment_plan(instance=cash_out_flow)
     print('reset_push_payment_plan done.')
     return True
 

@@ -151,3 +151,47 @@ class XDetailSerializer(AbstractDetailSerializerModel):
 ```
 
 ---
+### 🔥 🔥 Hiển thị Tập tin trong KSM / Files khi phiếu đã approved 🔥🔥
+- khi một phiếu được tạo có đính kèm tập tin. thì hệ thống tự sinh folder và lưu vào KMS -> files
+- khi phiếu hoàn tất thì tập tin đó sẽ chuyển trạng thái approved và hiển thị trong file trên UI
+
+##### ⚠️⚠️ Cách thực hiện
+thêm hàm **update_files_is_approved** vào hàm save của models chức năng
+```python
+  update_files_is_approved(
+    BusinessRequestAttachmentFile.objects.filter(
+      business_request=self, attachment__is_approved=False
+    )
+  )
+```
+
+hàm được import từ file "models.py" trong folder core/attachments
+```python
+from apps.core.attachments.models import M2MFilesAbstractModel, update_files_is_approved
+```
+#### Mẫu tham khảo
+![append vào model của Công tác](../../../README_IMG/attach_docs_02.png)
+
+##### Giải thích
+1. 📝 **BusinessRequestAttachmentFile**
+   - là abstract models manytomany của file và chức năng
+2. 📝 **business_request**
+   - là related field trong model đến chức năng <br> ![business_request là related field trong abstract models](../../../README_IMG/attach_docs_01.png)
+3. 📝 **attachment__is_approved**
+   - là field mặc định trong abstract models M2M
+
+Link tham khảo:
+> eoffice / businesstrip / models / models.py line 130
+
+### ⚠️⚠️AD HOC CASE với các app không cần workflow thì phải manual kiểm tra điều kiện theo rule của chức năng đó
+### để add
+xem một ví dụ ad hoc case như hình sau:
+![ad hoc case](../../../README_IMG/attach_docs_03.png)
+- ➡️ trong function create của class tạo thì chức năng này kiểm tra manual khi phiếu có stt (finish) hoặc phiếu hoàn
+  thành 100% <br>
+![ad hoc case](../../../README_IMG/attach_docs_04.png)
+- ➡️ tương tự cho models của chức năng này thì khi update phiếu tự kiểm tra điều kiện
+
+Link tham khảo:
+> sales / task / models / task.py line 207 <br>
+> sales / task / serializers / task.py line 272

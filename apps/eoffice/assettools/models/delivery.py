@@ -5,7 +5,7 @@ import json
 from django.db import models, transaction
 from django.utils import timezone
 
-from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.core.attachments.models import M2MFilesAbstractModel, update_files_is_approved
 from apps.shared import DataAbstractModel, AssetToolsMsg, DisperseModel
 
 
@@ -178,6 +178,11 @@ class AssetToolsDelivery(DataAbstractModel):
         if self.system_status >= 2:
             self.update_product_used()
             self.code_generator()
+            update_files_is_approved(
+                AssetToolsDeliveryAttachmentFile.objects.filter(
+                    asset_tools_delivery=self, attachment__is_approved=False
+                )
+            )
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
                     kwargs['update_fields'].append('code')

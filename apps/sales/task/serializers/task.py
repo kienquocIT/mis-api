@@ -3,6 +3,7 @@ from datetime import datetime
 from django.conf import settings
 from rest_framework import serializers
 
+from apps.core.attachments.models import update_files_is_approved
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
 from apps.core.process.utils import ProcessRuntimeControl
@@ -23,7 +24,7 @@ __all__ = ['OpportunityTaskListSerializer', 'OpportunityTaskCreateSerializer', '
 
 def handle_attachment(instance, attachment_result):
     if attachment_result and isinstance(attachment_result, dict):
-        relate_app = Application.objects.get(id="49fe2eb9-39cd-44af-b74a-f690d7b61b67")
+        relate_app = Application.objects.get(id="e66cfb5a-b3ce-4694-a4da-47618f53de4c")
         state = TaskAttachmentFile.resolve_change(
             result=attachment_result, doc_id=instance.id, doc_app=relate_app,
         )
@@ -268,6 +269,12 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
         if attach_assignee is not None:
             handle_attachment(task, attach_assignee)
             update_models_attachment_assignee(attach_assignee['new'])
+        if task.task_status.is_finish or task.percent_completed == 100:
+            update_files_is_approved(
+                TaskAttachmentFile.objects.filter(
+                    task=task, attachment__is_approved=False
+                )
+            )
         if task and 'log_time' in validated_data:
             log_time = validated_data['log_time']
             employee = OpportunityTaskLogWorkSerializer.valid_employee_log_work(user.employee_current, task)

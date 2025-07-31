@@ -62,7 +62,10 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         warehouse_obj = WareHouse.objects.create(**validated_data)
-        AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj)
+        AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 0)
+        AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 1)
+        AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 2)
+        AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 3)
         return warehouse_obj
 
 
