@@ -21,7 +21,6 @@ __all__ = [
     'CashInflowListForRecon'
 ]
 
-
 # main views
 class ReconList(BaseListMixin, BaseCreateMixin):
     queryset = Reconciliation.objects
@@ -31,9 +30,6 @@ class ReconList(BaseListMixin, BaseCreateMixin):
     serializer_detail = ReconDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
-
-    def get_queryset(self):
-        return super().get_queryset().select_related().prefetch_related()
 
     @swagger_auto_schema(
         operation_summary="Recon list",
@@ -56,6 +52,10 @@ class ReconList(BaseListMixin, BaseCreateMixin):
         label_code='financialrecon', model_code='reconciliation', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'tenant_id': request.user.tenant_current_id,
+            'company_id': request.user.company_current_id,
+        }
         return self.create(request, *args, **kwargs)
 
 
@@ -84,6 +84,10 @@ class ReconDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='financialrecon', model_code='reconciliation', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {
+            'tenant_id': request.user.tenant_current_id,
+            'company_id': request.user.company_current_id,
+        }
         return self.update(request, *args, **kwargs)
 
 

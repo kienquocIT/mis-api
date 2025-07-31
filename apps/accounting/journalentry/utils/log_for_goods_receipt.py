@@ -24,13 +24,14 @@ class JEForGoodsReceiptHandler:
                 ).first()
                 cost = stock_log_item.value if stock_log_item else 0
                 sum_cost += cost
-                for account in gr_prd_obj.product.get_product_account_deter_sub_data(
+                account_list = gr_prd_obj.product.get_product_account_deter_sub_data(
                     account_deter_foreign_title='Inventory account',
                     warehouse_id=gr_wh_obj.warehouse_id
-                ):
+                )
+                if len(account_list) == 1:
                     debit_rows_data.append({
-                        # (+) hàng hóa (mđ: 156)
-                        'account': account,
+                        # (-) hàng hóa (mđ: 156)
+                        'account': account_list[0],
                         'product_mapped': gr_prd_obj.product,
                         'business_partner': None,
                         'debit': cost,
@@ -38,14 +39,16 @@ class JEForGoodsReceiptHandler:
                         'is_fc': False,
                         'taxable_value': 0,
                     })
-        for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+
+        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
             tenant_id=gr_obj.tenant_id,
             company_id=gr_obj.company_id,
             foreign_title='Customer overpayment'
-        ):
+        )
+        if len(account_list) == 1:
             credit_rows_data.append({
-                # (-) nhập hàng chưa nhập hóa đơn (mđ: 33881)
-                'account': account,
+                # (+) nhập hàng chưa nhập hóa đơn (mđ: 33881)
+                'account': account_list[0],
                 'product_mapped': None,
                 'business_partner': None,
                 'debit': 0,

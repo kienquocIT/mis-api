@@ -21,6 +21,7 @@ class ReconForAPInvoiceHandler:
                         'id': str(ap_invoice_obj.supplier_mapped_id),
                         'code': ap_invoice_obj.supplier_mapped.code,
                         'name': ap_invoice_obj.supplier_mapped.name,
+                        'tax_code': ap_invoice_obj.supplier_mapped.tax_code,
                     } if ap_invoice_obj.supplier_mapped else {},
                     posting_date=str(ap_invoice_obj.posting_date),
                     document_date=str(ap_invoice_obj.document_date),

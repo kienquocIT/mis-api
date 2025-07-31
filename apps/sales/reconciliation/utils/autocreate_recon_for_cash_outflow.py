@@ -23,6 +23,7 @@ class ReconForCOFHandler:
                             'id': str(business_partner.id),
                             'code': business_partner.code,
                             'name': business_partner.name,
+                            'tax_code': business_partner.tax_code,
                         },
                         posting_date=str(cof_obj.posting_date),
                         document_date=str(cof_obj.document_date),

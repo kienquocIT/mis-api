@@ -30,7 +30,8 @@ class Reconciliation(DataAbstractModel, AutoDocumentAbstractModel):
     # business_partner_data = {
     #     'id': uuid,
     #     'code': str,
-    #     'title': str
+    #     'title': str,
+    #     'tax_code': str,
     # }
     posting_date = models.DateTimeField()
     document_date = models.DateTimeField()
@@ -43,9 +44,10 @@ class Reconciliation(DataAbstractModel, AutoDocumentAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        if isinstance(kwargs['update_fields'], list):
-            if 'date_approved' in kwargs['update_fields']:
-                CompanyFunctionNumber.auto_gen_code_based_on_config('reconciliation', True, self, kwargs)
+        if self.system_status in [2, 3]:  # added, finish
+            if isinstance(kwargs['update_fields'], list):
+                if 'date_approved' in kwargs['update_fields']:
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('reconciliation', True, self, kwargs)
         # hit DB
         super().save(*args, **kwargs)
 

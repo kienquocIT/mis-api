@@ -13,14 +13,15 @@ class JEForCOFHandler:
         debit_rows_data = []
         credit_rows_data = []
         if cof_obj.cash_value > 0:
-            for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+            account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
                 tenant_id=cof_obj.tenant_id,
                 company_id=cof_obj.company_id,
                 foreign_title='Cash in hand received from customers'
-            ):
+            )
+            if len(account_list) == 1:
                 credit_rows_data.append({
                     # (+) Tiền mặt thu từ khách hàng (mđ: 1111)
-                    'account': account,
+                    'account': account_list[0],
                     'product_mapped': None,
                     'business_partner': None,
                     'debit': 0,
@@ -28,15 +29,17 @@ class JEForCOFHandler:
                     'is_fc': False,
                     'taxable_value': 0,
                 })
+
         if cof_obj.bank_value > 0:
-            for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+            account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
                 tenant_id=cof_obj.tenant_id,
                 company_id=cof_obj.company_id,
                 foreign_title='Cash in bank received from customers'
-            ):
+            )
+            if len(account_list) == 1:
                 credit_rows_data.append({
                     # (+) Tiền mặt thu từ khách hàng (mđ: 1121)
-                    'account': account,
+                    'account': account_list[0],
                     'product_mapped': None,
                     'business_partner': None,
                     'debit': 0,
@@ -44,14 +47,16 @@ class JEForCOFHandler:
                     'is_fc': False,
                     'taxable_value': 0,
                 })
-        for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+
+        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
             tenant_id=cof_obj.tenant_id,
             company_id=cof_obj.company_id,
             foreign_title='Payable to suppliers'
-        ):
+        )
+        if len(account_list) == 1:
             debit_rows_data.append({
-                # (-) Phải thu khách hàng (mđ: 331)
-                'account': account,
+                # (-) Phải trả cho NCC (mđ: 331)
+                'account': account_list[0],
                 'product_mapped': None,
                 'business_partner': cof_obj.customer,
                 'debit': cof_obj.total_value,
@@ -61,6 +66,7 @@ class JEForCOFHandler:
                 'use_for_recon': True,
                 'use_for_recon_type': 'cof-ap'
             })
+
         return debit_rows_data, credit_rows_data
 
     @classmethod

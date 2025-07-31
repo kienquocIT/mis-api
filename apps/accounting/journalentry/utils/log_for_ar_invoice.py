@@ -41,14 +41,16 @@ class JEForARInvoiceHandler:
                                 'is_fc': False,
                                 'taxable_value': 0,
                             })
-        for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+
+        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
             company_id=ar_invoice_obj.company_id,
             foreign_title='Customer underpayment'
-        ):
+        )
+        if len(account_list) == 1:
             credit_rows_data.append({
                 # (+) giao hàng chưa xuất hóa đơn (mđ: 13881)
-                'account': account,
+                'account': account_list[0],
                 'product_mapped': None,
                 'business_partner': None,
                 'debit': 0,
@@ -58,14 +60,16 @@ class JEForARInvoiceHandler:
                 'use_for_recon': True,
                 'use_for_recon_type': 'ar-deli'
             })
-        for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+
+        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
             company_id=ar_invoice_obj.company_id,
             foreign_title='Receivables from customers'
-        ):
+        )
+        if len(account_list) == 1:
             debit_rows_data.append({
                 # (-) phải thu của khách hàng - trong nước (mđ: 131)
-                'account': account,
+                'account': account_list[0],
                 'product_mapped': None,
                 'business_partner': ar_invoice_obj.customer_mapped,
                 'debit': ar_invoice_obj.sum_after_tax_value,
@@ -75,14 +79,16 @@ class JEForARInvoiceHandler:
                 'use_for_recon': True,
                 'use_for_recon_type': 'ar-cif'
             })
-        for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+
+        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
             company_id=ar_invoice_obj.company_id,
             foreign_title='Sales revenue'
-        ):
+        )
+        if len(account_list) == 1:
             credit_rows_data.append({
                 # (+) doanh thu bán hàng hóa - trong nước (mđ: 511)
-                'account': account,
+                'account': account_list[0],
                 'product_mapped': None,
                 'business_partner': None,
                 'debit': 0,
@@ -90,14 +96,16 @@ class JEForARInvoiceHandler:
                 'is_fc': False,
                 'taxable_value': 0,
             })
-        for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+
+        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
             company_id=ar_invoice_obj.company_id,
             foreign_title='Sales tax'
-        ):
+        )
+        if len(account_list) == 1:
             credit_rows_data.append({
                 # (+) thuế GTGT đầu ra (mđ: 3331)
-                'account': account,
+                'account': account_list[0],
                 'product_mapped': None,
                 'business_partner': None,
                 'debit': 0,
@@ -105,6 +113,7 @@ class JEForARInvoiceHandler:
                 'is_fc': False,
                 'taxable_value': ar_invoice_obj.sum_after_tax_value,
             })
+
         return debit_rows_data, credit_rows_data
 
     @classmethod

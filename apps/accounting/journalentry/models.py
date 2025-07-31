@@ -141,6 +141,7 @@ class JournalEntryItem(SimpleAbstractModel):
                 'id': str(item.get('business_partner').id),
                 'code': item.get('business_partner').code,
                 'name': item.get('business_partner').name,
+                'tax_code': item.get('business_partner').tax_code,
             } if item.get('business_partner') else {},
             debit=item.get('debit', 0) if je_item_type == 0 else 0,
             credit=item.get('credit', 0) if je_item_type == 1 else 0,

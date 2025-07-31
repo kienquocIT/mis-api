@@ -25,14 +25,16 @@ class JEForAPInvoiceHandler:
                 ).first()
                 cost = stock_log_item.value if stock_log_item else 0
                 sum_cost += cost
-        for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+
+        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
             tenant_id=ap_invoice_obj.tenant_id,
             company_id=ap_invoice_obj.company_id,
             foreign_title='Customer overpayment'
-        ):
+        )
+        if len(account_list) == 1:
             debit_rows_data.append({
                 # (-) nhập hàng chưa nhập hóa đơn (mđ: 33881)
-                'account': account,
+                'account': account_list[0],
                 'product_mapped': None,
                 'business_partner': None,
                 'debit': sum_cost,
@@ -42,14 +44,16 @@ class JEForAPInvoiceHandler:
                 'use_for_recon': True,
                 'use_for_recon_type': 'ap-gr'
             })
-        for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+
+        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
             tenant_id=ap_invoice_obj.tenant_id,
             company_id=ap_invoice_obj.company_id,
             foreign_title='Payable to suppliers'
-        ):
+        )
+        if len(account_list) == 1:
             credit_rows_data.append({
                 # (+) phải trả cho NCC (mđ: 331)
-                'account': account,
+                'account': account_list[0],
                 'product_mapped': None,
                 'business_partner': ap_invoice_obj.supplier_mapped,
                 'debit': 0,
@@ -59,14 +63,16 @@ class JEForAPInvoiceHandler:
                 'use_for_recon': True,
                 'use_for_recon_type': 'ap-cof'
             })
-        for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+
+        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
             tenant_id=ap_invoice_obj.tenant_id,
             company_id=ap_invoice_obj.company_id,
             foreign_title='Purchases tax'
-        ):
+        )
+        if len(account_list) == 1:
             debit_rows_data.append({
                 # (-) thuế GTGT đầu vào (mđ: 1331)
-                'account': account,
+                'account': account_list[0],
                 'product_mapped': None,
                 'business_partner': None,
                 'debit': ap_invoice_obj.sum_tax_value,
@@ -74,6 +80,7 @@ class JEForAPInvoiceHandler:
                 'is_fc': False,
                 'taxable_value': ap_invoice_obj.sum_after_tax_value,
             })
+
         return debit_rows_data, credit_rows_data
 
     @classmethod

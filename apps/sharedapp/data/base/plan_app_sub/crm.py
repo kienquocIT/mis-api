@@ -2621,9 +2621,7 @@ FINANCIAL_RECON_APP_CONFIG = {
     "model_code": "reconciliation",
     "app_label": "financialrecon",
     "is_workflow": True,
-    "app_depend_on": [
-        "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
-    ],
+    "app_depend_on": [],
     "permit_mapping": {
         "view": {
             "range": ["1", "2", "3", "4"],
@@ -2632,22 +2630,14 @@ FINANCIAL_RECON_APP_CONFIG = {
         },
         "create": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {
-                    "view": "==",
-                },
-            },
+            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {
-                    "view": "==",
-                },
-            },
+            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },

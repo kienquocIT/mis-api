@@ -22,6 +22,7 @@ class ReconForCIFHandler:
                             'id': str(cif_obj.customer_id),
                             'code': cif_obj.customer.code,
                             'name': cif_obj.customer.name,
+                            'tax_code': cif_obj.customer.tax_code,
                         } if cif_obj.customer else {},
                         posting_date=str(cif_obj.posting_date),
                         document_date=str(cif_obj.document_date),
