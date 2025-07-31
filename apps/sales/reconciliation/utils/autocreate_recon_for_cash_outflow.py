@@ -13,16 +13,17 @@ class ReconForCOFHandler:
         """ Tạo phiếu cấn trừ tự động """
         try:
             with transaction.atomic():
-                if cof_obj.has_ar_invoice_value > 0:
+                if cof_obj.has_ap_invoice_value > 0:
+                    business_partner = cof_obj.customer or cof_obj.supplier
                     recon_obj = Reconciliation.objects.create(
                         recon_type=1,
                         title=f"Reconciliation for {cof_obj.code}",
-                        business_partner=cof_obj.customer,
+                        business_partner=business_partner,
                         business_partner_data={
-                            'id': str(cof_obj.customer_id),
-                            'code': cof_obj.customer.code,
-                            'name': cof_obj.customer.name,
-                        } if cof_obj.customer else {},
+                            'id': str(business_partner.id),
+                            'code': business_partner.code,
+                            'name': business_partner.name,
+                        },
                         posting_date=str(cof_obj.posting_date),
                         document_date=str(cof_obj.document_date),
                         system_status=3,

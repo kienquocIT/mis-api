@@ -67,7 +67,6 @@ class APInvoiceList(BaseListMixin, BaseCreateMixin):
 class APInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = APInvoice.objects  # noqa
     serializer_list = APInvoiceListSerializer
-    serializer_create = APInvoiceCreateSerializer
     serializer_detail = APInvoiceDetailSerializer
     serializer_update = APInvoiceUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT

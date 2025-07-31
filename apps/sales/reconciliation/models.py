@@ -43,7 +43,9 @@ class Reconciliation(DataAbstractModel, AutoDocumentAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        CompanyFunctionNumber.auto_gen_code_based_on_config('reconciliation', False, self, kwargs)
+        if isinstance(kwargs['update_fields'], list):
+            if 'date_approved' in kwargs['update_fields']:
+                CompanyFunctionNumber.auto_gen_code_based_on_config('reconciliation', True, self, kwargs)
         # hit DB
         super().save(*args, **kwargs)
 
@@ -57,13 +59,13 @@ class ReconciliationItem(SimpleAbstractModel):
     #     'title': str
     # }
     order = models.IntegerField(default=0)
+    debit_doc_id = models.UUIDField(verbose_name='Debit document id', null=True)
     debit_app_code = models.CharField(
         max_length=100,
         verbose_name='Code of debit application',
         help_text='{app_label}.{model}',
         null = True
     )
-    debit_doc_id = models.UUIDField(verbose_name='Debit document id', null=True)
     debit_doc_data = models.JSONField(default=dict)
     # debit_doc_data = {
     #     'id': uuid,
@@ -71,6 +73,7 @@ class ReconciliationItem(SimpleAbstractModel):
     #     'title': str,
     #     'document_date': str,
     #     'posting_date': str,
+    #     'app_code': str,
     # }
     debit_account = models.ForeignKey(
         'accountingsettings.ChartOfAccounts',
@@ -79,13 +82,13 @@ class ReconciliationItem(SimpleAbstractModel):
         null=True
     )
     debit_account_data = models.JSONField(default=dict)
+    credit_doc_id = models.UUIDField(verbose_name='Credit document id', null=True)
     credit_app_code = models.CharField(
         max_length=100,
         verbose_name='Code of credit application',
         help_text='{app_label}.{model}',
         null=True
     )
-    credit_doc_id = models.UUIDField(verbose_name='Credit document id', null=True)
     credit_doc_data = models.JSONField(default=dict)
     # credit_doc_data = {
     #     'id': uuid,
@@ -93,6 +96,7 @@ class ReconciliationItem(SimpleAbstractModel):
     #     'title': str,
     #     'document_date': str,
     #     'posting_date': str,
+    #     'app_code': str,
     # }
     credit_account = models.ForeignKey(
         'accountingsettings.ChartOfAccounts',

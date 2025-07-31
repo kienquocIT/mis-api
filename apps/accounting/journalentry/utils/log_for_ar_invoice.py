@@ -32,7 +32,7 @@ class JEForARInvoiceHandler:
                             warehouse_id=pw_data.warehouse_id
                         ):
                             debit_rows_data.append({
-                                # (+) giá vốn hàng bán (mđ: 632)
+                                # (-) giá vốn hàng bán (mđ: 632)
                                 'account': account,
                                 'product_mapped': deli_product.product,
                                 'business_partner': None,
@@ -47,7 +47,7 @@ class JEForARInvoiceHandler:
             foreign_title='Customer underpayment'
         ):
             credit_rows_data.append({
-                # (-) giao hàng chưa xuất hóa đơn (mđ: 13881)
+                # (+) giao hàng chưa xuất hóa đơn (mđ: 13881)
                 'account': account,
                 'product_mapped': None,
                 'business_partner': None,
@@ -103,7 +103,7 @@ class JEForARInvoiceHandler:
                 'debit': 0,
                 'credit': ar_invoice_obj.sum_tax_value,
                 'is_fc': False,
-                'taxable_value': ar_invoice_obj.sum_tax_value,
+                'taxable_value': ar_invoice_obj.sum_after_tax_value,
             })
         return debit_rows_data, credit_rows_data
 

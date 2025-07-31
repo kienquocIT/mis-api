@@ -115,7 +115,6 @@ class ARInvoiceList(BaseListMixin, BaseCreateMixin):
 class ARInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = ARInvoice.objects  # noqa
     serializer_list = ARInvoiceListSerializer
-    serializer_create = ARInvoiceCreateSerializer
     serializer_detail = ARInvoiceDetailSerializer
     serializer_update = ARInvoiceUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
