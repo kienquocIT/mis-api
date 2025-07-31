@@ -2,6 +2,9 @@ from datetime import datetime
 from apps.shared import DisperseModel
 
 
+HOLIDAY = ["2025-04-30", "2025-05-01", "2025-09-02"]
+
+
 class AttendanceHandler:
     @classmethod
     def check_attendance(cls, employee_id, date):
@@ -114,9 +117,20 @@ class AttendanceHandler:
     @classmethod
     def active_check(cls, date, employee_id, data_logs, leaves, businesses, shift_assigns):
         data_push_list = []
+        data_push = {
+            'employee_id': employee_id,
+            'date': date,
+        }
+        if date in HOLIDAY:
+            print(f"[{date}] Holiday")
+            data_push.update({'attendance_status': 4})
+            data_push_list.append(data_push)
+            return data_push_list
         if not shift_assigns:
             print(f"[{date}] Weekend")
-            return True
+            data_push.update({'attendance_status': 5})
+            data_push_list.append(data_push)
+            return data_push_list
         if shift_assigns:
             # Lọc logs theo ngày và employee_id
             logs_on_day = [
@@ -127,11 +141,9 @@ class AttendanceHandler:
                 data_push = {}
                 shift_check = shift_assign.shift
                 if shift_check:
-                    data_push = {
-                        'employee_id': employee_id,
-                        'date': date,
+                    data_push.update({
                         'shift_id': shift_check.id,
-                    }
+                    })
                     # Kiểm tra nghỉ phép
                     if leaves:
                         data_push = AttendanceHandler.run_check_leave(
