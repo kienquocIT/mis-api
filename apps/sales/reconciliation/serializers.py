@@ -205,11 +205,11 @@ class ReconCommonFunction:
         recon_item_data = validate_data.get('recon_item_data', [])
         if validate_data.get('recon_type') == 0:
             for item in recon_item_data:
-                if item.get('debit_doc_id'):
-                    ar_invoice_obj = ARInvoice.objects.filter(id=item.get('debit_doc_id')).first()
+                if item.get('credit_doc_id'):
+                    ar_invoice_obj = ARInvoice.objects.filter(id=item.get('credit_doc_id')).first()
                     if ar_invoice_obj:
-                        item['debit_app_code'] = ar_invoice_obj.get_model_code()
-                        item['debit_doc_data'] = {
+                        item['credit_app_code'] = ar_invoice_obj.get_model_code()
+                        item['credit_doc_data'] = {
                             'id': str(ar_invoice_obj.id),
                             'code': ar_invoice_obj.code,
                             'title': ar_invoice_obj.title,
@@ -217,11 +217,11 @@ class ReconCommonFunction:
                             'posting_date': str(ar_invoice_obj.posting_date),
                             'app_code': ar_invoice_obj.get_model_code()
                         }
-                if item.get('credit_doc_id'):
-                    cif_obj = CashInflow.objects.filter(id=item.get('credit_doc_id')).first()
+                if item.get('debit_doc_id'):
+                    cif_obj = CashInflow.objects.filter(id=item.get('debit_doc_id')).first()
                     if cif_obj:
-                        item['credit_app_code'] = cif_obj.get_model_code()
-                        item['credit_doc_data'] = {
+                        item['debit_app_code'] = cif_obj.get_model_code()
+                        item['debit_doc_data'] = {
                             'id': str(cif_obj.id),
                             'code': cif_obj.code,
                             'title': cif_obj.title,
@@ -236,15 +236,15 @@ class ReconCommonFunction:
                     foreign_title='Receivables from customers'
                 )
                 if len(account_list) == 1:
-                    item['debit_account_id'] = str(account_list[0].id)
-                    item['debit_account_data'] = {
+                    item['credit_account_id'] = str(account_list[0].id)
+                    item['credit_account_data'] = {
                         'id': str(account_list[0].id),
                         'acc_code': account_list[0].acc_code,
                         'acc_name': account_list[0].acc_name,
                         'foreign_acc_name': account_list[0].foreign_acc_name
                     }
-                    item['credit_account_id'] = str(account_list[0].id)
-                    item['credit_account_data'] = {
+                    item['debit_account_id'] = str(account_list[0].id)
+                    item['debit_account_data'] = {
                         'id': str(account_list[0].id),
                         'acc_code': account_list[0].acc_code,
                         'acc_name': account_list[0].acc_name,
@@ -254,11 +254,11 @@ class ReconCommonFunction:
                     logger.error(msg=f'No debit account has found.')
         elif validate_data.get('recon_type') == 1:
             for item in recon_item_data:
-                if item.get('debit_doc_id'):
-                    ap_invoice_obj = APInvoice.objects.filter(id=item.get('debit_doc_id')).first()
+                if item.get('credit_doc_id'):
+                    ap_invoice_obj = APInvoice.objects.filter(id=item.get('credit_doc_id')).first()
                     if ap_invoice_obj:
-                        item['debit_app_code'] = ap_invoice_obj.get_model_code()
-                        item['debit_doc_data'] = {
+                        item['credit_app_code'] = ap_invoice_obj.get_model_code()
+                        item['credit_doc_data'] = {
                             'id': str(ap_invoice_obj.id),
                             'code': ap_invoice_obj.code,
                             'title': ap_invoice_obj.title,
@@ -266,11 +266,11 @@ class ReconCommonFunction:
                             'posting_date': str(ap_invoice_obj.posting_date),
                             'app_code': ap_invoice_obj.get_model_code()
                         }
-                if item.get('credit_doc_id'):
-                    cof_obj = CashOutflow.objects.filter(id=item.get('credit_doc_id')).first()
+                if item.get('debit_doc_id'):
+                    cof_obj = CashOutflow.objects.filter(id=item.get('debit_doc_id')).first()
                     if cof_obj:
-                        item['credit_app_code'] = cof_obj.get_model_code()
-                        item['credit_doc_data'] = {
+                        item['debit_app_code'] = cof_obj.get_model_code()
+                        item['debit_doc_data'] = {
                             'id': str(cof_obj.id),
                             'code': cof_obj.code,
                             'title': cof_obj.title,
@@ -285,15 +285,15 @@ class ReconCommonFunction:
                     foreign_title='Payable to suppliers'
                 )
                 if len(account_list) == 1:
-                    item['debit_account_id'] = str(account_list[0].id)
-                    item['debit_account_data'] = {
+                    item['credit_account_id'] = str(account_list[0].id)
+                    item['credit_account_data'] = {
                         'id': str(account_list[0].id),
                         'acc_code': account_list[0].acc_code,
                         'acc_name': account_list[0].acc_name,
                         'foreign_acc_name': account_list[0].foreign_acc_name
                     }
-                    item['credit_account_id'] = str(account_list[0].id)
-                    item['credit_account_data'] = {
+                    item['debit_account_id'] = str(account_list[0].id)
+                    item['debit_account_data'] = {
                         'id': str(account_list[0].id),
                         'acc_code': account_list[0].acc_code,
                         'acc_name': account_list[0].acc_name,
@@ -306,32 +306,32 @@ class ReconCommonFunction:
 
 # related features
 class APInvoiceListForReconSerializer(serializers.ModelSerializer):
-    debit_doc_id = serializers.SerializerMethodField()
-    debit_app_code = serializers.SerializerMethodField()
-    debit_doc_data = serializers.SerializerMethodField()
+    credit_doc_id = serializers.SerializerMethodField()
+    credit_app_code = serializers.SerializerMethodField()
+    credit_doc_data = serializers.SerializerMethodField()
     recon_total = serializers.SerializerMethodField()
     sum_recon_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = APInvoice
         fields = (
-            'debit_doc_id',
-            'debit_app_code',
-            'debit_doc_data',
+            'credit_doc_id',
+            'credit_app_code',
+            'credit_doc_data',
             'recon_total',
             'sum_recon_amount'
         )
 
     @classmethod
-    def get_debit_doc_id(cls, obj):
+    def get_credit_doc_id(cls, obj):
         return obj.id if obj else ''
 
     @classmethod
-    def get_debit_app_code(cls, obj):
+    def get_credit_app_code(cls, obj):
         return obj.get_model_code() if obj else ''
 
     @classmethod
-    def get_debit_doc_data(cls, obj):
+    def get_credit_doc_data(cls, obj):
         return {
             "id": obj.id,
             "code": obj.code,
@@ -356,32 +356,32 @@ class APInvoiceListForReconSerializer(serializers.ModelSerializer):
 
 
 class CashOutflowListForReconSerializer(serializers.ModelSerializer):
-    credit_doc_id = serializers.SerializerMethodField()
-    credit_app_code = serializers.SerializerMethodField()
-    credit_doc_data = serializers.SerializerMethodField()
+    debit_doc_id = serializers.SerializerMethodField()
+    debit_app_code = serializers.SerializerMethodField()
+    debit_doc_data = serializers.SerializerMethodField()
     recon_total = serializers.SerializerMethodField()
     sum_recon_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = CashOutflow
         fields = (
-            'credit_doc_id',
-            'credit_app_code',
-            'credit_doc_data',
+            'debit_doc_id',
+            'debit_app_code',
+            'debit_doc_data',
             'recon_total',
             'sum_recon_amount'
         )
 
     @classmethod
-    def get_credit_doc_id(cls, obj):
+    def get_debit_doc_id(cls, obj):
         return obj.id if obj else ''
 
     @classmethod
-    def get_credit_app_code(cls, obj):
+    def get_debit_app_code(cls, obj):
         return obj.get_model_code() if obj else ''
 
     @classmethod
-    def get_credit_doc_data(cls, obj):
+    def get_debit_doc_data(cls, obj):
         return {
             "id": obj.id,
             "code": obj.code,

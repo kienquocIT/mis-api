@@ -5,6 +5,7 @@ from apps.masterdata.saledata.models import Account, BankAccount
 from apps.sales.apinvoice.models import APInvoice
 from apps.sales.financialcashflow.models import CashOutflow, CashOutflowItem, CashOutflowItemDetail
 from apps.sales.purchasing.models import PurchaseOrderPaymentStage
+from apps.sales.reconciliation.models import ReconciliationItem
 from apps.shared import (
     AbstractListSerializerModel,
     AbstractCreateSerializerModel,
@@ -529,13 +530,10 @@ class APInvoiceListForCashOutflowSerializer(serializers.ModelSerializer):
     @classmethod
     def get_recon_balance(cls, obj):
         # đã cấn trừ
-        cash_out_value = sum(
-            CashOutflowItem.objects.filter(
-                cash_outflow__system_status=3,
-                ap_invoice=obj
-            ).values_list('sum_payment_value', flat=True)
-        )
-        recon_balance = obj.sum_after_tax_value - cash_out_value
+        sum_recon_amount = sum(item.recon_amount for item in ReconciliationItem.objects.filter(
+            credit_doc_id=str(obj.id),
+        ))
+        recon_balance = obj.sum_after_tax_value - sum_recon_amount
         return recon_balance
 
     @classmethod

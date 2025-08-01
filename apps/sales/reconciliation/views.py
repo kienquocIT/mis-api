@@ -37,7 +37,7 @@ class ReconList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='financialrecon', model_code='reconciliation', perm_code='view',
+        label_code='reconciliation', model_code='reconciliation', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -49,7 +49,7 @@ class ReconList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='financialrecon', model_code='reconciliation', perm_code='create',
+        label_code='reconciliation', model_code='reconciliation', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
@@ -73,7 +73,7 @@ class ReconDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary='Detail Recon')
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='financialrecon', model_code='reconciliation', perm_code='view',
+        label_code='reconciliation', model_code='reconciliation', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -81,7 +81,7 @@ class ReconDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Recon", request_body=ReconUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='financialrecon', model_code='reconciliation', perm_code='edit',
+        label_code='reconciliation', model_code='reconciliation', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         self.ser_context = {

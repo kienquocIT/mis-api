@@ -2619,7 +2619,7 @@ FINANCIAL_RECON_APP_CONFIG = {
     "title": "Reconciliation",
     "code": "reconciliation",
     "model_code": "reconciliation",
-    "app_label": "financialrecon",
+    "app_label": "reconciliation",
     "is_workflow": True,
     "app_depend_on": [],
     "permit_mapping": {
