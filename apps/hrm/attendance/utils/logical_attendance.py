@@ -1,4 +1,7 @@
 from datetime import datetime
+
+import requests
+from requests.auth import HTTPDigestAuth
 from apps.shared import DisperseModel
 
 
@@ -7,7 +10,14 @@ HOLIDAY = ["2025-04-30", "2025-05-01", "2025-09-02"]
 
 class AttendanceHandler:
     @classmethod
-    def check_attendance(cls, employee_id, date, data_logs):
+    def check_attendance(cls, employee_id, date):
+        data_logs = DeviceIntegrate.get_attendance(
+            device_ip="192.168.0.40",
+            username="admin",
+            password="mts@2025",
+            date=date
+        )
+
         model_employee = DisperseModel(app_model='hr.Employee').get_model()
         if model_employee and hasattr(model_employee, 'objects'):
             employee_obj = model_employee.objects.filter_on_company(id=employee_id).first()
@@ -23,7 +33,7 @@ class AttendanceHandler:
                 shift_assigns = employee_obj.shift_assignment_employee.filter_on_company(date=date)
                 return AttendanceHandler.active_check(
                     date=date,
-                    employee_id=employee_id,
+                    employee_obj=employee_obj,
                     data_logs=data_logs,
                     leaves=leaves,
                     businesses=businesses,
@@ -32,66 +42,119 @@ class AttendanceHandler:
         return []
 
     @classmethod
-    def active_check(cls, date, employee_id, data_logs, leaves, businesses, shift_assigns):
+    def active_check(cls, date, employee_obj, data_logs, leaves, businesses, shift_assigns):
         data_push_list = []
-        data_push = {
-            'employee_id': employee_id,
-            'date': date,
-        }
-        if date in HOLIDAY:
-            print(f"[{date}] Holiday")
-            data_push.update({'attendance_status': 5})
-            data_push_list.append(data_push)
-            return data_push_list
-        if not shift_assigns:
-            print(f"[{date}] Weekend")
-            data_push.update({'attendance_status': 4})
-            data_push_list.append(data_push)
-            return data_push_list
-        if shift_assigns:
-            # Lọc logs theo ngày và employee_id
-            logs_on_day = [
-                log for log in data_logs
-                if log['employee_id'] == employee_id and log['timestamp'].startswith(date)
-            ]
-            for shift_assign in shift_assigns:
-                data_check = {}
-                shift_check = shift_assign.shift
-                if shift_check:
-                    data_push.update({
-                        'shift_id': str(shift_check.id),
+        integrate = employee_obj.device_integrate_employee.filter_on_company().first()
+        if integrate:
+            data_push = {
+                'employee_id': employee_obj.id,
+                'date': date,
+            }
+            if date in HOLIDAY:
+                print(f"[{date}] Holiday")
+                data_push.update({'attendance_status': 5})
+                data_push_list.append(data_push)
+                return data_push_list
+            if not shift_assigns:
+                print(f"[{date}] Weekend")
+                data_push.update({'attendance_status': 4})
+                data_push_list.append(data_push)
+                return data_push_list
+            if shift_assigns:
+                # Lọc logs theo ngày và employee_id
+                logs_on_day = [
+                    log for log in data_logs
+                    if log['employeeNoString'] == integrate.device_employee_id and log['time'].startswith(date)
+                ]
+                for log in logs_on_day:
+                    log.update({
+                        'timestamp': datetime.fromisoformat(log['time'])
                     })
-                    # Kiểm tra nghỉ phép
-                    if leaves:
-                        data_check = AttendanceHandler.run_check_leave(
-                            date=date,
-                            logs_on_day=logs_on_day,
-                            leaves=leaves,
-                            shift_check=shift_check
-                        )
-                    # Kiểm tra công tác
-                    if businesses:
-                        data_check = AttendanceHandler.run_check_business(
-                            date=date,
-                            businesses=businesses
-                        )
-                    if not leaves and not businesses:
-                        checkin_time, checkout_time = AttendanceHandler.parse_checkin_checkout_grace(
-                            shift_check=shift_check,
-                            check_type=0,
-                        )
-                        data_check = AttendanceHandler.run_check_normal(
-                            date=date,
-                            logs_on_day=logs_on_day,
-                            checkin_time=checkin_time,
-                            checkout_time=checkout_time
-                        )
-                    for key in data_check:
-                        if key not in data_push:
-                            data_push.update({key: data_check[key]})
-                if data_push:
-                    data_push_list.append(data_push)
+                for shift_assign in shift_assigns:
+                    # data_check = {}
+                    # shift_check = shift_assign.shift
+                    # if shift_check:
+                    #     data_push.update({
+                    #         'shift_id': str(shift_check.id),
+                    #     })
+                    #     # Kiểm tra nghỉ phép
+                    #     if leaves:
+                    #         data_check = AttendanceHandler.run_check_leave(
+                    #             date=date,
+                    #             logs_on_day=logs_on_day,
+                    #             leaves=leaves,
+                    #             shift_check=shift_check
+                    #         )
+                    #     # Kiểm tra công tác
+                    #     if businesses:
+                    #         data_check = AttendanceHandler.run_check_business(
+                    #             date=date,
+                    #             businesses=businesses
+                    #         )
+                    #     if not leaves and not businesses:
+                    #         checkin_time, checkout_time = AttendanceHandler.parse_checkin_checkout_grace(
+                    #             shift_check=shift_check,
+                    #             check_type=0,
+                    #         )
+                    #         data_check = AttendanceHandler.run_check_normal(
+                    #             date=date,
+                    #             logs_on_day=logs_on_day,
+                    #             checkin_time=checkin_time,
+                    #             checkout_time=checkout_time
+                    #         )
+                    #     for key, value in data_check.items():
+                    #         if key not in data_push:
+                    #             data_push.update({key: value})
+
+                    data_push = AttendanceHandler.check_by_cases(
+                        date=date,
+                        logs_on_day=logs_on_day,
+                        shift_assign=shift_assign,
+                        leaves=leaves,
+                        businesses=businesses,
+                        data_push=data_push,
+                    )
+                    if data_push:
+                        data_push_list.append(data_push)
         return data_push_list
+
+    @classmethod
+    def check_by_cases(cls, date, logs_on_day, shift_assign, leaves, businesses, data_push):
+        data_check = {}
+        shift_check = shift_assign.shift
+        if shift_check:
+            data_push.update({
+                'shift_id': str(shift_check.id),
+            })
+            # Kiểm tra nghỉ phép
+            if leaves:
+                data_check = AttendanceHandler.run_check_leave(
+                    date=date,
+                    logs_on_day=logs_on_day,
+                    leaves=leaves,
+                    shift_check=shift_check
+                )
+            # Kiểm tra công tác
+            if businesses:
+                data_check = AttendanceHandler.run_check_business(
+                    date=date,
+                    businesses=businesses
+                )
+            if not leaves and not businesses:
+                checkin_time, checkout_time = AttendanceHandler.parse_checkin_checkout_grace(
+                    shift_check=shift_check,
+                    check_type=0,
+                )
+                data_check = AttendanceHandler.run_check_normal(
+                    date=date,
+                    logs_on_day=logs_on_day,
+                    checkin_time=checkin_time,
+                    checkout_time=checkout_time
+                )
+            for key, value in data_check.items():
+                if key not in data_push:
+                    data_push.update({key: value})
+        return data_push
 
     @classmethod
     def run_check_normal(cls, date, logs_on_day, checkin_time, checkout_time):
@@ -101,21 +164,21 @@ class AttendanceHandler:
             keys = ['from', 'to']
             if all(key in checkin_time for key in keys) and all(key in checkout_time for key in keys):
                 for log in logs_on_day:
-                    is_checkin = False
-                    is_checkout = False
-                    log_time = datetime.strptime(log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
-                    if log['event_type'] == "IN":
-                        is_checkin = AttendanceHandler.check_normal_is_checkin(
-                            log_time=log_time,
-                            checkin_time_from=checkin_time['from'],
-                            checkin_time_to=checkin_time['to'],
-                        )
-                    if log['event_type'] == "OUT":
-                        is_checkout = AttendanceHandler.check_normal_is_checkout(
-                            log_time=log_time,
-                            checkout_time_from=checkout_time['from'],
-                            checkout_time_to=checkout_time['to'],
-                        )
+                    # is_checkin = False
+                    # is_checkout = False
+                    log_time = log['timestamp'].time()
+                    # if log['event_type'] == "IN":
+                    is_checkin = AttendanceHandler.check_normal_is_checkin(
+                        log_time=log_time,
+                        checkin_time_from=checkin_time['from'],
+                        checkin_time_to=checkin_time['to'],
+                    )
+                    # if log['event_type'] == "OUT":
+                    is_checkout = AttendanceHandler.check_normal_is_checkout(
+                        log_time=log_time,
+                        checkout_time_from=checkout_time['from'],
+                        checkout_time_to=checkout_time['to'],
+                    )
                     if is_checkin is True:
                         checkin_log = AttendanceHandler.check_normal_set_log(
                             check_log=checkin_log,
@@ -161,7 +224,7 @@ class AttendanceHandler:
         if check_log is None:
             check_log = log
         else:
-            prev_time = datetime.strptime(check_log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
+            prev_time = log['timestamp'].time()
             if check_type == 'in':
                 if log_time > prev_time:
                     check_log = log
@@ -174,7 +237,7 @@ class AttendanceHandler:
     def check_normal_push_data(cls, date, checkin_log, checkout_log):
         data_push = {}
         if checkin_log:
-            checkin_time = datetime.strptime(checkin_log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
+            checkin_time = checkin_log['timestamp'].time()
             data_push.update({
                 # 'is_checkin': True,
                 'checkin_time': checkin_time,
@@ -184,7 +247,7 @@ class AttendanceHandler:
             print(f"[{date}] ❌ Không có check-in đúng giờ")
 
         if checkout_log:
-            checkout_time = datetime.strptime(checkout_log['timestamp'], "%Y-%m-%d %H:%M:%S").time()
+            checkout_time = checkout_log['timestamp'].time()
             data_push.update({
                 # 'is_checkout': True,
                 'checkout_time': checkout_time,
@@ -366,3 +429,181 @@ class AttendanceHandler:
                 if shift_check.break_in_gr_start and shift_check.break_in_gr_end:
                     checkout_time = {'from': shift_check.break_in_gr_start, 'to': shift_check.break_in_gr_end}
         return checkin_time, checkout_time
+
+
+class DeviceIntegrate:
+
+    @classmethod
+    def get_user(cls, device_ip, username, password):
+        """
+        # post data:
+
+        searchID:
+            ID tìm kiếm, dùng khi chia kết quả thành nhiều trang. Mỗi lần gọi mới có thể để "1".	"1"
+        searchResultPosition:
+            Vị trí bắt đầu lấy kết quả. Dùng để phân trang (page offset).	0 = bắt đầu từ kết quả đầu tiên
+        maxResults:
+            Số bản ghi tối đa trả về trong 1 lần gọi.	50 = trả tối đa 50 bản ghi
+
+        # return data:
+        [
+            {
+                "employeeNo": "3",
+                "name": "quannm",
+                "userType": "normal",
+                "onlyVerify": false,
+                "closeDelayEnabled": false,
+                "Valid": {
+                  "enable": true,
+                  "beginTime": "2025-07-31T00:00:00",
+                  "endTime": "2035-07-30T23:59:59",
+                  "timeType": "local"
+                },
+                "belongGroup": "",
+                "password": "",
+                "doorRight": "1",
+                "RightPlan": [
+                  {
+                      "doorNo": 1,
+                      "planTemplateNo": "1"
+                  }
+                ],
+                "maxOpenDoorTime": 0,
+                "openDoorTime": 0,
+                "roomNumber": 0,
+                "floorNumber": 0,
+                "localUIRight": false,
+                "gender": "unknown",
+                "numOfCard": 0,
+                "numOfFP": 1,
+                "numOfFace": 1,
+                "groupId": 1,
+                "localAtndPlanTemplateId": 0,
+                "PersonInfoExtends": [
+                  {
+                      "value": ""
+                  }
+                ],
+                "faceURL": "http://192.168.0.40/LOCALS/pic/enrlFace/0/0000000003.jpg@WEB000000000112"
+                },
+        ]
+        """
+
+        url = f"http://{device_ip}/ISAPI/AccessControl/UserInfo/Search?format=json"
+        all_results = []
+        position = 0
+        max_results = 50
+
+        while True:
+            payload = {
+                "UserInfoSearchCond": {
+                    "searchID": "1",
+                    "searchResultPosition": position,
+                    "maxResults": max_results,
+                }
+            }
+            res = requests.post(
+                url,
+                json=payload,
+                auth=HTTPDigestAuth(username, password),
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+
+            if res.status_code != 200:
+                print("Error:", res.status_code, res.text)
+                break
+
+            data = res.json()
+            infos = data.get("UserInfoSearch", {}).get("UserInfo", [])
+
+            if not infos:
+                break  # Không còn dữ liệu
+
+            all_results.extend(infos)
+            print(f"Lấy được {len(infos)} bản ghi từ offset {position}")
+
+            # Nếu số bản ghi trả về < max_results → hết dữ liệu
+            if len(infos) < max_results:
+                break
+
+            position += max_results  # Sang trang tiếp theo
+
+        return all_results
+
+    @classmethod
+    def get_attendance(cls, device_ip, username, password, date):
+        """
+        # post data:
+
+        searchID:
+            ID tìm kiếm, dùng khi chia kết quả thành nhiều trang. Mỗi lần gọi mới có thể để "1".	"1"
+        searchResultPosition:
+            Vị trí bắt đầu lấy kết quả. Dùng để phân trang (page offset).	0 = bắt đầu từ kết quả đầu tiên
+        maxResults:
+            Số bản ghi tối đa trả về trong 1 lần gọi.	50 = trả tối đa 50 bản ghi
+        major:
+            Mã loại sự kiện lớn. 5 = Access Control Events (sự kiện kiểm soát ra/vào).	5
+        minor:
+            Mã loại sự kiện nhỏ. 75 = Face/Fingerprint/Card Verified (chấm công thành công).	75
+        startTime:
+            Thời gian bắt đầu tìm kiếm (ISO 8601 + múi giờ).	"2025-08-01T00:00:00+07:00"
+        endTime:
+            Thời gian kết thúc tìm kiếm (ISO 8601 + múi giờ).	"2025-08-01T23:59:59+07:00"
+
+        # response data:
+        [
+            {'major': 5, 'minor': 75, 'time': '2025-08-01T09:27:57+08:00', 'cardType': 1, 'name': 'quannm',
+             'cardReaderNo': 1, 'doorNo': 1, 'employeeNoString': '3', 'serialNo': 132, 'userType': 'normal',
+             'currentVerifyMode': 'faceOrFpOrCardOrPw', 'mask': 'no',
+             'pictureURL': 'http://192.168.0.40/LOCALS/pic/acsLinkCap/202508_00/01_012757_30075_0.jpeg@WEB000000000009',
+             'FaceRect': {'height': 0.336, 'width': 0.19, 'x': 0.391, 'y': 0.644}
+             }
+        ]
+        """
+
+        url = f"http://{device_ip}/ISAPI/AccessControl/AcsEvent?format=json"
+        all_results = []
+        position = 0
+        max_results = 50
+
+        while True:
+            payload = {
+                "AcsEventCond": {
+                    "searchID": "1",
+                    "searchResultPosition": position,
+                    "maxResults": max_results,
+                    "major": 5,
+                    "minor": 75,
+                    "startTime": f"{date}T00:00:00+07:00",
+                    "endTime": f"{date}T23:59:59+07:00"
+                }
+            }
+            res = requests.post(
+                url,
+                json=payload,
+                auth=HTTPDigestAuth(username, password),
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+
+            if res.status_code != 200:
+                print("Error:", res.status_code, res.text)
+                break
+
+            data = res.json()
+            events = data.get("AcsEvent", {}).get("InfoList", [])
+
+            if not events:
+                break  # Không còn dữ liệu
+
+            all_results.extend(events)
+            print(f"Lấy được {len(events)} bản ghi từ offset {position}")
+
+            # Nếu số bản ghi trả về < max_results → hết dữ liệu
+            if len(events) < max_results:
+                break
+
+            position += max_results  # Sang trang tiếp theo
+
+        return all_results
