@@ -6,7 +6,7 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account
 from apps.sales.apinvoice.models import APInvoice
 from apps.sales.arinvoice.models import ARInvoice
-from apps.sales.financialcashflow.models import CashInflow, CashOutflow, CashOutflowItem
+from apps.sales.financialcashflow.models import CashInflow, CashOutflow, CashOutflowItem, CashInflowItem
 from apps.sales.reconciliation.models import Reconciliation, ReconciliationItem
 from apps.shared import (
     ReconMsg, AbstractListSerializerModel, AbstractDetailSerializerModel,  AbstractCreateSerializerModel
@@ -414,59 +414,99 @@ class CashOutflowListForReconSerializer(serializers.ModelSerializer):
 
 
 class ARInvoiceListForReconSerializer(serializers.ModelSerializer):
+    debit_doc_id = serializers.SerializerMethodField()
+    debit_app_code = serializers.SerializerMethodField()
+    debit_doc_data = serializers.SerializerMethodField()
     recon_total = serializers.SerializerMethodField()
-    cash_inflow_data = serializers.SerializerMethodField()
+    sum_recon_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = ARInvoice
         fields = (
-            'id',
-            'title',
-            'code',
-            'document_date',
-            'posting_date',
+            'debit_doc_id',
+            'debit_app_code',
+            'debit_doc_data',
             'recon_total',
-            'cash_inflow_data'
+            'sum_recon_amount'
         )
+
+    @classmethod
+    def get_debit_doc_id(cls, obj):
+        return obj.id if obj else ''
+
+    @classmethod
+    def get_debit_app_code(cls, obj):
+        return obj.get_model_code() if obj else ''
+
+    @classmethod
+    def get_debit_doc_data(cls, obj):
+        return {
+            "id": obj.id,
+            "code": obj.code,
+            "title": obj.title,
+            "posting_date": obj.posting_date,
+            "document_date": obj.document_date,
+            "app_code": obj.get_model_code()
+        } if obj else {}
 
     @classmethod
     def get_recon_total(cls, obj):
         return sum(item.product_subtotal_final for item in obj.ar_invoice_items.all())
 
     @classmethod
-    def get_cash_inflow_data(cls, obj):
-        print(obj)
-        cash_inflow_data = []
-        return cash_inflow_data
+    def get_sum_recon_amount(cls, obj):
+        sum_recon_amount = sum(item.sum_payment_value for item in CashInflowItem.objects.filter(
+            cash_inflow__customerr_id=str(obj.customer_mapped_id),
+            has_ar_invoice=True,
+            ar_invoice_id=str(obj.id)
+        ))
+        return sum_recon_amount
 
 
 class CashInflowListForReconSerializer(serializers.ModelSerializer):
-    document_type = serializers.SerializerMethodField()
-    sum_total_value = serializers.SerializerMethodField()
-    recon_balance = serializers.SerializerMethodField()
+    credit_doc_id = serializers.SerializerMethodField()
+    credit_app_code = serializers.SerializerMethodField()
+    credit_doc_data = serializers.SerializerMethodField()
+    recon_total = serializers.SerializerMethodField()
+    sum_recon_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = CashInflow
         fields = (
-            'id',
-            'title',
-            'code',
-            'document_date',
-            'posting_date',
-            'document_type',
-            'sum_total_value',
-            'recon_balance',
+            'credit_doc_id',
+            'credit_app_code',
+            'credit_doc_data',
+            'recon_total',
+            'sum_recon_amount'
         )
 
     @classmethod
-    def get_document_type(cls, obj):
-        return _('Cash inflow') if obj else ''
+    def get_credit_doc_id(cls, obj):
+        return obj.id if obj else ''
 
     @classmethod
-    def get_sum_total_value(cls, obj):
+    def get_credit_app_code(cls, obj):
+        return obj.get_model_code() if obj else ''
+
+    @classmethod
+    def get_credit_doc_data(cls, obj):
+        return {
+            "id": obj.id,
+            "code": obj.code,
+            "title": obj.title,
+            "posting_date": obj.posting_date,
+            "document_date": obj.document_date,
+            "app_code": obj.get_model_code()
+        } if obj else {}
+
+    @classmethod
+    def get_recon_total(cls, obj):
         return obj.total_value
 
     @classmethod
-    def get_recon_balance(cls, obj):
-        print(obj)
-        return 0
+    def get_sum_recon_amount(cls, obj):
+        sum_recon_amount = sum(item.recon_amount for item in ReconciliationItem.objects.filter(
+            recon__business_partner_id=str(obj.customer_id),
+            credit_doc_id=str(obj.id)
+        ))
+        return sum_recon_amount
