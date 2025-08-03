@@ -1,6 +1,8 @@
 import logging
 from django.db import models
 from django.utils import timezone
+
+from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Account
 from apps.shared import DataAbstractModel, SimpleAbstractModel, AutoDocumentAbstractModel
 
@@ -53,18 +55,16 @@ class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
         je_item_data = kwargs.pop('je_item_data', {})
         je_obj = cls.objects.create(
             **kwargs,
-            code='JE00' + str(
-                JournalEntry.objects.filter(
-                    tenant_id=kwargs.get('tenant_id'),
-                    company_id=kwargs.get('company_id'),
-                    system_status=3
-                ).count() + 1
-            ),
             je_posting_date=timezone.now(),
             je_document_date=timezone.now(),
             system_status=3,
             system_auto_create=True
         )
+        # duyệt tự động
+        CompanyFunctionNumber.auto_gen_code_based_on_config('journalentry', True, je_obj)
+        je_obj.system_status = 3
+        je_obj.save(update_fields=['code', 'system_status'])
+
         state = JournalEntryItem.create_je_item_mapped(je_obj, je_item_data)
         if not state:
             logger.error(msg='[JE] Failed to create Journal Entry Items.')

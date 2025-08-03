@@ -2843,6 +2843,16 @@ AppProp_SaleData_FinancialRecon_Recon_data = {
     },
 }
 
+AppProp_SaleData_AccountingJE_Recon_data = {
+    "355c278c-7901-4f6d-8330-76eb9082b40f": {
+        "application_id": "a9bb7b64-4f3c-412d-9e08-3b713d58d31d",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    },
+}
+
 AppProp_SaleData_Product_Modification_data = {
     "c9c48d4a-3f7e-410b-bca8-9c1b78a455f9": {
         "application_id": "f491fdf3-1384-4a82-b155-12ef6673c901",
@@ -3371,6 +3381,7 @@ ApplicationProperty_data = {
     **AppProp_SaleData_BOM_data,
     **AppProp_SaleData_FinancialCashflow_CashInflow_data,
     **AppProp_SaleData_FinancialRecon_Recon_data,
+    **AppProp_SaleData_AccountingJE_Recon_data,
     **AppProp_SaleData_Product_Modification_data,
     **AppProp_SaleData_Equipment_Loan_data,
     **AppProp_SaleData_Equipment_Return_data,

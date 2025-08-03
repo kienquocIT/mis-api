@@ -89,6 +89,8 @@ class JEForCIFHandler:
                     'company_id': str(cif_obj.company_id),
                     'employee_created_id': str(cif_obj.employee_created_id),
                     'employee_inherit_id': str(cif_obj.employee_inherit_id),
+                    'date_created': str(cif_obj.date_created),
+                    'date_approved': str(cif_obj.date_approved),
                     'je_item_data': {
                         'debit_rows': debit_rows_data,
                         'credit_rows': credit_rows_data

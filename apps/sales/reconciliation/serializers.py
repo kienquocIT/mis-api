@@ -456,7 +456,7 @@ class ARInvoiceListForReconSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sum_recon_amount(cls, obj):
         sum_recon_amount = sum(item.sum_payment_value for item in CashInflowItem.objects.filter(
-            cash_inflow__customerr_id=str(obj.customer_mapped_id),
+            cash_inflow__customer_id=str(obj.customer_mapped_id),
             has_ar_invoice=True,
             ar_invoice_id=str(obj.id)
         ))

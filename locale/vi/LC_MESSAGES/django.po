@@ -338,6 +338,10 @@ msgstr "Phiếu chi"
 msgid "Reconciliation"
 msgstr "Cấn trừ"
 
+# a9bb7b64-4f3c-412d-9e08-3b713d58d31d
+msgid "Journal Entry"
+msgstr "Bút toán"
+
 # 7505d5db-42fe-4cde-ae5e-dbba78e2df03
 msgid "Document approval"
 msgstr "Công văn phê duyệt"

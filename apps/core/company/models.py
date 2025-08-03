@@ -560,6 +560,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             'productmodificationbom': 'PMB-[n4]',
             'purchaserequest': 'PR[n4]',
             'reconciliation': 'RECON[n4]',
+            'journalentry': 'JE[n4]',
             'returnadvance': 'RP[n4]',
             'quotation': 'SQ[n4]',
             'saleorder': 'SO[n4]',

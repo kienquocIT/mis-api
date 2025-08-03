@@ -387,6 +387,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "b690b9ff-670a-474b-8ae2-2c17d7c30f40",  # Recon
     },
+    "a9bb7b64-4f3c-412d-9e08-3b713d58d31d": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "a9bb7b64-4f3c-412d-9e08-3b713d58d31d",  # JE
+    },
     "488a6284-6341-4c51-b837-fb6964e51d82": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "488a6284-6341-4c51-b837-fb6964e51d82",  # Partner Center/ Lists

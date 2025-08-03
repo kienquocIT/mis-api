@@ -103,6 +103,8 @@ class JEForAPInvoiceHandler:
                     'company_id': str(ap_invoice_obj.company_id),
                     'employee_created_id': str(ap_invoice_obj.employee_created_id),
                     'employee_inherit_id': str(ap_invoice_obj.employee_inherit_id),
+                    'date_created': str(ap_invoice_obj.date_created),
+                    'date_approved': str(ap_invoice_obj.date_approved),
                     'je_item_data': {
                         'debit_rows': debit_rows_data,
                         'credit_rows': credit_rows_data

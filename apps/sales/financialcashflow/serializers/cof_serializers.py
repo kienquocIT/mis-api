@@ -113,12 +113,8 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
         cash_out_advance_for_supplier_data = validated_data.pop('cash_out_advance_for_supplier_data', [])
         cash_out_ap_invoice_data = validated_data.pop('cash_out_ap_invoice_data', [])
 
-        if len(cash_out_advance_for_supplier_data) > 0:
-            validated_data['no_ap_invoice_value'] = validated_data.get('total_value', 0)
-        elif len(cash_out_ap_invoice_data) > 0:
-            validated_data['has_ap_invoice_value'] = validated_data.get('total_value', 0)
-
         cash_outflow_obj = CashOutflow.objects.create(**validated_data)
+
         CashOutflowCommonFunction.create_cof_item(
             cash_outflow_obj, cash_out_advance_for_supplier_data, cash_out_ap_invoice_data
         )
@@ -348,16 +344,22 @@ class CashOutflowCommonFunction:
     @classmethod
     def validate_cash_out_advance_for_supplier_data(cls, validate_data):
         if 'cash_out_advance_for_supplier_data' in validate_data:
+            no_ap_invoice_value = 0
             for item in validate_data.get('cash_out_advance_for_supplier_data', []):
                 item['has_ap_invoice'] = False
                 cls.common_valid_cash_out_advance_for_supplier_data(item)
-                validate_data['total_value'] = float(validate_data.get('total_value', 0)) + item['sum_payment_value']
+                no_ap_invoice_value += item.get('sum_payment_value', 0)
+                validate_data['total_value'] = float(
+                    validate_data.get('total_value', 0)
+                ) + item.get('sum_payment_value', 0)
+            validate_data['no_ap_invoice_value'] = no_ap_invoice_value
         print('3. validate_cash_out_advance_for_supplier_data --- ok')
         return validate_data
 
     @classmethod
     def validate_cash_out_ap_invoice_data(cls, validate_data):
         if 'cash_out_ap_invoice_data' in validate_data:
+            has_ap_invoice_value = 0
             for item in validate_data.get('cash_out_ap_invoice_data', []):
                 item['has_ap_invoice'] = True
                 # check ar invoice
@@ -375,7 +377,11 @@ class CashOutflowCommonFunction:
                     'sum_total_value': sum(item.product_subtotal_final for item in ap_invoice.ap_invoice_items.all())
                 }
                 cls.common_valid_cash_out_ap_invoice_data(item)
-                validate_data['total_value'] = float(validate_data.get('total_value', 0)) + item['sum_payment_value']
+                has_ap_invoice_value += item.get('sum_payment_value', 0)
+                validate_data['total_value'] = float(
+                    validate_data.get('total_value', 0)
+                ) + item.get('sum_payment_value', 0)
+            validate_data['has_ap_invoice_value'] = has_ap_invoice_value
         print('4. validate_cash_out_ap_invoice_data --- ok')
         return validate_data
 
