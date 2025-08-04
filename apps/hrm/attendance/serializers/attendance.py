@@ -1,8 +1,5 @@
 from rest_framework import serializers
-
-from apps.core.hr.serializers.employee_serializers import EmployeeListAllSerializer
 from apps.hrm.attendance.models.attendance import Attendance
-from apps.hrm.attendance.serializers import ShiftListSerializer
 
 
 class AttendanceListSerializer(serializers.ModelSerializer):

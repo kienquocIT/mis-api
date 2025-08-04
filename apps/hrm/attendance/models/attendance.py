@@ -4,24 +4,24 @@ from apps.hrm.attendance.utils.logical_attendance import AttendanceHandler
 from apps.shared import MasterDataAbstractModel, ATTENDANCE_STATUS
 
 
-class AccessLog(MasterDataAbstractModel):
-    employee = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        verbose_name='employee',
-        related_name='access_log_employee'
-    )
-    timestamp = models.DateTimeField(null=True, help_text='date time of logging')
-    recognition_type = models.CharField(max_length=50, blank=True, help_text='type of logging')
-
-    # example: Card, Face, Fingertip
-
-    class Meta:
-        verbose_name = 'Access Log'
-        verbose_name_plural = 'Access Logs'
-        ordering = ('-timestamp',)
-        default_permissions = ()
-        permissions = ()
+# class AccessLog(MasterDataAbstractModel):
+#     employee = models.ForeignKey(
+#         'hr.Employee',
+#         on_delete=models.CASCADE,
+#         verbose_name='employee',
+#         related_name='access_log_employee'
+#     )
+#     timestamp = models.DateTimeField(null=True, help_text='date time of logging')
+#     recognition_type = models.CharField(max_length=50, blank=True, help_text='type of logging')
+#
+#     # example: Card, Face, Fingertip
+#
+#     class Meta:
+#         verbose_name = 'Access Log'
+#         verbose_name_plural = 'Access Logs'
+#         ordering = ('-timestamp',)
+#         default_permissions = ()
+#         permissions = ()
 
 
 class Attendance(MasterDataAbstractModel):
@@ -96,4 +96,3 @@ class Attendance(MasterDataAbstractModel):
         ordering = ('-date',)
         default_permissions = ()
         permissions = ()
-
