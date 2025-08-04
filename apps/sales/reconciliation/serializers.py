@@ -1,6 +1,5 @@
 import logging
 from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
 from apps.accounting.accountingsettings.models import DefaultAccountDetermination
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account

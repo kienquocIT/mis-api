@@ -361,7 +361,9 @@ class CashInflowCommonFunction:
                 }
                 cls.common_valid_cash_in_ar_invoice_data(item)
                 has_ar_invoice_value += item.get('sum_payment_value', 0)
-                validate_data['total_value'] = float(validate_data.get('total_value', 0)) + item.get('sum_payment_value', 0)
+                validate_data['total_value'] = float(
+                    validate_data.get('total_value', 0)
+                ) + item.get('sum_payment_value', 0)
             validate_data['has_ar_invoice_value'] = has_ar_invoice_value
         print('3. validate_cash_in_ar_invoice_data --- ok')
         return validate_data
