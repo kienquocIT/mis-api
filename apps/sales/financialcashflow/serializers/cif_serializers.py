@@ -4,6 +4,7 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, BankAccount
 from apps.sales.arinvoice.models import ARInvoice
 from apps.sales.financialcashflow.models import CashInflow, CashInflowItem, CashInflowItemDetail
+from apps.sales.reconciliation.models import ReconciliationItem
 from apps.sales.saleorder.models import SaleOrderPaymentStage
 from apps.shared import (
     AbstractListSerializerModel,
@@ -105,12 +106,8 @@ class CashInflowCreateSerializer(AbstractCreateSerializerModel):
         cash_in_customer_advance_data = validated_data.pop('cash_in_customer_advance_data', [])
         cash_in_ar_invoice_data = validated_data.pop('cash_in_ar_invoice_data', [])
 
-        if len(cash_in_customer_advance_data) > 0:
-            validated_data['no_ar_invoice_value'] = validated_data.get('total_value', 0)
-        elif len(cash_in_ar_invoice_data) > 0:
-            validated_data['has_ar_invoice_value'] = validated_data.get('total_value', 0)
-
         cash_inflow_obj = CashInflow.objects.create(**validated_data)
+
         CashInflowCommonFunction.create_cif_item(
             cash_inflow_obj, cash_in_customer_advance_data, cash_in_ar_invoice_data
         )
@@ -330,16 +327,22 @@ class CashInflowCommonFunction:
     @classmethod
     def validate_cash_in_customer_advance_data(cls, validate_data):
         if 'cash_in_customer_advance_data' in validate_data:
+            no_ar_invoice_value = 0
             for item in validate_data.get('cash_in_customer_advance_data', []):
                 item['has_ar_invoice'] = False
                 cls.common_valid_cash_in_customer_advance_data(item)
-                validate_data['total_value'] = float(validate_data.get('total_value', 0)) + item['sum_payment_value']
+                no_ar_invoice_value += item.get('sum_payment_value', 0)
+                validate_data['total_value'] = float(
+                    validate_data.get('total_value', 0)
+                ) + item.get('sum_payment_value', 0)
+            validate_data['no_ar_invoice_value'] = no_ar_invoice_value
         print('2. validate_cash_in_customer_advance_data --- ok')
         return validate_data
 
     @classmethod
     def validate_cash_in_ar_invoice_data(cls, validate_data):
         if 'cash_in_ar_invoice_data' in validate_data:
+            has_ar_invoice_value = 0
             for item in validate_data.get('cash_in_ar_invoice_data', []):
                 item['has_ar_invoice'] = True
                 # check ar invoice
@@ -357,7 +360,11 @@ class CashInflowCommonFunction:
                     'sum_total_value': sum(item.product_subtotal_final for item in ar_invoice.ar_invoice_items.all())
                 }
                 cls.common_valid_cash_in_ar_invoice_data(item)
-                validate_data['total_value'] = float(validate_data.get('total_value', 0)) + item['sum_payment_value']
+                has_ar_invoice_value += item.get('sum_payment_value', 0)
+                validate_data['total_value'] = float(
+                    validate_data.get('total_value', 0)
+                ) + item.get('sum_payment_value', 0)
+            validate_data['has_ar_invoice_value'] = has_ar_invoice_value
         print('3. validate_cash_in_ar_invoice_data --- ok')
         return validate_data
 
@@ -514,13 +521,10 @@ class ARInvoiceListForCashInflowSerializer(serializers.ModelSerializer):
     @classmethod
     def get_recon_balance(cls, obj):
         # đã cấn trừ
-        cash_in_value = sum(
-            CashInflowItem.objects.filter(
-                cash_inflow__system_status=3,
-                ar_invoice=obj
-            ).values_list('sum_payment_value', flat=True)
-        )
-        recon_balance = obj.sum_after_tax_value - cash_in_value
+        sum_recon_amount = sum(item.recon_amount for item in ReconciliationItem.objects.filter(
+            debit_doc_id=str(obj.id),
+        ))
+        recon_balance = obj.sum_after_tax_value - sum_recon_amount
         return recon_balance
 
     @classmethod

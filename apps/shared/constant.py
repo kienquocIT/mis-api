@@ -125,6 +125,7 @@ MAP_FIELD_TITLE = {
     'cashoutflow.returnadvance': 'title',
     'distributionplan.distributionplan': 'title',
     'production.bom': 'title',
+    'reconciliation.reconciliation': 'title',
     'financialcashflow.cashinflow': 'title',
     'financialcashflow.cashoutflow': 'title',
     'productmodification.productmodification': 'title',

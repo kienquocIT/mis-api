@@ -13,14 +13,15 @@ class JEForCIFHandler:
         debit_rows_data = []
         credit_rows_data = []
         if cif_obj.cash_value > 0:
-            for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+            account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
                 tenant_id=cif_obj.tenant_id,
                 company_id=cif_obj.company_id,
                 foreign_title='Cash in hand received from customers'
-            ):
+            )
+            if len(account_list) == 1:
                 debit_rows_data.append({
                     # (-) Tiền mặt thu từ khách hàng (mđ: 1111)
-                    'account': account,
+                    'account': account_list[0],
                     'product_mapped': None,
                     'business_partner': None,
                     'debit': cif_obj.cash_value,
@@ -28,15 +29,17 @@ class JEForCIFHandler:
                     'is_fc': False,
                     'taxable_value': 0,
                 })
+
         if cif_obj.bank_value > 0:
-            for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+            account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
                 tenant_id=cif_obj.tenant_id,
                 company_id=cif_obj.company_id,
                 foreign_title='Cash in bank received from customers'
-            ):
+            )
+            if len(account_list) == 1:
                 debit_rows_data.append({
                     # (-) Tiền mặt thu từ khách hàng (mđ: 1121)
-                    'account': account,
+                    'account': account_list[0],
                     'product_mapped': None,
                     'business_partner': None,
                     'debit': cif_obj.bank_value,
@@ -44,14 +47,16 @@ class JEForCIFHandler:
                     'is_fc': False,
                     'taxable_value': 0,
                 })
-        for account in DefaultAccountDetermination.get_default_account_deter_sub_data(
+
+        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
             tenant_id=cif_obj.tenant_id,
             company_id=cif_obj.company_id,
             foreign_title='Receivables from customers'
-        ):
+        )
+        if len(account_list) == 1:
             credit_rows_data.append({
                 # (+) Phải thu khách hàng (mđ: 131)
-                'account': account,
+                'account': account_list[0],
                 'product_mapped': None,
                 'business_partner': cif_obj.customer,
                 'debit': 0,
@@ -61,6 +66,7 @@ class JEForCIFHandler:
                 'use_for_recon': True,
                 'use_for_recon_type': 'cif-ar'
             })
+
         return debit_rows_data, credit_rows_data
 
     @classmethod
@@ -83,6 +89,8 @@ class JEForCIFHandler:
                     'company_id': str(cif_obj.company_id),
                     'employee_created_id': str(cif_obj.employee_created_id),
                     'employee_inherit_id': str(cif_obj.employee_inherit_id),
+                    'date_created': str(cif_obj.date_created),
+                    'date_approved': str(cif_obj.date_approved),
                     'je_item_data': {
                         'debit_rows': debit_rows_data,
                         'credit_rows': credit_rows_data

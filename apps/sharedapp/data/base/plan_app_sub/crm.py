@@ -2619,11 +2619,9 @@ FINANCIAL_RECON_APP_CONFIG = {
     "title": "Reconciliation",
     "code": "reconciliation",
     "model_code": "reconciliation",
-    "app_label": "financialrecon",
+    "app_label": "reconciliation",
     "is_workflow": True,
-    "app_depend_on": [
-        "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
-    ],
+    "app_depend_on": [],
     "permit_mapping": {
         "view": {
             "range": ["1", "2", "3", "4"],
@@ -2632,22 +2630,56 @@ FINANCIAL_RECON_APP_CONFIG = {
         },
         "create": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {
-                    "view": "==",
-                },
-            },
+            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {
-                    "view": "==",
-                },
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
             },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_print": True,
+    "allow_process": False,
+    "allow_opportunity": False,
+}
+
+ACCOUNTING_JE_APP_CONFIG = {
+    "id": "a9bb7b64-4f3c-412d-9e08-3b713d58d31d",
+    "title": "Journal Entry",
+    "code": "reconciliation",
+    "model_code": "journalentry",
+    "app_label": "accounting",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
             },
@@ -3253,6 +3285,11 @@ Application_crm_data = {
         spacing_allow=["0", "1"],
     ),
     "b690b9ff-670a-474b-8ae2-2c17d7c30f40": ApplicationConfigFrame(**FINANCIAL_RECON_APP_CONFIG).data(
+        depend_follow_main=True,
+        filtering_inheritor=True,
+        spacing_allow=["0", "1"],
+    ),
+    "a9bb7b64-4f3c-412d-9e08-3b713d58d31d": ApplicationConfigFrame(**ACCOUNTING_JE_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
         spacing_allow=["0", "1"],

@@ -1,6 +1,7 @@
 import logging
 from django.db import transaction
 from apps.accounting.journalentry.models import JournalEntryItem
+from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.reconciliation.models import Reconciliation, ReconciliationItem
 
 
@@ -22,16 +23,22 @@ class ReconForCIFHandler:
                             'id': str(cif_obj.customer_id),
                             'code': cif_obj.customer.code,
                             'name': cif_obj.customer.name,
+                            'tax_code': cif_obj.customer.tax_code,
                         } if cif_obj.customer else {},
                         posting_date=str(cif_obj.posting_date),
                         document_date=str(cif_obj.document_date),
-                        system_status=3,
-                        employee_created_id=str(cif_obj.employee_created_id),
-                        employee_inherit_id=str(cif_obj.employee_inherit_id),
-                        company_id=str(cif_obj.company_id),
-                        tenant_id=str(cif_obj.tenant_id),
+                        employee_created=cif_obj.employee_created,
+                        employee_inherit=cif_obj.employee_inherit,
+                        date_created=cif_obj.date_created,
+                        date_approved=cif_obj.date_approved,
+                        company=cif_obj.company,
+                        tenant=cif_obj.tenant,
                         system_auto_create=True
                     )
+                    CompanyFunctionNumber.auto_gen_code_based_on_config('reconciliation', True, recon_obj)
+                    recon_obj.system_status = 3
+                    recon_obj.save(update_fields=['code', 'system_status'])
+
                     # tạo các dòng cấn trừ
                     bulk_info = []
                     # tìm bút toán của phiếu thu

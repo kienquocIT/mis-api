@@ -1,6 +1,7 @@
 import logging
 from django.db import transaction
 from apps.accounting.journalentry.models import JournalEntryItem
+from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.reconciliation.models import Reconciliation, ReconciliationItem
 
 
@@ -21,16 +22,21 @@ class ReconForAPInvoiceHandler:
                         'id': str(ap_invoice_obj.supplier_mapped_id),
                         'code': ap_invoice_obj.supplier_mapped.code,
                         'name': ap_invoice_obj.supplier_mapped.name,
+                        'tax_code': ap_invoice_obj.supplier_mapped.tax_code,
                     } if ap_invoice_obj.supplier_mapped else {},
-                    posting_date=str(ap_invoice_obj.posting_date),
-                    document_date=str(ap_invoice_obj.document_date),
-                    system_status=3,
-                    employee_created_id=str(ap_invoice_obj.employee_created_id),
-                    employee_inherit_id=str(ap_invoice_obj.employee_inherit_id),
-                    company_id=str(ap_invoice_obj.company_id),
-                    tenant_id=str(ap_invoice_obj.tenant_id),
+                    posting_date=ap_invoice_obj.posting_date,
+                    document_date=ap_invoice_obj.document_date,
+                    employee_created=ap_invoice_obj.employee_created,
+                    employee_inherit=ap_invoice_obj.employee_inherit,
+                    date_created=ap_invoice_obj.date_created,
+                    date_approved=ap_invoice_obj.date_approved,
+                    company=ap_invoice_obj.company,
+                    tenant=ap_invoice_obj.tenant,
                     system_auto_create=True
                 )
+                CompanyFunctionNumber.auto_gen_code_based_on_config('reconciliation', True, recon_obj)
+                recon_obj.system_status = 3
+                recon_obj.save(update_fields=['code', 'system_status'])
 
                 # tạo các dòng cấn trừ
                 bulk_info = []
