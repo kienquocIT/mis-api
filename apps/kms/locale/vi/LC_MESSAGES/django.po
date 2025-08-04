@@ -27,7 +27,7 @@ msgstr "Công văn phê duyệt"
 
 #
 msgid "Incoming document"
-msgstr "Văn bản đến"
+msgstr "Công văn đến"
 
 
 

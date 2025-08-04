@@ -80,6 +80,7 @@ class EmployeeListAllSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.group.id,
                 'title': obj.group.title,
+                'code': obj.group.code
             }
         return {}
 
