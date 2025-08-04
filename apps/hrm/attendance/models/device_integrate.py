@@ -9,6 +9,7 @@ class AttendanceDevice(MasterDataAbstractModel):
     username = models.CharField(max_length=100, blank=True)
     password = models.CharField(max_length=100, blank=True)
     minor_codes = models.JSONField(default=list)
+    is_using = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Attendance Device'
