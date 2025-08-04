@@ -49,6 +49,8 @@ class AttendanceHandler:
             data_push = {
                 'employee_id': employee_obj.id,
                 'date': date,
+                'tenant_id': employee_obj.tenant_id,
+                'company_id': employee_obj.company_id,
             }
             if date in HOLIDAY:
                 print(f"[{date}] Holiday")
@@ -71,41 +73,6 @@ class AttendanceHandler:
                         'timestamp': datetime.fromisoformat(log['time'])
                     })
                 for shift_assign in shift_assigns:
-                    # data_check = {}
-                    # shift_check = shift_assign.shift
-                    # if shift_check:
-                    #     data_push.update({
-                    #         'shift_id': str(shift_check.id),
-                    #     })
-                    #     # Kiểm tra nghỉ phép
-                    #     if leaves:
-                    #         data_check = AttendanceHandler.run_check_leave(
-                    #             date=date,
-                    #             logs_on_day=logs_on_day,
-                    #             leaves=leaves,
-                    #             shift_check=shift_check
-                    #         )
-                    #     # Kiểm tra công tác
-                    #     if businesses:
-                    #         data_check = AttendanceHandler.run_check_business(
-                    #             date=date,
-                    #             businesses=businesses
-                    #         )
-                    #     if not leaves and not businesses:
-                    #         checkin_time, checkout_time = AttendanceHandler.parse_checkin_checkout_grace(
-                    #             shift_check=shift_check,
-                    #             check_type=0,
-                    #         )
-                    #         data_check = AttendanceHandler.run_check_normal(
-                    #             date=date,
-                    #             logs_on_day=logs_on_day,
-                    #             checkin_time=checkin_time,
-                    #             checkout_time=checkout_time
-                    #         )
-                    #     for key, value in data_check.items():
-                    #         if key not in data_push:
-                    #             data_push.update({key: value})
-
                     data_push = AttendanceHandler.check_by_cases(
                         date=date,
                         logs_on_day=logs_on_day,
