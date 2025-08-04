@@ -525,3 +525,16 @@ WORKING_DAYS = (
     (5, 'Sat'),
     (6, 'Sun'),
 )
+
+
+# attendance
+ATTENDANCE_STATUS = (
+    (0, 'Absent'),
+    (1, 'Present'),
+    (2, 'Leave'),
+    (3, 'Business'),
+    (4, 'Weekend'),
+    (5, 'Holiday'),
+    (6, 'Overtime'),
+    (7, 'Overtime on business trip')
+)
