@@ -76,11 +76,10 @@ class Attendance(MasterDataAbstractModel):
     )
 
     @classmethod
-    def push_attendance_data(cls, employee_id, date, data_logs):
+    def push_attendance_data(cls, employee_id, date):
         data_parse = AttendanceHandler.check_attendance(
             employee_id=employee_id,
             date=date,
-            data_logs=data_logs
         )
 
         # delete old records for them same employee and date
