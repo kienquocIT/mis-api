@@ -4,6 +4,20 @@ from apps.hrm.attendance.utils.logical_attendance import DeviceIntegrate
 from apps.shared import MasterDataAbstractModel
 
 
+class AttendanceDevice(MasterDataAbstractModel):
+    device_ip = models.CharField(max_length=100, blank=True)
+    username = models.CharField(max_length=100, blank=True)
+    password = models.CharField(max_length=100, blank=True)
+    minor_codes = models.JSONField(default=list)
+
+    class Meta:
+        verbose_name = 'Attendance Device'
+        verbose_name_plural = 'Attendance Devices'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
 class DeviceIntegrateEmployee(MasterDataAbstractModel):
     employee = models.ForeignKey(
         'hr.Employee',
