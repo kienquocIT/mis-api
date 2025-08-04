@@ -16,6 +16,7 @@ class AttendanceDeviceListSerializer(serializers.ModelSerializer):
             'username',
             'password',
             'minor_codes',
+            'is_using',
         )
 
 
@@ -33,6 +34,7 @@ class AttendanceDeviceCreateSerializer(serializers.ModelSerializer):
             'username',
             'password',
             'minor_codes',
+            'is_using',
         )
 
     def create(self, validated_data):
@@ -50,6 +52,7 @@ class AttendanceDeviceUpdateSerializer(serializers.ModelSerializer):
             'username',
             'password',
             'minor_codes',
+            'is_using',
         )
 
     def update(self, instance, validated_data):
@@ -84,9 +87,6 @@ class DeviceIntegrateEmployeeCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         results = DeviceIntegrateEmployee.call_integrate(
-            device_ip="192.168.0.40",
-            username="admin",
-            password="mts@2025",
             tenant_id=validated_data.get('tenant_id', None),
             company_id=validated_data.get('company_id', None),
         )

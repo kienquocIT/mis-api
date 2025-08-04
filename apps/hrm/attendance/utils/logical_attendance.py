@@ -11,12 +11,10 @@ HOLIDAY = ["2025-04-30", "2025-05-01", "2025-09-02"]
 class AttendanceHandler:
     @classmethod
     def check_attendance(cls, employee_id, date):
-        data_logs = DeviceIntegrate.get_attendance(
-            device_ip="192.168.0.40",
-            username="admin",
-            password="mts@2025",
-            date=date
-        )
+        data_logs = []
+        model_log = DisperseModel(app_model='attendance.AccessLog').get_model()
+        if model_log and hasattr(model_log, 'objects'):
+            data_logs = model_log.objects.filter_on_company(date=date)
 
         model_employee = DisperseModel(app_model='hr.Employee').get_model()
         if model_employee and hasattr(model_employee, 'objects'):
@@ -406,7 +404,14 @@ class DeviceIntegrate:
     }
 
     @classmethod
-    def get_user(cls, device_ip, username, password):
+    def get_device_config(cls):
+        model_device = DisperseModel(app_model='attendance.AttendanceDevice').get_model()
+        if model_device and hasattr(model_device, 'objects'):
+            return model_device.objects.filter_on_company(is_using=True).first()
+        return None
+
+    @classmethod
+    def get_user(cls):
         """
         # post data:
 
@@ -461,7 +466,11 @@ class DeviceIntegrate:
         ]
         """
 
-        url = f"http://{device_ip}/ISAPI/AccessControl/UserInfo/Search?format=json"
+        device_config = DeviceIntegrate.get_device_config()
+        if not device_config:
+            return []
+
+        url = f"http://{device_config.device_ip}/ISAPI/AccessControl/UserInfo/Search?format=json"
         all_results = []
         position = 0
         max_results = 50
@@ -477,7 +486,7 @@ class DeviceIntegrate:
             res = requests.post(
                 url,
                 json=payload,
-                auth=HTTPDigestAuth(username, password),
+                auth=HTTPDigestAuth(device_config.username, device_config.password),
                 headers={"Content-Type": "application/json"},
                 timeout=10
             )
@@ -504,7 +513,7 @@ class DeviceIntegrate:
         return all_results
 
     @classmethod
-    def get_attendance(cls, device_ip, username, password, date):
+    def get_attendance_log(cls, date):
         """
         # post data:
 
@@ -534,13 +543,17 @@ class DeviceIntegrate:
         ]
         """
 
-        url = f"http://{device_ip}/ISAPI/AccessControl/AcsEvent?format=json"
+        device_config = DeviceIntegrate.get_device_config()
+        if not device_config:
+            return []
+
+        url = f"http://{device_config.device_ip}/ISAPI/AccessControl/AcsEvent?format=json"
         all_results = []
 
         # Lấy danh sách minor cho thiết bị, nếu không có thì báo lỗi
-        minors = DeviceIntegrate.DEVICE_MINOR_CODES.get(device_ip)
+        minors = DeviceIntegrate.DEVICE_MINOR_CODES.get(device_config.device_ip)
         if not minors:
-            print(f"[ERROR] Không tìm thấy cấu hình minor cho thiết bị {device_ip}")
+            print(f"[ERROR] Không tìm thấy cấu hình minor cho thiết bị {device_config.device_ip}")
             return []
 
         for minor in minors:
@@ -563,7 +576,7 @@ class DeviceIntegrate:
                 res = requests.post(
                     url,
                     json=payload,
-                    auth=HTTPDigestAuth(username, password),
+                    auth=HTTPDigestAuth(device_config.username, device_config.password),
                     headers={"Content-Type": "application/json"},
                     timeout=10
                 )
