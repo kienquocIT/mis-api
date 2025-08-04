@@ -2266,3 +2266,13 @@ def update_loan_product():
 
     print('Done :))')
     return True
+
+
+def update_user_username(user_id, username, tenant_code):
+    user_obj = User.objects.filter(id=user_id).first()
+    if user_obj:
+        user_obj.username = username
+        user_obj.username_auth = username + '-' + tenant_code
+        user_obj.save(update_fields=['username', 'username_auth'])
+    print('update_user_username done.')
+    return True
