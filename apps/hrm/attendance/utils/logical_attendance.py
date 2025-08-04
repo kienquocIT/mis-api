@@ -433,6 +433,11 @@ class AttendanceHandler:
 
 class DeviceIntegrate:
 
+    # Cấu hình minor cho từng thiết bị
+    DEVICE_MINOR_CODES = {
+        "192.168.0.40": [38, 75],
+    }
+
     @classmethod
     def get_user(cls, device_ip, username, password):
         """
@@ -564,46 +569,55 @@ class DeviceIntegrate:
 
         url = f"http://{device_ip}/ISAPI/AccessControl/AcsEvent?format=json"
         all_results = []
-        position = 0
-        max_results = 50
 
-        while True:
-            payload = {
-                "AcsEventCond": {
-                    "searchID": "1",
-                    "searchResultPosition": position,
-                    "maxResults": max_results,
-                    "major": 5,
-                    "minor": 75,
-                    "startTime": f"{date}T00:00:00+07:00",
-                    "endTime": f"{date}T23:59:59+07:00"
+        # Lấy danh sách minor cho thiết bị, nếu không có thì báo lỗi
+        minors = DeviceIntegrate.DEVICE_MINOR_CODES.get(device_ip)
+        if not minors:
+            print(f"[ERROR] Không tìm thấy cấu hình minor cho thiết bị {device_ip}")
+            return []
+
+        for minor in minors:
+            print(f"📌 Đang lấy dữ liệu cho minor={minor}")
+            position = 0
+            max_results = 50
+
+            while True:
+                payload = {
+                    "AcsEventCond": {
+                        "searchID": "1",
+                        "searchResultPosition": position,
+                        "maxResults": max_results,
+                        "major": 5,
+                        "minor": minor,
+                        "startTime": f"{date}T00:00:00+07:00",
+                        "endTime": f"{date}T23:59:59+07:00"
+                    }
                 }
-            }
-            res = requests.post(
-                url,
-                json=payload,
-                auth=HTTPDigestAuth(username, password),
-                headers={"Content-Type": "application/json"},
-                timeout=10
-            )
+                res = requests.post(
+                    url,
+                    json=payload,
+                    auth=HTTPDigestAuth(username, password),
+                    headers={"Content-Type": "application/json"},
+                    timeout=10
+                )
 
-            if res.status_code != 200:
-                print("Error:", res.status_code, res.text)
-                break
+                if res.status_code != 200:
+                    print("Error:", res.status_code, res.text)
+                    break
 
-            data = res.json()
-            events = data.get("AcsEvent", {}).get("InfoList", [])
+                data = res.json()
+                events = data.get("AcsEvent", {}).get("InfoList", [])
 
-            if not events:
-                break  # Không còn dữ liệu
+                if not events:
+                    break  # Không còn dữ liệu
 
-            all_results.extend(events)
-            print(f"Lấy được {len(events)} bản ghi từ offset {position}")
+                all_results.extend(events)
+                print(f"Lấy được {len(events)} bản ghi từ offset {position}")
 
-            # Nếu số bản ghi trả về < max_results → hết dữ liệu
-            if len(events) < max_results:
-                break
+                # Nếu số bản ghi trả về < max_results → hết dữ liệu
+                if len(events) < max_results:
+                    break
 
-            position += max_results  # Sang trang tiếp theo
+                position += max_results  # Sang trang tiếp theo
 
         return all_results
