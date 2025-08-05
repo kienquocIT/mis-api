@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import models
 
 from apps.hrm.attendance.utils.logical_attendance import DeviceIntegrate
@@ -76,24 +78,28 @@ class AccessLog(MasterDataAbstractModel):
 
     @classmethod
     def push_access_log(cls, date):
-        cls.objects.filter_on_company(date=date).delete()
+        cls.objects.filter_on_company(timestamp__date=date).delete()
         bulk_data = []
         device_config = DeviceIntegrate.get_device_config()
         if device_config:
+            logs = DeviceIntegrate.get_attendance_log(date=date)
             employee_integrate = DeviceIntegrateEmployee.objects.filter_on_company(
-                device_employee_id__in=[
-                    data.get('employeeNoString', '') for data in DeviceIntegrate.get_attendance_log(date=date)
-                ]
+                device_employee_id__in=[data.get('employeeNoString', '') for data in logs],
+                employee__isnull=False,
             )
             if employee_integrate:
-                for data in DeviceIntegrate.get_attendance_log(date=date):
+                for log in logs:
                     for employee_int in employee_integrate:
-                        if employee_int.device_employee_id == data.get('employeeNoString', ''):
+                        if employee_int.device_employee_id == log.get('employeeNoString', ''):
+                            dt_obj = datetime.fromisoformat(log.get('time', None))
+                            dt_naive = dt_obj.replace(tzinfo=None)
                             bulk_data.append(cls(
                                 device_id=device_config.id,
                                 employee_id=employee_int.employee_id,
-                                timestamp=data.get('time', None),
-                                minor=data.get('minor', ''),
+                                device_employee_id=employee_int.device_employee_id,
+                                device_employee_name=employee_int.device_employee_name,
+                                timestamp=dt_naive,
+                                minor=log.get('minor', ''),
                                 tenant_id=employee_int.tenant_id,
                                 company_id=employee_int.company_id,
                             ))

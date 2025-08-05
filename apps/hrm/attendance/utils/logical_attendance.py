@@ -14,7 +14,7 @@ class AttendanceHandler:
         data_logs = []
         model_log = DisperseModel(app_model='attendance.AccessLog').get_model()
         if model_log and hasattr(model_log, 'objects'):
-            data_logs = model_log.objects.filter_on_company(date=date)
+            data_logs = model_log.objects.filter_on_company(timestamp__date=date)
 
         model_employee = DisperseModel(app_model='hr.Employee').get_model()
         if model_employee and hasattr(model_employee, 'objects'):
@@ -64,12 +64,8 @@ class AttendanceHandler:
                 # Lọc logs theo ngày và employee_id
                 logs_on_day = [
                     log for log in data_logs
-                    if log['employeeNoString'] == integrate.device_employee_id and log['time'].startswith(date)
+                    if log.employee_id == employee_obj.id and str(log.timestamp.date()) == date
                 ]
-                for log in logs_on_day:
-                    log.update({
-                        'timestamp': datetime.fromisoformat(log['time'])
-                    })
                 for shift_assign in shift_assigns:
                     data_push = AttendanceHandler.check_by_cases(
                         date=date,
@@ -131,7 +127,7 @@ class AttendanceHandler:
                 for log in logs_on_day:
                     # is_checkin = False
                     # is_checkout = False
-                    log_time = log['timestamp'].time()
+                    log_time = log.timestamp.time()
                     # if log['event_type'] == "IN":
                     is_checkin = AttendanceHandler.check_normal_is_checkin(
                         log_time=log_time,
@@ -189,7 +185,7 @@ class AttendanceHandler:
         if check_log is None:
             check_log = log
         else:
-            prev_time = log['timestamp'].time()
+            prev_time = log.timestamp.time()
             if check_type == 'in':
                 if log_time > prev_time:
                     check_log = log
@@ -202,7 +198,7 @@ class AttendanceHandler:
     def check_normal_push_data(cls, date, checkin_log, checkout_log):
         data_push = {}
         if checkin_log:
-            checkin_time = checkin_log['timestamp'].time()
+            checkin_time = checkin_log.timestamp.time()
             data_push.update({
                 # 'is_checkin': True,
                 'checkin_time': checkin_time,
@@ -212,7 +208,7 @@ class AttendanceHandler:
             print(f"[{date}] ❌ Không có check-in đúng giờ")
 
         if checkout_log:
-            checkout_time = checkout_log['timestamp'].time()
+            checkout_time = checkout_log.timestamp.time()
             data_push.update({
                 # 'is_checkout': True,
                 'checkout_time': checkout_time,
