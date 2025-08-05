@@ -54,14 +54,12 @@ class CashOutflow(DataAbstractModel):
     posting_date = models.DateTimeField()
     document_date = models.DateTimeField()
     description = models.TextField(blank=True, null=True)
-    advance_for_employee_value = models.FloatField(default=0)  # tiền tạm ứng cho Nhân viên
     advance_for_supplier_value = models.FloatField(default=0)  # tiền tạm ứng cho NCC (không theo PO)
+    payment_to_customer_value = models.FloatField(default=0)  # tiền thanh toán cho KH
+    advance_for_employee_value = models.FloatField(default=0)  # tiền tạm ứng cho Nhân viên
     no_ap_invoice_value = models.FloatField(default=0)  # tổng tiền nhận của NCC không hóa đơn (theo PO)
     has_ap_invoice_value = models.FloatField(default=0)  # tổng tiền nhận của NCC có hóa đơn (theo AP)
-    total_value = models.FloatField(
-        default=0,
-        help_text="total_value = advance_for_supplier_value + no_ap_invoice_value + has_ap_invoice_value"
-    )
+    total_value = models.FloatField(default=0)
     # payment method
     cash_value = models.FloatField(default=0)
     bank_value = models.FloatField(default=0)
