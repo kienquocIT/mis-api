@@ -1,8 +1,65 @@
 from rest_framework import serializers
 
 from apps.core.hr.models import Employee
-from apps.hrm.attendance.models import DeviceIntegrateEmployee
+from apps.hrm.attendance.models import DeviceIntegrateEmployee, AttendanceDevice
 from apps.shared import BaseMsg
+
+
+class AttendanceDeviceListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = AttendanceDevice
+        fields = (
+            'id',
+            'title',
+            'device_ip',
+            'username',
+            'password',
+            'minor_codes',
+            'is_using',
+        )
+
+
+class AttendanceDeviceCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
+    device_ip = serializers.CharField(max_length=100)
+    username = serializers.CharField(max_length=100)
+    password = serializers.CharField(max_length=100)
+
+    class Meta:
+        model = AttendanceDevice
+        fields = (
+            'title',
+            'device_ip',
+            'username',
+            'password',
+            'minor_codes',
+            'is_using',
+        )
+
+    def create(self, validated_data):
+        device = AttendanceDevice.objects.create(**validated_data)
+        return device
+
+
+class AttendanceDeviceUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = AttendanceDevice
+        fields = (
+            'title',
+            'device_ip',
+            'username',
+            'password',
+            'minor_codes',
+            'is_using',
+        )
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
 
 
 class DeviceIntegrateEmployeeListSerializer(serializers.ModelSerializer):
@@ -30,9 +87,6 @@ class DeviceIntegrateEmployeeCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         results = DeviceIntegrateEmployee.call_integrate(
-            device_ip="192.168.0.40",
-            username="admin",
-            password="mts@2025",
             tenant_id=validated_data.get('tenant_id', None),
             company_id=validated_data.get('company_id', None),
         )
