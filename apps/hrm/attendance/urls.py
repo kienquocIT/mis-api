@@ -1,7 +1,7 @@
 from django.urls import path
 
 from apps.hrm.attendance.views import ShiftMasterDataList, ShiftMasterDataDetail, ShiftAssignmentList, \
-    DeviceIntegrateEmployeeList, DeviceIntegrateEmployeeDetail
+    DeviceIntegrateEmployeeList, DeviceIntegrateEmployeeDetail, AttendanceDeviceList, AttendanceDeviceDetail
 from apps.hrm.attendance.views.attendance import AttendanceDataList
 
 urlpatterns = [
@@ -15,6 +15,12 @@ urlpatterns = [
     path('attendance/list', AttendanceDataList.as_view(), name='AttendanceDataList'),
 
     # device integrate
+    path('attendance-device/list', AttendanceDeviceList.as_view(), name='AttendanceDeviceList'),
+    path(
+        'attendance-device/<str:pk>',
+        AttendanceDeviceDetail.as_view(),
+        name='AttendanceDeviceDetail'
+    ),
     path('device-integrate-employee/list', DeviceIntegrateEmployeeList.as_view(), name='DeviceIntegrateEmployeeList'),
     path(
         'device-integrate-employee/<str:pk>',
