@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import requests
 from requests.auth import HTTPDigestAuth
 from apps.shared import DisperseModel
