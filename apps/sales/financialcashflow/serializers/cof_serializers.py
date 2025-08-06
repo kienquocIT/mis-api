@@ -88,6 +88,7 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
             'document_date',
             'description',
             'advance_for_supplier_value',
+            'payment_to_customer_value',
             'advance_for_employee_value',
             # detail data
             'cash_out_advance_for_supplier_data',
@@ -101,6 +102,8 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
         CashOutflowCommonFunction.validate_supplier_id(validate_data)
         if validate_data.get('cof_type') == 0:
             validate_data['total_value'] = float(validate_data.get('advance_for_supplier_value', 0))
+        if validate_data.get('cof_type') == 1:
+            validate_data['total_value'] = float(validate_data.get('payment_to_customer_value', 0))
         if validate_data.get('cof_type') == 2:
             validate_data['total_value'] = float(validate_data.get('advance_for_employee_value', 0))
         CashOutflowCommonFunction.validate_cash_out_advance_for_supplier_data(validate_data)
@@ -138,6 +141,7 @@ class CashOutflowDetailSerializer(AbstractDetailSerializerModel):
             'description',
             'supplier_data',
             'advance_for_supplier_value',
+            'payment_to_customer_value',
             'advance_for_employee_value',
             'cash_out_advance_for_supplier_data',
             'cash_out_ap_invoice_data',
@@ -203,6 +207,7 @@ class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
             'document_date',
             'description',
             'advance_for_employee_value',
+            'payment_to_customer_value',
             'advance_for_supplier_value',
             # detail data
             'cash_out_advance_for_supplier_data',
