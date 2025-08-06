@@ -142,6 +142,8 @@ MAP_FIELD_TITLE = {
     # KMS
     'documentapproval.kmsdocumentapproval': 'title',
     'incomingdocument.kmsincomingdocument': 'title',
+    # HRM
+    'absenceexplanation.absenceexplanation': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
