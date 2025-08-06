@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.hrm.attendance.utils.logical_attendance import AttendanceHandler
-from apps.shared import MasterDataAbstractModel, ATTENDANCE_STATUS
+from apps.shared import MasterDataAbstractModel, ATTENDANCE_STATUS, DisperseModel
 
 
 class Attendance(MasterDataAbstractModel):
@@ -56,17 +56,20 @@ class Attendance(MasterDataAbstractModel):
     )
 
     @classmethod
-    def push_attendance_data(cls, employee_id, date):
-        data_parse = AttendanceHandler.check_attendance(
-            employee_id=employee_id,
-            date=date,
-        )
+    def push_attendance_data(cls, date):
+        model_employee = DisperseModel(app_model='hr.Employee').get_model()
+        if model_employee and hasattr(model_employee, 'objects'):
+            for employee_id in model_employee.objects.filter_on_company().values_list('id', flat=True):
+                data_parse = AttendanceHandler.check_attendance(
+                    employee_id=employee_id,
+                    date=date,
+                )
 
-        # delete old records for them same employee and date
-        cls.objects.filter(employee_id=employee_id, date=date).delete()
+                # delete old records for them same employee and date
+                cls.objects.filter(employee_id=employee_id, date=date).delete()
 
-        # create new records
-        cls.objects.bulk_create([cls(**data) for data in data_parse])
+                # create new records
+                cls.objects.bulk_create([cls(**data) for data in data_parse])
         return True
 
     class Meta:
