@@ -143,6 +143,7 @@ INSTALLED_APPS = \
     ] + [  # HRM
         'apps.hrm.employeeinfo',
         'apps.hrm.attendance',
+        'apps.hrm.absenceexplanation',
     ] + [
         'apps.sales.financialcashflow',
         'apps.sales.reconciliation',

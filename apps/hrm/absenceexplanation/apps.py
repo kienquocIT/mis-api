@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class AbsenceexplainationConfig(AppConfig):
+class AbsenceexplanationConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.hrm.absenceexplaination'
+    name = 'apps.hrm.absenceexplanation'

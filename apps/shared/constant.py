@@ -538,3 +538,11 @@ ATTENDANCE_STATUS = (
     (6, 'Overtime'),
     (7, 'Overtime on business trip')
 )
+
+# absence explanation
+ABSENCE_TYPE = (
+    (0, 'Check in'),
+    (1, 'Check out'),
+    (2, 'All day')
+)
+
