@@ -1,8 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.hrm.attendance.models.attendance import Attendance
-from apps.hrm.attendance.serializers.attendance import AttendanceListSerializer, AttendanceDetailSerializer, \
-    AttendanceCreateSerializer
+from apps.hrm.attendance.serializers.attendance import AttendanceListSerializer, AttendanceCreateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin
 
 
