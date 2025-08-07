@@ -60,6 +60,7 @@ class Attendance(MasterDataAbstractModel):
     def push_attendance_data(cls, date):
         m_log = DisperseModel(app_model='attendance.AccessLog').get_model()
         m_employee = DisperseModel(app_model='hr.Employee').get_model()
+        attendance_objs = []
         if m_employee and m_log and hasattr(m_employee, 'objects') and hasattr(m_log, 'push_access_log'):
             m_log.push_access_log(date=date)
             for employee_id in m_employee.objects.filter_on_company().values_list('id', flat=True):
@@ -68,13 +69,14 @@ class Attendance(MasterDataAbstractModel):
                     date=date,
                 )
 
-                # delete old records for them same employee and date
+                # delete old records
                 cls.objects.filter(employee_id=employee_id, date=date).delete()
 
                 # create new records
-                cls.objects.bulk_create([cls(**data) for data in data_parse])
-        print('push_attendance_data done.')
-        return True
+                attendance_objs = cls.objects.bulk_create([cls(**data) for data in data_parse])
+            print('push_attendance_data done.')
+            return attendance_objs
+        return attendance_objs
 
     class Meta:
         verbose_name = 'Attendance'

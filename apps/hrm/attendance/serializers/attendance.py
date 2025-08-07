@@ -54,3 +54,23 @@ class AttendanceDetailSerializer(serializers.ModelSerializer):
             'is_late',
             'is_early_leave'
         )
+
+
+class AttendanceCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendance
+        fields = (
+            'date',
+        )
+
+    def validate(self, validate_data):
+        date = validate_data.pop('date')
+        objs_created = Attendance.push_attendance_data(date=date)
+        if not objs_created:
+            raise serializers.ValidationError({'detail': "Get attendance data fail"})
+        validate_data.update({'instance': objs_created[0]})
+        return validate_data
+
+    def create(self, validated_data):
+        result = validated_data.pop('instance')
+        return result
