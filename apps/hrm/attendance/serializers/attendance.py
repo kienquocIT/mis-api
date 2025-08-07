@@ -1,3 +1,6 @@
+import calendar
+from datetime import date
+
 from rest_framework import serializers
 from apps.hrm.attendance.models.attendance import Attendance
 
@@ -56,16 +59,37 @@ class AttendanceDetailSerializer(serializers.ModelSerializer):
         )
 
 
+def get_all_days_in_month(year, month):
+    today = date.today()
+    num_days = calendar.monthrange(year, month)[1]
+
+    return [
+        date(year, month, day).strftime("%Y-%m-%d")
+        for day in range(1, num_days + 1)
+        if date(year, month, day) <= today
+    ]
+
+
 class AttendanceCreateSerializer(serializers.ModelSerializer):
+    year = serializers.IntegerField()
+    month = serializers.IntegerField()
+
     class Meta:
         model = Attendance
         fields = (
-            'date',
+            'month',
+            'year',
         )
 
     def validate(self, validate_data):
-        date = validate_data.pop('date')
-        objs_created = Attendance.push_attendance_data(date=date)
+        month = validate_data.pop('month')
+        year = validate_data.pop('year')
+        dates = get_all_days_in_month(year=year, month=month)
+        objs_created = []
+        for date_check in dates:
+            objs_create = Attendance.push_attendance_data(date=date_check)
+            if not objs_created:
+                objs_created = objs_create
         if not objs_created:
             raise serializers.ValidationError({'detail': "Get attendance data fail"})
         validate_data.update({'instance': objs_created[0]})

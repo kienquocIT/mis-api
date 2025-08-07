@@ -13,7 +13,7 @@ class AttendanceDataList(BaseListMixin, BaseCreateMixin):
         'date': ['exact', 'gte', 'lte'],
     }
     serializer_list = AttendanceListSerializer
-    serializer_detail = AttendanceDetailSerializer
+    serializer_detail = AttendanceListSerializer
     serializer_create = AttendanceCreateSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
