@@ -15,7 +15,8 @@ class Attendance(MasterDataAbstractModel):
         'attendance.ShiftInfo',
         on_delete=models.CASCADE,
         verbose_name='shift',
-        related_name='attendance_shift'
+        related_name='attendance_shift',
+        null=True,
     )
     checkin_time = models.TimeField(null=True)
     checkout_time = models.TimeField(null=True)
@@ -57,9 +58,11 @@ class Attendance(MasterDataAbstractModel):
 
     @classmethod
     def push_attendance_data(cls, date):
-        model_employee = DisperseModel(app_model='hr.Employee').get_model()
-        if model_employee and hasattr(model_employee, 'objects'):
-            for employee_id in model_employee.objects.filter_on_company().values_list('id', flat=True):
+        m_log = DisperseModel(app_model='attendance.AccessLog').get_model()
+        m_employee = DisperseModel(app_model='hr.Employee').get_model()
+        if m_employee and m_log and hasattr(m_employee, 'objects') and hasattr(m_log, 'push_access_log'):
+            m_log.push_access_log(date=date)
+            for employee_id in m_employee.objects.filter_on_company().values_list('id', flat=True):
                 data_parse = AttendanceHandler.check_attendance(
                     employee_id=employee_id,
                     date=date,
@@ -70,6 +73,7 @@ class Attendance(MasterDataAbstractModel):
 
                 # create new records
                 cls.objects.bulk_create([cls(**data) for data in data_parse])
+        print('push_attendance_data done.')
         return True
 
     class Meta:
