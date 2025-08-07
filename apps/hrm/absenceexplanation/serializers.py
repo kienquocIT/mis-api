@@ -14,7 +14,7 @@ class AbsenceExplanationListSerializer(AbstractListSerializerModel):
             'id',
             'code',
             'description',
-            'type',
+            'absence_type',
             'employee',
             'date_created',
             'system_status'
@@ -36,7 +36,7 @@ class AbsenceExplanationCreateSerializer(AbstractCreateSerializerModel):
         fields = (
             'description',
             'employee',
-            'type',
+            'absence_type',
             'reason',
             'date',
         )
@@ -51,7 +51,7 @@ class AbsenceExplanationDetailSerializer(AbstractDetailSerializerModel):
             'id',
             'code',
             'description',
-            'type',
+            'absence_type',
             'employee',
             'date',
             'reason',
@@ -77,7 +77,7 @@ class AbsenceExplanationUpdateSerializer(AbstractCreateSerializerModel):
         fields = (
             'description',
             'employee',
-            'type',
+            'absence_type',
             'reason',
             'date'
         )

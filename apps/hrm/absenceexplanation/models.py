@@ -12,7 +12,7 @@ class AbsenceExplanation(DataAbstractModel):
         related_name='absent_employee'
     )
     date = models.DateField(help_text="Absence explanation for")
-    type = models.SmallIntegerField(
+    absence_type = models.SmallIntegerField(
         default=0,
         choices=ABSENCE_TYPE
     )
