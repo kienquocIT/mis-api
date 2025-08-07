@@ -547,4 +547,3 @@ ABSENCE_TYPE = (
     (1, 'Check out'),
     (2, 'All day')
 )
-

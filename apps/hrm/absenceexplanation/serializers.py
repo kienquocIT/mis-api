@@ -81,4 +81,3 @@ class AbsenceExplanationUpdateSerializer(AbstractCreateSerializerModel):
             'reason',
             'date'
         )
-
