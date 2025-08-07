@@ -45,6 +45,7 @@ APP_MAP_DATA = {
     },
     'equipmentloan.equipmentloan': {'title': 'Equipment Loan', 'url': 'equipment-loan/detail/'},
     'equipmentreturn.equipmentreturn': {'title': 'Equipment Return', 'url': 'equipment-return/detail/'},
+    'absenceexplanation.absenceexplanation': {'title': 'Absence Explanation', 'url': 'hrm/absenceexplanation/detail/'},
 }
 
 WORKFLOW_TYPE_MAP_TXT = {

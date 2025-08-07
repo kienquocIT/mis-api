@@ -88,6 +88,10 @@ _PlanApplication_hrm_data = {
         "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",  # HRM
         "application_id": "7436c857-ad09-4213-a190-c1c7472e99be",  # Employee info
     },
+    "8308d062-b22c-4f05-b88e-1115f9fe03ee": {
+        "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",  # HRM
+        "application_id": "8308d062-b22c-4f05-b88e-1115f9fe03ee",  # Absence explanation
+    },
 }
 
 _PlanApplication_sale_data = {
