@@ -937,7 +937,6 @@ def create_empl_map_hrm():
         if not _created:
             avai_lst.append(obj)
     print('init create hrm data list done!')
-    print('Available list has created', avai_lst)
 
 
 def reset_remain_gr_for_po():
@@ -2276,3 +2275,9 @@ def update_user_username(user_id, username, tenant_code):
         user_obj.save(update_fields=['username', 'username_auth'])
     print('update_user_username done.')
     return True
+
+
+def create_template_print_default():
+    for company in Company.objects.all():
+        ConfigDefaultData(company).create_print_template_default()
+    print('Done Create print template default !!')

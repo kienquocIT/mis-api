@@ -43,19 +43,20 @@ from .push_notify import TeleBotPushNotify
 from .tasks import call_task_background
 from apps.core.tenant.models import TenantPlan
 
-from apps.core.mailer.tasks import send_mail_otp, send_mail_new_project_member, send_mail_new_contract_submit
+from apps.core.mailer.tasks import send_mail_otp, send_mail_new_project_member
 from apps.core.account.models import ValidateUser
 from apps.eoffice.leave.leave_util import leave_available_map_employee
 from apps.sales.lead.models import LeadStage
 from apps.sales.project.models import ProjectMapMember, ProjectMapGroup, ProjectMapWork, ProjectConfig
 from apps.core.forms.models import Form, FormPublishedEntries
 from apps.core.forms.tasks import notifications_form_with_new, notifications_form_with_change
-from apps.sales.project.extend_func import calc_rate_project, calc_update_task, re_calc_work_group
+from apps.sales.project.extend_func import calc_rate_project, re_calc_work_group
 from .models import DisperseModel
 from .. import ProjectMsg
-from ...core.attachments.models import Folder
+from apps.core.printer.models import PrintTemplates
+from ...core.printer.template_content import TEMPLATE_CONTENT_MAP
 from ...sales.leaseorder.models import LeaseOrderAppConfig
-from ...sales.project.tasks import create_project_news
+from apps.sales.project.tasks import create_project_news
 
 logger = logging.getLogger(__name__)
 
@@ -990,7 +991,7 @@ class ConfigDefaultData:
             defaults={},
         )
         if not company_config:
-            company_config = CompanyConfig.objects.get(company=self.company_obj)
+            company_config = self.company_obj
         if created:
             #
             translation.activate(company_config.language if company_config else 'vi')
@@ -1157,6 +1158,28 @@ class ConfigDefaultData:
             tenant=self.company_obj.tenant
         )
 
+    def create_print_template_default(self, company_obj):
+        list_default = [{
+            "app_id": 'b9650500-aba7-44e3-b6e0-2542622702a3',  # business trip
+            "contents": TEMPLATE_CONTENT_MAP
+        }]
+        if not company_obj:
+            company_obj = self.company_obj
+
+        for item in list_default:
+            content = item['content'][str(item['app_id'])]
+            _, _ = PrintTemplates.objects.get_or_create(
+                company=company_obj,
+                tenant=company_obj.tenant,
+                is_default=True,
+                application=item['app_id'],
+                defaults={
+                    'is_default': True,
+                    'application': item['app_id'],
+                    'content': content,
+                }
+            )
+
     def call_new(self):
         config = self.company_config()
         self.delivery_config()
@@ -1176,6 +1199,7 @@ class ConfigDefaultData:
         self.make_sure_workflow_apps()
         self.project_config()
         self.lease_order_config()
+        self.create_print_template_default(config.company)
         return True
 
 

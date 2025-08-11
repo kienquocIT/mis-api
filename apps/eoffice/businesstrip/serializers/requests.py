@@ -264,11 +264,40 @@ class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_employee_inherit(cls, obj):
         if obj.employee_inherit:
+            # Hàm đệ quy để lấy first_manager của group hoặc parent group
+            def get_first_manager(group):
+                if not group:
+                    return {}
+                
+                # Nếu không có first_manager và có parent_n, đệ quy lên parent
+                if group.parent_n:
+                    return get_first_manager(group.parent_n)
+                else:
+                    return {
+                        "id": str(group.first_manager.id),
+                        "full_name": group.first_manager.get_full_name(),
+                    }
+
+            # Lấy thông tin CEO/Manager từ group
+            ceo = {}
+            if obj.employee_inherit.group:
+                ceo = get_first_manager(obj.employee_inherit.group) or {}
+            
             return {
                 "id": str(obj.employee_inherit_id),
                 "last_name": obj.employee_inherit.last_name,
                 "first_name": obj.employee_inherit.first_name,
-                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}',
+                "group": {
+                    "id": str(obj.employee_inherit.group.id),
+                    "title": obj.employee_inherit.group.title,
+                    "ceo": ceo,
+                    "first_manager": {
+                        "id": str(obj.employee_inherit.group.first_manager.id),
+                        "full_name": obj.employee_inherit.group.first_manager.get_full_name(),
+                    } if obj.employee_inherit.group.first_manager else {},
+                } if obj.employee_inherit.group else {}
+
             }
         return {}
 

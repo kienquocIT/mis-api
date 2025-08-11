@@ -103,6 +103,7 @@ BUSINESS_TRIP_REQUEST = {
         },
     },
     "allow_permit": True,
+    "allow_print": True,
 }
 
 ASSET_TOOLS_PROVIDE = {

@@ -8,6 +8,14 @@ from .application_properties_params import (
     Goods_Transfer_data__params,
     Goods_Return_data__params, Delivery_data__params, Bidding_data__params, LeaseOrder_data__params
 )
+#  TYPE = {
+#  1: text
+#  2: date
+#  3: number Int
+#  4: boolean
+#  5: uuid (select combobox)
+#  6: float number (currency etc..)
+# }
 
 __all__ = ["ApplicationProperty_data"]
 
@@ -1727,21 +1735,45 @@ AppProp_Eoffice_Business_trip_data = {
         'title': 'Title',
         'code': 'title',
         'type': 1,
+        'is_print': True,
+    },
+    'd1b25a07-ab3e-4a33-8597-dc85d9abf70f': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Employee inherit',
+        'code': 'employee_inherit__full_name',
+        'type': 5,
+        'is_print': True,
+    },
+    'fec24f63-dd1c-4144-95cb-00f6293aef22': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Employee inherit group',
+        'code': 'employee_inherit__group__title',
+        'type': 5,
+        'is_print': True,
+    },
+    '01527bfe-e451-4585-b9ae-26315686450d': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Remark',
+        'code': 'remark',
+        'type': 5,
+        'is_print': True,
     },
     '9351e068-8fc9-4431-99ac-66454998aff0': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
         'title': 'Departure',
-        'code': 'departure',
+        'code': 'departure__title',
         'type': 5,
+        'is_print': True,
     },
     '77ae7fd2-5982-434b-b4d7-4668ba28fbba': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
         'title': 'Destination',
-        'code': 'destination',
+        'code': 'destination__title',
         'type': 5,
         'content_type': 'base.city',
         'is_wf_zone': False,
         'is_wf_condition': True,
+        'is_print': True,
     },
     '99638e9d-2136-4060-84a2-45568b833bec': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
@@ -1754,12 +1786,14 @@ AppProp_Eoffice_Business_trip_data = {
         'title': 'Date from',
         'code': 'date_f',
         'type': 2,
+        'is_print': True,
     },
     '8323f1d7-7e69-4c24-b8d2-458c9fb2d73e': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
         'title': 'Date to',
         'code': 'date_t',
         'type': 2,
+        'is_print': True,
     },
     '94bdd32e-177a-4b8e-9491-03749ef9514f': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
@@ -1789,9 +1823,109 @@ AppProp_Eoffice_Business_trip_data = {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
         'title': 'Total day',
         'code': 'total_day',
+        'type': 3,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+        'is_print': True,
+    },
+    '383b5097-1b36-4104-a5d6-9ba09a94ae37': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Total pretax amount',
+        'code': 'pretax_amount',
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': True,
+        'is_print': True,
+    },
+    'fab53ba6-7e3c-41e8-b506-a7ea9fb2fb7a': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Total taxes',
+        'code': 'taxes',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+        'is_print': True,
+    },
+    '64aa5944-174c-49bb-b6ea-f36c38957801': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Total amount',
+        'code': 'total_amount',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+        'is_print': True,
+    },
+    'b69611e7-12c6-4706-a95e-7b14fc390c45': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Expenses title',
+        'code': 'expense_items___title',
+        'type': 1,
+        'is_wf_zone': False,
+        'is_wf_condition': False,
+        'is_print': True,
+    },
+    'da331644-a117-4714-9061-aadd52fae4ae': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Expenses expense item',
+        'code': 'expense_items___expense_item',
+        'type': 5,
+        'is_wf_zone': False,
+        'is_wf_condition': False,
+        'is_print': True,
+    },
+    '25cfa3d4-3be4-4a0b-bb8f-9f79216bac3c': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Expenses UoM',
+        'code': 'expense_items___uom_txt',
+        'type': 1,
+        'is_wf_zone': False,
+        'is_wf_condition': False,
+        'is_print': True,
+    },
+    '9b712c30-2056-452c-a43e-9dc26b41c9ef': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Expenses Quantity',
+        'code': 'expense_items___quantity',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': False,
+        'is_print': True,
+    },
+    'd421d998-bc5e-4461-bca2-546579b53a26': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Expenses Price',
+        'code': 'expense_items___price',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': False,
+        'is_print': True,
+    },
+    '8c4e6274-017a-4f19-8091-afe0049558f1': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Expenses Tax',
+        'code': 'expense_items___tax',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': False,
+        'is_print': True,
+    },
+    'b27238f7-3433-42e3-b8ad-8a7ff1d8b3e1': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Expenses sub total',
+        'code': 'expense_items___subtotal',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': False,
+        'is_print': True,
+    },
+    '41d76ca4-460a-46e9-b3b2-687ef1513a5d': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Expenses No.',
+        'code': 'expense_items___order',
+        'type': 3,
+        'is_wf_zone': False,
+        'is_wf_condition': False,
+        'is_print': True,
     },
 }
 

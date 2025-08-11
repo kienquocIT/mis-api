@@ -102,6 +102,24 @@ Bastion_data_params = {
         'system_code': '3',
         'is_mail': True,
     },
+    'ab276c17-b193-4ccd-b8dc-2ed4f5a0b179': {
+        'application_id': 'ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68',  # bastion app
+        'title': 'Current Manager',
+        'code': 'employee_inherit__group__first_manager__full_name',
+        'remark': 'First manager of employee inherit',
+        'type': 5,
+        'is_print': True,
+        'is_mail': True,
+    },
+    '5ff17fa7-74c5-4fce-b5d6-9c8d5d5807f1': {
+        'application_id': 'ba2ef9f1-63f4-4cfb-ae2f-9dee6a56da68',  # bastion app
+        'title': 'Current CEO',
+        'code': 'employee_inherit__group__ceo__full_name',
+        'remark': 'Chief Executive Officer of employee inherit',
+        'type': 5,
+        'is_print': True,
+        'is_mail': True,
+    },
 }
 
 Quotation_data__params = {
