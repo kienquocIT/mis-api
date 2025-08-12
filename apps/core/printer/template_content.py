@@ -9,7 +9,7 @@ PRINT_BUSINESS = '<h1 style="text-align: center;"><span style="font-size: 22pt;"
                  'class="params-data badge badge-light border px-2 py-1 rounded-pill d-inline-block" ' \
                  'style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
                  'data-code="_current_date_solemn"> #Current date solemn </span>&nbsp;</span></p></div></div>' \
-                 '<p><span>​&nbsp; </span></p>' \
+                 '<p><span>&nbsp; </span></p>' \
                  '<p><span style="font-family: \'times new roman\', times, serif; font-size: 12pt;">' \
                  'Họ v&agrave; t&ecirc;n nh&acirc;n vi&ecirc;n: <span id="idx-ZpYFFmRUCRW7eYFy" ' \
                  'class="params-data badge badge-light border px-2 py-1 rounded-pill d-inline-block" ' \
