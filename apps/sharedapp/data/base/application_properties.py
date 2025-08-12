@@ -3481,6 +3481,16 @@ AppProp_KMS_IncomingDocument_data = {
     }
 }
 
+AppProp_HRM_AbsenceExplanation_data = {
+    "86d0a556-c818-4a19-b4d3-e143d71957db": {
+        "application_id": "8308d062-b22c-4f05-b88e-1115f9fe03ee",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    }
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -3531,4 +3541,7 @@ ApplicationProperty_data = {
     #  KMS
     **AppProp_KMS_Document_data,
     **AppProp_KMS_IncomingDocument_data,
+
+    # HRM
+    **AppProp_HRM_AbsenceExplanation_data
 }
