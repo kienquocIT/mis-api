@@ -63,7 +63,7 @@ PRINT_BUSINESS = '<h1 style="text-align: center;"><span style="font-size: 22pt;"
                  'font-family: \'times new roman\', times, serif;"> <span id="idx-tg0Bmp683Yomml0S" ' \
                  'class="params-data badge badge-light border px-2 py-1 ' \
                  'rounded-pill d-inline-block" style="background-color: #e0f3ff; ' \
-                 'color: #007bff; font-weight: 500;" data-code="expense_items___expense_item">' \
+                 'color: #007bff; font-weight: 500;" data-code="expense_items___expense_item_data__title">' \
                  ' #Expenses expense item </span>&nbsp; </span></td><td style="width: 14.0853%; height: 12px;">' \
                  '<span style="font-size: 12pt; font-family: \'times new roman\', times, serif;"> <span ' \
                  'id="idx-w33GwzU9vdo1dva3" class="params-data badge badge-light border px-2 py-1 rounded-pill ' \
@@ -78,17 +78,26 @@ PRINT_BUSINESS = '<h1 style="text-align: center;"><span style="font-size: 22pt;"
                  'font-family: \'times new roman\', times, serif;"> <span id="idx-99Ecl6xvqXsK62wH" ' \
                  'class="params-data badge badge-light border px-2 py-1 rounded-pill d-inline-block" ' \
                  'style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
-                 'data-code="expense_items___price"> #Expenses Price </span>' \
+                 'data-code="expense_items___price"> #Expenses Price </span> <span ' \
+                 'id="idx-WpPsbh02h55lLqFd" class="params-data badge badge-light border px-2 py-1 rounded-pill ' \
+                 'd-inline-block" style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
+                 'data-code="_current_currency_code"> #Current Currency Code </span>' \
                  '&nbsp; </span></td><td style="width: 14.0853%; height: 12px;"><span style="font-size: 12pt; ' \
                  'font-family: \'times new roman\', times, serif;"> <span id="idx-objlQyQXmPejEeIB" ' \
                  'class="params-data badge badge-light border px-2 py-1 rounded-pill d-inline-block" ' \
                  'style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
-                 'data-code="expense_items___tax"> #Expenses Tax </span>&nbsp;' \
+                 'data-code="expense_items___tax_data_title"> #Expenses Tax </span>&nbsp;<span ' \
+                 'id="idx-WpPsbh02h55lLqFd" class="params-data badge badge-light border px-2 py-1 rounded-pill ' \
+                 'd-inline-block" style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
+                 'data-code="_current_currency_code"> #Current Currency Code </span>&nbsp;' \
                  ' </span></td><td style="width: 14.0861%; height: 12px;"><span style="font-size: 12pt; ' \
                  'font-family: \'times new roman\', times, serif;"> <span id="idx-LyDVYDLUtI70Ds8H" ' \
                  'class="params-data badge badge-light border px-2 py-1 rounded-pill d-inline-block" ' \
                  'style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
-                 'data-code="expense_items___subtotal"> #Expenses sub total&nbsp;</span></span></td></tr>' \
+                 'data-code="expense_items___subtotal"> #Expenses sub total&nbsp;</span>&nbsp;<span ' \
+                 'id="idx-WpPsbh02h55lLqFd" class="params-data badge badge-light border px-2 py-1 rounded-pill ' \
+                 'd-inline-block" style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
+                 'data-code="_current_currency_code"> #Current Currency Code </span></span></td></tr>' \
                  '</tbody></table><table style="border-collapse: collapse; width: 28.5419%; height: 36px; float: ' \
                  'right;" border="1"><tbody><tr style="height: 12px;"><td style="width: 49.7662%; height: 12px;">' \
                  '<span style="font-size: 12pt; font-family: \'times new roman\', times, serif;"><strong>' \
@@ -96,14 +105,20 @@ PRINT_BUSINESS = '<h1 style="text-align: center;"><span style="font-size: 22pt;"
                  'style="font-size: 12pt; font-family: \'times new roman\', times, serif;"> <span ' \
                  'id="idx-eHfppSQJSIjQK7hj" class="params-data' \
                  ' badge badge-light border px-2 py-1 rounded-pill d-inline-block" style="background-color: #e0f3ff;' \
-                 ' color: #007bff; font-weight: 500;" data-code="pretax_amount"> #Total pretax amount </span>&nbsp; ' \
+                 ' color: #007bff; font-weight: 500;" data-code="pretax_amount"> #Total pretax amount </span>&nbsp;' \
+                 '<span id="idx-WpPsbh02h55lLqFd" class="params-data badge badge-light border px-2 py-1 rounded-pill ' \
+                 'd-inline-block" style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
+                 'data-code="_current_currency_code"> #Current Currency Code </span>&nbsp; ' \
                  '</span></td></tr><tr style="height: 12px;"><td style="width: 49.7662%; height: 12px;"><span ' \
                  'style="font-size: 12pt; font-family: \'times new roman\', times, serif;"><strong>Thuế</strong>' \
                  '</span></td><td style="width: 49.7662%; height: 12px;"><span style="font-size: 12pt; ' \
                  'font-family: \'times new roman\', times, serif;"> <span id="idx-XMAw7bDIbnh3ma9p"' \
                  ' class="params-data badge badge-light border px-2 py-1 rounded-pill d-inline-block" ' \
                  'style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" data-code="taxes"> ' \
-                 '#Total taxes </span>&nbsp; </span></td></tr>' \
+                 '#Total taxes </span>&nbsp;<span id="idx-WpPsbh02h55lLqFd" class="params-data badge badge-light ' \
+                 'border px-2 py-1 rounded-pill d-inline-block" style="background-color: #e0f3ff; color: #007bff;' \
+                 ' font-weight: 500;" data-code="_current_currency_code"> #Current Currency Code </span>&nbsp; ' \
+                 '</span></td></tr>' \
                  '<tr style="height: 12px;"><td style="width: 49.7662%; height: 12px;"><span style="font-size: 12pt;' \
                  ' font-family: \'times new roman\', times, serif;"><strong>Tổng</strong></span></td>' \
                  '<td style="width: 49.7662%; height: 12px;"><span id="idx-XMAw7bDIbnh3ma9p" class="params-data badge' \
@@ -111,7 +126,10 @@ PRINT_BUSINESS = '<h1 style="text-align: center;"><span style="font-size: 22pt;"
                  'color: #007bff; font-weight: 500; font-size: 12pt; font-family: \'times new roman\', times, serif;"' \
                  ' data-code="taxes"> <span id="idx-TurwzuFvEcJwqsCW" class="params-data badge badge-light border ' \
                  'px-2 py-1 rounded-pill d-inline-block" style="background-color: #e0f3ff; color: #007bff; ' \
-                 'font-weight: 500;" data-code="total_amount"> #Total amount </span>&nbsp; </span></td></tr></tbody>' \
+                 'font-weight: 500;" data-code="total_amount"> #Total amount </span>&nbsp;<span ' \
+                 'id="idx-WpPsbh02h55lLqFd" class="params-data badge badge-light border px-2 py-1 ' \
+                 'rounded-pill d-inline-block" style="background-color: #e0f3ff; color: #007bff; font-weight: 500;"' \
+                 ' data-code="_current_currency_code"> #Current Currency Code </span>&nbsp; </span></td></tr></tbody>' \
                  '</table><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><h3><span style="font-size: 14px; ' \
                  'font-family: \'times new roman\', times, serif;"><strong>III. Chi tiết chuyến đi c&ocirc;ng' \
                  ' t&aacute;c</strong></span></h3><table style="border-collapse: collapse; width: 100%; ' \
@@ -145,7 +163,8 @@ PRINT_BUSINESS = '<h1 style="text-align: center;"><span style="font-size: 22pt;"
                  'text-align: center;"><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p><span style="font-family: ' \
                  '\'times new roman\', times, serif;"> <span id="idx-gDCCEJYaqRxyE7Wx" class="params-data badge ' \
                  'badge-light border px-2 py-1 rounded-pill d-inline-block" style="background-color: #e0f3ff; ' \
-                 'color: #007bff; font-weight: 500;" data-code="employee_inherit"> #Employee inherit </span>&nbsp; ' \
+                 'color: #007bff; font-weight: 500;" data-code="employee_inherit__full_name">' \
+                 ' #Employee inherit </span>&nbsp; ' \
                  '</span></p></td><td style="width: 33.1129%; height: 12px; text-align: center;"><p>&nbsp;</p>' \
                  '<p>&nbsp;</p><p>&nbsp;</p><p><span style="font-family: \'times new roman\', times, serif;"> ' \
                  '<span id="idx-qcs2pB4Pu5znNi7A" class="params-data badge badge-light border px-2 py-1 rounded-pill' \
@@ -161,5 +180,5 @@ PRINT_BUSINESS = '<h1 style="text-align: center;"><span style="font-size: 22pt;"
                  '\'times new roman\', times, serif;">&nbsp;</span></p>'
 
 TEMPLATE_CONTENT_MAP = {
-    'b9650500-aba7-44e3-b6e0-2542622702a3': PRINT_BUSINESS,
+    '87ce1662-ca9d-403f-a32e-9553714ebc6d': PRINT_BUSINESS,
 }

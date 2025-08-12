@@ -839,3 +839,5 @@ IV. Thiết lập view
 ``
 > **Note** muốn hiển thị employee first manager thì trong employee inherit trả thêm param group.first_manager.full_name
 > hiển thị CEO thì thêm group.ceo.full_name
+> - để print list thì sử dụng tên field + "___" + field_name_child
+> - ví dụ: products_list___category__title

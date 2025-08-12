@@ -1867,7 +1867,7 @@ AppProp_Eoffice_Business_trip_data = {
     'da331644-a117-4714-9061-aadd52fae4ae': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
         'title': 'Expenses expense item',
-        'code': 'expense_items___expense_item',
+        'code': 'expense_items___expense_item_data__title',
         'type': 5,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -1903,7 +1903,7 @@ AppProp_Eoffice_Business_trip_data = {
     '8c4e6274-017a-4f19-8091-afe0049558f1': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
         'title': 'Expenses Tax',
-        'code': 'expense_items___tax',
+        'code': 'expense_items___tax_data__title',
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,

@@ -1160,23 +1160,26 @@ class ConfigDefaultData:
 
     def create_print_template_default(self, company_obj):
         list_default = [{
-            "app_id": 'b9650500-aba7-44e3-b6e0-2542622702a3',  # business trip
-            "contents": TEMPLATE_CONTENT_MAP
+            "app_id": '87ce1662-ca9d-403f-a32e-9553714ebc6d',  # business trip
+            "content": TEMPLATE_CONTENT_MAP
         }]
         if not company_obj:
             company_obj = self.company_obj
 
         for item in list_default:
             content = item['content'][str(item['app_id'])]
-            _, _ = PrintTemplates.objects.get_or_create(
+            PrintTemplates.objects.get_or_create(
                 company=company_obj,
                 tenant=company_obj.tenant,
                 is_default=True,
-                application=item['app_id'],
+                application_id=item['app_id'],
                 defaults={
+                    'title': 'Mẫu in Công tác',
+                    'company': company_obj,
+                    'tenant': company_obj.tenant,
                     'is_default': True,
-                    'application': item['app_id'],
-                    'content': content,
+                    'application_id': item['app_id'],
+                    'contents': content,
                 }
             )
 

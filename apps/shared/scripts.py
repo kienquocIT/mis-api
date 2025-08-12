@@ -2279,5 +2279,5 @@ def update_user_username(user_id, username, tenant_code):
 
 def create_template_print_default():
     for company in Company.objects.all():
-        ConfigDefaultData(company).create_print_template_default()
+        ConfigDefaultData(company).create_print_template_default(company)
     print('Done Create print template default !!')
