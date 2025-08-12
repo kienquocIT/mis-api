@@ -78,7 +78,7 @@ class AccessLog(MasterDataAbstractModel):
 
     @classmethod
     def push_access_log(cls, date):
-        cls.objects.filter_on_company(timestamp__date=date).delete()
+        # cls.objects.filter_on_company(timestamp__date=date).delete()
         bulk_data = []
         device_config = DeviceIntegrate.get_device_config()
         if device_config:
