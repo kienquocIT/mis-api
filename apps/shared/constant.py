@@ -142,6 +142,8 @@ MAP_FIELD_TITLE = {
     # KMS
     'documentapproval.kmsdocumentapproval': 'title',
     'incomingdocument.kmsincomingdocument': 'title',
+    # HRM
+    'absenceexplanation.absenceexplanation': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -537,4 +539,11 @@ ATTENDANCE_STATUS = (
     (5, 'Holiday'),
     (6, 'Overtime'),
     (7, 'Overtime on business trip')
+)
+
+# absence explanation
+ABSENCE_TYPE = (
+    (0, 'Check in'),
+    (1, 'Check out'),
+    (2, 'All day')
 )

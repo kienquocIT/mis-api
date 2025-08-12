@@ -96,12 +96,53 @@ EMPLOYEE_CONTRACT = {
     "allow_import": False,
 }
 
+HRM_ABSENCE_EXPLANATION = {
+    "id": "8308d062-b22c-4f05-b88e-1115f9fe03ee",
+    "title": "Absence explanation",
+    "code": "absenceexplanation",
+    "model_code": "absenceexplanation",
+    "app_label": "absenceexplanation",
+    "is_workflow": True,
+    "allow_permit": True,
+    "option_permission": 0,
+    "option_allowed": [1, 2, 3, 4],
+    "app_depend_on": [
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+    },
+    "allow_import": False,
+}
+
 Application_hrm_data = {
     "7436c857-ad09-4213-a190-c1c7472e99be": ApplicationConfigFrame(**EMPLOYEE_INFO).data(
         depend_follow_main=False,
         filtering_inheritor=False,
     ),
     "1b8a6f6e-65ec-4769-acaa-465bed2d0523": ApplicationConfigFrame(**EMPLOYEE_CONTRACT).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "8308d062-b22c-4f05-b88e-1115f9fe03ee": ApplicationConfigFrame(**HRM_ABSENCE_EXPLANATION).data(
         depend_follow_main=False,
         filtering_inheritor=False,
     ),
