@@ -447,6 +447,7 @@ class BusinessRequestUpdateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
         raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         attachment = validated_data.pop('attachment', None)
         expense_list = validated_data.pop('expense_items', None)

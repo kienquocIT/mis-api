@@ -983,7 +983,7 @@ def re_runtime_again(doc_id):
                 if doc_obj:
                     doc_obj.system_status = 0
                     doc_obj.save(update_fields=['system_status'])
-    runtime.delete()
+        runtime.delete()
     print("re_runtime_again successfully.")
     return True
 
