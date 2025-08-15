@@ -136,6 +136,7 @@ class Manufacturer(MasterDataAbstractModel):
 
 
 class Product(DataAbstractModel):
+    title = models.TextField(blank=True)
     # import in quotation
     create_from_import = models.BooleanField(default=False)
     import_data_row = models.JSONField(default=dict)
@@ -158,7 +159,7 @@ class Product(DataAbstractModel):
         help_text='product for sale: 0, inventory: 1, purchase: 2'
     )
     avatar = models.TextField(null=True, verbose_name='avatar path')
-    description = models.CharField(null=True, blank=True, max_length=1000)
+    description = models.TextField(blank=True)
 
     warehouses = models.ManyToManyField(
         'saledata.WareHouse',
