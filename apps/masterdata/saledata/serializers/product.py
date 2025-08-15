@@ -102,7 +102,6 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
@@ -348,7 +347,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 
 
 class ProductQuickCreateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
@@ -656,7 +654,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()

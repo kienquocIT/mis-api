@@ -2281,3 +2281,17 @@ def create_template_print_default():
     for company in Company.objects.all():
         ConfigDefaultData(company).create_print_template_default(company)
     print('Done Create print template default !!')
+
+
+def delete_opp_quotation_sale_order(company_id):
+    opportunity = Opportunity.objects.filter(company_id=company_id)
+    quotation = Quotation.objects.filter(company_id=company_id)
+    sale_order = SaleOrder.objects.filter(company_id=company_id)
+    if opportunity:
+        opportunity.delete()
+    if quotation:
+        quotation.delete()
+    if sale_order:
+        sale_order.delete()
+    print('delete_opp_quotation_sale_order done.')
+    return True
