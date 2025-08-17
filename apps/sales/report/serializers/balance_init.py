@@ -405,10 +405,6 @@ class BalanceInitializationDetailSerializer(serializers.ModelSerializer):
 
 class BalanceInitCommonFunction:
     @staticmethod
-    def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
-        return (log_quantity / inventory_uom.ratio) if inventory_uom else 0
-
-    @staticmethod
     def get_product_from_balance_init_data(balance_init_data, tenant_current, company_current):
         if 'product_id' not in balance_init_data and 'product_code' not in balance_init_data:
             raise serializers.ValidationError({"error": "Balance data is missing product information."})
