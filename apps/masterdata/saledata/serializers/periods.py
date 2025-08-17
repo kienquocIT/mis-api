@@ -181,7 +181,7 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
             self.context.get('company_current').software_start_using_time = software_start_using_time_format
             self.context.get('company_current').save(update_fields=['software_start_using_time'])
 
-        if all(key in self.initial_data for key in ['clear_balance_data', 'product_id', 'warehouse_id']):
+        if all(key in self.initial_data for key in ['clear_balance_init_data', 'product_id', 'warehouse_id']):
             if ReportStockLog.objects.filter(
                     tenant=instance.tenant,
                     company=instance.company,
@@ -193,7 +193,7 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
                 )
             try:
                 with transaction.atomic():
-                    PeriodInventoryFunction.clear_balance_data(
+                    PeriodInventoryFunction.clear_balance_init_data(
                         instance,
                         self.initial_data.get('product_id'),
                         self.initial_data.get('warehouse_id')
@@ -206,7 +206,7 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
 
 class PeriodInventoryFunction:
     @classmethod
-    def clear_balance_data(cls, instance, product_id, warehouse_id):
+    def clear_balance_init_data(cls, instance, product_id, warehouse_id):
         prd_obj = Product.objects.filter(id=product_id).first()
         wh_obj = WareHouse.objects.filter(id=warehouse_id).first()
         company_config = instance.company.company_config

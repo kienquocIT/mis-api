@@ -7,7 +7,7 @@ from apps.masterdata.saledata.serializers.warehouse import (
     ProductWareHouseListSerializerForGoodsTransfer, WareHouseForInventoryListSerializer
 )
 from apps.shared import (
-    BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view,
+    BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view, ResponseController,
 )
 from apps.masterdata.saledata.models import (
     WareHouse, ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial, WarehouseEmployeeConfig
@@ -45,14 +45,18 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if 'interact' in self.request.query_params:
-            if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
-                interact = self.request.user.employee_current.warehouse_employees_emp
-                queryset = queryset.filter(id__in=interact.warehouse_list)
+
         if 'is_virtual' in self.request.query_params:
             return queryset.filter(is_virtual=True)
-        if 'is_not_virtual' in self.request.query_params:
-            return queryset.filter(is_virtual=False)
+
+        queryset = queryset.filter(is_virtual=False)
+
+        # Lọc quyền tương tác kho đặt biệt (nếu có)
+        if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
+            interact = self.request.user.employee_current.warehouse_employees_emp
+            if len(interact.warehouse_list) > 0:
+                queryset = queryset.filter(id__in=interact.warehouse_list)
+
         return queryset
 
     @swagger_auto_schema(operation_summary='WareHouse List')
@@ -319,8 +323,10 @@ class WarehouseEmployeeConfigDetail(BaseRetrieveMixin, BaseDestroyMixin):
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
     )
-    def delete(self, request, *args, pk, **kwargs):
-        return self.destroy(request, *args, pk, **kwargs)
+    def delete(self, request, *args, **kwargs):
+        # Xóa cấu hình
+        self.get_object().delete()
+        return ResponseController.success_200({}, key_data='result')
 
 
 class WareHouseForInventoryList(BaseListMixin, BaseCreateMixin):

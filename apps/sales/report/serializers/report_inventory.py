@@ -11,10 +11,6 @@ from apps.sales.report.models import (
 )
 
 
-def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
-    return (log_quantity / inventory_uom.ratio) if inventory_uom else 0
-
-
 class ReportStockListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     lot_mapped = serializers.SerializerMethodField()
@@ -74,12 +70,12 @@ class ReportStockListSerializer(serializers.ModelSerializer):
         if 'sale_order_id' in kwargs:
             kwargs['physical_warehouse_id'] = physical_warehouse_id
         for log in all_logs_by_month.filter(product_id=obj.product_id, **kwargs):
-            casted_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, log.quantity)
+            casted_quantity = BalanceInitCommonFunction.cast_unit_to_inv_quantity(obj.product.inventory_uom, log.quantity)
             casted_value = log.value
             casted_cost = (casted_value / casted_quantity) if casted_quantity else 0
             casted_current_quantity = [
-                cast_unit_to_inv_quantity(obj.product.inventory_uom, log.perpetual_current_quantity),
-                cast_unit_to_inv_quantity(obj.product.inventory_uom, log.periodic_current_quantity)
+                BalanceInitCommonFunction.cast_unit_to_inv_quantity(obj.product.inventory_uom, log.perpetual_current_quantity),
+                BalanceInitCommonFunction.cast_unit_to_inv_quantity(obj.product.inventory_uom, log.periodic_current_quantity)
             ][div]
             casted_current_value = [log.perpetual_current_value, log.periodic_current_value][div]
             casted_current_cost = (casted_current_value / casted_current_quantity) if casted_current_quantity else 0
@@ -125,12 +121,12 @@ class ReportStockListSerializer(serializers.ModelSerializer):
                 this_balance = ReportInventorySubFunction.get_this_sub_period_cost_dict(
                     this_sub_period_cost, warehouse_item[0] if 'sale_order_id' in kw_parameter else None
                 )
-                casted_obq = cast_unit_to_inv_quantity(
+                casted_obq = BalanceInitCommonFunction.cast_unit_to_inv_quantity(
                     obj.product.inventory_uom, this_balance['opening_balance_quantity']
                 )
                 casted_obv = this_balance['opening_balance_value']
                 casted_obc = casted_obv / casted_obq if casted_obq else 0
-                casted_ebq = cast_unit_to_inv_quantity(
+                casted_ebq = BalanceInitCommonFunction.cast_unit_to_inv_quantity(
                     obj.product.inventory_uom, this_balance['ending_balance_quantity']
                 )
                 casted_ebv = this_balance['ending_balance_value']
@@ -221,7 +217,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
     def get_data_stock_activity_for_in(cls, log, data_stock_activity, product):
         if len(log.lot_data) > 0:
             lot = log.lot_data
-            casted_in_quantity = cast_unit_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity', 0))
+            casted_in_quantity = BalanceInitCommonFunction.cast_unit_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity', 0))
             data_stock_activity.append({
                 'in_quantity': casted_in_quantity,
                 'in_value': lot.get('lot_value'),
@@ -235,7 +231,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                 'trans_code': log.trans_code,
             })
         else:
-            casted_in_quantity = cast_unit_to_inv_quantity(product.inventory_uom, log.quantity)
+            casted_in_quantity = BalanceInitCommonFunction.cast_unit_to_inv_quantity(product.inventory_uom, log.quantity)
             data_stock_activity.append({
                 'in_quantity': casted_in_quantity,
                 'in_value': log.value,
@@ -254,7 +250,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
     def get_data_stock_activity_for_out(cls, log, data_stock_activity, product):
         if len(log.lot_data) > 0:
             lot = log.lot_data
-            casted_out_quantity = cast_unit_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity', 0))
+            casted_out_quantity = BalanceInitCommonFunction.cast_unit_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity', 0))
             data_stock_activity.append({
                 'in_quantity': '',
                 'in_value': '',
@@ -268,7 +264,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                 'trans_code': log.trans_code,
             })
         else:
-            casted_out_quantity = cast_unit_to_inv_quantity(product.inventory_uom, log.quantity)
+            casted_out_quantity = BalanceInitCommonFunction.cast_unit_to_inv_quantity(product.inventory_uom, log.quantity)
             data_stock_activity.append({
                 'in_quantity': '',
                 'in_value': '',
@@ -331,16 +327,16 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
             this_sub_value = ReportInventorySubFunction.get_this_sub_period_cost_dict(obj)
 
             if div == 0:
-                sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity)
-                sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_out_quantity)
+                sum_in_quantity = BalanceInitCommonFunction.cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity)
+                sum_out_quantity = BalanceInitCommonFunction.cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_out_quantity)
             else:
-                sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_input_quantity)
-                sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_output_quantity)
+                sum_in_quantity = BalanceInitCommonFunction.cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_input_quantity)
+                sum_out_quantity = BalanceInitCommonFunction.cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_output_quantity)
                 sum_in_value = obj.sum_input_value
                 sum_out_value = obj.sum_output_value
 
             result.append({
-                'opening_balance_quantity': cast_unit_to_inv_quantity(
+                'opening_balance_quantity': BalanceInitCommonFunction.cast_unit_to_inv_quantity(
                     obj.product.inventory_uom, wh_sub.opening_quantity
                 ),
                 'opening_balance_value': wh_sub.opening_quantity * this_sub_value['opening_balance_cost'],
@@ -348,7 +344,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                 'sum_in_value': sum_in_value,
                 'sum_out_quantity': sum_out_quantity,
                 'sum_out_value': sum_out_value,
-                'ending_balance_quantity': cast_unit_to_inv_quantity(
+                'ending_balance_quantity': BalanceInitCommonFunction.cast_unit_to_inv_quantity(
                     obj.product.inventory_uom, wh_sub.ending_quantity
                 ),
                 'ending_balance_value': wh_sub.ending_quantity * this_sub_value['ending_balance_cost'],
@@ -410,16 +406,16 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
         this_sub_value = ReportInventorySubFunction.get_this_sub_period_cost_dict(obj)
 
         if div == 0:
-            sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity)
-            sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_out_quantity)
+            sum_in_quantity = BalanceInitCommonFunction.cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity)
+            sum_out_quantity = BalanceInitCommonFunction.cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_out_quantity)
         else:
-            sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_input_quantity)
-            sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_output_quantity)
+            sum_in_quantity = BalanceInitCommonFunction.cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_input_quantity)
+            sum_out_quantity = BalanceInitCommonFunction.cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_output_quantity)
             sum_in_value = obj.sum_input_value
             sum_out_value = obj.sum_output_value
 
         result = {
-            'opening_balance_quantity': cast_unit_to_inv_quantity(
+            'opening_balance_quantity': BalanceInitCommonFunction.cast_unit_to_inv_quantity(
                 obj.product.inventory_uom, this_sub_value['opening_balance_quantity']
             ),
             'opening_balance_value': this_sub_value['opening_balance_value'],
@@ -427,7 +423,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
             'sum_in_value': sum_in_value,
             'sum_out_quantity': sum_out_quantity,
             'sum_out_value': sum_out_value,
-            'ending_balance_quantity': cast_unit_to_inv_quantity(
+            'ending_balance_quantity': BalanceInitCommonFunction.cast_unit_to_inv_quantity(
                 obj.product.inventory_uom, this_sub_value['ending_balance_quantity']
             ),
             'ending_balance_value': this_sub_value['ending_balance_value'],
@@ -474,7 +470,7 @@ class WarehouseAvailableProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_stock_amount(cls, obj):
-        return cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.stock_amount)
+        return BalanceInitCommonFunction.cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.stock_amount)
 
 
 class WarehouseAvailableProductDetailSerializer(serializers.ModelSerializer):
@@ -517,7 +513,7 @@ class WarehouseAvailableProductDetailSerializer(serializers.ModelSerializer):
                 'id': item.id,
                 'lot_number': item.lot_number,
                 'expire_date': item.expire_date,
-                'quantity_import': cast_unit_to_inv_quantity(obj.product.inventory_uom, item.quantity_import),
+                'quantity_import': BalanceInitCommonFunction.cast_unit_to_inv_quantity(obj.product.inventory_uom, item.quantity_import),
                 'goods_receipt_date': goods_receipt_date
             })
         for item in obj.product_warehouse_serial_product_warehouse.filter(serial_status=False):
@@ -579,53 +575,22 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
 
 
 class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
+    balance_init_data = serializers.JSONField(default=dict)
 
     class Meta:
         model = BalanceInitialization
-        fields = ()
+        fields = ('balance_init_data',)
 
     def validate(self, validate_data):
         tenant_current = self.context.get('tenant_current')
         company_current = self.context.get('company_current')
-        balance_data = self.initial_data.get('balance_data')
-        prd_obj = Product.objects.filter(
-            tenant=tenant_current, company=company_current, id=balance_data.get('product_id')
-        ).first()
-        wh_obj = WareHouse.objects.filter(
-            tenant=tenant_current, company=company_current, id=balance_data.get('warehouse_id')
-        ).first()
-        this_period = Periods.get_current_period(tenant_current.id, company_current.id)
-        if not prd_obj:
-            raise serializers.ValidationError({'prd_obj': 'Product is not found.'})
-        if not wh_obj:
-            raise serializers.ValidationError({'wh_obj': 'Warehouse is not found.'})
-        if not this_period:
-            raise serializers.ValidationError({'this_period': 'Period is not found.'})
-        if prd_obj.inventory_uom:
-            validate_data['uom'] = prd_obj.inventory_uom
-        else:
-            raise serializers.ValidationError({'uom': 'Inventory UOM is not found.'})
-        if BalanceInitialization.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
-            raise serializers.ValidationError(
-                {"Existed": f"{prd_obj.title}'s opening balance has been created in {wh_obj.title}."}
-            )
-        if ReportStockLog.objects.filter(
-                product=prd_obj,
-                warehouse=wh_obj if not this_period.company.company_config.cost_per_project else None
-        ).exists():
-            raise serializers.ValidationError(
-                {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
-            )
-        sub_period_order = this_period.company.software_start_using_time.month - this_period.space_month
-        this_sub_period = this_period.sub_periods_period_mapped.filter(order=sub_period_order).first()
-        validate_data['product'] = prd_obj
-        validate_data['warehouse'] = wh_obj
-        validate_data['period_obj'] = this_period
-        validate_data['sub_period_obj'] = this_sub_period
-        validate_data['quantity'] = float(balance_data.get('quantity', 0))
-        validate_data['value'] = float(balance_data.get('value', 0))
-        validate_data['data_lot'] = balance_data.get('data_lot', [])
-        validate_data['data_sn'] = balance_data.get('data_sn', [])
+        if not tenant_current or not company_current:
+            raise serializers.ValidationError({"error": "Tenant or Company is missing."})
+
+        balance_init_data = validate_data.get('balance_init_data', {})
+        validate_data = BalanceInitCommonFunction.validate_balance_init_data(
+            balance_init_data, tenant_current, company_current
+        )
         return validate_data
 
     @classmethod
@@ -908,55 +873,22 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
 
 
 class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateSerializer):
+    balance_init_data = serializers.JSONField(default=dict)
 
     class Meta:
         model = BalanceInitialization
-        fields = ()
+        fields = ('balance_init_data',)
 
     def validate(self, validate_data):
         tenant_current = self.context.get('tenant_current')
         company_current = self.context.get('company_current')
-        balance_data = self.initial_data.get('balance_data')
-        prd_obj = Product.objects.filter(
-            tenant=tenant_current, company=company_current, code=balance_data.get('product_code')
-        ).first()
-        wh_obj = WareHouse.objects.filter(
-            tenant=tenant_current, company=company_current, code=balance_data.get('warehouse_code')
-        ).first()
-        this_period = Periods.get_current_period(tenant_current.id, company_current.id)
-        if prd_obj.inventory_uom:
-            validate_data['uom'] = prd_obj.inventory_uom
-        else:
-            raise serializers.ValidationError({'uom': 'Inventory UOM is not found.'})
-        if not prd_obj:
-            raise serializers.ValidationError({'prd_obj': 'Product is not found.'})
-        if not wh_obj:
-            raise serializers.ValidationError({'wh_obj': 'Warehouse is not found.'})
-        if not this_period:
-            raise serializers.ValidationError({'this_period': 'Period is not found.'})
-        if prd_obj.general_traceability_method != 0:
-            raise serializers.ValidationError({'error': 'Serial or LOT traceability method is not supported.'})
-        if BalanceInitialization.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
-            raise serializers.ValidationError(
-                {"Existed": f"{prd_obj.title}'s opening balance has been created in {wh_obj.title}."}
-            )
-        if ReportStockLog.objects.filter(
-                product=prd_obj,
-                warehouse=wh_obj if not this_period.company.company_config.cost_per_project else None
-        ).exists():
-            raise serializers.ValidationError(
-                {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
-            )
-        sub_period_order = this_period.company.software_start_using_time.month - this_period.space_month
-        this_sub_period = this_period.sub_periods_period_mapped.filter(order=sub_period_order).first()
-        validate_data['product'] = prd_obj
-        validate_data['warehouse'] = wh_obj
-        validate_data['period_obj'] = this_period
-        validate_data['sub_period_obj'] = this_sub_period
-        validate_data['quantity'] = float(balance_data.get('quantity', 0))
-        validate_data['value'] = float(balance_data.get('value', 0))
-        validate_data['data_lot'] = []
-        validate_data['data_sn'] = []
+        if not tenant_current or not company_current:
+            raise serializers.ValidationError({"error": "Tenant or Company is missing."})
+
+        balance_init_data = validate_data.get('balance_init_data', {})
+        validate_data = BalanceInitCommonFunction.validate_balance_init_data(
+            balance_init_data, tenant_current, company_current
+        )
         return validate_data
 
     def create(self, validated_data):
@@ -984,3 +916,86 @@ class BalanceInitializationDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportInventoryCost
         fields = ('id',)
+
+
+class BalanceInitCommonFunction:
+    @staticmethod
+    def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
+        return (log_quantity / inventory_uom.ratio) if inventory_uom else 0
+
+    @staticmethod
+    def get_product_from_balance_init_data(balance_init_data, tenant_current, company_current):
+        if 'product_id' not in balance_init_data and 'product_code' not in balance_init_data:
+            raise serializers.ValidationError({"error": "Balance data is missing product information."})
+
+        prd_obj = None
+        if 'product_id' in balance_init_data:
+            prd_obj = Product.objects.filter(
+                tenant=tenant_current, company=company_current, id=balance_init_data.get('product_id')
+            ).first()
+        if 'product_code' in balance_init_data:
+            prd_obj = Product.objects.filter(
+                tenant=tenant_current, company=company_current, code=balance_init_data.get('product_code')
+            ).first()
+        return prd_obj
+
+    @staticmethod
+    def get_warehouse_from_balance_init_data(balance_init_data, tenant_current, company_current):
+        if 'warehouse_id' not in balance_init_data and 'warehouse_code' not in balance_init_data:
+            raise serializers.ValidationError({"error": "Balance data is missing warehouse information."})
+
+        wh_obj = None
+        if 'warehouse_id' in balance_init_data:
+            wh_obj = WareHouse.objects.filter(
+                tenant=tenant_current, company=company_current, id=balance_init_data.get('warehouse_id')
+            ).first()
+        if 'product_code' in balance_init_data:
+            wh_obj = WareHouse.objects.filter(
+                tenant=tenant_current, company=company_current, code=balance_init_data.get('warehouse_code')
+            ).first()
+        return wh_obj
+
+    @staticmethod
+    def validate_balance_init_data(balance_init_data, tenant_obj, company_obj):
+        prd_obj = BalanceInitCommonFunction.get_product_from_balance_init_data(balance_init_data, tenant_obj, company_obj)
+        if not prd_obj:
+            raise serializers.ValidationError({'prd_obj': 'Product is not found.'})
+
+        wh_obj = BalanceInitCommonFunction.get_warehouse_from_balance_init_data(balance_init_data, tenant_obj, company_obj)
+        if not wh_obj:
+            raise serializers.ValidationError({'wh_obj': 'Warehouse is not found.'})
+
+        this_period = Periods.get_current_period(tenant_obj.id, company_obj.id)
+        if not this_period:
+            raise serializers.ValidationError({'this_period': 'Period is not found.'})
+
+        if not prd_obj.inventory_uom:
+            raise serializers.ValidationError({'inventory_uom': 'Inventory UOM is not found.'})
+
+        if BalanceInitialization.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
+            raise serializers.ValidationError(
+                {"Existed": f"{prd_obj.title}'s opening balance has been created in {wh_obj.title}."}
+            )
+
+        if prd_obj.is_used_in_inventory_activities(warehouse_obj=wh_obj):
+            raise serializers.ValidationError(
+                {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
+            )
+
+        sub_period_order = company_obj.software_start_using_time.month - this_period.space_month
+        this_sub_period = this_period.sub_periods_period_mapped.filter(order=sub_period_order).first()
+        if not this_sub_period:
+            raise serializers.ValidationError({"this_sub_period": 'This sub period is not found.'})
+
+        validate_data = {
+            'product': prd_obj,
+            'uom': prd_obj.inventory_uom,
+            'warehouse': wh_obj,
+            'period_obj': this_period,
+            'sub_period_obj': this_sub_period,
+            'quantity': float(balance_init_data.get('quantity', 0)),
+            'value': float(balance_init_data.get('value', 0)),
+            'data_lot': balance_init_data.get('data_lot', []),
+            'data_sn': balance_init_data.get('data_sn', [])
+        }
+        return validate_data
