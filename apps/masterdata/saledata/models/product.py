@@ -356,8 +356,9 @@ class Product(DataAbstractModel):
         """
         if self.company:
             # Nếu QL tồn kho theo project thì warehouse = None
-            if self.company.company_config.cost_per_project:
-                warehouse_obj = None
+            if self.company.company_config:
+                if self.company.company_config.cost_per_project:
+                    warehouse_obj = None
         report_stock_log_model = DisperseModel(app_model='report.ReportStockLog').get_model()
         return report_stock_log_model.objects.filter(
             tenant=self.tenant, company=self.company, product=self, warehouse=warehouse_obj
