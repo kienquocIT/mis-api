@@ -361,7 +361,7 @@ class Product(DataAbstractModel):
         report_stock_log_model = DisperseModel(app_model='report.ReportStockLog').get_model()
         return report_stock_log_model.objects.filter(
             tenant=self.tenant, company=self.company, product=self, warehouse=warehouse_obj
-        ).exists()
+        ).exclude(trans_title='Balance init input').exists()
 
     def get_current_cost_info(self, get_type=1, **kwargs):
         """

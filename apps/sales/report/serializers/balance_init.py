@@ -6,7 +6,6 @@ from apps.masterdata.saledata.models import (
 )
 from apps.sales.report.utils.inventory_log import ReportInvCommonFunc, ReportInvLog
 from apps.sales.report.models import (
-    ReportInventoryCost,
     BalanceInitialization, BalanceInitializationSerial, BalanceInitializationLot
 )
 
