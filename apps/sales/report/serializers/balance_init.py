@@ -399,7 +399,7 @@ class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateS
 
 class BalanceInitializationDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ReportInventoryCost
+        model = BalanceInitialization
         fields = ('id',)
 
 
