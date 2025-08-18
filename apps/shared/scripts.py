@@ -2398,14 +2398,14 @@ def update_product_for_ecovn(company_code):
             sale_uom_obj = UnitOfMeasure.objects.filter(company__code=company_code, code=sale_uom_list[i]).first()
             product_obj.sale_default_uom = sale_uom_obj
             product_obj.sale_default_uom_data = {
-                'id': sale_uom_obj.id,
+                'id': str(sale_uom_obj.id),
                 'code': sale_uom_obj.code,
                 'title': sale_uom_obj.title,
             }
             sale_tax_obj = Tax.objects.filter(company__code=company_code, code=sale_tax_list[i]).first()
             product_obj.sale_tax = sale_tax_obj
             product_obj.sale_tax_data = {
-                'id': sale_tax_obj.id,
+                'id': str(sale_tax_obj.id),
                 'code': sale_tax_obj.code,
                 'title': sale_tax_obj.title,
                 'rate': sale_tax_obj.rate,
@@ -2414,7 +2414,7 @@ def update_product_for_ecovn(company_code):
             inventory_uom_obj = UnitOfMeasure.objects.filter(company__code=company_code, code=inventory_uom_list[i]).first()
             product_obj.inventory_uom = inventory_uom_obj
             product_obj.inventory_uom_data = {
-                'id': inventory_uom_obj.id,
+                'id': str(inventory_uom_obj.id),
                 'code': inventory_uom_obj.code,
                 'title': inventory_uom_obj.title,
             }
@@ -2423,14 +2423,14 @@ def update_product_for_ecovn(company_code):
             purchase_uom_obj = UnitOfMeasure.objects.filter(company__code=company_code, code=purchase_uom_list[i]).first()
             product_obj.purchase_default_uom = sale_uom_obj
             product_obj.purchase_default_uom_data = {
-                'id': purchase_uom_obj.id,
+                'id': str(purchase_uom_obj.id),
                 'code': purchase_uom_obj.code,
                 'title': purchase_uom_obj.title,
             }
             purchase_tax_obj = Tax.objects.filter(company__code=company_code, code=purchase_tax_list[i]).first()
             product_obj.purchase_tax = purchase_tax_obj
             product_obj.purchase_tax_data = {
-                'id': purchase_tax_obj.id,
+                'id': str(purchase_tax_obj.id),
                 'code': purchase_tax_obj.code,
                 'title': purchase_tax_obj.title,
                 'rate': purchase_tax_obj.rate,
