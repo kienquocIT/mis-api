@@ -50,12 +50,10 @@ opentelemetry-instrumentation==0.29b0
 opentelemetry-instrumentation-django==0.29b0
 opentelemetry-instrumentation-logging==0.29b0
 opentelemetry-instrumentation-requests==0.29b0
-openpyxl==3.1.5
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
 packaging==21.3
-pandas==1.5.3
 phonenumbers==8.13.1
 pip-cache==0.0.6
 Pillow==10.1.0
