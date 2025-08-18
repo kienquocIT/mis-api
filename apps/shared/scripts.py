@@ -2390,7 +2390,7 @@ def update_product_for_ecovn(company_code):
      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
      0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-    for i in range(123):
+    for i in range(len(code_list)):
         product_obj = Product.objects.filter(company__code=company_code, code=code_list[i]).first()
         if product_obj:
             product_obj.product_choice = [0, 1, 2]
@@ -2401,7 +2401,7 @@ def update_product_for_ecovn(company_code):
                 'id': str(sale_uom_obj.id),
                 'code': sale_uom_obj.code,
                 'title': sale_uom_obj.title,
-            }
+            } if sale_uom_obj else {}
             sale_tax_obj = Tax.objects.filter(company__code=company_code, code=sale_tax_list[i]).first()
             product_obj.sale_tax = sale_tax_obj
             product_obj.sale_tax_data = {
@@ -2409,7 +2409,7 @@ def update_product_for_ecovn(company_code):
                 'code': sale_tax_obj.code,
                 'title': sale_tax_obj.title,
                 'rate': sale_tax_obj.rate,
-            }
+            } if sale_tax_obj else {}
             # inventory
             inventory_uom_obj = UnitOfMeasure.objects.filter(company__code=company_code, code=inventory_uom_list[i]).first()
             product_obj.inventory_uom = inventory_uom_obj
@@ -2417,7 +2417,7 @@ def update_product_for_ecovn(company_code):
                 'id': str(inventory_uom_obj.id),
                 'code': inventory_uom_obj.code,
                 'title': inventory_uom_obj.title,
-            }
+            } if inventory_uom_obj else {}
             product_obj.valuation_method = valuation_method_list[i]
             # purchase
             purchase_uom_obj = UnitOfMeasure.objects.filter(company__code=company_code, code=purchase_uom_list[i]).first()
@@ -2426,7 +2426,7 @@ def update_product_for_ecovn(company_code):
                 'id': str(purchase_uom_obj.id),
                 'code': purchase_uom_obj.code,
                 'title': purchase_uom_obj.title,
-            }
+            } if purchase_uom_obj else {}
             purchase_tax_obj = Tax.objects.filter(company__code=company_code, code=purchase_tax_list[i]).first()
             product_obj.purchase_tax = purchase_tax_obj
             product_obj.purchase_tax_data = {
@@ -2434,7 +2434,7 @@ def update_product_for_ecovn(company_code):
                 'code': purchase_tax_obj.code,
                 'title': purchase_tax_obj.title,
                 'rate': purchase_tax_obj.rate,
-            }
+            } if purchase_tax_obj else {}
             product_obj.supplied_by = supplied_by_list[i]
             product_obj.save(update_fields=[
                 'product_choice',
