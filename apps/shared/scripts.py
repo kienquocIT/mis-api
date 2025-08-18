@@ -2300,7 +2300,7 @@ def delete_opp_quotation_sale_order(company_id):
 def update_product_for_ecovn(company_code):
     import pandas as pd
 
-    df = pd.read_excel(r"C:\Users\nguye\Downloads\BFLOW-ECOVN-KHO HCM.xlsx")
+    df = pd.read_excel(r"apps/shared/ecovn_prd_update.xlsx")
     code_list = df['Mã (*, định danh)'].tolist()[1:]
     sale_uom_list = df['Đơn vị tính cho việc bán'].tolist()[1:]
     sale_tax_list = df['Thuế bán'].tolist()[1:]
