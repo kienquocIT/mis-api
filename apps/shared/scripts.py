@@ -2295,3 +2295,87 @@ def delete_opp_quotation_sale_order(company_id):
         sale_order.delete()
     print('delete_opp_quotation_sale_order done.')
     return True
+
+
+def update_product_for_ecovn(company_code):
+    import pandas as pd
+
+    df = pd.read_excel(r"C:\Users\nguye\Downloads\BFLOW-ECOVN-KHO HCM.xlsx")
+    code_list = df['Mã (*, định danh)'].tolist()[1:]
+    sale_uom_list = df['Đơn vị tính cho việc bán'].tolist()[1:]
+    sale_tax_list = df['Thuế bán'].tolist()[1:]
+    inventory_uom_list = df['Đơn vị tính tồn ko'].tolist()[1:]
+    valuation_method_list = df['Phương thức định giá'].tolist()[1:]
+    purchase_uom_list = df['Đơn vị tính mua hàng'].tolist()[1:]
+    purchase_tax_list = df['Thuế mua'].tolist()[1:]
+    supplied_by_list = df['Nguồn cung cho việc mua'].tolist()[1:]
+
+    for i in range(123):
+        product_obj = Product.objects.filter(company__code=company_code, code=code_list[i]).first()
+        if product_obj:
+            product_obj.product_choice = [0, 1, 2]
+            # sale
+            sale_uom_obj = UnitOfMeasure.objects.filter(company__code=company_code, code=sale_uom_list[i]).first()
+            product_obj.sale_default_uom = sale_uom_obj
+            product_obj.sale_default_uom_data = {
+                'id': sale_uom_obj.id,
+                'code': sale_uom_obj.code,
+                'title': sale_uom_obj.title,
+            }
+            sale_tax_obj = Tax.objects.filter(company__code=company_code, code=sale_tax_list[i]).first()
+            product_obj.sale_tax = sale_tax_obj
+            product_obj.sale_tax_data = {
+                'id': sale_tax_obj.id,
+                'code': sale_tax_obj.code,
+                'title': sale_tax_obj.title,
+                'rate': sale_tax_obj.rate,
+            }
+            # inventory
+            inventory_uom_obj = UnitOfMeasure.objects.filter(company__code=company_code, code=inventory_uom_list[i]).first()
+            product_obj.inventory_uom = inventory_uom_obj
+            product_obj.inventory_uom_data = {
+                'id': inventory_uom_obj.id,
+                'code': inventory_uom_obj.code,
+                'title': inventory_uom_obj.title,
+            }
+            product_obj.valuation_method = valuation_method_list[i]
+            # purchase
+            purchase_uom_obj = UnitOfMeasure.objects.filter(company__code=company_code, code=purchase_uom_list[i]).first()
+            product_obj.purchase_default_uom = sale_uom_obj
+            product_obj.purchase_default_uom_data = {
+                'id': purchase_uom_obj.id,
+                'code': purchase_uom_obj.code,
+                'title': purchase_uom_obj.title,
+            }
+            purchase_tax_obj = Tax.objects.filter(company__code=company_code, code=purchase_tax_list[i]).first()
+            product_obj.purchase_tax = purchase_tax_obj
+            product_obj.purchase_tax_data = {
+                'id': purchase_tax_obj.id,
+                'code': purchase_tax_obj.code,
+                'title': purchase_tax_obj.title,
+                'rate': purchase_tax_obj.rate,
+            }
+            product_obj.supplied_by = supplied_by_list[i]
+            product_obj.save(update_fields=[
+                'product_choice',
+                # sale
+                'sale_default_uom',
+                'sale_default_uom_data',
+                'sale_tax',
+                'sale_tax_data',
+                # inventory
+                'inventory_uom',
+                'inventory_uom_data',
+                'valuation_method',
+                # purchase
+                'purchase_default_uom',
+                'purchase_default_uom_data',
+                'purchase_tax',
+                'purchase_tax_data',
+                'supplied_by',
+            ])
+        else:
+            print(f'Missing {code_list[i]}')
+
+        print('Done :))')
+        return True
