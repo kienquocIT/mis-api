@@ -13,3 +13,4 @@ from .revenue_plan_config import *
 from .document import *
 from .asset import *
 from .bank import *
+from .attribute import *

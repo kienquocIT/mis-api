@@ -29,7 +29,7 @@ from apps.masterdata.saledata.views import (
     WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail,
     RevenuePlanConfigList, PriceListItemListImportDB, DocumentTypeList, DocumentTypeDetail,
     FixedAssetClassificationList, FixedAssetClassificationGroupList, ToolClassificationList, BankList, BankDetail,
-    BankAccountDetail, BankAccountList, ToolClassificationDetail
+    BankAccountDetail, BankAccountList, ToolClassificationDetail, AttributeViewList, AttributeViewDetail
 )
 from apps.masterdata.saledata.views.warehouse import (
     ProductWareHouseLotList, ProductWareHouseSerialList,
@@ -223,4 +223,10 @@ urlpatterns += [
     path('bank/detail/<str:pk>', BankDetail.as_view(), name='BankDetail'),
     path('bank-account/list', BankAccountList.as_view(), name='BankAccountList'),
     path('bank-account/detail/<str:pk>', BankAccountDetail.as_view(), name='BankAccountDetail'),
+]
+
+# attribute
+urlpatterns += [
+    path('attribute/list', AttributeViewList.as_view(), name='AttributeViewList'),
+    path('attribute/<str:pk>', AttributeViewDetail.as_view(), name='AttributeViewDetail'),
 ]
