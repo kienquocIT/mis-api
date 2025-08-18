@@ -2375,7 +2375,7 @@ def update_product_for_ecovn(company_code):
                 'supplied_by',
             ])
         else:
-            print(f'Missing {code_list[i]}')
+            print(f'{i}. Missing {code_list[i]}')
 
     print('Done :))')
     return True
