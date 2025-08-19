@@ -134,6 +134,7 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
     products = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
+    sale_order = serializers.SerializerMethodField()
 
     @classmethod
     def get_products(cls, obj):
@@ -155,6 +156,17 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_attachments(cls, obj):
         return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
+
+    @classmethod
+    def get_sale_order(cls, obj):
+        return {
+            'id': obj.sale_order_id,
+            'title': obj.sale_order.title,
+            'code': obj.sale_order.code,
+            'customer_data': obj.sale_order.customer_data,
+            'contact_data': obj.sale_order.contact_data,
+            'date_approved': obj.sale_order.date_approved,
+        } if obj.sale_order else {}
 
     class Meta:
         model = OrderDeliverySub
@@ -182,6 +194,7 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
             'delivery_logistic',
             'workflow_runtime_id',
             'employee_inherit',
+            'sale_order',
         )
 
 
