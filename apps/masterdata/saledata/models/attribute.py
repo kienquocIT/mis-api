@@ -18,6 +18,7 @@ class Attribute(MasterDataAbstractModel):
     )
     price_config_data = models.JSONField(default=dict, help_text='data JSON of price_config')
     is_category = models.BooleanField(default=False, help_text='flag to know this is attribute or category')
+    is_inventory = models.BooleanField(default=False, help_text='flag to know this allow inventory')
 
     class Meta:
         verbose_name = 'Attribute'
@@ -82,6 +83,12 @@ class AttributeList(MasterDataAbstractModel):
 
 
 class AttributeListItem(MasterDataAbstractModel):
+    attribute = models.ForeignKey(
+        Attribute,
+        on_delete=models.CASCADE,
+        verbose_name="attribute",
+        related_name="attribute_list_item_attribute",
+    )
     attribute_list = models.ForeignKey(
         AttributeList,
         on_delete=models.CASCADE,

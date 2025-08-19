@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
@@ -227,6 +228,10 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
         symmetrical=False,
         blank=True,
         related_name='file_of_sale_order',
+    )
+    date_created = models.DateTimeField(
+        default=timezone.now,
+        help_text='The record created at value',
     )
 
     class Meta:
