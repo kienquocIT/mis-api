@@ -437,6 +437,7 @@ class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
     serializer_create = BalanceInitializationCreateSerializer
     serializer_detail = BalanceInitializationDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related('product', 'uom', 'warehouse').prefetch_related()
@@ -472,6 +473,7 @@ class BalanceInitializationListImportDB(BaseCreateMixin):
     queryset = ReportInventoryCost.objects
     serializer_create = BalanceInitializationCreateSerializerImportDB
     serializer_detail = BalanceInitializationDetailSerializer
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Create Balance Initialization Import BD",

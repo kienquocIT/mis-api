@@ -77,10 +77,7 @@ class ARInvoiceList(BaseListMixin, BaseCreateMixin):
     serializer_create = ARInvoiceCreateSerializer
     serializer_detail = ARInvoiceDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = [
-        'tenant_id', 'company_id',
-        'employee_created_id', 'employee_inherit_id',
-    ]
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related().select_related()
@@ -183,7 +180,6 @@ class DeliveryListForARInvoice(BaseListMixin):
         'order_delivery__sale_order_id': ['exact'],
     }
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     def get_queryset(self):
         return super().get_queryset().filter(
