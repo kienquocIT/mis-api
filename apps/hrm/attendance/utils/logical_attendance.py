@@ -602,10 +602,10 @@ class HikVisionAPI:
 class RonaldJackAPI:
 
     @classmethod
-    def get_attendance_log(cls, ip="115.78.15.163", port=4370, password=0):
+    def get_attendance_log(cls, device_ip="115.78.15.163", port=4370, password=0):
         """
         Trả về danh sách chấm công từ máy Ronald Jack / ZKTeco
-        :param ip: IP của máy
+        :param device_ip: IP của máy
         :param port: cổng kết nối (thường 4370)
         :param password: Communication Key (nếu có)
         """
@@ -613,11 +613,11 @@ class RonaldJackAPI:
         conn = None
 
         # Thử TCP trước
-        zk = ZK(ip, port=port, timeout=5, password=password, force_udp=False, ommit_ping=False)
+        py_zk_tcp = ZK(device_ip, port=port, timeout=5, password=password, force_udp=False, ommit_ping=False)
 
         try:
-            print(f"👉 Thử kết nối TCP {ip}:{port} ...")
-            conn = zk.connect()
+            print(f"👉 Thử kết nối TCP {device_ip}:{port} ...")
+            conn = py_zk_tcp.connect()
             conn.disable_device()
 
             logs = conn.get_attendance()
@@ -631,12 +631,12 @@ class RonaldJackAPI:
 
             conn.enable_device()
 
-        except Exception as e:
-            print(f"[WARN] TCP thất bại: {e}")
+        except Exception as error:
+            print(f"[WARN] TCP thất bại: {error}")
             print("👉 Thử lại bằng UDP ...")
             try:
-                zk = ZK(ip, port=port, timeout=5, password=password, force_udp=True, ommit_ping=False)
-                conn = zk.connect()
+                py_zk_udp = ZK(device_ip, port=port, timeout=5, password=password, force_udp=True, ommit_ping=False)
+                conn = py_zk_udp.connect()
                 conn.disable_device()
 
                 logs = conn.get_attendance()
@@ -650,12 +650,11 @@ class RonaldJackAPI:
 
                 conn.enable_device()
 
-            except Exception as e2:
-                print(f"[ERROR] UDP cũng thất bại: {e2}")
+            except Exception as err:
+                print(f"[ERROR] UDP cũng thất bại: {err}")
 
         finally:
             if conn:
                 conn.disconnect()
 
         return attendance
-

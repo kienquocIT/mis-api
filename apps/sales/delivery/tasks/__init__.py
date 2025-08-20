@@ -210,6 +210,8 @@ class OrderActiveDeliverySerializer:
                 product_data=m2m_obj.product_data,
                 uom=m2m_obj.unit_of_measure,
                 uom_data=m2m_obj.uom_data,
+                tax=m2m_obj.tax,
+                tax_data=m2m_obj.tax_data,
 
                 delivery_quantity=m2m_obj.product_quantity,
                 delivered_quantity_before=0,

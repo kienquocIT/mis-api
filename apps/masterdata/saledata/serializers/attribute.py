@@ -1,7 +1,5 @@
 from rest_framework import serializers
 
-from apps.core.hr.models import Employee
-from apps.hrm.attendance.models import DeviceIntegrateEmployee, AttendanceDevice
 from apps.masterdata.saledata.models import Attribute, AttributeNumeric, AttributeList, AttributeWarranty, \
     AttributeListItem
 from apps.shared import BaseMsg
@@ -65,12 +63,14 @@ class AttributeHandler:
 
             if attribute.price_config_type == 2:
                 attribute.attribute_warranty_attribute.all().delete()
-                AttributeWarranty.objects.create(
-                    attribute=attribute,
-                    tenant_id=attribute.tenant_id,
-                    company_id=attribute.company_id,
-                    **attribute.price_config_data
-                )
+                AttributeWarranty.objects.bulk_create([
+                    AttributeWarranty(
+                        attribute=attribute,
+                        tenant_id=attribute.tenant_id,
+                        company_id=attribute.company_id,
+                        **warranty_item,
+                    ) for warranty_item in attribute.price_config_data.get('warranty_item', [])
+                ])
         return True
 
 
