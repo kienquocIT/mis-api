@@ -86,11 +86,8 @@ PRINT_BUSINESS = '<h1 style="text-align: center;"><span style="font-size: 22pt;"
                  'font-family: \'times new roman\', times, serif;"> <span id="idx-objlQyQXmPejEeIB" ' \
                  'class="params-data badge badge-light border px-2 py-1 rounded-pill d-inline-block" ' \
                  'style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
-                 'data-code="expense_items___tax_data_title"> #Expenses Tax </span>&nbsp;<span ' \
-                 'id="idx-WpPsbh02h55lLqFd" class="params-data badge badge-light border px-2 py-1 rounded-pill ' \
-                 'd-inline-block" style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
-                 'data-code="_current_currency_code"> #Current Currency Code </span>&nbsp;' \
-                 ' </span></td><td style="width: 14.0861%; height: 12px;"><span style="font-size: 12pt; ' \
+                 'data-code="expense_items___tax_data_rate"> #Expenses - Tax value %</span>%</span></td>' \
+                 '<td style="width: 14.0861%; height: 12px;"><span style="font-size: 12pt; ' \
                  'font-family: \'times new roman\', times, serif;"> <span id="idx-LyDVYDLUtI70Ds8H" ' \
                  'class="params-data badge badge-light border px-2 py-1 rounded-pill d-inline-block" ' \
                  'style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
