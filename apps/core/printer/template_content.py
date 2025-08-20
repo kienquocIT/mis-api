@@ -86,11 +86,8 @@ PRINT_BUSINESS = '<h1 style="text-align: center;"><span style="font-size: 22pt;"
                  'font-family: \'times new roman\', times, serif;"> <span id="idx-objlQyQXmPejEeIB" ' \
                  'class="params-data badge badge-light border px-2 py-1 rounded-pill d-inline-block" ' \
                  'style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
-                 'data-code="expense_items___tax_data_title"> #Expenses Tax </span>&nbsp;<span ' \
-                 'id="idx-WpPsbh02h55lLqFd" class="params-data badge badge-light border px-2 py-1 rounded-pill ' \
-                 'd-inline-block" style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
-                 'data-code="_current_currency_code"> #Current Currency Code </span>&nbsp;' \
-                 ' </span></td><td style="width: 14.0861%; height: 12px;"><span style="font-size: 12pt; ' \
+                 'data-code="expense_items___tax_data_rate"> #Expenses - Tax value %</span>%</span></td>' \
+                 '<td style="width: 14.0861%; height: 12px;"><span style="font-size: 12pt; ' \
                  'font-family: \'times new roman\', times, serif;"> <span id="idx-LyDVYDLUtI70Ds8H" ' \
                  'class="params-data badge badge-light border px-2 py-1 rounded-pill d-inline-block" ' \
                  'style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
@@ -118,18 +115,16 @@ PRINT_BUSINESS = '<h1 style="text-align: center;"><span style="font-size: 22pt;"
                  '#Total taxes </span>&nbsp;<span id="idx-WpPsbh02h55lLqFd" class="params-data badge badge-light ' \
                  'border px-2 py-1 rounded-pill d-inline-block" style="background-color: #e0f3ff; color: #007bff;' \
                  ' font-weight: 500;" data-code="_current_currency_code"> #Current Currency Code </span>&nbsp; ' \
-                 '</span></td></tr>' \
-                 '<tr style="height: 12px;"><td style="width: 49.7662%; height: 12px;"><span style="font-size: 12pt;' \
-                 ' font-family: \'times new roman\', times, serif;"><strong>Tổng</strong></span></td>' \
-                 '<td style="width: 49.7662%; height: 12px;"><span id="idx-XMAw7bDIbnh3ma9p" class="params-data badge' \
+                 '</span></td></tr><tr style="height: 12px;"><td style="width: 49.7662%; height: 12px;">' \
+                 '<span style="font-size: 12pt; font-family: \'times new roman\', times, serif;">' \
+                 '<strong>Tổng</strong></span></td>' \
+                 '<td style="width: 49.7662%; height: 12px;"><span id="idx-Iyr1ZZZkNPGF666h" class="params-data badge' \
                  ' badge-light border px-2 py-1 rounded-pill d-inline-block" style="background-color: #e0f3ff; ' \
-                 'color: #007bff; font-weight: 500; font-size: 12pt; font-family: \'times new roman\', times, serif;"' \
-                 ' data-code="taxes"> <span id="idx-TurwzuFvEcJwqsCW" class="params-data badge badge-light border ' \
-                 'px-2 py-1 rounded-pill d-inline-block" style="background-color: #e0f3ff; color: #007bff; ' \
-                 'font-weight: 500;" data-code="total_amount"> #Total amount </span>&nbsp;<span ' \
-                 'id="idx-WpPsbh02h55lLqFd" class="params-data badge badge-light border px-2 py-1 ' \
-                 'rounded-pill d-inline-block" style="background-color: #e0f3ff; color: #007bff; font-weight: 500;"' \
-                 ' data-code="_current_currency_code"> #Current Currency Code </span>&nbsp; </span></td></tr></tbody>' \
+                 'color: #007bff; font-weight: 500;" data-code="total_amount">#Total amount</span> ' \
+                 '<span id="idx-cgfIXGFmYnvHcuUY" class="params-data badge badge-light border px-2 py-1 rounded-pill' \
+                 ' d-inline-block" style="background-color: #e0f3ff; color: #007bff; font-weight: 500;" ' \
+                 'data-code="_current_currency_code">#Current Currency Code</span>&nbsp; &nbsp;</td>' \
+                 '</tr></tbody>' \
                  '</table><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><h3><span style="font-size: 14px; ' \
                  'font-family: \'times new roman\', times, serif;"><strong>III. Chi tiết chuyến đi c&ocirc;ng' \
                  ' t&aacute;c</strong></span></h3><table style="border-collapse: collapse; width: 100%; ' \

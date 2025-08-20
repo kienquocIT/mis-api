@@ -1746,7 +1746,7 @@ AppProp_Eoffice_Business_trip_data = {
     },
     'fec24f63-dd1c-4144-95cb-00f6293aef22': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
-        'title': 'Employee inherit group',
+        'title': 'Employee inherit - group',
         'code': 'employee_inherit__group__title',
         'type': 5,
         'is_print': True,
@@ -1857,7 +1857,7 @@ AppProp_Eoffice_Business_trip_data = {
     },
     'b69611e7-12c6-4706-a95e-7b14fc390c45': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
-        'title': 'Expenses title',
+        'title': 'Expenses - title',
         'code': 'expense_items___title',
         'type': 1,
         'is_wf_zone': False,
@@ -1866,7 +1866,7 @@ AppProp_Eoffice_Business_trip_data = {
     },
     'da331644-a117-4714-9061-aadd52fae4ae': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
-        'title': 'Expenses expense item',
+        'title': 'Expenses - expense item',
         'code': 'expense_items___expense_item_data__title',
         'type': 5,
         'is_wf_zone': False,
@@ -1875,7 +1875,7 @@ AppProp_Eoffice_Business_trip_data = {
     },
     '25cfa3d4-3be4-4a0b-bb8f-9f79216bac3c': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
-        'title': 'Expenses UoM',
+        'title': 'Expenses - UoM',
         'code': 'expense_items___uom_txt',
         'type': 1,
         'is_wf_zone': False,
@@ -1884,7 +1884,7 @@ AppProp_Eoffice_Business_trip_data = {
     },
     '9b712c30-2056-452c-a43e-9dc26b41c9ef': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
-        'title': 'Expenses Quantity',
+        'title': 'Expenses - Quantity',
         'code': 'expense_items___quantity',
         'type': 6,
         'is_wf_zone': False,
@@ -1893,8 +1893,17 @@ AppProp_Eoffice_Business_trip_data = {
     },
     'd421d998-bc5e-4461-bca2-546579b53a26': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
-        'title': 'Expenses Price',
+        'title': 'Expenses - Price',
         'code': 'expense_items___price',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': False,
+        'is_print': True,
+    },
+    'ff5517d5-e102-47e1-9e40-0c87db601757': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Expenses - Tax title',
+        'code': 'expense_items___tax_data__title',
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -1902,8 +1911,17 @@ AppProp_Eoffice_Business_trip_data = {
     },
     '8c4e6274-017a-4f19-8091-afe0049558f1': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
-        'title': 'Expenses Tax',
-        'code': 'expense_items___tax_data__title',
+        'title': 'Expenses - Tax value %',
+        'code': 'expense_items___tax_data__rate',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': False,
+        'is_print': True,
+    },
+    '4dc0b12e-db80-4b02-ad67-8dc0a415a193': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Expenses - Tax code',
+        'code': 'expense_items___tax_data__code',
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': False,
@@ -1911,7 +1929,7 @@ AppProp_Eoffice_Business_trip_data = {
     },
     'b27238f7-3433-42e3-b8ad-8a7ff1d8b3e1': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
-        'title': 'Expenses sub total',
+        'title': 'Expenses - sub total',
         'code': 'expense_items___subtotal',
         'type': 6,
         'is_wf_zone': False,
@@ -1920,7 +1938,7 @@ AppProp_Eoffice_Business_trip_data = {
     },
     '41d76ca4-460a-46e9-b3b2-687ef1513a5d': {
         'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
-        'title': 'Expenses No.',
+        'title': 'Expenses - No.',
         'code': 'expense_items___order',
         'type': 3,
         'is_wf_zone': False,
