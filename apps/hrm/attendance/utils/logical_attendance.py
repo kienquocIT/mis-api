@@ -292,8 +292,8 @@ class AttendanceHandler:
             if business.total_day >= 1:
                 data_push.update({
                     'attendance_status': 3,
-                    'business_id': business.id,
-                    'business_data': {
+                    'business_trip_id': business.id,
+                    'business_trip_data': {
                         'id': str(business.id),
                         'title': str(business.title),
                         'code': str(business.code),

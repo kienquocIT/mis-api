@@ -35,6 +35,7 @@ def handle_attach_file(instance, attachment_result):
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
     is_not_inventory = serializers.SerializerMethodField()
     product_subtotal = serializers.SerializerMethodField()
+    product_subtotal_after_tax = serializers.SerializerMethodField()
 
     @classmethod
     def get_is_not_inventory(cls, obj):
@@ -49,6 +50,12 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_subtotal(cls, obj):
         return obj.product_cost * obj.picked_quantity
+
+    @classmethod
+    def get_product_subtotal_after_tax(cls, obj):
+        subtotal = obj.product_cost * obj.picked_quantity
+        tax = subtotal * obj.tax_data.get('rate', 0) / 100
+        return subtotal + tax
 
     class Meta:
         model = OrderDeliveryProduct
@@ -74,6 +81,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
 
             'product_cost',
             'product_subtotal',
+            'product_subtotal_after_tax',
 
             'product_depreciation_subtotal',
             'product_depreciation_price',
