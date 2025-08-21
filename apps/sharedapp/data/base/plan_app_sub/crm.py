@@ -3180,6 +3180,45 @@ EQUIPMENT_RETURN_APP_CONFIG = {
     "allow_opportunity": False,
 }
 
+PAYMENT_PLAN_APP_CONFIG = {
+    "id": "0a788054-1d79-4dfd-9371-8bc6a23971f3",
+    "title": "Payment Plan",
+    "code": "paymentplan",
+    "model_code": "paymentplan",
+    "app_label": "paymentplan",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -3537,6 +3576,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "f5954e02-6ad1-4ebf-a4f2-0b598820f5f0": ApplicationConfigFrame(**EQUIPMENT_RETURN_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "0a788054-1d79-4dfd-9371-8bc6a23971f3": ApplicationConfigFrame(**PAYMENT_PLAN_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

@@ -265,6 +265,70 @@ class FORMATTING:
             data = pattern.sub(r"\1,\2", data)
         return data
 
+    @classmethod
+    def number_to_vietnamese(cls, number: int) -> str:
+        """
+        Chuyển số nguyên sang chữ tiếng Việt.
+        Ví dụ:
+            200000 -> "hai trăm nghìn"
+            15 -> "mười lăm"
+            101 -> "một trăm linh một"
+        """
+        units = ["", "một", "hai", "ba", "bốn", "năm",
+                 "sáu", "bảy", "tám", "chín"]
+        tens = ["", "mười", "hai mươi", "ba mươi", "bốn mươi",
+                "năm mươi", "sáu mươi", "bảy mươi", "tám mươi", "chín mươi"]
+        scales = ["", "nghìn", "triệu", "tỷ"]
+
+        if number == 0:
+            return "không"
+
+        def read_three_digits(n: int) -> str:
+            hundred = n // 100
+            ten = (n % 100) // 10
+            unit = n % 10
+            words = []  # đổi tên tránh shadow biến ngoài
+
+            if hundred > 0:
+                words.append(units[hundred] + " trăm")
+
+            if ten > 1:
+                words.append(tens[ten])
+                if unit == 1:
+                    words.append("mốt")
+                elif unit == 5:
+                    words.append("lăm")
+                elif unit > 0:
+                    words.append(units[unit])
+            elif ten == 1:
+                words.append("mười")
+                if unit == 5:
+                    words.append("lăm")
+                elif unit > 0:
+                    words.append(units[unit])
+            else:
+                if hundred > 0 and unit > 0:
+                    words.append("linh")
+                if unit > 0:
+                    words.append(units[unit])
+
+            return " ".join(words)
+
+        n = number
+        result_parts = []
+        scale_index = 0
+        while n > 0:
+            group = n % 1000
+            if group != 0:
+                prefix = read_three_digits(group)
+                if scales[scale_index]:
+                    prefix += " " + scales[scale_index]
+                result_parts.insert(0, prefix)
+            n //= 1000
+            scale_index += 1
+
+        return " ".join(result_parts).strip()
+
 
 class DictHandler:
     current_data: dict or list

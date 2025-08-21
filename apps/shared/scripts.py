@@ -2459,3 +2459,14 @@ def update_product_for_ecovn(company_code):
 
     print('Done :))')
     return True
+
+
+def update_employee_inherit_id_payment_plan():
+    for payment_plan in PaymentPlan.objects.all():
+        if payment_plan.sale_order:
+            payment_plan.employee_inherit_id = payment_plan.sale_order.employee_inherit_id
+        if payment_plan.purchase_order:
+            payment_plan.employee_inherit_id = payment_plan.purchase_order.employee_inherit_id
+        payment_plan.save(update_fields=['employee_inherit_id'])
+    print('update_employee_inherit_id_payment_plan done.')
+    return True

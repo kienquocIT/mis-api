@@ -25,8 +25,8 @@ class PaymentPlanList(BaseListMixin):
         operation_description="Get Payment Plan List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='paymentplan', model_code='paymentplan', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='paymentplan', model_code='paymentplan', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

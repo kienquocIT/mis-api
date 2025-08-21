@@ -443,6 +443,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "f5954e02-6ad1-4ebf-a4f2-0b598820f5f0",  # Equipment Return
     },
+    "0a788054-1d79-4dfd-9371-8bc6a23971f3": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "0a788054-1d79-4dfd-9371-8bc6a23971f3",  # Payment Plan
+    },
 }
 
 _PlanApplication_eOffice_data = {
