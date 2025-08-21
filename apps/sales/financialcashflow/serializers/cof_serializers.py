@@ -32,7 +32,6 @@ class CashOutflowListSerializer(AbstractListSerializerModel):
             'code',
             'title',
             'cof_type',
-            'supplier_data',
             'total_value',
             'date_created',
             'system_status'
@@ -42,7 +41,7 @@ class CashOutflowListSerializer(AbstractListSerializerModel):
 class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     cof_type = serializers.IntegerField()
-    supplier_id = serializers.UUIDField()
+    supplier_id = serializers.UUIDField(required=False, allow_null=True)
     posting_date = serializers.DateTimeField()
     document_date = serializers.DateTimeField()
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -189,7 +188,7 @@ class CashOutflowDetailSerializer(AbstractDetailSerializerModel):
 
 class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
-    supplier_id = serializers.UUIDField()
+    supplier_id = serializers.UUIDField(required=False, allow_null=True)
     posting_date = serializers.DateTimeField()
     document_date = serializers.DateTimeField()
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -223,11 +222,6 @@ class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
     def update(self, instance, validated_data):
         cash_out_advance_for_supplier_data = validated_data.pop('cash_out_advance_for_supplier_data', [])
         cash_out_ap_invoice_data = validated_data.pop('cash_out_ap_invoice_data', [])
-
-        if len(cash_out_advance_for_supplier_data) > 0:
-            validated_data['no_ap_invoice_value'] = validated_data.get('total_value', 0)
-        elif len(cash_out_ap_invoice_data) > 0:
-            validated_data['has_ap_invoice_value'] = validated_data.get('total_value', 0)
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -268,7 +262,7 @@ class CashOutflowCommonFunction:
                     return validate_data
                 except Account.DoesNotExist:
                     raise serializers.ValidationError({'supplier_id': CashOutflowMsg.SUPPLIER_NOT_EXIST})
-        raise serializers.ValidationError({'supplier_id': CashOutflowMsg.SUPPLIER_NOT_NULL})
+        return None
 
     @staticmethod
     def common_valid_cash_out_ap_invoice_data(item):
@@ -307,6 +301,8 @@ class CashOutflowCommonFunction:
 
         item['sum_balance_value'] = float(item.get('sum_balance_value', 0))
         item['sum_payment_value'] = float(item.get('sum_payment_value', 0))
+        if item.get('sum_payment_value', 0) > item.get('sum_balance_value', 0):
+            raise serializers.ValidationError({'error': CashOutflowMsg.BALANCE_VALUE_CHANGED})
         return True
 
     @staticmethod
@@ -344,6 +340,8 @@ class CashOutflowCommonFunction:
 
         item['sum_balance_value'] = float(item.get('sum_balance_value', 0))
         item['sum_payment_value'] = float(item.get('sum_payment_value', 0))
+        if item.get('sum_payment_value', 0) > item.get('sum_balance_value', 0):
+            raise serializers.ValidationError({'error': CashOutflowMsg.BALANCE_VALUE_CHANGED})
         return True
 
     @classmethod
@@ -420,7 +418,7 @@ class CashOutflowCommonFunction:
                         raise serializers.ValidationError({'company_bank_account_id': CashOutflowMsg.BANK_NOT_EXIST})
                 else:
                     raise serializers.ValidationError({'company_bank_account_id': CashOutflowMsg.BANK_NOT_NULL})
-            print('5. validate_payment_method_data --- ok')
+            print('6. validate_payment_method_data --- ok')
             return validate_data
         raise serializers.ValidationError({'payment_method': CashOutflowMsg.MISSING_PAYMENT_METHOD_INFO})
 

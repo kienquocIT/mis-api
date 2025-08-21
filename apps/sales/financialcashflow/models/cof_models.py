@@ -179,6 +179,7 @@ class CashOutflowItem(SimpleAbstractModel):
         'purchasing.PurchaseOrder',
         on_delete=models.CASCADE,
         related_name="cash_outflow_item_purchase_order",
+        null=True
     )
     purchase_order_data = models.JSONField(default=dict)  # {'id', 'code', title'}
     sum_balance_value = models.FloatField(default=0)

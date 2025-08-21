@@ -58,7 +58,7 @@ class JEForCOFHandler:
                 # (-) Phải trả cho NCC (mđ: 331)
                 'account': account_list[0],
                 'product_mapped': None,
-                'business_partner': cof_obj.customer,
+                'business_partner': cof_obj.customer or cof_obj.supplier,
                 'debit': cof_obj.total_value,
                 'credit': 0,
                 'is_fc': False,
