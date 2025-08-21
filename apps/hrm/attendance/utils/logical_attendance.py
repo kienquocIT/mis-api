@@ -1,5 +1,7 @@
 import requests
 from requests.auth import HTTPDigestAuth
+from zk import ZK
+
 from apps.shared import DisperseModel
 
 
@@ -290,8 +292,8 @@ class AttendanceHandler:
             if business.total_day >= 1:
                 data_push.update({
                     'attendance_status': 3,
-                    'business_id': business.id,
-                    'business_data': {
+                    'business_trip_id': business.id,
+                    'business_trip_data': {
                         'id': str(business.id),
                         'title': str(business.title),
                         'code': str(business.code),
@@ -390,7 +392,7 @@ class AttendanceHandler:
         return checkin_time, checkout_time
 
 
-class DeviceIntegrate:
+class HikVisionAPI:
 
     # Cấu hình minor cho từng thiết bị
     DEVICE_MINOR_CODES = {
@@ -460,7 +462,7 @@ class DeviceIntegrate:
         ]
         """
 
-        device_config = DeviceIntegrate.get_device_config()
+        device_config = HikVisionAPI.get_device_config()
         if not device_config:
             return []
 
@@ -537,7 +539,7 @@ class DeviceIntegrate:
         ]
         """
 
-        device_config = DeviceIntegrate.get_device_config()
+        device_config = HikVisionAPI.get_device_config()
         if not device_config:
             return []
 
@@ -545,7 +547,7 @@ class DeviceIntegrate:
         all_results = []
 
         # Lấy danh sách minor cho thiết bị, nếu không có thì báo lỗi
-        minors = DeviceIntegrate.DEVICE_MINOR_CODES.get(device_config.device_ip)
+        minors = HikVisionAPI.DEVICE_MINOR_CODES.get(device_config.device_ip)
         if not minors:
             print(f"[ERROR] Không tìm thấy cấu hình minor cho thiết bị {device_config.device_ip}")
             return []
@@ -595,3 +597,64 @@ class DeviceIntegrate:
                 position += max_results  # Sang trang tiếp theo
 
         return all_results
+
+
+class RonaldJackAPI:
+
+    @classmethod
+    def get_attendance_log(cls, device_ip="115.78.15.163", port=4370, password=0):
+        """
+        Trả về danh sách chấm công từ máy Ronald Jack / ZKTeco
+        :param device_ip: IP của máy
+        :param port: cổng kết nối (thường 4370)
+        :param password: Communication Key (nếu có)
+        """
+        attendance = []
+        conn = None
+
+        # Thử TCP trước
+        py_zk_tcp = ZK(device_ip, port=port, timeout=5, password=password, force_udp=False, ommit_ping=False)
+
+        try:
+            print(f"👉 Thử kết nối TCP {device_ip}:{port} ...")
+            conn = py_zk_tcp.connect()
+            conn.disable_device()
+
+            logs = conn.get_attendance()
+            for log in logs:
+                attendance.append({
+                    "uid": log.user_id,
+                    "timestamp": log.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    "status": log.status,
+                    "punch": log.punch
+                })
+
+            conn.enable_device()
+
+        except Exception as error:
+            print(f"[WARN] TCP thất bại: {error}")
+            print("👉 Thử lại bằng UDP ...")
+            try:
+                py_zk_udp = ZK(device_ip, port=port, timeout=5, password=password, force_udp=True, ommit_ping=False)
+                conn = py_zk_udp.connect()
+                conn.disable_device()
+
+                logs = conn.get_attendance()
+                for log in logs:
+                    attendance.append({
+                        "uid": log.user_id,
+                        "timestamp": log.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                        "status": log.status,
+                        "punch": log.punch
+                    })
+
+                conn.enable_device()
+
+            except Exception as err:
+                print(f"[ERROR] UDP cũng thất bại: {err}")
+
+        finally:
+            if conn:
+                conn.disconnect()
+
+        return attendance

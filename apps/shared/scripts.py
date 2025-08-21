@@ -2461,6 +2461,15 @@ def update_product_for_ecovn(company_code):
     return True
 
 
+def update_sale_lease_order_delivery_sub():
+    for delivery_sub in OrderDeliverySub.objects.all():
+        delivery_sub.sale_order_id = delivery_sub.sale_order_data.get('id', None)
+        delivery_sub.lease_order_id = delivery_sub.lease_order_data.get('id', None)
+        delivery_sub.save(update_fields=['sale_order_id', 'lease_order_id'], skip_check_period=True)
+    print('update_sale_lease_order_delivery_sub done.')
+    return True
+
+
 def update_employee_inherit_id_payment_plan():
     for payment_plan in PaymentPlan.objects.all():
         if payment_plan.sale_order:

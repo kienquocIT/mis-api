@@ -281,10 +281,24 @@ class OrderDeliverySub(DataAbstractModel):
         choices=DELIVERY_STATE,
         default=0,
     )
+    sale_order = models.ForeignKey(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE,
+        verbose_name="sale order",
+        related_name="delivery_sub_sale_order",
+        null=True
+    )
     sale_order_data = models.JSONField(
         default=dict,
         verbose_name='Sale Order data',
         help_text='data json of sale order',
+    )
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="delivery_sub_lease_order",
+        null=True
     )
     lease_order_data = models.JSONField(
         default=dict,
@@ -441,6 +455,14 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         null=True,
     )
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
+    tax = models.ForeignKey(
+        'saledata.Tax',
+        on_delete=models.CASCADE,
+        verbose_name="tax",
+        related_name="delivery_product_tax",
+        null=True
+    )
+    tax_data = models.JSONField(default=dict, help_text='data json of tax')
     uom_time = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,

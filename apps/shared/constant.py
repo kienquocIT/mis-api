@@ -547,3 +547,10 @@ ABSENCE_TYPE = (
     (1, 'Check out'),
     (2, 'All day')
 )
+
+# Attribute
+PRICE_CONFIG_TYPE = (
+    (0, 'Numeric'),
+    (1, 'List'),
+    (2, 'Warranty'),
+)

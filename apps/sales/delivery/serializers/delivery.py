@@ -34,6 +34,8 @@ def handle_attach_file(instance, attachment_result):
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
     is_not_inventory = serializers.SerializerMethodField()
+    product_subtotal = serializers.SerializerMethodField()
+    product_subtotal_after_tax = serializers.SerializerMethodField()
 
     @classmethod
     def get_is_not_inventory(cls, obj):
@@ -44,6 +46,16 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             if obj.asset_type >= 1:
                 return bool(True)
         return bool(False)
+
+    @classmethod
+    def get_product_subtotal(cls, obj):
+        return obj.product_cost * obj.picked_quantity
+
+    @classmethod
+    def get_product_subtotal_after_tax(cls, obj):
+        subtotal = obj.product_cost * obj.picked_quantity
+        tax = subtotal * obj.tax_data.get('rate', 0) / 100
+        return subtotal + tax
 
     class Meta:
         model = OrderDeliveryProduct
@@ -58,6 +70,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'asset_data',
             'product_quantity',
             'uom_data',
+            'tax_data',
             'delivery_quantity',
             'delivered_quantity_before',
             'remaining_quantity',
@@ -67,6 +80,9 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'is_not_inventory',
 
             'product_cost',
+            'product_subtotal',
+            'product_subtotal_after_tax',
+
             'product_depreciation_subtotal',
             'product_depreciation_price',
             'product_depreciation_method',
@@ -134,6 +150,12 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
     products = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
+    sale_order = serializers.SerializerMethodField()
+    estimated_delivery_date_print = serializers.SerializerMethodField()
+    actual_delivery_date_print = serializers.SerializerMethodField()
+    pretax_amount = serializers.SerializerMethodField()
+    tax_amount = serializers.SerializerMethodField()
+    total_amount = serializers.SerializerMethodField()
 
     @classmethod
     def get_products(cls, obj):
@@ -156,6 +178,51 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
     def get_attachments(cls, obj):
         return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
 
+    @classmethod
+    def get_sale_order(cls, obj):
+        return {
+            'id': obj.sale_order_id,
+            'title': obj.sale_order.title,
+            'code': obj.sale_order.code,
+            'customer_data': obj.sale_order.customer_data,
+            'contact_data': obj.sale_order.contact_data,
+            'date_approved': obj.sale_order.date_approved.date(),
+        } if obj.sale_order else {}
+
+    @classmethod
+    def get_estimated_delivery_date_print(cls, obj):
+        return obj.estimated_delivery_date.date() if obj.estimated_delivery_date else None
+
+    @classmethod
+    def get_actual_delivery_date_print(cls, obj):
+        return obj.actual_delivery_date.date() if obj.actual_delivery_date else None
+
+    @classmethod
+    def get_pretax_amount(cls, obj):
+        pretax = 0
+        for delivery_product in obj.delivery_product_delivery_sub.all():
+            subtotal = delivery_product.product_cost * delivery_product.picked_quantity
+            pretax += subtotal
+        return pretax
+
+    @classmethod
+    def get_tax_amount(cls, obj):
+        tax = 0
+        for delivery_product in obj.delivery_product_delivery_sub.all():
+            subtotal = delivery_product.product_cost * delivery_product.picked_quantity
+            tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
+        return tax
+
+    @classmethod
+    def get_total_amount(cls, obj):
+        pretax = 0
+        tax = 0
+        for delivery_product in obj.delivery_product_delivery_sub.all():
+            subtotal = delivery_product.product_cost * delivery_product.picked_quantity
+            pretax += subtotal
+            tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
+        return pretax + tax
+
     class Meta:
         model = OrderDeliverySub
         fields = (
@@ -175,6 +242,8 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
             'lease_order_data',
             'estimated_delivery_date',
             'actual_delivery_date',
+            'estimated_delivery_date_print',
+            'actual_delivery_date_print',
             'customer_data',
             'contact_data',
             'config_at_that_point',
@@ -182,6 +251,10 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
             'delivery_logistic',
             'workflow_runtime_id',
             'employee_inherit',
+            'sale_order',
+            'pretax_amount',
+            'tax_amount',
+            'total_amount',
         )
 
 

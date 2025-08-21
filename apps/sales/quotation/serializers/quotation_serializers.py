@@ -267,6 +267,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
             'indicator_gross_profit',
             'indicator_net_income',
             'attachment',
+            'date_created',
         )
 
     @classmethod
@@ -450,6 +451,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
             'indicator_gross_profit',
             'indicator_net_income',
             'attachment',
+            'date_created',
         )
 
     @classmethod
