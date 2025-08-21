@@ -137,7 +137,7 @@ class CashOutflowMsg:
     PURCHASE_ORDER_NOT_EXIST = _('Purchase order does not exist')
     PURCHASE_ORDER_STAGE_NOT_EXIST = _('Purchase order stage does not exist')
     BANK_NOT_EXIST = _('This company bank account does not exist')
-    BANK_NOT_NULL = _('This company bank account is not null')
+    BANK_NOT_NULL = _('This company bank information is not missing')
     ACCOUNT_NOT_SUPPLIER = _('This account is not a Supplier account')
     ACCOUNT_NOT_CUSTOMER = _('This account is not a Customer account')
     SUPPLIER_NOT_EXIST = _('Supplier does not exist')

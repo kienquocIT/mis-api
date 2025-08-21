@@ -1,18 +1,14 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-
 from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import Account, BankAccount
+from apps.masterdata.saledata.models import Account, AccountBanks
 from apps.sales.apinvoice.models import APInvoice
 from apps.sales.financialcashflow.models import CashOutflow, CashOutflowItem, CashOutflowItemDetail
 from apps.sales.purchasing.models import PurchaseOrderPaymentStage
 from apps.sales.reconciliation.models import ReconciliationItem
 from apps.shared import (
-    AbstractListSerializerModel,
-    AbstractCreateSerializerModel,
-    AbstractDetailSerializerModel,
-    CashOutflowMsg
+    AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel, CashOutflowMsg
 )
 
 
@@ -100,6 +96,7 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
             'cash_out_ap_invoice_data',
             # payment method data
             'payment_method_data',
+            'banking_information'
         )
 
     def validate(self, validate_data):
@@ -135,6 +132,8 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
 class CashOutflowDetailSerializer(AbstractDetailSerializerModel):
     cash_out_advance_for_supplier_data = serializers.SerializerMethodField()
     cash_out_ap_invoice_data = serializers.SerializerMethodField()
+    supplier_data = serializers.SerializerMethodField()
+    customer_data = serializers.SerializerMethodField()
 
     class Meta:
         model = CashOutflow
@@ -147,6 +146,8 @@ class CashOutflowDetailSerializer(AbstractDetailSerializerModel):
             'document_date',
             'description',
             'supplier_data',
+            'customer_data',
+            'employee_data',
             'advance_for_supplier_value',
             'payment_to_customer_value',
             'advance_for_employee_value',
@@ -155,7 +156,8 @@ class CashOutflowDetailSerializer(AbstractDetailSerializerModel):
             'total_value',
             'cash_value',
             'bank_value',
-            'company_bank_account_data'
+            'account_bank_account_data',
+            'banking_information'
         )
 
     @classmethod
@@ -193,6 +195,38 @@ class CashOutflowDetailSerializer(AbstractDetailSerializerModel):
             })
         return cash_out_ap_invoice_data
 
+    @classmethod
+    def get_supplier_data(cls, obj):
+        supplier_data = obj.supplier_data
+        if obj.supplier:
+            supplier_data['bank_accounts_mapped'] = [{
+                'id': item.id,
+                'bank_country_id': item.country_id,
+                'bank_name': item.bank_name,
+                'bank_code': item.bank_code,
+                'bank_account_name': item.bank_account_name,
+                'bank_account_number': item.bank_account_number,
+                'bic_swift_code': item.bic_swift_code,
+                'is_default': item.is_default
+            } for item in obj.supplier.account_banks_mapped.all()]
+        return supplier_data
+
+    @classmethod
+    def get_customer_data(cls, obj):
+        customer_data = obj.customer_data
+        if obj.customer:
+            customer_data['bank_accounts_mapped'] = [{
+                'id': item.id,
+                'bank_country_id': item.country_id,
+                'bank_name': item.bank_name,
+                'bank_code': item.bank_code,
+                'bank_account_name': item.bank_account_name,
+                'bank_account_number': item.bank_account_number,
+                'bic_swift_code': item.bic_swift_code,
+                'is_default': item.is_default
+            } for item in obj.customer.account_banks_mapped.all()]
+        return customer_data
+
 
 class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
@@ -225,6 +259,7 @@ class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
             'cash_out_ap_invoice_data',
             # payment method data
             'payment_method_data',
+            'banking_information'
         )
 
     def validate(self, validate_data):
@@ -307,7 +342,12 @@ class CashOutflowCommonFunction:
                     validate_data['employee_data'] = {
                         'id': str(employee.id),
                         'code': employee.code,
-                        'full_name': employee.get_full_name(2)
+                        'full_name': employee.get_full_name(2),
+                        'group': {
+                            'id': str(employee.group_id),
+                            'code': employee.group.code,
+                            'title': employee.group.title,
+                        } if employee.group else {},
                     }
                     print('2. validate_employee_id --- ok')
                     return validate_data
@@ -447,28 +487,30 @@ class CashOutflowCommonFunction:
             validate_data['cash_value'] = float(payment_method_data.get('cash_value', 0))
             validate_data['bank_value'] = float(payment_method_data.get('bank_value', 0))
             validate_data['total_value'] = float(validate_data.get('total_value', 0))
+            validate_data['banking_information'] = payment_method_data.get('banking_information', '')
             if validate_data['cash_value'] + validate_data['bank_value'] != validate_data['total_value']:
                 raise serializers.ValidationError({'payment_method': CashOutflowMsg.COF_TOTAL_VALUE_NOT_MATCH})
 
             if validate_data['bank_value'] > 0:
-                if 'company_bank_account_id' in payment_method_data:
+                if 'account_bank_account_id' in payment_method_data:
                     try:
-                        company_bank_account = BankAccount.objects.get(
-                            id=payment_method_data.get('company_bank_account_id')
+                        account_bank_account = AccountBanks.objects.get(
+                            id=payment_method_data.get('account_bank_account_id')
                         )
-                        validate_data['company_bank_account_id'] = str(company_bank_account.id)
-                        validate_data['company_bank_account_data'] = {
-                            'id': str(company_bank_account.id),
-                            'bank_mapped_data': company_bank_account.bank_mapped_data,
-                            'bank_account_owner': company_bank_account.bank_account_owner,
-                            'bank_account_number': company_bank_account.bank_account_number,
-                            'brand_name': company_bank_account.brand_name,
-                            'brand_address': company_bank_account.brand_address
+                        validate_data['account_bank_account_id'] = str(account_bank_account.id)
+                        validate_data['account_bank_account_data'] = {
+                            'id': str(account_bank_account.id),
+                            'bank_name': account_bank_account.bank_name,
+                            'bank_code': account_bank_account.bank_code,
+                            'bank_account_name': account_bank_account.bank_account_name,
+                            'bank_account_number': account_bank_account.bank_account_number,
+                            'bic_swift_code': account_bank_account.bic_swift_code
                         }
-                    except BankAccount.DoesNotExist:
+                    except AccountBanks.DoesNotExist:
                         raise serializers.ValidationError({'company_bank_account_id': CashOutflowMsg.BANK_NOT_EXIST})
                 else:
-                    raise serializers.ValidationError({'company_bank_account_id': CashOutflowMsg.BANK_NOT_NULL})
+                    if not validate_data.get('banking_information'):
+                        raise serializers.ValidationError({'error': CashOutflowMsg.BANK_NOT_NULL})
             print('6. validate_payment_method_data --- ok')
             return validate_data
         raise serializers.ValidationError({'payment_method': CashOutflowMsg.MISSING_PAYMENT_METHOD_INFO})
