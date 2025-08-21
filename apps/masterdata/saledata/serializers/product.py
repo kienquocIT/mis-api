@@ -102,7 +102,6 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
@@ -348,7 +347,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 
 
 class ProductQuickCreateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
@@ -656,7 +654,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
@@ -763,7 +760,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             validate_data.get('weight'), 'weight', ProductMsg.WGT_IS_WRONG
         )
         instance = self.instance
-        being_used = CommonCreateUpdateProduct.check_being_used_product(instance)
+        being_used = instance.is_used_in_other_model()
         # kiểm tra trước khi cho phép thay đổi Product Type
         if sorted(self.initial_data.get('product_types_mapped_list', [])) != sorted(
                 [str(prd_type_id) for prd_type_id in instance.product_product_types.values_list(

@@ -335,6 +335,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
             'is_recurring',
             'recurrence_task_id',
             'attachment',
+            'date_created',
         )
 
     @classmethod
@@ -535,6 +536,7 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
             'sale_order_payment_stage',
             'sale_order_invoice',
             'attachment',
+            'date_created',
         )
 
     @classmethod

@@ -210,6 +210,8 @@ class OrderActiveDeliverySerializer:
                 product_data=m2m_obj.product_data,
                 uom=m2m_obj.unit_of_measure,
                 uom_data=m2m_obj.uom_data,
+                tax=m2m_obj.tax,
+                tax_data=m2m_obj.tax_data,
 
                 delivery_quantity=m2m_obj.product_quantity,
                 delivered_quantity_before=0,
@@ -403,7 +405,9 @@ class OrderActiveDeliverySerializer:
             delivery_data=[],
             is_updated=False,
             state=obj_delivery.state,
+            sale_order_id=obj_delivery.sale_order_id,
             sale_order_data=obj_delivery.sale_order_data,
+            lease_order_id=obj_delivery.lease_order_id,
             lease_order_data=obj_delivery.lease_order_data,
             customer_data=obj_delivery.customer_data,
             contact_data=obj_delivery.contact_data,

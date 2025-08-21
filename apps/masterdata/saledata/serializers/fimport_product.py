@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 class ProductImportCreateSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=150)
-    title = serializers.CharField(max_length=150)
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     part_number = serializers.CharField(max_length=150, allow_null=True, allow_blank=True)
     # general

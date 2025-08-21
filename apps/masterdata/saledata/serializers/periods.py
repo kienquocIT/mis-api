@@ -132,6 +132,7 @@ class PeriodsCreateSerializer(serializers.ModelSerializer):
             bulk_info.append(SubPeriods(period_mapped=period, **item))
         SubPeriods.objects.bulk_create(bulk_info)
 
+        # Cập nhập TG bắt đầu sd phần mềm cho công ty
         software_start_using_time = self.initial_data.get('software_start_using_time')
         if software_start_using_time:
             software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
@@ -161,13 +162,10 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         software_start_using_time = self.initial_data.get('software_start_using_time')
-        if self.context.get('company_current'):
-            if self.context.get('company_current').software_start_using_time and software_start_using_time:
-                raise serializers.ValidationError(
-                    {"software_start_using_time": 'You have set up software using time already'}
-                )
-        else:
-            raise serializers.ValidationError({"company_current": 'Company does not exist'})
+        if self.instance.company.software_start_using_time and software_start_using_time:
+            raise serializers.ValidationError(
+                {"software_start_using_time": 'You have set up software using time already'}
+            )
         return validate_data
 
     def update(self, instance, validated_data):
@@ -175,40 +173,33 @@ class PeriodsUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
 
+        # Cập nhập TG bắt đầu sd phần mềm cho công ty
         software_start_using_time = self.initial_data.get('software_start_using_time')
         if software_start_using_time:
-            software_start_using_time_format = datetime.strptime(software_start_using_time, '%m-%Y')
-            self.context.get('company_current').software_start_using_time = software_start_using_time_format
-            self.context.get('company_current').save(update_fields=['software_start_using_time'])
+            instance.company.software_start_using_time = datetime.strptime(software_start_using_time, '%m-%Y')
+            instance.company.save(update_fields=['software_start_using_time'])
 
-        if all(key in self.initial_data for key in ['clear_balance_data', 'product_id', 'warehouse_id']):
-            if ReportStockLog.objects.filter(
-                    tenant=instance.tenant,
-                    company=instance.company,
-                    product_id=self.initial_data.get('product_id'),
-                    warehouse_id=self.initial_data.get('warehouse_id')
-            ).exclude(trans_title='Balance init input').exists():
+        # Kiểm tra và xóa dữ liệu đầu kì (nếu có)
+        if all(key in self.initial_data for key in ['clear_balance_init_data', 'product_id', 'warehouse_id']):
+            prd_obj = Product.objects.filter(id=self.initial_data.get('product_id')).first()
+            wh_obj = WareHouse.objects.filter(id=self.initial_data.get('warehouse_id')).first()
+            if prd_obj.is_used_in_inventory_activities(warehouse_obj=wh_obj):
                 raise serializers.ValidationError(
-                    {"Has trans": 'The transactions of this product are existed in this warehouse.'}
+                    {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
                 )
             try:
                 with transaction.atomic():
-                    PeriodInventoryFunction.clear_balance_data(
-                        instance,
-                        self.initial_data.get('product_id'),
-                        self.initial_data.get('warehouse_id')
-                    )
+                    PeriodInventoryFunction.clear_balance_init_data(instance, prd_obj, wh_obj)
                 return instance
             except Exception as err:
                 return err
+
         return instance
 
 
 class PeriodInventoryFunction:
     @classmethod
-    def clear_balance_data(cls, instance, product_id, warehouse_id):
-        prd_obj = Product.objects.filter(id=product_id).first()
-        wh_obj = WareHouse.objects.filter(id=warehouse_id).first()
+    def clear_balance_init_data(cls, instance, prd_obj, wh_obj):
         company_config = instance.company.company_config
         if prd_obj and wh_obj:
             prd_obj.stock_amount = 0

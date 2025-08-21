@@ -147,4 +147,3 @@ Application_hrm_data = {
         filtering_inheritor=False,
     ),
 }
-

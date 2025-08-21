@@ -264,11 +264,32 @@ class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_employee_inherit(cls, obj):
         if obj.employee_inherit:
+            def get_first_manager(group):
+                if not group:
+                    return {}
+                if group.parent_n:
+                    return get_first_manager(group.parent_n)
+                return {
+                    "id": str(group.first_manager.id),
+                    "full_name": group.first_manager.get_full_name(),
+                }
+            ceo = {}
+            if obj.employee_inherit.group:
+                ceo = get_first_manager(obj.employee_inherit.group) or {}
             return {
                 "id": str(obj.employee_inherit_id),
                 "last_name": obj.employee_inherit.last_name,
                 "first_name": obj.employee_inherit.first_name,
-                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}',
+                "group": {
+                    "id": str(obj.employee_inherit.group.id),
+                    "title": obj.employee_inherit.group.title,
+                    "ceo": ceo,
+                    "first_manager": {
+                        "id": str(obj.employee_inherit.group.first_manager.id),
+                        "full_name": obj.employee_inherit.group.first_manager.get_full_name(),
+                    } if obj.employee_inherit.group.first_manager else {},
+                } if obj.employee_inherit.group else {}
             }
         return {}
 
@@ -426,6 +447,7 @@ class BusinessRequestUpdateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
         raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         attachment = validated_data.pop('attachment', None)
         expense_list = validated_data.pop('expense_items', None)

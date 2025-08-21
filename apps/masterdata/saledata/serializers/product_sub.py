@@ -184,33 +184,3 @@ class CommonCreateUpdateProduct:
             current = current.price_list_mapped
 
         return factor
-
-    @staticmethod
-    def check_being_used_product(product_obj):
-        """
-            Kiểm tra sản phẩm có đang được sử dụng bởi các model liên kết hay không.
-            Trả về True nếu có, False nếu không.
-        """
-        ignore_models = {
-            'productproducttype',
-            'productuomgroup',
-            'price',
-            'productpricelist',
-            'productcomponent'
-        }
-
-        related_fields = product_obj._meta.get_fields()
-        used_models = set()
-
-        for field in related_fields:
-            if field.is_relation and field.auto_created and not field.concrete:
-                related_name = field.get_accessor_name()
-                related_manager = getattr(product_obj, related_name)
-                if related_manager.exists():
-                    first_record = related_manager.first()
-                    if first_record:
-                        used_models.add(first_record._meta.model_name)
-
-        print(used_models)
-        # Nếu có ít nhất một model liên kết không nằm trong danh sách bỏ qua => đang được sử dụng
-        return any(model not in ignore_models for model in used_models)

@@ -2,7 +2,7 @@ from datetime import datetime
 
 from django.db import models
 
-from apps.hrm.attendance.utils.logical_attendance import DeviceIntegrate
+from apps.hrm.attendance.utils.logical_attendance import HikVisionAPI
 from apps.shared import MasterDataAbstractModel
 
 
@@ -35,7 +35,7 @@ class DeviceIntegrateEmployee(MasterDataAbstractModel):
     @classmethod
     def call_integrate(cls, tenant_id, company_id):
         result_list = []
-        for data_integrate in DeviceIntegrate.get_user():
+        for data_integrate in HikVisionAPI.get_user():
             obj, _created = cls.objects.get_or_create(
                 tenant_id=tenant_id, company_id=company_id,
                 device_employee_id=data_integrate.get('employeeNo', ''),
@@ -80,9 +80,9 @@ class AccessLog(MasterDataAbstractModel):
     def push_access_log(cls, date):
         # cls.objects.filter_on_company(timestamp__date=date).delete()
         bulk_data = []
-        device_config = DeviceIntegrate.get_device_config()
+        device_config = HikVisionAPI.get_device_config()
         if device_config:
-            logs = DeviceIntegrate.get_attendance_log(date=date)
+            logs = HikVisionAPI.get_attendance_log(date=date)
             employee_integrate = DeviceIntegrateEmployee.objects.filter_on_company(
                 device_employee_id__in=[data.get('employeeNoString', '') for data in logs],
                 employee__isnull=False,

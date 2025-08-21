@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.inventory import WareHouse
 from apps.masterdata.saledata.utils import ProductHandler
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, DisperseModel
 
 __all__ = [
     'ProductType', 'ProductCategory', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
@@ -136,6 +136,7 @@ class Manufacturer(MasterDataAbstractModel):
 
 
 class Product(DataAbstractModel):
+    title = models.TextField(blank=True)
     # import in quotation
     create_from_import = models.BooleanField(default=False)
     import_data_row = models.JSONField(default=dict)
@@ -158,7 +159,7 @@ class Product(DataAbstractModel):
         help_text='product for sale: 0, inventory: 1, purchase: 2'
     )
     avatar = models.TextField(null=True, verbose_name='avatar path')
-    description = models.CharField(null=True, blank=True, max_length=1000)
+    description = models.TextField(blank=True)
 
     warehouses = models.ManyToManyField(
         'saledata.WareHouse',
@@ -318,6 +319,49 @@ class Product(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    def is_used_in_other_model(self):
+        """
+            Kiểm tra sản phẩm đã được sử dụng bởi các model liên kết hay chưa.
+            Trả về True nếu có, False nếu không.
+        """
+        ignore_models = {
+            'productproducttype',
+            'productuomgroup',
+            'price',
+            'productpricelist',
+            'productcomponent'
+        }
+
+        related_fields = self._meta.get_fields()
+        used_models = set()
+
+        for field in related_fields:
+            if field.is_relation and field.auto_created and not field.concrete:
+                related_name = field.get_accessor_name()
+                related_manager = getattr(self, related_name)
+                if related_manager.exists():
+                    first_record = related_manager.first()
+                    if first_record:
+                        used_models.add(first_record._meta.model_name)
+
+        print(used_models)
+        # Nếu có ít nhất một model liên kết không nằm trong danh sách bỏ qua => đang được sử dụng
+        return any(model not in ignore_models for model in used_models)
+
+    def is_used_in_inventory_activities(self, warehouse_obj):
+        """
+            Kiểm tra sản phẩm đã có hoạt động kho hay chưa.
+            Trả về True nếu có, False nếu không.
+        """
+        # Nếu QL tồn kho theo project thì warehouse = None
+        if hasattr(self.company, 'company_config'):
+            if self.company.company_config.cost_per_project:
+                warehouse_obj = None
+        report_stock_log_model = DisperseModel(app_model='report.ReportStockLog').get_model()
+        return report_stock_log_model.objects.filter(
+            tenant=self.tenant, company=self.company, product=self, warehouse=warehouse_obj
+        ).exclude(trans_title='Balance init input').exists()
 
     def get_current_cost_info(self, get_type=1, **kwargs):
         """

@@ -287,22 +287,36 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
     def get_action_myself(self, obj):
         employee_current_id = self.context.get('employee_current_id', None)
         if employee_current_id and obj.stage_currents:
-            if str(employee_current_id) in obj.stage_currents.assignee_and_zone_data:
-                stage_assignee_obj = RuntimeAssignee.objects.filter_current(
-                    stage=obj.stage_currents,
-                    employee_id=employee_current_id,
-                    is_done=False,
-                ).first()
-                if stage_assignee_obj:
-                    return {
-                        'id': stage_assignee_obj.id,
-                        'actions': obj.stage_currents.actions,
-                        'zones': self.get_properties_data(stage_assignee_obj.zone_and_properties),
-                        'zones_hidden': self.get_properties_data(stage_assignee_obj.zone_hidden_and_properties),
-                        'is_edit_all_zone': stage_assignee_obj.is_edit_all_zone,
-                        'association': self.get_association(node_current=obj.stage_currents.node)
-                        if obj.stage_currents.node else [],
-                    }
+            if obj.stage_currents.node:
+                if str(employee_current_id) in obj.stage_currents.assignee_and_zone_data:
+                    stage_assignee_obj = RuntimeAssignee.objects.filter_current(
+                        stage=obj.stage_currents,
+                        employee_id=employee_current_id,
+                        is_done=False,
+                    ).first()
+                    if stage_assignee_obj:
+                        actions = obj.stage_currents.actions
+                        if obj.stage_currents.node.is_system is True and obj.stage_currents.node.code == 'initial':
+                            actions.append(2)
+                        return {
+                            'id': stage_assignee_obj.id,
+                            'actions': actions,
+                            'zones': self.get_properties_data(stage_assignee_obj.zone_and_properties),
+                            'zones_hidden': self.get_properties_data(stage_assignee_obj.zone_hidden_and_properties),
+                            'is_edit_all_zone': stage_assignee_obj.is_edit_all_zone,
+                            'association': self.get_association(node_current=obj.stage_currents.node)
+                            if obj.stage_currents.node else [],
+                        }
+                if str(employee_current_id) not in obj.stage_currents.assignee_and_zone_data:
+                    if obj.stage_currents.node.is_system is True and obj.stage_currents.node.code == 'initial':
+                        return {
+                            'actions': [4],
+                            'zones': [],
+                            'zones_hidden': [],
+                            'is_edit_all_zone': True,
+                            'association': self.get_association(node_current=obj.stage_currents.node)
+                            if obj.stage_currents.node else [],
+                        }
         return {}
 
     @classmethod
@@ -348,6 +362,9 @@ class RuntimeAssigneeUpdateSerializer(serializers.ModelSerializer):
         if self.instance.stage:
             if attrs in self.instance.stage.actions:
                 return attrs
+            if self.instance.stage.node:
+                if self.instance.stage.node.is_system is True and self.instance.stage.node.code == 'initial':
+                    return attrs
         raise serializers.ValidationError(
             {
                 'action': 'Action not support for you'

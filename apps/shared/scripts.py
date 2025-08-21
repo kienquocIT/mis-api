@@ -937,7 +937,6 @@ def create_empl_map_hrm():
         if not _created:
             avai_lst.append(obj)
     print('init create hrm data list done!')
-    print('Available list has created', avai_lst)
 
 
 def reset_remain_gr_for_po():
@@ -984,7 +983,7 @@ def re_runtime_again(doc_id):
                 if doc_obj:
                     doc_obj.system_status = 0
                     doc_obj.save(update_fields=['system_status'])
-    runtime.delete()
+        runtime.delete()
     print("re_runtime_again successfully.")
     return True
 
@@ -2275,4 +2274,197 @@ def update_user_username(user_id, username, tenant_code):
         user_obj.username_auth = username + '-' + tenant_code
         user_obj.save(update_fields=['username', 'username_auth'])
     print('update_user_username done.')
+    return True
+
+
+def create_template_print_default():
+    for company in Company.objects.all():
+        ConfigDefaultData(company).create_print_template_default(company)
+    print('Done Create print template default !!')
+
+
+def delete_opp_quotation_sale_order(company_id):
+    opportunity = Opportunity.objects.filter(company_id=company_id)
+    quotation = Quotation.objects.filter(company_id=company_id)
+    sale_order = SaleOrder.objects.filter(company_id=company_id)
+    if opportunity:
+        opportunity.delete()
+    if quotation:
+        quotation.delete()
+    if sale_order:
+        sale_order.delete()
+    print('delete_opp_quotation_sale_order done.')
+    return True
+
+
+def update_product_for_ecovn(company_code):
+    code_list = ['TB.GG02', 'TB.GG10', 'TB.PCS500DX', 'TB.PCS500DXT', 'TB.PCS400T', 'TB.PCS400G', 'TB.BLADEXT', 'E.GSODIGESTER.100',
+     'E.DIY.100', 'E.ECOBALL', 'NVL.BOS.1000', 'DD.BOS.1000', 'DD.BOS.500', 'DD.BOS.250', 'E.GSOGEL.1000',
+     'E.GSOGEL.250', 'E.AQUA.100', 'CP.ECOFERT.1L', 'CP.ECOFERT.5L', 'CP.ECOI.M.1L', 'CP.ECOINS.1L', 'CP.ECOINS.5L',
+     'PK.350.MIDDLEAIRCOVER', 'PK.350.BLDC', 'PK.350.MAINPCB', 'PK.350.FANMOTOR', 'PK.350.DOORASSY', 'PK.350.FILTERCAP',
+     'PK.350.SUCTIONPUMP', 'PK.350.RECAPTACLE', 'PK.350.UPPERCOVERASSY', 'PK.350.COUPLINGLOWER',
+     'PK.350.PARTSFOR RECEPTACLE (2)', 'PK.350.DOORSENSOR', 'PK.350.TOPCOVER', 'PK.350.FILTER', 'PK.400.CHANELPCB',
+     'PK.400.MAINPCB', 'PK.400.FANMOTOR', 'PK.400S.DOORASSY', 'PK.400W.DOORASSY', 'PK.400G.DOORASSY',
+     'PK.400.RECEPTACLE', 'PK.400.COUPLINGLOWWER', 'PK.400.PARTSFORRECEPTACLE (2)', 'PK.400.PARTSFORRECEPTACLE (1)',
+     'PK.400.DOORLATCH', 'PK.400.DISPLAYPCB', 'PK.400.POWERCABLE', 'PK.400.FILTERPACKING', 'PK.400W.FILTERCOVER',
+     'PK.400S.FILTERCOVER', 'PK.400G.FILTERCOVER', 'PK.400.SCUPPER', 'PK.400.UPPERCOVER', 'PK.400.HEATERSENSOR',
+     'PK.400.BIMETAL', 'PK.400.WATERTRAY', 'PK.400.GEARBOX', 'PK400.FILTERASSY', 'PK.400.HEATERASSY',
+     'PK.500.HEATERHARMESS.H', 'PK.500.HEATERHARMESS.B', 'PK.500.MAINPCB', 'PK.500.FANMOTOR', 'PK.500.DOORASSY',
+     'PK.500.FILTERCAP', 'PK.500.RECEPTACLE', 'PK.500.COUPLINGLOWER', 'PK.500.PARTSFORRECEPTACLE(2)',
+     'PK.500.PARTSFORRECEPTACLE (1)', 'PK.500.DISPLAYPCB', 'PK.500.FILTERCOVER', 'PK.500.HEATERSENSOR',
+     'PK.500.BIMETAL', 'PK.500.WATERTRAY', 'PK.500.UPPERCOVER', 'PK.500.STEAMCOVER', 'PK.500.HINGECOVER',
+     'PK.500.FILTER', 'PK.500.DOORLATCHASSY', 'PK.500.BLOWINGFAN', 'PK.500.GREARBOX', 'PK.500.HEATINGPLATEASSY',
+     'PK.BLADEX.STORAGE', 'PK.GG02.CHECKSENSOR', 'PK.GG02.BLADE-SIDE', 'PK.GG02.INPUTLIDSEAL', 'PK.GG02.FILTER',
+     'PK.GG02.BLADE-CENTER', 'PK.GG02.MAINMOTOR', 'PK.GG02.CHAIN', 'PK.GG02.MAINPCB', 'PK.GG02.FANMOTOR',
+     'PK.GG02.DISPLAYPCBASSY', 'PK.GG02.HEATINGSENSOR', 'PK.GG02.SCOOP', 'PK.GGO2.HEATING ELEMENT',
+     'PK.GG02.HEAT HOLDING MATERIAL_ SET', 'PK.GG02.PCBMICOMCHIP', 'PK.GG02.MOTORPLASTICGEAR', 'PK.GG500.SEALOUTPUT',
+     'PK.GG500.SEALINPUT', 'PK.GG500.TANKSENSOR', 'PK.GG500.OILSENSOR', 'PK.GG500.HUMIDITYSENSOR', 'PK.GG500.FANMOTOR',
+     'PK.GG500.UVLAMP', 'PK.GG30.TANKSENSOR', 'PK.GG30.OILSENSOR', 'PK.GG30.HUMIDITYSENSOR', 'PK.GG30.FANMOTOR',
+     'PK.GG30N.UVLAMP', 'PK.GG30.SEALOUTPUT', 'PK.GG10-GG30.TOUCHSREENMAGNET', 'PK.GG30.CENTERMIXINGBLADE',
+     'PK.GG30.OFFLOADDOORHANDLE', 'PK.GG10.TANKSENSOR', 'PK.GG10.OILSENSOR', 'PK.GG10.HUMIDITYSENSOR',
+     'PK.GG10.FANMOTOR', 'PK.GG10.UVLAMP', 'PK.GG10.SEALOUTPUT']
+    sale_uom_list = ['UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM005', 'UOM005', 'UOM008', 'UOM007',
+     'UOM007', 'UOM007', 'UOM007', 'UOM007', 'UOM007', 'UOM005', 'UOM007', 'UOM007', 'UOM007', 'UOM007', 'UOM007',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM006',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001']
+    sale_tax_list = ['VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8',
+     'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_0', 'VAT_0', 'VAT_10', 'VAT_10', 'VAT_8', 'VAT_8', 'VAT_8',
+     'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8',
+     'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8',
+     'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8',
+     'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8',
+     'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8',
+     'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8',
+     'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8',
+     'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8',
+     'VAT_8', 'VAT_8', 'VAT_8']
+    inventory_uom_list = ['UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM005', 'UOM005', 'UOM008', 'UOM007',
+     'UOM007', 'UOM007', 'UOM007', 'UOM007', 'UOM007', 'UOM005', 'UOM007', 'UOM007', 'UOM007', 'UOM007', 'UOM007',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM006',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001']
+    valuation_method_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 0, 0, 0, 0, 0, 0, 0]
+    purchase_uom_list = ['UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM005', 'UOM005', 'UOM008', 'UOM001', 'UOM007',
+     'UOM007', 'UOM007', 'UOM007', 'UOM007', 'UOM005', 'UOM007', 'UOM007', 'UOM007', 'UOM007', 'UOM007', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM006', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001', 'UOM001',
+     'UOM001']
+    purchase_tax_list = ['VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_8',
+     'VAT_8', 'VAT_8', 'VAT_8', 'VAT_8', 'VAT_10', 'VAT_0', 'VAT_0', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10',
+     'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10',
+     'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10',
+     'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10',
+     'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10',
+     'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10',
+     'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10',
+     'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10',
+     'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10',
+     'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10', 'VAT_10']
+    supplied_by_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    for i in range(len(code_list)):
+        product_obj = Product.objects.filter(company__code=company_code, code=code_list[i]).first()
+        if product_obj:
+            product_obj.product_choice = [0, 1, 2]
+            # sale
+            sale_uom_obj = UnitOfMeasure.objects.filter(company__code=company_code, code=sale_uom_list[i]).first()
+            product_obj.sale_default_uom = sale_uom_obj
+            product_obj.sale_default_uom_data = {
+                'id': str(sale_uom_obj.id),
+                'code': sale_uom_obj.code,
+                'title': sale_uom_obj.title,
+            } if sale_uom_obj else {}
+            sale_tax_obj = Tax.objects.filter(company__code=company_code, code=sale_tax_list[i]).first()
+            product_obj.sale_tax = sale_tax_obj
+            product_obj.sale_tax_data = {
+                'id': str(sale_tax_obj.id),
+                'code': sale_tax_obj.code,
+                'title': sale_tax_obj.title,
+                'rate': sale_tax_obj.rate,
+            } if sale_tax_obj else {}
+            # inventory
+            inventory_uom_obj = UnitOfMeasure.objects.filter(company__code=company_code, code=inventory_uom_list[i]).first()
+            product_obj.inventory_uom = inventory_uom_obj
+            product_obj.inventory_uom_data = {
+                'id': str(inventory_uom_obj.id),
+                'code': inventory_uom_obj.code,
+                'title': inventory_uom_obj.title,
+            } if inventory_uom_obj else {}
+            product_obj.valuation_method = valuation_method_list[i]
+            # purchase
+            purchase_uom_obj = UnitOfMeasure.objects.filter(company__code=company_code, code=purchase_uom_list[i]).first()
+            product_obj.purchase_default_uom = sale_uom_obj
+            product_obj.purchase_default_uom_data = {
+                'id': str(purchase_uom_obj.id),
+                'code': purchase_uom_obj.code,
+                'title': purchase_uom_obj.title,
+            } if purchase_uom_obj else {}
+            purchase_tax_obj = Tax.objects.filter(company__code=company_code, code=purchase_tax_list[i]).first()
+            product_obj.purchase_tax = purchase_tax_obj
+            product_obj.purchase_tax_data = {
+                'id': str(purchase_tax_obj.id),
+                'code': purchase_tax_obj.code,
+                'title': purchase_tax_obj.title,
+                'rate': purchase_tax_obj.rate,
+            } if purchase_tax_obj else {}
+            product_obj.supplied_by = supplied_by_list[i]
+            product_obj.save(update_fields=[
+                'product_choice',
+                # sale
+                'sale_default_uom',
+                'sale_default_uom_data',
+                'sale_tax',
+                'sale_tax_data',
+                # inventory
+                'inventory_uom',
+                'inventory_uom_data',
+                'valuation_method',
+                # purchase
+                'purchase_default_uom',
+                'purchase_default_uom_data',
+                'purchase_tax',
+                'purchase_tax_data',
+                'supplied_by',
+            ])
+        else:
+            print(f'{i}. Missing {code_list[i]}')
+
+    print('Done :))')
+    return True
+
+
+def update_sale_lease_order_delivery_sub():
+    for delivery_sub in OrderDeliverySub.objects.all():
+        delivery_sub.sale_order_id = delivery_sub.sale_order_data.get('id', None)
+        delivery_sub.lease_order_id = delivery_sub.lease_order_data.get('id', None)
+        delivery_sub.save(update_fields=['sale_order_id', 'lease_order_id'], skip_check_period=True)
+    print('update_sale_lease_order_delivery_sub done.')
     return True

@@ -801,3 +801,43 @@ IV. Thiết lập view
 > 7. 
 
 ---
+
+---
+## TEMPALATE PRINT 🖨️
++ khai báo field muốn in trong application_properties
++ tạo template mặc định trong file template_content.py folder "print" ID key là application ID của app đó
++ thêm chức năng muốn thêm vào trong danh sách list_default trong hàm create_print_template_default
++ sau khi thêm thì chạy lại script create_template_print_default
+### khai báo
+   - khai báo trong folder plan_app_sub thêm hoặc đổi field allow_print thành True
+   - trong folder tìm đến app thêm or đổi trường <b>"is_print"</b> thành giá trị "True"
+``JSON
+   'd1b25a07-ab3e-4a33-8597-dc85d9abf70f': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Employee inherit',
+        'code': 'employee_inherit__full_name',
+        'type': 5,
+        'is_print': True,
+   }
+``
+### Tạo Template
+   - tạo template mặc định khi có một công ty mới dc tạo
+   - trong file template_content.py folder "print" tạo thêm template mới
+
+``python
+  TEMPLATE_CONTENT_MAP = {
+   'b9650500-aba7-44e3-b6e0-2542622702a3': PRINT_BUSINESS,
+  }
+``
+### Thêm vào Signal
+  - thêm vào signal hàm create_print_template_default để init template print mới
+``json
+  list_default = [{
+      "app_id": 'b9650500-aba7-44e3-b6e0-2542622702a3', # business trip
+      "contents": TEMPLATE_CONTENT_MAP
+  }]
+``
+> **Note** muốn hiển thị employee first manager thì trong employee inherit trả thêm param group.first_manager.full_name
+> hiển thị CEO thì thêm group.ceo.full_name
+> - để print list thì sử dụng tên field + "___" + field_name_child
+> - ví dụ: products_list___category__title

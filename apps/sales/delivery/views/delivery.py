@@ -56,7 +56,10 @@ class OrderDeliverySubDetail(
     update_hidden_field = ['tenant_id', 'company_id', 'employee_modified_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('employee_inherit').prefetch_related(
+        return super().get_queryset().select_related(
+            'employee_inherit',
+            'sale_order',
+        ).prefetch_related(
             Prefetch(
                 'delivery_product_delivery_sub',
                 queryset=OrderDeliveryProduct.objects.select_related(
