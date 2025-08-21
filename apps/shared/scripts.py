@@ -2466,6 +2466,15 @@ def update_sale_lease_order_delivery_sub():
         delivery_sub.sale_order_id = delivery_sub.sale_order_data.get('id', None)
         delivery_sub.lease_order_id = delivery_sub.lease_order_data.get('id', None)
         delivery_sub.save(update_fields=['sale_order_id', 'lease_order_id'], skip_check_period=True)
+        if delivery_sub.sale_order:
+            for deli_product in delivery_sub.delivery_product_delivery_sub.all():
+                if deli_product.product:
+                    so_prod = deli_product.product.sale_order_product_product.filter(
+                        sale_order_id=delivery_sub.sale_order_id
+                    ).first()
+                    if so_prod:
+                        deli_product.product_description = so_prod.product_description
+                        deli_product.save(update_fields=['product_description'], for_goods_return=True)
     print('update_sale_lease_order_delivery_sub done.')
     return True
 

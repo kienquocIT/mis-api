@@ -1421,7 +1421,7 @@ Delivery_data__params = {
     "4aae1835-d20d-46a0-846c-fdaf5a69a943": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
         "title": "Product - description",
-        "code": "products___product_data__description",
+        "code": "products___product_description",
         "remark": "",
         "type": 1,
         "is_print": True,

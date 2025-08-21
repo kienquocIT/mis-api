@@ -72,6 +72,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'product_quantity',
             'uom_data',
             'tax_data',
+            'product_description',
             'delivery_quantity',
             'delivered_quantity_before',
             'remaining_quantity',
@@ -190,16 +191,17 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
             'code': obj.sale_order.code,
             'customer_data': obj.sale_order.customer_data,
             'contact_data': obj.sale_order.contact_data,
-            'date_approved': obj.sale_order.date_approved.date(),
+            'date_approved': obj.sale_order.date_approved.date().strftime("%d/%m/%Y")
+            if obj.sale_order.date_approved else None,
         } if obj.sale_order else {}
 
     @classmethod
     def get_estimated_delivery_date_print(cls, obj):
-        return obj.estimated_delivery_date.date() if obj.estimated_delivery_date else None
+        return obj.estimated_delivery_date.date().strftime("%d/%m/%Y") if obj.estimated_delivery_date else None
 
     @classmethod
     def get_actual_delivery_date_print(cls, obj):
-        return obj.actual_delivery_date.date() if obj.actual_delivery_date else None
+        return obj.actual_delivery_date.date().strftime("%d/%m/%Y") if obj.actual_delivery_date else None
 
     @classmethod
     def get_pretax_amount(cls, obj):

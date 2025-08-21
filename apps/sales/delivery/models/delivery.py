@@ -471,6 +471,7 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         null=True
     )
     uom_time_data = models.JSONField(default=dict, help_text='data json of uom time')
+    product_description = models.TextField(blank=True, null=True)
     delivery_quantity = models.FloatField(verbose_name='Quantity need pickup of SaleOrder',)
     delivered_quantity_before = models.FloatField(default=0, verbose_name='Quantity was picked before',)
     remaining_quantity = models.FloatField(default=0, verbose_name='Quantity need pick')
