@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
+
+from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, BankAccount
 from apps.sales.apinvoice.models import APInvoice
@@ -42,6 +44,8 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     cof_type = serializers.IntegerField()
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
+    customer_id = serializers.UUIDField(required=False, allow_null=True)
+    employee_id = serializers.UUIDField(required=False, allow_null=True)
     posting_date = serializers.DateTimeField()
     document_date = serializers.DateTimeField()
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -83,6 +87,8 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
             'title',
             'cof_type',
             'supplier_id',
+            'customer_id',
+            'employee_id',
             'posting_date',
             'document_date',
             'description',
@@ -99,6 +105,8 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
     def validate(self, validate_data):
         CashOutflowCommonFunction.validate_cof_type(validate_data)
         CashOutflowCommonFunction.validate_supplier_id(validate_data)
+        CashOutflowCommonFunction.validate_customer_id(validate_data)
+        CashOutflowCommonFunction.validate_employee_id(validate_data)
         if validate_data.get('cof_type') == 0:
             validate_data['total_value'] = float(validate_data.get('advance_for_supplier_value', 0))
         if validate_data.get('cof_type') == 1:
@@ -189,6 +197,8 @@ class CashOutflowDetailSerializer(AbstractDetailSerializerModel):
 class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     supplier_id = serializers.UUIDField(required=False, allow_null=True)
+    customer_id = serializers.UUIDField(required=False, allow_null=True)
+    employee_id = serializers.UUIDField(required=False, allow_null=True)
     posting_date = serializers.DateTimeField()
     document_date = serializers.DateTimeField()
     description = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -202,6 +212,8 @@ class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
             'title',
             'cof_type',
             'supplier_id',
+            'customer_id',
+            'employee_id',
             'posting_date',
             'document_date',
             'description',
@@ -262,6 +274,45 @@ class CashOutflowCommonFunction:
                     return validate_data
                 except Account.DoesNotExist:
                     raise serializers.ValidationError({'supplier_id': CashOutflowMsg.SUPPLIER_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_customer_id(cls, validate_data):
+        if 'customer_id' in validate_data:
+            if validate_data.get('customer_id'):
+                try:
+                    customer = Account.objects.get(id=validate_data.get('customer_id'))
+                    if not customer.is_customer_account:
+                        raise serializers.ValidationError({'customer_id': CashOutflowMsg.ACCOUNT_NOT_CUSTOMER})
+                    validate_data['customer_id'] = str(customer.id)
+                    validate_data['customer_data'] = {
+                        'id': str(customer.id),
+                        'code': customer.code,
+                        'name': customer.name,
+                        'tax_code': customer.tax_code,
+                    }
+                    print('2. validate_customer_id --- ok')
+                    return validate_data
+                except Account.DoesNotExist:
+                    raise serializers.ValidationError({'customer_id': CashOutflowMsg.CUSTOMER_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_employee_id(cls, validate_data):
+        if 'employee_id' in validate_data:
+            if validate_data.get('employee_id'):
+                try:
+                    employee = Employee.objects.get(id=validate_data.get('employee_id'))
+                    validate_data['employee_id'] = str(employee.id)
+                    validate_data['employee_data'] = {
+                        'id': str(employee.id),
+                        'code': employee.code,
+                        'full_name': employee.get_full_name(2)
+                    }
+                    print('2. validate_employee_id --- ok')
+                    return validate_data
+                except Account.DoesNotExist:
+                    raise serializers.ValidationError({'employee_id': CashOutflowMsg.EMPLOYEE_NOT_EXIST})
         return None
 
     @staticmethod

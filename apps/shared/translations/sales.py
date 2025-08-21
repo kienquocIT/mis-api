@@ -139,8 +139,10 @@ class CashOutflowMsg:
     BANK_NOT_EXIST = _('This company bank account does not exist')
     BANK_NOT_NULL = _('This company bank account is not null')
     ACCOUNT_NOT_SUPPLIER = _('This account is not a Supplier account')
+    ACCOUNT_NOT_CUSTOMER = _('This account is not a Customer account')
     SUPPLIER_NOT_EXIST = _('Supplier does not exist')
-    SUPPLIER_NOT_NULL = _('Supplier is not null')
+    CUSTOMER_NOT_EXIST = _('Customer does not exist')
+    EMPLOYEE_NOT_EXIST = _('Employee does not exist')
     COF_TYPE_NOT_VALID = _('Cash out type is not valid')
     COF_TYPE_NOT_NULL = _('Cash out type is not null')
 
