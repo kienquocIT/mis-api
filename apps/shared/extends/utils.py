@@ -274,60 +274,61 @@ class FORMATTING:
             15 -> "mười lăm"
             101 -> "một trăm linh một"
         """
-        units = ["", "một", "hai", "ba", "bốn", "năm",
-                 "sáu", "bảy", "tám", "chín"]
-        tens = ["", "mười", "hai mươi", "ba mươi", "bốn mươi",
-                "năm mươi", "sáu mươi", "bảy mươi", "tám mươi", "chín mươi"]
         scales = ["", "nghìn", "triệu", "tỷ"]
 
         if number == 0:
             return "không"
-
-        def read_three_digits(n: int) -> str:
-            hundred = n // 100
-            ten = (n % 100) // 10
-            unit = n % 10
-            words = []  # đổi tên tránh shadow biến ngoài
-
-            if hundred > 0:
-                words.append(units[hundred] + " trăm")
-
-            if ten > 1:
-                words.append(tens[ten])
-                if unit == 1:
-                    words.append("mốt")
-                elif unit == 5:
-                    words.append("lăm")
-                elif unit > 0:
-                    words.append(units[unit])
-            elif ten == 1:
-                words.append("mười")
-                if unit == 5:
-                    words.append("lăm")
-                elif unit > 0:
-                    words.append(units[unit])
-            else:
-                if hundred > 0 and unit > 0:
-                    words.append("linh")
-                if unit > 0:
-                    words.append(units[unit])
-
-            return " ".join(words)
-
-        n = number
+        parse_num = number
         result_parts = []
         scale_index = 0
-        while n > 0:
-            group = n % 1000
+        while parse_num > 0:
+            group = parse_num % 1000
             if group != 0:
-                prefix = read_three_digits(group)
+                prefix = FORMATTING.read_three_digits(group)
                 if scales[scale_index]:
                     prefix += " " + scales[scale_index]
                 result_parts.insert(0, prefix)
-            n //= 1000
+            parse_num //= 1000
             scale_index += 1
 
         return " ".join(result_parts).strip()
+
+    @classmethod
+    def read_three_digits(cls, group: int) -> str:
+        units = ["", "một", "hai", "ba", "bốn", "năm",
+                 "sáu", "bảy", "tám", "chín"]
+        tens = ["", "mười", "hai mươi", "ba mươi", "bốn mươi",
+                "năm mươi", "sáu mươi", "bảy mươi", "tám mươi", "chín mươi"]
+
+        hundred = int(group // 100)
+        ten = int((group % 100) // 10)
+        unit = int(group % 10)
+        words = []
+
+        if hundred > 0:
+            words.append(units[hundred] + " trăm")
+
+        if ten > 1:
+            words.append(tens[ten])
+            if unit == 1:
+                words.append("mốt")
+            elif unit == 5:
+                words.append("lăm")
+            elif unit > 0:
+                words.append(units[unit])
+        elif ten == 1:
+            words.append("mười")
+            if unit == 5:
+                words.append("lăm")
+            elif unit > 0:
+                words.append(units[unit])
+        else:
+            if hundred > 0 and unit > 0:
+                words.append("linh")
+            if unit > 0:
+                words.append(units[unit])
+
+        return " ".join(words)
 
 
 class DictHandler:

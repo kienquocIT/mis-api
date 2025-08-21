@@ -4,7 +4,8 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel, HRMsg
+from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel, \
+    HRMsg, FORMATTING
 from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 from ..utils import DeliHandler
@@ -154,8 +155,11 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
     estimated_delivery_date_print = serializers.SerializerMethodField()
     actual_delivery_date_print = serializers.SerializerMethodField()
     pretax_amount = serializers.SerializerMethodField()
+    pretax_amount_word = serializers.SerializerMethodField()
     tax_amount = serializers.SerializerMethodField()
+    tax_amount_word = serializers.SerializerMethodField()
     total_amount = serializers.SerializerMethodField()
+    total_amount_word = serializers.SerializerMethodField()
 
     @classmethod
     def get_products(cls, obj):
@@ -206,12 +210,20 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
         return pretax
 
     @classmethod
+    def get_pretax_amount_word(cls, obj):
+        return FORMATTING.number_to_vietnamese(number=OrderDeliverySubDetailSerializer.get_pretax_amount(obj=obj))
+
+    @classmethod
     def get_tax_amount(cls, obj):
         tax = 0
         for delivery_product in obj.delivery_product_delivery_sub.all():
             subtotal = delivery_product.product_cost * delivery_product.picked_quantity
             tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
         return tax
+
+    @classmethod
+    def get_tax_amount_word(cls, obj):
+        return FORMATTING.number_to_vietnamese(number=OrderDeliverySubDetailSerializer.get_tax_amount(obj=obj))
 
     @classmethod
     def get_total_amount(cls, obj):
@@ -222,6 +234,10 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
             pretax += subtotal
             tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
         return pretax + tax
+
+    @classmethod
+    def get_total_amount_word(cls, obj):
+        return FORMATTING.number_to_vietnamese(number=OrderDeliverySubDetailSerializer.get_total_amount(obj=obj))
 
     class Meta:
         model = OrderDeliverySub
@@ -253,8 +269,11 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
             'employee_inherit',
             'sale_order',
             'pretax_amount',
+            'pretax_amount_word',
             'tax_amount',
+            'tax_amount_word',
             'total_amount',
+            'total_amount_word',
         )
 
 
