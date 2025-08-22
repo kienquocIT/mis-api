@@ -57,27 +57,28 @@ class CashOutflow(DataAbstractModel):
     advance_for_supplier_value = models.FloatField(default=0)  # tiền tạm ứng cho NCC (không theo PO)
     payment_to_customer_value = models.FloatField(default=0)  # tiền thanh toán cho KH
     advance_for_employee_value = models.FloatField(default=0)  # tiền tạm ứng cho Nhân viên
-    no_ap_invoice_value = models.FloatField(default=0)  # tổng tiền nhận của NCC không hóa đơn (theo PO)
-    has_ap_invoice_value = models.FloatField(default=0)  # tổng tiền nhận của NCC có hóa đơn (theo AP)
+    no_ap_invoice_value = models.FloatField(default=0)  # tổng tiền chi cho NCC không hóa đơn (theo PO)
+    has_ap_invoice_value = models.FloatField(default=0)  # tổng tiền chi cho NCC có hóa đơn (theo AP)
     total_value = models.FloatField(default=0)
     # payment method
     cash_value = models.FloatField(default=0)
     bank_value = models.FloatField(default=0)
-    company_bank_account = models.ForeignKey(
-        'saledata.BankAccount',
-        on_delete=models.CASCADE,
-        related_name="cash_outflow_company_bank_account",
+    account_bank_account = models.ForeignKey(
+        'saledata.AccountBanks',
+        on_delete=models.SET_NULL,
+        related_name="cash_outflow_account_bank_account",
         null=True
     )
-    company_bank_account_data = models.JSONField(default=dict)
-    # company_bank_account_data = {
+    account_bank_account_data = models.JSONField(default=dict)
+    # account_bank_account_data = {
     #     'id': uuid,
-    #     'bank_mapped_data': dict,
-    #     'bank_account_owner': str,
+    #     'bank_name': str,
+    #     'bank_code': str,
+    #     'bank_account_name': str,
     #     'bank_account_number': str,
-    #     'brand_name': str,
-    #     'brand_address': str,
+    #     'bic_swift_code': str,
     # }
+    banking_information = models.TextField(blank=True, null=True)
 
     class Meta:
         verbose_name = 'Cash Outflow'
@@ -179,6 +180,7 @@ class CashOutflowItem(SimpleAbstractModel):
         'purchasing.PurchaseOrder',
         on_delete=models.CASCADE,
         related_name="cash_outflow_item_purchase_order",
+        null=True
     )
     purchase_order_data = models.JSONField(default=dict)  # {'id', 'code', title'}
     sum_balance_value = models.FloatField(default=0)

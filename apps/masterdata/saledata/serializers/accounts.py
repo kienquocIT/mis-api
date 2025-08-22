@@ -442,6 +442,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_bank_accounts_mapped(cls, obj):
         return [{
+            'id': item.id,
             'bank_country_id': item.country_id,
             'bank_name': item.bank_name,
             'bank_code': item.bank_code,
@@ -675,25 +676,57 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
 
 
 class CustomerListSimpleSerializer(serializers.ModelSerializer):
+    bank_accounts_mapped = serializers.SerializerMethodField()
+
     class Meta:
         model = Account
         fields = (
             "id",
             'code',
             "name",
-            "tax_code"
+            "tax_code",
+            "bank_accounts_mapped"
         )
+
+    @classmethod
+    def get_bank_accounts_mapped(cls, obj):
+        return [{
+            'id': item.id,
+            'bank_country_id': item.country_id,
+            'bank_name': item.bank_name,
+            'bank_code': item.bank_code,
+            'bank_account_name': item.bank_account_name,
+            'bank_account_number': item.bank_account_number,
+            'bic_swift_code': item.bic_swift_code,
+            'is_default': item.is_default
+        } for item in obj.account_banks_mapped.all()]
 
 
 class SupplierListSimpleSerializer(serializers.ModelSerializer):
+    bank_accounts_mapped = serializers.SerializerMethodField()
+
     class Meta:
         model = Account
         fields = (
             "id",
             'code',
             "name",
-            "tax_code"
+            "tax_code",
+            "bank_accounts_mapped"
         )
+
+    @classmethod
+    def get_bank_accounts_mapped(cls, obj):
+        return [{
+            'id': item.id,
+            'bank_country_id': item.country_id,
+            'bank_name': item.bank_name,
+            'bank_code': item.bank_code,
+            'bank_account_name': item.bank_account_name,
+            'bank_account_number': item.bank_account_number,
+            'bic_swift_code': item.bic_swift_code,
+            'is_default': item.is_default
+        } for item in obj.account_banks_mapped.all()]
 
 
 class AccountsMapEmployeesListSerializer(serializers.ModelSerializer):
