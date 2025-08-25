@@ -841,3 +841,31 @@ IV. Thiết lập view
 > hiển thị CEO thì thêm group.ceo.full_name
 > - để print list thì sử dụng tên field + "___" + field_name_child
 > - ví dụ: products_list___category__title
+
+---
+
+---
+## Template Mail 📬
++ khai báo mail trong apps/core/mailer/templates.py
++ thêm url detail của app muốn gửi mail trong apps/core/mailer/mail_data.py
++ thêm func trong class MailDataResolver convert data to HTML trong file apps/core/mailer/mail_data.py
++ thêm điều kiện xử lý template trong func get_config của class MailTemplateSystem trong file models.py
++ tạo func shared_task trong apps/code/mailer/tasks.py hoặc trong file models của app để dễ quản lý
++ final: gọi call task background và test
+### khai báo mail trong apps/core/mailer/templates.py
+![](README_IMG/attach_docs_05.png)
+
+### thêm url trang detail của chức năng muốn gửi mail apps/core/mailer/mail_data.py
+![](README_IMG/attach_docs_06.png)
+
+### thêm func trong class MailDataResolver convert data to HTML
+![](README_IMG/attach_docs_07.png)
+
+### thêm điều kiện xử lý template trong func get_config của class MailTemplateSystem
+![](README_IMG/attach_docs_08.png)
+
+### tạo task background trong apps/code/mailer/tasks.py
+![](README_IMG/attach_docs_09.png)
+
+### tạo post save khi task tạo mới thì gửi mail
+![](README_IMG/attach_docs_10.png)

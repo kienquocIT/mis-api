@@ -810,3 +810,185 @@ def send_mail_annual_leave(leave_id, tenant_id, company_id, employee_id, email_l
     log_cls.save()
 
     return 'Success' if state_send else 'SEND_FAILURE'
+
+
+def comment_send_mail_mention(cls, log_cls, **kwargs):
+    tenant_id = kwargs.get('tenant_id', None)
+    subject = kwargs.get('subject', None)
+    doc_id = kwargs.get('doc_id', None)
+    template_obj = kwargs.get('template_obj', None)
+    doc_code = kwargs.get('doc_code', None)
+    comment_id = kwargs.get('comment_id', None)
+    lst_mention = kwargs.get('comment_mentions', None)
+    comment_msg = kwargs.get('comment_msg', None)
+
+    tenant_obj = DisperseModel(app_model='tenant.Tenant').get_model().objects.filter(pk=tenant_id).first()
+    log_cls.update(
+        address_sender=cls.from_email if cls.from_email else '',
+    )
+    log_cls.update_employee_to(employee_to=[], address_to_init=[lst_mention])
+    log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
+    log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
+    log_cls.update_log_data(host=cls.host, port=cls.port)
+    try:
+        state_send = cls.setup(
+            subject=subject,
+            from_email=cls.kwargs['from_email'],
+            mail_cc=cls.kwargs['cc_email'],
+            bcc=cls.kwargs['bcc_email'],
+            header={},
+            reply_to=cls.kwargs['reply_email'],
+        ).send(
+            as_name='No Reply',
+            mail_to=lst_mention,
+            mail_cc=[],
+            mail_bcc=[],
+            template=template_obj.contents,
+            data=MailDataResolver.new_mention(
+                tenant_obj=tenant_obj,
+                comment_id=comment_id,
+                doc_id=doc_id,
+                app_code=doc_code,
+                comment_msg=comment_msg
+            ),
+        )
+    except Exception as err:
+        state_send = False
+        log_cls.update(errors_data=str(err))
+    return state_send
+
+
+@shared_task
+def task_send_mail_mention(data_list):
+    obj_got = get_config_template_user(
+        tenant_id=data_list.get('tenant_id'), company_id=data_list.get('company_id'), user_id=None, system_code=10
+    )
+
+    if not (isinstance(obj_got, list) and len(obj_got) == 3):
+        return obj_got
+
+    config_obj, template_obj, _ = obj_got
+
+    cls = SendMailController(mail_config=config_obj, timeout=10)
+
+    if not cls.is_active or not template_obj:
+        return 'MAIL_CONFIG_DEACTIVATE'
+
+    subject = template_obj.subject or 'New mention in comment'
+
+    log_cls = MailLogController(
+        tenant_id=data_list.get('tenant_id'), company_id=data_list.get('company_id'),
+        system_code=10, doc_id=data_list.get('doc_id'), subject=subject
+    )
+
+    if not log_cls.create():
+        return 'SEND_FAILURE'
+
+    state_send = comment_send_mail_mention(
+        cls=cls,
+        log_cls=log_cls,
+        tenant_id=data_list.get('tenant_id'),
+        subject=subject,
+        template_obj=template_obj,
+        doc_id=data_list.get('doc_id'),
+        doc_code=data_list.get('doc_app'),
+        comment_id=data_list.get('comment_id'),
+        comment_mentions=data_list.get('comment_mentions'),
+        comment_msg=data_list.get('title')
+    )
+
+    log_cls.update(status_code=1 if state_send else 2, status_remark=state_send)
+    log_cls.save()
+
+    return 'Success' if state_send else 'SEND_FAILURE'
+
+
+def send_mail_new_task(cls, log_cls, **kwargs):
+    tenant_id = kwargs.get('tenant_id', None)
+    subject = kwargs.get('subject', None)
+    doc_id = kwargs.get('doc_id', None)
+    doc_code = kwargs.get('doc_code', None)
+    template_obj = kwargs.get('template_obj', None)
+    tenant_obj = DisperseModel(app_model='tenant.Tenant').get_model().objects.filter(pk=tenant_id).first()
+    employee_inherit = kwargs.get('employee_inherit', {})
+    assigner = kwargs.get('employee_created', '')
+    log_cls.update(
+        address_sender=cls.from_email if cls.from_email else '',
+    )
+    log_cls.update_employee_to(employee_to=[], address_to_init=[employee_inherit['email']])
+    log_cls.update_employee_cc(employee_cc=[], address_cc_init=cls.kwargs['cc_email'])
+    log_cls.update_employee_bcc(employee_bcc=[], address_bcc_init=cls.kwargs['bcc_email'])
+    log_cls.update_log_data(host=cls.host, port=cls.port)
+    try:
+        state_send = cls.setup(
+            subject=subject,
+            from_email=cls.kwargs['from_email'],
+            mail_cc=cls.kwargs['cc_email'],
+            bcc=cls.kwargs['bcc_email'],
+            header={},
+            reply_to=cls.kwargs['reply_email'],
+        ).send(
+            as_name='No Reply',
+            mail_to=employee_inherit['email'],
+            mail_cc=[],
+            mail_bcc=[],
+            template=template_obj.contents,
+            data=MailDataResolver.new_tasks(
+                tenant_obj=tenant_obj,
+                doc_id=doc_id,
+                app_code=doc_code,
+                assigner=assigner,
+                employee_inherit=employee_inherit['full_name']
+            ),
+        )
+    except Exception as err:
+        state_send = False
+        log_cls.update(errors_data=str(err))
+    return state_send
+
+
+@shared_task
+def prepare_send_mail_new_task(data_list):
+    obj_got = get_config_template_user(
+        tenant_id=data_list.get('tenant_id'), company_id=data_list.get('company_id'), user_id=None, system_code=11
+    )
+
+    if not (isinstance(obj_got, list) and len(obj_got) == 3):
+        return obj_got
+
+    config_obj, template_obj, _ = obj_got
+
+    cls = SendMailController(mail_config=config_obj, timeout=10)
+
+    if not cls.is_active or not template_obj:
+        return 'MAIL_CONFIG_DEACTIVATE'
+
+    subject = template_obj.subject or 'New to do tasks'
+
+    log_cls = MailLogController(
+        tenant_id=data_list.get('tenant_id'), company_id=data_list.get('company_id'),
+        system_code=11, doc_id=data_list.get('doc_id'), subject=subject
+    )
+
+    if not log_cls.create():
+        return 'SEND_FAILURE'
+
+    state_send = send_mail_new_task(
+        cls=cls,
+        log_cls=log_cls,
+        tenant_id=data_list.get('tenant_id'),
+        subject=subject,
+        template_obj=template_obj,
+        doc_id=data_list.get('doc_id'),
+        doc_code=data_list.get('doc_app'),
+        employee_inherit={
+            'full_name': data_list.get('employee_inherit_full_name'),
+            'email': data_list.get('employee_inherit_email')
+        },
+        employee_created=data_list.get('employee_created'),
+    )
+
+    log_cls.update(status_code=1 if state_send else 2, status_remark=state_send)
+    log_cls.save()
+
+    return 'Success' if state_send else 'SEND_FAILURE'

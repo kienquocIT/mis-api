@@ -4,6 +4,7 @@ from django.dispatch import receiver
 
 from apps.core.log.tasks import force_new_notify_many
 from apps.core.mailer.handle_html import HTMLController
+from apps.core.mailer.tasks import task_send_mail_mention
 from apps.shared import MasterDataAbstractModel, call_task_background, CommentMSg, DisperseModel
 
 
@@ -27,7 +28,8 @@ class Comments(MasterDataAbstractModel):
                 str(obj.id): {
                     'full_name': obj.get_full_name(),
                     'avatar_img': str(obj.avatar_img.url) if obj.avatar_img else '',
-                    'group__title': obj.group.title if obj.group else ''
+                    'group__title': obj.group.title if obj.group else '',
+                    'email': obj.email if obj.email else '',
                 }
                 for obj in
                 DisperseModel(app_model='hr.Employee').get_model().objects.select_related('group').filter_current(
@@ -41,7 +43,8 @@ class Comments(MasterDataAbstractModel):
             return {
                 'full_name': str(self.employee_created.get_full_name()),
                 'avatar_img': str(self.employee_created.avatar_img.url) if self.employee_created.avatar_img else '',
-                'group__title': self.employee_created.group.title if self.employee_created.group else ''
+                'group__title': self.employee_created.group.title if self.employee_created.group else '',
+                'email': self.employee_created.email if self.employee_created.email else '',
             }
         return {}
 
@@ -97,11 +100,13 @@ def save_comment(sender, instance, created, **kwargs):  # pylint: disable=W0613
         # resolve mentions data
         if instance.mentions:
             task_kwargs = []
+            lst_mention = []
             parent_n__mentions_idx = []
             for employee_id in instance.mentions:
                 if instance.parent_n:
                     parent_n__mentions_idx.append(str(employee_id))
-
+                if instance.mentions_data[employee_id].get('email', ''):
+                    lst_mention.append(instance.mentions_data[employee_id].get('email', ''))
                 if str(employee_id) != str(instance.employee_created_id):
                     task_kwargs.append({
                         'tenant_id': instance.tenant_id,
@@ -122,6 +127,22 @@ def save_comment(sender, instance, created, **kwargs):  # pylint: disable=W0613
                     my_task=force_new_notify_many,
                     **{
                         'data_list': task_kwargs
+                    }
+                )
+            if len(lst_mention) > 0:
+                data_mention = {
+                    'comment_id': str(instance.id),
+                    'tenant_id': instance.tenant_id,
+                    'company_id': instance.company_id,
+                    'title': CommentMSg.have_been_mentioned_msg.format(instance.employee_created.get_full_name()),
+                    'doc_id': instance.doc_id,
+                    'doc_app': instance.application.get_prefix_permit(),
+                    'comment_mentions': lst_mention,
+                }
+                call_task_background(
+                    task_send_mail_mention,
+                    **{
+                        'data_list': data_mention
                     }
                 )
             if len(parent_n__mentions_idx) > 0:
