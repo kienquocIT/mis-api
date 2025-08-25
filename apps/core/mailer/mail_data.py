@@ -46,6 +46,9 @@ APP_MAP_DATA = {
     'equipmentloan.equipmentloan': {'title': 'Equipment Loan', 'url': 'equipment-loan/detail/'},
     'equipmentreturn.equipmentreturn': {'title': 'Equipment Return', 'url': 'equipment-return/detail/'},
     'absenceexplanation.absenceexplanation': {'title': 'Absence Explanation', 'url': 'hrm/absenceexplanation/detail/'},
+    'task.opportunitytask': {
+        'title': 'Tasks', 'url': 'task/list'
+    },
 }
 
 WORKFLOW_TYPE_MAP_TXT = {
@@ -178,5 +181,38 @@ class MailDataResolver:
                 'day_off': day_off,
                 'date_back': date_back,
                 'url': f'{full_domain}/{app_url}{link_id}'
+            },
+        }
+
+    @classmethod
+    def new_mention(cls, tenant_obj, comment_id, doc_id, app_code, comment_msg):
+        full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{tenant_obj.code.lower()}{settings.UI_DOMAIN_SUFFIX}'
+        if settings.UI_FIXED_DOMAIN:
+            full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{settings.UI_DOMAIN}'
+        app_url = APP_MAP_DATA.get(app_code, {}).get('url', '')
+        if 'task' not in app_code:
+            app_url += f'{doc_id}?'
+        elif 'task' in app_code:
+            app_url += f'?task_id={doc_id}&'
+
+        return {
+            '_mention': {
+                'comment_msg': comment_msg,
+                'links': f'{full_domain}/{app_url}comment_id={comment_id}'
+            },
+        }
+
+    @classmethod
+    def new_tasks(cls, tenant_obj, doc_id, app_code, assigner, employee_inherit):
+        full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{tenant_obj.code.lower()}{settings.UI_DOMAIN_SUFFIX}'
+        if settings.UI_FIXED_DOMAIN:
+            full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{settings.UI_DOMAIN}'
+        app_url = APP_MAP_DATA.get(app_code, {}).get('url', '')
+
+        return {
+            '_task': {
+                'employee_inherit': employee_inherit,
+                'assigner': assigner,
+                'links': f'{full_domain}/{app_url}?task_id={doc_id}'
             },
         }

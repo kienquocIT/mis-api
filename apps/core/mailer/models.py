@@ -12,7 +12,8 @@ from apps.core.mailer.templates import (
     TEMPLATE_CALENDAR_DEFAULT, SUBJECT_MAIL_WELCOME_DEFAULT, SUBJECT_OTP_VALIDATE_DEFAULT, SUBJECT_CALENDAR_DEFAULT,
     SUBJECT_WORKFLOW_DEFAULT, TEMPLATE_WORKFLOW_DEFAULT, SUBJECT_PROJECT_NEW_DEFAULT, TEMPLATE_PROJECT_NEW_DEFAULT,
     SUBJECT_CONTRACT_NEW_DEFAULT, TEMPLATE_REQUEST_CONTRACT_DEFAULT, SUBJECT_LEAVE_NEW_DEFAULT,
-    TEMPLATE_REQUEST_LEAVE_DEFAULT
+    TEMPLATE_REQUEST_LEAVE_DEFAULT, SUBJECT_NEW_COMMENT_DEFAULT, TEMPLATE_MENTION_COMMENT_DEFAULT,
+    SUBJECT_NEW_TASK_DEFAULT, TEMPLATE_NEW_TASKS_DEFAULT
 )
 from apps.shared import MasterDataAbstractModel, StringHandler, SimpleEncryptor, SimpleAbstractModel, DisperseModel
 
@@ -216,6 +217,13 @@ class MailTemplateSystem(MasterDataAbstractModel):
                 elif system_code in [9, '9']:
                     obj.subject = SUBJECT_LEAVE_NEW_DEFAULT
                     obj.contents = TEMPLATE_REQUEST_LEAVE_DEFAULT.replace('__company_title__', company_obj.title)
+                elif system_code in [10, '10']:  # comment
+                    obj.subject = SUBJECT_NEW_COMMENT_DEFAULT
+                    obj.contents = TEMPLATE_MENTION_COMMENT_DEFAULT.replace('__company_title__', company_obj.title)
+                elif system_code in [11, '11']:  # tasks
+                    obj.subject = SUBJECT_NEW_TASK_DEFAULT
+                    obj.contents = TEMPLATE_NEW_TASKS_DEFAULT.replace('__company_title__', company_obj.title)
+
                 obj.save(update_fields=['contents', 'subject'])
             except tenant_cls.DoesNotExist:
                 pass
