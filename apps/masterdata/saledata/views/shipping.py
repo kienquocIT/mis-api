@@ -30,8 +30,8 @@ class ShippingList(BaseListMixin, BaseCreateMixin):
         request_body=ShippingCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
+        login_require=True, auth_require=False,
+        # allow_admin_tenant=True, allow_admin_company=True,
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -61,8 +61,8 @@ class ShippingDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=ShippingUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
+        login_require=True, auth_require=False,
+        # allow_admin_tenant=True, allow_admin_company=True,
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
