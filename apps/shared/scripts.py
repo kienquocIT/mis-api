@@ -74,7 +74,8 @@ from ..sales.report.models import ReportCashflow, ReportLease
 from ..sales.report.scripts import InventoryReportRun
 from ..sales.report.utils import IRForGoodsReceiptHandler
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
-from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrder, SaleOrderIndicator
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrder, SaleOrderIndicator, SaleOrderPaymentStage, \
+    SaleOrderInvoice
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
 from ..sales.saleorder.utils import SOFinishHandler, SOHandler
 from ..sales.task.models import OpportunityTaskStatus, OpportunityTask
@@ -6167,4 +6168,226 @@ def update_quotation_costs_data(quotation_id):
         quotation.quotation_costs_data = quotation_costs_data
         quotation.save(update_fields=['quotation_costs_data'])
     print('update_quotation_costs_data done.')
+    return True
+
+
+def update_invoice_payment_sale_order():
+    sale_order = SaleOrder.objects.filter(id="f9106f94-aa0d-4a10-8f53-0e59cef388f5").first()
+    if sale_order:
+        sale_order.payment_term_id = "eb1fedc1-11ba-4b23-aa1d-d9cd7eedf627"
+        sale_order.payment_term_data = {
+            "id": "eb1fedc1-11ba-4b23-aa1d-d9cd7eedf627",
+            "title": "Thanh toán 30-70",
+            "code": "TT3070",
+            "apply_for": 0,
+            "term": [
+                {
+                    "id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                    "value": "30",
+                    "unit_type": 0,
+                    "day_type": 2,
+                    "no_of_days": "0",
+                    "after": 6,
+                    "order": 1,
+                    "title": "Đợt 1"
+                },
+                {
+                    "id": "3a00e5fa-2b99-4c0f-b72e-78c5cd7fcb7a",
+                    "value": "Cân bằng",
+                    "unit_type": 2,
+                    "day_type": 2,
+                    "no_of_days": "0",
+                    "after": 2,
+                    "order": 2,
+                    "title": "Đợt 2"
+                }
+            ]
+        }
+        sale_order.sale_order_payment_stage = [
+            {
+                "order": 1,
+                "term_id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                "term_data": {
+                    "id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                    "value": "30",
+                    "unit_type": 0,
+                    "day_type": 2,
+                    "no_of_days": "0",
+                    "after": 6,
+                    "order": 1,
+                    "title": "Đợt 1"
+                },
+                "remark": "Thanh toán khi ký hợp đồng - 31/07 - 30% (Tạm ứng)",
+                "date": "2025-07-31 00:00:00",
+                "ratio": 30,
+                "invoice": None,
+                "is_ar_invoice": False,
+                "invoice_data": {
+
+                },
+                "value_before_tax": 12500000.1,
+                "reconcile_data": [
+
+                ],
+                "value_total": 12500000.1,
+                "due_date": "2025-07-31 00:00:00"
+            },
+            {
+                "order": 2,
+                "term_id": "3a00e5fa-2b99-4c0f-b72e-78c5cd7fcb7a",
+                "term_data": {
+                    "id": "3a00e5fa-2b99-4c0f-b72e-78c5cd7fcb7a",
+                    "value": "70",
+                    "unit_type": 0,
+                    "day_type": 2,
+                    "no_of_days": "0",
+                    "after": 2,
+                    "order": 2,
+                    "title": "Đợt 2"
+                },
+                "remark": "Thanh toán 14 ngày kể từ ngày nhận máy - 04/08 - 70%",
+                "date": "2025-08-04 00:00:00",
+                "ratio": 70,
+                "invoice": 1,
+                "is_ar_invoice": True,
+                "invoice_data": {
+                    "order": 1,
+                    "remark": "Xuất hóa đơn 1 lần (ngày tạo 04/08)",
+                    "date": "2025-08-04",
+                    "term_data": [
+                        {
+                            "id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                            "value": "30",
+                            "unit_type": 0,
+                            "day_type": 2,
+                            "no_of_days": "0",
+                            "after": 6,
+                            "order": 1,
+                            "title": "Đợt 1"
+                        },
+                        {
+                            "id": "3a00e5fa-2b99-4c0f-b72e-78c5cd7fcb7a",
+                            "value": "70",
+                            "unit_type": 0,
+                            "day_type": 2,
+                            "no_of_days": "0",
+                            "after": 2,
+                            "order": 2,
+                            "title": "Đợt 2"
+                        }
+                    ],
+                    "ratio": 100,
+                    "tax_id": "30d575f1-b2fc-4f93-8b4e-af9e4d79cd11",
+                    "tax_data": {
+                        "id": "30d575f1-b2fc-4f93-8b4e-af9e4d79cd11",
+                        "code": "VAT_8",
+                        "rate": 8,
+                        "title": "VAT-8"
+                    },
+                    "total": 45000000.36,
+                    "balance": 45000000.36
+                },
+                "value_before_tax": 29166666.9,
+                "value_reconcile": 12500000.1,
+                "reconcile_data": [
+                    {
+                        "order": 1,
+                        "term_id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                        "term_data": {
+                            "id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                            "value": "30",
+                            "unit_type": 0,
+                            "day_type": 2,
+                            "no_of_days": "0",
+                            "after": 6,
+                            "order": 1,
+                            "title": "Đợt 1"
+                        },
+                        "remark": "Thanh toán khi ký hợp đồng - 31/07 - 30% (Tạm ứng)",
+                        "date": "2025-07-31 00:00:00",
+                        "ratio": 30,
+                        "invoice": None,
+                        "is_ar_invoice": False,
+                        "invoice_data": {
+
+                        },
+                        "value_before_tax": 12500000.1,
+                        "reconcile_data": [
+
+                        ],
+                        "value_total": 12500000.1,
+                        "due_date": "2025-07-31 00:00:00"
+                    }
+                ],
+                "tax_id": "30d575f1-b2fc-4f93-8b4e-af9e4d79cd11",
+                "tax_data": {
+                    "id": "30d575f1-b2fc-4f93-8b4e-af9e4d79cd11",
+                    "code": "VAT_8",
+                    "rate": 8,
+                    "title": "VAT-8"
+                },
+                "value_tax": 3333333.36,
+                "value_total": 32500000.259999998,
+                "due_date": "2025-08-18 00:00:00"
+            }
+        ]
+        sale_order.sale_order_invoice = [
+            {
+                "order": 1,
+                "remark": "Xuất hóa đơn 1 lần (ngày tạo 04/08)",
+                "date": "2025-08-04",
+                "term_data": [
+                    {
+                        "id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                        "value": "30",
+                        "unit_type": 0,
+                        "day_type": 2,
+                        "no_of_days": "0",
+                        "after": 6,
+                        "order": 1,
+                        "title": "Đợt 1"
+                    },
+                    {
+                        "id": "3a00e5fa-2b99-4c0f-b72e-78c5cd7fcb7a",
+                        "value": "70",
+                        "unit_type": 0,
+                        "day_type": 2,
+                        "no_of_days": "0",
+                        "after": 2,
+                        "order": 2,
+                        "title": "Đợt 2"
+                    }
+                ],
+                "ratio": 100,
+                "tax_id": "30d575f1-b2fc-4f93-8b4e-af9e4d79cd11",
+                "tax_data": {
+                    "id": "30d575f1-b2fc-4f93-8b4e-af9e4d79cd11",
+                    "code": "VAT_8",
+                    "rate": 8,
+                    "title": "VAT-8"
+                },
+                "total": 45000000.36,
+                "balance": 0
+            }
+        ]
+        sale_order.save(update_fields=['payment_term_id', 'payment_term_data', 'sale_order_payment_stage', 'sale_order_invoice'])
+        sale_order.sale_order_payment_stage_sale_order.all().delete()
+        SaleOrderPaymentStage.objects.bulk_create(
+            [SaleOrderPaymentStage(
+                sale_order=sale_order,
+                tenant_id=sale_order.tenant_id,
+                company_id=sale_order.company_id,
+                **sale_order_payment_stage,
+            ) for sale_order_payment_stage in sale_order.sale_order_payment_stage]
+        )
+        sale_order.sale_order_invoice_sale_order.all().delete()
+        SaleOrderInvoice.objects.bulk_create(
+            [SaleOrderInvoice(
+                sale_order=sale_order,
+                tenant_id=sale_order.tenant_id,
+                company_id=sale_order.company_id,
+                **sale_order_invoice,
+            ) for sale_order_invoice in sale_order.sale_order_invoice]
+        )
+    print('update_invoice_payment_sale_order done.')
     return True
