@@ -31,6 +31,8 @@ from apps.masterdata.saledata.views import (
     FixedAssetClassificationList, FixedAssetClassificationGroupList, ToolClassificationList, BankList, BankDetail,
     BankAccountDetail, BankAccountList, ToolClassificationDetail, AttributeViewList, AttributeViewDetail
 )
+from apps.masterdata.saledata.views.shipment import ContainerMasterDataList, ContainerMasterDataDetail, \
+    PackageMasterDataDetail, PackageMasterDataList
 from apps.masterdata.saledata.views.warehouse import (
     ProductWareHouseLotList, ProductWareHouseSerialList,
     ProductWareHouseAssetToolsList, ProductWareHouseListForGoodsTransfer,
@@ -229,4 +231,12 @@ urlpatterns += [
 urlpatterns += [
     path('attribute/list', AttributeViewList.as_view(), name='AttributeViewList'),
     path('attribute/<str:pk>', AttributeViewDetail.as_view(), name='AttributeViewDetail'),
+]
+
+# container type
+urlpatterns += [
+    path('shipment/container/list', ContainerMasterDataList.as_view(), name='ContainerMasterDataList'),
+    path('shipment/container/detail/<str:pk>', ContainerMasterDataDetail.as_view(), name='ContainerMasterDataDetail'),
+    path('shipment/package/list', PackageMasterDataList.as_view(), name='PackageMasterDataList'),
+    path('shipment/package/detail/<str:pk>', PackageMasterDataDetail.as_view(), name='PackageMasterDataDetail'),
 ]
