@@ -315,7 +315,7 @@ class Product(DataAbstractModel):
     duration_unit = models.ForeignKey(
         UnitOfMeasure,
         null=True,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name='duration_unit_uom'
     )
     duration_unit_data = models.JSONField(default=dict)
