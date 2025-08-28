@@ -236,19 +236,19 @@ class ProductImportCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         # validate dimension
-        validate_data['width'] = ProductCreateSerializer.validate_dimension(
+        validate_data['width'] = ProductCommonFunction.validate_dimension(
             validate_data.get('width'), 'width', ProductMsg.W_IS_WRONG
         )
-        validate_data['height'] = ProductCreateSerializer.validate_dimension(
+        validate_data['height'] = ProductCommonFunction.validate_dimension(
             validate_data.get('height'), 'height', ProductMsg.H_IS_WRONG
         )
-        validate_data['length'] = ProductCreateSerializer.validate_dimension(
+        validate_data['length'] = ProductCommonFunction.validate_dimension(
             validate_data.get('length'), 'length', ProductMsg.L_IS_WRONG
         )
-        validate_data['volume'] = ProductCreateSerializer.validate_dimension(
+        validate_data['volume'] = ProductCommonFunction.validate_dimension(
             validate_data.get('volume'), 'volume', ProductMsg.VLM_IS_WRONG
         )
-        validate_data['weight'] = ProductCreateSerializer.validate_dimension(
+        validate_data['weight'] = ProductCommonFunction.validate_dimension(
             validate_data.get('weight'), 'weight', ProductMsg.WGT_IS_WRONG
         )
 
@@ -399,6 +399,7 @@ class ProductManufacturerImportCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         instance = Manufacturer.objects.create(**validated_data)
         return instance
+
 
 class ProductManufacturerImportDetailSerializer(serializers.ModelSerializer):
     class Meta:
