@@ -311,6 +311,15 @@ class Product(DataAbstractModel):
         default=0
     )
 
+    # product attribute
+    duration_unit = models.ForeignKey(
+        UnitOfMeasure,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='duration_unit_uom'
+    )
+    duration_unit_data = models.JSONField(default=dict)
+
     # for Variants
 
     class Meta:
@@ -345,7 +354,6 @@ class Product(DataAbstractModel):
                     if first_record:
                         used_models.add(first_record._meta.model_name)
 
-        print(used_models)
         # Nếu có ít nhất một model liên kết không nằm trong danh sách bỏ qua => đang được sử dụng
         return any(model not in ignore_models for model in used_models)
 
@@ -785,6 +793,27 @@ class ProductComponent(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Product Component'
         verbose_name_plural = 'Products Components'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class ProductAttribute(MasterDataAbstractModel):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='product_attributes'
+    )
+    order = models.IntegerField(default=1)
+    attribute = models.ForeignKey(
+        'saledata.Attribute',
+        on_delete=models.SET_NULL,
+        null=True
+    )
+
+    class Meta:
+        verbose_name = 'Product Attribute'
+        verbose_name_plural = 'Products Attributes'
         ordering = ('order',)
         default_permissions = ()
         permissions = ()

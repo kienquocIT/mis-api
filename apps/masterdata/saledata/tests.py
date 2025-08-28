@@ -343,7 +343,8 @@ class ProductTestCase(AdvanceTestCase):
                 'product_variant_item_list',
                 'part_number',
                 'production_amount',
-                'component_list_data'
+                'component_list_data',
+                'duration_unit_data'
             ],
             check_sum_second=True,
         )
@@ -433,7 +434,8 @@ class ProductTestCase(AdvanceTestCase):
                 'product_variant_item_list',
                 'part_number',
                 'production_amount',
-                'component_list_data'
+                'component_list_data',
+                'duration_unit_data'
             ],
             check_sum_second=True,
         )
