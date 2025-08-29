@@ -87,6 +87,7 @@ class POFinishHandler:
                         invoice_planned_date=payment_obj.invoice_data.get('date', None)
                         if isinstance(payment_obj.invoice_data, dict) else None,
                         due_date=payment_obj.due_date,
+                        employee_inherit_id=instance.employee_inherit_id,
                         group_inherit_id=instance.employee_inherit.group_id if instance.employee_inherit else None,
                         date_approved=instance.date_approved,
                     ))

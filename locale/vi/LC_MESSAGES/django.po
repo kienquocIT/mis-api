@@ -178,6 +178,10 @@ msgstr "Cuộc họp với khách hàng"
 msgid "Opportunity"
 msgstr "Cơ hội kinh doanh"
 
+# 0a788054-1d79-4dfd-9371-8bc6a23971f3
+msgid "Payment Plan"
+msgstr "Kế hoạch thanh toán"
+
 # 3407d35d-27ce-407e-8260-264574a216e3
 msgid "Payment Term"
 msgstr "Điều khoản thanh toán"

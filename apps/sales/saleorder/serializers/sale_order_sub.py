@@ -375,9 +375,10 @@ class SaleOrderRuleValidate:
 # SUB SERIALIZERS
 class SaleOrderProductSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=False, allow_null=True)
-    unit_of_measure_id = serializers.UUIDField(allow_null=True, error_messages={
-        'required': SaleMsg.PRODUCT_UOM_REQUIRED,
-    })
+    # unit_of_measure_id = serializers.UUIDField(allow_null=True, error_messages={
+    #     'required': SaleMsg.PRODUCT_UOM_REQUIRED,
+    # })
+    unit_of_measure_id = serializers.UUIDField(allow_null=True, required=False)
     tax_id = serializers.UUIDField(required=False, allow_null=True)
     promotion_id = serializers.UUIDField(required=False, allow_null=True)
     shipping_id = serializers.UUIDField(required=False, allow_null=True)

@@ -186,3 +186,16 @@ msgstr "<h2 style=\"font-weight: 500; font-size: 20px\">Công ty: <strong><span 
     "<div><p>Nhân viên <span class=\"params-data\" data-code=\"_leave__employee\"></span> đã được cấp phép nghỉ phép khoảng <span class=\"params-data\" data-code=\"_leave__day_off\"></span> ngày, và sẽ quay lại làm việc vào <span class=\"params-data\" data-code=\"_leave__date_back\"></span>.</p>"
     "<p>Trong thời gian này, vui lòng liên hệ <span class=\"params-data\" data-code=\"_leave__leader_name\"></span> vào <span class=\"params-data\" data-code=\"_leave__leader_email\"></span> nếu công việc bạn cần xử lý gấp.</p>"
     "</div>"
+
+
+msgid "🔔 Notification: You have new to do tasks"
+msgstr "🔔 Thông báo: Bạn có một giao việc mới cần làm"
+
+msgid "<h2 style=\"font-weight: 500; font-size: 20px\">Company: <strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
+    "<p style=\"font-size: 18px\">Hi, <span class=\"params-data\" data-code=\"_task__employee_inherit\"></span></p>"
+    "<p>You have a new task! <span class=\"params-data\" data-code=\"_task__assigner\"></span> has just assign you a task that needs to be processed. Please check and start working on it.</p>"
+    "<p><a href=\"_mention__links\" style=\"text-decoration:none;color:#fff;width: 150px;display: inline-block;background: #007D88;padding: 6px;text-transform: uppercase;letter-spacing: .95px; text-align:center;\">View document</a></p>"
+msgstr "<h2 style=\"font-weight: 500; font-size: 20px\">Công ty: <strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
+    "<p style=\"font-size: 18px\">Chào, <span class=\"params-data\" data-code=\"_task__employee_inherit\"></span></p>"
+    "<p>Bạn có một task mới! <span class=\"params-data\" data-code=\"_task__assigner\"></span> đã giao cho bạn một task cần xử lý. Vui lòng kiểm tra và bắt đầu thực hện.</p>"
+    "<p><a href=\"_mention__links\" style=\"text-decoration:none;color:#fff;width: 150px;display: inline-block;background: #007D88;padding: 6px;text-transform: uppercase;letter-spacing: .95px; text-align:center;\">Xem phiếu</a></p>"

@@ -74,7 +74,8 @@ from ..sales.report.models import ReportCashflow, ReportLease
 from ..sales.report.scripts import InventoryReportRun
 from ..sales.report.utils import IRForGoodsReceiptHandler
 from ..sales.revenue_plan.models import RevenuePlanGroupEmployee
-from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrder, SaleOrderIndicator
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrder, SaleOrderIndicator, SaleOrderPaymentStage, \
+    SaleOrderInvoice
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
 from ..sales.saleorder.utils import SOFinishHandler, SOHandler
 from ..sales.task.models import OpportunityTaskStatus, OpportunityTask
@@ -2466,5 +2467,3927 @@ def update_sale_lease_order_delivery_sub():
         delivery_sub.sale_order_id = delivery_sub.sale_order_data.get('id', None)
         delivery_sub.lease_order_id = delivery_sub.lease_order_data.get('id', None)
         delivery_sub.save(update_fields=['sale_order_id', 'lease_order_id'], skip_check_period=True)
+        if delivery_sub.sale_order:
+            for deli_product in delivery_sub.delivery_product_delivery_sub.all():
+                if deli_product.product:
+                    so_prod = deli_product.product.sale_order_product_product.filter(
+                        sale_order_id=delivery_sub.sale_order_id
+                    ).first()
+                    if so_prod:
+                        deli_product.product_description = so_prod.product_description
+                        deli_product.save(update_fields=['product_description'], for_goods_return=True)
     print('update_sale_lease_order_delivery_sub done.')
+    return True
+
+
+def update_employee_inherit_id_payment_plan():
+    for payment_plan in PaymentPlan.objects.all():
+        if payment_plan.sale_order:
+            payment_plan.employee_inherit_id = payment_plan.sale_order.employee_inherit_id
+        if payment_plan.purchase_order:
+            payment_plan.employee_inherit_id = payment_plan.purchase_order.employee_inherit_id
+        payment_plan.save(update_fields=['employee_inherit_id'])
+    print('update_employee_inherit_id_payment_plan done.')
+    return True
+
+
+def update_quotation_products_data(quotation_id):
+    quotation = Quotation.objects.filter(id=quotation_id).first()
+    if quotation:
+        quotation_products_data = [
+            {
+                "product_id": "4fc6cf2d-2fb8-4ec5-b64e-7b49213d8849",
+                "product_title": "Máy tính để bàn HP Slim Desktop Core i7-12700 | 8GB | 512GB | Intel UHD | Win11 | Đen",
+                "product_code": "HPI.DES.6K7B3PA",
+                "product_data": {
+                    "id": "4fc6cf2d-2fb8-4ec5-b64e-7b49213d8849",
+                    "code": "HPI.DES.6K7B3PA",
+                    "title": "Máy tính để bàn HP Slim Desktop Core i7-12700 | 8GB | 512GB | Intel UHD | Win11 | Đen",
+                    "description": "Máy tính để bàn đồng bộ HP Slim Desktop S01-pF2024d 6K7B3PA (Core i7-12700 | 8GB | 512GB | Intel UHD | Win11 | Đen)",
+                    "product_id": "4fc6cf2d-2fb8-4ec5-b64e-7b49213d8849",
+                    "product_data": {
+                        "id": "4fc6cf2d-2fb8-4ec5-b64e-7b49213d8849",
+                        "title": "Máy tính để bàn HP Slim Desktop Core i7-12700 | 8GB | 512GB | Intel UHD | Win11 | Đen",
+                        "code": "HPI.DES.6K7B3PA"
+                    },
+                    "general_information": {
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "title": "Hàng hóa",
+                                "code": "goods",
+                                "is_goods": True,
+                                "is_finished_goods": False,
+                                "is_material": False,
+                                "is_tool": False,
+                                "is_service": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "bc6d7184-6942-42ad-97f0-5937bbcdcfde",
+                            "title": "Desktop",
+                            "code": "DES"
+                        },
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "title": "Đơn vị",
+                            "code": "Unit"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "sale_information": {
+                        "default_uom": {
+                            "id": "469a0812-9d37-44c0-a170-a19342b3ec8b",
+                            "title": "Bộ",
+                            "code": "UOM006",
+                            "ratio": 1,
+                            "rounding": 1,
+                            "is_referenced_unit": False
+                        },
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "title": "Đồng Việt Nam",
+                            "code": ""
+                        },
+                        "length": None,
+                        "width": None,
+                        "height": None
+                    },
+                    "purchase_information": {
+                        "uom": {
+                            "id": "469a0812-9d37-44c0-a170-a19342b3ec8b",
+                            "title": "Bộ",
+                            "code": "UOM006",
+                            "ratio": 1,
+                            "rounding": 1,
+                            "is_referenced_unit": False
+                        },
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        }
+                    },
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_status": 1,
+                            "price_type": 0,
+                            "uom": {
+                                "id": "469a0812-9d37-44c0-a170-a19342b3ec8b",
+                                "title": "Bộ",
+                                "code": "UOM006",
+                                "ratio": 1,
+                                "rounding": 1,
+                                "is_referenced_unit": False
+                            }
+                        }
+                    ],
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "supplied_by": 0,
+                    "inventory_information": {
+                        "uom": {
+                            "id": "469a0812-9d37-44c0-a170-a19342b3ec8b",
+                            "title": "Bộ",
+                            "code": "UOM006",
+                            "ratio": 1,
+                            "rounding": 1,
+                            "is_referenced_unit": False
+                        }
+                    },
+                    "general_traceability_method": 0,
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_finished": False,
+                        "is_so_using": False
+                    },
+                    "bom_data": {},
+                    "standard_price": 0
+                },
+                "unit_of_measure_id": "469a0812-9d37-44c0-a170-a19342b3ec8b",
+                "product_uom_title": "Bộ",
+                "product_uom_code": "UOM006",
+                "uom_data": {
+                    "id": "469a0812-9d37-44c0-a170-a19342b3ec8b",
+                    "title": "Bộ",
+                    "code": "UOM006",
+                    "ratio": 1,
+                    "rounding": 1,
+                    "is_referenced_unit": False
+                },
+                "product_quantity": 1,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "title": "VAT-8",
+                    "rate": 8,
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 1284000,
+                "product_description": "Máy tính để bàn đồng bộ HP Slim Desktop S01-pF2024d 6K7B3PA (Core i7-12700 | 8GB | 512GB | Intel UHD | Win11 | Đen)",
+                "product_unit_price": 16050000,
+                "product_discount_value": 0,
+                "product_discount_amount": 0,
+                "product_discount_amount_total": 0,
+                "product_subtotal_price": 16050000,
+                "product_subtotal_price_after_tax": 17334000,
+                "order": 1,
+                "is_group": False
+            },
+            {
+                "product_id": "801bc8f2-6c2e-443a-8f7b-3c67dd17d8ca",
+                "product_title": "Card mạng 2 cổng cho máy tính để bàn",
+                "product_code": "GIG.CRD.82546-2RJ45",
+                "product_data": {
+                    "id": "801bc8f2-6c2e-443a-8f7b-3c67dd17d8ca",
+                    "code": "GIG.CRD.82546-2RJ45",
+                    "title": "Card mạng 2 cổng cho máy tính để bàn",
+                    "description": "Card mạng LAN 2 cổng PCI ra Dual 2 Port Gigabit Ethernet intel 82546 cho máy tính để bàn",
+                    "product_id": "801bc8f2-6c2e-443a-8f7b-3c67dd17d8ca",
+                    "product_data": {
+                        "id": "801bc8f2-6c2e-443a-8f7b-3c67dd17d8ca",
+                        "title": "Card mạng 2 cổng cho máy tính để bàn",
+                        "code": "GIG.CRD.82546-2RJ45"
+                    },
+                    "general_information": {
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "title": "Hàng hóa",
+                                "code": "goods",
+                                "is_goods": True,
+                                "is_finished_goods": False,
+                                "is_material": False,
+                                "is_tool": False,
+                                "is_service": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "65e98dfd-8ecd-4c7a-b5d6-891fecc57538",
+                            "title": "Card",
+                            "code": "CRD"
+                        },
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "title": "Đơn vị",
+                            "code": "Unit"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "sale_information": {
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "title": "Đồng Việt Nam",
+                            "code": ""
+                        },
+                        "length": None,
+                        "width": None,
+                        "height": None
+                    },
+                    "purchase_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        }
+                    },
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_status": 1,
+                            "price_type": 0,
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "title": "Cái",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            }
+                        }
+                    ],
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "supplied_by": 0,
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0,
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_finished": False,
+                        "is_so_using": True
+                    },
+                    "bom_data": {},
+                    "standard_price": 0
+                },
+                "unit_of_measure_id": "02d31f81-313c-4be7-8839-f6088011afba",
+                "product_uom_title": "Cái",
+                "product_uom_code": "UOM001",
+                "uom_data": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "title": "Cái",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "rounding": 4,
+                    "is_referenced_unit": True
+                },
+                "product_quantity": 1,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "title": "VAT-8",
+                    "rate": 8,
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 160000,
+                "product_description": "Card mạng LAN 2 cổng PCI ra Dual 2 Port Gigabit Ethernet intel 82546 cho máy tính để bàn",
+                "product_unit_price": 2000000,
+                "product_discount_value": 0,
+                "product_discount_amount": 0,
+                "product_discount_amount_total": 0,
+                "product_subtotal_price": 2000000,
+                "product_subtotal_price_after_tax": 2160000,
+                "order": 2,
+                "is_group": False
+            },
+            {
+                "product_id": "f8a79232-a258-4a20-927a-8453ba377449",
+                "product_title": "Thanh đấu nối patch panel CAT6 24 port",
+                "product_code": "CSC.CAB.760237040/9",
+                "product_data": {
+                    "id": "f8a79232-a258-4a20-927a-8453ba377449",
+                    "code": "CSC.CAB.760237040/9",
+                    "title": "Thanh đấu nối patch panel CAT6 24 port",
+                    "description": "Thanh đấu nối Patch Panel 24 cổng CAT6 Commscope",
+                    "product_id": "f8a79232-a258-4a20-927a-8453ba377449",
+                    "product_data": {
+                        "id": "f8a79232-a258-4a20-927a-8453ba377449",
+                        "title": "Thanh đấu nối patch panel CAT6 24 port",
+                        "code": "CSC.CAB.760237040/9"
+                    },
+                    "general_information": {
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "title": "Hàng hóa",
+                                "code": "goods",
+                                "is_goods": True,
+                                "is_finished_goods": False,
+                                "is_material": False,
+                                "is_tool": False,
+                                "is_service": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "b6a87e98-5479-4b90-9c34-05f41eab853b",
+                            "title": "Cáp, dây dẫn",
+                            "code": "CAB"
+                        },
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "title": "Đơn vị",
+                            "code": "Unit"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "sale_information": {
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "title": "Đồng Việt Nam",
+                            "code": ""
+                        },
+                        "length": None,
+                        "width": None,
+                        "height": None
+                    },
+                    "purchase_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        }
+                    },
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_status": 1,
+                            "price_type": 0,
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "title": "Cái",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            }
+                        }
+                    ],
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "supplied_by": 0,
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0,
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_finished": True,
+                        "is_so_using": True
+                    },
+                    "bom_data": {},
+                    "standard_price": 1000000
+                },
+                "unit_of_measure_id": "02d31f81-313c-4be7-8839-f6088011afba",
+                "product_uom_title": "Cái",
+                "product_uom_code": "UOM001",
+                "uom_data": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "title": "Cái",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "rounding": 4,
+                    "is_referenced_unit": True
+                },
+                "product_quantity": 3,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "title": "VAT-8",
+                    "rate": 8,
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 1428000,
+                "product_description": "Thanh đấu nối Patch Panel 24 cổng CAT6 Commscope",
+                "product_unit_price": 5950000,
+                "product_discount_value": 0,
+                "product_discount_amount": 0,
+                "product_discount_amount_total": 0,
+                "product_subtotal_price": 17850000,
+                "product_subtotal_price_after_tax": 19278000,
+                "order": 3,
+                "is_group": False
+            },
+            {
+                "product_id": "215268d7-7dae-415d-ace8-c323d445a9b3",
+                "product_title": "Ổ cắm mạng 1 port CAT6 Commscope",
+                "product_code": "CSC.CAB.1375055-1",
+                "product_data": {
+                    "id": "215268d7-7dae-415d-ace8-c323d445a9b3",
+                    "code": "CSC.CAB.1375055-1",
+                    "title": "Ổ cắm mạng 1 port CAT6 Commscope",
+                    "description": "Ổ cắm mạng 1 port CAT6 Commscope (bao gồm Box, Face, Module)",
+                    "product_id": "215268d7-7dae-415d-ace8-c323d445a9b3",
+                    "product_data": {
+                        "id": "215268d7-7dae-415d-ace8-c323d445a9b3",
+                        "title": "Ổ cắm mạng 1 port CAT6 Commscope",
+                        "code": "CSC.CAB.1375055-1"
+                    },
+                    "general_information": {
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "title": "Hàng hóa",
+                                "code": "goods",
+                                "is_goods": True,
+                                "is_finished_goods": False,
+                                "is_material": False,
+                                "is_tool": False,
+                                "is_service": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "b6a87e98-5479-4b90-9c34-05f41eab853b",
+                            "title": "Cáp, dây dẫn",
+                            "code": "CAB"
+                        },
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "title": "Đơn vị",
+                            "code": "Unit"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "sale_information": {
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "title": "Đồng Việt Nam",
+                            "code": ""
+                        },
+                        "length": None,
+                        "width": None,
+                        "height": None
+                    },
+                    "purchase_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        }
+                    },
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_status": 1,
+                            "price_type": 0,
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "title": "Cái",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            }
+                        }
+                    ],
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "supplied_by": 0,
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0,
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_finished": False,
+                        "is_so_using": True
+                    },
+                    "bom_data": {},
+                    "standard_price": 0
+                },
+                "unit_of_measure_id": "02d31f81-313c-4be7-8839-f6088011afba",
+                "product_uom_title": "Cái",
+                "product_uom_code": "UOM001",
+                "uom_data": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "title": "Cái",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "rounding": 4,
+                    "is_referenced_unit": True
+                },
+                "product_quantity": 32,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "title": "VAT-8",
+                    "rate": 8,
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 819200,
+                "product_description": "Ổ cắm mạng 1 port CAT6 Commscope (bao gồm Box, Face, Module)",
+                "product_unit_price": 320000,
+                "product_discount_value": 0,
+                "product_discount_amount": 0,
+                "product_discount_amount_total": 0,
+                "product_subtotal_price": 10240000,
+                "product_subtotal_price_after_tax": 11059200,
+                "order": 4,
+                "is_group": False
+            },
+            {
+                "product_id": "2ca23b24-58d2-44fa-ac6a-1f8ae442272a",
+                "product_title": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 3.0 mét",
+                "product_code": "CSC.CAB.NPC06UVDB-RD010F",
+                "product_data": {
+                    "id": "2ca23b24-58d2-44fa-ac6a-1f8ae442272a",
+                    "code": "CSC.CAB.NPC06UVDB-RD010F",
+                    "title": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 3.0 mét",
+                    "description": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 3.0 mét",
+                    "product_id": "2ca23b24-58d2-44fa-ac6a-1f8ae442272a",
+                    "product_data": {
+                        "id": "2ca23b24-58d2-44fa-ac6a-1f8ae442272a",
+                        "title": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 3.0 mét",
+                        "code": "CSC.CAB.NPC06UVDB-RD010F"
+                    },
+                    "general_information": {
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "title": "Hàng hóa",
+                                "code": "goods",
+                                "is_goods": True,
+                                "is_finished_goods": False,
+                                "is_material": False,
+                                "is_tool": False,
+                                "is_service": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "b6a87e98-5479-4b90-9c34-05f41eab853b",
+                            "title": "Cáp, dây dẫn",
+                            "code": "CAB"
+                        },
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "title": "Đơn vị",
+                            "code": "Unit"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "sale_information": {
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "title": "Đồng Việt Nam",
+                            "code": ""
+                        },
+                        "length": None,
+                        "width": None,
+                        "height": None
+                    },
+                    "purchase_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        }
+                    },
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_status": 1,
+                            "price_type": 0,
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "title": "Cái",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            }
+                        }
+                    ],
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "supplied_by": 0,
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0,
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_finished": False,
+                        "is_so_using": True
+                    },
+                    "bom_data": {},
+                    "standard_price": 0
+                },
+                "unit_of_measure_id": "6357dffe-05ad-458e-a11b-1b8a9f2bb686",
+                "product_uom_title": "Sợi",
+                "product_uom_code": "UOM007",
+                "uom_data": {
+                    "id": "6357dffe-05ad-458e-a11b-1b8a9f2bb686",
+                    "code": "UOM007",
+                    "title": "Sợi",
+                    "group": {
+                        "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                        "code": "Unit",
+                        "title": "Đơn vị",
+                        "is_referenced_unit": False
+                    },
+                    "ratio": 1,
+                    "is_default": False
+                },
+                "product_quantity": 32,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "title": "VAT-8",
+                    "rate": 8,
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 512000,
+                "product_description": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 3.0 mét",
+                "product_unit_price": 200000,
+                "product_discount_value": 0,
+                "product_discount_amount": 0,
+                "product_discount_amount_total": 0,
+                "product_subtotal_price": 6400000,
+                "product_subtotal_price_after_tax": 6912000,
+                "order": 5,
+                "is_group": False
+            },
+            {
+                "product_id": "6a691684-3b73-4cfe-ac97-629cb673add3",
+                "product_title": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 1.5 mét",
+                "product_code": "CSC.CAB.NPC06UVDB-BL005F",
+                "product_data": {
+                    "id": "6a691684-3b73-4cfe-ac97-629cb673add3",
+                    "code": "CSC.CAB.NPC06UVDB-BL005F",
+                    "title": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 1.5 mét",
+                    "description": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 1.5 mét",
+                    "product_id": "6a691684-3b73-4cfe-ac97-629cb673add3",
+                    "product_data": {
+                        "id": "6a691684-3b73-4cfe-ac97-629cb673add3",
+                        "title": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 1.5 mét",
+                        "code": "CSC.CAB.NPC06UVDB-BL005F"
+                    },
+                    "general_information": {
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "title": "Hàng hóa",
+                                "code": "goods",
+                                "is_goods": True,
+                                "is_finished_goods": False,
+                                "is_material": False,
+                                "is_tool": False,
+                                "is_service": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "b6a87e98-5479-4b90-9c34-05f41eab853b",
+                            "title": "Cáp, dây dẫn",
+                            "code": "CAB"
+                        },
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "title": "Đơn vị",
+                            "code": "Unit"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "sale_information": {
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "title": "Đồng Việt Nam",
+                            "code": ""
+                        },
+                        "length": None,
+                        "width": None,
+                        "height": None
+                    },
+                    "purchase_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        }
+                    },
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_status": 1,
+                            "price_type": 0,
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "title": "Cái",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            }
+                        }
+                    ],
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "supplied_by": 0,
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0,
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_finished": True,
+                        "is_so_using": True
+                    },
+                    "bom_data": {},
+                    "standard_price": 0
+                },
+                "unit_of_measure_id": "6357dffe-05ad-458e-a11b-1b8a9f2bb686",
+                "product_uom_title": "Sợi",
+                "product_uom_code": "UOM007",
+                "uom_data": {
+                    "id": "6357dffe-05ad-458e-a11b-1b8a9f2bb686",
+                    "code": "UOM007",
+                    "title": "Sợi",
+                    "group": {
+                        "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                        "code": "Unit",
+                        "title": "Đơn vị",
+                        "is_referenced_unit": False
+                    },
+                    "ratio": 1,
+                    "is_default": False
+                },
+                "product_quantity": 32,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "title": "VAT-8",
+                    "rate": 8,
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 435200,
+                "product_description": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 1.5 mét",
+                "product_unit_price": 170000,
+                "product_discount_value": 0,
+                "product_discount_amount": 0,
+                "product_discount_amount_total": 0,
+                "product_subtotal_price": 5440000,
+                "product_subtotal_price_after_tax": 5875200,
+                "order": 6,
+                "is_group": False
+            },
+            {
+                "product_id": "f37e8d58-b736-46e6-920f-145db8acc801",
+                "product_title": "Dây cáp mạng CommScope CAT6 UTP",
+                "product_code": "CSC.CAB.1427254-6",
+                "product_data": {
+                    "id": "f37e8d58-b736-46e6-920f-145db8acc801",
+                    "code": "CSC.CAB.1427254-6",
+                    "title": "Dây cáp mạng CommScope CAT6 UTP",
+                    "description": "Dây cáp mạng CommScope CAT6 4 pair, 23AWG UTP, 305m/cuộn",
+                    "product_id": "f37e8d58-b736-46e6-920f-145db8acc801",
+                    "product_data": {
+                        "id": "f37e8d58-b736-46e6-920f-145db8acc801",
+                        "title": "Dây cáp mạng CommScope CAT6 UTP",
+                        "code": "CSC.CAB.1427254-6"
+                    },
+                    "general_information": {
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "title": "Hàng hóa",
+                                "code": "goods",
+                                "is_goods": True,
+                                "is_finished_goods": False,
+                                "is_material": False,
+                                "is_tool": False,
+                                "is_service": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "b6a87e98-5479-4b90-9c34-05f41eab853b",
+                            "title": "Cáp, dây dẫn",
+                            "code": "CAB"
+                        },
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "title": "Đơn vị",
+                            "code": "Unit"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "sale_information": {
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "title": "Đồng Việt Nam",
+                            "code": ""
+                        },
+                        "length": None,
+                        "width": None,
+                        "height": None
+                    },
+                    "purchase_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        }
+                    },
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_status": 1,
+                            "price_type": 0,
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "title": "Cái",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            }
+                        }
+                    ],
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "supplied_by": 0,
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0,
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_finished": True,
+                        "is_so_using": True
+                    },
+                    "bom_data": {},
+                    "standard_price": 3200000
+                },
+                "unit_of_measure_id": "997f93a7-90fa-4373-aab3-d4f9df9bf5d6",
+                "product_uom_title": "Thùng",
+                "product_uom_code": "UOM008",
+                "uom_data": {
+                    "id": "997f93a7-90fa-4373-aab3-d4f9df9bf5d6",
+                    "code": "UOM008",
+                    "title": "Thùng",
+                    "group": {
+                        "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                        "code": "Unit",
+                        "title": "Đơn vị",
+                        "is_referenced_unit": False
+                    },
+                    "ratio": 1,
+                    "is_default": False
+                },
+                "product_quantity": 3,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "title": "VAT-8",
+                    "rate": 8,
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 1689600,
+                "product_description": "Dây cáp mạng CommScope CAT6 4 pair, 23AWG UTP, 305m/cuộn",
+                "product_unit_price": 7040000,
+                "product_discount_value": 0,
+                "product_discount_amount": 0,
+                "product_discount_amount_total": 0,
+                "product_subtotal_price": 21120000,
+                "product_subtotal_price_after_tax": 22809600,
+                "order": 7,
+                "is_group": False
+            },
+            {
+                "product_id": "ca9c4386-f800-43d1-9ac7-134045ef5368",
+                "product_title": "Lắp đặt hệ thống cáp",
+                "product_code": "HQG.DVU.LDHTC",
+                "product_data": {
+                    "id": "ca9c4386-f800-43d1-9ac7-134045ef5368",
+                    "code": "HQG.DVU.LDHTC",
+                    "title": "Lắp đặt hệ thống cáp",
+                    "description": "Lắp đặt hệ thống cáp CAT6 (Kéo rải dây trong ống, nẹp. Lắp đặt đế nổi và đấu nối Outlet, Pacth Panel)\nInstalling CAT6 cable system (Pulling wires in pipes, clamps. Installing surface base and connecting Outlet, Pacth Panel)",
+                    "product_id": "ca9c4386-f800-43d1-9ac7-134045ef5368",
+                    "product_data": {
+                        "id": "ca9c4386-f800-43d1-9ac7-134045ef5368",
+                        "title": "Lắp đặt hệ thống cáp",
+                        "code": "HQG.DVU.LDHTC"
+                    },
+                    "general_information": {
+                        "product_type": [
+                            {
+                                "id": "d968c963-de27-4531-9a32-d2bdedae2639",
+                                "title": "Dịch vụ",
+                                "code": "service",
+                                "is_goods": False,
+                                "is_finished_goods": False,
+                                "is_material": False,
+                                "is_tool": False,
+                                "is_service": True
+                            }
+                        ],
+                        "product_category": {
+                            "id": "30ff647d-96fb-405c-8b82-b8798bbfc640",
+                            "title": "Dịch vụ",
+                            "code": "SVC"
+                        },
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "title": "Đơn vị",
+                            "code": "Unit"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "sale_information": {
+                        "default_uom": {
+                            "id": "ad0bc9c4-6322-4a7b-bdc5-127995b073d3",
+                            "title": "Node",
+                            "code": "UOM009",
+                            "ratio": 1,
+                            "rounding": 1,
+                            "is_referenced_unit": False
+                        },
+                        "tax_code": {
+                            "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                            "title": "VAT-8",
+                            "code": "VAT_8",
+                            "rate": 8
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "title": "Đồng Việt Nam",
+                            "code": ""
+                        },
+                        "length": None,
+                        "width": None,
+                        "height": None
+                    },
+                    "purchase_information": {
+                        "uom": {},
+                        "tax": {}
+                    },
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_status": 1,
+                            "price_type": 0,
+                            "uom": {
+                                "id": "ad0bc9c4-6322-4a7b-bdc5-127995b073d3",
+                                "title": "Node",
+                                "code": "UOM009",
+                                "ratio": 1,
+                                "rounding": 1,
+                                "is_referenced_unit": False
+                            }
+                        }
+                    ],
+                    "product_choice": [
+                        0
+                    ],
+                    "supplied_by": 0,
+                    "inventory_information": {
+                        "uom": {}
+                    },
+                    "general_traceability_method": 0,
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_finished": True,
+                        "is_so_using": True
+                    },
+                    "bom_data": {},
+                    "standard_price": 0
+                },
+                "unit_of_measure_id": "ad0bc9c4-6322-4a7b-bdc5-127995b073d3",
+                "product_uom_title": "Node",
+                "product_uom_code": "UOM009",
+                "uom_data": {
+                    "id": "ad0bc9c4-6322-4a7b-bdc5-127995b073d3",
+                    "title": "Node",
+                    "code": "UOM009",
+                    "ratio": 1,
+                    "rounding": 1,
+                    "is_referenced_unit": False
+                },
+                "product_quantity": 32,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "title": "VAT-8",
+                    "code": "VAT_8",
+                    "rate": 8
+                },
+                "product_tax_amount": 2534400,
+                "product_description": "Lắp đặt hệ thống cáp CAT6 (Kéo rải dây trong ống, nẹp. Lắp đặt đế nổi và đấu nối Outlet, Pacth Panel)\nInstalling CAT6 cable system (Pulling wires in pipes, clamps. Installing surface base and connecting Outlet, Pacth Panel)",
+                "product_unit_price": 990000,
+                "product_discount_value": 0,
+                "product_discount_amount": 0,
+                "product_discount_amount_total": 0,
+                "product_subtotal_price": 31680000,
+                "product_subtotal_price_after_tax": 34214400,
+                "order": 8,
+                "is_group": False
+            },
+            {
+                "product_id": "be7a9c41-7f65-4e62-a8d7-9e9225e07cae",
+                "product_title": "Đấu nối hệ thống cáp",
+                "product_code": "HQG.DVU.DNHTC",
+                "product_data": {
+                    "id": "be7a9c41-7f65-4e62-a8d7-9e9225e07cae",
+                    "code": "HQG.DVU.DNHTC",
+                    "title": "Đấu nối hệ thống cáp",
+                    "description": "Đấu nối Outlet. Lắp đặt, đấu nối Patch panel. Đo test hệ thống cáp.",
+                    "product_id": "be7a9c41-7f65-4e62-a8d7-9e9225e07cae",
+                    "product_data": {
+                        "id": "be7a9c41-7f65-4e62-a8d7-9e9225e07cae",
+                        "title": "Đấu nối hệ thống cáp",
+                        "code": "HQG.DVU.DNHTC"
+                    },
+                    "general_information": {
+                        "product_type": [
+                            {
+                                "id": "d968c963-de27-4531-9a32-d2bdedae2639",
+                                "title": "Dịch vụ",
+                                "code": "service",
+                                "is_goods": False,
+                                "is_finished_goods": False,
+                                "is_material": False,
+                                "is_tool": False,
+                                "is_service": True
+                            }
+                        ],
+                        "product_category": {
+                            "id": "30ff647d-96fb-405c-8b82-b8798bbfc640",
+                            "title": "Dịch vụ",
+                            "code": "SVC"
+                        },
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "title": "Đơn vị",
+                            "code": "Unit"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "sale_information": {
+                        "default_uom": {
+                            "id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                            "title": "Gói",
+                            "code": "UOM005",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": False
+                        },
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "title": "Đồng Việt Nam",
+                            "code": ""
+                        },
+                        "length": None,
+                        "width": None,
+                        "height": None
+                    },
+                    "purchase_information": {
+                        "uom": {
+                            "id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                            "title": "Gói",
+                            "code": "UOM005",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": False
+                        },
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        }
+                    },
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_status": 1,
+                            "price_type": 0,
+                            "uom": {
+                                "id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                                "title": "Gói",
+                                "code": "UOM005",
+                                "ratio": 1,
+                                "rounding": 4,
+                                "is_referenced_unit": False
+                            }
+                        }
+                    ],
+                    "product_choice": [
+                        0,
+                        2
+                    ],
+                    "supplied_by": 0,
+                    "inventory_information": {
+                        "uom": {}
+                    },
+                    "general_traceability_method": 0,
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_finished": False,
+                        "is_so_using": True
+                    },
+                    "bom_data": {},
+                    "standard_price": 0
+                },
+                "unit_of_measure_id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                "product_uom_title": "Gói",
+                "product_uom_code": "UOM005",
+                "uom_data": {
+                    "id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                    "title": "Gói",
+                    "code": "UOM005",
+                    "ratio": 1,
+                    "rounding": 4,
+                    "is_referenced_unit": False
+                },
+                "product_quantity": 1,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "title": "VAT-8",
+                    "rate": 8,
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 880000,
+                "product_description": "Đấu nối Outlet. Lắp đặt, đấu nối Patch panel. Đo test hệ thống cáp.",
+                "product_unit_price": 11000000,
+                "product_discount_value": 0,
+                "product_discount_amount": 0,
+                "product_discount_amount_total": 0,
+                "product_subtotal_price": 11000000,
+                "product_subtotal_price_after_tax": 11880000,
+                "order": 9,
+                "is_group": False
+            },
+            {
+                "product_id": "4b62347f-32ec-42a0-b631-4db7ae80e587",
+                "product_title": "Vật tư thi công hạ tầng cáp",
+                "product_code": "HQG.VTU.VTHTC",
+                "product_data": {
+                    "id": "4b62347f-32ec-42a0-b631-4db7ae80e587",
+                    "code": "HQG.VTU.VTHTC",
+                    "title": "Vật tư thi công hạ tầng cáp",
+                    "description": "Vặt tư thi công (Ống ruột gà, nẹp tường, nẹp sàn phi 20, 25, 32…)",
+                    "product_id": "4b62347f-32ec-42a0-b631-4db7ae80e587",
+                    "product_data": {
+                        "id": "4b62347f-32ec-42a0-b631-4db7ae80e587",
+                        "title": "Vật tư thi công hạ tầng cáp",
+                        "code": "HQG.VTU.VTHTC"
+                    },
+                    "general_information": {
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "title": "Hàng hóa",
+                                "code": "goods",
+                                "is_goods": True,
+                                "is_finished_goods": False,
+                                "is_material": False,
+                                "is_tool": False,
+                                "is_service": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "4f73880c-7d2c-47e5-97a3-52ff91cd555b",
+                            "title": "Vật tư",
+                            "code": "VTU"
+                        },
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "title": "Đơn vị",
+                            "code": "Unit"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "sale_information": {
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "title": "Đồng Việt Nam",
+                            "code": ""
+                        },
+                        "length": None,
+                        "width": None,
+                        "height": None
+                    },
+                    "purchase_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        }
+                    },
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_status": 1,
+                            "price_type": 0,
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "title": "Cái",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            }
+                        }
+                    ],
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "supplied_by": 0,
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0,
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_finished": False,
+                        "is_so_using": True
+                    },
+                    "bom_data": {},
+                    "standard_price": 0
+                },
+                "unit_of_measure_id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                "product_uom_title": "Gói",
+                "product_uom_code": "UOM005",
+                "uom_data": {
+                    "id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                    "code": "UOM005",
+                    "title": "Gói",
+                    "group": {
+                        "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                        "code": "Unit",
+                        "title": "Đơn vị",
+                        "is_referenced_unit": False
+                    },
+                    "ratio": 1,
+                    "is_default": True
+                },
+                "product_quantity": 1,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "title": "VAT-8",
+                    "rate": 8,
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 1584000,
+                "product_description": "Vặt tư thi công (Ống ruột gà, nẹp tường, nẹp sàn phi 20, 25, 32…)",
+                "product_unit_price": 19800000,
+                "product_discount_value": 0,
+                "product_discount_amount": 0,
+                "product_discount_amount_total": 0,
+                "product_subtotal_price": 19800000,
+                "product_subtotal_price_after_tax": 21384000,
+                "order": 10,
+                "is_group": False
+            },
+            {
+                "product_id": "dcdf245e-f067-4705-b51f-4a0ddf379dd7",
+                "product_title": "Vật tư phụ thi công hạ tầng cáp",
+                "product_code": "HQG.VTU.VTPHTC",
+                "product_data": {
+                    "id": "dcdf245e-f067-4705-b51f-4a0ddf379dd7",
+                    "code": "HQG.VTU.VTPHTC",
+                    "title": "Vật tư phụ thi công hạ tầng cáp",
+                    "description": "Vật tư tiêu hao, thang, dây đai, ống  lồng, dây rút, Plugboot, nhãn dán chuyên dụng...",
+                    "product_id": "dcdf245e-f067-4705-b51f-4a0ddf379dd7",
+                    "product_data": {
+                        "id": "dcdf245e-f067-4705-b51f-4a0ddf379dd7",
+                        "title": "Vật tư phụ thi công hạ tầng cáp",
+                        "code": "HQG.VTU.VTPHTC"
+                    },
+                    "general_information": {
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "title": "Hàng hóa",
+                                "code": "goods",
+                                "is_goods": True,
+                                "is_finished_goods": False,
+                                "is_material": False,
+                                "is_tool": False,
+                                "is_service": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "4f73880c-7d2c-47e5-97a3-52ff91cd555b",
+                            "title": "Vật tư",
+                            "code": "VTU"
+                        },
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "title": "Đơn vị",
+                            "code": "Unit"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "sale_information": {
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "title": "Đồng Việt Nam",
+                            "code": ""
+                        },
+                        "length": None,
+                        "width": None,
+                        "height": None
+                    },
+                    "purchase_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "title": "VAT-10",
+                            "code": "VAT_10",
+                            "rate": 10
+                        }
+                    },
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_status": 1,
+                            "price_type": 0,
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "title": "Cái",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            }
+                        }
+                    ],
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "supplied_by": 0,
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "title": "Cái",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0,
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_finished": False,
+                        "is_so_using": True
+                    },
+                    "bom_data": {},
+                    "standard_price": 0
+                },
+                "unit_of_measure_id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                "product_uom_title": "Gói",
+                "product_uom_code": "UOM005",
+                "uom_data": {
+                    "id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                    "code": "UOM005",
+                    "title": "Gói",
+                    "group": {
+                        "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                        "code": "Unit",
+                        "title": "Đơn vị",
+                        "is_referenced_unit": False
+                    },
+                    "ratio": 1,
+                    "is_default": True
+                },
+                "product_quantity": 1,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "title": "VAT-8",
+                    "rate": 8,
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 880000,
+                "product_description": "Vật tư tiêu hao, thang, dây đai, ống  lồng, dây rút, Plugboot, nhãn dán chuyên dụng...",
+                "product_unit_price": 11000000,
+                "product_discount_value": 0,
+                "product_discount_amount": 0,
+                "product_discount_amount_total": 0,
+                "product_subtotal_price": 11000000,
+                "product_subtotal_price_after_tax": 11880000,
+                "order": 11,
+                "is_group": False
+            },
+            {
+                "product_id": "a415bbbc-772e-41e1-9b51-b16f6a59d02f",
+                "product_title": "Đầu đọc vân tay ZK9500",
+                "product_code": "ZKT.NVI.ZK9500",
+                "product_data": {
+                    "id": "a415bbbc-772e-41e1-9b51-b16f6a59d02f",
+                    "code": "ZKT.NVI.ZK9500",
+                    "title": "Đầu đọc vân tay ZK9500",
+                    "description": "Đầu đọc vân tay dùng cho hệ thống kiểm soát ra vào, hệ thống ký điện tử",
+                    "product_id": "a415bbbc-772e-41e1-9b51-b16f6a59d02f",
+                    "product_data": {
+                        "id": "a415bbbc-772e-41e1-9b51-b16f6a59d02f",
+                        "title": "Đầu đọc vân tay ZK9500",
+                        "code": "ZKT.NVI.ZK9500"
+                    },
+                    "general_information": {
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "title": "Hàng hóa",
+                                "code": "goods",
+                                "is_goods": True,
+                                "is_finished_goods": False,
+                                "is_material": False,
+                                "is_tool": False,
+                                "is_service": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "76e129af-6dc4-4ce4-a53a-2fb500c98317",
+                            "title": "TB Ngoại vi",
+                            "code": "NVI"
+                        },
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "title": "Đơn vị",
+                            "code": "Unit"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "sale_information": {
+                        "default_uom": {},
+                        "tax_code": {},
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "title": "Đồng Việt Nam",
+                            "code": ""
+                        },
+                        "length": None,
+                        "width": None,
+                        "height": None
+                    },
+                    "purchase_information": {
+                        "uom": {},
+                        "tax": {}
+                    },
+                    "price_list": [],
+                    "product_choice": [],
+                    "supplied_by": 0,
+                    "inventory_information": {
+                        "uom": {}
+                    },
+                    "general_traceability_method": 0,
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_finished": False,
+                        "is_so_using": True
+                    },
+                    "bom_data": {},
+                    "standard_price": 0
+                },
+                "unit_of_measure_id": "02d31f81-313c-4be7-8839-f6088011afba",
+                "product_uom_title": "Cái",
+                "product_uom_code": "UOM001",
+                "uom_data": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "title": "Cái",
+                    "group": {
+                        "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                        "code": "Unit",
+                        "title": "Đơn vị",
+                        "is_referenced_unit": True
+                    },
+                    "ratio": 1,
+                    "is_default": True
+                },
+                "product_quantity": 55,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "title": "VAT-8",
+                    "rate": 8,
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 9504000,
+                "product_description": "Đầu đọc vân tay dùng cho hệ thống kiểm soát ra vào, hệ thống ký điện tử",
+                "product_unit_price": 2160000,
+                "product_discount_value": 0,
+                "product_discount_amount": 0,
+                "product_discount_amount_total": 0,
+                "product_subtotal_price": 118800000,
+                "product_subtotal_price_after_tax": 128304000,
+                "order": 12,
+                "is_group": False
+            }
+        ]
+        quotation.quotation_products_data = quotation_products_data
+        quotation.save(update_fields=['quotation_products_data'])
+    print('update_quotation_products_data done.')
+    return True
+
+
+def update_quotation_costs_data(quotation_id):
+    quotation = Quotation.objects.filter(id=quotation_id).first()
+    if quotation:
+        quotation_costs_data = [
+            {
+                "product_id": "4fc6cf2d-2fb8-4ec5-b64e-7b49213d8849",
+                "product_title": "Máy tính để bàn HP Slim Desktop Core i7-12700 | 8GB | 512GB | Intel UHD | Win11 | Đen",
+                "product_code": "HPI.DES.6K7B3PA",
+                "product_data": {
+                    "id": "4fc6cf2d-2fb8-4ec5-b64e-7b49213d8849",
+                    "code": "HPI.DES.6K7B3PA",
+                    "title": "Máy tính để bàn HP Slim Desktop Core i7-12700 | 8GB | 512GB | Intel UHD | Win11 | Đen",
+                    "bom_data": {},
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "title": "Cái",
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            },
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_type": 0,
+                            "price_status": 1
+                        }
+                    ],
+                    "product_id": "4fc6cf2d-2fb8-4ec5-b64e-7b49213d8849",
+                    "description": "Máy tính để bàn đồng bộ HP Slim Desktop S01-pF2024d 6K7B3PA (Core i7-12700 | 8GB | 512GB | Intel UHD | Win11 | Đen)",
+                    "supplied_by": 0,
+                    "product_data": {
+                        "id": "4fc6cf2d-2fb8-4ec5-b64e-7b49213d8849",
+                        "code": "HPI.DES.6K7B3PA",
+                        "title": "Máy tính để bàn HP Slim Desktop Core i7-12700 | 8GB | 512GB | Intel UHD | Win11 | Đen"
+                    },
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_using": False,
+                        "is_so_finished": False
+                    },
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "standard_price": 0,
+                    "sale_information": {
+                        "width": None,
+                        "height": None,
+                        "length": None,
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "code": "",
+                            "title": "Đồng Việt Nam"
+                        }
+                    },
+                    "general_information": {
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "code": "Unit",
+                            "title": "Đơn vị"
+                        },
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "code": "goods",
+                                "title": "Hàng hóa",
+                                "is_tool": False,
+                                "is_goods": True,
+                                "is_service": False,
+                                "is_material": False,
+                                "is_finished_goods": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "bc6d7184-6942-42ad-97f0-5937bbcdcfde",
+                            "code": "DES",
+                            "title": "Desktop"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "purchase_information": {
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0
+                },
+                "supplied_by": 0,
+                "unit_of_measure_id": "469a0812-9d37-44c0-a170-a19342b3ec8b",
+                "product_uom_title": "Bộ",
+                "product_uom_code": "UOM006",
+                "uom_data": {
+                    "id": "469a0812-9d37-44c0-a170-a19342b3ec8b",
+                    "code": "UOM006",
+                    "group": {
+                        "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                        "code": "Unit",
+                        "title": "Đơn vị",
+                        "is_referenced_unit": False
+                    },
+                    "ratio": 1,
+                    "title": "Bộ",
+                    "is_default": False
+                },
+                "product_quantity": 1,
+                "tax_id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                "product_tax_title": "VAT-10",
+                "product_tax_value": 10,
+                "tax_data": {
+                    "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                    "code": "VAT_10",
+                    "rate": 10,
+                    "title": "VAT-10"
+                },
+                "product_tax_amount": 1400000,
+                "product_cost_price": 14000000,
+                "product_subtotal_price": 14000000,
+                "product_subtotal_price_after_tax": 15400000,
+                "order": 1
+            },
+            {
+                "product_id": "801bc8f2-6c2e-443a-8f7b-3c67dd17d8ca",
+                "product_title": "Card mạng 2 cổng cho máy tính để bàn",
+                "product_code": "GIG.CRD.82546-2RJ45",
+                "product_data": {
+                    "id": "801bc8f2-6c2e-443a-8f7b-3c67dd17d8ca",
+                    "code": "GIG.CRD.82546-2RJ45",
+                    "title": "Card mạng 2 cổng cho máy tính để bàn",
+                    "bom_data": {},
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "title": "Cái",
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            },
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_type": 0,
+                            "price_status": 1
+                        }
+                    ],
+                    "product_id": "801bc8f2-6c2e-443a-8f7b-3c67dd17d8ca",
+                    "description": "Card mạng LAN 2 cổng PCI ra Dual 2 Port Gigabit Ethernet intel 82546 cho máy tính để bàn",
+                    "supplied_by": 0,
+                    "product_data": {
+                        "id": "801bc8f2-6c2e-443a-8f7b-3c67dd17d8ca",
+                        "code": "GIG.CRD.82546-2RJ45",
+                        "title": "Card mạng 2 cổng cho máy tính để bàn"
+                    },
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_using": False,
+                        "is_so_finished": False
+                    },
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "standard_price": 0,
+                    "sale_information": {
+                        "width": None,
+                        "height": None,
+                        "length": None,
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "code": "",
+                            "title": "Đồng Việt Nam"
+                        }
+                    },
+                    "general_information": {
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "code": "Unit",
+                            "title": "Đơn vị"
+                        },
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "code": "goods",
+                                "title": "Hàng hóa",
+                                "is_tool": False,
+                                "is_goods": True,
+                                "is_service": False,
+                                "is_material": False,
+                                "is_finished_goods": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "65e98dfd-8ecd-4c7a-b5d6-891fecc57538",
+                            "code": "CRD",
+                            "title": "Card"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "purchase_information": {
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0
+                },
+                "supplied_by": 0,
+                "unit_of_measure_id": "02d31f81-313c-4be7-8839-f6088011afba",
+                "product_uom_title": "Cái",
+                "product_uom_code": "UOM001",
+                "uom_data": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "title": "Cái",
+                    "rounding": 4,
+                    "is_referenced_unit": True
+                },
+                "product_quantity": 1,
+                "tax_id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                "product_tax_title": "VAT-10",
+                "product_tax_value": 10,
+                "tax_data": {
+                    "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                    "code": "VAT_10",
+                    "rate": 10,
+                    "title": "VAT-10"
+                },
+                "product_tax_amount": 100000,
+                "product_cost_price": 1000000,
+                "product_subtotal_price": 1000000,
+                "product_subtotal_price_after_tax": 1100000,
+                "order": 2
+            },
+            {
+                "product_id": "f8a79232-a258-4a20-927a-8453ba377449",
+                "product_title": "Thanh đấu nối patch panel CAT6 24 port",
+                "product_code": "CSC.CAB.760237040/9",
+                "product_data": {
+                    "id": "f8a79232-a258-4a20-927a-8453ba377449",
+                    "code": "CSC.CAB.760237040/9",
+                    "title": "Thanh đấu nối patch panel CAT6 24 port",
+                    "bom_data": {},
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "title": "Cái",
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            },
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_type": 0,
+                            "price_status": 1
+                        }
+                    ],
+                    "product_id": "f8a79232-a258-4a20-927a-8453ba377449",
+                    "description": "Thanh đấu nối Patch Panel 24 cổng CAT6 Commscope",
+                    "supplied_by": 0,
+                    "product_data": {
+                        "id": "f8a79232-a258-4a20-927a-8453ba377449",
+                        "code": "CSC.CAB.760237040/9",
+                        "title": "Thanh đấu nối patch panel CAT6 24 port"
+                    },
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_using": False,
+                        "is_so_finished": False
+                    },
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "standard_price": 1000000,
+                    "sale_information": {
+                        "width": None,
+                        "height": None,
+                        "length": None,
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "code": "",
+                            "title": "Đồng Việt Nam"
+                        }
+                    },
+                    "general_information": {
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "code": "Unit",
+                            "title": "Đơn vị"
+                        },
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "code": "goods",
+                                "title": "Hàng hóa",
+                                "is_tool": False,
+                                "is_goods": True,
+                                "is_service": False,
+                                "is_material": False,
+                                "is_finished_goods": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "b6a87e98-5479-4b90-9c34-05f41eab853b",
+                            "code": "CAB",
+                            "title": "Cáp, dây dẫn"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "purchase_information": {
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0
+                },
+                "supplied_by": 0,
+                "unit_of_measure_id": "02d31f81-313c-4be7-8839-f6088011afba",
+                "product_uom_title": "Cái",
+                "product_uom_code": "UOM001",
+                "uom_data": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "title": "Cái",
+                    "rounding": 4,
+                    "is_referenced_unit": True
+                },
+                "product_quantity": 3,
+                "tax_id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                "product_tax_title": "VAT-10",
+                "product_tax_value": 10,
+                "tax_data": {
+                    "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                    "code": "VAT_10",
+                    "rate": 10,
+                    "title": "VAT-10"
+                },
+                "product_tax_amount": 892650,
+                "product_cost_price": 2975500,
+                "product_subtotal_price": 8926500,
+                "product_subtotal_price_after_tax": 9819150,
+                "order": 3
+            },
+            {
+                "product_id": "215268d7-7dae-415d-ace8-c323d445a9b3",
+                "product_title": "Ổ cắm mạng 1 port CAT6 Commscope",
+                "product_code": "CSC.CAB.1375055-1",
+                "product_data": {
+                    "id": "215268d7-7dae-415d-ace8-c323d445a9b3",
+                    "code": "CSC.CAB.1375055-1",
+                    "title": "Ổ cắm mạng 1 port CAT6 Commscope",
+                    "bom_data": {},
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "title": "Cái",
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            },
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_type": 0,
+                            "price_status": 1
+                        }
+                    ],
+                    "product_id": "215268d7-7dae-415d-ace8-c323d445a9b3",
+                    "description": "Ổ cắm mạng 1 port CAT6 Commscope (bao gồm Box, Face, Module)",
+                    "supplied_by": 0,
+                    "product_data": {
+                        "id": "215268d7-7dae-415d-ace8-c323d445a9b3",
+                        "code": "CSC.CAB.1375055-1",
+                        "title": "Ổ cắm mạng 1 port CAT6 Commscope"
+                    },
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_using": False,
+                        "is_so_finished": False
+                    },
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "standard_price": 0,
+                    "sale_information": {
+                        "width": None,
+                        "height": None,
+                        "length": None,
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "code": "",
+                            "title": "Đồng Việt Nam"
+                        }
+                    },
+                    "general_information": {
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "code": "Unit",
+                            "title": "Đơn vị"
+                        },
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "code": "goods",
+                                "title": "Hàng hóa",
+                                "is_tool": False,
+                                "is_goods": True,
+                                "is_service": False,
+                                "is_material": False,
+                                "is_finished_goods": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "b6a87e98-5479-4b90-9c34-05f41eab853b",
+                            "code": "CAB",
+                            "title": "Cáp, dây dẫn"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "purchase_information": {
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0
+                },
+                "supplied_by": 0,
+                "unit_of_measure_id": "02d31f81-313c-4be7-8839-f6088011afba",
+                "product_uom_title": "Cái",
+                "product_uom_code": "UOM001",
+                "uom_data": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "title": "Cái",
+                    "rounding": 4,
+                    "is_referenced_unit": True
+                },
+                "product_quantity": 32,
+                "tax_id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                "product_tax_title": "VAT-10",
+                "product_tax_value": 10,
+                "tax_data": {
+                    "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                    "code": "VAT_10",
+                    "rate": 10,
+                    "title": "VAT-10"
+                },
+                "product_tax_amount": 510400,
+                "product_cost_price": 159500,
+                "product_subtotal_price": 5104000,
+                "product_subtotal_price_after_tax": 5614400,
+                "order": 4
+            },
+            {
+                "product_id": "2ca23b24-58d2-44fa-ac6a-1f8ae442272a",
+                "product_title": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 3.0 mét",
+                "product_code": "CSC.CAB.NPC06UVDB-RD010F",
+                "product_data": {
+                    "id": "2ca23b24-58d2-44fa-ac6a-1f8ae442272a",
+                    "code": "CSC.CAB.NPC06UVDB-RD010F",
+                    "title": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 3.0 mét",
+                    "bom_data": {},
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "title": "Cái",
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            },
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_type": 0,
+                            "price_status": 1
+                        }
+                    ],
+                    "product_id": "2ca23b24-58d2-44fa-ac6a-1f8ae442272a",
+                    "description": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 3.0 mét",
+                    "supplied_by": 0,
+                    "product_data": {
+                        "id": "2ca23b24-58d2-44fa-ac6a-1f8ae442272a",
+                        "code": "CSC.CAB.NPC06UVDB-RD010F",
+                        "title": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 3.0 mét"
+                    },
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_using": False,
+                        "is_so_finished": False
+                    },
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "standard_price": 0,
+                    "sale_information": {
+                        "width": None,
+                        "height": None,
+                        "length": None,
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "code": "",
+                            "title": "Đồng Việt Nam"
+                        }
+                    },
+                    "general_information": {
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "code": "Unit",
+                            "title": "Đơn vị"
+                        },
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "code": "goods",
+                                "title": "Hàng hóa",
+                                "is_tool": False,
+                                "is_goods": True,
+                                "is_service": False,
+                                "is_material": False,
+                                "is_finished_goods": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "b6a87e98-5479-4b90-9c34-05f41eab853b",
+                            "code": "CAB",
+                            "title": "Cáp, dây dẫn"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "purchase_information": {
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0
+                },
+                "supplied_by": 0,
+                "unit_of_measure_id": "02d31f81-313c-4be7-8839-f6088011afba",
+                "product_uom_title": "Cái",
+                "product_uom_code": "UOM001",
+                "uom_data": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "title": "Cái",
+                    "rounding": 4,
+                    "is_referenced_unit": True
+                },
+                "product_quantity": 32,
+                "tax_id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                "product_tax_title": "VAT-10",
+                "product_tax_value": 10,
+                "tax_data": {
+                    "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                    "code": "VAT_10",
+                    "rate": 10,
+                    "title": "VAT-10"
+                },
+                "product_tax_amount": 313600,
+                "product_cost_price": 98000,
+                "product_subtotal_price": 3136000,
+                "product_subtotal_price_after_tax": 3449600,
+                "order": 5
+            },
+            {
+                "product_id": "6a691684-3b73-4cfe-ac97-629cb673add3",
+                "product_title": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 1.5 mét",
+                "product_code": "CSC.CAB.NPC06UVDB-BL005F",
+                "product_data": {
+                    "id": "6a691684-3b73-4cfe-ac97-629cb673add3",
+                    "code": "CSC.CAB.NPC06UVDB-BL005F",
+                    "title": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 1.5 mét",
+                    "bom_data": {},
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "title": "Cái",
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            },
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_type": 0,
+                            "price_status": 1
+                        }
+                    ],
+                    "product_id": "6a691684-3b73-4cfe-ac97-629cb673add3",
+                    "description": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 1.5 mét",
+                    "supplied_by": 0,
+                    "product_data": {
+                        "id": "6a691684-3b73-4cfe-ac97-629cb673add3",
+                        "code": "CSC.CAB.NPC06UVDB-BL005F",
+                        "title": "Cáp nhảy-Patch cord COMMSCOPE CAT6 UTP 1.5 mét"
+                    },
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_using": False,
+                        "is_so_finished": False
+                    },
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "standard_price": 0,
+                    "sale_information": {
+                        "width": None,
+                        "height": None,
+                        "length": None,
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "code": "",
+                            "title": "Đồng Việt Nam"
+                        }
+                    },
+                    "general_information": {
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "code": "Unit",
+                            "title": "Đơn vị"
+                        },
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "code": "goods",
+                                "title": "Hàng hóa",
+                                "is_tool": False,
+                                "is_goods": True,
+                                "is_service": False,
+                                "is_material": False,
+                                "is_finished_goods": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "b6a87e98-5479-4b90-9c34-05f41eab853b",
+                            "code": "CAB",
+                            "title": "Cáp, dây dẫn"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "purchase_information": {
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0
+                },
+                "supplied_by": 0,
+                "unit_of_measure_id": "02d31f81-313c-4be7-8839-f6088011afba",
+                "product_uom_title": "Cái",
+                "product_uom_code": "UOM001",
+                "uom_data": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "title": "Cái",
+                    "rounding": 4,
+                    "is_referenced_unit": True
+                },
+                "product_quantity": 32,
+                "tax_id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                "product_tax_title": "VAT-10",
+                "product_tax_value": 10,
+                "tax_data": {
+                    "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                    "code": "VAT_10",
+                    "rate": 10,
+                    "title": "VAT-10"
+                },
+                "product_tax_amount": 264000,
+                "product_cost_price": 82500,
+                "product_subtotal_price": 2640000,
+                "product_subtotal_price_after_tax": 2904000,
+                "order": 6
+            },
+            {
+                "product_id": "f37e8d58-b736-46e6-920f-145db8acc801",
+                "product_title": "Dây cáp mạng CommScope CAT6 UTP",
+                "product_code": "CSC.CAB.1427254-6",
+                "product_data": {
+                    "id": "f37e8d58-b736-46e6-920f-145db8acc801",
+                    "code": "CSC.CAB.1427254-6",
+                    "title": "Dây cáp mạng CommScope CAT6 UTP",
+                    "bom_data": {},
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "title": "Cái",
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            },
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_type": 0,
+                            "price_status": 1
+                        }
+                    ],
+                    "product_id": "f37e8d58-b736-46e6-920f-145db8acc801",
+                    "description": "Dây cáp mạng CommScope CAT6 4 pair, 23AWG UTP, 305m/cuộn",
+                    "supplied_by": 0,
+                    "product_data": {
+                        "id": "f37e8d58-b736-46e6-920f-145db8acc801",
+                        "code": "CSC.CAB.1427254-6",
+                        "title": "Dây cáp mạng CommScope CAT6 UTP"
+                    },
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_using": False,
+                        "is_so_finished": False
+                    },
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "standard_price": 3200000,
+                    "sale_information": {
+                        "width": None,
+                        "height": None,
+                        "length": None,
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "code": "",
+                            "title": "Đồng Việt Nam"
+                        }
+                    },
+                    "general_information": {
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "code": "Unit",
+                            "title": "Đơn vị"
+                        },
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "code": "goods",
+                                "title": "Hàng hóa",
+                                "is_tool": False,
+                                "is_goods": True,
+                                "is_service": False,
+                                "is_material": False,
+                                "is_finished_goods": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "b6a87e98-5479-4b90-9c34-05f41eab853b",
+                            "code": "CAB",
+                            "title": "Cáp, dây dẫn"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "purchase_information": {
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0
+                },
+                "supplied_by": 0,
+                "unit_of_measure_id": "02d31f81-313c-4be7-8839-f6088011afba",
+                "product_uom_title": "Cái",
+                "product_uom_code": "UOM001",
+                "uom_data": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "ratio": 1,
+                    "title": "Cái",
+                    "rounding": 4,
+                    "is_referenced_unit": True
+                },
+                "product_quantity": 3,
+                "tax_id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                "product_tax_title": "VAT-10",
+                "product_tax_value": 10,
+                "tax_data": {
+                    "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                    "code": "VAT_10",
+                    "rate": 10,
+                    "title": "VAT-10"
+                },
+                "product_tax_amount": 1056000,
+                "product_cost_price": 3520000,
+                "product_subtotal_price": 10560000,
+                "product_subtotal_price_after_tax": 11616000,
+                "order": 7
+            },
+            {
+                "product_id": "ca9c4386-f800-43d1-9ac7-134045ef5368",
+                "product_title": "Lắp đặt hệ thống cáp",
+                "product_code": "HQG.DVU.LDHTC",
+                "product_data": {
+                    "id": "ca9c4386-f800-43d1-9ac7-134045ef5368",
+                    "code": "HQG.DVU.LDHTC",
+                    "title": "Lắp đặt hệ thống cáp",
+                    "bom_data": {},
+                    "price_list": [],
+                    "product_id": "ca9c4386-f800-43d1-9ac7-134045ef5368",
+                    "description": "Lắp đặt ống, nẹp. Kéo rải dây trong. Lắp đặt đế nổi.",
+                    "supplied_by": 0,
+                    "product_data": {
+                        "id": "ca9c4386-f800-43d1-9ac7-134045ef5368",
+                        "code": "HQG.DVU.LDHTC",
+                        "title": "Lắp đặt hệ thống cáp"
+                    },
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_using": False,
+                        "is_so_finished": False
+                    },
+                    "product_choice": [],
+                    "standard_price": 0,
+                    "sale_information": {
+                        "width": None,
+                        "height": None,
+                        "length": None,
+                        "tax_code": {},
+                        "default_uom": {},
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "code": "",
+                            "title": "Đồng Việt Nam"
+                        }
+                    },
+                    "general_information": {
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "code": "Unit",
+                            "title": "Đơn vị"
+                        },
+                        "product_type": [
+                            {
+                                "id": "d968c963-de27-4531-9a32-d2bdedae2639",
+                                "code": "service",
+                                "title": "Dịch vụ",
+                                "is_tool": False,
+                                "is_goods": False,
+                                "is_service": True,
+                                "is_material": False,
+                                "is_finished_goods": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "30ff647d-96fb-405c-8b82-b8798bbfc640",
+                            "code": "SVC",
+                            "title": "Dịch vụ"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "purchase_information": {
+                        "tax": {},
+                        "uom": {}
+                    },
+                    "inventory_information": {
+                        "uom": {}
+                    },
+                    "general_traceability_method": 0
+                },
+                "supplied_by": 0,
+                "unit_of_measure_id": "ad0bc9c4-6322-4a7b-bdc5-127995b073d3",
+                "product_uom_title": "Node",
+                "product_uom_code": "UOM009",
+                "uom_data": {
+                    "id": "ad0bc9c4-6322-4a7b-bdc5-127995b073d3",
+                    "code": "UOM009",
+                    "group": {
+                        "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                        "code": "Unit",
+                        "title": "Đơn vị",
+                        "is_referenced_unit": False
+                    },
+                    "ratio": 1,
+                    "title": "Node",
+                    "is_default": False
+                },
+                "product_quantity": 32,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "rate": 8,
+                    "title": "VAT-8",
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 1267200,
+                "product_cost_price": 495000,
+                "product_subtotal_price": 15840000,
+                "product_subtotal_price_after_tax": 17107200,
+                "order": 8
+            },
+            {
+                "product_id": "be7a9c41-7f65-4e62-a8d7-9e9225e07cae",
+                "product_title": "Đấu nối hệ thống cáp",
+                "product_code": "HQG.DVU.DNHTC",
+                "product_data": {
+                    "id": "be7a9c41-7f65-4e62-a8d7-9e9225e07cae",
+                    "code": "HQG.DVU.DNHTC",
+                    "title": "Đấu nối hệ thống cáp",
+                    "bom_data": {},
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "uom": {
+                                "id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                                "code": "UOM005",
+                                "ratio": 1,
+                                "title": "Gói",
+                                "rounding": 4,
+                                "is_referenced_unit": False
+                            },
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_type": 0,
+                            "price_status": 1
+                        }
+                    ],
+                    "product_id": "be7a9c41-7f65-4e62-a8d7-9e9225e07cae",
+                    "description": "Đấu nối Outlet. Lắp đặt, đấu nối Patch panel. Đo test hệ thống cáp.",
+                    "supplied_by": 0,
+                    "product_data": {
+                        "id": "be7a9c41-7f65-4e62-a8d7-9e9225e07cae",
+                        "code": "HQG.DVU.DNHTC",
+                        "title": "Đấu nối hệ thống cáp"
+                    },
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_using": False,
+                        "is_so_finished": False
+                    },
+                    "product_choice": [
+                        0,
+                        2
+                    ],
+                    "standard_price": 0,
+                    "sale_information": {
+                        "width": None,
+                        "height": None,
+                        "length": None,
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "default_uom": {
+                            "id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                            "code": "UOM005",
+                            "ratio": 1,
+                            "title": "Gói",
+                            "rounding": 4,
+                            "is_referenced_unit": False
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "code": "",
+                            "title": "Đồng Việt Nam"
+                        }
+                    },
+                    "general_information": {
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "code": "Unit",
+                            "title": "Đơn vị"
+                        },
+                        "product_type": [
+                            {
+                                "id": "d968c963-de27-4531-9a32-d2bdedae2639",
+                                "code": "service",
+                                "title": "Dịch vụ",
+                                "is_tool": False,
+                                "is_goods": False,
+                                "is_service": True,
+                                "is_material": False,
+                                "is_finished_goods": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "30ff647d-96fb-405c-8b82-b8798bbfc640",
+                            "code": "SVC",
+                            "title": "Dịch vụ"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "purchase_information": {
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "uom": {
+                            "id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                            "code": "UOM005",
+                            "ratio": 1,
+                            "title": "Gói",
+                            "rounding": 4,
+                            "is_referenced_unit": False
+                        }
+                    },
+                    "inventory_information": {
+                        "uom": {}
+                    },
+                    "general_traceability_method": 0
+                },
+                "supplied_by": 0,
+                "unit_of_measure_id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                "product_uom_title": "Gói",
+                "product_uom_code": "UOM005",
+                "uom_data": {
+                    "id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                    "code": "UOM005",
+                    "ratio": 1,
+                    "title": "Gói",
+                    "rounding": 4,
+                    "is_referenced_unit": False
+                },
+                "product_quantity": 1,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "rate": 8,
+                    "title": "VAT-8",
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 440000,
+                "product_cost_price": 5500000,
+                "product_subtotal_price": 5500000,
+                "product_subtotal_price_after_tax": 5940000,
+                "order": 9
+            },
+            {
+                "product_id": "4b62347f-32ec-42a0-b631-4db7ae80e587",
+                "product_title": "Vật tư thi công hạ tầng cáp",
+                "product_code": "HQG.VTU.VTHTC",
+                "product_data": {
+                    "id": "4b62347f-32ec-42a0-b631-4db7ae80e587",
+                    "code": "HQG.VTU.VTHTC",
+                    "title": "Vật tư thi công hạ tầng cáp",
+                    "bom_data": {},
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "title": "Cái",
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            },
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_type": 0,
+                            "price_status": 1
+                        }
+                    ],
+                    "product_id": "4b62347f-32ec-42a0-b631-4db7ae80e587",
+                    "description": "Vặt tư thi công (Ống ruột gà, nẹp tường, nẹp sàn phi 20, 25, 32…)",
+                    "supplied_by": 0,
+                    "product_data": {
+                        "id": "4b62347f-32ec-42a0-b631-4db7ae80e587",
+                        "code": "HQG.VTU.VTHTC",
+                        "title": "Vật tư thi công hạ tầng cáp"
+                    },
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_using": False,
+                        "is_so_finished": False
+                    },
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "standard_price": 0,
+                    "sale_information": {
+                        "width": None,
+                        "height": None,
+                        "length": None,
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "code": "",
+                            "title": "Đồng Việt Nam"
+                        }
+                    },
+                    "general_information": {
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "code": "Unit",
+                            "title": "Đơn vị"
+                        },
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "code": "goods",
+                                "title": "Hàng hóa",
+                                "is_tool": False,
+                                "is_goods": True,
+                                "is_service": False,
+                                "is_material": False,
+                                "is_finished_goods": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "4f73880c-7d2c-47e5-97a3-52ff91cd555b",
+                            "code": "VTU",
+                            "title": "Vật tư"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "purchase_information": {
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0
+                },
+                "supplied_by": 0,
+                "unit_of_measure_id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                "product_uom_title": "Gói",
+                "product_uom_code": "UOM005",
+                "uom_data": {
+                    "id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                    "code": "UOM005",
+                    "group": {
+                        "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                        "code": "Unit",
+                        "title": "Đơn vị",
+                        "is_referenced_unit": False
+                    },
+                    "ratio": 1,
+                    "title": "Gói",
+                    "is_default": True
+                },
+                "product_quantity": 1,
+                "tax_id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                "product_tax_title": "VAT-10",
+                "product_tax_value": 10,
+                "tax_data": {
+                    "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                    "code": "VAT_10",
+                    "rate": 10,
+                    "title": "VAT-10"
+                },
+                "product_tax_amount": 990000,
+                "product_cost_price": 9900000,
+                "product_subtotal_price": 9900000,
+                "product_subtotal_price_after_tax": 10890000,
+                "order": 10
+            },
+            {
+                "product_id": "dcdf245e-f067-4705-b51f-4a0ddf379dd7",
+                "product_title": "Vật tư phụ thi công hạ tầng cáp",
+                "product_code": "HQG.VTU.VTPHTC",
+                "product_data": {
+                    "id": "dcdf245e-f067-4705-b51f-4a0ddf379dd7",
+                    "code": "HQG.VTU.VTPHTC",
+                    "title": "Vật tư phụ thi công hạ tầng cáp",
+                    "bom_data": {},
+                    "price_list": [
+                        {
+                            "id": "0635c95c-9914-482e-be89-1325efc38dd6",
+                            "uom": {
+                                "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                                "code": "UOM001",
+                                "ratio": 1,
+                                "title": "Cái",
+                                "rounding": 4,
+                                "is_referenced_unit": True
+                            },
+                            "title": "General Price List",
+                            "value": 0,
+                            "is_default": True,
+                            "price_type": 0,
+                            "price_status": 1
+                        }
+                    ],
+                    "product_id": "dcdf245e-f067-4705-b51f-4a0ddf379dd7",
+                    "description": "Vật tư tiêu hao, thang, dây đai, ống  lồng, dây rút, Plugboot, nhãn dán chuyên dụng...",
+                    "supplied_by": 0,
+                    "product_data": {
+                        "id": "dcdf245e-f067-4705-b51f-4a0ddf379dd7",
+                        "code": "HQG.VTU.VTPHTC",
+                        "title": "Vật tư phụ thi công hạ tầng cáp"
+                    },
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_using": False,
+                        "is_so_finished": False
+                    },
+                    "product_choice": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "standard_price": 0,
+                    "sale_information": {
+                        "width": None,
+                        "height": None,
+                        "length": None,
+                        "tax_code": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "default_uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "code": "",
+                            "title": "Đồng Việt Nam"
+                        }
+                    },
+                    "general_information": {
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "code": "Unit",
+                            "title": "Đơn vị"
+                        },
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "code": "goods",
+                                "title": "Hàng hóa",
+                                "is_tool": False,
+                                "is_goods": True,
+                                "is_service": False,
+                                "is_material": False,
+                                "is_finished_goods": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "4f73880c-7d2c-47e5-97a3-52ff91cd555b",
+                            "code": "VTU",
+                            "title": "Vật tư"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "purchase_information": {
+                        "tax": {
+                            "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                            "code": "VAT_10",
+                            "rate": 10,
+                            "title": "VAT-10"
+                        },
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "inventory_information": {
+                        "uom": {
+                            "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                            "code": "UOM001",
+                            "ratio": 1,
+                            "title": "Cái",
+                            "rounding": 4,
+                            "is_referenced_unit": True
+                        }
+                    },
+                    "general_traceability_method": 0
+                },
+                "supplied_by": 0,
+                "unit_of_measure_id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                "product_uom_title": "Gói",
+                "product_uom_code": "UOM005",
+                "uom_data": {
+                    "id": "c69027e7-3036-4f49-9ffc-006df8255259",
+                    "code": "UOM005",
+                    "group": {
+                        "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                        "code": "Unit",
+                        "title": "Đơn vị",
+                        "is_referenced_unit": False
+                    },
+                    "ratio": 1,
+                    "title": "Gói",
+                    "is_default": True
+                },
+                "product_quantity": 1,
+                "tax_id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                "product_tax_title": "VAT-10",
+                "product_tax_value": 10,
+                "tax_data": {
+                    "id": "4c751034-fd6a-4ad1-9bf0-b7a448f3cc45",
+                    "code": "VAT_10",
+                    "rate": 10,
+                    "title": "VAT-10"
+                },
+                "product_tax_amount": 550000,
+                "product_cost_price": 5500000,
+                "product_subtotal_price": 5500000,
+                "product_subtotal_price_after_tax": 6050000,
+                "order": 11
+            },
+            {
+                "product_id": "a415bbbc-772e-41e1-9b51-b16f6a59d02f",
+                "product_title": "Đầu đọc vân tay ZK9500",
+                "product_code": "ZKT.NVI.ZK9500",
+                "product_data": {
+                    "id": "a415bbbc-772e-41e1-9b51-b16f6a59d02f",
+                    "code": "ZKT.NVI.ZK9500",
+                    "title": "Đầu đọc vân tay ZK9500",
+                    "bom_data": {
+
+                    },
+                    "price_list": [
+
+                    ],
+                    "product_id": "a415bbbc-772e-41e1-9b51-b16f6a59d02f",
+                    "description": "Đầu đọc vân tay dùng cho hệ thống kiểm soát ra vào, hệ thống ký điện tử",
+                    "supplied_by": 0,
+                    "product_data": {
+                        "id": "a415bbbc-772e-41e1-9b51-b16f6a59d02f",
+                        "code": "ZKT.NVI.ZK9500",
+                        "title": "Đầu đọc vân tay ZK9500"
+                    },
+                    "bom_check_data": {
+                        "is_bom": False,
+                        "is_bom_opp": False,
+                        "is_so_using": True,
+                        "is_so_finished": False
+                    },
+                    "product_choice": [
+
+                    ],
+                    "standard_price": 0,
+                    "sale_information": {
+                        "width": None,
+                        "height": None,
+                        "length": None,
+                        "tax_code": {
+
+                        },
+                        "default_uom": {
+
+                        },
+                        "currency_using": {
+                            "id": "5fd2a6fb-8bee-4084-bba1-50100bf798cf",
+                            "code": "",
+                            "title": "Đồng Việt Nam"
+                        }
+                    },
+                    "general_information": {
+                        "uom_group": {
+                            "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                            "code": "Unit",
+                            "title": "Đơn vị"
+                        },
+                        "product_type": [
+                            {
+                                "id": "82af8bdb-5ad2-4608-8db4-9ddc1f6639c3",
+                                "code": "goods",
+                                "title": "Hàng hóa",
+                                "is_tool": False,
+                                "is_goods": True,
+                                "is_service": False,
+                                "is_material": False,
+                                "is_finished_goods": False
+                            }
+                        ],
+                        "product_category": {
+                            "id": "76e129af-6dc4-4ce4-a53a-2fb500c98317",
+                            "code": "NVI",
+                            "title": "TB Ngoại vi"
+                        },
+                        "general_traceability_method": 0
+                    },
+                    "purchase_information": {
+                        "tax": {
+
+                        },
+                        "uom": {
+
+                        }
+                    },
+                    "inventory_information": {
+                        "uom": {
+
+                        }
+                    },
+                    "general_traceability_method": 0
+                },
+                "supplied_by": 0,
+                "unit_of_measure_id": "02d31f81-313c-4be7-8839-f6088011afba",
+                "product_uom_title": "Cái",
+                "product_uom_code": "UOM001",
+                "uom_data": {
+                    "id": "02d31f81-313c-4be7-8839-f6088011afba",
+                    "code": "UOM001",
+                    "group": {
+                        "id": "b1efa35c-86da-403e-9c76-239b6aa0863a",
+                        "code": "Unit",
+                        "title": "Đơn vị",
+                        "is_referenced_unit": True
+                    },
+                    "ratio": 1,
+                    "title": "Cái",
+                    "is_default": True
+                },
+                "product_quantity": 55,
+                "tax_id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                "product_tax_title": "VAT-8",
+                "product_tax_value": 8,
+                "tax_data": {
+                    "id": "eed95d45-e432-4180-aa22-d04197872bfc",
+                    "code": "VAT_8",
+                    "rate": 8,
+                    "title": "VAT-8",
+                    "category": {
+                        "id": "369a4195-5473-405f-9f81-2bb252c62afd",
+                        "title": "Thuế GTGT"
+                    },
+                    "tax_type": 2,
+                    "is_default": True
+                },
+                "product_tax_amount": 0,
+                "product_cost_price": 0,
+                "product_subtotal_price": 0,
+                "product_subtotal_price_after_tax": 0,
+                "order": 12
+            }
+        ]
+        quotation.quotation_costs_data = quotation_costs_data
+        quotation.save(update_fields=['quotation_costs_data'])
+    print('update_quotation_costs_data done.')
+    return True
+
+
+def update_invoice_payment_sale_order():
+    sale_order = SaleOrder.objects.filter(id="f9106f94-aa0d-4a10-8f53-0e59cef388f5").first()
+    if sale_order:
+        sale_order.payment_term_id = "eb1fedc1-11ba-4b23-aa1d-d9cd7eedf627"
+        sale_order.payment_term_data = {
+            "id": "eb1fedc1-11ba-4b23-aa1d-d9cd7eedf627",
+            "title": "Thanh toán 30-70",
+            "code": "TT3070",
+            "apply_for": 0,
+            "term": [
+                {
+                    "id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                    "value": "30",
+                    "unit_type": 0,
+                    "day_type": 2,
+                    "no_of_days": "0",
+                    "after": 6,
+                    "order": 1,
+                    "title": "Đợt 1"
+                },
+                {
+                    "id": "3a00e5fa-2b99-4c0f-b72e-78c5cd7fcb7a",
+                    "value": "Cân bằng",
+                    "unit_type": 2,
+                    "day_type": 2,
+                    "no_of_days": "0",
+                    "after": 2,
+                    "order": 2,
+                    "title": "Đợt 2"
+                }
+            ]
+        }
+        sale_order.sale_order_payment_stage = [
+            {
+                "order": 1,
+                "term_id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                "term_data": {
+                    "id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                    "value": "30",
+                    "unit_type": 0,
+                    "day_type": 2,
+                    "no_of_days": "0",
+                    "after": 6,
+                    "order": 1,
+                    "title": "Đợt 1"
+                },
+                "remark": "Thanh toán khi ký hợp đồng - 31/07 - 30% (Tạm ứng)",
+                "date": "2025-07-31 00:00:00",
+                "ratio": 30,
+                "invoice": None,
+                "is_ar_invoice": False,
+                "invoice_data": {
+
+                },
+                "value_before_tax": 12500000.1,
+                "reconcile_data": [
+
+                ],
+                "value_total": 12500000.1,
+                "due_date": "2025-07-31 00:00:00"
+            },
+            {
+                "order": 2,
+                "term_id": "3a00e5fa-2b99-4c0f-b72e-78c5cd7fcb7a",
+                "term_data": {
+                    "id": "3a00e5fa-2b99-4c0f-b72e-78c5cd7fcb7a",
+                    "value": "70",
+                    "unit_type": 0,
+                    "day_type": 2,
+                    "no_of_days": "0",
+                    "after": 2,
+                    "order": 2,
+                    "title": "Đợt 2"
+                },
+                "remark": "Thanh toán 14 ngày kể từ ngày nhận máy - 04/08 - 70%",
+                "date": "2025-08-04 00:00:00",
+                "ratio": 70,
+                "invoice": 1,
+                "is_ar_invoice": True,
+                "invoice_data": {
+                    "order": 1,
+                    "remark": "Xuất hóa đơn 1 lần (ngày tạo 04/08)",
+                    "date": "2025-08-04",
+                    "term_data": [
+                        {
+                            "id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                            "value": "30",
+                            "unit_type": 0,
+                            "day_type": 2,
+                            "no_of_days": "0",
+                            "after": 6,
+                            "order": 1,
+                            "title": "Đợt 1"
+                        },
+                        {
+                            "id": "3a00e5fa-2b99-4c0f-b72e-78c5cd7fcb7a",
+                            "value": "70",
+                            "unit_type": 0,
+                            "day_type": 2,
+                            "no_of_days": "0",
+                            "after": 2,
+                            "order": 2,
+                            "title": "Đợt 2"
+                        }
+                    ],
+                    "ratio": 100,
+                    "tax_id": "30d575f1-b2fc-4f93-8b4e-af9e4d79cd11",
+                    "tax_data": {
+                        "id": "30d575f1-b2fc-4f93-8b4e-af9e4d79cd11",
+                        "code": "VAT_8",
+                        "rate": 8,
+                        "title": "VAT-8"
+                    },
+                    "total": 45000000.36,
+                    "balance": 45000000.36
+                },
+                "value_before_tax": 29166666.9,
+                "value_reconcile": 12500000.1,
+                "reconcile_data": [
+                    {
+                        "order": 1,
+                        "term_id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                        "term_data": {
+                            "id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                            "value": "30",
+                            "unit_type": 0,
+                            "day_type": 2,
+                            "no_of_days": "0",
+                            "after": 6,
+                            "order": 1,
+                            "title": "Đợt 1"
+                        },
+                        "remark": "Thanh toán khi ký hợp đồng - 31/07 - 30% (Tạm ứng)",
+                        "date": "2025-07-31 00:00:00",
+                        "ratio": 30,
+                        "invoice": None,
+                        "is_ar_invoice": False,
+                        "invoice_data": {
+
+                        },
+                        "value_before_tax": 12500000.1,
+                        "reconcile_data": [
+
+                        ],
+                        "value_total": 12500000.1,
+                        "due_date": "2025-07-31 00:00:00"
+                    }
+                ],
+                "tax_id": "30d575f1-b2fc-4f93-8b4e-af9e4d79cd11",
+                "tax_data": {
+                    "id": "30d575f1-b2fc-4f93-8b4e-af9e4d79cd11",
+                    "code": "VAT_8",
+                    "rate": 8,
+                    "title": "VAT-8"
+                },
+                "value_tax": 3333333.36,
+                "value_total": 32500000.259999998,
+                "due_date": "2025-08-18 00:00:00"
+            }
+        ]
+        sale_order.sale_order_invoice = [
+            {
+                "order": 1,
+                "remark": "Xuất hóa đơn 1 lần (ngày tạo 04/08)",
+                "date": "2025-08-04",
+                "term_data": [
+                    {
+                        "id": "78d2d7cd-12e1-4414-b8b9-1887f1bde15f",
+                        "value": "30",
+                        "unit_type": 0,
+                        "day_type": 2,
+                        "no_of_days": "0",
+                        "after": 6,
+                        "order": 1,
+                        "title": "Đợt 1"
+                    },
+                    {
+                        "id": "3a00e5fa-2b99-4c0f-b72e-78c5cd7fcb7a",
+                        "value": "70",
+                        "unit_type": 0,
+                        "day_type": 2,
+                        "no_of_days": "0",
+                        "after": 2,
+                        "order": 2,
+                        "title": "Đợt 2"
+                    }
+                ],
+                "ratio": 100,
+                "tax_id": "30d575f1-b2fc-4f93-8b4e-af9e4d79cd11",
+                "tax_data": {
+                    "id": "30d575f1-b2fc-4f93-8b4e-af9e4d79cd11",
+                    "code": "VAT_8",
+                    "rate": 8,
+                    "title": "VAT-8"
+                },
+                "total": 45000000.36,
+                "balance": 0
+            }
+        ]
+        sale_order.save(update_fields=['payment_term_id', 'payment_term_data', 'sale_order_payment_stage', 'sale_order_invoice'])
+        sale_order.sale_order_payment_stage_sale_order.all().delete()
+        SaleOrderPaymentStage.objects.bulk_create(
+            [SaleOrderPaymentStage(
+                sale_order=sale_order,
+                tenant_id=sale_order.tenant_id,
+                company_id=sale_order.company_id,
+                **sale_order_payment_stage,
+            ) for sale_order_payment_stage in sale_order.sale_order_payment_stage]
+        )
+        sale_order.sale_order_invoice_sale_order.all().delete()
+        SaleOrderInvoice.objects.bulk_create(
+            [SaleOrderInvoice(
+                sale_order=sale_order,
+                tenant_id=sale_order.tenant_id,
+                company_id=sale_order.company_id,
+                **sale_order_invoice,
+            ) for sale_order_invoice in sale_order.sale_order_invoice]
+        )
+    print('update_invoice_payment_sale_order done.')
     return True

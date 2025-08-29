@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models import (
     Product, ProductProductType, ProductMeasurements, UnitOfMeasure, Currency, Price, ProductPriceList, Tax
 )
 from apps.masterdata.saledata.serializers import (
-    CommonCreateUpdateProduct, ProductCreateSerializer
+    ProductCommonFunction, ProductCreateSerializer
 )
 from apps.shared import ProductMsg
 from apps.core.base.models import BaseItemUnit
@@ -236,19 +236,19 @@ class ProductImportCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         # validate dimension
-        validate_data['width'] = ProductCreateSerializer.validate_dimension(
+        validate_data['width'] = ProductCommonFunction.validate_dimension(
             validate_data.get('width'), 'width', ProductMsg.W_IS_WRONG
         )
-        validate_data['height'] = ProductCreateSerializer.validate_dimension(
+        validate_data['height'] = ProductCommonFunction.validate_dimension(
             validate_data.get('height'), 'height', ProductMsg.H_IS_WRONG
         )
-        validate_data['length'] = ProductCreateSerializer.validate_dimension(
+        validate_data['length'] = ProductCommonFunction.validate_dimension(
             validate_data.get('length'), 'length', ProductMsg.L_IS_WRONG
         )
-        validate_data['volume'] = ProductCreateSerializer.validate_dimension(
+        validate_data['volume'] = ProductCommonFunction.validate_dimension(
             validate_data.get('volume'), 'volume', ProductMsg.VLM_IS_WRONG
         )
-        validate_data['weight'] = ProductCreateSerializer.validate_dimension(
+        validate_data['weight'] = ProductCommonFunction.validate_dimension(
             validate_data.get('weight'), 'weight', ProductMsg.WGT_IS_WRONG
         )
 
@@ -347,7 +347,7 @@ class ProductImportCreateSerializer(serializers.ModelSerializer):
                             fill__tenant=True, fill__company=True, auto_update=True
                         )
                         for price_list in sale_product_price_list:
-                            cumulative_factor = CommonCreateUpdateProduct.get_cumulative_factor(price_list)
+                            cumulative_factor = ProductCommonFunction.get_cumulative_factor(price_list)
                             price = sale_general_price * cumulative_factor
                             prod_price_bulk_info.append(ProductPriceList(
                                 product=product,
@@ -399,6 +399,7 @@ class ProductManufacturerImportCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         instance = Manufacturer.objects.create(**validated_data)
         return instance
+
 
 class ProductManufacturerImportDetailSerializer(serializers.ModelSerializer):
     class Meta:

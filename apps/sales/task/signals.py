@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
+from apps.core.mailer.tasks import prepare_send_mail_new_task
 from apps.sales.project.tasks import create_project_news
 from apps.sales.task.tasks import opp_task_summary
 from apps.sales.task.models import OpportunityTask, OpportunityTaskSummaryDaily
@@ -157,6 +158,30 @@ def opp_task_changes(sender, instance, created, **kwargs):
                     'employee_id': prev_employee_inherit_id,
                 }
             )
+    if created:
+        # resolve task data
+        if instance.task_status.task_kind in [0, 1] \
+                and instance.employee_created and instance.employee_inherit \
+                and instance.employee_inherit.email \
+                and instance.employee_created.email != instance.employee_inherit.email:
+            # check nếu người tạo và người nhận có email và 2 user này ko cùng 1 người
+            task_kwargs = {
+                'tenant_id': str(instance.tenant_id),
+                'company_id': str(instance.company_id),
+                'doc_id': str(instance.id),
+                'doc_app': 'task.opportunitytask',
+                'employee_inherit_full_name': instance.employee_inherit.get_full_name(),
+                'employee_inherit_email': instance.employee_inherit.email,
+                'employee_created': instance.employee_created.get_full_name(),
+            }
+            if len(task_kwargs) > 0:
+                call_task_background(
+                    my_task=prepare_send_mail_new_task,
+                    **{
+                        'data_list': task_kwargs
+                    }
+                )
+            print('finish run send mail new task')
 
 
 @receiver(post_save, sender=OpportunityTaskSummaryDaily)
