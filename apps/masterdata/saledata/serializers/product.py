@@ -665,7 +665,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_attribute_list_data(cls, obj):
-        return obj.product_attributes.all().values_list('attribute_id', flat=True)
+        return list(obj.product_attributes.all().values_list('attribute_id', flat=True))
 
     @classmethod
     def get_duration_unit_data(cls, obj):
