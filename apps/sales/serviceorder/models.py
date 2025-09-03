@@ -2,6 +2,7 @@ from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
+from apps.masterdata.saledata.models import Tax, UnitOfMeasure
 # from apps.masterdata.saledata.models import Account, ExpenseItem, Tax, UnitOfMeasure
 # from apps.masterdata.saledata.models.shipment import ContainerTypeInfo, PackageTypeInfo
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel
@@ -41,6 +42,93 @@ class ServiceOrder(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+# service detail tab
+class ServiceOrderServiceDetail(MasterDataAbstractModel):
+    service_order = models.ForeignKey(
+        ServiceOrder,
+        on_delete=models.CASCADE,
+        related_name="service_details"
+    )
+    ordering_number = models.IntegerField(default=0)
+    description = models.TextField()
+    quantity = models.PositiveIntegerField()
+    uom = models.ForeignKey(
+        UnitOfMeasure,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+    price = models.FloatField()
+    tax = models.ForeignKey(
+        Tax,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+    tax_value = models.JSONField()
+    total = models.FloatField(default=0)
+
+    # data related to work order
+    delivery_balance = models.FloatField(default=0)
+    total_contribution_percentage = models.FloatField(default=0)
+
+    #data related to payment
+    total_payment_percentage = models.FloatField(default=0)
+    total_payment_value = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Service order service detail'
+        verbose_name_plural = 'Service order service details'
+        ordering = ('ordering_number',)
+        default_permissions = ()
+        permissions = ()
+
+
+# work order tab
+
+WORK_ORDER_STATUS = (
+    (0, 'pending'),
+    (1, 'in_progress'),
+    (2, 'completed'),
+    (3, 'cancelled'),
+)
+
+
+class ServiceOrderWorkOrder(MasterDataAbstractModel):
+    service_order = models.ForeignKey(
+        ServiceOrder,
+        on_delete=models.CASCADE,
+        related_name="work_orders"
+    )
+    ordering_number = models.IntegerField(default=0)
+    description = models.TextField()
+    start_date = models.DateField()
+    end_date = models.DateField()
+    is_delivery_point = models.BooleanField(default=False)
+    quantity = models.IntegerField(default=0)
+    unit_cost = models.FloatField(default=0)
+    total = models.FloatField(default=0)
+    work_status = models.PositiveSmallIntegerField(
+        default=0,
+        choices=WORK_ORDER_STATUS
+    )
+
+    class Meta:
+        verbose_name = 'Service order work order'
+        verbose_name_plural = 'Service order work orders'
+        ordering = ('ordering_number',)
+        default_permissions = ()
+        permissions = ()
+
+
+class ServiceOrderWorkOrderCost(MasterDataAbstractModel):
+    work_order = models.ForeignKey(
+        'ServiceOrderWorkOrder',
+        on_delete=models.CASCADE,
+        related_name="work_order_costs"
+    )
+    ordering_number = models.IntegerField(default=0)
+
 
 
 # shipment tab
