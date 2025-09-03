@@ -29,6 +29,11 @@ class AttendanceHandler:
                     business_mapped__system_status=3,
                 )]
                 shift_assigns = employee_obj.shift_assignment_employee.filter_on_company(date=date)
+                # Kiem tra neu cau hinh cong ty su dung chung 1 ca
+                company_config_obj = employee_obj.company.company_config if employee_obj.company else None
+                if company_config_obj:
+                    if company_config_obj.shift_mode == 0:
+                        shift_assigns = [company_config_obj.shift]
                 return AttendanceHandler.active_check(
                     date=date,
                     employee_obj=employee_obj,

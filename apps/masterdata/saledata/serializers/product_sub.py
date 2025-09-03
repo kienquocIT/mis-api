@@ -4,13 +4,26 @@ from apps.masterdata.saledata.models import (
     ProductMeasurements, ProductProductType, ProductVariantAttribute, ProductVariant
 )
 from apps.masterdata.saledata.models.price import ProductPriceList, Price, Currency
-from apps.masterdata.saledata.models.product import ProductComponent
+from apps.masterdata.saledata.models.product import ProductComponent, ProductAttribute
 from apps.shared import ProductMsg
 
 
-class CommonCreateUpdateProduct:
-    @classmethod
-    def create_price_list_product(cls, product, price_list_obj):
+class ProductCommonFunction:
+    @staticmethod
+    def validate_dimension(value, field_name, error_msg):
+        if value:
+            try:
+                value = float(value)
+                if value <= 0:
+                    raise serializers.ValidationError({field_name: error_msg})
+            except ValueError:
+                raise serializers.ValidationError({field_name: error_msg})
+        else:
+            value = None
+        return value
+
+    @staticmethod
+    def create_price_list_product(product, price_list_obj):
         child_price_list = Price.get_children(price_list_obj)
         bulk_info = []
         price_list_product_data = []
@@ -33,8 +46,8 @@ class CommonCreateUpdateProduct:
         ProductPriceList.objects.bulk_create(bulk_info)
         return price_list_product_data
 
-    @classmethod
-    def create_price_list(cls, product, data_price, validated_data):
+    @staticmethod
+    def create_price_list(product, data_price, validated_data):
         default_pr = Price.objects.filter_current(fill__tenant=True, fill__company=True, is_default=True).first()
         currency_using = product.sale_currency_using
         if not currency_using:
@@ -46,7 +59,7 @@ class CommonCreateUpdateProduct:
             currency_using = primary_crc
         if default_pr:
             if len(data_price) == 0:
-                cls.create_price_list_product(product, default_pr)
+                ProductCommonFunction.create_price_list_product(product, default_pr)
             else:
                 objs = []
                 for item in data_price:
@@ -66,8 +79,8 @@ class CommonCreateUpdateProduct:
             return True
         return False
 
-    @classmethod
-    def create_measure(cls, product, data_measure):
+    @staticmethod
+    def create_measure(product, data_measure):
         volume_id = data_measure['volume']['id'] if len(data_measure['volume']) > 0 else None
         weight_id = data_measure['weight']['id'] if len(data_measure['weight']) > 0 else None
         if volume_id and 'value' in data_measure['volume']:
@@ -84,8 +97,8 @@ class CommonCreateUpdateProduct:
             )
         return True
 
-    @classmethod
-    def sub_validate_volume_obj(cls, initial_data, validate_data):
+    @staticmethod
+    def sub_validate_volume_obj(initial_data, validate_data):
         volume_obj = None
         if initial_data.get('volume_id', None):
             volume_obj = BaseItemUnit.objects.filter(id=initial_data['volume_id'])
@@ -99,8 +112,8 @@ class CommonCreateUpdateProduct:
             }
         return {}
 
-    @classmethod
-    def sub_validate_weight_obj(cls, initial_data, validate_data):
+    @staticmethod
+    def sub_validate_weight_obj(initial_data, validate_data):
         weight_obj = None
         if initial_data.get('weight_id', None):
             weight_obj = BaseItemUnit.objects.filter(id=initial_data['weight_id'])
@@ -114,8 +127,8 @@ class CommonCreateUpdateProduct:
             }
         return {}
 
-    @classmethod
-    def setup_price_list_data_in_sale(cls, initial_data):
+    @staticmethod
+    def setup_price_list_data_in_sale(initial_data):
         sale_price_list = initial_data.get('sale_price_list', [])
         for item in sale_price_list:
             price_list_id = item.get('price_list_id', None)
@@ -124,8 +137,8 @@ class CommonCreateUpdateProduct:
                 raise serializers.ValidationError({'sale_product_price_list': ProductMsg.PRICE_LIST_NOT_EXIST})
         return sale_price_list
 
-    @classmethod
-    def create_product_types_mapped(cls, product_obj, product_types_mapped_list):
+    @staticmethod
+    def create_product_types_mapped(product_obj, product_types_mapped_list):
         bulk_info = []
         for item in product_types_mapped_list:
             bulk_info.append(ProductProductType(product=product_obj, product_type_id=item))
@@ -133,8 +146,8 @@ class CommonCreateUpdateProduct:
         ProductProductType.objects.bulk_create(bulk_info)
         return True
 
-    @classmethod
-    def create_component_mapped(cls, product_obj, component_list_data):
+    @staticmethod
+    def create_component_mapped(product_obj, component_list_data):
         bulk_info = []
         for item in component_list_data:
             bulk_info.append(ProductComponent(product=product_obj, **item))
@@ -142,8 +155,17 @@ class CommonCreateUpdateProduct:
         ProductComponent.objects.bulk_create(bulk_info)
         return True
 
-    @classmethod
-    def create_product_variant_attribute(cls, product_obj, product_variant_attribute_list):
+    @staticmethod
+    def create_attribute_mapped(product_obj, attribute_list_data):
+        bulk_info = []
+        for order, item in enumerate(attribute_list_data):
+            bulk_info.append(ProductAttribute(product=product_obj, order=order, attribute_id=item))
+        ProductAttribute.objects.filter(product=product_obj).delete()
+        ProductAttribute.objects.bulk_create(bulk_info)
+        return True
+
+    @staticmethod
+    def create_product_variant_attribute(product_obj, product_variant_attribute_list):
         bulk_info = []
         for item in product_variant_attribute_list:
             bulk_info.append(ProductVariantAttribute(product=product_obj, **item))
@@ -151,16 +173,16 @@ class CommonCreateUpdateProduct:
         ProductVariantAttribute.objects.bulk_create(bulk_info)
         return True
 
-    @classmethod
-    def create_product_variant_item(cls, product_obj, product_variant_item_list):
+    @staticmethod
+    def create_product_variant_item(product_obj, product_variant_item_list):
         bulk_info = []
         for item in product_variant_item_list:
             bulk_info.append(ProductVariant(product=product_obj, **item))
         ProductVariant.objects.bulk_create(bulk_info)
         return True
 
-    @classmethod
-    def update_product_variant_item(cls, product_obj, product_variant_item_update_list):
+    @staticmethod
+    def update_product_variant_item(product_obj, product_variant_item_update_list):
         bulk_info = []
         for item in product_variant_item_update_list:
             if item.get('variant_value_id', None):
@@ -171,8 +193,8 @@ class CommonCreateUpdateProduct:
         ProductVariant.objects.bulk_create(bulk_info)
         return True
 
-    @classmethod
-    def get_cumulative_factor(cls, price_list):
+    @staticmethod
+    def get_cumulative_factor(price_list):
         factor = 1.0
         current = price_list
         visited_price_list = set()
