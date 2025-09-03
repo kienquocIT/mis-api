@@ -3220,7 +3220,7 @@ PAYMENT_PLAN_APP_CONFIG = {
 }
 
 SERVICEORDER_APP_CONFIG = {
-    "id": "36f25733-a6e7-43ea-b710-38e2052f0f6d ",
+    "id": "36f25733-a6e7-43ea-b710-38e2052f0f6d",
     "title": "Service Order",
     "code": "serviceorder",
     "model_code": "serviceorder",
