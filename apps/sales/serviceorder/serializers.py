@@ -4,7 +4,7 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account
 from apps.sales.serviceorder.models import (
-    ServiceOrder, ServiceOrderAttachMapAttachFile, ServiceOrderPackage, ServiceOrderContainer, ServiceOrderShipment,
+    ServiceOrder, ServiceOrderAttachMapAttachFile, ServiceOrderShipment,
 )
 from apps.shared import (
     AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel, AttachmentMsg,
@@ -131,9 +131,9 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     def create(self, validated_data):
         with transaction.atomic():
             shipment = validated_data.pop('shipment', [])
-            attachment = validated_data.pop('attachment', [])
+            # attachment = validated_data.pop('attachment', [])
             service_order = ServiceOrder.objects.create(**validated_data)
-            ServiceOrderCommonFunc.create_service_order_shipments(service_order.id, shipment)
+            ServiceOrderCommonFunc.create_shipment(service_order.id, shipment)
             # ServiceOrderCommonFunc.create_attachment(service_order.id, attachment)
             # SerializerCommonHandle.handle_attach_file(
             #     relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
