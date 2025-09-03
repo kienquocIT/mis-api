@@ -14,3 +14,4 @@ from .document import *
 from .asset import *
 from .bank import *
 from .attribute import *
+from .shipment import *

@@ -13,6 +13,7 @@ class ServiceOrder(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name="service_order_customer"
     )
+    customer_data = models.JSONField(default=dict)
     start_date = models.DateField()
     end_date = models.DateField()
     attachment_m2m = models.ManyToManyField(
@@ -50,10 +51,11 @@ class ServiceOrderShipment(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name="service_order_shipment_service_order"
     )
-    reference_number = models.CharField(max_length=100, null=True, help_text="Package can allow null")
+    reference_number = models.CharField(max_length=100, null=True)  # Package can allow null
     weight = models.FloatField(default=0, verbose_name="Weight (kg)")
     dimension = models.FloatField(default=0, verbose_name="Dimension")
     description = models.TextField(blank=True, help_text="Note")
+    reference_container = models.CharField(max_length=100, null=True, help_text="Only use for package")
     is_container = models.BooleanField(default=True)
 
     class Meta:

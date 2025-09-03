@@ -1,7 +1,9 @@
 from django.db import transaction
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
+from apps.masterdata.saledata.models import Account
 from apps.sales.serviceorder.models import (
     ServiceOrder, ServiceOrderAttachMapAttachFile, ServiceOrderPackage, ServiceOrderContainer, ServiceOrderShipment,
 )
@@ -15,6 +17,7 @@ __all__ = [
     'ServiceOrderDetailSerializer',
     'ServiceOrderCreateSerializer',
     'ServiceOrderUpdateSerializer',
+    'ServiceOderShipmentSerializer'
 ]
 
 
@@ -44,7 +47,6 @@ class ServiceOrderCommonFunc:
         for index, package_data in enumerate(packages_data):
             break
             # target_container = container_list[i % len(container_list)]
-
 
     @staticmethod
     def create_service_order_packages(shipment, container, packages_data):
@@ -113,19 +115,6 @@ class ServiceOrderCommonFunc:
 
 
 # ================================ SHIPMENT =====================================
-class ServiceOrderPackageSerializer(serializers.Serializer):
-    order = serializers.IntegerField(default=1)
-    package_type = serializers.CharField(required=False, allow_null=True)
-    package_type_title = serializers.CharField(read_only=True)
-
-
-class ServiceOrderContainerSerializer(serializers.Serializer):
-    order = serializers.IntegerField(default=1)
-    container_type = serializers.CharField(required=False, allow_null=True)
-    packages = ServiceOrderPackageSerializer(many=True, required=False)
-    container_type_title = serializers.CharField(read_only=True)
-
-
 class ServiceOderShipmentSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=100)
     reference_number = serializers.CharField(max_length=100, required=False, allow_null=True)
@@ -133,13 +122,22 @@ class ServiceOderShipmentSerializer(serializers.Serializer):
     dimension = serializers.FloatField(default=0)
     description = serializers.CharField(required=True, allow_blank=True)
     is_container = serializers.BooleanField(default=True)
+    reference_container = serializers.CharField(max_length=100, required=False, allow_null=True)
 
-    # nested containers
-    containers = ServiceOrderContainerSerializer(many=True, required=False)
-    packages = ServiceOrderPackageSerializer(many=True, required=False)
+    class Meta:
+        model = ServiceOrderShipment
+        fields = (
+            'title',
+            'reference_number',
+            'weight',
+            'dimension',
+            'description',
+            'is_container',
+            'reference_container'
+        )
 
 
-# ================================ MAIN =====================================
+# MAIN
 class ServiceOrderListSerializer(AbstractListSerializerModel):
     employee_created = serializers.SerializerMethodField()
 
@@ -162,23 +160,40 @@ class ServiceOrderListSerializer(AbstractListSerializerModel):
 
 class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
-    customer = serializers.CharField()
+    customer = serializers.UUIDField()
     start_date = serializers.DateField()
     end_date = serializers.DateField()
-    shipments = ServiceOderShipmentSerializer(many=True)
-    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
-    def validate_attachment(self, value):
-        user = self.context.get('user', None)
-        return SerializerCommonValidate.validate_attachment(
-            user=user, model_cls=ServiceOrderAttachMapAttachFile, value=value
-        )
+    # shipments = ServiceOderShipmentSerializer(many=True)
+    # attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+
+    # def validate_attachment(self, value):
+    #     user = self.context.get('user', None)
+    #     return SerializerCommonValidate.validate_attachment(
+    #         user=user, model_cls=ServiceOrderAttachMapAttachFile, value=value
+    #     )
+
+    @classmethod
+    def validate_customer(cls, value):
+        try:
+            customer_obj = Account.objects.get(id=value)
+            return customer_obj
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'detail': _("Account does not exist")})
 
     def validate(self, validate_data):
+        customer_obj = validate_data.get('customer')
+        validate_data["customer_data"] = {
+            "id": customer_obj.id,
+            "title": customer_obj.title,
+            "code": customer_obj.code,
+            "tax_code": customer_obj.tax_code,
+        } if customer_obj else {}
+
         start_date = validate_data.get('start_date', '')
         end_date = validate_data.get('end_date', '')
         if start_date and end_date and start_date >= end_date:
-            raise serializers.ValidationError("End date must be after start date")
+            raise serializers.ValidationError({'detail': _("End date must be after start date")})
         return validate_data
 
     @decorator_run_workflow
@@ -187,14 +202,14 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             shipments = validated_data.pop('shipments', [])
             attachment = validated_data.pop('attachment', [])
             service_order = ServiceOrder.objects.create(**validated_data)
-            ServiceOrderCommonFunc.create_service_order_shipments(service_order.id, shipments)
-            ServiceOrderCommonFunc.create_attachment(service_order.id, attachment)
-            SerializerCommonHandle.handle_attach_file(
-                relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
-                model_cls=ServiceOrderAttachMapAttachFile,
-                instance=service_order,
-                attachment_result=attachment
-            )
+            # ServiceOrderCommonFunc.create_service_order_shipments(service_order.id, shipments)
+            # ServiceOrderCommonFunc.create_attachment(service_order.id, attachment)
+            # SerializerCommonHandle.handle_attach_file(
+            #     relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
+            #     model_cls=ServiceOrderAttachMapAttachFile,
+            #     instance=service_order,
+            #     attachment_result=attachment
+            # )
         return service_order
 
     class Meta:
@@ -204,8 +219,8 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             'customer',
             'start_date',
             'end_date',
-            'shipments',
-            'attachment'
+            # 'shipments',
+            # 'attachment'
         )
 
 
