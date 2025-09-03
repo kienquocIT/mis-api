@@ -457,11 +457,11 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'product_variant_item_list',
             'is_public_website',
             'account_deter_referenced_by',
-            'attribute_list_data',
             # Transaction information
             'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount',
             'component_list_data',
-            'duration_unit_data'
+            'duration_unit_data',
+            'attribute_list_data',
         )
 
     @classmethod
@@ -665,7 +665,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_attribute_list_data(cls, obj):
-        return obj.product_attributes.all().values_list('attribute_id', flat=True)
+        return list(obj.product_attributes.all().values_list('attribute_id', flat=True))
 
     @classmethod
     def get_duration_unit_data(cls, obj):
@@ -773,7 +773,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_duration_unit(cls, value):
-        print(value)
         return ProductCreateSerializer.validate_duration_unit(value)
 
     def validate(self, validate_data):
