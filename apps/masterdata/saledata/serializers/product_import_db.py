@@ -4,7 +4,7 @@ from rest_framework import serializers
 from apps.masterdata.saledata.models import Currency, Price
 from apps.masterdata.saledata.models import UnitOfMeasure, UnitOfMeasureGroup, ProductType, Tax, TaxCategory
 from apps.masterdata.saledata.models.product import Product, ProductCategory
-from apps.masterdata.saledata.serializers import CommonCreateUpdateProduct, ProductCreateSerializer
+from apps.masterdata.saledata.serializers import ProductCommonFunction, ProductCreateSerializer
 from apps.shared import ProductMsg
 
 PRODUCT_OPTION = [(0, _('Sale')), (1, _('Inventory')), (2, _('Purchase'))]
@@ -253,12 +253,12 @@ class ProductQuotationCreateSerializerLoadDB(serializers.ModelSerializer):
                 supplied_by=0
             )
 
-            CommonCreateUpdateProduct.create_product_types_mapped(
+            ProductCommonFunction.create_product_types_mapped(
                 product_obj,
                 [str(product_type_obj.id)]
             )
 
-            price_list_product_data = CommonCreateUpdateProduct.create_price_list_product(
+            price_list_product_data = ProductCommonFunction.create_price_list_product(
                 product_obj,
                 self.get_default_price_list_obj(tenant, company)
             )
