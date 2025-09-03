@@ -38,10 +38,15 @@ class ServiceOrderCommonFunc:
 
     @staticmethod
     def create_shipment(service_order, shipment_data):
-        pass
         # new_shipment = []
         # for shipment in shipment_data:
-        #     pass
+        #     new_item = ServiceOrderShipment(
+        #         title=shipment.get('title'),
+        #         service_order_id=str(service_order.id),
+        #         reference_number=shipment.get('reference_number', ''),
+        #
+        #     )
+        pass
 
 
 # SHIPMENT
