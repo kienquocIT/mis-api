@@ -1,6 +1,5 @@
 from django.db import transaction
 from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account
@@ -9,7 +8,7 @@ from apps.sales.serviceorder.models import (
 )
 from apps.shared import (
     AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel, AttachmentMsg,
-    SerializerCommonValidate, SerializerCommonHandle,
+    SVOMsg
 )
 
 __all__ = [
@@ -179,7 +178,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             customer_obj = Account.objects.get(id=value)
             return customer_obj
         except Account.DoesNotExist:
-            raise serializers.ValidationError({'detail': _("Account does not exist")})
+            raise serializers.ValidationError({'customer': SVOMsg.CUSTOMER_NOT_EXIST})
 
     def validate(self, validate_data):
         customer_obj = validate_data.get('customer')
@@ -193,7 +192,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
         start_date = validate_data.get('start_date', '')
         end_date = validate_data.get('end_date', '')
         if start_date and end_date and start_date >= end_date:
-            raise serializers.ValidationError({'detail': _("End date must be after start date")})
+            raise serializers.ValidationError({'error': SVOMsg.DATE_COMPARE_ERROR})
         return validate_data
 
     @decorator_run_workflow

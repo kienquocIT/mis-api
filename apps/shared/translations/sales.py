@@ -152,3 +152,8 @@ class ReconMsg:
     ACCOUNT_NOT_SUPPLIER = _('This account is not a Supplier account')
     CUSTOMER_NOT_EXIST = _('Customer does not exist')
     CUSTOMER_NOT_NULL = _('Customer is not null')
+
+
+class SVOMsg:
+    CUSTOMER_NOT_EXIST = _('Customer does not exist')
+    DATE_COMPARE_ERROR = _("End date must be after start date")
