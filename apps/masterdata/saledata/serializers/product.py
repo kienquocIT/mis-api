@@ -7,10 +7,16 @@ from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasu
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
 from apps.sales.report.utils.inventory_log import ReportInvCommonFunc
 from apps.shared import ProductMsg, PriceMsg, BaseMsg
-from .product_sub import CommonCreateUpdateProduct
+from .product_sub import ProductCommonFunction
 from ..models import ProductWareHouse
 
 PRODUCT_OPTION = [(0, _('Sale')), (1, _('Inventory')), (2, _('Purchase'))]
+
+
+def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
+    if inventory_uom:
+        return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
+    return 0
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -116,6 +122,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     volume = serializers.FloatField(required=False, allow_null=True)
     weight = serializers.FloatField(required=False, allow_null=True)
     available_notify_quantity = serializers.FloatField(required=False, allow_null=True)
+    duration_unit = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Product
@@ -132,7 +139,9 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             # Purchase
             'purchase_default_uom', 'purchase_tax', 'supplied_by',
             # Accounting
-            'account_deter_referenced_by'
+            'account_deter_referenced_by',
+            # Attribute
+            'duration_unit'
         )
 
     @classmethod
@@ -267,33 +276,29 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         return None
 
     @classmethod
-    def validate_dimension(cls, value, field_name, error_msg):
+    def validate_duration_unit(cls, value):
         if value:
             try:
-                value = float(value)
-                if value <= 0:
-                    raise serializers.ValidationError({field_name: error_msg})
-            except ValueError:
-                raise serializers.ValidationError({field_name: error_msg})
-        else:
-            value = None
-        return value
+                return UnitOfMeasure.objects.get(id=value)
+            except UnitOfMeasure.DoesNotExist:
+                raise serializers.ValidationError({'duration_unit': ProductMsg.UOM_NOT_EXIST})
+        return None
 
     def validate(self, validate_data):
         # validate dimension
-        validate_data['width'] = self.validate_dimension(
+        validate_data['width'] = ProductCommonFunction.validate_dimension(
             validate_data.get('width'), 'width', ProductMsg.W_IS_WRONG
         )
-        validate_data['height'] = self.validate_dimension(
+        validate_data['height'] = ProductCommonFunction.validate_dimension(
             validate_data.get('height'), 'height', ProductMsg.H_IS_WRONG
         )
-        validate_data['length'] = self.validate_dimension(
+        validate_data['length'] = ProductCommonFunction.validate_dimension(
             validate_data.get('length'), 'length', ProductMsg.L_IS_WRONG
         )
-        validate_data['volume'] = self.validate_dimension(
+        validate_data['volume'] = ProductCommonFunction.validate_dimension(
             validate_data.get('volume'), 'volume', ProductMsg.VLM_IS_WRONG
         )
-        validate_data['weight'] = self.validate_dimension(
+        validate_data['weight'] = ProductCommonFunction.validate_dimension(
             validate_data.get('weight'), 'weight', ProductMsg.WGT_IS_WRONG
         )
         # add sale_currency_using
@@ -301,41 +306,49 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         if not primary_crc:
             raise serializers.ValidationError({'sale_currency_using': ProductMsg.CURRENCY_NOT_EXIST})
         validate_data['sale_currency_using'] = primary_crc
+
+        if 1 in validate_data.get('product_choice', []):
+            validate_data['duration_unit'] = None
+
         return validate_data
 
     def create(self, validated_data):
         validated_data.update(
-            {'volume': CommonCreateUpdateProduct.sub_validate_volume_obj(self.initial_data, validated_data)}
+            {'volume': ProductCommonFunction.sub_validate_volume_obj(self.initial_data, validated_data)}
         )
         validated_data.update(
-            {'weight': CommonCreateUpdateProduct.sub_validate_weight_obj(self.initial_data, validated_data)}
+            {'weight': ProductCommonFunction.sub_validate_weight_obj(self.initial_data, validated_data)}
         )
         validated_data.update(
-            {'sale_product_price_list': CommonCreateUpdateProduct.setup_price_list_data_in_sale(self.initial_data)}
+            {'sale_product_price_list': ProductCommonFunction.setup_price_list_data_in_sale(self.initial_data)}
         )
         product_obj = Product.objects.create(**validated_data)
-        CommonCreateUpdateProduct.create_product_types_mapped(
+        ProductCommonFunction.create_product_types_mapped(
             product_obj, self.initial_data.get('product_types_mapped_list', [])
         )
         if 'volume' in validated_data and 'weight' in validated_data:
             measure_data = {'weight': validated_data['weight'], 'volume': validated_data['volume']}
             if measure_data:
-                CommonCreateUpdateProduct.create_measure(product_obj, measure_data)
+                ProductCommonFunction.create_measure(product_obj, measure_data)
         if 0 in validated_data.get('product_choice', []):
-            CommonCreateUpdateProduct.create_price_list(
+            ProductCommonFunction.create_price_list(
                 product_obj,
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
 
-        CommonCreateUpdateProduct.create_component_mapped(
+        ProductCommonFunction.create_component_mapped(
             product_obj, self.initial_data.get('component_list_data', [])
         )
 
-        CommonCreateUpdateProduct.create_product_variant_attribute(
+        ProductCommonFunction.create_attribute_mapped(
+            product_obj, self.initial_data.get('attribute_list_data', [])
+        )
+
+        ProductCommonFunction.create_product_variant_attribute(
             product_obj, self.initial_data.get('product_variant_attribute_list', [])
         )
-        CommonCreateUpdateProduct.create_product_variant_item(
+        ProductCommonFunction.create_product_variant_item(
             product_obj, self.initial_data.get('product_variant_item_list', [])
         )
         AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 0)
@@ -405,19 +418,13 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
         default_pr = validated_data.pop('default_price_list')
 
         product = Product.objects.create(**validated_data)
-        CommonCreateUpdateProduct.create_product_types_mapped(
+        ProductCommonFunction.create_product_types_mapped(
             product, self.initial_data.get('product_types_mapped_list', [])
         )
-        price_list_product_data = CommonCreateUpdateProduct.create_price_list_product(product, default_pr)
+        price_list_product_data = ProductCommonFunction.create_price_list_product(product, default_pr)
         product.sale_product_price_list = price_list_product_data
         product.save(update_fields=['sale_product_price_list'])
         return product
-
-
-def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
-    if inventory_uom:
-        return (log_quantity / inventory_uom.ratio) if inventory_uom.ratio else 0
-    return 0
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -433,6 +440,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     wait_receipt_amount = serializers.SerializerMethodField()
     available_amount = serializers.SerializerMethodField()
     component_list_data = serializers.SerializerMethodField()
+    attribute_list_data = serializers.SerializerMethodField()
+    duration_unit_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -450,7 +459,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'account_deter_referenced_by',
             # Transaction information
             'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount',
-            'component_list_data'
+            'component_list_data',
+            'duration_unit_data',
+            'attribute_list_data',
         )
 
     @classmethod
@@ -652,6 +663,23 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             })
         return component_list_data
 
+    @classmethod
+    def get_attribute_list_data(cls, obj):
+        return list(obj.product_attributes.all().values_list('attribute_id', flat=True))
+
+    @classmethod
+    def get_duration_unit_data(cls, obj):
+        return {
+            'id': obj.duration_unit_id,
+            'title': obj.duration_unit.title,
+            'code': obj.duration_unit.code,
+            'group': {
+                'id': obj.duration_unit.group_id,
+                'title': obj.duration_unit.group.title,
+                'code': obj.duration_unit.group.code
+            } if obj.duration_unit.group else {},
+        } if obj.duration_unit else {}
+
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
@@ -668,6 +696,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     volume = serializers.FloatField(required=False, allow_null=True)
     weight = serializers.FloatField(required=False, allow_null=True)
     available_notify_quantity = serializers.FloatField(required=False, allow_null=True)
+    duration_unit = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Product
@@ -682,7 +711,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'sale_default_uom', 'sale_tax', 'online_price_list', 'available_notify', 'available_notify_quantity',
             'inventory_uom', 'inventory_level_min', 'inventory_level_max',
             'valuation_method',
-            'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by'
+            'purchase_default_uom', 'purchase_tax', 'is_public_website', 'supplied_by', 'duration_unit'
         )
 
     @classmethod
@@ -742,21 +771,25 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     def validate_purchase_tax(cls, value):
         return ProductCreateSerializer.validate_purchase_tax(value)
 
+    @classmethod
+    def validate_duration_unit(cls, value):
+        return ProductCreateSerializer.validate_duration_unit(value)
+
     def validate(self, validate_data):
         # validate dimension
-        validate_data['width'] = ProductCreateSerializer.validate_dimension(
+        validate_data['width'] = ProductCommonFunction.validate_dimension(
             validate_data.get('width'), 'width', ProductMsg.W_IS_WRONG
         )
-        validate_data['height'] = ProductCreateSerializer.validate_dimension(
+        validate_data['height'] = ProductCommonFunction.validate_dimension(
             validate_data.get('height'), 'height', ProductMsg.H_IS_WRONG
         )
-        validate_data['length'] = ProductCreateSerializer.validate_dimension(
+        validate_data['length'] = ProductCommonFunction.validate_dimension(
             validate_data.get('length'), 'length', ProductMsg.L_IS_WRONG
         )
-        validate_data['volume'] = ProductCreateSerializer.validate_dimension(
+        validate_data['volume'] = ProductCommonFunction.validate_dimension(
             validate_data.get('volume'), 'volume', ProductMsg.VLM_IS_WRONG
         )
-        validate_data['weight'] = ProductCreateSerializer.validate_dimension(
+        validate_data['weight'] = ProductCommonFunction.validate_dimension(
             validate_data.get('weight'), 'weight', ProductMsg.WGT_IS_WRONG
         )
         instance = self.instance
@@ -786,17 +819,21 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'valuation_method': _("Cannot change the valuation method for products that have transactions.")}
             )
+
+        if 1 in validate_data.get('product_choice', []):
+            validate_data['duration_unit'] = None
+
         return validate_data
 
     def update(self, instance, validated_data):
         validated_data.update(
-            {'volume': CommonCreateUpdateProduct.sub_validate_volume_obj(self.initial_data, validated_data)}
+            {'volume': ProductCommonFunction.sub_validate_volume_obj(self.initial_data, validated_data)}
         )
         validated_data.update(
-            {'weight': CommonCreateUpdateProduct.sub_validate_weight_obj(self.initial_data, validated_data)}
+            {'weight': ProductCommonFunction.sub_validate_weight_obj(self.initial_data, validated_data)}
         )
         validated_data.update(
-            {'sale_product_price_list': CommonCreateUpdateProduct.setup_price_list_data_in_sale(self.initial_data)}
+            {'sale_product_price_list': ProductCommonFunction.setup_price_list_data_in_sale(self.initial_data)}
         )
         instance.product_measure.all().delete()
         ProductPriceList.objects.filter(
@@ -807,28 +844,32 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        CommonCreateUpdateProduct.create_product_types_mapped(
+        ProductCommonFunction.create_product_types_mapped(
             instance, self.initial_data.get('product_types_mapped_list', [])
         )
         if 'volume' in validated_data and 'weight' in validated_data:
             measure_data = {'weight': validated_data['weight'], 'volume': validated_data['volume']}
             if measure_data:
-                CommonCreateUpdateProduct.create_measure(instance, measure_data)
+                ProductCommonFunction.create_measure(instance, measure_data)
         if 0 in validated_data.get('product_choice', []):
-            CommonCreateUpdateProduct.create_price_list(
+            ProductCommonFunction.create_price_list(
                 instance,
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
 
-        CommonCreateUpdateProduct.create_component_mapped(
+        ProductCommonFunction.create_component_mapped(
             instance, self.initial_data.get('component_list_data', [])
         )
 
-        CommonCreateUpdateProduct.create_product_variant_attribute(
+        ProductCommonFunction.create_attribute_mapped(
+            instance, self.initial_data.get('attribute_list_data', [])
+        )
+
+        ProductCommonFunction.create_product_variant_attribute(
             instance, self.initial_data.get('product_variant_attribute_list', [])
         )
-        CommonCreateUpdateProduct.update_product_variant_item(
+        ProductCommonFunction.update_product_variant_item(
             instance, self.initial_data.get('product_variant_item_list', [])
         )
         AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 0)
