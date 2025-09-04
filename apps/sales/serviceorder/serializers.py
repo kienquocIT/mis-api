@@ -1,7 +1,5 @@
-from django.db import transaction
 from rest_framework import serializers
 from apps.core.base.models import Application
-from django.utils.translation import gettext_lazy as _
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account
 from apps.sales.serviceorder.models import (
@@ -63,7 +61,7 @@ class ServiceOrderCommonFunc:
     def create_shipment(service_order_obj, shipment_data):
         bulk_info_shipment = []
         bulk_info_container = []
-        for index, shipment_data_item in enumerate(shipment_data):
+        for _, shipment_data_item in enumerate(shipment_data):
             item_data_parsed = ServiceOrderCommonFunc.get_mapped_data(shipment_data_item)
             shipment_obj = ServiceOrderShipment(service_order=service_order_obj, **item_data_parsed)
             bulk_info_shipment.append(shipment_obj)
@@ -132,8 +130,7 @@ class ServiceOderShipmentSerializer(serializers.Serializer):
     packageContainerRef = serializers.CharField(max_length=100, required=False, allow_null=True)
     packageType = serializers.JSONField(required=False, allow_null=True)
 
-    @classmethod
-    def validate(cls, validate_data):
+    def validate(self, validate_data):
         if validate_data.get('is_container', True):
             if not validate_data.get('containerName'):
                 raise serializers.ValidationError({'container name': SVOMsg.CONTAINER_NAME_NOT_EXIST})
