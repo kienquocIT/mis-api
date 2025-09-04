@@ -84,7 +84,7 @@ class ServiceOrderCommonFunc:
 
         # create package part
         bulk_info_packages = []
-        for index, shipment_data_item in enumerate(shipment_data):
+        for _, shipment_data_item in enumerate(shipment_data):
             # get package
             pkg_order = 1
             if not shipment_data_item.get('is_container'):
