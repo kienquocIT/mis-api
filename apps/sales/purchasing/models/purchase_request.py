@@ -97,6 +97,15 @@ class PurchaseRequest(DataAbstractModel):
             instance.distribution_plan.save(update_fields=['purchase_request_number'])
         return True
 
+    @classmethod
+    def check_reject_document(cls, instance):
+        # check if there is CR not done
+        if cls.objects.filter_on_company(document_root_id=instance.document_root_id, system_status__in=[1, 2]).exists():
+            return False
+        if not instance:
+            return False
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):

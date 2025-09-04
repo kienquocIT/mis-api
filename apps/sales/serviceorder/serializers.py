@@ -5,8 +5,8 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, Product, UnitOfMeasure, Tax
 from apps.sales.serviceorder.models import (
-    ServiceOrder, ServiceOrderAttachMapAttachFile, ServiceOrderShipment, ServiceOrderServiceDetail,
-    ServiceOrderWorkOrder,
+    ServiceOrder, ServiceOrderAttachMapAttachFile, ServiceOrderShipment, ServiceOrderContainer, ServiceOrderPackage,
+    ServiceOrderWorkOrder, ServiceOrderServiceDetail,
 )
 from apps.shared import (
     AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel, AttachmentMsg,
@@ -39,15 +39,77 @@ class ServiceOrderCommonFunc:
         return True
 
     @staticmethod
-    def create_shipment(service_order, shipment_data):
-        # new_shipment = []
-        # for shipment in shipment_data:
-        #     new_item = ServiceOrderShipment(
-        #         title=shipment.get('title'),
-        #         service_order_id=str(service_order.id),
-        #         reference_number=shipment.get('reference_number', ''),
-        #
-        #     )
+    def get_mapped_data(shipment_data_item):
+        if shipment_data_item.get('is_container', True):
+            return {
+                'title': shipment_data_item.get('containerName', ''),
+                'reference_number': shipment_data_item.get('containerRefNumber', ''),
+                'weight': shipment_data_item.get('containerWeight', 0),
+                'dimension': shipment_data_item.get('containerDimension', 0),
+                'description': shipment_data_item.get('containerNote'),
+                'is_container': True,
+                'reference_container': None
+            }
+        return {
+            'title': shipment_data_item.get('packageName', ''),
+            'reference_number': shipment_data_item.get('containerRefNumber', ''),
+            'weight': shipment_data_item.get('packageWeight', 0),
+            'dimension': shipment_data_item.get('packageDimension', 0),
+            'description': shipment_data_item.get('packageNote'),
+            'is_container': False,
+            'reference_container': shipment_data_item.get('packageContainerRef'),
+        }
+
+    @staticmethod
+    def create_shipment(service_order_obj, shipment_data):
+        bulk_info_shipment = []
+        bulk_info_container = []
+        for _, shipment_data_item in enumerate(shipment_data):
+            item_data_parsed = ServiceOrderCommonFunc.get_mapped_data(shipment_data_item)
+            shipment_obj = ServiceOrderShipment(service_order=service_order_obj, **item_data_parsed)
+            bulk_info_shipment.append(shipment_obj)
+            # get container
+            ctn_order = 1
+            if shipment_obj.is_container:
+                bulk_info_container.append(ServiceOrderContainer(
+                    shipment=shipment_obj,
+                    order=ctn_order,
+                    container_type_id=shipment_data_item.get("containerType", {}).get("id")
+                ))
+                ctn_order += 1
+
+        # bulk create shipments
+        ServiceOrderShipment.objects.filter(service_order=service_order_obj).delete()
+        ServiceOrderShipment.objects.bulk_create(bulk_info_shipment)
+
+        # bulk create container
+        container_created = ServiceOrderContainer.objects.bulk_create(bulk_info_container)
+
+        # create package part
+        bulk_info_packages = []
+        for _, shipment_data_item in enumerate(shipment_data):
+            # get package
+            pkg_order = 1
+            if not shipment_data_item.get('is_container'):
+                ctn_mapped = None
+                for ctn in container_created:
+                    if ctn.shipment.reference_number == shipment_data_item.get('packageContainerRef'):
+                        ctn_mapped = ctn
+                if ctn_mapped:
+                    bulk_info_packages.append(ServiceOrderPackage(
+                        shipment=ctn_mapped.shipment,
+                        order=pkg_order,
+                        package_type_id=str(shipment_data_item.get("packageType", {}).get("id")),
+                        container_reference_id=str(ctn_mapped.id)
+                    ))
+                    pkg_order += 1
+
+        # bulk create package
+        ServiceOrderPackage.objects.bulk_create(bulk_info_packages)
+        return True
+
+    @staticmethod
+    def create_expense(service_order_obj, expense_data):
         pass
 
     @staticmethod
@@ -78,25 +140,43 @@ class ServiceOrderCommonFunc:
 
 # SHIPMENT
 class ServiceOderShipmentSerializer(serializers.Serializer):
-    title = serializers.CharField(max_length=100)
-    reference_number = serializers.CharField(max_length=100, required=False, allow_null=True)
-    weight = serializers.FloatField(default=0)
-    dimension = serializers.FloatField(default=0)
-    description = serializers.CharField(required=True, allow_blank=True)
-    reference_container = serializers.CharField(max_length=100, required=False, allow_null=True)
     is_container = serializers.BooleanField(default=True)
 
-    class Meta:
-        model = ServiceOrderShipment
-        fields = (
-            'title',
-            'reference_number',
-            'weight',
-            'dimension',
-            'description',
-            'is_container',
-            'reference_container'
-        )
+    # container field
+    containerName = serializers.CharField(max_length=100, required=False, allow_null=True)
+    containerRefNumber = serializers.CharField(max_length=100, required=False, allow_null=True)
+    containerWeight = serializers.FloatField(required=False, allow_null=True)
+    containerDimension = serializers.FloatField(required=False, allow_null=True)
+    containerNote = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    containerType = serializers.JSONField(required=False, allow_null=True)
+
+    packageName = serializers.CharField(max_length=100, required=False, allow_null=True)
+    packageRefNumber = serializers.CharField(max_length=100, required=False, allow_null=True)
+    packageWeight = serializers.FloatField(required=False, allow_null=True)
+    packageDimension = serializers.FloatField(required=False, allow_null=True)
+    packageNote = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    packageContainerRef = serializers.CharField(max_length=100, required=False, allow_null=True)
+    packageType = serializers.JSONField(required=False, allow_null=True)
+
+    def validate(self, validate_data):
+        if validate_data.get('is_container', True):
+            if not validate_data.get('containerName'):
+                raise serializers.ValidationError({'container name': SVOMsg.CONTAINER_NAME_NOT_EXIST})
+            if not validate_data.get('containerRefNumber'):
+                raise serializers.ValidationError({'Container Reference Number': SVOMsg.CONTAINER_REF_NOT_EXIST})
+
+        else:
+            if not validate_data.get('packageName'):
+                raise serializers.ValidationError({'Package Name': SVOMsg.PACKAGE_NAME_NOT_EXIST})
+            if not validate_data.get('packageContainerRef'):
+                raise serializers.ValidationError({'Package Reference Container': SVOMsg.PACKAGE_REF_NOT_EXIST})
+
+        return validate_data
+
+
+# EXPENSE
+class ServiceOrderExpenseSerializer(serializers.Serializer):
+    pass
 
 # SERVICE DETAIL
 class ServiceOrderServiceDetailSerializer(serializers.Serializer):
@@ -180,8 +260,9 @@ class ServiceOrderListSerializer(AbstractListSerializerModel):
             'id',
             'title',
             'code',
-            'customer',
+            'customer_data'
             'date_created',
+            'end_date',
             'employee_created',
             'system_status'
         )
@@ -196,8 +277,8 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     customer = serializers.UUIDField()
     start_date = serializers.DateField()
     end_date = serializers.DateField()
-
     shipment = ServiceOderShipmentSerializer(many=True)
+    expense = ServiceOrderExpenseSerializer(many=True)
     service_detail_data = ServiceOrderServiceDetailSerializer(many=True)
     # attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
@@ -219,8 +300,8 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     def validate(self, validate_data):
         customer_obj = validate_data.get('customer')
         validate_data["customer_data"] = {
-            "id": customer_obj.id,
-            "title": customer_obj.title,
+            "id": str(customer_obj.id),
+            "name": customer_obj.name,
             "code": customer_obj.code,
             "tax_code": customer_obj.tax_code,
         } if customer_obj else {}
@@ -233,21 +314,22 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
-        with transaction.atomic():
-            shipment = validated_data.pop('shipment', [])
-            service_detail_data = validated_data.pop('service_detail_data', [])
-            # attachment = validated_data.pop('attachment', [])
-            service_order = ServiceOrder.objects.create(**validated_data)
-            ServiceOrderCommonFunc.create_shipment(service_order.id, shipment)
-            ServiceOrderCommonFunc.create_service_detail(service_order, service_detail_data)
-            # ServiceOrderCommonFunc.create_attachment(service_order.id, attachment)
-            # SerializerCommonHandle.handle_attach_file(
-            #     relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
-            #     model_cls=ServiceOrderAttachMapAttachFile,
-            #     instance=service_order,
-            #     attachment_result=attachment
-            # )
-        return service_order
+        shipment_data = validated_data.pop('shipment', [])
+        expense_data = validated_data.pop('expense', [])
+        service_detail_data = validated_data.pop('service_detail_data', [])
+        # attachment = validated_data.pop('attachment', [])
+        service_order_obj = ServiceOrder.objects.create(**validated_data)
+        ServiceOrderCommonFunc.create_shipment(service_order_obj, shipment_data)
+        ServiceOrderCommonFunc.create_expense(service_order_obj, expense_data)
+        ServiceOrderCommonFunc.create_service_detail(service_order_obj, service_detail_data)
+        # ServiceOrderCommonFunc.create_attachment(service_order.id, attachment)
+        # SerializerCommonHandle.handle_attach_file(
+        #     relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
+        #     model_cls=ServiceOrderAttachMapAttachFile,
+        #     instance=service_order,
+        #     attachment_result=attachment
+        # )
+        return service_order_obj
 
     class Meta:
         model = ServiceOrder
@@ -257,6 +339,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             'start_date',
             'end_date',
             'shipment',
+            'expense'
             'service_detail_data'
             # 'attachment'
         )

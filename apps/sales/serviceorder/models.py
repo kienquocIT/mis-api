@@ -357,18 +357,20 @@ class ServiceOrderExpense(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name="service_order_expense_service_order"
     )
-    expense_items = models.ForeignKey(
+    expense_item = models.ForeignKey(
         'saledata.ExpenseItem',
         null=True,
         on_delete=models.SET_NULL,
-        related_name="service_order_expense_expense_items"
+        related_name="service_order_expense_expense_item"
     )
+    expense_item_data = models.JSONField(default=dict)
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         null=True,
         on_delete=models.SET_NULL,
         related_name="service_order_expense_uom"
     )
+    uom_data = models.JSONField(default=dict)
     quantity = models.FloatField(default=0)
     expense_price = models.FloatField(default=0)
     tax = models.ForeignKey(
@@ -377,6 +379,7 @@ class ServiceOrderExpense(MasterDataAbstractModel):
         on_delete=models.SET_NULL,
         related_name="service_order_expense_tax"
     )
+    tax_data = models.JSONField(default=dict)
     subtotal_price = models.FloatField(default=0)
 
     class Meta:

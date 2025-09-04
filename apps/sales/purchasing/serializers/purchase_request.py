@@ -83,6 +83,7 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
     contact = serializers.SerializerMethodField()
     purchase_request_product_datas = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseRequest
@@ -102,7 +103,8 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
             'pretax_amount',
             'taxes',
             'total_price',
-            'attachment'
+            'attachment',
+            'employee_inherit',
         )
 
     @classmethod
@@ -185,6 +187,10 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
     def get_attachment(cls, obj):
         att_objs = PurchaseRequestAttachmentFile.objects.select_related('attachment').filter(purchase_request=obj)
         return [item.attachment.get_detail() for item in att_objs]
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
 
 
 class PurchaseRequestProductSerializer(serializers.ModelSerializer):
