@@ -71,7 +71,6 @@ class ServiceOrderServiceDetail(MasterDataAbstractModel):
         null=True,
     )
     tax_data = models.JSONField()
-    tax_value = models.FloatField(default=0)
     sub_total_value = models.FloatField(default=0)
     total_value = models.FloatField(default=0)
 

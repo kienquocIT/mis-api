@@ -52,8 +52,29 @@ class ServiceOrderCommonFunc:
 
     @staticmethod
     def create_service_detail(service_order, service_detail_data):
-        ...
-
+        service_order_id = service_order.id
+        bulk_data = []
+        for service_detail in service_detail_data:
+            bulk_data.append({
+                'service_order_id': service_order_id,
+                'product_id': service_detail.product.get('id', None),
+                'order': service_detail.order,
+                'description': service_detail.description,
+                'quantity': service_detail.quantity,
+                'uom_id': service_detail.uom.get('id', None),
+                'uom_data': service_detail.uom_data,
+                'price': service_detail.price,
+                'tax_id': service_detail.tax.get('id', None),
+                'tax_data': service_detail.tax_data,
+                'sub_total_value': service_detail.sub_total_value,
+                'total_value': service_detail.total_value,
+                'delivery_balance_value': service_detail.delivery_balance_value,
+                'total_contribution_percent': service_detail.total_contribution_percent,
+                'total_payment_percent': service_detail.total_payment_percent,
+                'total_payment_value': service_detail.total_payment_value,
+            })
+        service_order.service_details.all().delete()
+        ServiceOrderServiceDetail.objects.bulk_create(bulk_data)
 
 # SHIPMENT
 class ServiceOderShipmentSerializer(serializers.Serializer):
@@ -218,7 +239,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             # attachment = validated_data.pop('attachment', [])
             service_order = ServiceOrder.objects.create(**validated_data)
             ServiceOrderCommonFunc.create_shipment(service_order.id, shipment)
-            ServiceOrderCommonFunc.create_service_detail(service_order.id, service_detail_data)
+            ServiceOrderCommonFunc.create_service_detail(service_order, service_detail_data)
             # ServiceOrderCommonFunc.create_attachment(service_order.id, attachment)
             # SerializerCommonHandle.handle_attach_file(
             #     relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
