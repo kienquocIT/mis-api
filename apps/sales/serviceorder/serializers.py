@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
@@ -213,20 +214,21 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
-        shipment_data = validated_data.pop('shipment', [])
-        expense_data = validated_data.pop('expense', [])
-        # attachment = validated_data.pop('attachment', [])
-        service_order_obj = ServiceOrder.objects.create(**validated_data)
-        ServiceOrderCommonFunc.create_shipment(service_order_obj, shipment_data)
-        ServiceOrderCommonFunc.create_expense(service_order_obj, expense_data)
-        # ServiceOrderCommonFunc.create_attachment(service_order.id, attachment)
-        # SerializerCommonHandle.handle_attach_file(
-        #     relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
-        #     model_cls=ServiceOrderAttachMapAttachFile,
-        #     instance=service_order,
-        #     attachment_result=attachment
-        # )
-        return service_order_obj
+        with transaction.atomic():
+            shipment_data = validated_data.pop('shipment', [])
+            expense_data = validated_data.pop('expense', [])
+            # attachment = validated_data.pop('attachment', [])
+            service_order_obj = ServiceOrder.objects.create(**validated_data)
+            ServiceOrderCommonFunc.create_shipment(service_order_obj, shipment_data)
+            ServiceOrderCommonFunc.create_expense(service_order_obj, expense_data)
+            # ServiceOrderCommonFunc.create_attachment(service_order.id, attachment)
+            # SerializerCommonHandle.handle_attach_file(
+            #     relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
+            #     model_cls=ServiceOrderAttachMapAttachFile,
+            #     instance=service_order,
+            #     attachment_result=attachment
+            # )
+            return service_order_obj
 
     class Meta:
         model = ServiceOrder
