@@ -157,3 +157,7 @@ class ReconMsg:
 class SVOMsg:
     CUSTOMER_NOT_EXIST = _('Customer does not exist')
     DATE_COMPARE_ERROR = _("End date must be after start date")
+    CONTAINER_NAME_NOT_EXIST = _('Container name is empty')
+    CONTAINER_REF_NOT_EXIST = _('Container reference number is empty')
+    PACKAGE_NAME_NOT_EXIST = _('Package name is empty')
+    PACKAGE_REF_NOT_EXIST = _('Package reference container is empty')
