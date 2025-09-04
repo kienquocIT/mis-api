@@ -73,7 +73,9 @@ class Attendance(MasterDataAbstractModel):
                 cls.objects.filter(employee_id=employee_id, date=date).delete()
 
                 # create new records
-                attendance_objs = cls.objects.bulk_create([cls(**data) for data in data_parse])
+                created_objs = cls.objects.bulk_create([cls(**data) for data in data_parse])
+                if created_objs:
+                    attendance_objs = created_objs
             print('push_attendance_data done.')
             return attendance_objs
         return attendance_objs
