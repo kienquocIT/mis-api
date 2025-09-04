@@ -144,6 +144,7 @@ INSTALLED_APPS = \
         'apps.hrm.employeeinfo',
         'apps.hrm.attendance',
         'apps.hrm.absenceexplanation',
+        'apps.hrm.overtimerequest',
     ] + [
         'apps.sales.financialcashflow',
         'apps.sales.reconciliation',
@@ -698,7 +699,7 @@ if ENABLE_PROD is True:
                 'OPTIONS': {
                     'charset': 'utf8mb4',
                 },
-                'CONN_MAX_AGE': 600,  # 60 * 10
+                'CONN_MAX_AGE': 1200,  # 60 * 10
             }
         }
     )

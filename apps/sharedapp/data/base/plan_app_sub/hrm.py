@@ -133,6 +133,43 @@ HRM_ABSENCE_EXPLANATION = {
     "allow_import": False,
 }
 
+HRM_OVERTIME_REQUEST = {
+    "id": "4a996500-fcc4-484f-be62-b3c73a2db927",
+    "title": "Overtime request",
+    "code": "overtimerequest",
+    "model_code": "overtimerequest",
+    "app_label": "overtimerequest",
+    "is_workflow": True,
+    "allow_permit": True,
+    # "option_permission": 1,
+    # "option_allowed": [4],
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+    },
+    "allow_import": False,
+    "allow_print": True,
+}
+
 Application_hrm_data = {
     "7436c857-ad09-4213-a190-c1c7472e99be": ApplicationConfigFrame(**EMPLOYEE_INFO).data(
         depend_follow_main=False,
@@ -143,6 +180,10 @@ Application_hrm_data = {
         filtering_inheritor=False,
     ),
     "8308d062-b22c-4f05-b88e-1115f9fe03ee": ApplicationConfigFrame(**HRM_ABSENCE_EXPLANATION).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "4a996500-fcc4-484f-be62-b3c73a2db927": ApplicationConfigFrame(**HRM_OVERTIME_REQUEST).data(
         depend_follow_main=False,
         filtering_inheritor=False,
     ),

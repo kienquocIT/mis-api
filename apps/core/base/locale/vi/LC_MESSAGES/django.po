@@ -124,3 +124,7 @@ msgstr "Thông tin nhân viên"
 #
 msgid "APP_Document approval"
 msgstr "Công văn phê duyệt"
+
+#
+msgid "APP_Overtime request"
+msgstr "Đăng ký làm ngoài giờ"
