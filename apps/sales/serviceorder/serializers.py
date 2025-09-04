@@ -1,10 +1,12 @@
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import Account
+from apps.masterdata.saledata.models import Account, Product, UnitOfMeasure, Tax
 from apps.sales.serviceorder.models import (
-    ServiceOrder, ServiceOrderAttachMapAttachFile, ServiceOrderShipment,
+    ServiceOrder, ServiceOrderAttachMapAttachFile, ServiceOrderShipment, ServiceOrderServiceDetail,
+    ServiceOrderWorkOrder,
 )
 from apps.shared import (
     AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel, AttachmentMsg,
@@ -48,6 +50,10 @@ class ServiceOrderCommonFunc:
         #     )
         pass
 
+    @staticmethod
+    def create_service_detail(service_order, service_detail_data):
+        ...
+
 
 # SHIPMENT
 class ServiceOderShipmentSerializer(serializers.Serializer):
@@ -71,6 +77,77 @@ class ServiceOderShipmentSerializer(serializers.Serializer):
             'reference_container'
         )
 
+# SERVICE DETAIL
+class ServiceOrderServiceDetailSerializer(serializers.Serializer):
+    product = serializers.UUIDField()
+    uom = serializers.UUIDField()
+    tax = serializers.UUIDField()
+
+    class Meta:
+        model = ServiceOrderServiceDetail
+        fields = (
+            'product',
+            'order',
+            'code',
+            'title',
+            'description',
+            'quantity',
+            'uom',
+            'uom_data',
+            'price',
+            'tax',
+            'tax_data',
+            'total_value',
+            'delivery_balance_value',
+            'total_contribution_percent',
+            'total_payment_percent',
+            'total_payment_value'
+        )
+
+    @classmethod
+    def validate_product(cls, value):
+        if value:
+            try:
+                product = Product.objects.get_on_company(id=value)
+                return product
+            except Product.DoesNotExist:
+                raise serializers.ValidationError({'product': _('Product does not exist')})
+        return None
+
+    @classmethod
+    def validate_uom(cls, value):
+        if value:
+            try:
+                uom = UnitOfMeasure.objects.get_on_company(id=value)
+                return uom
+            except UnitOfMeasure.DoesNotExist:
+                raise serializers.ValidationError({'uom': _('Unit of Measure does not exist')})
+        raise serializers.ValidationError({'uom': _('Unit of Measure is required')})
+
+    @classmethod
+    def validate_tax(cls, value):
+        if value:
+            try:
+                tax = Tax.objects.get_on_company(id=value)
+                return tax
+            except Tax.DoesNotExist:
+                raise serializers.ValidationError({'tax': _('Tax does not exist')})
+        raise serializers.ValidationError({'tax': _('Tax is required')})
+
+# WORK ORDER
+class ServiceOrderWorkOrderSerializer(serializers.Serializer):
+    product = serializers.UUIDField(allow_null=True)
+    code = serializers.CharField(allow_blank=True)
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
+
+    class Meta:
+        model = ServiceOrderWorkOrder
+        fields = (
+            'product',
+            'order',
+            'code'
+        )
 
 # MAIN
 class ServiceOrderListSerializer(AbstractListSerializerModel):
@@ -100,6 +177,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     end_date = serializers.DateField()
 
     shipment = ServiceOderShipmentSerializer(many=True)
+    service_detail_data = ServiceOrderServiceDetailSerializer(many=True)
     # attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     # def validate_attachment(self, value):
@@ -107,6 +185,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     #     return SerializerCommonValidate.validate_attachment(
     #         user=user, model_cls=ServiceOrderAttachMapAttachFile, value=value
     #     )
+
 
     @classmethod
     def validate_customer(cls, value):
@@ -135,9 +214,11 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     def create(self, validated_data):
         with transaction.atomic():
             shipment = validated_data.pop('shipment', [])
+            service_detail_data = validated_data.pop('service_detail_data', [])
             # attachment = validated_data.pop('attachment', [])
             service_order = ServiceOrder.objects.create(**validated_data)
             ServiceOrderCommonFunc.create_shipment(service_order.id, shipment)
+            ServiceOrderCommonFunc.create_service_detail(service_order.id, service_detail_data)
             # ServiceOrderCommonFunc.create_attachment(service_order.id, attachment)
             # SerializerCommonHandle.handle_attach_file(
             #     relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
@@ -155,6 +236,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             'start_date',
             'end_date',
             'shipment',
+            'service_detail_data'
             # 'attachment'
         )
 
