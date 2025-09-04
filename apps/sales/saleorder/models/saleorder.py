@@ -250,14 +250,18 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
         if instance.sale_order.filter(system_status__in=[1, 2, 3]).exists():
             return False
         # check delivery (if SO was used for OrderDelivery and all OrderDeliverySub is done => can't change)
+        # if hasattr(instance, 'delivery_of_sale_order'):
+        #     if not instance.delivery_of_sale_order.delivery_sub_order_delivery.filter(**{
+        #         'tenant_id': instance.tenant_id,
+        #         'company_id': instance.company_id,
+        #         'order_delivery__sale_order_id': instance.id,
+        #         'state__in': [0, 1]
+        #     }).exists():
+        #         return False
+
+        # check delivery (if SO was used for OrderDelivery => can't reject)
         if hasattr(instance, 'delivery_of_sale_order'):
-            if not instance.delivery_of_sale_order.delivery_sub_order_delivery.filter(**{
-                'tenant_id': instance.tenant_id,
-                'company_id': instance.company_id,
-                'order_delivery__sale_order_id': instance.id,
-                'state__in': [0, 1]
-            }).exists():
-                return False
+            return False
         return True
 
     @classmethod
