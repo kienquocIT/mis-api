@@ -20,6 +20,15 @@ __all__ = [
 ]
 
 
+def round_by_company_config(company, value):
+    round_num = None
+    if company:
+        company_config = company.config
+        if company_config:
+            round_num = int(company_config.currency_rule.get('precision', '0'))
+    return round(value, round_num) if round_num or round_num == 0 else value
+
+
 def handle_attach_file(instance, attachment_result):
     if attachment_result and isinstance(attachment_result, dict):
         relate_app = Application.objects.filter(id="1373e903-909c-4b77-9957-8bcf97e8d6d3").first()
@@ -50,13 +59,13 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product_subtotal(cls, obj):
-        return obj.product_cost * obj.picked_quantity
+        return round_by_company_config(company=obj.company, value=obj.product_cost * obj.picked_quantity)
 
     @classmethod
     def get_product_subtotal_after_tax(cls, obj):
         subtotal = obj.product_cost * obj.picked_quantity
         tax = subtotal * obj.tax_data.get('rate', 0) / 100
-        return subtotal + tax
+        return round_by_company_config(company=obj.company, value=subtotal + tax)
 
     class Meta:
         model = OrderDeliveryProduct
@@ -209,11 +218,13 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
         for delivery_product in obj.delivery_product_delivery_sub.all():
             subtotal = delivery_product.product_cost * delivery_product.picked_quantity
             pretax += subtotal
-        return pretax
+        return round_by_company_config(company=obj.company, value=pretax)
 
     @classmethod
     def get_pretax_amount_word(cls, obj):
-        return FORMATTING.number_to_vietnamese(number=OrderDeliverySubDetailSerializer.get_pretax_amount(obj=obj))
+        return FORMATTING.number_to_vietnamese(
+            number=OrderDeliverySubDetailSerializer.get_pretax_amount(obj=obj)
+        ).capitalize()
 
     @classmethod
     def get_tax_amount(cls, obj):
@@ -221,11 +232,13 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
         for delivery_product in obj.delivery_product_delivery_sub.all():
             subtotal = delivery_product.product_cost * delivery_product.picked_quantity
             tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
-        return tax
+        return round_by_company_config(company=obj.company, value=tax)
 
     @classmethod
     def get_tax_amount_word(cls, obj):
-        return FORMATTING.number_to_vietnamese(number=OrderDeliverySubDetailSerializer.get_tax_amount(obj=obj))
+        return FORMATTING.number_to_vietnamese(
+            number=OrderDeliverySubDetailSerializer.get_tax_amount(obj=obj)
+        ).capitalize()
 
     @classmethod
     def get_total_amount(cls, obj):
@@ -235,11 +248,13 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
             subtotal = delivery_product.product_cost * delivery_product.picked_quantity
             pretax += subtotal
             tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
-        return pretax + tax
+        return round_by_company_config(company=obj.company, value=pretax + tax)
 
     @classmethod
     def get_total_amount_word(cls, obj):
-        return FORMATTING.number_to_vietnamese(number=OrderDeliverySubDetailSerializer.get_total_amount(obj=obj))
+        return FORMATTING.number_to_vietnamese(
+            number=OrderDeliverySubDetailSerializer.get_total_amount(obj=obj)
+        ).capitalize()
 
     class Meta:
         model = OrderDeliverySub
