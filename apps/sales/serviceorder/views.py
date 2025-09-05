@@ -53,6 +53,7 @@ class ServiceOrderList(BaseListMixin, BaseCreateMixin):
         # label_code='serviceorder', model_code='serviceorder', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
@@ -81,4 +82,5 @@ class ServiceOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         # label_code='serviceorder', model_code='serviceorder', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)

@@ -161,3 +161,6 @@ class SVOMsg:
     CONTAINER_REF_NOT_EXIST = _('Container reference number is empty')
     PACKAGE_NAME_NOT_EXIST = _('Package name is empty')
     PACKAGE_REF_NOT_EXIST = _('Package reference container is empty')
+    EXPENSE_ITEM_NOT_EXIST = _('Expense item does not exist')
+    UOM_NOT_EXIST = _('Uom does not exist')
+    TAX_NOT_EXIST = _('Tax does not exist')

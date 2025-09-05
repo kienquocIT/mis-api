@@ -1,13 +1,15 @@
+from django.db import transaction
 from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import Account
+from apps.masterdata.saledata.models import Account, ExpenseItem, UnitOfMeasure, Tax
 from apps.sales.serviceorder.models import (
     ServiceOrder, ServiceOrderAttachMapAttachFile, ServiceOrderShipment, ServiceOrderContainer, ServiceOrderPackage,
+    ServiceOrderExpense,
 )
 from apps.shared import (
-    AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel, AttachmentMsg,
-    SVOMsg
+    AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel,
+    SVOMsg, SerializerCommonHandle, SerializerCommonValidate
 )
 
 __all__ = [
@@ -21,20 +23,6 @@ __all__ = [
 
 # COMMON FUNCTION
 class ServiceOrderCommonFunc:
-    @staticmethod
-    def create_attachment(doc_id, attachment_result):
-        if attachment_result and isinstance(attachment_result, dict):
-            relate_app = Application.objects.get(id="36f25733-a6e7-43ea-b710-38e2052f0f6d")
-            state = ServiceOrderAttachMapAttachFile.resolve_change(
-                result=attachment_result,
-                doc_id=doc_id,
-                doc_app=relate_app
-            )
-            if state:
-                return True
-            raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
-        return True
-
     @staticmethod
     def get_mapped_data(shipment_data_item):
         if shipment_data_item.get('is_container', True):
@@ -65,6 +53,7 @@ class ServiceOrderCommonFunc:
             item_data_parsed = ServiceOrderCommonFunc.get_mapped_data(shipment_data_item)
             shipment_obj = ServiceOrderShipment(service_order=service_order_obj, **item_data_parsed)
             bulk_info_shipment.append(shipment_obj)
+
             # get container
             ctn_order = 1
             if shipment_obj.is_container:
@@ -107,7 +96,45 @@ class ServiceOrderCommonFunc:
 
     @staticmethod
     def create_expense(service_order_obj, expense_data):
-        pass
+        bulk_info_expense = []
+        for expense_data_item in expense_data:
+            expense_item_obj = expense_data_item.get('expense_item')
+            uom_obj = expense_data_item.get('uom')
+            tax_obj = expense_data_item.get('tax')
+
+            expense_obj = ServiceOrderExpense(
+                service_order=service_order_obj,
+                title=expense_data_item.get('expense_name'),
+                expense_item=expense_item_obj,
+                expense_item_data={
+                    "id": str(expense_item_obj.id),
+                    "code": expense_item_obj.code,
+                    "title": expense_item_obj.title,
+                } if expense_item_obj else {},
+                uom=uom_obj,
+                uom_data={
+                    "id": str(uom_obj.id),
+                    "code": uom_obj.code,
+                    "title": uom_obj.title,
+                } if uom_obj else {},
+                quantity=expense_data_item.get('quantity', 0),
+                expense_price=expense_data_item.get('expense_price', 0),
+                tax=tax_obj,
+                tax_data={
+                    "id": str(tax_obj.id),
+                    "code": tax_obj.code,
+                    "title": tax_obj.title,
+                    "rate": tax_obj.rate
+                } if tax_obj else {},
+                subtotal_price=expense_data_item.get('subtotal', 0)
+            )
+            bulk_info_expense.append(expense_obj)
+
+        # bulk create expense
+        ServiceOrderExpense.objects.filter(service_order=service_order_obj).delete()
+        ServiceOrderExpense.objects.bulk_create(bulk_info_expense)
+
+        return True
 
 
 # SHIPMENT
@@ -148,7 +175,39 @@ class ServiceOderShipmentSerializer(serializers.Serializer):
 
 # EXPENSE
 class ServiceOrderExpenseSerializer(serializers.Serializer):
-    pass
+    expense_name = serializers.CharField()
+    expense_item = serializers.UUIDField(required=False, allow_null=True)
+    uom = serializers.UUIDField(required=False, allow_null=True)
+    quantity = serializers.FloatField(required=False, allow_null=True)
+    expense_price = serializers.FloatField(required=False, allow_null=True)
+    tax = serializers.UUIDField(required=False, allow_null=True)
+    subtotal = serializers.FloatField(required=False, allow_null=True)
+
+    @classmethod
+    def validate_expense_item(cls, value):
+        try:
+            expense_item_obj = ExpenseItem.objects.get(id=value)
+            return expense_item_obj
+        except ExpenseItem.DoesNotExist:
+            raise serializers.ValidationError({'expense_item': SVOMsg.EXPENSE_ITEM_NOT_EXIST})
+
+    @classmethod
+    def validate_uom(cls, value):
+        try:
+            uom_obj = UnitOfMeasure.objects.get(id=value)
+            return uom_obj
+        except UnitOfMeasure.DoesNotExist:
+            raise serializers.ValidationError({'uom': SVOMsg.UOM_NOT_EXIST})
+
+    @classmethod
+    def validate_tax(cls, value):
+        if value:
+            try:
+                tax_obj = Tax.objects.get(id=value)
+                return tax_obj
+            except Tax.DoesNotExist:
+                raise serializers.ValidationError({'tax': SVOMsg.TAX_NOT_EXIST})
+        return None
 
 
 # MAIN
@@ -161,7 +220,7 @@ class ServiceOrderListSerializer(AbstractListSerializerModel):
             'id',
             'title',
             'code',
-            'customer_data'
+            'customer_data',
             'date_created',
             'end_date',
             'employee_created',
@@ -180,13 +239,16 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     end_date = serializers.DateField()
     shipment = ServiceOderShipmentSerializer(many=True)
     expense = ServiceOrderExpenseSerializer(many=True)
-    # attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+    expense_pretax_value = serializers.FloatField(required=False, allow_null=True)
+    expense_tax_value = serializers.FloatField(required=False, allow_null=True)
+    expense_total_value = serializers.FloatField(required=False, allow_null=True)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
-    # def validate_attachment(self, value):
-    #     user = self.context.get('user', None)
-    #     return SerializerCommonValidate.validate_attachment(
-    #         user=user, model_cls=ServiceOrderAttachMapAttachFile, value=value
-    #     )
+    def validate_attachment(self, value):
+        user = self.context.get('user', None)
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=ServiceOrderAttachMapAttachFile, value=value
+        )
 
     @classmethod
     def validate_customer(cls, value):
@@ -213,20 +275,20 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
-        shipment_data = validated_data.pop('shipment', [])
-        expense_data = validated_data.pop('expense', [])
-        # attachment = validated_data.pop('attachment', [])
-        service_order_obj = ServiceOrder.objects.create(**validated_data)
-        ServiceOrderCommonFunc.create_shipment(service_order_obj, shipment_data)
-        ServiceOrderCommonFunc.create_expense(service_order_obj, expense_data)
-        # ServiceOrderCommonFunc.create_attachment(service_order.id, attachment)
-        # SerializerCommonHandle.handle_attach_file(
-        #     relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
-        #     model_cls=ServiceOrderAttachMapAttachFile,
-        #     instance=service_order,
-        #     attachment_result=attachment
-        # )
-        return service_order_obj
+        with transaction.atomic():
+            shipment_data = validated_data.pop('shipment', [])
+            expense_data = validated_data.pop('expense', [])
+            attachment = validated_data.pop('attachment', [])
+            service_order_obj = ServiceOrder.objects.create(**validated_data)
+            ServiceOrderCommonFunc.create_shipment(service_order_obj, shipment_data)
+            ServiceOrderCommonFunc.create_expense(service_order_obj, expense_data)
+            SerializerCommonHandle.handle_attach_file(
+                relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
+                model_cls=ServiceOrderAttachMapAttachFile,
+                instance=service_order_obj,
+                attachment_result=attachment
+            )
+            return service_order_obj
 
     class Meta:
         model = ServiceOrder
@@ -236,8 +298,11 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             'start_date',
             'end_date',
             'shipment',
-            'expense'
-            # 'attachment'
+            'expense',
+            'expense_pretax_value',
+            'expense_tax_value',
+            'expense_total_value',
+            'attachment'
         )
 
 
