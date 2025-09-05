@@ -8,7 +8,7 @@ from apps.sales.serviceorder.models import (
     ServiceOrderExpense,
 )
 from apps.shared import (
-    AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel, AttachmentMsg,
+    AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel,
     SVOMsg, SerializerCommonHandle, SerializerCommonValidate
 )
 
