@@ -50,7 +50,7 @@ APP_MAP_DATA = {
         'title': 'Tasks', 'url': 'task/list'
     },
     'overtimerequest.overtimerequest': {
-        'title': 'Overtime request', 'url': 'overtime-request/detail/'
+        'title': 'Overtime request', 'url': 'hrm/overtime-request/detail/'
     },
 }
 

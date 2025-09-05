@@ -571,6 +571,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             'contractapproval': 'CA[n4]',
             'productionorder': 'PO[n4]',
             'workorder': 'WO[n4]',
+            'overtimerequest': 'OT[n4]',
         }
 
         parsed_code = ''
