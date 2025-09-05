@@ -362,15 +362,6 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
         return shipment_list
 
     @classmethod
-    def get_expense(cls, obj):
-        expense_list = obj.service_order_expense_service_order.all().select_related(
-            'expense_item',
-            'uom',
-            'tax'
-        )
-        pass
-
-    @classmethod
     def get_employee_inherit(cls, obj):
         return {
             'id': obj.employee_inherit_id,
