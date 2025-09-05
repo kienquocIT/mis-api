@@ -33,7 +33,8 @@ class ServiceOrderCommonFunc:
                 'dimension': shipment_data_item.get('containerDimension', 0),
                 'description': shipment_data_item.get('containerNote'),
                 'is_container': True,
-                'reference_container': None
+                'reference_container': None,
+                'container_type_id': str(shipment_data_item.get("containerType", {}).get("id"))
             }
         return {
             'title': shipment_data_item.get('packageName', ''),
@@ -43,6 +44,7 @@ class ServiceOrderCommonFunc:
             'description': shipment_data_item.get('packageNote'),
             'is_container': False,
             'reference_container': shipment_data_item.get('packageContainerRef'),
+            'package_type_id': str(shipment_data_item.get("packageType", {}).get("id")),
         }
 
     @staticmethod
@@ -51,16 +53,24 @@ class ServiceOrderCommonFunc:
         bulk_info_container = []
         for _, shipment_data_item in enumerate(shipment_data):
             item_data_parsed = ServiceOrderCommonFunc.get_mapped_data(shipment_data_item)
-            shipment_obj = ServiceOrderShipment(service_order=service_order_obj, **item_data_parsed)
+            shipment_obj = ServiceOrderShipment(
+                service_order=service_order_obj,
+                company=service_order_obj.company,
+                tenant=service_order_obj.tenant,
+                **item_data_parsed
+            )
             bulk_info_shipment.append(shipment_obj)
 
             # get container
             ctn_order = 1
             if shipment_obj.is_container:
                 bulk_info_container.append(ServiceOrderContainer(
+                    service_order=service_order_obj,
                     shipment=shipment_obj,
                     order=ctn_order,
-                    container_type_id=shipment_data_item.get("containerType", {}).get("id")
+                    container_type_id=str(shipment_data_item.get("containerType", {}).get("id")),
+                    company=service_order_obj.company,
+                    tenant=service_order_obj.tenant,
                 ))
                 ctn_order += 1
 
@@ -83,10 +93,13 @@ class ServiceOrderCommonFunc:
                         ctn_mapped = ctn
                 if ctn_mapped:
                     bulk_info_packages.append(ServiceOrderPackage(
+                        service_order=service_order_obj,
                         shipment=ctn_mapped.shipment,
                         order=pkg_order,
                         package_type_id=str(shipment_data_item.get("packageType", {}).get("id")),
-                        container_reference_id=str(ctn_mapped.id)
+                        container_reference_id=str(ctn_mapped.id),
+                        company=service_order_obj.company,
+                        tenant=service_order_obj.tenant,
                     ))
                     pkg_order += 1
 
@@ -307,12 +320,83 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
 
 
 class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
+    shipment = serializers.SerializerMethodField()
+    expense = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_shipment(cls, obj):
+        shipment_list = []
+        for item in obj.service_order_shipment_service_order.all():
+            is_container = item.is_container
+            if is_container:
+                shipment_list.append({
+                    'id': str(item.id),
+                    'containerName': item.title,
+                    'containerType': {
+                        'id': str(item.container_type.id),
+                        'code': item.container_type.code,
+                        'title': item.container_type.title,
+                    } if item.container_type else {},
+                    'containerRefNumber': item.reference_number,
+                    'containerWeight': item.weight,
+                    'containerDimension': item.dimension,
+                    'containerNote': item.description,
+                    'is_container': True
+                })
+            else:
+                shipment_list.append({
+                    'id': str(item.id),
+                    'packageName': item.title,
+                    'packageType': {
+                        'id': str(item.package_type.id),
+                        'code': item.package_type.code,
+                        'title': item.package.title,
+                    },
+                    'packageRefNumber': item.reference_number,
+                    'packageWeight': item.weight,
+                    'packageDimension': item.dimension,
+                    'packageNote': item.description,
+                    'is_container': False
+                })
+        return shipment_list
+
+    @classmethod
+    def get_expense(cls, obj):
+        expense_list = obj.service_order_expense_service_order.all().select_related(
+            'expense_item',
+            'uom',
+            'tax'
+        )
+        pass
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'full_name': obj.employee_inherit.get_full_name()
+        } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_attachment(cls, obj):
+        return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
+
     class Meta:
         model = ServiceOrder
         fields = (
             'id',
             'code',
             'title',
+            'date_created',
+            'customer_data',
+            'start_date',
+            'end_date',
+            'shipment',
+            'expense',
+            'expense_pretax_value',
+            'expense_tax_value',
+            'expense_total_value',
+            'attachment'
         )
 
 
