@@ -49,6 +49,9 @@ APP_MAP_DATA = {
     'task.opportunitytask': {
         'title': 'Tasks', 'url': 'task/list'
     },
+    'overtimerequest.overtimerequest': {
+        'title': 'Overtime request', 'url': 'overtime-request/detail/'
+    },
 }
 
 WORKFLOW_TYPE_MAP_TXT = {
@@ -214,5 +217,22 @@ class MailDataResolver:
                 'employee_inherit': employee_inherit,
                 'assigner': assigner,
                 'links': f'{full_domain}/{app_url}?task_id={doc_id}'
+            },
+        }
+
+    @classmethod
+    def new_overtime(cls, tenant_obj, doc_id, app_code, start_date, end_date, start_time, end_time):
+        full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{tenant_obj.code.lower()}{settings.UI_DOMAIN_SUFFIX}'
+        if settings.UI_FIXED_DOMAIN:
+            full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{settings.UI_DOMAIN}'
+        app_url = APP_MAP_DATA.get(app_code, {}).get('url', '')
+
+        return {
+            '_ot': {
+                'links': f'{full_domain}/{app_url}{doc_id}',
+                'start_date': start_date,
+                'end_date': end_date,
+                'start_time': start_time,
+                'end_time': end_time,
             },
         }
