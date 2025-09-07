@@ -199,7 +199,7 @@ class ServiceOrderPayment(MasterDataAbstractModel):
         related_name="payments"
     )
     installment = models.PositiveIntegerField(default=0)
-    description = models.TextField()
+    description = models.TextField(blank=True)
     payment_type = models.PositiveSmallIntegerField(choices=PAYMENT_TYPE)
     is_invoice_required = models.BooleanField(default=False)
     payment_value = models.FloatField(default=0)
@@ -250,15 +250,16 @@ class ServiceOrderPaymentDetail(SimpleAbstractModel):
 
 
 class ServiceOrderPaymentReconcile(SimpleAbstractModel):
-    advance_payment = models.ForeignKey(
-        'ServiceOrderPayment',
+    advance_payment_detail = models.ForeignKey(
+        'ServiceOrderPaymentDetail',
         on_delete=models.CASCADE,
-        related_name="advance_payment_reconciles"
+        help_text="the advance payment detail mapping with this reconcile record"
     )
     payment_detail = models.ForeignKey(
         'ServiceOrderPaymentDetail',
         on_delete=models.CASCADE,
-        related_name="payment_detail_reconciles"
+        related_name="payment_detail_reconciles",
+        help_text="the payment detail contains this reconcile record"
     )
     service_detail = models.ForeignKey(
         'ServiceOrderServiceDetail',
