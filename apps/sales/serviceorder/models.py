@@ -2,6 +2,7 @@ from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
+from apps.shared import MasterDataAbstractModel, DataAbstractModel
 from apps.masterdata.saledata.models import Tax, UnitOfMeasure, Currency, Product
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel
 
@@ -291,6 +292,20 @@ class ServiceOrderShipment(MasterDataAbstractModel):
     description = models.TextField(blank=True, help_text="Note")
     reference_container = models.CharField(max_length=100, null=True, help_text="Only use for package")
     is_container = models.BooleanField(default=True)
+    container_type = models.ForeignKey(
+        'saledata.ContainerTypeInfo',
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name="Container type",
+        related_name="service_order_shipment_container_type"
+    )
+    package_type = models.ForeignKey(
+        'saledata.PackageTypeInfo',
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name="Package type",
+        help_text="service_order_shipment_package_type"
+    )
 
     class Meta:
         verbose_name = 'Service order shipment'
@@ -300,8 +315,13 @@ class ServiceOrderShipment(MasterDataAbstractModel):
         permissions = ()
 
 
-class ServiceOrderContainer(SimpleAbstractModel):
+class ServiceOrderContainer(MasterDataAbstractModel):
     order = models.IntegerField(default=1)
+    service_order = models.ForeignKey(
+        ServiceOrder,
+        on_delete=models.CASCADE,
+        related_name="service_order_containers"
+    )
     shipment = models.ForeignKey(
         ServiceOrderShipment,
         on_delete=models.CASCADE,
@@ -323,8 +343,13 @@ class ServiceOrderContainer(SimpleAbstractModel):
         permissions = ()
 
 
-class ServiceOrderPackage(SimpleAbstractModel):
+class ServiceOrderPackage(MasterDataAbstractModel):
     order = models.IntegerField(default=1)
+    service_order = models.ForeignKey(
+        ServiceOrder,
+        on_delete=models.CASCADE,
+        related_name="service_order_packages"
+    )
     shipment = models.ForeignKey(
         ServiceOrderShipment,
         on_delete=models.CASCADE,
