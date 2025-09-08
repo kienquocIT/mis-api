@@ -747,7 +747,6 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
 
 class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
     shipment = serializers.SerializerMethodField()
-    # expense = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
     service_detail_data = serializers.SerializerMethodField()
     work_order_data = serializers.SerializerMethodField()
@@ -929,30 +928,6 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
 
         } for payment in obj.payments.all()]
 
-    # @classmethod
-    # def get_expense(cls, obj):
-    #     expense_list = []
-    #     for item in obj.service_order_expense_service_order.all():
-    #         expense_list.append(
-    #             {
-    #                 'id': str(item.id),
-    #                 'containerName': item.title,
-    #                 'containerType': {
-    #                     'id': str(item.container_type.id),
-    #                     'code': item.container_type.code,
-    #                     'title': item.container_type.title,
-    #                 } if item.container_type else {},
-    #                 'containerRefNumber': item.reference_number,
-    #                 'containerWeight': item.weight,
-    #                 'containerDimension': item.dimension,
-    #                 'containerNote': item.description,
-    #                 'referenceContainer': item.reference_container,
-    #                 'is_container': True,
-    #                 'order': item.order
-    #             }
-    #         )
-    #     return expense_list
-
     class Meta:
         model = ServiceOrder
         fields = (
@@ -964,7 +939,6 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'start_date',
             'end_date',
             'shipment',
-            # 'expense',
             'expense_pretax_value',
             'expense_tax_value',
             'expense_total_value',
