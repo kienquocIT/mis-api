@@ -49,11 +49,12 @@ class ServiceOrderShipment(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name="service_order_shipment_service_order"
     )
-    reference_number = models.CharField(max_length=100, null=True)  # Package can allow null
+    order = models.IntegerField(default=1)
+    reference_number = models.CharField(max_length=100, null=True, blank=True)  # Package can allow null
     weight = models.FloatField(default=0, verbose_name="Weight (kg)")
     dimension = models.FloatField(default=0, verbose_name="Dimension")
     description = models.TextField(blank=True, help_text="Note")
-    reference_container = models.CharField(max_length=100, null=True, help_text="Only use for package")
+    reference_container = models.CharField(max_length=100, null=True, blank=True, help_text="Only use for package")
     is_container = models.BooleanField(default=True)
     container_type = models.ForeignKey(
         'saledata.ContainerTypeInfo',

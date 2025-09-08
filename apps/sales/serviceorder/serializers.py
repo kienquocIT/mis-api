@@ -17,7 +17,7 @@ __all__ = [
     'ServiceOrderDetailSerializer',
     'ServiceOrderCreateSerializer',
     'ServiceOrderUpdateSerializer',
-    'ServiceOderShipmentSerializer'
+    'ServiceOrderShipmentSerializer'
 ]
 
 
@@ -51,10 +51,13 @@ class ServiceOrderCommonFunc:
     def create_shipment(service_order_obj, shipment_data):
         bulk_info_shipment = []
         bulk_info_container = []
+        ctn_shipment = 1
+        ctn_order = 1
         for _, shipment_data_item in enumerate(shipment_data):
             item_data_parsed = ServiceOrderCommonFunc.get_mapped_data(shipment_data_item)
             shipment_obj = ServiceOrderShipment(
                 service_order=service_order_obj,
+                order=ctn_shipment,
                 company=service_order_obj.company,
                 tenant=service_order_obj.tenant,
                 **item_data_parsed
@@ -62,7 +65,6 @@ class ServiceOrderCommonFunc:
             bulk_info_shipment.append(shipment_obj)
 
             # get container
-            ctn_order = 1
             if shipment_obj.is_container:
                 bulk_info_container.append(ServiceOrderContainer(
                     service_order=service_order_obj,
@@ -73,6 +75,7 @@ class ServiceOrderCommonFunc:
                     tenant=service_order_obj.tenant,
                 ))
                 ctn_order += 1
+            ctn_shipment += 1
 
         # bulk create shipments
         ServiceOrderShipment.objects.filter(service_order=service_order_obj).delete()
@@ -83,9 +86,9 @@ class ServiceOrderCommonFunc:
 
         # create package part
         bulk_info_packages = []
+        pkg_order = 1
         for _, shipment_data_item in enumerate(shipment_data):
             # get package
-            pkg_order = 1
             if not shipment_data_item.get('is_container'):
                 ctn_mapped = None
                 for ctn in container_created:
@@ -151,39 +154,74 @@ class ServiceOrderCommonFunc:
 
 
 # SHIPMENT
-class ServiceOderShipmentSerializer(serializers.Serializer):
-    is_container = serializers.BooleanField(default=True)
+# class ServiceOderShipmentSerializer(serializers.Serializer):
+#     is_container = serializers.BooleanField(default=True)
+#
+#     # container field
+#     containerName = serializers.CharField(max_length=100, required=False, allow_null=True)
+#     containerRefNumber = serializers.CharField(max_length=100, required=False, allow_null=True)
+#     containerWeight = serializers.FloatField(required=False, allow_null=True)
+#     containerDimension = serializers.FloatField(required=False, allow_null=True)
+#     containerNote = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+#     containerType = serializers.JSONField(required=False, allow_null=True)
+#
+#     packageName = serializers.CharField(max_length=100, required=False, allow_null=True)
+#     packageRefNumber = serializers.CharField(max_length=100, required=False, allow_null=True)
+#     packageWeight = serializers.FloatField(required=False, allow_null=True)
+#     packageDimension = serializers.FloatField(required=False, allow_null=True)
+#     packageNote = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+#     packageContainerRef = serializers.CharField(max_length=100, required=False, allow_null=True)
+#     packageType = serializers.JSONField(required=False, allow_null=True)
+#
+#     def validate(self, validate_data):
+#         if validate_data.get('is_container', True):
+#             if not validate_data.get('containerName'):
+#                 raise serializers.ValidationError({'container name': SVOMsg.CONTAINER_NAME_NOT_EXIST})
+#             if not validate_data.get('containerRefNumber'):
+#                 raise serializers.ValidationError({'Container Reference Number': SVOMsg.CONTAINER_REF_NOT_EXIST})
+#
+#         else:
+#             if not validate_data.get('packageName'):
+#                 raise serializers.ValidationError({'Package Name': SVOMsg.PACKAGE_NAME_NOT_EXIST})
+#             if not validate_data.get('packageContainerRef'):
+#                 raise serializers.ValidationError({'Package Reference Container': SVOMsg.PACKAGE_REF_NOT_EXIST})
+#
+#         return validate_data
 
-    # container field
-    containerName = serializers.CharField(max_length=100, required=False, allow_null=True)
-    containerRefNumber = serializers.CharField(max_length=100, required=False, allow_null=True)
-    containerWeight = serializers.FloatField(required=False, allow_null=True)
-    containerDimension = serializers.FloatField(required=False, allow_null=True)
-    containerNote = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    containerType = serializers.JSONField(required=False, allow_null=True)
-
-    packageName = serializers.CharField(max_length=100, required=False, allow_null=True)
-    packageRefNumber = serializers.CharField(max_length=100, required=False, allow_null=True)
-    packageWeight = serializers.FloatField(required=False, allow_null=True)
-    packageDimension = serializers.FloatField(required=False, allow_null=True)
-    packageNote = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    packageContainerRef = serializers.CharField(max_length=100, required=False, allow_null=True)
-    packageType = serializers.JSONField(required=False, allow_null=True)
+class ServiceOrderShipmentSerializer(serializers.ModelSerializer):
+    container_type = serializers.JSONField(required=False, allow_null=True)
+    package_type = serializers.JSONField(required=False, allow_null=True)
 
     def validate(self, validate_data):
         if validate_data.get('is_container', True):
-            if not validate_data.get('containerName'):
+            if not validate_data.get('title'):
                 raise serializers.ValidationError({'container name': SVOMsg.CONTAINER_NAME_NOT_EXIST})
-            if not validate_data.get('containerRefNumber'):
+            if not validate_data.get('reference_number'):
                 raise serializers.ValidationError({'Container Reference Number': SVOMsg.CONTAINER_REF_NOT_EXIST})
-
         else:
-            if not validate_data.get('packageName'):
+            if not validate_data.get('title'):
                 raise serializers.ValidationError({'Package Name': SVOMsg.PACKAGE_NAME_NOT_EXIST})
-            if not validate_data.get('packageContainerRef'):
+            if not validate_data.get('reference_container'):
                 raise serializers.ValidationError({'Package Reference Container': SVOMsg.PACKAGE_REF_NOT_EXIST})
 
         return validate_data
+
+    class Meta:
+        model = ServiceOrderShipment
+        fields = (
+            'id',
+            'code',
+            'title',
+            'order',
+            'reference_number',
+            'weight',
+            'dimension',
+            'description',
+            'reference_container',
+            'is_container',
+            'container_type',
+            'package_type'
+        )
 
 
 # EXPENSE
@@ -250,7 +288,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     customer = serializers.UUIDField()
     start_date = serializers.DateField()
     end_date = serializers.DateField()
-    shipment = ServiceOderShipmentSerializer(many=True)
+    shipment = ServiceOrderShipmentSerializer(many=True)
     expense = ServiceOrderExpenseSerializer(many=True)
     expense_pretax_value = serializers.FloatField(required=False, allow_null=True)
     expense_tax_value = serializers.FloatField(required=False, allow_null=True)
@@ -321,7 +359,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
 
 class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
     shipment = serializers.SerializerMethodField()
-    expense = serializers.SerializerMethodField()
+    # expense = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
 
     @classmethod
@@ -342,6 +380,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                     'containerWeight': item.weight,
                     'containerDimension': item.dimension,
                     'containerNote': item.description,
+                    'referenceContainer': item.reference_container,
                     'is_container': True
                 })
             else:
@@ -351,12 +390,13 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                     'packageType': {
                         'id': str(item.package_type.id),
                         'code': item.package_type.code,
-                        'title': item.package.title,
+                        'title': item.package_type.title,
                     },
                     'packageRefNumber': item.reference_number,
                     'packageWeight': item.weight,
                     'packageDimension': item.dimension,
                     'packageNote': item.description,
+                    'referenceContainer': item.reference_container,
                     'is_container': False
                 })
         return shipment_list
@@ -383,7 +423,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'start_date',
             'end_date',
             'shipment',
-            'expense',
+            # 'expense',
             'expense_pretax_value',
             'expense_tax_value',
             'expense_total_value',
