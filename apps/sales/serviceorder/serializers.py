@@ -161,6 +161,8 @@ class ServiceOrderCommonFunc:
         for service_detail in service_detail_data:
             bulk_data.append(ServiceOrderServiceDetail(
                 service_order_id=service_order_id,
+                title=service_detail.get('title'),
+                code=service_detail.get('code'),
                 product_id=service_detail.get('product').id if service_detail.get('product') else None,
                 order=service_detail.get('order'),
                 description=service_detail.get('description'),
@@ -195,6 +197,8 @@ class ServiceOrderCommonFunc:
         for work_order in work_order_data:
             instance = ServiceOrderWorkOrder(
                 service_order_id=service_order_id,
+                title=work_order.get('title'),
+                code=work_order.get('code'),
                 product_id=work_order.get('product').id if work_order.get('product') else None,
                 order=work_order.get('order'),
                 start_date=work_order.get('start_date'),
@@ -251,6 +255,7 @@ class ServiceOrderCommonFunc:
                 service_detail_id=service_detail_uuid,
                 order=contribution.get('order', 0),
                 title=contribution.get('title', ''),
+                is_selected=contribution.get('is_selected', False),
                 contribution_percent=contribution.get('contribution_percent', 0),
                 balance_quantity=contribution.get('balance_quantity', 0),
                 delivered_quantity=contribution.get('delivered_quantity', 0),
@@ -353,6 +358,7 @@ class ServiceOrderCommonFunc:
                 reconcile_value=reconcile.get('reconcile_value', 0)
             ))
         ServiceOrderPaymentReconcile.objects.bulk_create(bulk_data)
+
 
 # SHIPMENT
 class ServiceOderShipmentSerializer(serializers.Serializer):
@@ -547,9 +553,10 @@ class ServiceOrderWorkOrderSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'work_order_cost': _('Tax of work order cost is missing')})
         return cost_data
 
+
 # PAYMENT
 class ServiceOrderPaymentSerializer(serializers.ModelSerializer):
-    payment_detail_data = serializers.JSONField()
+    payment_detail_data = serializers.JSONField(required=False)
     reconcile_data = serializers.JSONField()
 
     class Meta:
@@ -592,6 +599,7 @@ class ServiceOrderListSerializer(AbstractListSerializerModel):
         return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
 
+
 class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     customer = serializers.UUIDField()
@@ -605,7 +613,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     service_detail_data = ServiceOrderServiceDetailSerializer(many=True)
     work_order_data = ServiceOrderWorkOrderSerializer(many=True)
     payment_data = ServiceOrderPaymentSerializer(many=True)
-    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+    # attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
@@ -672,17 +680,21 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             'expense_pretax_value',
             'expense_tax_value',
             'expense_total_value',
-            'attachment',
+            # 'attachment',
             'service_detail_data',
             'work_order_data',
             'payment_data'
         )
 
 
+
 class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
     shipment = serializers.SerializerMethodField()
-    expense = serializers.SerializerMethodField()
+    # expense = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
+    service_detail_data = serializers.SerializerMethodField()
+    work_order_data = serializers.SerializerMethodField()
+    payment_data = serializers.SerializerMethodField()
 
     @classmethod
     def get_shipment(cls, obj):
@@ -732,6 +744,125 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
     def get_attachment(cls, obj):
         return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
 
+    @classmethod
+    def get_service_detail_data(cls, obj):
+        return [{
+            'id': service_detail.id,
+            'title': service_detail.title,
+            'code': service_detail.code,
+            'product_id': service_detail.product_id if service_detail.product else None,
+            'product': {
+                'id': service_detail.product.id,
+                'title': service_detail.product.title
+            } if service_detail.product else None,
+            'order': service_detail.order,
+            'description': service_detail.description,
+            'quantity': service_detail.quantity,
+            'uom_title': service_detail.uom_data.get('title', ''),
+            'uom_data': service_detail.uom_data,
+            'price': service_detail.price,
+            'tax_data': service_detail.tax_data,
+            'tax_code': service_detail.tax_data.get('code', ''),
+            'sub_total_value': service_detail.sub_total_value,
+            'total_value': service_detail.total_value,
+            'delivery_balance_value': service_detail.delivery_balance_value,
+            'total_contribution_percent': service_detail.total_contribution_percent,
+            'total_payment_percent': service_detail.total_payment_percent,
+            'total_payment_value': service_detail.total_payment_value,
+        } for service_detail in obj.service_details.all()]
+
+    @classmethod
+    def get_work_order_data(cls, obj):
+        return [{
+            'id': work_order.id,
+            'title': work_order.title,
+            'code': work_order.code,
+            'product_id': work_order.product_id if work_order.product else None,
+            'product': {
+                'id': work_order.product.id,
+                'name': work_order.product.title
+            } if work_order.product else None,
+            'order': work_order.order,
+            'start_date': work_order.start_date,
+            'end_date': work_order.end_date,
+            'is_delivery_point': work_order.is_delivery_point,
+            'quantity': work_order.quantity,
+            'unit_cost': work_order.unit_cost,
+            'total_value': work_order.total_value,
+            'work_status': work_order.work_status,
+
+            # nested costs
+            'cost_data': [{
+                'id': cost.id,
+                'order': cost.order,
+                'title': cost.title,
+                'description': cost.description,
+                'quantity': cost.quantity,
+                'unit_cost': cost.unit_cost,
+                'currency_id': cost.currency_id,
+                'tax_id': cost.tax_id,
+                'total_value': cost.total_value,
+                'exchanged_total_value': cost.exchanged_total_value,
+            } for cost in work_order.work_order_costs.all()],
+
+            # nested contributions
+            'product_contribution_data': [{
+                'id': contribution.id,
+                'service_id': contribution.service_detail_id,
+                'order': contribution.order,
+                'title': contribution.title,
+                'is_selected': contribution.is_selected,
+                'contribution_percent': contribution.contribution_percent,
+                'balance_quantity': contribution.balance_quantity,
+                'delivered_quantity': contribution.delivered_quantity,
+            } for contribution in work_order.work_order_contributions.all()]
+
+        } for work_order in obj.work_orders.all()]
+
+    @classmethod
+    def get_payment_data(cls, obj):
+        return [{
+            'id': str(payment.id),
+            'installment': payment.installment,
+            'description': payment.description,
+            'payment_type': payment.payment_type,
+            'is_invoice_required': payment.is_invoice_required,
+            'payment_value': payment.payment_value,
+            'tax_value': payment.tax_value,
+            'reconcile_value': payment.reconcile_value,
+            'receivable_value': payment.receivable_value,
+            'due_date': payment.due_date,
+
+            # nested details
+            'payment_detail_data': [{
+                'id': detail.id,
+                'service_id': detail.service_detail_id,
+                'title': detail.title,
+                'sub_total_value': detail.sub_total_value,
+                'payment_percent': detail.payment_percent,
+                'payment_value': detail.payment_value,
+                'total_reconciled_value': detail.total_reconciled_value,
+                'issued_value': detail.issued_value,
+                'balance_value': detail.balance_value,
+                'tax_value': detail.tax_value,
+                'reconcile_value': detail.reconcile_value,
+                'receivable_value': detail.receivable_value,
+
+                # nested reconciles
+                'reconcile_data': [{
+                    'id': reconcile.id,
+                    'advance_payment_detail_id': reconcile.advance_payment_detail_id,
+                    'advance_payment_id': reconcile.advance_payment_detail.service_order_payment.id if reconcile.advance_payment_detail.service_order_payment else None,
+                    'payment_detail_id': reconcile.payment_detail_id,
+                    'service_id': reconcile.service_detail_id if reconcile.service_detail else None,
+                    'installment': reconcile.installment,
+                    'total_value': reconcile.total_value,
+                    'reconcile_value': reconcile.reconcile_value,
+                } for reconcile in detail.payment_detail_reconciles.all()]
+            } for detail in payment.payment_details.all()]
+
+        } for payment in obj.payments.all()]
+
     class Meta:
         model = ServiceOrder
         fields = (
@@ -743,12 +874,16 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'start_date',
             'end_date',
             'shipment',
-            'expense',
+            # 'expense',
             'expense_pretax_value',
             'expense_tax_value',
             'expense_total_value',
-            'attachment'
+            'attachment',
+            'service_detail_data',
+            'work_order_data',
+            'payment_data'
         )
+
 
 
 class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):

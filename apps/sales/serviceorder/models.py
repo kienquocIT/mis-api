@@ -173,6 +173,7 @@ class ServiceOrderWorkOrderContribution(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name="service_detail_contributions"
     )
+    is_selected = models.BooleanField(default=False)
     order = models.IntegerField(default=0)
     title = models.CharField(max_length=150, blank=True)
     contribution_percent = models.FloatField(default=0)
