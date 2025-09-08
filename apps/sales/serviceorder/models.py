@@ -2,7 +2,8 @@ from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
-from apps.shared import MasterDataAbstractModel, DataAbstractModel
+from apps.masterdata.saledata.models import Tax, UnitOfMeasure, Currency, Product
+from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel
 
 
 class ServiceOrder(DataAbstractModel):
@@ -38,6 +39,242 @@ class ServiceOrder(DataAbstractModel):
         verbose_name = 'Service Order'
         verbose_name_plural = 'Service Orders'
         ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+# service detail tab
+class ServiceOrderServiceDetail(MasterDataAbstractModel):
+    service_order = models.ForeignKey(
+        ServiceOrder,
+        on_delete=models.CASCADE,
+        related_name="service_details"
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+    order = models.IntegerField(default=0)
+    description = models.TextField(blank=True)
+    quantity = models.PositiveIntegerField(default=0)
+    uom = models.ForeignKey(
+        UnitOfMeasure,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+    uom_data = models.JSONField(default=dict)
+    price = models.FloatField(default=0)
+    tax = models.ForeignKey(
+        Tax,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+    tax_data = models.JSONField()
+    sub_total_value = models.FloatField(default=0)
+    total_value = models.FloatField(default=0)
+
+    # data related to work order
+    delivery_balance_value = models.FloatField(default=0)
+    total_contribution_percent = models.FloatField(default=0)
+
+    #data related to payment
+    total_payment_percent = models.FloatField(default=0)
+    total_payment_value = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Service order service detail'
+        verbose_name_plural = 'Service order service details'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+# work order tab
+WORK_ORDER_STATUS = (
+    (0, 'pending'),
+    (1, 'in_progress'),
+    (2, 'completed'),
+    (3, 'cancelled'),
+)
+
+class ServiceOrderWorkOrder(MasterDataAbstractModel):
+    service_order = models.ForeignKey(
+        ServiceOrder,
+        on_delete=models.CASCADE,
+        related_name="work_orders"
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+    order = models.IntegerField(default=0)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    is_delivery_point = models.BooleanField(default=False)
+    quantity = models.IntegerField(default=0)
+    unit_cost = models.FloatField(default=0)
+    total_value = models.FloatField(default=0)
+    work_status = models.PositiveSmallIntegerField(
+        default=0,
+        choices=WORK_ORDER_STATUS
+    )
+
+    class Meta:
+        verbose_name = 'Service order work order'
+        verbose_name_plural = 'Service order work orders'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class ServiceOrderWorkOrderCost(SimpleAbstractModel):
+    work_order = models.ForeignKey(
+        'ServiceOrderWorkOrder',
+        on_delete=models.CASCADE,
+        related_name="work_order_costs"
+    )
+    order = models.IntegerField(default=0)
+    title = models.CharField(max_length=100, blank=True)
+    description = models.TextField()
+    quantity = models.PositiveIntegerField(default=0)
+    unit_cost = models.FloatField(default=0)
+    currency = models.ForeignKey(
+        Currency,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+    tax = models.ForeignKey(
+        Tax,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+    total_value = models.FloatField(default=0)
+    exchanged_total_value = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Service order work order cost'
+        verbose_name_plural = 'Service order work order costs'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class ServiceOrderWorkOrderContribution(SimpleAbstractModel):
+    work_order = models.ForeignKey(
+        'ServiceOrderWorkOrder',
+        on_delete=models.CASCADE,
+        related_name="work_order_contributions"
+    )
+    service_detail = models.ForeignKey(
+        'ServiceOrderServiceDetail',
+        on_delete=models.CASCADE,
+        related_name="service_detail_contributions"
+    )
+    is_selected = models.BooleanField(default=False)
+    order = models.IntegerField(default=0)
+    title = models.CharField(max_length=150, blank=True)
+    contribution_percent = models.FloatField(default=0)
+    balance_quantity = models.FloatField(default=0)
+    delivered_quantity = models.IntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Service order work order contribution'
+        verbose_name_plural = 'Service order work order contributions'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+#tab payment
+PAYMENT_TYPE = (
+    (0, 'advance'),
+    (1, 'payment'),
+)
+
+class ServiceOrderPayment(MasterDataAbstractModel):
+    service_order = models.ForeignKey(
+        'ServiceOrder',
+        on_delete=models.CASCADE,
+        related_name="payments"
+    )
+    installment = models.PositiveIntegerField(default=0)
+    description = models.TextField(blank=True)
+    payment_type = models.PositiveSmallIntegerField(choices=PAYMENT_TYPE)
+    is_invoice_required = models.BooleanField(default=False)
+    payment_value = models.FloatField(default=0)
+    tax_value = models.FloatField(default=0)
+    reconcile_value = models.FloatField(default=0)
+    receivable_value = models.FloatField(default=0)
+    due_date = models.DateField()
+
+    class Meta:
+        verbose_name = 'Service order payment'
+        verbose_name_plural = 'Service order payments'
+        ordering = ('installment',)
+        default_permissions = ()
+        permissions = ()
+
+
+class ServiceOrderPaymentDetail(SimpleAbstractModel):
+    service_order_payment = models.ForeignKey(
+        'ServiceOrderPayment',
+        on_delete=models.CASCADE,
+        related_name="payment_details"
+    )
+    service_detail = models.ForeignKey(
+        'ServiceOrderServiceDetail',
+        on_delete=models.CASCADE,
+    )
+    title = models.CharField(max_length=150, blank=True)
+    sub_total_value = models.FloatField(default=0)
+    payment_percent = models.FloatField(default=0)
+    payment_value = models.FloatField(default=0)
+
+    # No invoice only data
+    total_reconciled_value = models.FloatField(default=0, help_text='Total reconciled value')
+
+    # With invoice only data
+    issued_value = models.FloatField(default=0)
+    balance_value = models.FloatField(default=0)
+    tax_value = models.FloatField(default=0)
+    reconcile_value = models.FloatField( default=0)
+    receivable_value = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Service order payment detail'
+        verbose_name_plural = 'Service order detail'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class ServiceOrderPaymentReconcile(SimpleAbstractModel):
+    advance_payment_detail = models.ForeignKey(
+        'ServiceOrderPaymentDetail',
+        on_delete=models.CASCADE,
+        help_text="the advance payment detail mapping with this reconcile record"
+    )
+    payment_detail = models.ForeignKey(
+        'ServiceOrderPaymentDetail',
+        on_delete=models.CASCADE,
+        related_name="payment_detail_reconciles",
+        help_text="the payment detail contains this reconcile record"
+    )
+    service_detail = models.ForeignKey(
+        'ServiceOrderServiceDetail',
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+    installment = models.PositiveIntegerField(default=0)
+    total_value = models.FloatField(default=0)
+    reconcile_value = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Service order payment reconcile'
+        verbose_name_plural = 'Service order payment reconciles'
+        ordering = ()
         default_permissions = ()
         permissions = ()
 

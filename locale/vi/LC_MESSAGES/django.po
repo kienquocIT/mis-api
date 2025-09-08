@@ -1730,6 +1730,10 @@ msgstr "Một số giá trị không đúng"
 msgid "Opportunity is already used for lease order"
 msgstr "Đã có đơn cho thuê được tạo với cơ hội kinh doanh này"
 
+#
+msgid "Overtime request"
+msgstr "Đăng ký làm ngoài giờ"
+
 # 36f25733-a6e7-43ea-b710-38e2052f0f6d
 msgid "Service order"
 msgstr "Đơn đặt dịch vụ"

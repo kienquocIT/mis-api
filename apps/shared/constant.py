@@ -144,6 +144,7 @@ MAP_FIELD_TITLE = {
     'incomingdocument.kmsincomingdocument': 'title',
     # HRM
     'absenceexplanation.absenceexplanation': 'title',
+    'overtimerequest.overtimerequest': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
