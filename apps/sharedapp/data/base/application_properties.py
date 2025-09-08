@@ -3509,15 +3509,72 @@ AppProp_HRM_AbsenceExplanation_data = {
     }
 }
 
-AppProp_SaleData_ServiceOrder_data = {
-    "9a0c78e9-dc53-4ee0-a009-70ea503d4f6c": {
-        "application_id": "36f25733-a6e7-43ea-b710-38e2052f0f6d",
-        "title": "Title",
-        "code": "title",
-        "type": 1,
-        'is_wf_zone': True,
-    }
+AppProp_HRM_OvertimeRequest_data = {
+    '97a04178-4cf0-4526-85da-1e75766a6ddb': {
+        'application_id': '4a996500-fcc4-484f-be62-b3c73a2db927',
+        'title': 'Title',
+        'code': 'title',
+        'type': 1,
+        'is_print': True,
+    },
+    "1aeef773-ec3a-481b-806a-66466f71f7f3": {
+        'application_id': '4a996500-fcc4-484f-be62-b3c73a2db927',
+        'title': 'Start time',
+        'code': 'start_time',
+        'type': 2,
+        'is_print': True,
+    },
+    "7a994297-a164-4355-b5bc-caf3cf77474e": {
+        'application_id': '4a996500-fcc4-484f-be62-b3c73a2db927',
+        'title': 'End time',
+        'code': 'end_time',
+        'type': 2,
+        'is_print': True,
+    },
+    "a5aaa28c-ceb0-4fb1-b47e-07aef3f9bf1d": {
+        'application_id': '4a996500-fcc4-484f-be62-b3c73a2db927',
+        'title': 'Start date',
+        'code': 'start_date',
+        'type': 2,
+        'is_print': True,
+    },
+    "7833bcb3-3dae-4d7c-8297-993d11e1de33": {
+        'application_id': '4a996500-fcc4-484f-be62-b3c73a2db927',
+        'title': 'End time',
+        'code': 'end_date',
+        'type': 2,
+        'is_print': True,
+    },
+    "46576e58-8c46-4256-b007-4802c4008877": {
+        'application_id': '4a996500-fcc4-484f-be62-b3c73a2db927',
+        'title': 'Employee created - full name',
+        'code': 'employee_created__full_name',
+        'type': 5,
+        'is_print': True,
+    },
+    "868f2045-1e44-4abc-a2ea-e3d1f670de70": {
+        'application_id': '4a996500-fcc4-484f-be62-b3c73a2db927',
+        'title': 'Employee created - group title',
+        'code': 'employee_created__group__title',
+        'type': 5,
+        'is_print': True,
+    },
+    "56f0c20a-7748-4141-8df9-96a2afc6059a": {
+        'application_id': '4a996500-fcc4-484f-be62-b3c73a2db927',
+        'title': 'Employee OT - full name',
+        'code': 'employee_list_data___full_name',
+        'type': 1,
+        'is_print': True,
+    },
+    "74dc27b8-b1ef-4784-9e4c-14bcd3cad34e": {
+        'application_id': '4a996500-fcc4-484f-be62-b3c73a2db927',
+        'title': 'Employee OT - group title',
+        'code': 'employee_list_data___group__title',
+        'type': 1,
+        'is_print': True,
+    },
 }
+
 
 ApplicationProperty_data = {
     **Bastion_data_params,
@@ -3571,6 +3628,8 @@ ApplicationProperty_data = {
     **AppProp_KMS_IncomingDocument_data,
 
     # HRM
+    **AppProp_HRM_AbsenceExplanation_data,
+    **AppProp_HRM_OvertimeRequest_data
     **AppProp_HRM_AbsenceExplanation_data,
 
     # saledata
