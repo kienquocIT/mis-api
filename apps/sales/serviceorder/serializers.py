@@ -304,7 +304,7 @@ class ServiceOrderCommonFunc:
             temp_id = payment_detail.get('service_id')
             payment_detail_uuid = service_detail_id_map.get(temp_id)
             if not payment_detail_uuid:
-                return
+                return {}
             bulk_data.append(ServiceOrderPaymentDetail(
                 service_order_payment=payment,
                 service_detail_id=payment_detail_uuid,
@@ -538,7 +538,9 @@ class ServiceOrderWorkOrderSerializer(serializers.ModelSerializer):
                 try:
                     Currency.objects.get(id=currency_id)
                 except Currency.DoesNotExist:
-                    raise serializers.ValidationError({'work_order_cost': _('Currency of work order cost does not exist')})
+                    raise serializers.ValidationError(
+                        {'work_order_cost': _('Currency of work order cost does not exist')}
+                    )
             else:
                 raise serializers.ValidationError({'work_order_cost': _('Currency of work order cost is missing')})
 

@@ -2,7 +2,6 @@ from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
-from apps.shared import MasterDataAbstractModel, DataAbstractModel
 from apps.masterdata.saledata.models import Tax, UnitOfMeasure, Currency, Product
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel
 
