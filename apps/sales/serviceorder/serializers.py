@@ -12,7 +12,7 @@ from apps.sales.serviceorder.models import (
 )
 from apps.shared import (
     AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel,
-    SVOMsg, SerializerCommonHandle, SerializerCommonValidate
+    SVOMsg, SerializerCommonHandle, SerializerCommonValidate,
 )
 
 __all__ = [
@@ -27,56 +27,44 @@ __all__ = [
 # COMMON FUNCTION
 class ServiceOrderCommonFunc:
     @staticmethod
-    def get_mapped_data(shipment_data_item):
-        if shipment_data_item.get('is_container', True):
-            return {
-                'title': shipment_data_item.get('containerName', ''),
-                'reference_number': shipment_data_item.get('containerRefNumber', ''),
-                'weight': shipment_data_item.get('containerWeight', 0),
-                'dimension': shipment_data_item.get('containerDimension', 0),
-                'description': shipment_data_item.get('containerNote'),
-                'is_container': True,
-                'reference_container': None,
-                'container_type_id': str(shipment_data_item.get("containerType", {}).get("id"))
-            }
-        return {
-            'title': shipment_data_item.get('packageName', ''),
-            'reference_number': shipment_data_item.get('containerRefNumber', ''),
-            'weight': shipment_data_item.get('packageWeight', 0),
-            'dimension': shipment_data_item.get('packageDimension', 0),
-            'description': shipment_data_item.get('packageNote'),
-            'is_container': False,
-            'reference_container': shipment_data_item.get('packageContainerRef'),
-            'package_type_id': str(shipment_data_item.get("packageType", {}).get("id")),
-        }
-
-    @staticmethod
     def create_shipment(service_order_obj, shipment_data):
         bulk_info_shipment = []
         bulk_info_container = []
         ctn_shipment = 1
         ctn_order = 1
         for _, shipment_data_item in enumerate(shipment_data):
-            item_data_parsed = ServiceOrderCommonFunc.get_mapped_data(shipment_data_item)
+            package_type = shipment_data_item.get("package_type")
+            container_type = shipment_data_item.get("container_type")
+
             shipment_obj = ServiceOrderShipment(
                 service_order=service_order_obj,
                 order=ctn_shipment,
+                title=shipment_data_item.get("title", ""),
+                container_type_id=container_type.get("id") if container_type else None,
+                package_type_id=package_type.get("id") if package_type else None,
                 company=service_order_obj.company,
                 tenant=service_order_obj.tenant,
-                **item_data_parsed
+                reference_number=shipment_data_item.get("reference_number"),
+                weight=shipment_data_item.get("weight", 0),
+                dimension=shipment_data_item.get("dimension", 0),
+                description=shipment_data_item.get("description", ""),
+                reference_container=shipment_data_item.get("reference_container"),
+                is_container=shipment_data_item.get("is_container", True),
             )
             bulk_info_shipment.append(shipment_obj)
 
             # get container
             if shipment_obj.is_container:
-                bulk_info_container.append(ServiceOrderContainer(
-                    service_order=service_order_obj,
-                    shipment=shipment_obj,
-                    order=ctn_order,
-                    container_type_id=str(shipment_data_item.get("containerType", {}).get("id")),
-                    company=service_order_obj.company,
-                    tenant=service_order_obj.tenant,
-                ))
+                bulk_info_container.append(
+                    ServiceOrderContainer(
+                        service_order=service_order_obj,
+                        shipment=shipment_obj,
+                        order=ctn_order,
+                        container_type_id=container_type.get("id") if container_type else None,
+                        company=service_order_obj.company,
+                        tenant=service_order_obj.tenant,
+                    )
+                )
                 ctn_order += 1
             ctn_shipment += 1
 
@@ -95,35 +83,84 @@ class ServiceOrderCommonFunc:
             if not shipment_data_item.get('is_container'):
                 ctn_mapped = None
                 for ctn in container_created:
-                    if ctn.shipment.reference_number == shipment_data_item.get('packageContainerRef'):
+                    if ctn.shipment.reference_number == shipment_data_item.get('reference_container'):
                         ctn_mapped = ctn
                 if ctn_mapped:
-                    bulk_info_packages.append(ServiceOrderPackage(
-                        service_order=service_order_obj,
-                        shipment=ctn_mapped.shipment,
-                        order=pkg_order,
-                        package_type_id=str(shipment_data_item.get("packageType", {}).get("id")),
-                        container_reference_id=str(ctn_mapped.id),
-                        company=service_order_obj.company,
-                        tenant=service_order_obj.tenant,
-                    ))
+                    bulk_info_packages.append(
+                        ServiceOrderPackage(
+                            service_order=service_order_obj,
+                            shipment=ctn_mapped.shipment,
+                            order=pkg_order,
+                            package_type_id=package_type.get("id") if package_type else None,
+                            container_reference_id=str(ctn_mapped.id),
+                            company=service_order_obj.company,
+                            tenant=service_order_obj.tenant,
+                        )
+                    )
                     pkg_order += 1
 
         # bulk create package
         ServiceOrderPackage.objects.bulk_create(bulk_info_packages)
         return True
 
+    # @staticmethod
+    # def create_expense(service_order_obj, expense_data):
+    #     bulk_info_expense = []
+    #     for expense_data_item in expense_data:
+    #         expense_item_obj = expense_data_item.get('expense_item')
+    #         uom_obj = expense_data_item.get('uom')
+    #         tax_obj = expense_data_item.get('tax')
+    #
+    #         expense_obj = ServiceOrderExpense(
+    #             service_order=service_order_obj,
+    #             title=expense_data_item.get('title'),
+    #             expense_item=expense_item_obj,
+    #             expense_item_data={
+    #                 "id": str(expense_item_obj.id),
+    #                 "code": expense_item_obj.code,
+    #                 "title": expense_item_obj.title,
+    #             } if expense_item_obj else {},
+    #             uom=uom_obj,
+    #             uom_data={
+    #                 "id": str(uom_obj.id),
+    #                 "code": uom_obj.code,
+    #                 "title": uom_obj.title,
+    #             } if uom_obj else {},
+    #             quantity=expense_data_item.get('quantity', 0),
+    #             expense_price=expense_data_item.get('expense_price', 0),
+    #             tax=tax_obj,
+    #             tax_data={
+    #                 "id": str(tax_obj.id),
+    #                 "code": tax_obj.code,
+    #                 "title": tax_obj.title,
+    #                 "rate": tax_obj.rate
+    #             } if tax_obj else {},
+    #             subtotal_price=expense_data_item.get('subtotal_price', 0)
+    #         )
+    #         bulk_info_expense.append(expense_obj)
+    #
+    #     # bulk create expense
+    #     ServiceOrderExpense.objects.filter(service_order=service_order_obj).delete()
+    #     ServiceOrderExpense.objects.bulk_create(bulk_info_expense)
+    #
+    #     return True
     @staticmethod
     def create_expense(service_order_obj, expense_data):
         bulk_info_expense = []
+
         for expense_data_item in expense_data:
-            expense_item_obj = expense_data_item.get('expense_item')
-            uom_obj = expense_data_item.get('uom')
-            tax_obj = expense_data_item.get('tax')
+            # Resolve UUID → instance
+            expense_item_id = expense_data_item.get("expense_item")
+            uom_id = expense_data_item.get("uom")
+            tax_id = expense_data_item.get("tax")
+
+            expense_item_obj = ExpenseItem.objects.filter(id=expense_item_id).first() if expense_item_id else None
+            uom_obj = UnitOfMeasure.objects.filter(id=uom_id).first() if uom_id else None
+            tax_obj = Tax.objects.filter(id=tax_id).first() if tax_id else None
 
             expense_obj = ServiceOrderExpense(
                 service_order=service_order_obj,
-                title=expense_data_item.get('expense_name'),
+                title=expense_data_item.get("title"),
                 expense_item=expense_item_obj,
                 expense_item_data={
                     "id": str(expense_item_obj.id),
@@ -136,20 +173,23 @@ class ServiceOrderCommonFunc:
                     "code": uom_obj.code,
                     "title": uom_obj.title,
                 } if uom_obj else {},
-                quantity=expense_data_item.get('quantity', 0),
-                expense_price=expense_data_item.get('expense_price', 0),
+                quantity=expense_data_item.get("quantity", 0),
+                expense_price=expense_data_item.get("expense_price", 0),
                 tax=tax_obj,
                 tax_data={
                     "id": str(tax_obj.id),
                     "code": tax_obj.code,
                     "title": tax_obj.title,
-                    "rate": tax_obj.rate
+                    "rate": tax_obj.rate,
                 } if tax_obj else {},
-                subtotal_price=expense_data_item.get('subtotal', 0)
+                subtotal_price=expense_data_item.get("subtotal_price", 0),
+                company=service_order_obj.company,
+                tenant=service_order_obj.tenant,
             )
+
             bulk_info_expense.append(expense_obj)
 
-        # bulk create expense
+        # Replace old expenses
         ServiceOrderExpense.objects.filter(service_order=service_order_obj).delete()
         ServiceOrderExpense.objects.bulk_create(bulk_info_expense)
 
@@ -161,26 +201,28 @@ class ServiceOrderCommonFunc:
         bulk_data = []
         service_detail_id_map = {}
         for service_detail in service_detail_data:
-            bulk_data.append(ServiceOrderServiceDetail(
-                service_order_id=service_order_id,
-                title=service_detail.get('title'),
-                code=service_detail.get('code'),
-                product_id=service_detail.get('product').id if service_detail.get('product') else None,
-                order=service_detail.get('order'),
-                description=service_detail.get('description'),
-                quantity=service_detail.get('quantity'),
-                uom_id=service_detail.get('uom_data', {}).get('id'),
-                uom_data=service_detail.get('uom_data'),
-                price=service_detail.get('price'),
-                tax_id=service_detail.get('tax_data', {}).get('id'),
-                tax_data=service_detail.get('tax_data'),
-                sub_total_value=service_detail.get('sub_total_value'),
-                total_value=service_detail.get('total_value'),
-                delivery_balance_value=service_detail.get('delivery_balance_value'),
-                total_contribution_percent=service_detail.get('total_contribution_percent'),
-                total_payment_percent=service_detail.get('total_payment_percent'),
-                total_payment_value=service_detail.get('total_payment_value'),
-            ))
+            bulk_data.append(
+                ServiceOrderServiceDetail(
+                    service_order_id=service_order_id,
+                    title=service_detail.get('title'),
+                    code=service_detail.get('code'),
+                    product_id=service_detail.get('product').id if service_detail.get('product') else None,
+                    order=service_detail.get('order'),
+                    description=service_detail.get('description'),
+                    quantity=service_detail.get('quantity'),
+                    uom_id=service_detail.get('uom_data', {}).get('id'),
+                    uom_data=service_detail.get('uom_data'),
+                    price=service_detail.get('price'),
+                    tax_id=service_detail.get('tax_data', {}).get('id'),
+                    tax_data=service_detail.get('tax_data'),
+                    sub_total_value=service_detail.get('sub_total_value'),
+                    total_value=service_detail.get('total_value'),
+                    delivery_balance_value=service_detail.get('delivery_balance_value'),
+                    total_contribution_percent=service_detail.get('total_contribution_percent'),
+                    total_payment_percent=service_detail.get('total_payment_percent'),
+                    total_payment_value=service_detail.get('total_payment_value'),
+                )
+            )
 
         service_order.service_details.all().delete()
         created_service_details = ServiceOrderServiceDetail.objects.bulk_create(bulk_data)
@@ -228,18 +270,20 @@ class ServiceOrderCommonFunc:
     def create_work_order_cost(work_order, cost_data):
         bulk_data = []
         for cost in cost_data:
-            bulk_data.append(ServiceOrderWorkOrderCost(
-                work_order=work_order,
-                order=cost.get('order', 0),
-                title=cost.get('title', ''),
-                description=cost.get('description', ''),
-                quantity=cost.get('quantity', 0),
-                unit_cost=cost.get('unit_cost', 0),
-                currency_id=cost.get('currency_id'),
-                tax_id=cost.get('tax_id'),
-                total_value=cost.get('total_value', 0),
-                exchanged_total_value=cost.get('exchanged_total_value', 0),
-            ))
+            bulk_data.append(
+                ServiceOrderWorkOrderCost(
+                    work_order=work_order,
+                    order=cost.get('order', 0),
+                    title=cost.get('title', ''),
+                    description=cost.get('description', ''),
+                    quantity=cost.get('quantity', 0),
+                    unit_cost=cost.get('unit_cost', 0),
+                    currency_id=cost.get('currency_id'),
+                    tax_id=cost.get('tax_id'),
+                    total_value=cost.get('total_value', 0),
+                    exchanged_total_value=cost.get('exchanged_total_value', 0),
+                )
+            )
 
         work_order.work_order_costs.all().delete()
         ServiceOrderWorkOrderCost.objects.bulk_create(bulk_data)
@@ -252,16 +296,18 @@ class ServiceOrderCommonFunc:
             service_detail_uuid = service_detail_id_map.get(temp_id)
             if not service_detail_uuid:
                 return
-            bulk_data.append(ServiceOrderWorkOrderContribution(
-                work_order=work_order,
-                service_detail_id=service_detail_uuid,
-                order=contribution.get('order', 0),
-                title=contribution.get('title', ''),
-                is_selected=contribution.get('is_selected', False),
-                contribution_percent=contribution.get('contribution_percent', 0),
-                balance_quantity=contribution.get('balance_quantity', 0),
-                delivered_quantity=contribution.get('delivered_quantity', 0),
-            ))
+            bulk_data.append(
+                ServiceOrderWorkOrderContribution(
+                    work_order=work_order,
+                    service_detail_id=service_detail_uuid,
+                    order=contribution.get('order', 0),
+                    title=contribution.get('title', ''),
+                    is_selected=contribution.get('is_selected', False),
+                    contribution_percent=contribution.get('contribution_percent', 0),
+                    balance_quantity=contribution.get('balance_quantity', 0),
+                    delivered_quantity=contribution.get('delivered_quantity', 0),
+                )
+            )
         work_order.work_order_contributions.all().delete()
         ServiceOrderWorkOrderContribution.objects.bulk_create(bulk_data)
 
@@ -270,27 +316,31 @@ class ServiceOrderCommonFunc:
         service_order_id = service_order.id
         bulk_data = []
         for payment in payment_data:
-            bulk_data.append(ServiceOrderPayment(
-                service_order_id=service_order_id,
-                installment=payment.get('installment', 0),
-                description=payment.get('description', ''),
-                payment_type=payment.get('payment_type', 1),
-                is_invoice_required=payment.get('is_invoice_required', False),
-                payment_value=payment.get('payment_value', 0),
-                tax_value=payment.get('tax_value', 0),
-                reconcile_value=payment.get('reconcile_value', 0),
-                receivable_value=payment.get('receivable_value', 0),
-                due_date=payment.get('due_date'),
-            ))
+            bulk_data.append(
+                ServiceOrderPayment(
+                    service_order_id=service_order_id,
+                    installment=payment.get('installment', 0),
+                    description=payment.get('description', ''),
+                    payment_type=payment.get('payment_type', 1),
+                    is_invoice_required=payment.get('is_invoice_required', False),
+                    payment_value=payment.get('payment_value', 0),
+                    tax_value=payment.get('tax_value', 0),
+                    reconcile_value=payment.get('reconcile_value', 0),
+                    receivable_value=payment.get('receivable_value', 0),
+                    due_date=payment.get('due_date'),
+                )
+            )
         service_order.payments.all().delete()
         created_payments = ServiceOrderPayment.objects.bulk_create(bulk_data)
         payment_detail_id_map = {}
         for instance, raw_data in zip(created_payments, payment_data):
-            payment_detail_id_map.update(ServiceOrderCommonFunc.create_payment_detail(
-                instance,
-                raw_data.get('payment_detail_data', []),
-                service_detail_id_map
-            ))
+            payment_detail_id_map.update(
+                ServiceOrderCommonFunc.create_payment_detail(
+                    instance,
+                    raw_data.get('payment_detail_data', []),
+                    service_detail_id_map
+                )
+            )
 
         for instance, raw_data in zip(created_payments, payment_data):
             ServiceOrderCommonFunc.create_reconcile_data(
@@ -308,20 +358,22 @@ class ServiceOrderCommonFunc:
             payment_detail_uuid = service_detail_id_map.get(temp_id)
             if not payment_detail_uuid:
                 return {}
-            bulk_data.append(ServiceOrderPaymentDetail(
-                service_order_payment=payment,
-                service_detail_id=payment_detail_uuid,
-                title=payment_detail.get("title", ""),
-                sub_total_value=payment_detail.get("sub_total_value", 0),
-                payment_percent=payment_detail.get("payment_percent", 0),
-                payment_value=payment_detail.get("payment_value", 0),
-                total_reconciled_value=payment_detail.get("total_reconciled_value", 0),
-                issued_value=payment_detail.get("issued_value", 0),
-                balance_value=payment_detail.get("balance_value", 0),
-                tax_value=payment_detail.get("tax_value", 0),
-                reconcile_value=payment_detail.get("reconcile_value", 0),
-                receivable_value=payment_detail.get("receivable_value", 0),
-            ))
+            bulk_data.append(
+                ServiceOrderPaymentDetail(
+                    service_order_payment=payment,
+                    service_detail_id=payment_detail_uuid,
+                    title=payment_detail.get("title", ""),
+                    sub_total_value=payment_detail.get("sub_total_value", 0),
+                    payment_percent=payment_detail.get("payment_percent", 0),
+                    payment_value=payment_detail.get("payment_value", 0),
+                    total_reconciled_value=payment_detail.get("total_reconciled_value", 0),
+                    issued_value=payment_detail.get("issued_value", 0),
+                    balance_value=payment_detail.get("balance_value", 0),
+                    tax_value=payment_detail.get("tax_value", 0),
+                    reconcile_value=payment_detail.get("reconcile_value", 0),
+                    receivable_value=payment_detail.get("receivable_value", 0),
+                )
+            )
 
         created_payment_details = ServiceOrderPaymentDetail.objects.bulk_create(bulk_data)
 
@@ -351,51 +403,18 @@ class ServiceOrderCommonFunc:
             if not payment_detail_uuid:
                 return
 
-            bulk_data.append(ServiceOrderPaymentReconcile(
-                advance_payment_detail_id=advance_payment_detail_uuid,
-                payment_detail_id=payment_detail_uuid,
-                service_detail_id=service_uuid,
-                installment=reconcile.get('installment', 0),
-                total_value=reconcile.get('total_value', 0),
-                reconcile_value=reconcile.get('reconcile_value', 0)
-            ))
+            bulk_data.append(
+                ServiceOrderPaymentReconcile(
+                    advance_payment_detail_id=advance_payment_detail_uuid,
+                    payment_detail_id=payment_detail_uuid,
+                    service_detail_id=service_uuid,
+                    installment=reconcile.get('installment', 0),
+                    total_value=reconcile.get('total_value', 0),
+                    reconcile_value=reconcile.get('reconcile_value', 0)
+                )
+            )
         ServiceOrderPaymentReconcile.objects.bulk_create(bulk_data)
 
-
-# SHIPMENT
-# class ServiceOderShipmentSerializer(serializers.Serializer):
-#     is_container = serializers.BooleanField(default=True)
-#
-#     # container field
-#     containerName = serializers.CharField(max_length=100, required=False, allow_null=True)
-#     containerRefNumber = serializers.CharField(max_length=100, required=False, allow_null=True)
-#     containerWeight = serializers.FloatField(required=False, allow_null=True)
-#     containerDimension = serializers.FloatField(required=False, allow_null=True)
-#     containerNote = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-#     containerType = serializers.JSONField(required=False, allow_null=True)
-#
-#     packageName = serializers.CharField(max_length=100, required=False, allow_null=True)
-#     packageRefNumber = serializers.CharField(max_length=100, required=False, allow_null=True)
-#     packageWeight = serializers.FloatField(required=False, allow_null=True)
-#     packageDimension = serializers.FloatField(required=False, allow_null=True)
-#     packageNote = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-#     packageContainerRef = serializers.CharField(max_length=100, required=False, allow_null=True)
-#     packageType = serializers.JSONField(required=False, allow_null=True)
-#
-#     def validate(self, validate_data):
-#         if validate_data.get('is_container', True):
-#             if not validate_data.get('containerName'):
-#                 raise serializers.ValidationError({'container name': SVOMsg.CONTAINER_NAME_NOT_EXIST})
-#             if not validate_data.get('containerRefNumber'):
-#                 raise serializers.ValidationError({'Container Reference Number': SVOMsg.CONTAINER_REF_NOT_EXIST})
-#
-#         else:
-#             if not validate_data.get('packageName'):
-#                 raise serializers.ValidationError({'Package Name': SVOMsg.PACKAGE_NAME_NOT_EXIST})
-#             if not validate_data.get('packageContainerRef'):
-#                 raise serializers.ValidationError({'Package Reference Container': SVOMsg.PACKAGE_REF_NOT_EXIST})
-#
-#         return validate_data
 
 class ServiceOrderShipmentSerializer(serializers.ModelSerializer):
     container_type = serializers.JSONField(required=False, allow_null=True)
@@ -434,40 +453,42 @@ class ServiceOrderShipmentSerializer(serializers.ModelSerializer):
 
 
 # EXPENSE
-class ServiceOrderExpenseSerializer(serializers.Serializer):
-    expense_name = serializers.CharField()
-    expense_item = serializers.UUIDField(required=False, allow_null=True)
-    uom = serializers.UUIDField(required=False, allow_null=True)
-    quantity = serializers.FloatField(required=False, allow_null=True)
-    expense_price = serializers.FloatField(required=False, allow_null=True)
+class ServiceOrderExpenseSerializer(serializers.ModelSerializer):
+    expense_item = serializers.UUIDField()
+    uom = serializers.UUIDField()
     tax = serializers.UUIDField(required=False, allow_null=True)
-    subtotal = serializers.FloatField(required=False, allow_null=True)
 
-    @classmethod
-    def validate_expense_item(cls, value):
-        try:
-            expense_item_obj = ExpenseItem.objects.get(id=value)
-            return expense_item_obj
-        except ExpenseItem.DoesNotExist:
-            raise serializers.ValidationError({'expense_item': SVOMsg.EXPENSE_ITEM_NOT_EXIST})
+    @staticmethod
+    def validate_expense_item(value):
+        if not ExpenseItem.objects.filter(id=value).exists():
+            raise serializers.ValidationError(SVOMsg.EXPENSE_ITEM_NOT_EXIST)
+        return value
 
-    @classmethod
-    def validate_uom(cls, value):
-        try:
-            uom_obj = UnitOfMeasure.objects.get(id=value)
-            return uom_obj
-        except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'uom': SVOMsg.UOM_NOT_EXIST})
+    @staticmethod
+    def validate_uom(value):
+        if not UnitOfMeasure.objects.filter(id=value).exists():
+            raise serializers.ValidationError(SVOMsg.UOM_NOT_EXIST)
+        return value
 
-    @classmethod
-    def validate_tax(cls, value):
-        if value:
-            try:
-                tax_obj = Tax.objects.get(id=value)
-                return tax_obj
-            except Tax.DoesNotExist:
-                raise serializers.ValidationError({'tax': SVOMsg.TAX_NOT_EXIST})
-        return None
+    @staticmethod
+    def validate_tax(value):
+        if value and not Tax.objects.filter(id=value).exists():
+            raise serializers.ValidationError(SVOMsg.TAX_NOT_EXIST)
+        return value
+
+    class Meta:
+        model = ServiceOrderExpense
+        fields = (
+            "id",
+            "code",
+            "title",
+            "expense_item",
+            "uom",
+            "quantity",
+            "expense_price",
+            "tax",
+            "subtotal_price",
+        )
 
 
 # SERVICE DETAIL
@@ -615,7 +636,6 @@ class ServiceOrderPaymentSerializer(serializers.ModelSerializer):
         )
 
 
-
 # MAIN
 class ServiceOrderListSerializer(AbstractListSerializerModel):
     employee_created = serializers.SerializerMethodField()
@@ -638,7 +658,6 @@ class ServiceOrderListSerializer(AbstractListSerializerModel):
         return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
 
-
 class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     customer = serializers.UUIDField()
@@ -652,6 +671,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     service_detail_data = ServiceOrderServiceDetailSerializer(many=True)
     work_order_data = ServiceOrderWorkOrderSerializer(many=True)
     payment_data = ServiceOrderPaymentSerializer(many=True)
+
     # attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     def validate_attachment(self, value):
@@ -659,7 +679,6 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
         return SerializerCommonValidate.validate_attachment(
             user=user, model_cls=ServiceOrderAttachMapAttachFile, value=value
         )
-
 
     @classmethod
     def validate_customer(cls, value):
@@ -726,7 +745,6 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
         )
 
 
-
 class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
     shipment = serializers.SerializerMethodField()
     # expense = serializers.SerializerMethodField()
@@ -741,37 +759,43 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
         for item in obj.service_order_shipment_service_order.all():
             is_container = item.is_container
             if is_container:
-                shipment_list.append({
-                    'id': str(item.id),
-                    'containerName': item.title,
-                    'containerType': {
-                        'id': str(item.container_type.id),
-                        'code': item.container_type.code,
-                        'title': item.container_type.title,
-                    } if item.container_type else {},
-                    'containerRefNumber': item.reference_number,
-                    'containerWeight': item.weight,
-                    'containerDimension': item.dimension,
-                    'containerNote': item.description,
-                    'referenceContainer': item.reference_container,
-                    'is_container': True
-                })
+                shipment_list.append(
+                    {
+                        'id': str(item.id),
+                        'containerName': item.title,
+                        'containerType': {
+                            'id': str(item.container_type.id),
+                            'code': item.container_type.code,
+                            'title': item.container_type.title,
+                        } if item.container_type else {},
+                        'containerRefNumber': item.reference_number,
+                        'containerWeight': item.weight,
+                        'containerDimension': item.dimension,
+                        'containerNote': item.description,
+                        'referenceContainer': item.reference_container,
+                        'is_container': True,
+                        'order': item.order
+                    }
+                )
             else:
-                shipment_list.append({
-                    'id': str(item.id),
-                    'packageName': item.title,
-                    'packageType': {
-                        'id': str(item.package_type.id),
-                        'code': item.package_type.code,
-                        'title': item.package_type.title,
-                    },
-                    'packageRefNumber': item.reference_number,
-                    'packageWeight': item.weight,
-                    'packageDimension': item.dimension,
-                    'packageNote': item.description,
-                    'referenceContainer': item.reference_container,
-                    'is_container': False
-                })
+                shipment_list.append(
+                    {
+                        'id': str(item.id),
+                        'packageName': item.title,
+                        'packageType': {
+                            'id': str(item.package_type.id),
+                            'code': item.package_type.code,
+                            'title': item.package_type.title,
+                        },
+                        'packageRefNumber': item.reference_number,
+                        'packageWeight': item.weight,
+                        'packageDimension': item.dimension,
+                        'packageNote': item.description,
+                        'referenceContainer': item.reference_container,
+                        'is_container': False,
+                        'order': item.order
+                    }
+                )
         return shipment_list
 
     @classmethod
@@ -894,7 +918,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                     'id': reconcile.id,
                     'advance_payment_detail_id': reconcile.advance_payment_detail_id,
                     'advance_payment_id': reconcile.advance_payment_detail.service_order_payment.id
-                                            if reconcile.advance_payment_detail.service_order_payment else None,
+                    if reconcile.advance_payment_detail.service_order_payment else None,
                     'payment_detail_id': reconcile.payment_detail_id,
                     'service_id': reconcile.service_detail_id if reconcile.service_detail else None,
                     'installment': reconcile.installment,
@@ -904,6 +928,30 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             } for detail in payment.payment_details.all()]
 
         } for payment in obj.payments.all()]
+
+    # @classmethod
+    # def get_expense(cls, obj):
+    #     expense_list = []
+    #     for item in obj.service_order_expense_service_order.all():
+    #         expense_list.append(
+    #             {
+    #                 'id': str(item.id),
+    #                 'containerName': item.title,
+    #                 'containerType': {
+    #                     'id': str(item.container_type.id),
+    #                     'code': item.container_type.code,
+    #                     'title': item.container_type.title,
+    #                 } if item.container_type else {},
+    #                 'containerRefNumber': item.reference_number,
+    #                 'containerWeight': item.weight,
+    #                 'containerDimension': item.dimension,
+    #                 'containerNote': item.description,
+    #                 'referenceContainer': item.reference_container,
+    #                 'is_container': True,
+    #                 'order': item.order
+    #             }
+    #         )
+    #     return expense_list
 
     class Meta:
         model = ServiceOrder
@@ -925,7 +973,6 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'work_order_data',
             'payment_data'
         )
-
 
 
 class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):

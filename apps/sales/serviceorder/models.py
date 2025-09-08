@@ -5,6 +5,20 @@ from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Tax, UnitOfMeasure, Currency, Product
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel
 
+# work order tab
+WORK_ORDER_STATUS = (
+    (0, 'pending'),
+    (1, 'in_progress'),
+    (2, 'completed'),
+    (3, 'cancelled'),
+)
+
+# tab payment
+PAYMENT_TYPE = (
+    (0, 'advance'),
+    (1, 'payment'),
+)
+
 
 class ServiceOrder(DataAbstractModel):
     customer = models.ForeignKey(
@@ -78,7 +92,7 @@ class ServiceOrderServiceDetail(MasterDataAbstractModel):
     delivery_balance_value = models.FloatField(default=0)
     total_contribution_percent = models.FloatField(default=0)
 
-    #data related to payment
+    # data related to payment
     total_payment_percent = models.FloatField(default=0)
     total_payment_value = models.FloatField(default=0)
 
@@ -89,14 +103,6 @@ class ServiceOrderServiceDetail(MasterDataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-
-# work order tab
-WORK_ORDER_STATUS = (
-    (0, 'pending'),
-    (1, 'in_progress'),
-    (2, 'completed'),
-    (3, 'cancelled'),
-)
 
 class ServiceOrderWorkOrder(MasterDataAbstractModel):
     service_order = models.ForeignKey(
@@ -187,12 +193,6 @@ class ServiceOrderWorkOrderContribution(SimpleAbstractModel):
         permissions = ()
 
 
-#tab payment
-PAYMENT_TYPE = (
-    (0, 'advance'),
-    (1, 'payment'),
-)
-
 class ServiceOrderPayment(MasterDataAbstractModel):
     service_order = models.ForeignKey(
         'ServiceOrder',
@@ -239,7 +239,7 @@ class ServiceOrderPaymentDetail(SimpleAbstractModel):
     issued_value = models.FloatField(default=0)
     balance_value = models.FloatField(default=0)
     tax_value = models.FloatField(default=0)
-    reconcile_value = models.FloatField( default=0)
+    reconcile_value = models.FloatField(default=0)
     receivable_value = models.FloatField(default=0)
 
     class Meta:
