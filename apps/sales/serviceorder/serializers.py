@@ -888,11 +888,17 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
 
 class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
+    service_detail_data = ServiceOrderServiceDetailSerializer(many=True)
+    work_order_data = ServiceOrderWorkOrderSerializer(many=True)
+    payment_data = ServiceOrderPaymentSerializer(many=True)
 
     class Meta:
         model = ServiceOrder
         fields = (
             'title',
+            'service_detail_data',
+            'work_order_data',
+            'payment_data'
         )
 
     def validate(self, validate_data):
@@ -900,8 +906,17 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.save()
+        with transaction.atomic():
+            for key, value in validated_data.items():
+                setattr(instance, key, value)
+            instance.save()
 
-        return instance
+            service_detail_data = validated_data.pop('service_detail_data', [])
+            work_order_data = validated_data.pop('work_order_data', [])
+            payment_data = validated_data.pop('payment_data', [])
+
+            service_detail_id_map = ServiceOrderCommonFunc.create_service_detail(instance, service_detail_data)
+            ServiceOrderCommonFunc.create_work_order(instance, work_order_data, service_detail_id_map)
+            ServiceOrderCommonFunc.create_payment(instance, payment_data, service_detail_id_map)
+
+            return instance
