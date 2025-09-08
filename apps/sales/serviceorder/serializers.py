@@ -3,8 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import Account, Product, UnitOfMeasure, Tax, Currency
-from apps.masterdata.saledata.models import Account, ExpenseItem, UnitOfMeasure, Tax
+from apps.masterdata.saledata.models import Account, ExpenseItem, UnitOfMeasure, Tax, Product, Currency
 from apps.sales.serviceorder.models import (
     ServiceOrder, ServiceOrderAttachMapAttachFile, ServiceOrderShipment, ServiceOrderContainer, ServiceOrderPackage,
     ServiceOrderWorkOrder, ServiceOrderServiceDetail, ServiceOrderWorkOrderCost, ServiceOrderWorkOrderContribution,
@@ -852,7 +851,8 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                 'reconcile_data': [{
                     'id': reconcile.id,
                     'advance_payment_detail_id': reconcile.advance_payment_detail_id,
-                    'advance_payment_id': reconcile.advance_payment_detail.service_order_payment.id if reconcile.advance_payment_detail.service_order_payment else None,
+                    'advance_payment_id': reconcile.advance_payment_detail.service_order_payment.id
+                                            if reconcile.advance_payment_detail.service_order_payment else None,
                     'payment_detail_id': reconcile.payment_detail_id,
                     'service_id': reconcile.service_detail_id if reconcile.service_detail else None,
                     'installment': reconcile.installment,
