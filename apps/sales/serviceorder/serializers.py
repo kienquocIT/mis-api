@@ -671,8 +671,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     service_detail_data = ServiceOrderServiceDetailSerializer(many=True)
     work_order_data = ServiceOrderWorkOrderSerializer(many=True)
     payment_data = ServiceOrderPaymentSerializer(many=True)
-
-    # attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
@@ -738,7 +737,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             'expense_pretax_value',
             'expense_tax_value',
             'expense_total_value',
-            # 'attachment',
+            'attachment',
             'service_detail_data',
             'work_order_data',
             'payment_data'
@@ -747,6 +746,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
 
 class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
     shipment = serializers.SerializerMethodField()
+    expense = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
     service_detail_data = serializers.SerializerMethodField()
     work_order_data = serializers.SerializerMethodField()
@@ -771,7 +771,6 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                         'containerWeight': item.weight,
                         'containerDimension': item.dimension,
                         'containerNote': item.description,
-                        'referenceContainer': item.reference_container,
                         'is_container': True,
                         'order': item.order
                     }
@@ -790,7 +789,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                         'packageWeight': item.weight,
                         'packageDimension': item.dimension,
                         'packageNote': item.description,
-                        'referenceContainer': item.reference_container,
+                        'packageContainerRef': item.reference_container,
                         'is_container': False,
                         'order': item.order
                     }
@@ -928,6 +927,19 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
 
         } for payment in obj.payments.all()]
 
+    @classmethod
+    def get_expense(cls, obj):
+        return [{
+            'id': str(item.id),
+            'title': item.title,
+            'expense_item_data': item.expense_item_data,
+            'uom_data': item.uom_data,
+            'quantity': item.quantity,
+            'expense_price': item.expense_price,
+            'tax_data': item.tax_data,
+            'subtotal_price': item.subtotal_price
+        } for item in obj.service_order_expense_service_order.all()]
+
     class Meta:
         model = ServiceOrder
         fields = (
@@ -945,7 +957,8 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'attachment',
             'service_detail_data',
             'work_order_data',
-            'payment_data'
+            'payment_data',
+            'expense'
         )
 
 
