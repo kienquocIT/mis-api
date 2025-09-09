@@ -104,47 +104,6 @@ class ServiceOrderCommonFunc:
         ServiceOrderPackage.objects.bulk_create(bulk_info_packages)
         return True
 
-    # @staticmethod
-    # def create_expense(service_order_obj, expense_data):
-    #     bulk_info_expense = []
-    #     for expense_data_item in expense_data:
-    #         expense_item_obj = expense_data_item.get('expense_item')
-    #         uom_obj = expense_data_item.get('uom')
-    #         tax_obj = expense_data_item.get('tax')
-    #
-    #         expense_obj = ServiceOrderExpense(
-    #             service_order=service_order_obj,
-    #             title=expense_data_item.get('title'),
-    #             expense_item=expense_item_obj,
-    #             expense_item_data={
-    #                 "id": str(expense_item_obj.id),
-    #                 "code": expense_item_obj.code,
-    #                 "title": expense_item_obj.title,
-    #             } if expense_item_obj else {},
-    #             uom=uom_obj,
-    #             uom_data={
-    #                 "id": str(uom_obj.id),
-    #                 "code": uom_obj.code,
-    #                 "title": uom_obj.title,
-    #             } if uom_obj else {},
-    #             quantity=expense_data_item.get('quantity', 0),
-    #             expense_price=expense_data_item.get('expense_price', 0),
-    #             tax=tax_obj,
-    #             tax_data={
-    #                 "id": str(tax_obj.id),
-    #                 "code": tax_obj.code,
-    #                 "title": tax_obj.title,
-    #                 "rate": tax_obj.rate
-    #             } if tax_obj else {},
-    #             subtotal_price=expense_data_item.get('subtotal_price', 0)
-    #         )
-    #         bulk_info_expense.append(expense_obj)
-    #
-    #     # bulk create expense
-    #     ServiceOrderExpense.objects.filter(service_order=service_order_obj).delete()
-    #     ServiceOrderExpense.objects.bulk_create(bulk_info_expense)
-    #
-    #     return True
     @staticmethod
     def create_expense(service_order_obj, expense_data):
         bulk_info_expense = []
