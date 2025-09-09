@@ -113,7 +113,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
 
 
 class OpportunityCreateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField()
+    title = serializers.CharField(max_length=100)
     customer = serializers.UUIDField()
     product_category = serializers.ListField(child=serializers.UUIDField(), required=False)
     employee_inherit_id = serializers.UUIDField()
@@ -894,7 +894,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     win_rate = serializers.FloatField(required=False)
     customer_decision_factor = serializers.ListField(required=False, child=serializers.UUIDField())
     opportunity_contact_role_datas = OpportunityContactRoleCreateSerializer(many=True, required=False)
-    title = serializers.CharField()
+    title = serializers.CharField(max_length=100)
     is_input_rate = serializers.BooleanField(required=False)
     employee_inherit = serializers.UUIDField(required=False)
     stage = serializers.UUIDField(required=False)
