@@ -894,7 +894,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     win_rate = serializers.FloatField(required=False)
     customer_decision_factor = serializers.ListField(required=False, child=serializers.UUIDField())
     opportunity_contact_role_datas = OpportunityContactRoleCreateSerializer(many=True, required=False)
-    title = serializers.CharField(required=False)
+    title = serializers.CharField()
     is_input_rate = serializers.BooleanField(required=False)
     employee_inherit = serializers.UUIDField(required=False)
     stage = serializers.UUIDField(required=False)
@@ -1143,6 +1143,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 'code': obj.employee_inherit.code,
                 'group': {
                     'id': obj.employee_inherit.group_id,
+                    'code': obj.employee_inherit.group.code,
                     'title': obj.employee_inherit.group.title
                 } if obj.employee_inherit.group else {}
             }
@@ -1188,7 +1189,10 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
         return [{
             'id': item.id,
             'is_deal_closed': item.is_deal_closed,
+            'is_closed_lost': item.is_closed_lost,
+            'is_delivery': item.is_delivery,
             'indicator': item.indicator,
+            'win_rate': item.win_rate,
         } for item in obj.stage.all()]
 
     @classmethod
@@ -1253,7 +1257,12 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 "email": item.email,
                 "avatar": item.avatar,
                 "is_active": item.is_active,
-            } for item in obj.members.all()
+                "group": {
+                    'id': item.group_id,
+                    'code': item.group.code,
+                    'title': item.group.title
+                } if item.group else {}
+            } for item in obj.members.all().select_related('group')
         ] if allow_get_member else []
 
     @classmethod
