@@ -2,8 +2,11 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.base.models import Application
+from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, ExpenseItem, UnitOfMeasure, Tax, Product, Currency
+from apps.sales.opportunity.models import Opportunity
+from apps.sales.opportunity.msg import OpportunityOnlyMsg
 from apps.sales.serviceorder.models import (
     ServiceOrder, ServiceOrderAttachMapAttachFile, ServiceOrderShipment,
     ServiceOrderWorkOrder, ServiceOrderServiceDetail, ServiceOrderExpense, ServiceOrderPayment,
@@ -21,6 +24,8 @@ __all__ = [
     'ServiceOrderCreateSerializer',
     'ServiceOrderUpdateSerializer',
 ]
+
+from apps.shared.translations.opportunity import OpportunityMsg
 
 
 # SHIPMENT
@@ -289,6 +294,8 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     work_order_data = ServiceOrderWorkOrderSerializer(many=True)
     payment_data = ServiceOrderPaymentSerializer(many=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+    opportunity_id = serializers.UUIDField(required=False, allow_null=True)
+    employee_inherit_id = serializers.UUIDField(required=False, allow_null=True)
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
@@ -303,6 +310,24 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             return customer_obj
         except Account.DoesNotExist:
             raise serializers.ValidationError({'customer': SVOMsg.CUSTOMER_NOT_EXIST})
+
+    @classmethod
+    def validate_opportunity_id(cls, value):
+        try:
+            if value is None:
+                return value
+            return Opportunity.objects.get_on_company(id=value).id
+        except Opportunity.DoesNotExist:
+            raise serializers.ValidationError({'opportunity': OpportunityOnlyMsg.OPP_NOT_EXIST})
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        try:
+            if value is None:
+                return value
+            return Employee.objects.get_on_company(id=value).id
+        except Opportunity.DoesNotExist:
+            raise serializers.ValidationError({'employee_inherit_id': OpportunityOnlyMsg.EMP_NOT_EXIST})
 
     def validate(self, validate_data):
         customer_obj = validate_data.get('customer')
@@ -345,6 +370,8 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     class Meta:
         model = ServiceOrder
         fields = (
+            'opportunity_id',
+            'employee_inherit_id',
             'title',
             'customer',
             'start_date',
@@ -368,6 +395,8 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
     service_detail_data = serializers.SerializerMethodField()
     work_order_data = serializers.SerializerMethodField()
     payment_data = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     @classmethod
     def get_shipment(cls, obj):
@@ -566,9 +595,24 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'subtotal_price': item.subtotal_price
         } for item in obj.service_order_expense_service_order.all()]
 
+    @classmethod
+    def get_opportunity(cls, obj):
+        return {
+            'id': obj.opportunity_id,
+            'title': obj.opportunity.title,
+            'code': obj.opportunity.code,
+            'customer': {
+                'id': obj.opportunity.customer_id,
+                'title': obj.opportunity.customer.title
+            } if obj.opportunity.customer else {},
+            'is_deal_close': obj.opportunity.is_deal_close,
+        } if obj.opportunity else {}
+
     class Meta:
         model = ServiceOrder
         fields = (
+            'opportunity',
+            'employee_inherit',
             'id',
             'code',
             'title',
