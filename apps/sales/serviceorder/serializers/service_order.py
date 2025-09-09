@@ -1,5 +1,7 @@
 from django.db import transaction
 from rest_framework import serializers
+
+from apps.core.attachments.models import update_files_is_approved
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
@@ -137,6 +139,13 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             service_detail_id_map = ServiceOrderCommonFunc.create_service_detail(service_order_obj, service_detail_data)
             ServiceOrderCommonFunc.create_work_order(service_order_obj, work_order_data, service_detail_id_map)
             ServiceOrderCommonFunc.create_payment(service_order_obj, payment_data, service_detail_id_map)
+
+            # adhoc case after create SO
+            update_files_is_approved(
+                ServiceOrderAttachMapAttachFile.objects.filter(
+                    service_order=service_order_obj, attachment__is_approved=False
+                )
+            )
             return service_order_obj
 
     class Meta:
@@ -473,7 +482,12 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
             service_detail_id_map = ServiceOrderCommonFunc.create_service_detail(instance, service_detail_data)
             ServiceOrderCommonFunc.create_work_order(instance, work_order_data, service_detail_id_map)
             ServiceOrderCommonFunc.create_payment(instance, payment_data, service_detail_id_map)
-
+            # adhoc case update file to KMS
+            update_files_is_approved(
+                ServiceOrderAttachMapAttachFile.objects.filter(
+                    service_order=instance, attachment__is_approved=False
+                )
+            )
             return instance
 
     class Meta:
