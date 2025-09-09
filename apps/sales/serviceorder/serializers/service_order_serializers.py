@@ -25,8 +25,6 @@ __all__ = [
     'ServiceOrderUpdateSerializer',
 ]
 
-from apps.shared.translations.opportunity import OpportunityMsg
-
 
 # SHIPMENT
 class ServiceOrderShipmentSerializer(serializers.ModelSerializer):
