@@ -695,6 +695,9 @@ class ServiceOrderCommonFunc:
                 unit_cost=work_order.get('unit_cost'),
                 total_value=work_order.get('total_value'),
                 work_status=work_order.get('work_status'),
+                task_id=work_order.get('task_id', None),
+                tenant_id=service_order.tenant_id,
+                company_id=service_order.company_id,
             )
             bulk_data.append(instance)
 
