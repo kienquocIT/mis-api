@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.core.attachments.models import M2MFilesAbstractModel, update_files_is_approved
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Tax, UnitOfMeasure, Currency, Product
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel, BastionFieldAbstractModel
@@ -46,11 +46,6 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('serviceorder', True, self, kwargs)
-                    update_files_is_approved(
-                        ServiceOrderAttachMapAttachFile.objects.filter(
-                            service_order=self, attachment__is_approved=False
-                        )
-                    )
         # hit DB
         super().save(*args, **kwargs)
 
