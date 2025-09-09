@@ -8,6 +8,7 @@ from uuid import UUID
 
 from django.conf import settings
 from django.core.exceptions import EmptyResultSet, ValidationError as DjangoValidationError
+from django.core.files.uploadedfile import TemporaryUploadedFile
 from django.db import transaction
 from django.db.models import Q, Model
 from django.utils import timezone
@@ -789,7 +790,13 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             if not key_force_override:
                 key_force_override = ['tenant_id', 'company_id', 'employee_created_id']
 
-            result = deepcopy(data)
+            # result = deepcopy(data)
+
+            # check if 'file' () in data then not use deepcopy
+            if "file" in data and isinstance(data["file"], TemporaryUploadedFile):
+                result = data
+            else:
+                result = deepcopy(data)
             for key, value in data_replace.items():
                 if key not in result or key in key_force_override:
                     result[key] = value
@@ -982,7 +989,12 @@ class BaseCreateMixin(BaseMixin):
                 body_data=body_data, hidden_field=self.create_hidden_field
             )
         if state_check is True:
-            log_data = deepcopy(request.data)
+            # log_data = deepcopy(request.data)
+            # check if 'file' () in request.data then not use deepcopy
+            if "file" in request.data and isinstance(request.data["file"], TemporaryUploadedFile):
+                log_data = request.data
+            else:
+                log_data = deepcopy(request.data)
             serializer = self.get_serializer_create(data=request.data)
             serializer.is_valid(raise_exception=True)
             obj = self.perform_create(serializer, extras=field_hidden)

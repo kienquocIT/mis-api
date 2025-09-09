@@ -57,7 +57,7 @@ class PrintTemplateList(BaseListMixin, BaseCreateMixin):
     }
 
     def get_queryset(self):
-        return super().get_queryset().select_related('application')
+        return super().get_queryset().filter(is_delete=False).select_related('application')
 
     @swagger_auto_schema()
     @mask_view(login_require=True, allow_admin_company=True)
