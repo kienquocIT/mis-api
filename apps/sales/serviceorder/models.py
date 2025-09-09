@@ -121,6 +121,13 @@ class ServiceOrderWorkOrder(MasterDataAbstractModel):
         default=0,
         choices=WORK_ORDER_STATUS
     )
+    task = models.ForeignKey(
+        'task.OpportunityTask',
+        on_delete=models.SET_NULL,
+        verbose_name="task",
+        related_name="service_order_work_order_task",
+        null=True,
+    )
 
     class Meta:
         verbose_name = 'Service order work order'

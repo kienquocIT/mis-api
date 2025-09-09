@@ -10,9 +10,10 @@ from apps.sales.serviceorder.models import (
     ServiceOrderPayment, ServiceOrderPaymentDetail, ServiceOrderPaymentReconcile,
     ServiceOrderExpense,
 )
+from apps.sales.task.models import OpportunityTask
 from apps.shared import (
     AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel,
-    SVOMsg, SerializerCommonHandle, SerializerCommonValidate
+    SVOMsg, SerializerCommonHandle, SerializerCommonValidate, BaseMsg
 )
 
 __all__ = [
@@ -501,6 +502,7 @@ class ServiceOrderWorkOrderSerializer(serializers.ModelSerializer):
     end_date = serializers.DateField()
     cost_data = serializers.JSONField()
     product_contribution = serializers.JSONField()
+    task_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = ServiceOrderWorkOrder
@@ -517,7 +519,8 @@ class ServiceOrderWorkOrderSerializer(serializers.ModelSerializer):
             'total_value',
             'work_status',
             'cost_data',
-            'product_contribution'
+            'product_contribution',
+            'task_id',
         )
 
     @classmethod
@@ -551,6 +554,13 @@ class ServiceOrderWorkOrderSerializer(serializers.ModelSerializer):
             else:
                 raise serializers.ValidationError({'work_order_cost': _('Tax of work order cost is missing')})
         return cost_data
+
+    @classmethod
+    def validate_task_id(cls, value):
+        try:
+            return OpportunityTask.objects.get(id=value).id
+        except OpportunityTask.DoesNotExist:
+            raise serializers.ValidationError({'task_id': BaseMsg.NOT_EXIST})
 
 
 # PAYMENT
@@ -814,7 +824,16 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                 'contribution_percent': contribution.contribution_percent,
                 'balance_quantity': contribution.balance_quantity,
                 'delivered_quantity': contribution.delivered_quantity,
-            } for contribution in work_order.work_order_contributions.all()]
+            } for contribution in work_order.work_order_contributions.all()],
+
+            # task
+            'task_id': work_order.task_id,
+            'task_data': {
+                'id': str(work_order.task_id),
+                'title': work_order.task.title,
+                'employee_inherit': work_order.task.employee_inherit.get_detail_minimal()
+                if work_order.task.employee_inherit else {},
+            } if work_order.task else {},
 
         } for work_order in obj.work_orders.all()]
 
