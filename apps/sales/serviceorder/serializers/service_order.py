@@ -581,6 +581,7 @@ class ServiceOrderDetailSerializerForDashboard(AbstractDetailSerializerModel):
             })
         return service_order_detail_list
 
+
 class ServiceOrderCommonFunc:
     @staticmethod
     def create_shipment(service_order_obj, shipment_data):
