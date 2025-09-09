@@ -13,7 +13,7 @@ from apps.core.mailer.templates import (
     SUBJECT_WORKFLOW_DEFAULT, TEMPLATE_WORKFLOW_DEFAULT, SUBJECT_PROJECT_NEW_DEFAULT, TEMPLATE_PROJECT_NEW_DEFAULT,
     SUBJECT_CONTRACT_NEW_DEFAULT, TEMPLATE_REQUEST_CONTRACT_DEFAULT, SUBJECT_LEAVE_NEW_DEFAULT,
     TEMPLATE_REQUEST_LEAVE_DEFAULT, SUBJECT_NEW_COMMENT_DEFAULT, TEMPLATE_MENTION_COMMENT_DEFAULT,
-    SUBJECT_NEW_TASK_DEFAULT, TEMPLATE_NEW_TASKS_DEFAULT
+    SUBJECT_NEW_TASK_DEFAULT, TEMPLATE_NEW_TASKS_DEFAULT, SUBJECT_NEW_OVERTIME_DEFAULT, TEMPLATE_NEW_OVERTIME_DEFAULT
 )
 from apps.shared import MasterDataAbstractModel, StringHandler, SimpleEncryptor, SimpleAbstractModel, DisperseModel
 
@@ -186,50 +186,51 @@ class MailTemplateSystem(MasterDataAbstractModel):
     def get_config(cls, tenant_id, company_id, system_code):
         obj, created = cls.objects.get_or_create(tenant_id=tenant_id, company_id=company_id, system_code=system_code)
         if created is True:
-            tenant_cls = DisperseModel(app_model='tenant.Tenant').get_model()
-            company_cls = DisperseModel(app_model='company.Company').get_model()
-            try:
-                tenant_obj = tenant_cls.objects.get(pk=tenant_id)
-                company_obj = company_cls.objects.get(pk=company_id)
-                if system_code in [1, '1']:
-                    obj.subject = SUBJECT_MAIL_WELCOME_DEFAULT
-                    obj.contents = TEMPLATE_MAIL_WELCOME_DEFAULT.replace(
-                        '__company_title__', company_obj.title
-                    ).replace('__company_sub_domain__', tenant_obj.code.lower())
-                elif system_code in [2, '2']:
-                    obj.subject = SUBJECT_CALENDAR_DEFAULT
-                    obj.contents = TEMPLATE_CALENDAR_DEFAULT.replace('__company_title__', company_obj.title)
-                elif system_code in [3, '3']:
-                    obj.subject = SUBJECT_OTP_VALIDATE_DEFAULT
-                    obj.contents = TEMPLATE_OTP_VALIDATE_DEFAULT.replace('__company_title__', company_obj.title)
-                # mail workflow
-                elif system_code in [6, '6']:
-                    obj.subject = SUBJECT_WORKFLOW_DEFAULT
-                    obj.contents = TEMPLATE_WORKFLOW_DEFAULT.replace(
-                        '__company_title__', company_obj.title
-                    ).replace('__company_sub_domain__', tenant_obj.code.lower())
-                elif system_code in [7, '7']:
-                    obj.subject = SUBJECT_PROJECT_NEW_DEFAULT
-                    obj.contents = TEMPLATE_PROJECT_NEW_DEFAULT.replace('__company_title__', company_obj.title)
-                elif system_code in [8, '8']:
-                    obj.subject = SUBJECT_CONTRACT_NEW_DEFAULT
-                    obj.contents = TEMPLATE_REQUEST_CONTRACT_DEFAULT.replace('__company_title__', company_obj.title)
-                elif system_code in [9, '9']:
-                    obj.subject = SUBJECT_LEAVE_NEW_DEFAULT
-                    obj.contents = TEMPLATE_REQUEST_LEAVE_DEFAULT.replace('__company_title__', company_obj.title)
-                elif system_code in [10, '10']:  # comment
-                    obj.subject = SUBJECT_NEW_COMMENT_DEFAULT
-                    obj.contents = TEMPLATE_MENTION_COMMENT_DEFAULT.replace('__company_title__', company_obj.title)
-                elif system_code in [11, '11']:  # tasks
-                    obj.subject = SUBJECT_NEW_TASK_DEFAULT
-                    obj.contents = TEMPLATE_NEW_TASKS_DEFAULT.replace('__company_title__', company_obj.title)
+            cls._initialize_template(obj, tenant_id, company_id, system_code)
+        return obj
+
+    @classmethod
+    def _initialize_template(cls, obj, tenant_id, company_id, system_code):
+        tenant_cls = DisperseModel(app_model='tenant.Tenant').get_model()
+        company_cls = DisperseModel(app_model='company.Company').get_model()
+        try:
+            tenant_obj = tenant_cls.objects.get(pk=tenant_id)
+            company_obj = company_cls.objects.get(pk=company_id)
+
+            # Template configuration mapping
+            template_config = cls._get_template_config()
+
+            # Convert system_code to string for consistent lookup
+            code_key = str(system_code)
+
+            if code_key in template_config:
+                config = template_config[code_key]
+                obj.subject = config['subject']
+                obj.contents = config['template'].replace('__company_title__', company_obj.title)
+
+                # Additional replacements for specific templates
+                if code_key in ['1', '6']:  # Welcome and Workflow
+                    obj.contents = obj.contents.replace('__company_sub_domain__', tenant_obj.code.lower())
 
                 obj.save(update_fields=['contents', 'subject'])
-            except tenant_cls.DoesNotExist:
-                pass
-            except company_cls.DoesNotExist:
-                pass
-        return obj
+        except (tenant_cls.DoesNotExist, company_cls.DoesNotExist):
+            pass
+
+    @classmethod
+    def _get_template_config(cls):
+        """Returns mapping of system codes to their template configurations"""
+        return {
+            '1': {'subject': SUBJECT_MAIL_WELCOME_DEFAULT, 'template': TEMPLATE_MAIL_WELCOME_DEFAULT},
+            '2': {'subject': SUBJECT_CALENDAR_DEFAULT, 'template': TEMPLATE_CALENDAR_DEFAULT},
+            '3': {'subject': SUBJECT_OTP_VALIDATE_DEFAULT, 'template': TEMPLATE_OTP_VALIDATE_DEFAULT},
+            '6': {'subject': SUBJECT_WORKFLOW_DEFAULT, 'template': TEMPLATE_WORKFLOW_DEFAULT},
+            '7': {'subject': SUBJECT_PROJECT_NEW_DEFAULT, 'template': TEMPLATE_PROJECT_NEW_DEFAULT},
+            '8': {'subject': SUBJECT_CONTRACT_NEW_DEFAULT, 'template': TEMPLATE_REQUEST_CONTRACT_DEFAULT},
+            '9': {'subject': SUBJECT_LEAVE_NEW_DEFAULT, 'template': TEMPLATE_REQUEST_LEAVE_DEFAULT},
+            '10': {'subject': SUBJECT_NEW_COMMENT_DEFAULT, 'template': TEMPLATE_MENTION_COMMENT_DEFAULT},
+            '11': {'subject': SUBJECT_NEW_TASK_DEFAULT, 'template': TEMPLATE_NEW_TASKS_DEFAULT},
+            '12': {'subject': SUBJECT_NEW_OVERTIME_DEFAULT, 'template': TEMPLATE_NEW_OVERTIME_DEFAULT},
+        }
 
     def save(self, *args, **kwargs):
         if not HTMLController.detect_escape(self.contents):

@@ -2,9 +2,22 @@ from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
-from apps.shared import MasterDataAbstractModel, DataAbstractModel
 from apps.masterdata.saledata.models import Tax, UnitOfMeasure, Currency, Product
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel
+
+# work order tab
+WORK_ORDER_STATUS = (
+    (0, 'pending'),
+    (1, 'in_progress'),
+    (2, 'completed'),
+    (3, 'cancelled'),
+)
+
+# tab payment
+PAYMENT_TYPE = (
+    (0, 'advance'),
+    (1, 'payment'),
+)
 
 
 class ServiceOrder(DataAbstractModel):
@@ -79,7 +92,7 @@ class ServiceOrderServiceDetail(MasterDataAbstractModel):
     delivery_balance_value = models.FloatField(default=0)
     total_contribution_percent = models.FloatField(default=0)
 
-    #data related to payment
+    # data related to payment
     total_payment_percent = models.FloatField(default=0)
     total_payment_value = models.FloatField(default=0)
 
@@ -90,14 +103,6 @@ class ServiceOrderServiceDetail(MasterDataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-
-# work order tab
-WORK_ORDER_STATUS = (
-    (0, 'pending'),
-    (1, 'in_progress'),
-    (2, 'completed'),
-    (3, 'cancelled'),
-)
 
 class ServiceOrderWorkOrder(MasterDataAbstractModel):
     service_order = models.ForeignKey(
@@ -195,12 +200,6 @@ class ServiceOrderWorkOrderContribution(SimpleAbstractModel):
         permissions = ()
 
 
-#tab payment
-PAYMENT_TYPE = (
-    (0, 'advance'),
-    (1, 'payment'),
-)
-
 class ServiceOrderPayment(MasterDataAbstractModel):
     service_order = models.ForeignKey(
         'ServiceOrder',
@@ -247,7 +246,7 @@ class ServiceOrderPaymentDetail(SimpleAbstractModel):
     issued_value = models.FloatField(default=0)
     balance_value = models.FloatField(default=0)
     tax_value = models.FloatField(default=0)
-    reconcile_value = models.FloatField( default=0)
+    reconcile_value = models.FloatField(default=0)
     receivable_value = models.FloatField(default=0)
 
     class Meta:
@@ -294,11 +293,12 @@ class ServiceOrderShipment(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name="service_order_shipment_service_order"
     )
-    reference_number = models.CharField(max_length=100, null=True)  # Package can allow null
+    order = models.IntegerField(default=1)
+    reference_number = models.CharField(max_length=100, null=True, blank=True)  # Package can allow null
     weight = models.FloatField(default=0, verbose_name="Weight (kg)")
     dimension = models.FloatField(default=0, verbose_name="Dimension")
     description = models.TextField(blank=True, help_text="Note")
-    reference_container = models.CharField(max_length=100, null=True, help_text="Only use for package")
+    reference_container = models.CharField(max_length=100, null=True, blank=True, help_text="Only use for package")
     is_container = models.BooleanField(default=True)
     container_type = models.ForeignKey(
         'saledata.ContainerTypeInfo',
