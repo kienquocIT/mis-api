@@ -3,7 +3,7 @@ from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Tax, UnitOfMeasure, Currency, Product
-from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel
+from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel, BastionFieldAbstractModel
 
 # work order tab
 WORK_ORDER_STATUS = (
@@ -20,7 +20,7 @@ PAYMENT_TYPE = (
 )
 
 
-class ServiceOrder(DataAbstractModel):
+class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
     customer = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
