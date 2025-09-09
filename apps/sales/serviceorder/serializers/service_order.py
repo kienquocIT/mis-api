@@ -12,7 +12,7 @@ from apps.sales.serviceorder.models import (
     ServiceOrderPackage, ServiceOrderWorkOrderCost, ServiceOrderWorkOrderContribution, ServiceOrderPaymentDetail,
     ServiceOrderPaymentReconcile,
 )
-from apps.sales.serviceorder.serializers import (
+from apps.sales.serviceorder.serializers.service_order_sub import (
     ServiceOrderShipmentSerializer, ServiceOrderExpenseSerializer,
     ServiceOrderServiceDetailSerializer, ServiceOrderWorkOrderSerializer, ServiceOrderPaymentSerializer,
 )
