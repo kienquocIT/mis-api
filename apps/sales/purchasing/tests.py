@@ -270,7 +270,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
                 'purchase_status', 'contact', 'note', 'purchase_request_product_datas', 'pretax_amount', 'taxes',
                 'total_price', 'system_status', 'workflow_runtime_id', 'attachment',
                 'distribution_plan', 'is_change', 'document_root_id', 'document_change_order',
-                'date_created',
+                'date_created', 'employee_inherit',
             ],
             check_sum_second=True,
         )
@@ -326,6 +326,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
                 'purchase_status', 'note', 'sale_order', 'purchase_request_product_datas', 'pretax_amount',
                 'taxes', 'total_price', 'system_status', 'workflow_runtime_id', 'attachment',
                 'distribution_plan', 'is_change', 'document_root_id', 'document_change_order', 'date_created',
+                'employee_inherit',
             ],
             check_sum_second=True,
         )

@@ -69,7 +69,8 @@ class PurchaseRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return super().get_queryset().select_related(
             'supplier',
             'sale_order',
-            'contact'
+            'contact',
+            'employee_inherit',
         )
 
     @swagger_auto_schema(

@@ -8,6 +8,10 @@ from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveM
 
 class ConfigPaymentTermList(BaseListMixin, BaseCreateMixin):
     queryset = PaymentTerm.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'id': ['exact', 'in'],
+    }
     serializer_list = PaymentTermListSerializer
     serializer_create = PaymentTermCreateSerializer
     serializer_detail = PaymentTermDetailSerializer
