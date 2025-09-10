@@ -12,7 +12,7 @@ from apps.sales.serviceorder.models import (
     ServiceOrder, ServiceOrderAttachMapAttachFile, ServiceOrderShipment,
     ServiceOrderWorkOrder, ServiceOrderServiceDetail, ServiceOrderExpense, ServiceOrderPayment, ServiceOrderContainer,
     ServiceOrderPackage, ServiceOrderWorkOrderCost, ServiceOrderWorkOrderContribution, ServiceOrderPaymentDetail,
-    ServiceOrderPaymentReconcile,
+    ServiceOrderPaymentReconcile, ServiceOrderWorkOrderTask,
 )
 from apps.sales.serviceorder.serializers.service_order_sub import (
     ServiceOrderShipmentSerializer, ServiceOrderExpenseSerializer,
@@ -307,14 +307,18 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                 'delivered_quantity': contribution.delivered_quantity,
             } for contribution in work_order.work_order_contributions.all()],
 
-            # task
-            'task_id': work_order.task_id,
-            'task_data': {
-                'id': str(work_order.task_id),
-                'title': work_order.task.title,
-                'employee_inherit': work_order.task.employee_inherit.get_detail_minimal()
-                if work_order.task.employee_inherit else {},
-            } if work_order.task else {},
+            # tasks
+            'task_data': [
+                {
+                    'id': str(work_order_task.task_id),
+                    'title': work_order_task.task.title,
+                    'employee_created': work_order_task.task.employee_created.get_detail_minimal()
+                    if work_order_task.task.employee_created else {},
+                    'employee_inherit': work_order_task.task.employee_inherit.get_detail_minimal()
+                    if work_order_task.task.employee_inherit else {},
+                } if work_order_task.task else {}
+                for work_order_task in work_order.service_order_work_order_task_wo.all()
+            ],
 
         } for work_order in obj.work_orders.all()]
 
@@ -695,7 +699,7 @@ class ServiceOrderCommonFunc:
                 unit_cost=work_order.get('unit_cost'),
                 total_value=work_order.get('total_value'),
                 work_status=work_order.get('work_status'),
-                task_id=work_order.get('task_id', None),
+                task_data=work_order.get('task_data', []),
                 tenant_id=service_order.tenant_id,
                 company_id=service_order.company_id,
             )
@@ -703,6 +707,14 @@ class ServiceOrderCommonFunc:
 
         service_order.work_orders.all().delete()
         created_work_orders = ServiceOrderWorkOrder.objects.bulk_create(bulk_data)
+        # bulk create records in model 1-* ServiceOrderWorkOrderTask
+        for created_work_order in created_work_orders:
+            ServiceOrderWorkOrderTask.objects.bulk_create([ServiceOrderWorkOrderTask(
+                work_order=created_work_order,
+                task_id=task_data.get('id', None),
+                tenant_id=created_work_order.tenant_id,
+                company_id=created_work_order.company_id,
+            ) for task_data in created_work_order.task_data])
 
         for instance, raw_data in zip(created_work_orders, work_order_data):
             ServiceOrderCommonFunc.create_work_order_cost(instance, raw_data.get('cost_data', []))
