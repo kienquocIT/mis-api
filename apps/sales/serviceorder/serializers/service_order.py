@@ -342,7 +342,9 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                 'total_reconciled_value': detail.total_reconciled_value,
                 'issued_value': detail.issued_value,
                 'balance_value': detail.balance_value,
+
                 'tax_value': detail.tax_value,
+                'tax_data': detail.service_detail.tax_data if payment.is_invoice_required else None,
                 'reconcile_value': detail.reconcile_value,
                 'receivable_value': detail.receivable_value,
 
@@ -577,7 +579,7 @@ class ServiceOrderDetailSerializerForDashboard(AbstractDetailSerializerModel):
                             'percent_completed': wo_ctb_item.work_order.task.percent_completed,
                         } if wo_ctb_item.work_order.task else {}]
                     } if wo_ctb_item.work_order else {},
-                } for wo_ctb_item in item.service_detail_contributions.all()]
+                } for wo_ctb_item in item.service_detail_contributions.all().order_by("work_order__order")]
             })
         return service_order_detail_list
 
