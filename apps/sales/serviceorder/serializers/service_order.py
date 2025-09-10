@@ -29,10 +29,10 @@ __all__ = [
     'ServiceOrderCreateSerializer',
     'ServiceOrderDetailSerializer',
     'ServiceOrderUpdateSerializer',
+    'ServiceOrderDetailSerializerForDashboard',
 ]
 
 
-# MAIN
 class ServiceOrderListSerializer(AbstractListSerializerModel):
     employee_created = serializers.SerializerMethodField()
 
@@ -43,9 +43,8 @@ class ServiceOrderListSerializer(AbstractListSerializerModel):
             'title',
             'code',
             'customer_data',
-            'date_created',
-            'end_date',
             'employee_created',
+            'date_created',
             'system_status'
         )
 
@@ -507,6 +506,80 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
             'work_order_data',
             'payment_data'
         )
+
+
+class ServiceOrderDetailSerializerForDashboard(AbstractDetailSerializerModel):
+    contract_value = serializers.SerializerMethodField()
+    contract_value_delivered = serializers.SerializerMethodField()
+    service_order_detail_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ServiceOrder
+        fields = (
+            'id',
+            'code',
+            'title',
+            'customer_data',
+            'start_date',
+            'end_date',
+            'contract_value',
+            'contract_value_delivered',
+            'service_order_detail_list'
+        )
+
+    @classmethod
+    def get_contract_value(cls, obj):
+        return sum(list(obj.service_details.all().values_list('total_value', flat=True)))
+
+    @classmethod
+    def get_contract_value_delivered(cls, obj):
+        return sum(list(obj.service_details.all().values_list('delivery_balance_value', flat=True)))
+
+    @classmethod
+    def get_service_order_detail_list(cls, obj):
+        service_order_detail_list = []
+        for item in obj.service_details.all():
+            service_order_detail_list.append({
+                'id': item.id,
+                'product_data': {
+                    'id': str(item.product_id),
+                    'code': item.product.code,
+                    'title': item.product.title
+                } if item.product else {},
+                'description': item.description,
+                'total_value': item.total_value,
+                'total_contribution_percent': item.total_contribution_percent,
+                'work_order_contribute_list': [{
+                    'id': str(wo_ctb_item.id),
+                    'is_selected': wo_ctb_item.is_selected,
+                    'title': wo_ctb_item.title,
+                    'contribution_percent': wo_ctb_item.contribution_percent,
+                    'balance_quantity': wo_ctb_item.balance_quantity,
+                    'delivered_quantity': wo_ctb_item.delivered_quantity,
+                    'work_order_data': {
+                        'id': str(wo_ctb_item.work_order.id),
+                        'code': wo_ctb_item.work_order.code,
+                        'title': wo_ctb_item.work_order.title,
+                        'start_date': wo_ctb_item.work_order.start_date,
+                        'end_date': wo_ctb_item.work_order.end_date,
+                        'is_delivery_point': wo_ctb_item.work_order.is_delivery_point,
+                        'quantity': wo_ctb_item.work_order.quantity,
+                        'unit_cost': wo_ctb_item.work_order.unit_cost,
+                        'total_value': wo_ctb_item.work_order.total_value,
+                        'work_status': wo_ctb_item.work_order.work_status,
+                        'task_data_list': [{
+                            'id': str(wo_ctb_item.work_order.task_id),
+                            'code': wo_ctb_item.work_order.task.code,
+                            'title': wo_ctb_item.work_order.task.title,
+                            'remark': wo_ctb_item.work_order.task.remark,
+                            'assignee_data': wo_ctb_item.work_order.task.employee_inherit.get_detail_with_group()
+                            if wo_ctb_item.work_order.task.employee_inherit else {},
+                            'percent_completed': wo_ctb_item.work_order.task.percent_completed,
+                        } if wo_ctb_item.work_order.task else {}]
+                    } if wo_ctb_item.work_order else {},
+                } for wo_ctb_item in item.service_detail_contributions.all()]
+            })
+        return service_order_detail_list
 
 
 class ServiceOrderCommonFunc:
