@@ -4,8 +4,7 @@ from apps.masterdata.saledata.models import ExpenseItem, UnitOfMeasure, Tax, Pro
 from apps.sales.serviceorder.models import (
     ServiceOrderShipment, ServiceOrderExpense, ServiceOrderServiceDetail, ServiceOrderWorkOrder, ServiceOrderPayment,
 )
-from apps.sales.task.models import OpportunityTask
-from apps.shared import SVOMsg, BaseMsg
+from apps.shared import SVOMsg
 
 
 __all__ = [
@@ -86,7 +85,6 @@ class ServiceOrderWorkOrderSerializer(serializers.ModelSerializer):
     end_date = serializers.DateField()
     cost_data = serializers.JSONField()
     product_contribution = serializers.JSONField()
-    task_id = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = ServiceOrderWorkOrder
@@ -104,7 +102,7 @@ class ServiceOrderWorkOrderSerializer(serializers.ModelSerializer):
             'work_status',
             'cost_data',
             'product_contribution',
-            'task_id',
+            'task_data',
         )
 
     @classmethod
@@ -140,15 +138,6 @@ class ServiceOrderWorkOrderSerializer(serializers.ModelSerializer):
             else:
                 raise serializers.ValidationError({'work_order_cost': _('Tax of work order cost is missing')})
         return cost_data
-
-    @classmethod
-    def validate_task_id(cls, value):
-        try:
-            if value is None:
-                return value
-            return OpportunityTask.objects.get(id=value).id
-        except OpportunityTask.DoesNotExist:
-            raise serializers.ValidationError({'task_id': BaseMsg.NOT_EXIST})
 
 
 # SHIPMENT

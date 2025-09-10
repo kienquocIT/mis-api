@@ -126,13 +126,7 @@ class ServiceOrderWorkOrder(MasterDataAbstractModel):
         default=0,
         choices=WORK_ORDER_STATUS
     )
-    task = models.ForeignKey(
-        'task.OpportunityTask',
-        on_delete=models.SET_NULL,
-        verbose_name="task",
-        related_name="service_order_work_order_task",
-        null=True,
-    )
+    task_data = models.JSONField(default=list, help_text="list task data, records in ServiceOrderWorkOrderTask")
 
     class Meta:
         verbose_name = 'Service order work order'
@@ -196,6 +190,28 @@ class ServiceOrderWorkOrderContribution(SimpleAbstractModel):
         verbose_name = 'Service order work order contribution'
         verbose_name_plural = 'Service order work order contributions'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class ServiceOrderWorkOrderTask(MasterDataAbstractModel):
+    work_order = models.ForeignKey(
+        'ServiceOrderWorkOrder',
+        on_delete=models.CASCADE,
+        related_name="service_order_work_order_task_wo"
+    )
+    task = models.ForeignKey(
+        'task.OpportunityTask',
+        on_delete=models.SET_NULL,
+        verbose_name="task",
+        related_name="service_order_work_order_task_task",
+        null=True,
+    )
+
+    class Meta:
+        verbose_name = 'Service order work order task'
+        verbose_name_plural = 'Service order work order tasks'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
