@@ -3,12 +3,14 @@ from apps.sales.serviceorder.models import ServiceOrder
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.serviceorder.serializers import (
     ServiceOrderListSerializer, ServiceOrderDetailSerializer,
-    ServiceOrderCreateSerializer, ServiceOrderUpdateSerializer,
+    ServiceOrderCreateSerializer, ServiceOrderUpdateSerializer, ServiceOrderDetailSerializerForDashboard,
 )
+
 
 __all__ = [
     'ServiceOrderList',
     'ServiceOrderDetail',
+    'ServiceOrderDetailForDashboard',
 ]
 
 
@@ -84,3 +86,20 @@ class ServiceOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
+
+
+class ServiceOrderDetailForDashboard(BaseRetrieveMixin):
+    queryset = ServiceOrder.objects  # noqa
+    serializer_detail = ServiceOrderDetailSerializerForDashboard
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related().select_related()
+
+    @swagger_auto_schema(operation_summary='Detail Service Order For Dashboard')
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='serviceorder', model_code='serviceorder', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)

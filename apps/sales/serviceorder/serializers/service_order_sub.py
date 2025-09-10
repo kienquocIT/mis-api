@@ -19,8 +19,8 @@ __all__ = [
 # SERVICE DETAIL
 class ServiceOrderServiceDetailSerializer(serializers.ModelSerializer):
     product = serializers.UUIDField()
-    uom = serializers.UUIDField()
-    tax = serializers.UUIDField()
+    uom = serializers.UUIDField(required=False, allow_null=True)
+    tax = serializers.UUIDField(required=False, allow_null=True)
     id = serializers.CharField(required=False)
 
     class Meta:
