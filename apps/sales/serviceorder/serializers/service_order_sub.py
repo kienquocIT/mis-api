@@ -20,8 +20,8 @@ __all__ = [
 # SERVICE DETAIL
 class ServiceOrderServiceDetailSerializer(serializers.ModelSerializer):
     product = serializers.UUIDField()
-    uom = serializers.UUIDField()
-    tax = serializers.UUIDField()
+    uom = serializers.UUIDField(required=False, allow_null=True)
+    tax = serializers.UUIDField(required=False, allow_null=True)
     id = serializers.CharField(required=False)
 
     class Meta:
@@ -144,6 +144,8 @@ class ServiceOrderWorkOrderSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_task_id(cls, value):
         try:
+            if value is None:
+                return value
             return OpportunityTask.objects.get(id=value).id
         except OpportunityTask.DoesNotExist:
             raise serializers.ValidationError({'task_id': BaseMsg.NOT_EXIST})
