@@ -312,6 +312,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                     if work_order_task.task.employee_created else {},
                     'employee_inherit': work_order_task.task.employee_inherit.get_detail_minimal()
                     if work_order_task.task.employee_inherit else {},
+                    'percent_completed': work_order_task.task.percent_completed,
                 } if work_order_task.task else {}
                 for work_order_task in work_order.service_order_work_order_task_wo.all()
             ],
