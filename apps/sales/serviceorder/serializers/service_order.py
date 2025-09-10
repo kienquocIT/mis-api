@@ -570,15 +570,24 @@ class ServiceOrderDetailSerializerForDashboard(AbstractDetailSerializerModel):
                         'unit_cost': wo_ctb_item.work_order.unit_cost,
                         'total_value': wo_ctb_item.work_order.total_value,
                         'work_status': wo_ctb_item.work_order.work_status,
+                        # 'task_data_list': [{
+                        #     'id': str(wo_ctb_item.work_order.task_id),
+                        #     'code': wo_ctb_item.work_order.task.code,
+                        #     'title': wo_ctb_item.work_order.task.title,
+                        #     'remark': wo_ctb_item.work_order.task.remark,
+                        #     'assignee_data': wo_ctb_item.work_order.task.employee_inherit.get_detail_with_group()
+                        #     if wo_ctb_item.work_order.task.employee_inherit else {},
+                        #     'percent_completed': wo_ctb_item.work_order.task.percent_completed,
+                        # } if wo_ctb_item.work_order.task else {}]
                         'task_data_list': [{
-                            'id': str(wo_ctb_item.work_order.task_id),
-                            'code': wo_ctb_item.work_order.task.code,
-                            'title': wo_ctb_item.work_order.task.title,
-                            'remark': wo_ctb_item.work_order.task.remark,
-                            'assignee_data': wo_ctb_item.work_order.task.employee_inherit.get_detail_with_group()
-                            if wo_ctb_item.work_order.task.employee_inherit else {},
-                            'percent_completed': wo_ctb_item.work_order.task.percent_completed,
-                        } if wo_ctb_item.work_order.task else {}]
+                            'id': str(wo_task_item.task.id),
+                            'code': wo_task_item.task.code,
+                            'title': wo_task_item.task.title,
+                            'remark': wo_task_item.task.remark,
+                            'assignee_data': wo_task_item.task.employee_inherit.get_detail_with_group()
+                            if wo_task_item.task.employee_inherit else {},
+                            'percent_completed': wo_task_item.task.percent_completed,
+                        } for wo_task_item in wo_ctb_item.work_order.service_order_work_order_task_wo.all()]
                     } if wo_ctb_item.work_order else {},
                 } for wo_ctb_item in item.service_detail_contributions.all().order_by("work_order__order")]
             })
