@@ -1,5 +1,7 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-from apps.sales.serviceorder.models import ServiceOrder
+from apps.sales.serviceorder.models import ServiceOrder, ServiceOrderServiceDetail, ServiceOrderWorkOrder, \
+    ServiceOrderWorkOrderTask
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.serviceorder.serializers import (
     ServiceOrderListSerializer, ServiceOrderDetailSerializer,
@@ -68,7 +70,30 @@ class ServiceOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related()
+        return super().get_queryset().select_related(
+            "employee_inherit",
+        ).prefetch_related(
+            Prefetch(
+                'service_details',
+                queryset=ServiceOrderServiceDetail.objects.select_related('product'),
+            ),
+            Prefetch(
+                'work_orders',
+                queryset=ServiceOrderWorkOrder.objects.select_related(
+                    'product',
+                ).prefetch_related(
+                    'work_order_costs',
+                    'work_order_contributions',
+                    Prefetch(
+                        'service_order_work_order_task_wo',
+                        queryset=ServiceOrderWorkOrderTask.objects.select_related(
+                            'task__employee_created',
+                            'task__employee_inherit',
+                        ),
+                    ),
+                ),
+            ),
+        )
 
     @swagger_auto_schema(operation_summary='Detail ServiceOrder')
     @mask_view(

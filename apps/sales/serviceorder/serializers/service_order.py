@@ -224,10 +224,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        return {
-            'id': obj.employee_inherit_id,
-            'full_name': obj.employee_inherit.get_full_name()
-        } if obj.employee_inherit else {}
+        return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
 
     @classmethod
     def get_attachment(cls, obj):
