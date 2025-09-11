@@ -193,11 +193,12 @@ class OpportunityTask(DataAbstractModel):
     def before_save(self):
         self.create_code_task()
         self.update_percent()
-        self.opportunity_data = {
-            "id": str(self.opportunity_id),
-            "title": str(self.opportunity.title),
-            "code": str(self.opportunity.code),
-        } if self.opportunity else {}
+        if self.opportunity:
+            self.opportunity_data = {
+                "id": str(self.opportunity_id),
+                "title": str(self.opportunity.title),
+                "code": str(self.opportunity.code),
+            }
 
         self.project_data = {
             "id": str(self.project_id),

@@ -41,8 +41,8 @@ class ServiceOrderList(BaseListMixin, BaseCreateMixin):
         operation_description="ServiceOrder list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='serviceorder', model_code='serviceorder', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='serviceorder', model_code='serviceorder', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -53,8 +53,8 @@ class ServiceOrderList(BaseListMixin, BaseCreateMixin):
         request_body=ServiceOrderCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='serviceorder', model_code='serviceorder', perm_code='create',
+        login_require=True, auth_require=True,
+        label_code='serviceorder', model_code='serviceorder', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
@@ -97,16 +97,16 @@ class ServiceOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(operation_summary='Detail ServiceOrder')
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='serviceorder', model_code='serviceorder', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='serviceorder', model_code='serviceorder', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update ServiceOrder", request_body=ServiceOrderUpdateSerializer)
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='serviceorder', model_code='serviceorder', perm_code='edit',
+        login_require=True, auth_require=True,
+        label_code='serviceorder', model_code='serviceorder', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
