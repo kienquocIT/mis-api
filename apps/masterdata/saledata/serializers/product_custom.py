@@ -1,7 +1,10 @@
 from datetime import datetime
+
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import Product
+from apps.shared import AttMsg, FORMATTING
 
 PRODUCT_OPTION = [(0, _('Sale')), (1, _('Inventory')), (2, _('Purchase'))]
 
@@ -26,6 +29,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'general_information', 'sale_information', 'purchase_information',
             'price_list', 'product_choice', 'supplied_by', 'inventory_information',
             'general_traceability_method', 'bom_check_data', 'bom_data', 'standard_price',
+            'avatar_img',
         )
 
     @classmethod
@@ -163,3 +167,29 @@ class ProductForSaleDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_cost_list(cls, obj):
         return obj.get_cost_info_of_all_warehouse()
+
+
+class ProductUploadAvatarSerializer(serializers.ModelSerializer):
+    @classmethod
+    def validate_avatar_img(cls, attrs):
+        if attrs and hasattr(attrs, 'size'):
+            if isinstance(attrs.size, int) and attrs.size < settings.FILE_AVATAR_MAX_SIZE:
+                return attrs
+            file_size_limit = AttMsg.FILE_SIZE_SHOULD_BE_LESS_THAN_X.format(
+                FORMATTING.size_to_text(settings.FILE_AVATAR_MAX_SIZE)
+            )
+            raise serializers.ValidationError({'avatar_img': file_size_limit})
+        raise serializers.ValidationError({'avatar_img': AttMsg.FILE_NO_DETECT_SIZE})
+
+    def update(self, instance, validated_data):
+        if instance.avatar_img:
+            instance.avatar_img.storage.delete(instance.avatar_img.name)
+        # trick or fixed issue: https://docs.djangoproject.com/en/4.2/ref/forms/fields/#django.forms.ImageField
+        # https://stackoverflow.com/a/77483484/13048590
+        instance.avatar_img = validated_data['avatar_img']
+        instance.save(update_fields=['avatar_img'])
+        return instance
+
+    class Meta:
+        model = Product
+        fields = ('avatar_img',)

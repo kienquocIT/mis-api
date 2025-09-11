@@ -123,8 +123,8 @@ class ServiceOrderDetailForDashboard(BaseRetrieveMixin):
 
     @swagger_auto_schema(operation_summary='Detail Service Order For Dashboard')
     @mask_view(
-        login_require=True, auth_require=True,
-        label_code='serviceorder', model_code='serviceorder', perm_code='view',
+        login_require=True, auth_require=False,
+        # label_code='serviceorder', model_code='serviceorder', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
