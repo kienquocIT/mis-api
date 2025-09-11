@@ -127,7 +127,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             work_order_data = validated_data.pop('work_order_data', [])
             payment_data = validated_data.pop('payment_data', [])
             service_order_obj = ServiceOrder.objects.create(**validated_data)
-            ServiceOrderCommonFunc.create_shipment(service_order_obj, shipment_data)
+            shipment_map_id = ServiceOrderCommonFunc.create_shipment(service_order_obj, shipment_data)
             ServiceOrderCommonFunc.create_expense(service_order_obj, expense_data)
             SerializerCommonHandle.handle_attach_file(
                 relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
@@ -136,7 +136,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
                 attachment_result=attachment
             )
             service_detail_id_map = ServiceOrderCommonFunc.create_service_detail(service_order_obj, service_detail_data)
-            ServiceOrderCommonFunc.create_work_order(service_order_obj, work_order_data, service_detail_id_map)
+            ServiceOrderCommonFunc.create_work_order(service_order_obj, work_order_data, service_detail_id_map, shipment_map_id)
             ServiceOrderCommonFunc.create_payment(service_order_obj, payment_data, service_detail_id_map)
 
             # adhoc case after create SO
@@ -301,6 +301,8 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                 'contribution_percent': contribution.contribution_percent,
                 'balance_quantity': contribution.balance_quantity,
                 'delivered_quantity': contribution.delivered_quantity,
+                'has_package': contribution.has_package,
+                'package_data': contribution.package_data,
             } for contribution in work_order.work_order_contributions.all()],
 
             # tasks
@@ -602,6 +604,7 @@ class ServiceOrderCommonFunc:
         bulk_info_container = []
         ctn_shipment = 1
         ctn_order = 1
+        shipment_map_id = {}
         for shipment_data_item in shipment_data:
             package_type = shipment_data_item.get("package_type")
             container_type = shipment_data_item.get("container_type")
@@ -640,10 +643,15 @@ class ServiceOrderCommonFunc:
 
         # bulk create shipments
         ServiceOrderShipment.objects.filter(service_order=service_order_obj).delete()
-        ServiceOrderShipment.objects.bulk_create(bulk_info_shipment)
+        created_shipments = ServiceOrderShipment.objects.bulk_create(bulk_info_shipment)
 
         # bulk create container
         container_created = ServiceOrderContainer.objects.bulk_create(bulk_info_container)
+
+        for frontend_data, backend_data in zip(shipment_data, created_shipments):
+            temp_id = frontend_data.get('id')
+            if temp_id:
+                shipment_map_id[temp_id] = backend_data.id
 
         # create package part
         bulk_info_packages = []
@@ -671,7 +679,7 @@ class ServiceOrderCommonFunc:
 
         # bulk create package
         ServiceOrderPackage.objects.bulk_create(bulk_info_packages)
-        return True
+        return shipment_map_id
 
     @staticmethod
     def create_expense(service_order_obj, expense_data):
@@ -764,7 +772,7 @@ class ServiceOrderCommonFunc:
         return service_detail_id_map
 
     @staticmethod
-    def create_work_order(service_order, work_order_data, service_detail_id_map):
+    def create_work_order(service_order, work_order_data, service_detail_id_map, shipment_map_id):
         service_order_id = service_order.id
         bulk_data = []
         for work_order in work_order_data:
@@ -803,7 +811,8 @@ class ServiceOrderCommonFunc:
             ServiceOrderCommonFunc.create_work_order_contribution(
                 instance,
                 raw_data.get('product_contribution', []),
-                service_detail_id_map
+                service_detail_id_map,
+                shipment_map_id
             )
 
     @staticmethod
@@ -829,13 +838,19 @@ class ServiceOrderCommonFunc:
         ServiceOrderWorkOrderCost.objects.bulk_create(bulk_data)
 
     @staticmethod
-    def create_work_order_contribution(work_order, contribution_data, service_detail_id_map):
+    def create_work_order_contribution(work_order, contribution_data, service_detail_id_map, shipment_map_id):
         bulk_data = []
         for contribution in contribution_data:
             temp_id = contribution.get('service_id')
             service_detail_uuid = service_detail_id_map.get(temp_id)
             if not service_detail_uuid:
                 return
+            package_data = contribution.get('package_data', [])
+            if package_data:
+                for package in package_data:
+                    package_temp_id = package.get('id')
+                    package_uuid = shipment_map_id.get(package_temp_id)
+                    package['id'] = str(package_uuid)
             bulk_data.append(
                 ServiceOrderWorkOrderContribution(
                     work_order=work_order,
@@ -846,6 +861,8 @@ class ServiceOrderCommonFunc:
                     contribution_percent=contribution.get('contribution_percent', 0),
                     balance_quantity=contribution.get('balance_quantity', 0),
                     delivered_quantity=contribution.get('delivered_quantity', 0),
+                    has_package=contribution.get('has_package', False),
+                    package_data=contribution.get('package_data', []),
                 )
             )
         work_order.work_order_contributions.all().delete()

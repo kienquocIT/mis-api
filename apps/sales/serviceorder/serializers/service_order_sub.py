@@ -144,6 +144,7 @@ class ServiceOrderWorkOrderSerializer(serializers.ModelSerializer):
 class ServiceOrderShipmentSerializer(serializers.ModelSerializer):
     container_type = serializers.JSONField(required=False, allow_null=True)
     package_type = serializers.JSONField(required=False, allow_null=True)
+    id = serializers.CharField(required=False)
 
     def validate(self, validate_data):
         if validate_data.get('is_container', True):

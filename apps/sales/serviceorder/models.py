@@ -3,6 +3,7 @@ from django.db import models
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Tax, UnitOfMeasure, Currency, Product
+from apps.sales.cashoutflow.utils import AdvanceHandler
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel, BastionFieldAbstractModel
 
 # work order tab
@@ -47,6 +48,7 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('serviceorder', True, self, kwargs)
         # hit DB
+        AdvanceHandler.push_opportunity_log(self)
         super().save(*args, **kwargs)
 
     class Meta:
@@ -185,6 +187,10 @@ class ServiceOrderWorkOrderContribution(SimpleAbstractModel):
     contribution_percent = models.FloatField(default=0)
     balance_quantity = models.FloatField(default=0)
     delivered_quantity = models.IntegerField(default=0)
+
+    #package feature
+    has_package = models.BooleanField(default=False)
+    package_data = models.JSONField(default=list, null=True)
 
     class Meta:
         verbose_name = 'Service order work order contribution'
