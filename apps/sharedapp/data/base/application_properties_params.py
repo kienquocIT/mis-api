@@ -206,7 +206,7 @@ Quotation_data__params = {
     '7e7a90fa-ea39-4f25-83a4-c820b8b79bb5': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product - Description',
-        'code': 'quotation_products_data___product_data__description',
+        'code': 'quotation_products_data___product_description',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -481,7 +481,7 @@ SaleOrder_data__params = {
     '8ab488ab-35ef-44fd-bc27-4183b25f6a29': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Product - Description',
-        'code': 'sale_order_products_data___product_data__description',
+        'code': 'sale_order_products_data___product_description',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -1795,7 +1795,7 @@ LeaseOrder_data__params = {
     'cbb8fb97-f359-47ed-b143-57b2b7c0754d': {
         'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
         'title': 'Product - Description',
-        'code': 'lease_products_data___product_data__description',
+        'code': 'lease_products_data___product_description',
         'remark': '',
         'type': 1,
         'is_print': True,
