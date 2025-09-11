@@ -338,6 +338,7 @@ class ProductTestCase(AdvanceTestCase):
                 'component_list_data',
                 'duration_unit_data',
                 'attribute_list_data',
+                'avatar_img',
             ],
             check_sum_second=True,
         )
@@ -422,6 +423,7 @@ class ProductTestCase(AdvanceTestCase):
                 'component_list_data',
                 'duration_unit_data',
                 'attribute_list_data',
+                'avatar_img',
             ],
             check_sum_second=True,
         )
