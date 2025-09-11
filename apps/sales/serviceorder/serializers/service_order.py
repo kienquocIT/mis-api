@@ -136,7 +136,9 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
                 attachment_result=attachment
             )
             service_detail_id_map = ServiceOrderCommonFunc.create_service_detail(service_order_obj, service_detail_data)
-            ServiceOrderCommonFunc.create_work_order(service_order_obj, work_order_data, service_detail_id_map, shipment_map_id)
+            ServiceOrderCommonFunc.create_work_order(
+                service_order_obj, work_order_data, service_detail_id_map, shipment_map_id
+            )
             ServiceOrderCommonFunc.create_payment(service_order_obj, payment_data, service_detail_id_map)
 
             # adhoc case after create SO
@@ -475,6 +477,7 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
             for key, value in validated_data.items():
                 setattr(instance, key, value)
             instance.save()
+            shipment_map_id = ServiceOrderCommonFunc.create_shipment(instance, shipment_data)
 
             ServiceOrderCommonFunc.create_shipment(instance, shipment_data)
             ServiceOrderCommonFunc.create_expense(instance, expense_data)
@@ -485,7 +488,7 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
                 attachment_result=attachment
             )
             service_detail_id_map = ServiceOrderCommonFunc.create_service_detail(instance, service_detail_data)
-            ServiceOrderCommonFunc.create_work_order(instance, work_order_data, service_detail_id_map)
+            ServiceOrderCommonFunc.create_work_order(instance, work_order_data, service_detail_id_map, shipment_map_id)
             ServiceOrderCommonFunc.create_payment(instance, payment_data, service_detail_id_map)
             # adhoc case update file to KMS
             update_files_is_approved(
@@ -599,7 +602,7 @@ class ServiceOrderDetailSerializerForDashboard(AbstractDetailSerializerModel):
 
 class ServiceOrderCommonFunc:
     @staticmethod
-    def create_shipment(service_order_obj, shipment_data):
+    def create_shipment(service_order_obj, shipment_data):  # pylint: disable=too-many-locals
         bulk_info_shipment = []
         bulk_info_container = []
         ctn_shipment = 1
