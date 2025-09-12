@@ -133,7 +133,7 @@ Quotation_data__params = {
     },
     '6a4808cf-5e65-4a25-b745-ad3c1c896b04': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Contact - name',
+        'title': 'Contact - Name',
         'code': 'contact_data__fullname',
         'remark': '',
         'type': 1,
@@ -141,7 +141,7 @@ Quotation_data__params = {
     },
     '7fb83226-66e3-42af-bd6e-cd106f8c6395': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Contact - email',
+        'title': 'Contact - Email',
         'code': 'contact_data__email',
         'remark': '',
         'type': 1,
@@ -149,7 +149,7 @@ Quotation_data__params = {
     },
     '9aef8506-b296-4ccb-bdb4-adf0cd70a93b': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Contact - phone',
+        'title': 'Contact - Phone',
         'code': 'contact_data__mobile',
         'remark': '',
         'type': 1,
@@ -157,7 +157,7 @@ Quotation_data__params = {
     },
     '6e15a6a5-47ac-4c5e-934b-7fbfc49e216c': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Customer - name',
+        'title': 'Customer - Name',
         'code': 'customer_data__name',
         'remark': '',
         'type': 1,
@@ -165,7 +165,7 @@ Quotation_data__params = {
     },
     '6dbc36e3-4909-4cc5-9043-42b5a2c00dfa': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Customer - code',
+        'title': 'Customer - Code',
         'code': 'customer_data__code',
         'remark': '',
         'type': 1,
@@ -173,7 +173,7 @@ Quotation_data__params = {
     },
     'e5bc0b78-af65-4275-8919-715b4220a18f': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Customer - phone',
+        'title': 'Customer - Phone',
         'code': 'customer_data__phone',
         'remark': '',
         'type': 1,
@@ -206,7 +206,7 @@ Quotation_data__params = {
     '7e7a90fa-ea39-4f25-83a4-c820b8b79bb5': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product - Description',
-        'code': 'quotation_products_data___product_data__description',
+        'code': 'quotation_products_data___product_description',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -215,6 +215,14 @@ Quotation_data__params = {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Product - Code',
         'code': 'quotation_products_data___product_data__code',
+        'remark': '',
+        'type': 1,
+        'is_print': True,
+    },
+    '68057823-cd81-4150-84b9-c6c5d520fcb0': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Product - Image',
+        'code': 'quotation_products_data___product_data__avatar_img',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -400,7 +408,7 @@ SaleOrder_data__params = {
     },
     '70608ead-a09b-45c5-83e1-96d527fd7b83': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
-        'title': 'Contact - name',
+        'title': 'Contact - Name',
         'code': 'contact_data__fullname',
         'remark': '',
         'type': 1,
@@ -408,7 +416,7 @@ SaleOrder_data__params = {
     },
     '5567204b-3832-4044-8a6c-f16bdd95891e': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
-        'title': 'Contact - email',
+        'title': 'Contact - Email',
         'code': 'contact_data__email',
         'remark': '',
         'type': 1,
@@ -416,7 +424,7 @@ SaleOrder_data__params = {
     },
     '0804e773-d393-4015-8eb9-5fd7a26e75d0': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
-        'title': 'Contact - phone',
+        'title': 'Contact - Phone',
         'code': 'contact_data__mobile',
         'remark': '',
         'type': 1,
@@ -424,7 +432,7 @@ SaleOrder_data__params = {
     },
     '5ffa134a-ac63-4038-82de-34613609020c': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
-        'title': 'Customer - name',
+        'title': 'Customer - Name',
         'code': 'customer_data__name',
         'remark': '',
         'type': 1,
@@ -432,7 +440,7 @@ SaleOrder_data__params = {
     },
     'fd331624-b917-48fd-a7d6-e55aa833e312': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
-        'title': 'Customer - code',
+        'title': 'Customer - Code',
         'code': 'customer_data__code',
         'remark': '',
         'type': 1,
@@ -440,7 +448,7 @@ SaleOrder_data__params = {
     },
     '0dff50e7-3a60-4c30-b0e2-4f8ed44ad91d': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
-        'title': 'Customer - phone',
+        'title': 'Customer - Phone',
         'code': 'customer_data__phone',
         'remark': '',
         'type': 1,
@@ -473,7 +481,7 @@ SaleOrder_data__params = {
     '8ab488ab-35ef-44fd-bc27-4183b25f6a29': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Product - Description',
-        'code': 'sale_order_products_data___product_data__description',
+        'code': 'sale_order_products_data___product_description',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -482,6 +490,14 @@ SaleOrder_data__params = {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Product - Code',
         'code': 'sale_order_products_data___product_data__code',
+        'remark': '',
+        'type': 1,
+        'is_print': True,
+    },
+    'bb2ffb5e-9a56-474d-8901-adfaf4346af4': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product - Image',
+        'code': 'sale_order_products_data___product_data__avatar_img',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -1316,7 +1332,7 @@ Delivery_data__params = {
     },
     "4f5643b7-cbb7-447e-ac58-819472ad99a2": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Sale order - title",
+        "title": "Sale order - Title",
         "code": "sale_order__title",
         "remark": "",
         "type": 1,
@@ -1324,7 +1340,7 @@ Delivery_data__params = {
     },
     "05a0c153-5493-49e0-adef-85ac18bcefd9": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Sale order - code",
+        "title": "Sale order - Code",
         "code": "sale_order__code",
         "remark": "",
         "type": 1,
@@ -1332,7 +1348,7 @@ Delivery_data__params = {
     },
     "8890fe68-94a1-4664-94f6-fd4e432f95af": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Sale order - approved date",
+        "title": "Sale order - Approved date",
         "code": "sale_order__date_approved",
         "remark": "",
         "type": 1,
@@ -1356,7 +1372,7 @@ Delivery_data__params = {
     },
     "e68c308b-3a74-484f-babf-4da6ebbc7148": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Contact - name",
+        "title": "Contact - Name",
         "code": "sale_order__contact_data__fullname",
         "remark": "",
         "type": 1,
@@ -1364,7 +1380,7 @@ Delivery_data__params = {
     },
     "16ddea79-709b-456f-b3d0-0692c11d72db": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Contact - email",
+        "title": "Contact - Email",
         "code": "sale_order__contact_data__email",
         "remark": "",
         "type": 1,
@@ -1372,7 +1388,7 @@ Delivery_data__params = {
     },
     "21978cfa-5f78-4889-9d46-4fab57dd0eac": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Contact - phone",
+        "title": "Contact - Phone",
         "code": "sale_order__contact_data__mobile",
         "remark": "",
         "type": 1,
@@ -1380,7 +1396,7 @@ Delivery_data__params = {
     },
     "01fdfac2-97bb-4528-a46c-d102b8771243": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Customer - name",
+        "title": "Customer - Name",
         "code": "sale_order__customer_data__name",
         "remark": "",
         "type": 1,
@@ -1388,7 +1404,7 @@ Delivery_data__params = {
     },
     "5d14c81b-8d78-4e5b-b64d-b5c3323fff31": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Customer - phone",
+        "title": "Customer - Phone",
         "code": "sale_order__customer_data__phone",
         "remark": "",
         "type": 1,
@@ -1444,7 +1460,7 @@ Delivery_data__params = {
     },
     "097e6784-3e15-4ade-8da8-be4545eff4da": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Product - order",
+        "title": "Product - Order",
         "code": "products___order",
         "remark": "",
         "type": 1,
@@ -1452,7 +1468,7 @@ Delivery_data__params = {
     },
     "2ebc7412-6ae0-4c5a-b1bb-66a0041d3d55": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Product - title",
+        "title": "Product - Name",
         "code": "products___product_data__title",
         "remark": "",
         "type": 1,
@@ -1460,8 +1476,16 @@ Delivery_data__params = {
     },
     "4aae1835-d20d-46a0-846c-fdaf5a69a943": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Product - description",
+        "title": "Product - Description",
         "code": "products___product_description",
+        "remark": "",
+        "type": 1,
+        "is_print": True,
+    },
+    "9527ce48-6612-4212-96db-c183d93c6107": {
+        "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
+        "title": "Product - Image",
+        "code": "products___product_data__avatar_img",
         "remark": "",
         "type": 1,
         "is_print": True,
@@ -1476,7 +1500,7 @@ Delivery_data__params = {
     },
     "19ff7a1c-b823-44e6-b15a-e6a247b47420": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Product - total quantity",
+        "title": "Product - Total quantity",
         "code": "products___delivery_quantity",
         "remark": "",
         "type": 1,
@@ -1484,7 +1508,7 @@ Delivery_data__params = {
     },
     "5e1e8c08-0f53-49a4-a51c-ab7a0dabe0d9": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Product - delivered quantity before",
+        "title": "Product - Delivered quantity before",
         "code": "products___delivered_quantity_before",
         "remark": "",
         "type": 1,
@@ -1492,7 +1516,7 @@ Delivery_data__params = {
     },
     "51c5669f-3d7f-47f3-999e-f11d05e38799": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Product - remaining quantity",
+        "title": "Product - Remaining quantity",
         "code": "products___remaining_quantity",
         "remark": "",
         "type": 1,
@@ -1500,7 +1524,7 @@ Delivery_data__params = {
     },
     "33ed8c9f-e67f-424c-b4bd-90e31ef1470e": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Product - unit price",
+        "title": "Product - Unit price",
         "code": "products___product_cost",
         "remark": "",
         "type": 1,
@@ -1508,7 +1532,7 @@ Delivery_data__params = {
     },
     "e3194a36-cca8-403c-8ce3-d50a4dc1d902": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Product - delivery quantity",
+        "title": "Product - Delivery quantity",
         "code": "products___picked_quantity",
         "remark": "",
         "type": 1,
@@ -1516,7 +1540,7 @@ Delivery_data__params = {
     },
     "b9733d9e-5ee3-49d3-aa29-314c03185586": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Product - tax rate",
+        "title": "Product - Tax rate",
         "code": "products___tax_data__rate",
         "remark": "",
         "type": 1,
@@ -1524,7 +1548,7 @@ Delivery_data__params = {
     },
     "158ee72d-0eb5-43be-8a19-97a938f75954": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Product - subtotal",
+        "title": "Product - Subtotal",
         "code": "products___product_subtotal",
         "remark": "",
         "type": 1,
@@ -1532,7 +1556,7 @@ Delivery_data__params = {
     },
     "b96f31ad-fe80-47ed-b080-952418b7dfc9": {
         "application_id": "1373e903-909c-4b77-9957-8bcf97e8d6d3",
-        "title": "Product - subtotal after tax",
+        "title": "Product - Subtotal after tax",
         "code": "products___product_subtotal_after_tax",
         "remark": "",
         "type": 1,
@@ -1714,7 +1738,7 @@ LeaseOrder_data__params = {
     },
     '25ede143-cc79-498e-a984-16fbb353a0f9': {
         'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
-        'title': 'Contact fullname',
+        'title': 'Contact - Name',
         'code': 'contact_data__fullname',
         'remark': '',
         'type': 1,
@@ -1722,7 +1746,7 @@ LeaseOrder_data__params = {
     },
     '4f5ad5b1-a4eb-4fe5-85cf-5fa1c5ed3cca': {
         'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
-        'title': 'Contact email',
+        'title': 'Contact - Email',
         'code': 'contact_data__email',
         'remark': '',
         'type': 1,
@@ -1730,7 +1754,7 @@ LeaseOrder_data__params = {
     },
     '7f50dc61-b077-4ad7-affd-c0f674dea5ef': {
         'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
-        'title': 'Customer name',
+        'title': 'Customer - Name',
         'code': 'customer_data__name',
         'remark': '',
         'type': 1,
@@ -1771,7 +1795,7 @@ LeaseOrder_data__params = {
     'cbb8fb97-f359-47ed-b143-57b2b7c0754d': {
         'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
         'title': 'Product - Description',
-        'code': 'lease_products_data___product_data__description',
+        'code': 'lease_products_data___product_description',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -1780,6 +1804,14 @@ LeaseOrder_data__params = {
         'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
         'title': 'Product - Code',
         'code': 'lease_products_data___product_data__code',
+        'remark': '',
+        'type': 1,
+        'is_print': True,
+    },
+    '48449e00-d44f-4e7e-8ef8-4a6dd0095242': {
+        'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
+        'title': 'Product - Image',
+        'code': 'lease_products_data___product_data__avatar_img',
         'remark': '',
         'type': 1,
         'is_print': True,

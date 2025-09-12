@@ -462,6 +462,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'component_list_data',
             'duration_unit_data',
             'attribute_list_data',
+            'avatar_img',
         )
 
     @classmethod

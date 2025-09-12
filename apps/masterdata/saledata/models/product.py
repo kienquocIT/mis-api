@@ -2,6 +2,8 @@ import logging
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+from apps.core.attachments.storages.aws.storages_backend import PublicMediaStorage
 from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.inventory import WareHouse
 from apps.masterdata.saledata.utils import ProductHandler
@@ -40,6 +42,17 @@ VALUATION_METHOD = [
 ]
 
 logger = logging.getLogger(__name__)
+
+
+def generate_product_avatar_path(instance, filename):
+    def get_ext():
+        return filename.split(".")[-1].lower()
+
+    if instance.id:
+        company_path = str(instance.company_id).replace('-', '')
+        product_id = str(instance.id).replace('-', '')
+        return f"{company_path}/product/avatar/{product_id}.{get_ext()}"
+    raise ValueError('Attachment require product related')
 
 
 # Create your models here.
@@ -321,6 +334,11 @@ class Product(DataAbstractModel):
     duration_unit_data = models.JSONField(default=dict)
 
     # for Variants
+
+    # image
+    avatar_img = models.ImageField(
+        storage=PublicMediaStorage, upload_to=generate_product_avatar_path, null=True,
+    )
 
     class Meta:
         verbose_name = 'Product'

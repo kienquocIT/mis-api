@@ -205,6 +205,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             "dec012bf-b931-48ba-a746-38b7fd7ca73b",  # Email
             "3a369ba5-82a0-4c4d-a447-3794b67d1d02",  # Consulting Document
             "010404b3-bb91-4b24-9538-075f5f00ef14",  # Lease Order
+            "36f25733-a6e7-43ea-b710-38e2052f0f6d",  # Service Order
         ]
         for obj in DistributionApplication.objects.select_related('app').filter(
                 employee=employee_obj, app_id__in=app_id_get

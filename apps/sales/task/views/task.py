@@ -28,6 +28,7 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
         'employee_inherit': ['exact'],
         'task_status': ['exact'],
         'priority': ['exact'],
+        'id': ['exact', 'in'],
     }
 
     def get_queryset(self):
