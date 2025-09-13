@@ -1,5 +1,7 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.parsers import MultiPartParser
+
 from apps.masterdata.saledata.models import ProductPriceList
 from apps.masterdata.saledata.serializers.product_import_db import (
     ProductQuotationCreateSerializerLoadDB, ProductQuotationDetailSerializerLoadDB
@@ -30,7 +32,7 @@ from apps.masterdata.saledata.serializers.product_masterdata import (
     ManufacturerCreateSerializer, ManufacturerDetailSerializer, ManufacturerUpdateSerializer
 )
 from apps.masterdata.saledata.serializers.product_custom import (
-    ProductForSaleListSerializer, ProductForSaleDetailSerializer
+    ProductForSaleListSerializer, ProductForSaleDetailSerializer, ProductUploadAvatarSerializer
 )
 
 
@@ -672,3 +674,22 @@ class ProductQuotationListLoadDB(BaseCreateMixin):
             'employee_current': request.user.employee_current
         }
         return self.create(request, *args, **kwargs)
+
+
+class ProductUploadAvatar(BaseUpdateMixin):
+    parser_classes = [MultiPartParser]
+    queryset = Product.objects
+    serializer_update = ProductUploadAvatarSerializer
+    retrieve_hidden_field = ['tenant_id', 'company_id']
+
+    def write_log(self, *args, **kwargs):
+        kwargs['request_data'] = {}
+        super().write_log(*args, **kwargs)
+
+    @swagger_auto_schema(request_body=ProductUploadAvatarSerializer)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='saledata', model_code='product', perm_code='edit',
+    )
+    def post(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)

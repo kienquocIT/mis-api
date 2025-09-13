@@ -1,7 +1,7 @@
 __all__ = ['TEMPLATE_OTP_VALIDATE_DEFAULT', 'TEMPLATE_MAIL_WELCOME_DEFAULT', 'TEMPLATE_CALENDAR_DEFAULT',
            'TEMPLATE_PROJECT_NEW_DEFAULT', 'TEMPLATE_REQUEST_CONTRACT_DEFAULT', 'TEMPLATE_REQUEST_LEAVE_DEFAULT',
            'SUBJECT_NEW_COMMENT_DEFAULT', 'TEMPLATE_MENTION_COMMENT_DEFAULT', 'SUBJECT_NEW_TASK_DEFAULT',
-           'TEMPLATE_NEW_TASKS_DEFAULT']
+           'TEMPLATE_NEW_TASKS_DEFAULT', 'SUBJECT_NEW_OVERTIME_DEFAULT', 'TEMPLATE_NEW_OVERTIME_DEFAULT']
 
 from django.utils.translation import gettext_lazy as _
 
@@ -120,4 +120,23 @@ TEMPLATE_NEW_TASKS_DEFAULT = _(
     "<p style=\"font-size: 18px\">Hi, <span class=\"params-data\" data-code=\"_task__employee_inherit\"></span></p>"
     "<p>You have a new task! <strong style=\"font-style: italic;\"><span class=\"params-data\" data-code=\"_task__assigner\"></span></strong> has just sent you a task that needs to be processed. Please check and start working on it.</p>"
     "<p><a href=\"_task__links\" style=\"text-decoration:none;color:#fff;width: 150px;display: inline-block;background: #007D88;padding: 6px;text-transform: uppercase;letter-spacing: .95px; text-align:center;\">View document</a></p>"
+)
+
+
+SUBJECT_NEW_OVERTIME_DEFAULT = _('🔔 Notification: New Overtime Request Received')
+
+TEMPLATE_NEW_OVERTIME_DEFAULT = _(
+    "<h2 style=\"font-weight: 500; font-size: 20px\">Company: <strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
+    "<p style=\"font-size: 18px\">Dear employee</p>"
+    "<p>A new overtime request has been submitted to your on BFLOW. Please review the details at your earliest convenience to ensure timely action</p>"
+    "<p><strong>Detail info Overtime request:</strong></p>"
+    "<ul>"
+    "<li><strong>Start date:</strong> <span class=\"params-data\" data-code=\"_ot__start_date\"></span></li>"
+    "<li><strong>End date:</strong> <span class=\"params-data\" data-code=\"_ot__end_date\"></span></li>"
+    "<li><strong>Start time:</strong> <span class=\"params-data\" data-code=\"_ot__start_time\"></span></li>"
+    "<li><strong>End time:</strong> <span class=\"params-data\" data-code=\"_ot__end_time\"></span></li>"
+    "</ul>"
+    "<p>Log in to the BFLOW platform to view the request: <a href=\"_ot__links\">View document</a></p>"
+    "<p>Thank you for your prompt attention to this matter.</p>"
+    "<p>Best regards, The BFLOW platform</p>"
 )

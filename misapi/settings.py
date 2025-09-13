@@ -135,6 +135,7 @@ INSTALLED_APPS = \
         'apps.sales.productmodificationbom',
         'apps.sales.equipmentloan',
         'apps.sales.equipmentreturn',
+        'apps.sales.serviceorder',
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ] + [
@@ -144,6 +145,7 @@ INSTALLED_APPS = \
         'apps.hrm.employeeinfo',
         'apps.hrm.attendance',
         'apps.hrm.absenceexplanation',
+        'apps.hrm.overtimerequest',
     ] + [
         'apps.sales.financialcashflow',
         'apps.sales.reconciliation',

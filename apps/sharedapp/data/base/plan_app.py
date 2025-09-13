@@ -92,6 +92,10 @@ _PlanApplication_hrm_data = {
         "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",  # HRM
         "application_id": "8308d062-b22c-4f05-b88e-1115f9fe03ee",  # Absence explanation
     },
+    "4a996500-fcc4-484f-be62-b3c73a2db927": {
+        "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",  # HRM
+        "application_id": "4a996500-fcc4-484f-be62-b3c73a2db927",  # Overtime request
+    }
 }
 
 _PlanApplication_sale_data = {
@@ -447,6 +451,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "0a788054-1d79-4dfd-9371-8bc6a23971f3",  # Payment Plan
     },
+    "36f25733-a6e7-43ea-b710-38e2052f0f6d": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "36f25733-a6e7-43ea-b710-38e2052f0f6d",  # Service Order
+    },
 }
 
 _PlanApplication_eOffice_data = {
@@ -487,7 +495,7 @@ _PlanApplication_kms_data = {
     },
     "6944d486-66a0-4521-bd28-681d5df42ff3": {
         "plan_id": "02793f68-3548-45c1-98f5-89899a963091",  # KMS
-        "application_id": "6944d486-66a0-4521-bd28-681d5df42ff3",  # Document approval
+        "application_id": "6944d486-66a0-4521-bd28-681d5df42ff3",  # Incoming document
     },
 }
 
