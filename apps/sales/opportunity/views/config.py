@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.opportunity.models import (
-    CustomerDecisionFactor, OpportunityConfig, OpportunityConfigStage
+    CustomerDecisionFactor, OpportunityConfig, OpportunityConfigStage, Opportunity
 )
 from apps.sales.opportunity.serializers import (
     CustomerDecisionFactorListSerializer,
@@ -8,7 +8,7 @@ from apps.sales.opportunity.serializers import (
     CustomerDecisionFactorDetailSerializer,
     OpportunityConfigDetailSerializer, OpportunityConfigUpdateSerializer,
     OpportunityConfigStageListSerializer, OpportunityConfigStageCreateSerializer,
-    OpportunityConfigStageDetailSerializer, OpportunityConfigStageUpdateSerializer
+    OpportunityConfigStageDetailSerializer, OpportunityConfigStageUpdateSerializer, OpportunityStageCheckingSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 
@@ -157,3 +157,23 @@ class OpportunityConfigStageDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestr
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+class OpportunityStageChecking(BaseRetrieveMixin):
+    queryset = Opportunity.objects
+    serializer_detail = OpportunityStageCheckingSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related().prefetch_related()
+
+    @swagger_auto_schema(
+        operation_summary="Opportunity Stage Check",
+        operation_description="Opportunity Stage Check",
+    )
+    @mask_view(
+        login_require=True, auth_require=False, employee_required=True,
+        label_code='opportunity', model_code='opportunity', perm_code="view",
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
