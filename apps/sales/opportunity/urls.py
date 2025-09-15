@@ -37,5 +37,9 @@ urlpatterns = [
     path('decision-factor/list', CustomerDecisionFactorList.as_view(), name='CustomerDecisionFactorList'),
     path('decision-factor/<str:pk>', CustomerDecisionFactorDetail.as_view(), name='CustomerDecisionFactorDetail'),
     path('detail/<str:pk_opp>/member/list', OpportunityMemberList.as_view(), name='OpportunityMemberList'),
-    path('detail/<str:pk_opp>/member/<str:pk_member>', OpportunityMemberDetail.as_view(), name='OpportunityMemberDetail'),
+    path(
+        'detail/<str:pk_opp>/member/<str:pk_member>',
+        OpportunityMemberDetail.as_view(),
+        name='OpportunityMemberDetail'
+    ),
 ]
