@@ -342,7 +342,7 @@ class TestCaseOpportunity(AdvanceTestCase):
         return response
 
     def test_get_config(self):
-        url = reverse('OpportunityConfig')
+        url = reverse('OpportunityConfigDetail')
         response = self.client.get(url, format='json')
         self.assertResponseList(  # noqa
             response,
@@ -360,7 +360,7 @@ class TestCaseOpportunity(AdvanceTestCase):
         return response
 
     def test_update_config(self):
-        url = reverse('OpportunityConfig')
+        url = reverse('OpportunityConfigDetail')
 
         is_am_create = True
         data = {
