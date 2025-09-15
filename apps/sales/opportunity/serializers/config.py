@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.sales.opportunity.models import (
-    CustomerDecisionFactor, OpportunityConfig, OpportunityConfigStage, StageCondition, Opportunity, OpportunityStage
+    CustomerDecisionFactor, OpportunityConfig, OpportunityConfigStage, StageCondition
 )
 
 
@@ -112,58 +112,3 @@ class OpportunityConfigStageUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         return instance
-
-
-class OpportunityStageCheckingSerializer(serializers.ModelSerializer):
-    current_stage = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Opportunity
-        fields = (
-            'id',
-            'current_stage'
-        )
-
-    @classmethod
-    def get_current_stage(cls, obj):
-        stages = OpportunityConfigStage.objects.filter(
-            company_id=obj.company_id, is_delete=False
-        ).order_by('win_rate')
-        stage_lost = None
-        stage_delivery = None
-        stage_close = None
-        list_stage = []
-        # sort stage [stage 1, stage 2, ...., stage Close Lost, stage Delivery, stage Deal Close
-        for item in stages:
-            if item.is_closed_lost:
-                stage_lost = item
-            elif item.is_delivery:
-                stage_delivery = item
-            elif item.is_deal_closed:
-                stage_close = item
-            else:
-                list_stage.append(item)
-        if stage_lost:
-            list_stage.append(stage_lost)
-        if stage_delivery:
-            list_stage.append(stage_delivery)
-        if stage_close:
-            list_stage.append(stage_close)
-        # list stage instance
-        list_stage_instance = obj.parse_stage(list_stage=list_stage, obj=obj)
-        # check stage
-        stage_index = []
-        win_rate = 0
-        for idx, item in enumerate(list_stage):
-            if item.logical_operator == 0 and all(element in list_stage_instance for element in item.condition_datas):
-                stage_index.append(idx)
-                win_rate = item.win_rate
-            if item.logical_operator != 0 and any(element in list_stage_instance for element in item.condition_datas):
-                stage_index.append(idx)
-                win_rate = item.win_rate
-        bulk_data = []
-        for index in stage_index:
-            stage = list_stage[index]
-            bulk_data.append(OpportunityStage(opportunity=obj, stage_id=stage.id, is_current=False))
-        bulk_data[-1].is_current = True
-        return bulk_data[-1] if len(bulk_data) > 0 else None

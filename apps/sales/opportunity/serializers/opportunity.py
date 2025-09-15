@@ -1123,6 +1123,61 @@ class OpportunityMemberUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+# stage checking
+class OpportunityStageCheckingSerializer(serializers.ModelSerializer):
+    current_stage = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Opportunity
+        fields = (
+            'id',
+            'current_stage'
+        )
+
+    def get_current_stage(self, obj):
+        print(self.context)
+        stages = OpportunityConfigStage.objects.filter(company_id=obj.company_id, is_delete=False).order_by('win_rate')
+        stage_lost = None
+        stage_delivery = None
+        stage_close = None
+        list_stage = []
+        # sort stage [stage 1, stage 2, ...., stage Close Lost, stage Delivery, stage Deal Close
+        for item in stages:
+            if item.is_closed_lost:
+                stage_lost = item
+            elif item.is_delivery:
+                stage_delivery = item
+            elif item.is_deal_closed:
+                stage_close = item
+            else:
+                list_stage.append(item)
+        if stage_lost:
+            list_stage.append(stage_lost)
+        if stage_delivery:
+            list_stage.append(stage_delivery)
+        if stage_close:
+            list_stage.append(stage_close)
+        # list stage instance
+        list_stage_instance = obj.parse_stage(list_stage=list_stage, obj=obj)
+        # check stage
+        stage_index = []
+        for idx, item in enumerate(list_stage):
+            if item.logical_operator == 0 and all(element in list_stage_instance for element in item.condition_datas):
+                stage_index.append(idx)
+            if item.logical_operator != 0 and any(element in list_stage_instance for element in item.condition_datas):
+                stage_index.append(idx)
+
+        current_stage = list_stage[stage_index[-1]]
+        return {
+            'id': str(current_stage.id),
+            'is_deal_closed': current_stage.is_deal_closed,
+            'is_closed_lost': current_stage.is_closed_lost,
+            'is_delivery': current_stage.is_delivery,
+            'indicator': current_stage.indicator,
+            'win_rate': current_stage.win_rate,
+        } if current_stage else {}
+
+
 class OpportunityCommonFunction:
     @classmethod
     def create_product_category(cls, data, opportunity):

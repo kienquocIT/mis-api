@@ -12,6 +12,7 @@ from apps.sales.opportunity.serializers import (
 )
 from apps.sales.opportunity.serializers.opportunity import (
     OpportunityMemberCreateSerializer, OpportunityMemberDetailSerializer, OpportunityMemberUpdateSerializer,
+    OpportunityStageCheckingSerializer,
 )
 from apps.shared import (
     BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck,
@@ -428,3 +429,28 @@ class OpportunityMemberDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMix
         if TypeCheck.check_uuid(pk_opp) and TypeCheck.check_uuid(pk_member):
             return self.destroy(request, *args, pk_opp, pk_member, is_purge=True, **kwargs)
         return ResponseController.notfound_404()
+
+
+class OpportunityStageChecking(BaseListMixin):
+    queryset = Opportunity.objects
+    serializer_list = OpportunityStageCheckingSerializer
+    retrieve_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        if 'opportunity_id' in self.request.query_params:
+            return super().get_queryset().filter(
+                id=self.request.query_params.get('opportunity_id')
+            ).select_related().prefetch_related()
+        return super().get_queryset().none()
+
+    @swagger_auto_schema(
+        operation_summary="Opportunity Stage Check",
+        operation_description="Opportunity Stage Check",
+    )
+    @mask_view(
+        login_require=True, auth_require=False, employee_required=True,
+        label_code='opportunity', model_code='opportunity', perm_code="view",
+    )
+    def get(self, request, *args, **kwargs):
+        self.ser_context = self.request.query_params
+        return self.list(request, *args, **kwargs)

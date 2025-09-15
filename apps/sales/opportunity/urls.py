@@ -32,7 +32,7 @@ urlpatterns = [
     # stage
     path('stage/list', OpportunityConfigStageList.as_view(), name='OpportunityConfigStageList'),
     path('stage/<str:pk>', OpportunityConfigStageDetail.as_view(), name='OpportunityConfigStageDetail'),
-    path('stage-checking/<str:pk>', OpportunityStageChecking.as_view(), name='OpportunityStageChecking'),
+    path('stage-checking', OpportunityStageChecking.as_view(), name='OpportunityStageChecking'),
     # related
     path('decision-factor/list', CustomerDecisionFactorList.as_view(), name='CustomerDecisionFactorList'),
     path('decision-factor/<str:pk>', CustomerDecisionFactorDetail.as_view(), name='CustomerDecisionFactorDetail'),
