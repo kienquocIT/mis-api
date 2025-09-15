@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.opportunity.models import (
-    CustomerDecisionFactor, OpportunityConfig, OpportunityConfigStage, Opportunity
+    CustomerDecisionFactor, OpportunityConfig, OpportunityConfigStage
 )
 from apps.sales.opportunity.serializers import (
     CustomerDecisionFactorListSerializer,
