@@ -1135,7 +1135,6 @@ class OpportunityStageCheckingSerializer(serializers.ModelSerializer):
         )
 
     def get_current_stage(self, obj):
-        print(self.context)
         stages = OpportunityConfigStage.objects.filter(company_id=obj.company_id, is_delete=False).order_by('win_rate')
         stage_lost = None
         stage_delivery = None
