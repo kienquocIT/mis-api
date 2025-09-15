@@ -1,32 +1,43 @@
-# pylint: disable=C0302
 import datetime
 from uuid import uuid4
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.core.hr.models import Employee, DistributionApplication
+from apps.core.hr.serializers.common import validate_license_used
 from apps.core.process.utils import ProcessRuntimeControl
-from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
+from apps.core.tenant.models import TenantPlan
+from apps.masterdata.saledata.models import Contact
 from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.models.accounts import AccountActivity
-from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
 from apps.sales.lead.models import LeadStage, LeadHint, LeadChartInformation, LeadOpportunity, LeadParser
 from apps.sales.opportunity.models import (
-    Opportunity, OpportunityProductCategory, OpportunityProduct,
-    OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember,
-    OpportunityConfigStage, OpportunityStage,
+    Opportunity, OpportunitySaleTeamMember, OpportunityConfigStage, OpportunityStage, PlanMemberOpportunity,
+)
+from apps.sales.opportunity.serializers.opportunity_sub import (
+    OpportunityCommonFunction,
+    OpportunityProductCreateSerializer, OpportunityCompetitorCreateSerializer,
+    OpportunityContactRoleCreateSerializer, OpportunityStageUpdateSerializer
 )
 from apps.sales.quotation.models import QuotationAppConfig
 from apps.sales.report.models import ReportPipeline
-from apps.shared import AccountsMsg, HRMsg, SaleMsg, DisperseModel
+from apps.shared import AccountsMsg, HRMsg, SaleMsg, DisperseModel, Caching
+from apps.shared.permissions.util import PermissionController
 from apps.shared.translations.opportunity import OpportunityMsg
 
+
 __all__ = [
-    'OpportunityListSerializer', 'OpportunityCreateSerializer', 'OpportunityUpdateSerializer',
-    'OpportunityDetailSerializer', 'OpportunityForSaleListSerializer', 'OpportunityDetailSimpleSerializer',
-    'CommonOpportunityUpdate'
+    'OpportunityListSerializer',
+    'OpportunityCreateSerializer',
+    'OpportunityUpdateSerializer',
+    'OpportunityDetailSerializer',
+    'OpportunityMemberCreateSerializer',
+    'OpportunityMemberDetailSerializer',
+    'OpportunityMemberUpdateSerializer',
+    'OpportunityStageCheckingSerializer'
 ]
 
 
+# main
 class OpportunityListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
@@ -113,7 +124,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
 
 
 class OpportunityCreateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField()
+    title = serializers.CharField(max_length=100)
     customer = serializers.UUIDField()
     product_category = serializers.ListField(child=serializers.UUIDField(), required=False)
     employee_inherit_id = serializers.UUIDField()
@@ -365,7 +376,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': HRMsg.INVALID_SCHEMA})
 
         # create M2M Opportunity and Product Category
-        CommonOpportunityUpdate.create_product_category(product_categories, opportunity)
+        OpportunityCommonFunction.create_product_category(product_categories, opportunity)
         # create stage default for Opportunity
         OpportunityStage.objects.create(stage=init_stage, opportunity=opportunity, is_current=True)
         # set sale_person in sale team
@@ -417,466 +428,201 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         return opportunity
 
 
-class OpportunityProductCreateSerializer(serializers.ModelSerializer):
-    product = serializers.UUIDField(allow_null=True)
-    product_category = serializers.UUIDField(allow_null=False, required=True)
-    uom = serializers.UUIDField(allow_null=False)
-    tax = serializers.UUIDField(allow_null=False, required=False)
+class OpportunityDetailSerializer(serializers.ModelSerializer):
+    decision_maker = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
+    sale_order = serializers.SerializerMethodField()
+    quotation = serializers.SerializerMethodField()
+    stage = serializers.SerializerMethodField()
+    customer = serializers.SerializerMethodField()
+    end_customer = serializers.SerializerMethodField()
+    product_category = serializers.SerializerMethodField()
+    customer_decision_factor = serializers.SerializerMethodField()
+    members = serializers.SerializerMethodField()
+    process = serializers.SerializerMethodField()
 
     class Meta:
-        model = OpportunityProduct
+        model = Opportunity
         fields = (
-            'product',
+            'id',
+            'title',
+            'code',
+            'customer',
+            'end_customer',
             'product_category',
-            'uom',
-            'tax',
-            'product_name',
-            'product_quantity',
-            'product_unit_price',
-            'product_subtotal_price',
+            'budget_value',
+            'open_date',
+            'close_date',
+            'decision_maker',
+            'opportunity_product_datas',
+            'total_product_pretax_amount',
+            'total_product_tax',
+            'total_product',
+            'opportunity_competitors_datas',
+            'opportunity_contact_role_datas',
+            'win_rate',
+            'is_input_rate',
+            'customer_decision_factor',
+            'sale_person',
+            'stage',
+            'lost_by_other_reason',
+            'sale_order',
+            'quotation',
+            'is_close_lost',
+            'is_deal_close',
+            'members',
+            'estimated_gross_profit_percent',
+            'estimated_gross_profit_value',
+            'process'
         )
 
     @classmethod
-    def validate_product(cls, value):
-        try:  # noqa
-            if value is not None:
-                obj = Product.objects.get(
-                    id=value
-                )
+    def get_decision_maker(cls, obj):
+        if obj.decision_maker:
+            return {
+                'id': obj.decision_maker.id,
+                'name': obj.decision_maker.fullname,
+            }
+        return {}
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        if obj.employee_inherit:
+            return {
+                'id': obj.employee_inherit_id,
+                'full_name': obj.employee_inherit.get_full_name(),
+                'code': obj.employee_inherit.code,
+                'group': {
+                    'id': obj.employee_inherit.group_id,
+                    'code': obj.employee_inherit.group.code,
+                    'title': obj.employee_inherit.group.title
+                } if obj.employee_inherit.group else {}
+            }
+        return {}
+
+    @classmethod
+    def get_sale_order(cls, obj):
+        if obj.sale_order:
+            if hasattr(obj.sale_order, 'delivery_of_sale_order'):
+                delivery = obj.sale_order.delivery_of_sale_order
                 return {
-                    'id': str(obj.id),
-                    'title': obj.title,
+                    'id': obj.sale_order_id,
+                    'code': obj.sale_order.code,
+                    'title': obj.sale_order.title,
+                    'system_status': obj.sale_order.system_status,
+                    'delivery': {
+                        'id': delivery.id,
+                        'code': delivery.code,
+                    }
                 }
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'Product': OpportunityMsg.NOT_EXIST})
-        return None
+            return {
+                'id': obj.sale_order_id,
+                'code': obj.sale_order.code,
+                'title': obj.sale_order.title,
+                'system_status': obj.sale_order.system_status,
+            }
+        return {}
 
     @classmethod
-    def validate_product_category(cls, value):
-        try:  # noqa
-            if value is not None:
-                obj = ProductCategory.objects.get(
-                    id=value
-                )
-                return {
-                    'id': str(obj.id),
-                    'title': obj.title,
-                }
-        except ProductCategory.DoesNotExist:
-            raise serializers.ValidationError({'Product Category': OpportunityMsg.NOT_EXIST})
-        return None
+    def get_quotation(cls, obj):
+        if obj.quotation:
+            return {
+                'id': obj.quotation_id,
+                'code': obj.quotation.code,
+                'title': obj.quotation.title,
+                'system_status': obj.quotation.system_status,
+                'is_customer_confirm': obj.quotation.is_customer_confirm,
+            }
+        return {}
 
     @classmethod
-    def validate_uom(cls, value):
-        try:  # noqa
-            if value is not None:
-                obj = UnitOfMeasure.objects.get(
-                    id=value
-                )
-                return {
-                    'id': str(obj.id),
-                    'title': obj.title,
-                }
-        except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'uom': OpportunityMsg.NOT_EXIST})
-        return None
-
-    @classmethod
-    def validate_tax(cls, value):
-        try:  # noqa
-            if value is not None:
-                obj = Tax.objects.get(
-                    id=value
-                )
-                return {
-                    'id': str(obj.id),
-                    'title': obj.title,
-                    'rate': obj.rate,
-                }
-        except Tax.DoesNotExist:
-            raise serializers.ValidationError({'Tax': OpportunityMsg.NOT_EXIST})
-        return None
-
-    @classmethod
-    def validate_product_quantity(cls, value):
-        if value < 0:
-            raise serializers.ValidationError({'quantity': OpportunityMsg.VALUE_GREATER_THAN_ZERO})
-        return value
-
-    @classmethod
-    def validate_product_unit_price(cls, value):
-        if value < 0:
-            raise serializers.ValidationError({'unit price': OpportunityMsg.VALUE_GREATER_THAN_ZERO})
-        return value
-
-    @classmethod
-    def validate_product_subtotal_price(cls, value):
-        if value < 0:
-            raise serializers.ValidationError({'subtotal price': OpportunityMsg.VALUE_GREATER_THAN_ZERO})
-        return value
-
-
-def get_opp_config_stage(instance):
-    opp_config_stage = []
-    for item in OpportunityConfigStage.objects.filter_current(
-        company=instance.company, is_delete=False
-    ):
-        condition_datas = []
-        for data in item.condition_datas:
-            condition_datas.append(
-                data['condition_property']['title']
-                + str(data['comparison_operator'].encode('utf-8'))
-                .replace("b'='", '=')
-                .replace("b'\\xe2\\x89\\xa0'", '!=')
-                + str(data['compare_data'])
-            )
-        opp_config_stage.append({
+    def get_stage(cls, obj):
+        return [{
             'id': item.id,
+            'is_deal_closed': item.is_deal_closed,
+            'is_closed_lost': item.is_closed_lost,
+            'is_delivery': item.is_delivery,
             'indicator': item.indicator,
             'win_rate': item.win_rate,
-            'logical_operator': item.logical_operator,
-            'condition': condition_datas
-        })
-    return opp_config_stage
-
-
-def get_instance_stage(instance):
-    instance_stage = []
-    quotation_status = instance.quotation.system_status if instance.quotation else None
-    # Quotation Status
-    instance_stage.append('Quotation Status=0' if quotation_status == 3 else 'Quotation Status!=0')
-    # Sale Order Status
-    sale_order_status = instance.sale_order.system_status if instance.sale_order else None
-    instance_stage.append('SaleOrder Status=0' if sale_order_status == 3 else 'SaleOrder Status!=0')
-    # Sale Order Delivery Status
-    delivery_status = instance.sale_order.delivery_status if instance.sale_order else None
-    instance_stage.append('SaleOrder Delivery Status=0' if delivery_status == 3 else 'SaleOrder Delivery Status!=0')
-    # Customer Annual Revenue
-    customer = instance.customer if instance.customer else None
-    instance_stage.append('Customer=0' if not customer else 'Customer!=0')
-    if 'Customer!=0' in instance_stage:
-        instance_stage.append('Customer='+str(customer.total_employees))
-    # Product Category
-    product_category = instance.product_category.all()
-    instance_stage.append('Product Category=0' if product_category.count() == 0 else 'Product Category!=0')
-    # Budget
-    instance_stage.append('Budget=0' if instance.budget_value <= 0 else 'Budget!=0')
-    # Open Date
-    instance_stage.append('Open Date=0' if not instance.open_date else 'Open Date!=0')
-    # Close Date
-    instance_stage.append('Close Date=0' if not instance.close_date else 'Close Date!=0')
-    # Decision Maker
-    instance_stage.append('Decision Maker=0' if not instance.decision_maker else 'Decision Maker!=0')
-    # Product Line Detail
-    product_line = instance.opportunity_product_opportunity.all()
-    instance_stage.append('Product Line Detail=0' if product_line.count() == 0 else 'Product Line Detail!=0')
-    # Competitor Win
-    competitors = instance.opportunity_competitor_opportunity.filter(win_deal=True)
-    instance_stage.append('Competitor Win!=0' if competitors.count() == 0 else 'Competitor Win=0')
-    # Lost By Other Reason
-    instance_stage.append('Lost By Other Reason=0' if instance.lost_by_other_reason else 'Lost By Other Reason!=0')
-    return instance_stage
-
-
-def get_instance_current_stage_range(stages, current_stage_indicator):
-    new_instance_current_stage = []
-    for stage in stages:
-        if stage.indicator in ['Closed Lost', 'Delivery', 'Deal Close']:
-            if stage.indicator in current_stage_indicator:
-                if not stage.win_rate:
-                    new_instance_current_stage[0]['current'] = 0
-                    new_instance_current_stage.append({
-                        'id': stage.id,
-                        'indicator': stage.indicator,
-                        'win_rate': stage.win_rate,
-                        'current': 1
-                    })
-                else:
-                    new_instance_current_stage.append({
-                        'id': stage.id,
-                        'indicator': stage.indicator,
-                        'win_rate': stage.win_rate,
-                        'current': 1 if len(new_instance_current_stage) == 0 else 0
-                    })
-        else:
-            if not stage.win_rate:
-                new_instance_current_stage[0]['current'] = 0
-                new_instance_current_stage.append({
-                    'id': stage.id,
-                    'indicator': stage.indicator,
-                    'win_rate': stage.win_rate,
-                    'current': 1
-                })
-            else:
-                new_instance_current_stage.append({
-                    'id': stage.id,
-                    'indicator': stage.indicator,
-                    'win_rate': stage.win_rate,
-                    'current': 1 if len(new_instance_current_stage) == 0 else 0
-                })
-    return new_instance_current_stage
-
-
-def check_or(stage_condition, instance_stage):
-    flag = False
-    for item in stage_condition:
-        if item in instance_stage:
-            flag = True
-            break
-    return flag
-
-
-def check_and(stage_condition, instance_stage):
-    flag = True
-    for item in stage_condition:
-        if item not in instance_stage:
-            flag = False
-    return flag
-
-
-def get_instance_current_stage(opp_config_stage, instance_stage, instance):
-    instance_current_stage = []
-    current_stage_indicator = []
-    for stage in opp_config_stage:
-        if stage['logical_operator']:
-            if check_or(stage['condition'], instance_stage):
-                current_stage_indicator.append(stage['indicator'])
-                instance_current_stage.append({
-                    'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
-                })
-        else:
-            if check_and(stage['condition'], instance_stage):
-                current_stage_indicator.append(stage['indicator'])
-                instance_current_stage.append({
-                    'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
-                })
-
-        if stage['indicator'] == 'Deal Close' and instance.is_deal_close:
-            current_stage_indicator.append(stage['indicator'])
-            instance_current_stage.append({
-                'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
-            })
-
-    if len(instance_current_stage) > 0:
-        instance_current_stage = sorted(instance_current_stage, key=lambda x: x['win_rate'], reverse=True)
-        if instance_current_stage[-1]['win_rate'] == 0:
-            instance_current_stage[-1]['current'] = 1
-        else:
-            instance_current_stage[0]['current'] = 1
-
-        stages = OpportunityConfigStage.objects.filter(
-            company_id=instance.company_id,
-            win_rate__lte=instance_current_stage[0]['win_rate'],
-            is_delete=False
-        ).order_by('-win_rate')
-        new_instance_current_stage = get_instance_current_stage_range(
-            stages,
-            current_stage_indicator
-        )
-
-        return new_instance_current_stage
-    raise serializers.ValidationError({'current stage': OpportunityMsg.ERROR_WHEN_GET_NULL_CURRENT_STAGE})
-
-
-class CommonOpportunityUpdate(serializers.ModelSerializer):
-    @classmethod
-    def create_product_category(cls, data, opportunity):
-        data_bulk = []
-        for product_category_id in data:
-            opportunity_product_category = OpportunityProductCategory(
-                product_category_id=product_category_id,
-                opportunity=opportunity
-            )
-            data_bulk.append(opportunity_product_category)
-        OpportunityProductCategory.objects.bulk_create(data_bulk)
-        return True
+        } for item in obj.stage.all()]
 
     @classmethod
-    def update_opportunity_product(cls, data, instance):
-        # delete old record
-        OpportunityProduct.objects.filter(opportunity=instance).delete()
-        # create new
-        bulk_data = []
-        for item in data:
-            product_id = None
-            if item['product']:
-                product_id = item['product']['id']
-            bulk_data.append(
-                OpportunityProduct(
-                    opportunity=instance,
-                    product_id=product_id,
-                    product_category_id=item['product_category']['id'],
-                    uom_id=item['uom']['id'],
-                    tax_id=item['tax']['id'] if 'tax' in item else None,
-                    product_name=item['product_name'],
-                    product_quantity=item['product_quantity'],
-                    product_unit_price=item['product_unit_price'],
-                    product_subtotal_price=item['product_subtotal_price'],
-                )
-            )
-        OpportunityProduct.objects.bulk_create(bulk_data)
-        return True
+    def get_customer(cls, obj):
+        if obj.customer:
+            return {
+                'id': obj.customer_id,
+                'code': obj.code,
+                'name': obj.customer.name,
+                'annual_revenue': obj.customer.annual_revenue,
+                'shipping_address': [{
+                    'full_address': item.full_address,
+                    'is_default': item.is_default
+                } for item in obj.customer.account_mapped_shipping_address.all()],
+                'contact_mapped': [{
+                    'id': str(item.id),
+                    'fullname': item.fullname,
+                    'email': item.email
+                } for item in obj.customer.contact_account_name.all()]
+            }
+        return {}
 
     @classmethod
-    def update_product_category(cls, data, instance):
-        # delete old record
-        OpportunityProductCategory.objects.filter(opportunity=instance).delete()
-        # create new
-        cls.create_product_category(data, instance)
-        return True
+    def get_end_customer(cls, obj):
+        if obj.end_customer:
+            return {
+                'id': obj.end_customer_id,
+                'name': obj.end_customer.name,
+            }
+        return {}
 
     @classmethod
-    def update_customer_decision_factor(cls, data, instance):
-        OpportunityCustomerDecisionFactor.objects.filter(opportunity=instance)
-        bulk_data = []
-        for factor_id in data:
-            bulk_data.append(
-                OpportunityCustomerDecisionFactor(
-                    opportunity=instance,
-                    factor_id=factor_id
-                )
-            )
-        OpportunityCustomerDecisionFactor.objects.bulk_create(bulk_data)
-        return True
+    def get_product_category(cls, obj):
+        if obj.product_category:
+            categories = obj.product_category.all()
+            return [{
+                'id': category.id,
+                'title': category.title,
+            } for category in categories]
+        return []
 
     @classmethod
-    def update_opportunity_competitor(cls, data, instance):
-        # delete old record
-        OpportunityCompetitor.objects.filter(opportunity=instance).delete()
-        # create new
-        bulk_data = []
-        for item in data:
-            bulk_data.append(
-                OpportunityCompetitor(
-                    opportunity=instance,
-                    competitor_id=item['competitor']['id'],
-                    strength=item['strength'],
-                    weakness=item['weakness'],
-                    win_deal=item['win_deal'],
-                )
-            )
-        OpportunityCompetitor.objects.bulk_create(bulk_data)
-        return True
+    def get_customer_decision_factor(cls, obj):
+        factor = obj.customer_decision_factor.all()
+        if factor:
+            return [
+                {
+                    'id': item.id,
+                    'title': item.title,
+                } for item in factor
+            ]
+        return []
+
+    def get_members(self, obj):
+        allow_get_member = self.context.get('allow_get_member', False)
+        return [
+            {
+                "id": item.id,
+                "first_name": item.first_name,
+                "last_name": item.last_name,
+                "full_name": item.get_full_name(),
+                "email": item.email,
+                "avatar": item.avatar,
+                "is_active": item.is_active,
+                "group": {
+                    'id': item.group_id,
+                    'code': item.group.code,
+                    'title': item.group.title
+                } if item.group else {}
+            } for item in obj.members.all().select_related('group')
+        ] if allow_get_member else []
 
     @classmethod
-    def update_opportunity_contact_role(cls, data, instance):
-        # delete old record
-        OpportunityContactRole.objects.filter(opportunity=instance).delete()
-        # create new
-        bulk_data = []
-        for item in data:
-            bulk_data.append(
-                OpportunityContactRole(
-                    opportunity=instance,
-                    type_customer=item['type_customer'],
-                    contact_id=item['contact']['id'],
-                    job_title=item['job_title'],
-                    role=item['role']
-                )
-            )
-        OpportunityContactRole.objects.bulk_create(bulk_data)
-        return True
-
-    @classmethod
-    def update_opportunity_stage_for_list(cls, instance):
-        opp_config_stage = get_opp_config_stage(instance)
-        instance_stage = get_instance_stage(instance)
-        instance_current_stage = get_instance_current_stage(opp_config_stage, instance_stage, instance)
-
-        OpportunityStage.objects.filter(opportunity=instance).delete()
-        data_bulk = []
-        for item in instance_current_stage:
-            data_bulk.append(
-                OpportunityStage(opportunity=instance, stage_id=item['id'], is_current=item['current'])
-            )
-        if len(data_bulk) > 0:
-            if data_bulk[-1].stage.indicator == 'Closed Lost' and 'SaleOrder Status=0' in instance_stage:
-                raise serializers.ValidationError(
-                    {'Closed Lost': 'Can not update to stage "Closed Lost". You are having an Approved Sale Order.'}
-                )
-        OpportunityStage.objects.bulk_create(data_bulk)
-        return True
-
-
-class OpportunityCompetitorCreateSerializer(serializers.ModelSerializer):
-    competitor = serializers.UUIDField(allow_null=False)
-
-    class Meta:
-        model = OpportunityCompetitor
-        fields = (
-            'competitor',
-            'strength',
-            'weakness',
-            'win_deal'
-        )
-
-    @classmethod
-    def validate_competitor(cls, value):
-        try:  # noqa
-            if value is not None:
-                obj = Account.objects.get(
-                    id=value
-                )
-                return {
-                    'id': str(obj.id),
-                    'name': obj.name,
-                }
-        except Account.DoesNotExist:
-            raise serializers.ValidationError({'competitor': OpportunityMsg.NOT_EXIST})
-        return None
-
-
-class OpportunityContactRoleCreateSerializer(serializers.ModelSerializer):
-    contact = serializers.UUIDField(allow_null=False)
-    job_title = serializers.CharField(allow_blank=True)
-
-    class Meta:
-        model = OpportunityContactRole
-        fields = (
-            'type_customer',
-            'role',
-            'contact',
-            'job_title'
-        )
-
-    @classmethod
-    def validate_contact(cls, value):
-        try:  # noqa
-            if value is not None:
-                obj = Contact.objects.get(
-                    id=value
-                )
-                return {
-                    'id': str(obj.id),
-                    'fullname': obj.fullname,
-                }
-        except Contact.DoesNotExist:
-            raise serializers.ValidationError({'contact': OpportunityMsg.NOT_EXIST})
-        return None
-
-
-class OpportunityStageUpdateSerializer(serializers.ModelSerializer):
-    stage = serializers.UUIDField(allow_null=False)
-    is_current = serializers.BooleanField()
-
-    class Meta:
-        model = OpportunitySaleTeamMember
-        fields = (
-            'stage',
-            'is_current'
-        )
-
-    @classmethod
-    def validate_stage(cls, value):
-        try:  # noqa
-            if value is not None:
-                obj = OpportunityConfigStage.objects.get(
-                    id=value, is_delete=False
-                )
-                return obj.id
-        except OpportunityConfigStage.DoesNotExist:
-            raise serializers.ValidationError({'stage': OpportunityMsg.NOT_EXIST})
-        return None
+    def get_process(cls, obj):
+        return {
+            'id': obj.process_id,
+            'title': obj.process.title,
+            'remark': obj.process.remark,
+        } if obj.process else {}
 
 
 class OpportunityUpdateSerializer(serializers.ModelSerializer):
@@ -895,7 +641,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     win_rate = serializers.FloatField(required=False)
     customer_decision_factor = serializers.ListField(required=False, child=serializers.UUIDField())
     opportunity_contact_role_datas = OpportunityContactRoleCreateSerializer(many=True, required=False)
-    title = serializers.CharField(required=False)
+    title = serializers.CharField(max_length=100)
     is_input_rate = serializers.BooleanField(required=False)
     employee_inherit = serializers.UUIDField(required=False)
     stage = serializers.UUIDField(required=False)
@@ -1018,39 +764,39 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if 'product_category' in validated_data:
             product_categories = validated_data.pop('product_category', [])
-            CommonOpportunityUpdate.update_product_category(
+            OpportunityCommonFunction.update_product_category(
                 product_categories,
                 instance
             )
 
         if 'opportunity_product_datas' in validated_data:
-            CommonOpportunityUpdate.update_opportunity_product(
+            OpportunityCommonFunction.update_opportunity_product(
                 validated_data['opportunity_product_datas'],
                 instance
             )
 
         if 'opportunity_competitors_datas' in validated_data:
-            CommonOpportunityUpdate.update_opportunity_competitor(
+            OpportunityCommonFunction.update_opportunity_competitor(
                 validated_data['opportunity_competitors_datas'],
                 instance
             )
 
         if 'opportunity_contact_role_datas' in validated_data:
-            CommonOpportunityUpdate.update_opportunity_contact_role(
+            OpportunityCommonFunction.update_opportunity_contact_role(
                 validated_data['opportunity_contact_role_datas'],
                 instance
             )
 
         if 'customer_decision_factor' in validated_data:
             factors = validated_data.pop('customer_decision_factor', [])
-            CommonOpportunityUpdate.update_customer_decision_factor(
+            OpportunityCommonFunction.update_customer_decision_factor(
                 factors,
                 instance
             )
 
         # if 'list_stage' in validated_data:
         #     list_stage = validated_data.pop('list_stage', [])
-        #     CommonOpportunityUpdate.update_opportunity_stage(
+        #     OpportunityCommonFunction.update_opportunity_stage(
         #         list_stage,
         #         instance
         #     )
@@ -1059,266 +805,196 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
 
-        CommonOpportunityUpdate.update_opportunity_stage_for_list(instance)
+        OpportunityCommonFunction.update_opportunity_stage_for_list(instance)
 
-        LeadHint.check_and_create_lead_hint(instance, None,)
+        LeadHint.check_and_create_lead_hint(instance, None, )
 
         # handle stage & win_rate
         instance.handle_stage_win_rate(obj=instance)
         return instance
 
 
-class OpportunityDetailSimpleSerializer(serializers.ModelSerializer):
+# related
+class OpportunityMemberCreateSerializer(serializers.Serializer):  # noqa
+    members = serializers.ListField(
+        child=serializers.UUIDField()
+    )
+
+    @classmethod
+    def validate_members(cls, attrs):
+        if len(attrs) > 0:
+            objs = DisperseModel(app_model='hr.Employee').get_model().objects.filter_current(
+                fill__tenant=True, fill__company=True, id__in=attrs
+            )
+            if objs.count() == len(attrs):
+                return objs
+            raise serializers.ValidationError({'members': OpportunityMsg.MEMBER_NOT_EXIST})
+        raise serializers.ValidationError({'members': OpportunityMsg.MEMBER_REQUIRED})
+
+    def create(self, validated_data):
+        opportunity_id = validated_data.get('opportunity_id')
+        tenant_id = validated_data.get('tenant_id')
+        company_id = validated_data.get('company_id')
+        members = validated_data.pop('members')
+        objs = []
+        for member_obj in members:
+            obj = OpportunitySaleTeamMember.objects.create(
+                opportunity_id=opportunity_id,
+                member=member_obj,
+                tenant_id=tenant_id,
+                company_id=company_id,
+            )
+            objs.append(obj)
+        return objs[0]
+
+
+class OpportunityMemberDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpportunitySaleTeamMember
+        fields = (
+            'id', 'date_modified', 'permit_view_this_opp', 'permit_add_member',
+            'permission_by_configured',
+        )
+
+
+class OpportunityMemberUpdateSerializer(serializers.ModelSerializer):
+    permission_by_configured = serializers.JSONField(
+        required=False,
+        help_text=str(
+            [{
+                "id": "UUID or None",
+                "app_id": "UUID",
+                "plan_data": "UUID",
+                "create": bool,
+                "view": bool,
+                "edit": bool,
+                "delete": bool,
+                "range": 'CHOICE("1", "2", "3", "4")',
+            }]
+        ),
+    )
+
+    def validate_permission_by_configured(self, attrs):
+        return PermissionController(tenant_id=self.instance.tenant_id).valid(attrs=attrs, has_space=False)
+
+    class Meta:
+        model = OpportunitySaleTeamMember
+        fields = ('permit_view_this_opp', 'permit_add_member', 'permission_by_configured')
+
+    def validate(self, validate_data):
+        return validate_license_used(validate_data=validate_data)
+
+    @staticmethod
+    def set_up_data_plan_app(validated_data, instance=None):
+        cls_query = PlanMemberOpportunity
+        filter_query = {'opportunity_member': instance}
+        plan_application_dict = {}
+        plan_app_data = []
+        bulk_info = []
+        if 'plan_app' in validated_data:
+            plan_app_data = validated_data['plan_app']
+            del validated_data['plan_app']
+            if instance:
+                # delete old M2M PlanEmployee
+                plan_x_old = cls_query.objects.filter(**filter_query)
+                if plan_x_old:
+                    plan_x_old.delete()
+        if plan_app_data:
+            for plan_app in plan_app_data:
+                plan_code = None
+                app_code_list = []
+                if 'plan' in plan_app:
+                    plan_code = plan_app['plan'].code if plan_app['plan'] else None
+                if 'application' in plan_app:
+                    app_code_list = [app.code for app in plan_app['application']] if plan_app['application'] else []
+                if plan_code and app_code_list:
+                    plan_application_dict.update({plan_code: app_code_list})
+                    bulk_info.append(
+                        cls_query(
+                            **{
+                                'plan': plan_app['plan'],
+                                'application': [str(app.id) for app in plan_app['application']]
+                            }
+                        )
+                    )
+        return plan_application_dict, plan_app_data, bulk_info
+
+    @staticmethod
+    def create_plan_update_tenant_plan(instance, plan_app_data, bulk_info):
+        if instance and plan_app_data and bulk_info:
+            # create M2M PlanEmployee
+            for info in bulk_info:
+                info.opportunity_member = instance
+            PlanMemberOpportunity.objects.bulk_create(bulk_info)
+            # update TenantPlan
+            for plan_data in plan_app_data:
+                if 'plan' in plan_data and 'license_used' in plan_data:
+                    tenant_plan = TenantPlan.objects.filter(
+                        tenant=instance.tenant,
+                        plan=plan_data['plan']
+                    ).first()
+                    if tenant_plan:
+                        tenant_plan.license_used = plan_data['license_used']
+                        tenant_plan.save()
+        Caching().clean_by_prefix_many(table_name_list=['hr_PlanEmployee', 'tenant_TenantPlan'])
+        return True
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
+
+
+# stage checking
+class OpportunityStageCheckingSerializer(serializers.ModelSerializer):
+    current_stage = serializers.SerializerMethodField()
+
     class Meta:
         model = Opportunity
         fields = (
             'id',
-            'title',
-            'code',
+            'current_stage'
         )
 
+    def get_current_stage(self, obj):
+        stages = OpportunityConfigStage.objects.filter(company_id=obj.company_id, is_delete=False).order_by('win_rate')
+        stage_lost = None
+        stage_delivery = None
+        stage_close = None
+        list_stage = []
+        # sort stage [stage 1, stage 2, ...., stage Close Lost, stage Delivery, stage Deal Close
+        for item in stages:
+            if item.is_closed_lost:
+                stage_lost = item
+            elif item.is_delivery:
+                stage_delivery = item
+            elif item.is_deal_closed:
+                stage_close = item
+            else:
+                list_stage.append(item)
+        if stage_lost:
+            list_stage.append(stage_lost)
+        if stage_delivery:
+            list_stage.append(stage_delivery)
+        if stage_close:
+            list_stage.append(stage_close)
+        # list stage instance
+        list_stage_instance = obj.parse_stage(list_stage=list_stage, obj=obj)
+        # check stage
+        stage_index = []
+        for idx, item in enumerate(list_stage):
+            if item.logical_operator == 0 and all(element in list_stage_instance for element in item.condition_datas):
+                stage_index.append(idx)
+            if item.logical_operator != 0 and any(element in list_stage_instance for element in item.condition_datas):
+                stage_index.append(idx)
 
-class OpportunityDetailSerializer(serializers.ModelSerializer):
-    decision_maker = serializers.SerializerMethodField()
-    sale_person = serializers.SerializerMethodField()
-    sale_order = serializers.SerializerMethodField()
-    quotation = serializers.SerializerMethodField()
-    stage = serializers.SerializerMethodField()
-    customer = serializers.SerializerMethodField()
-    end_customer = serializers.SerializerMethodField()
-    product_category = serializers.SerializerMethodField()
-    customer_decision_factor = serializers.SerializerMethodField()
-    members = serializers.SerializerMethodField()
-    process = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Opportunity
-        fields = (
-            'id',
-            'title',
-            'code',
-            'customer',
-            'end_customer',
-            'product_category',
-            'budget_value',
-            'open_date',
-            'close_date',
-            'decision_maker',
-            'opportunity_product_datas',
-            'total_product_pretax_amount',
-            'total_product_tax',
-            'total_product',
-            'opportunity_competitors_datas',
-            'opportunity_contact_role_datas',
-            'win_rate',
-            'is_input_rate',
-            'customer_decision_factor',
-            'sale_person',
-            'stage',
-            'lost_by_other_reason',
-            'sale_order',
-            'quotation',
-            'is_close_lost',
-            'is_deal_close',
-            'members',
-            'estimated_gross_profit_percent',
-            'estimated_gross_profit_value',
-            'process'
-        )
-
-    @classmethod
-    def get_decision_maker(cls, obj):
-        if obj.decision_maker:
-            return {
-                'id': obj.decision_maker.id,
-                'name': obj.decision_maker.fullname,
-            }
-        return {}
-
-    @classmethod
-    def get_sale_person(cls, obj):
-        if obj.employee_inherit:
-            return {
-                'id': obj.employee_inherit_id,
-                'full_name': obj.employee_inherit.get_full_name(),
-                'code': obj.employee_inherit.code,
-                'group': {
-                    'id': obj.employee_inherit.group_id,
-                    'title': obj.employee_inherit.group.title
-                } if obj.employee_inherit.group else {}
-            }
-        return {}
-
-    @classmethod
-    def get_sale_order(cls, obj):
-        if obj.sale_order:
-            if hasattr(obj.sale_order, 'delivery_of_sale_order'):
-                delivery = obj.sale_order.delivery_of_sale_order
-                return {
-                    'id': obj.sale_order_id,
-                    'code': obj.sale_order.code,
-                    'title': obj.sale_order.title,
-                    'system_status': obj.sale_order.system_status,
-                    'delivery': {
-                        'id': delivery.id,
-                        'code': delivery.code,
-                    }
-                }
-            return {
-                'id': obj.sale_order_id,
-                'code': obj.sale_order.code,
-                'title': obj.sale_order.title,
-                'system_status': obj.sale_order.system_status,
-            }
-        return {}
-
-    @classmethod
-    def get_quotation(cls, obj):
-        if obj.quotation:
-            return {
-                'id': obj.quotation_id,
-                'code': obj.quotation.code,
-                'title': obj.quotation.title,
-                'system_status': obj.quotation.system_status,
-                'is_customer_confirm': obj.quotation.is_customer_confirm,
-            }
-        return {}
-
-    @classmethod
-    def get_stage(cls, obj):
-        return [{
-            'id': item.id,
-            'is_deal_closed': item.is_deal_closed,
-            'indicator': item.indicator,
-        } for item in obj.stage.all()]
-
-    @classmethod
-    def get_customer(cls, obj):
-        if obj.customer:
-            return {
-                'id': obj.customer_id,
-                'code': obj.code,
-                'name': obj.customer.name,
-                'annual_revenue': obj.customer.annual_revenue,
-                'shipping_address': [{
-                    'full_address': item.full_address,
-                    'is_default': item.is_default
-                } for item in obj.customer.account_mapped_shipping_address.all()],
-                'contact_mapped': [{
-                    'id': str(item.id),
-                    'fullname': item.fullname,
-                    'email': item.email
-                } for item in obj.customer.contact_account_name.all()]
-            }
-        return {}
-
-    @classmethod
-    def get_end_customer(cls, obj):
-        if obj.end_customer:
-            return {
-                'id': obj.end_customer_id,
-                'name': obj.end_customer.name,
-            }
-        return {}
-
-    @classmethod
-    def get_product_category(cls, obj):
-        if obj.product_category:
-            categories = obj.product_category.all()
-            return [{
-                'id': category.id,
-                'title': category.title,
-            } for category in categories]
-        return []
-
-    @classmethod
-    def get_customer_decision_factor(cls, obj):
-        factor = obj.customer_decision_factor.all()
-        if factor:
-            return [
-                {
-                    'id': item.id,
-                    'title': item.title,
-                } for item in factor
-            ]
-        return []
-
-    def get_members(self, obj):
-        allow_get_member = self.context.get('allow_get_member', False)
-        return [
-            {
-                "id": item.id,
-                "first_name": item.first_name,
-                "last_name": item.last_name,
-                "full_name": item.get_full_name(),
-                "email": item.email,
-                "avatar": item.avatar,
-                "is_active": item.is_active,
-            } for item in obj.members.all()
-        ] if allow_get_member else []
-
-    @classmethod
-    def get_process(cls, obj):
+        current_stage = list_stage[stage_index[-1]]
         return {
-            'id': obj.process_id,
-            'title': obj.process.title,
-            'remark': obj.process.remark,
-        } if obj.process else {}
-
-
-class OpportunityForSaleListSerializer(serializers.ModelSerializer):
-    customer = serializers.SerializerMethodField()
-    sale_person = serializers.SerializerMethodField()
-    stage = serializers.SerializerMethodField()
-    is_close = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Opportunity
-        fields = (
-            'id',
-            'title',
-            'code',
-            'customer',
-            'sale_person',
-            'open_date',
-            'quotation_id',
-            'sale_order_id',
-            'opportunity_sale_team_datas',
-            'close_date',
-            'stage',
-            'is_close'
-        )
-
-    @classmethod
-    def get_customer(cls, obj):
-        if obj.customer:
-            return AccountForSaleListSerializer(obj.customer).data
-        return {}
-
-    @classmethod
-    def get_sale_person(cls, obj):
-        if obj.sale_person:
-            return {
-                'id': obj.sale_person_id,
-                'full_name': obj.sale_person.get_full_name(),
-                'code': obj.sale_person.code,
-            }
-        return {}
-
-    @classmethod
-    def get_stage(cls, obj):
-        if obj.opportunity_stage_opportunity:
-            stages = obj.opportunity_stage_opportunity.all()
-            return [
-                {
-                    'id': stage.stage.id,
-                    'is_current': stage.is_current,
-                    'indicator': stage.stage.indicator
-                } for stage in stages]
-        return []
-
-    @classmethod
-    def get_is_close(cls, obj):
-        if obj.is_deal_close or obj.is_close_lost:
-            return True
-        return False
+            'id': str(current_stage.id),
+            'is_deal_closed': current_stage.is_deal_closed,
+            'is_closed_lost': current_stage.is_closed_lost,
+            'is_delivery': current_stage.is_delivery,
+            'indicator': current_stage.indicator,
+            'win_rate': current_stage.win_rate,
+        } if current_stage else {}
