@@ -1,39 +1,16 @@
 from drf_yasg.utils import swagger_auto_schema
-
-from apps.sales.opportunity.models import CustomerDecisionFactor, OpportunityConfig, OpportunityConfigStage
-from apps.sales.opportunity.serializers import CustomerDecisionFactorListSerializer, \
-    CustomerDecisionFactorCreateSerializer, CustomerDecisionFactorDetailSerializer, OpportunityConfigDetailSerializer, \
-    OpportunityConfigUpdateSerializer, OpportunityConfigStageListSerializer, OpportunityConfigStageCreateSerializer, \
+from apps.sales.opportunity.models import (
+    CustomerDecisionFactor, OpportunityConfig, OpportunityConfigStage
+)
+from apps.sales.opportunity.serializers import (
+    CustomerDecisionFactorListSerializer,
+    CustomerDecisionFactorCreateSerializer,
+    CustomerDecisionFactorDetailSerializer,
+    OpportunityConfigDetailSerializer, OpportunityConfigUpdateSerializer,
+    OpportunityConfigStageListSerializer, OpportunityConfigStageCreateSerializer,
     OpportunityConfigStageDetailSerializer, OpportunityConfigStageUpdateSerializer
+)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
-
-
-class OpportunityConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = OpportunityConfig.objects  # noqa
-    serializer_detail = OpportunityConfigDetailSerializer
-    serializer_update = OpportunityConfigUpdateSerializer
-
-    @swagger_auto_schema(
-        operation_summary="Opportunity Config Detail",
-    )
-    @mask_view(login_require=True, auth_require=False)
-    def get(self, request, *args, **kwargs):
-        self.lookup_field = 'company_id'
-        self.kwargs['company_id'] = request.user.company_current_id
-        return self.retrieve(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_summary="Opportunity Config Update",
-        request_body=OpportunityConfigUpdateSerializer,
-    )
-    @mask_view(
-        login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
-    )
-    def put(self, request, *args, **kwargs):
-        self.lookup_field = 'company_id'
-        self.kwargs['company_id'] = request.user.company_current_id
-        return self.update(request, *args, **kwargs)
 
 
 class CustomerDecisionFactorList(BaseListMixin, BaseCreateMixin):
@@ -80,6 +57,34 @@ class CustomerDecisionFactorDetail(BaseDestroyMixin):
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+class OpportunityConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = OpportunityConfig.objects  # noqa
+    serializer_detail = OpportunityConfigDetailSerializer
+    serializer_update = OpportunityConfigUpdateSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Opportunity Config Detail",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        self.lookup_field = 'company_id'
+        self.kwargs['company_id'] = request.user.company_current_id
+        return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Opportunity Config Update",
+        request_body=OpportunityConfigUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def put(self, request, *args, **kwargs):
+        self.lookup_field = 'company_id'
+        self.kwargs['company_id'] = request.user.company_current_id
+        return self.update(request, *args, **kwargs)
 
 
 class OpportunityConfigStageList(BaseListMixin, BaseCreateMixin):

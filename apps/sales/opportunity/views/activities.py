@@ -65,7 +65,7 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
+class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = OpportunityCallLog.objects
     serializer_detail = OpportunityCallLogDetailSerializer
     serializer_update = OpportunityCallLogUpdateSerializer
@@ -338,7 +338,7 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class OpportunityDocumentDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
+class OpportunityDocumentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = OpportunityDocument.objects
     serializer_detail = OpportunityDocumentDetailSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT

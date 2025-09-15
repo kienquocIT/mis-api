@@ -1,46 +1,45 @@
 from django.urls import path
-
 from .views import (
-    OpportunityList, OpportunityDetail, CustomerDecisionFactorList, OpportunityConfigDetail,
-    CustomerDecisionFactorDetail, OpportunityConfigStageList, OpportunityConfigStageDetail,
+    OpportunityList, OpportunityDetail,
     OpportunityCallLogList, OpportunityCallLogDetail,
     OpportunityEmailList, OpportunityEmailDetail,
     OpportunityMeetingList, OpportunityMeetingDetail,
     OpportunityDocumentList, OpportunityDocumentDetail,
-    OpportunityActivityLogList, OpportunityForSaleList,
-    MemberOfOpportunityDetail, MemberOfOpportunityDetailAdd, OpportunityDetailGetByCreateFromOpp,
+    OpportunityActivityLogList,
+    OpportunityConfigDetail,
+    OpportunityConfigStageList, OpportunityConfigStageDetail, OpportunityStageChecking,
+    CustomerDecisionFactorList,
+    CustomerDecisionFactorDetail,
+    OpportunityMemberDetail, OpportunityMemberList,
 )
 
 urlpatterns = [
-    path('config', OpportunityConfigDetail.as_view(), name='OpportunityConfigDetail'),
-    path('lists', OpportunityList.as_view(), name='OpportunityList'),
-    path('lists-sale', OpportunityForSaleList.as_view(), name='OpportunityForSaleList'),
-    path(
-        '<str:pk>/create-from-opp',
-        OpportunityDetailGetByCreateFromOpp.as_view(), name='OpportunityDetailGetByCreateFromOpp'
-    ),
-    path('<str:pk>', OpportunityDetail.as_view(), name='OpportunityDetail'),
-    path('<str:pk_opp>/member/add', MemberOfOpportunityDetailAdd.as_view(), name='MemberOfOpportunityDetailAdd'),
-    path('<str:pk_opp>/member/<str:pk_member>', MemberOfOpportunityDetail.as_view(), name='MemberOfOpportunityDetail'),
-
-    path('config/decision-factors', CustomerDecisionFactorList.as_view(), name='CustomerDecisionFactorList'),
-    path(
-        'config/decision-factor/<str:pk>', CustomerDecisionFactorDetail.as_view(), name='CustomerDecisionFactorDetail'
-    ),
-    path('config/stage', OpportunityConfigStageList.as_view(), name='OpportunityConfigStageList'),
-    path('config/stage/<str:pk>', OpportunityConfigStageDetail.as_view(), name='OpportunityConfigStageDetail'),
-] + [
-    path('call-log/lists', OpportunityCallLogList.as_view(), name='OpportunityCallLogList'),
+    # main
+    path('list', OpportunityList.as_view(), name='OpportunityList'),
+    path('detail/<str:pk>', OpportunityDetail.as_view(), name='OpportunityDetail'),
+    # activities
+    path('call-log/list', OpportunityCallLogList.as_view(), name='OpportunityCallLogList'),
     path('call-log/<str:pk>', OpportunityCallLogDetail.as_view(), name='OpportunityCallLogDetail'),
-] + [
-    path('send-email/lists', OpportunityEmailList.as_view(), name='OpportunityEmailList'),
+    path('send-email/list', OpportunityEmailList.as_view(), name='OpportunityEmailList'),
     path('send-email/<str:pk>', OpportunityEmailDetail.as_view(), name='OpportunityEmailDetail'),
-] + [
-    path('meeting/lists', OpportunityMeetingList.as_view(), name='OpportunityMeetingList'),
+    path('meeting/list', OpportunityMeetingList.as_view(), name='OpportunityMeetingList'),
     path('meeting/<str:pk>', OpportunityMeetingDetail.as_view(), name='OpportunityMeetingDetail'),
-] + [
     path('document/list', OpportunityDocumentList.as_view(), name='OpportunityDocumentList'),
     path('document/<str:pk>', OpportunityDocumentDetail.as_view(), name='OpportunityDocumentDetail'),
-] + [  # opportunity activity log
-    path('activity-log/lists', OpportunityActivityLogList.as_view(), name='OpportunityActivityLogList'),
+    path('activity-log/list', OpportunityActivityLogList.as_view(), name='OpportunityActivityLogList'),
+    # config
+    path('config-detail', OpportunityConfigDetail.as_view(), name='OpportunityConfigDetail'),
+    # stage
+    path('stage/list', OpportunityConfigStageList.as_view(), name='OpportunityConfigStageList'),
+    path('stage/<str:pk>', OpportunityConfigStageDetail.as_view(), name='OpportunityConfigStageDetail'),
+    path('stage-checking', OpportunityStageChecking.as_view(), name='OpportunityStageChecking'),
+    # related
+    path('decision-factor/list', CustomerDecisionFactorList.as_view(), name='CustomerDecisionFactorList'),
+    path('decision-factor/<str:pk>', CustomerDecisionFactorDetail.as_view(), name='CustomerDecisionFactorDetail'),
+    path('detail/<str:pk_opp>/member/list', OpportunityMemberList.as_view(), name='OpportunityMemberList'),
+    path(
+        'detail/<str:pk_opp>/member/<str:pk_member>',
+        OpportunityMemberDetail.as_view(),
+        name='OpportunityMemberDetail'
+    ),
 ]

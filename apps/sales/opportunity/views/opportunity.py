@@ -3,19 +3,17 @@ from django.conf import settings
 from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
-
 from apps.sales.opportunity.filters import OpportunityListFilters
 from apps.sales.lead.models import Lead
 from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
 from apps.sales.opportunity.serializers import (
     OpportunityListSerializer, OpportunityUpdateSerializer,
-    OpportunityCreateSerializer, OpportunityDetailSerializer, OpportunityForSaleListSerializer
+    OpportunityCreateSerializer, OpportunityDetailSerializer
 )
-from apps.sales.opportunity.serializers.opp_members import (
-    MemberOfOpportunityDetailSerializer,
-    MemberOfOpportunityUpdateSerializer, MemberOfOpportunityAddSerializer,
+from apps.sales.opportunity.serializers.opportunity import (
+    OpportunityMemberCreateSerializer, OpportunityMemberDetailSerializer, OpportunityMemberUpdateSerializer,
+    OpportunityStageCheckingSerializer,
 )
-from apps.sales.opportunity.serializers.opportunity import OpportunityDetailSimpleSerializer
 from apps.shared import (
     BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck,
     ResponseController, BaseDestroyMixin,
@@ -132,47 +130,6 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
                 request.data['employee_inherit_id'] = request.data.get('employee_inherit_id')
                 self.ser_context = {'lead': lead}
         return self.create(request, *args, **kwargs)
-
-
-class OpportunityDetailGetByCreateFromOpp(BaseRetrieveMixin):
-    # by pass check permit --> only return id title code
-    queryset = Opportunity.objects
-    serializer_detail = OpportunityDetailSimpleSerializer
-    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
-
-    def get_queryset(self):
-        return super().get_queryset().select_related(
-            "customer",
-            "decision_maker",
-            "end_customer",
-            "employee_inherit__group",
-            "sale_order__delivery_of_sale_order",
-            "quotation",
-        ).prefetch_related(
-            "stage",
-            "members",
-        )
-
-    def manual_check_obj_retrieve(self, instance, **kwargs) -> Union[None, bool]:
-        if OpportunitySaleTeamMember.objects.filter_current(
-                fill__tenant=True, fill__company=True,
-                opportunity=instance,
-                # permit_view_this_opp=True, # don't check view opp | allow if you are member
-                member_id=self.cls_check.employee_attr.employee_current_id,
-        ).exists():
-            return True
-        return False
-
-    @swagger_auto_schema(
-        operation_summary="Opportunity detail get by create from opp",
-        operation_description="Only return id title code  + allow for all member of opp | Else deny",
-    )
-    @mask_view(
-        login_require=True, auth_require=False, employee_required=True,
-        label_code='opportunity', model_code='opportunity', perm_code="view",
-    )
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
 
 
 class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
@@ -301,9 +258,9 @@ class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
-class MemberOfOpportunityDetailAdd(BaseCreateMixin):
+class OpportunityMemberList(BaseCreateMixin):
     queryset = OpportunitySaleTeamMember
-    serializer_create = MemberOfOpportunityAddSerializer
+    serializer_create = OpportunityMemberCreateSerializer
 
     def get_opp_member_of_current_user(self, opp_obj):
         return OpportunitySaleTeamMember.objects.filter_current(
@@ -351,10 +308,10 @@ class MemberOfOpportunityDetailAdd(BaseCreateMixin):
         return ResponseController.notfound_404()
 
 
-class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
+class OpportunityMemberDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = OpportunitySaleTeamMember.objects
-    serializer_detail = MemberOfOpportunityDetailSerializer
-    serializer_update = MemberOfOpportunityUpdateSerializer
+    serializer_detail = OpportunityMemberDetailSerializer
+    serializer_update = OpportunityMemberUpdateSerializer
 
     retrieve_hidden_field = ('tenant_id', 'company_id')
 
@@ -474,42 +431,26 @@ class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyM
         return ResponseController.notfound_404()
 
 
-# Opportunity List use for Sale Apps
-class OpportunityForSaleList(BaseListMixin):
+class OpportunityStageChecking(BaseListMixin):
     queryset = Opportunity.objects
-    search_fields = ['title']
-    filterset_fields = {
-        'employee_inherit': ['exact'],
-        'quotation': ['exact', 'isnull'],
-        'sale_order': ['exact', 'isnull'],
-        'is_close_lost': ['exact'],
-        'is_deal_close': ['exact'],
-        'id': ['in'],
-    }
-    serializer_list = OpportunityForSaleListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
+    serializer_list = OpportunityStageCheckingSerializer
+    retrieve_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            "customer",
-            "sale_person",
-            'customer__industry',
-            'customer__owner',
-            'customer__payment_term_customer_mapped',
-            'customer__price_list_mapped'
-        ).prefetch_related(
-            "opportunity_stage_opportunity__stage",
-            "customer__account_mapped_shipping_address",
-            "customer__account_mapped_billing_address",
-        )
+        if 'opportunity_id' in self.request.query_params:
+            return super().get_queryset().filter(
+                id=self.request.query_params.get('opportunity_id')
+            ).select_related().prefetch_related()
+        return super().get_queryset().none()
 
     @swagger_auto_schema(
-        operation_summary="Opportunity List For Sales",
-        operation_description="Get Opportunity List For Sales",
+        operation_summary="Opportunity Stage Check",
+        operation_description="Opportunity Stage Check",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=False, employee_required=True,
         label_code='opportunity', model_code='opportunity', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
+        self.ser_context = self.request.query_params
         return self.list(request, *args, **kwargs)
