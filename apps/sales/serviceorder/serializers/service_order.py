@@ -602,12 +602,10 @@ class ServiceOrderDetailSerializerForDashboard(AbstractDetailSerializerModel):
 
 class ServiceOrderCommonFunc:
     @staticmethod
-    def create_shipment(service_order_obj, shipment_data):  # pylint: disable=too-many-locals
-        bulk_info_shipment = []
-        bulk_info_container = []
-        ctn_shipment = 1
-        ctn_order = 1
-        shipment_map_id = {}
+    def build_shipments(service_order_obj, shipment_data):
+        bulk_info_shipment, bulk_info_container = [], []
+        ctn_shipment, ctn_order = 1, 1
+
         for shipment_data_item in shipment_data:
             package_type = shipment_data_item.get("package_type")
             container_type = shipment_data_item.get("container_type")
@@ -644,28 +642,21 @@ class ServiceOrderCommonFunc:
                 ctn_order += 1
             ctn_shipment += 1
 
-        # bulk create shipments
-        ServiceOrderShipment.objects.filter(service_order=service_order_obj).delete()
-        created_shipments = ServiceOrderShipment.objects.bulk_create(bulk_info_shipment)
+        return bulk_info_shipment, bulk_info_container
 
-        # bulk create container
-        container_created = ServiceOrderContainer.objects.bulk_create(bulk_info_container)
-
-        for frontend_data, backend_data in zip(shipment_data, created_shipments):
-            temp_id = frontend_data.get('id')
-            if temp_id:
-                shipment_map_id[temp_id] = backend_data.id
-
-        # create package part
+    @staticmethod
+    def build_packages(service_order_obj, shipment_data, container_created):
         bulk_info_packages = []
         pkg_order = 1
+
         for shipment_data_item in shipment_data:
             package_type = shipment_data_item.get("package_type")
             if not shipment_data_item.get('is_container'):
-                ctn_mapped = None
-                for ctn in container_created:
-                    if ctn.shipment.reference_number == shipment_data_item.get('reference_container'):
-                        ctn_mapped = ctn
+                ctn_mapped = next(
+                    (ctn for ctn in container_created if
+                     ctn.shipment.reference_number == shipment_data_item.get('reference_container')),
+                    None
+                )
                 if ctn_mapped:
                     bulk_info_packages.append(
                         ServiceOrderPackage(
@@ -679,9 +670,30 @@ class ServiceOrderCommonFunc:
                         )
                     )
                     pkg_order += 1
+        return bulk_info_packages
 
-        # bulk create package
+    @staticmethod
+    def create_shipment(service_order_obj, shipment_data):
+        shipment_map_id = {}
+
+        # build shipment and containers
+        bulk_info_shipment, bulk_info_container = ServiceOrderCommonFunc.build_shipments(
+            service_order_obj, shipment_data
+        )
+        ServiceOrderShipment.objects.filter(service_order=service_order_obj).delete()
+        created_shipments = ServiceOrderShipment.objects.bulk_create(bulk_info_shipment)
+        container_created = ServiceOrderContainer.objects.bulk_create(bulk_info_container)
+
+        # Map temp id
+        for shipment_data_item, created_shipment_item in zip(shipment_data, created_shipments):
+            temp_id = shipment_data_item.get('id')
+            if temp_id:
+                shipment_map_id[temp_id] = created_shipment_item.id
+
+        # build packages
+        bulk_info_packages = ServiceOrderCommonFunc.build_packages(service_order_obj, shipment_data, container_created)
         ServiceOrderPackage.objects.bulk_create(bulk_info_packages)
+
         return shipment_map_id
 
     @staticmethod
