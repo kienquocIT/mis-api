@@ -60,9 +60,6 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     end_date = serializers.DateField()
     shipment = ServiceOrderShipmentSerializer(many=True)
     expense = ServiceOrderExpenseSerializer(many=True)
-    expense_pretax_value = serializers.FloatField(required=False, allow_null=True)
-    expense_tax_value = serializers.FloatField(required=False, allow_null=True)
-    expense_total_value = serializers.FloatField(required=False, allow_null=True)
     service_detail_data = ServiceOrderServiceDetailSerializer(many=True)
     work_order_data = ServiceOrderWorkOrderSerializer(many=True)
     payment_data = ServiceOrderPaymentSerializer(many=True)
@@ -115,6 +112,9 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
         end_date = validate_data.get('end_date', '')
         if start_date and end_date and start_date >= end_date:
             raise serializers.ValidationError({'error': SVOMsg.DATE_COMPARE_ERROR})
+
+        expense_data = validate_data.get('expense', [])
+        validate_data = ServiceOrderCommonFunc.calculate_total_expense(validate_data, expense_data)
         return validate_data
 
     @decorator_run_workflow
@@ -160,9 +160,6 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             'end_date',
             'shipment',
             'expense',
-            'expense_pretax_value',
-            'expense_tax_value',
-            'expense_total_value',
             'attachment',
             'service_detail_data',
             'work_order_data',
@@ -462,6 +459,9 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
         end_date = validate_data.get('end_date', '')
         if start_date and end_date and start_date >= end_date:
             raise serializers.ValidationError({'error': SVOMsg.DATE_COMPARE_ERROR})
+
+        expense_data = validate_data.get('expense', [])
+        validate_data = ServiceOrderCommonFunc.calculate_total_expense(validate_data, expense_data)
         return validate_data
 
     @decorator_run_workflow
@@ -576,15 +576,6 @@ class ServiceOrderDetailSerializerForDashboard(AbstractDetailSerializerModel):
                         'unit_cost': wo_ctb_item.work_order.unit_cost,
                         'total_value': wo_ctb_item.work_order.total_value,
                         'work_status': wo_ctb_item.work_order.work_status,
-                        # 'task_data_list': [{
-                        #     'id': str(wo_ctb_item.work_order.task_id),
-                        #     'code': wo_ctb_item.work_order.task.code,
-                        #     'title': wo_ctb_item.work_order.task.title,
-                        #     'remark': wo_ctb_item.work_order.task.remark,
-                        #     'assignee_data': wo_ctb_item.work_order.task.employee_inherit.get_detail_with_group()
-                        #     if wo_ctb_item.work_order.task.employee_inherit else {},
-                        #     'percent_completed': wo_ctb_item.work_order.task.percent_completed,
-                        # } if wo_ctb_item.work_order.task else {}]
                         'task_data_list': [{
                             'id': str(wo_task_item.task.id),
                             'code': wo_task_item.task.code,
@@ -641,14 +632,12 @@ class ServiceOrderCommonFunc:
                 )
                 ctn_order += 1
             ctn_shipment += 1
-
         return bulk_info_shipment, bulk_info_container
 
     @staticmethod
     def build_packages(service_order_obj, shipment_data, container_created):
         bulk_info_packages = []
         pkg_order = 1
-
         for shipment_data_item in shipment_data:
             package_type = shipment_data_item.get("package_type")
             if not shipment_data_item.get('is_container'):
@@ -734,17 +723,15 @@ class ServiceOrderCommonFunc:
                     "title": tax_obj.title,
                     "rate": tax_obj.rate,
                 } if tax_obj else {},
-                subtotal_price=expense_data_item.get("subtotal_price", 0),
+                subtotal_price=expense_data_item.get("quantity", 0) * expense_data_item.get("expense_price", 0),
                 company=service_order_obj.company,
                 tenant=service_order_obj.tenant,
             )
-
             bulk_info_expense.append(expense_obj)
 
         # Replace old expenses
         ServiceOrderExpense.objects.filter(service_order=service_order_obj).delete()
         ServiceOrderExpense.objects.bulk_create(bulk_info_expense)
-
         return True
 
     @staticmethod
@@ -812,7 +799,6 @@ class ServiceOrderCommonFunc:
 
         service_order.work_orders.all().delete()
         created_work_orders = ServiceOrderWorkOrder.objects.bulk_create(bulk_data)
-        # bulk create records in model 1-* ServiceOrderWorkOrderTask
         for created_work_order in created_work_orders:
             ServiceOrderWorkOrderTask.objects.bulk_create([ServiceOrderWorkOrderTask(
                 work_order=created_work_order,
@@ -986,3 +972,20 @@ class ServiceOrderCommonFunc:
                 )
             )
         ServiceOrderPaymentReconcile.objects.bulk_create(bulk_data)
+
+    @staticmethod
+    def calculate_total_expense(service_order_obj, expense_data: []):
+        service_order_obj['expense_pretax_value'] = 0
+        service_order_obj['expense_tax_value'] = 0
+        service_order_obj['expense_total_value'] = 0
+        if len(expense_data) > 0:
+            for expense_item in expense_data:
+                pretax_value = expense_item.get('quantity', 0) * expense_item.get('expense_price', 0)
+                service_order_obj['expense_pretax_value'] += pretax_value
+                tax_id = expense_item.get("tax")
+                tax_obj = Tax.objects.filter(id=tax_id).first() if tax_id else None
+                tax_rate = tax_obj.rate if tax_obj else 0
+                service_order_obj['expense_tax_value'] += pretax_value * tax_rate / 100
+            service_order_obj['expense_total_value'] = service_order_obj['expense_pretax_value'] + service_order_obj[
+                'expense_tax_value']
+        return service_order_obj

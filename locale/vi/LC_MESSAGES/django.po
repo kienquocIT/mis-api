@@ -368,7 +368,7 @@ msgstr "Thu hồi hàng cho mượn"
 
 # 36f25733-a6e7-43ea-b710-38e2052f0f6d
 msgid "Service Order"
-msgstr "Đơn đặt dịch vụ"
+msgstr "Đơn dịch vụ"
 
 # 8308d062-b22c-4f05-b88e-1115f9fe03ee
 msgid "Absence explanation"
