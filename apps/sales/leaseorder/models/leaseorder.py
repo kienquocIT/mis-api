@@ -278,7 +278,8 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
         # check if there is CR not done
         if cls.objects.filter_on_company(document_root_id=instance.document_root_id, system_status__in=[1, 2]).exists():
             return False
-        if not instance:
+        # check delivery (if LO was used for OrderDelivery => can't reject)
+        if hasattr(instance, 'delivery_of_lease_order'):
             return False
         return True
 
