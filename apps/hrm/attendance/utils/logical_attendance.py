@@ -66,7 +66,7 @@ class AttendanceHandler:
                 data_push_list.append(data_push)
                 return data_push_list
             if shift_assigns:
-                # Lọc logs theo ngày và employee_id
+                # Lọc logs theo date và employee_id
                 logs_on_day = [
                     log for log in data_logs
                     if log.employee_id == employee_obj.id and str(log.timestamp.date()) == date
@@ -130,16 +130,12 @@ class AttendanceHandler:
             keys = ['from', 'to']
             if all(key in checkin_time for key in keys) and all(key in checkout_time for key in keys):
                 for log in logs_on_day:
-                    # is_checkin = False
-                    # is_checkout = False
                     log_time = log.timestamp.time()
-                    # if log['event_type'] == "IN":
                     is_checkin = AttendanceHandler.check_normal_is_checkin(
                         log_time=log_time,
                         checkin_time_from=checkin_time['from'],
                         checkin_time_to=checkin_time['to'],
                     )
-                    # if log['event_type'] == "OUT":
                     is_checkout = AttendanceHandler.check_normal_is_checkout(
                         log_time=log_time,
                         checkout_time_from=checkout_time['from'],
@@ -309,46 +305,6 @@ class AttendanceHandler:
                 })
                 print(f"[{date}] Business")
         return data_push
-
-    # @classmethod
-    # def parse_checkin_checkout(cls, shift_check, check_type, is_first_shift=False, is_second_shift=False):
-    #     checkin_time = None
-    #     checkout_time = None
-    #     if check_type == 0:
-    #         checkin_time = (
-    #                 datetime.combine(
-    #                     datetime.today(), shift_check.checkin_time
-    #                 ) + timedelta(minutes=shift_check.checkin_threshold)
-    #         ).time()
-    #         checkout_time = (
-    #                 datetime.combine(
-    #                     datetime.today(), shift_check.checkout_time
-    #                 ) - timedelta(minutes=shift_check.checkout_threshold)
-    #         ).time()
-    #     if check_type == 1:
-    #         if is_first_shift is True:
-    #             checkin_time = (
-    #                     datetime.combine(
-    #                         datetime.today(), shift_check.break_out_time
-    #                     ) + timedelta(minutes=shift_check.break_out_threshold)
-    #             ).time()
-    #             checkout_time = (
-    #                     datetime.combine(
-    #                         datetime.today(), shift_check.checkout_time
-    #                     ) - timedelta(minutes=shift_check.checkout_threshold)
-    #             ).time()
-    #         if is_second_shift is True:
-    #             checkin_time = (
-    #                     datetime.combine(
-    #                         datetime.today(), shift_check.checkin_time
-    #                     ) + timedelta(minutes=shift_check.checkin_threshold)
-    #             ).time()
-    #             checkout_time = (
-    #                     datetime.combine(
-    #                         datetime.today(), shift_check.break_in_time
-    #                     ) - timedelta(minutes=shift_check.break_in_threshold)
-    #             ).time()
-    #     return checkin_time, checkout_time
 
     @classmethod
     def parse_checkin_checkout(cls, shift_check, check_type, is_first_shift=False, is_second_shift=False):
