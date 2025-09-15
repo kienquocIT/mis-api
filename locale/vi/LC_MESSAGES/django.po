@@ -366,6 +366,14 @@ msgstr "Cho mượn hàng"
 msgid "Equipment Return"
 msgstr "Thu hồi hàng cho mượn"
 
+# 36f25733-a6e7-43ea-b710-38e2052f0f6d
+msgid "Service Order"
+msgstr "Đơn đặt dịch vụ"
+
+# 8308d062-b22c-4f05-b88e-1115f9fe03ee
+msgid "Absence explanation"
+msgstr "Giải trình vắng mặt"
+
 #
 msgid "Does not exist"
 msgstr "Không tồn tại"
@@ -1733,11 +1741,3 @@ msgstr "Đã có đơn cho thuê được tạo với cơ hội kinh doanh này"
 #
 msgid "Overtime request"
 msgstr "Đăng ký làm ngoài giờ"
-
-# 36f25733-a6e7-43ea-b710-38e2052f0f6d
-msgid "Service Order"
-msgstr "Đơn đặt dịch vụ"
-
-#
-msgid "Absence explanation"
-msgstr "Giải trình vắng mặt"
