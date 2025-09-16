@@ -3,15 +3,13 @@ from uuid import uuid4
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.core.hr.models import Employee, DistributionApplication
-from apps.core.hr.serializers.common import validate_license_used
 from apps.core.process.utils import ProcessRuntimeControl
-from apps.core.tenant.models import TenantPlan
 from apps.masterdata.saledata.models import Contact
 from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.sales.lead.models import LeadStage, LeadHint, LeadChartInformation, LeadOpportunity, LeadParser
 from apps.sales.opportunity.models import (
-    Opportunity, OpportunitySaleTeamMember, OpportunityConfigStage, OpportunityStage, PlanMemberOpportunity,
+    Opportunity, OpportunitySaleTeamMember, OpportunityConfigStage, OpportunityStage,
 )
 from apps.sales.opportunity.serializers.opportunity_sub import (
     OpportunityCommonFunction,
@@ -20,8 +18,7 @@ from apps.sales.opportunity.serializers.opportunity_sub import (
 )
 from apps.sales.quotation.models import QuotationAppConfig
 from apps.sales.report.models import ReportPipeline
-from apps.shared import AccountsMsg, HRMsg, SaleMsg, DisperseModel, Caching
-from apps.shared.permissions.util import PermissionController
+from apps.shared import AccountsMsg, HRMsg, SaleMsg, DisperseModel
 from apps.shared.translations.opportunity import OpportunityMsg
 
 
