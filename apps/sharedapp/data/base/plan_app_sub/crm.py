@@ -3219,6 +3219,45 @@ PAYMENT_PLAN_APP_CONFIG = {
     "allow_permit": True,
 }
 
+SERVICEORDER_APP_CONFIG = {
+    "id": "36f25733-a6e7-43ea-b710-38e2052f0f6d",
+    "title": "Service Order",
+    "code": "serviceorder",
+    "model_code": "serviceorder",
+    "app_label": "serviceorder",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -3583,4 +3622,9 @@ Application_crm_data = {
         depend_follow_main=False,
         filtering_inheritor=True,
     ),
+    "36f25733-a6e7-43ea-b710-38e2052f0f6d": ApplicationConfigFrame(**SERVICEORDER_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
 }
+

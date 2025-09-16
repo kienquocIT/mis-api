@@ -3575,6 +3575,15 @@ AppProp_HRM_OvertimeRequest_data = {
     },
 }
 
+AppProp_SaleData_ServiceOrder_data = {
+    "9a0c78e9-dc53-4ee0-a009-70ea503d4f6c": {
+        "application_id": "36f25733-a6e7-43ea-b710-38e2052f0f6d",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    }
+}
 
 ApplicationProperty_data = {
     **Bastion_data_params,
@@ -3629,5 +3638,8 @@ ApplicationProperty_data = {
 
     # HRM
     **AppProp_HRM_AbsenceExplanation_data,
-    **AppProp_HRM_OvertimeRequest_data
+    **AppProp_HRM_OvertimeRequest_data,
+
+    # saledata
+    **AppProp_SaleData_ServiceOrder_data
 }

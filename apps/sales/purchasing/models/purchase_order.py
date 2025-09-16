@@ -105,7 +105,11 @@ class PurchaseOrder(DataAbstractModel):
 
     @classmethod
     def check_reject_document(cls, instance):
-        if not instance:
+        # check if there is CR not done
+        if cls.objects.filter_on_company(document_root_id=instance.document_root_id, system_status__in=[1, 2]).exists():
+            return False
+        # check if PO was used for GR
+        if instance.goods_receipt_po.filter(system_status__in=[1, 2, 3]).exists():
             return False
         return True
 
