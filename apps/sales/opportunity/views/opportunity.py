@@ -10,7 +10,7 @@ from apps.sales.opportunity.serializers import (
     OpportunityListSerializer, OpportunityUpdateSerializer,
     OpportunityCreateSerializer, OpportunityDetailSerializer
 )
-from apps.sales.opportunity.serializers.opportunity import (
+from apps.sales.opportunity.serializers.opportunity_sub import (
     OpportunityMemberCreateSerializer, OpportunityMemberDetailSerializer, OpportunityMemberUpdateSerializer,
     OpportunityStageCheckingSerializer, OpportunityContractSummarySerializer,
 )
