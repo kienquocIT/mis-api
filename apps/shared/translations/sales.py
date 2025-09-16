@@ -73,6 +73,7 @@ class SaleTask:
     CREATED_A = _('Created a Task')
     UPDATED_A = _('Updated a Task')
     DELETED_A = _('Deleted a Task')
+    ASSIGNEE_GROUP_NOT_PERMISSION = _('You do not permission update assignee group')
 
 
 class PurchaseRequestMsg:

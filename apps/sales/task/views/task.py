@@ -1,18 +1,26 @@
+import uuid
+
 from django.contrib.auth.models import AnonymousUser
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
 
-from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus
+from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, TaskAssigneeGroup, \
+    OpportunityTaskConfig
 from apps.sales.task.serializers import (
     OpportunityTaskListSerializer, OpportunityTaskCreateSerializer,
     OpportunityTaskDetailSerializer, OpportunityTaskUpdateSTTSerializer, OpportunityTaskLogWorkSerializer,
-    OpportunityTaskStatusListSerializer, OpportunityTaskUpdateSerializer,
+    OpportunityTaskStatusListSerializer, OpportunityTaskUpdateSerializer, OpportunityTaskEmployeeGroupSerializer,
+    OpportunityTaskListHasGroupSerializer
 )
-from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
+from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, \
+    BaseDestroyMixin, HttpMsg
 
 __all__ = [
     'OpportunityTaskList', 'OpportunityTaskDetail', 'OpportunityTaskSwitchSTT', 'OpportunityTaskLogWork',
-    'OpportunityTaskStatusList'
+    'OpportunityTaskStatusList', 'GroupAssigneeList', 'OpportunityTaskWithGroupList'
 ]
+
+from apps.shared.extends.response import cus_response
 
 
 class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
@@ -47,6 +55,16 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
+    def manual_check_obj_create(self, body_data, **kwargs):
+        # in this case, that create request without employee_inherit, and this employee has permission in settings task
+        # created assignee group
+        group_assignee = self.request.data.get('group_assignee')
+        if group_assignee:
+            uuid_obj = uuid.UUID(group_assignee, version=4)
+            # Kiểm tra xem có phải version 4 không
+            return str(uuid_obj) == group_assignee.lower()
+        return super().manual_check_obj_create(body_data, **kwargs)
+
     @swagger_auto_schema(
         operation_summary="Create Opportunity Task",
         operation_description="Lead create task for member of team via opportunity page or via Task page",
@@ -55,13 +73,47 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     @mask_view(
         login_require=True, auth_require=True,
         label_code='task', model_code='opportunityTask', perm_code='create',
-        opp_enabled=True, prj_enabled=True,
+        opp_enabled=True, prj_enabled=True
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
         }
         return self.create(request, *args, **kwargs)
+
+
+class OpportunityTaskWithGroupList(BaseListMixin):
+    queryset = OpportunityTask.objects
+    serializer_list = OpportunityTaskListHasGroupSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    filterset_fields = {
+        'parent_n': ['exact', 'isnull'],
+        'opportunity': ['exact'],
+        'employee_inherit': ['exact', 'isnull'],
+        'task_status': ['exact'],
+        'priority': ['exact'],
+    }
+
+    def get_queryset(self):
+        if not isinstance(self.request.user, AnonymousUser) and getattr(self.request.user, 'employee_current', None):
+            employee_current = self.request.user.employee_current.id
+            return self.queryset.select_related(
+                'parent_n', 'opportunity', 'employee_created', 'task_status', 'project', 'group_assignee'
+            ).filter(
+                group_assignee__employee_list_access__icontains=employee_current,
+                employee_inherit__isnull=True
+            )
+        return OpportunityTask.objects.none()
+
+    @swagger_auto_schema(
+        operation_summary="Opportunity Task List has group assignee",
+        operation_description="List of opportunity task has group assginee and employee inherit is null",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
@@ -74,8 +126,23 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     def get_queryset(self):
         return self.queryset.select_related(
             'parent_n', 'employee_inherit', 'employee_created', 'process', 'process_stage_app', 'task_status',
-            'opportunity', 'project'
+            'opportunity', 'project', 'group_assignee',
         )
+
+    def manual_check_obj_retrieve(self, instance, **kwargs):
+        # in this case, that get detail of request without employee_inherit, and this employee in group assignee
+        # retrieve task detail
+        employee_crt = self.request.user.employee_current_id
+        group_assignee = instance.group_assignee
+        if group_assignee and instance.employee_inherit is None:
+            is_stage = False
+            employee_list_access = group_assignee.employee_list_access
+            for item in employee_list_access:
+                if item == str(employee_crt):
+                    is_stage = True
+                    break
+            return is_stage
+        return super().manual_check_obj_retrieve(instance, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Opportunity Task Detail",
@@ -88,6 +155,21 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+    def manual_check_obj_update(self, instance, body_data, **kwargs):
+        # in this case, that get detail of request without employee_inherit, and this employee in group assignee
+        # retrieve task detail
+        employee_crt = self.request.user.employee_current_id
+        group_assignee = instance.group_assignee
+        if group_assignee and instance.employee_inherit is None:
+            is_stage = False
+            employee_list_access = group_assignee.employee_list_access
+            for item in employee_list_access:
+                if item == str(employee_crt):
+                    is_stage = True
+                    break
+            return is_stage
+        return super().manual_check_obj_retrieve(instance, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Opportunity Task Update",
@@ -175,3 +257,54 @@ class OpportunityTaskStatusList(BaseListMixin):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class GroupAssigneeList(BaseListMixin, BaseCreateMixin):
+    queryset = TaskAssigneeGroup.objects
+    serializer_list = OpportunityTaskEmployeeGroupSerializer
+    serializer_create = OpportunityTaskEmployeeGroupSerializer
+    serializer_detail = OpportunityTaskEmployeeGroupSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    filterset_fields = {
+        'id': ['exact', 'in'],
+    }
+
+    @classmethod
+    def check_user_perm(cls, request):
+        user_current = request.user
+        config = OpportunityTaskConfig.objects.get(
+            tenant=user_current.tenant_current, company=user_current.company_current
+        )
+        if config and str(user_current.employee_current.id) in config.user_allow_group_handle:
+            return True
+        return False
+
+    @swagger_auto_schema(
+        operation_summary="Task group assignee list",
+        operation_description="List of group assignee in task",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Task group assignee create",
+        operation_description="Lead create group assignee",
+        request_body=OpportunityTaskEmployeeGroupSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False
+    )
+    def post(self, request, *args, **kwargs):
+        has_perm = self.check_user_perm(request)
+        if has_perm:
+            return self.create(request, *args, **kwargs)
+        return cus_response(
+            {
+                "status": status.HTTP_403_FORBIDDEN,
+                "detail": HttpMsg.FORBIDDEN,
+            }, status.HTTP_403_FORBIDDEN, is_errors=True
+        )

@@ -13,9 +13,8 @@ from apps.shared import (
 )
 
 __all__ = [
-    'OpportunityTask', 'OpportunityTaskStatus',
-    'OpportunityLogWork', 'TaskAttachmentFile',
-    'OpportunityTaskSummaryDaily',
+    'OpportunityTask', 'OpportunityTaskStatus', 'OpportunityLogWork', 'TaskAttachmentFile',
+    'OpportunityTaskSummaryDaily', 'TaskAssigneeGroup'
 ]
 
 from apps.sales.task.utils import TaskHandler
@@ -50,6 +49,31 @@ class OpportunityTaskStatus(MasterDataAbstractModel):
         verbose_name = 'Task Status'
         verbose_name_plural = 'Task Status'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class TaskAssigneeGroup(MasterDataAbstractModel):
+    employee_list_access = models.JSONField(
+        default=list,
+        verbose_name='List of employee data backup',
+        help_text=json.dumps(
+            [
+                {
+                    'id': 'uuid4', 'full_name': 'Nguyen van A',
+                    'group': {'id': 'uuid4', 'title': 'group received task group'}
+                },
+                {
+                    'id': 'uuid4', 'full_name': 'Nguyen van B',
+                    'group': {'id': 'uuid4', 'title': 'group received task group'}
+                },
+            ], ensure_ascii=False
+        ).encode('utf8')
+    )
+
+    class Meta:
+        verbose_name = 'Assignee Task group'
+        verbose_name_plural = 'Assignee Task groups'
         default_permissions = ()
         permissions = ()
 
@@ -166,6 +190,14 @@ class OpportunityTask(DataAbstractModel):
         verbose_name="Number of child task",
         default=0, null=True
     )
+    group_assignee = models.ForeignKey(
+        TaskAssigneeGroup,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name='group assignee employee',
+        related_name='group_assignee_task',
+    )
 
     def create_code_task(self):
         # auto create code (temporary)
@@ -222,7 +254,7 @@ class OpportunityTask(DataAbstractModel):
         verbose_name = 'Opportunity Task Log Work'
         verbose_name_plural = 'Opportunity Task Log Work'
         default_permissions = ()
-        ordering = ('date_created',)
+        ordering = ('end_date',)
         permissions = ()
 
 

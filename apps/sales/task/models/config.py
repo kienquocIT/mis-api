@@ -32,6 +32,22 @@ class OpportunityTaskConfig(MasterDataAbstractModel):
         default=False,
         verbose_name='Assignee can edit Estimate'
     )
+    user_allow_group_handle = models.JSONField(
+        default=dict,
+        verbose_name='List of employee data backup',
+        help_text=json.dumps(
+            {
+                'uuid': {
+                    'id': 'uuid4', 'full_name': 'Nguyen van A',
+                    'group': {'id': 'uuid4', 'title': 'group received task group'}
+                },
+                'uuid2': {
+                    'id': 'uuid4', 'full_name': 'Nguyen van B',
+                    'group': {'id': 'uuid4', 'title': 'group received task group'}
+                },
+            }, ensure_ascii=False
+        ).encode('utf8')
+    )
 
     class Meta:
         verbose_name = 'Opportunity task config'
