@@ -69,8 +69,9 @@ class OpportunityListSerializer(serializers.ModelSerializer):
         if obj.customer:
             return {
                 'id': obj.customer_id,
-                'title': obj.customer.name,
+                'name': obj.customer.name,
                 'code': obj.customer.code,
+                'tax_code': obj.customer.tax_code,
                 'contact_mapped': [{
                     'id': str(item.id),
                     'fullname': item.fullname,
@@ -998,3 +999,72 @@ class OpportunityStageCheckingSerializer(serializers.ModelSerializer):
             'indicator': current_stage.indicator,
             'win_rate': current_stage.win_rate,
         } if current_stage else {}
+
+
+# contract summary
+class OpportunityContractSummarySerializer(serializers.ModelSerializer):
+    customer_data = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
+    sale_order_contract_summary_data = serializers.SerializerMethodField()
+    lease_order_contract_summary_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Opportunity
+        fields = (
+            'id',
+            'code',
+            'title',
+            'customer_data',
+            'sale_person',
+            'open_date',
+            'close_date',
+            'sale_order_contract_summary_data',
+            'lease_order_contract_summary_data',
+        )
+
+    @classmethod
+    def get_customer_data(cls, obj):
+        return {
+            'id': obj.customer_id,
+            'name': obj.customer.name,
+            'code': obj.customer.code,
+            'tax_code': obj.customer.tax_code,
+        } if obj.customer else {}
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        return obj.employee_inherit.get_detail_with_group() if obj.employee_inherit else {}
+
+    @classmethod
+    def get_sale_order_contract_summary_data(cls, obj):
+        sale_order_contract_summary_data = []
+        so_list_mapped = obj.sale_order_opportunity.all()
+        for so_obj in so_list_mapped:
+            for item in so_obj.sale_order_indicator_sale_order.all():
+                sale_order_contract_summary_data.append({
+                    'id': str(item.id),
+                    'indicator_value': item.indicator_value,
+                    'indicator_rate': item.indicator_rate,
+                    'quotation_indicator_data': item.quotation_indicator_data,
+                    'quotation_indicator_value': item.quotation_indicator_value,
+                    'quotation_indicator_rate': item.quotation_indicator_rate,
+                    'difference_indicator_value': item.difference_indicator_value,
+                })
+        return sale_order_contract_summary_data
+
+    @classmethod
+    def get_lease_order_contract_summary_data(cls, obj):
+        lease_order_contract_summary_data = []
+        lo_list_mapped = obj.lease_opportunity.all()
+        for lo_obj in lo_list_mapped:
+            for item in lo_obj.lease_order_indicator_lease_order.all():
+                lease_order_contract_summary_data.append({
+                    'id': str(item.id),
+                    'indicator_value': item.indicator_value,
+                    'indicator_rate': item.indicator_rate,
+                    'quotation_indicator_data': item.quotation_indicator_data,
+                    'quotation_indicator_value': item.quotation_indicator_value,
+                    'quotation_indicator_rate': item.quotation_indicator_rate,
+                    'difference_indicator_value': item.difference_indicator_value,
+                })
+        return lease_order_contract_summary_data
