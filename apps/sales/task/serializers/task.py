@@ -11,7 +11,7 @@ from apps.sales.project.extend_func import check_permit_add_member_pj, calc_upda
 from apps.sales.project.models import ProjectMapTasks
 from apps.sales.project.tasks import create_project_news
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, OpportunityTaskConfig, \
-    TaskAttachmentFile
+    TaskAttachmentFile, TaskAssigneeGroup
 
 from apps.shared import HRMsg, ProjectMsg, call_task_background
 from apps.shared.translations.base import AttachmentMsg
@@ -19,7 +19,9 @@ from apps.shared.translations.sales import SaleTask, SaleMsg
 
 __all__ = ['OpportunityTaskListSerializer', 'OpportunityTaskCreateSerializer', 'OpportunityTaskDetailSerializer',
            'OpportunityTaskUpdateSTTSerializer', 'OpportunityTaskLogWorkSerializer',
-           'OpportunityTaskStatusListSerializer', 'OpportunityTaskUpdateSerializer']
+           'OpportunityTaskStatusListSerializer', 'OpportunityTaskUpdateSerializer',
+           'OpportunityTaskEmployeeGroupSerializer', 'OpportunityTaskListHasGroupSerializer'
+           ]
 
 
 def handle_attachment(instance, attachment_result):
@@ -138,11 +140,12 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
 
 
 class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
-    employee_inherit_id = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField(allow_null=True, default=None, required=False)
     title = serializers.CharField(max_length=250)
     work = serializers.UUIDField(required=False)
     process = serializers.UUIDField(allow_null=True, default=None, required=False)
     process_stage_app = serializers.UUIDField(allow_null=True, default=None, required=False)
+    group_assignee = serializers.UUIDField(allow_null=True, default=None, required=False)
 
     @classmethod
     def validate_process(cls, attrs):
@@ -160,7 +163,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
             'title', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity', 'opportunity_data',
             'priority', 'label', 'employee_inherit_id', 'checklist', 'parent_n', 'remark', 'employee_created',
             'log_time', 'attach', 'attach_assignee', 'percent_completed', 'project', 'work',
-            'process', 'process_stage_app',
+            'process', 'process_stage_app', 'group_assignee'
         )
 
     @classmethod
@@ -172,15 +175,12 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def validate_employee_inherit_id(cls, value):
-        try:
-            return Employee.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            ).id
-        except Employee.DoesNotExist:
-            raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
+    def validate_employee_inherit_id(cls, attrs):
+        return Employee.objects.get_current(
+            fill__tenant=True,
+            fill__company=True,
+            id=attrs
+        ).id if attrs else None
 
     @classmethod
     def validate_employee_created(cls, value):
@@ -194,6 +194,14 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                 return value
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
         raise serializers.ValidationError({'detail': SaleTask.ERROR_ASSIGNER})
+
+    @classmethod
+    def validate_group_assignee(cls, value):
+        return TaskAssigneeGroup.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            id=value
+        ).first() if value else None
 
     @classmethod
     def validate_parent_n(cls, value):
@@ -328,6 +336,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
     project = serializers.SerializerMethodField()
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
+    group_assignee = serializers.SerializerMethodField()
 
     @classmethod
     def get_process(cls, obj):
@@ -466,6 +475,13 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
             "employee_inherit": sub.employee_inherit.get_full_name()
         } for sub in task_list] if task_list else []
 
+    @classmethod
+    def get_group_assignee(cls, obj):
+        return {
+            'id': str(obj.group_assignee.id),
+            'title': obj.group_assignee.title
+        } if obj.group_assignee else {}
+
     class Meta:
         model = OpportunityTask
         fields = (
@@ -491,18 +507,23 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
             'project',
             'process',
             'process_stage_app',
+            'group_assignee',
         )
 
 
 class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
-    employee_inherit_id = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField(allow_null=True, required=False)
+    group_assignee = serializers.UUIDField(allow_null=True, required=False)
     work = serializers.UUIDField(required=False)
+    task_status = serializers.UUIDField(allow_null=True, required=False)
+    start_date = serializers.DateField(allow_null=True, required=False)
+    end_date = serializers.DateField(allow_null=True, required=False)
 
     class Meta:
         model = OpportunityTask
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity_data',
                   'priority', 'label', 'employee_inherit_id', 'remark', 'checklist', 'parent_n', 'employee_created',
-                  'attach', 'attach_assignee', 'opportunity', 'percent_completed', 'project', 'work')
+                  'attach', 'attach_assignee', 'opportunity', 'percent_completed', 'project', 'work', 'group_assignee')
 
     @classmethod
     def validate_title(cls, attrs):
@@ -536,35 +557,42 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         return attrs
 
     @classmethod
+    def validate_group_assignee(cls, attrs):
+        return TaskAssigneeGroup.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            id=attrs
+        ).first() if attrs else None
+
+    @classmethod
     def valid_config_task(cls, current_data, update_data, user):
         employee_request = user.employee_current
-        config = OpportunityTaskConfig.objects.filter_current(
-            fill__company=True,
-        )
+        config = OpportunityTaskConfig.objects.filter_on_company()
         assignee = update_data['employee_inherit_id']
         if config.exists():
             config = config.first()
+            # nếu user nằm trong group assign và phiếu đang có người thụ hưởng là trống
+            if str(assignee) in current_data.group_assignee.employee_list_access \
+                    and current_data.employee_inherit is None and len(update_data) == 2 and (
+                    'employee_inherit_id' in update_data and 'employee_modified_id' in update_data):
+                return True
+
             # nếu người gửi là người thụ hưởng và ko phải là người tạo
             if employee_request.id == assignee and not employee_request == current_data.employee_created:
                 # cấu hình ko cho update time
-                if not config.is_edit_date and (
-                        current_data.start_date != update_data['start_date']
-                        or current_data.end_date != update_data['end_date']
-                ):
-                    raise serializers.ValidationError(
-                        {
-                            'system': SaleTask.ERROR_NOT_LOGWORK
-                        }
-                    )
+                if not config.is_edit_date and (current_data.start_date != update_data['start_date']
+                                                or current_data.end_date != update_data['end_date']):
+                    raise serializers.ValidationError({'system': SaleTask.ERROR_NOT_LOGWORK})
                 # cấu hình ko cho update estimate
                 if not config.is_edit_est and current_data.estimate != update_data['estimate']:
-                    raise serializers.ValidationError(
-                        {'system': SaleTask.NOT_CHANGE_ESTIMATE}
-                    )
+                    raise serializers.ValidationError({'system': SaleTask.NOT_CHANGE_ESTIMATE})
+            # group có bị thay đổi ko và ng update group phải nằm trong danh sách được cấp quyền trong config
+            if update_data['group_assignee'] is not None and hasattr(current_data, 'group_assignee'):
+                if update_data['group_assignee'] != current_data['group_assignee'] and \
+                        employee_request.id not in config.user_allow_group_handle:
+                    raise serializers.ValidationError({'group_assignee': SaleTask.ASSIGNEE_GROUP_NOT_PERMISSION})
             return True
-        raise serializers.ValidationError(
-            {'system': SaleTask.NOT_CONFIG}
-        )
+        raise serializers.ValidationError({'system': SaleTask.NOT_CONFIG})
 
     def validate_attach(self, attrs):
         user = self.context.get('user', None)
@@ -596,7 +624,8 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
             check_permit = check_permit_add_member_pj(attrs['project'], employee_current)
             # nếu user chỉ update
             if str(self.instance.project.id) == str(attrs['project'].id) and str(
-                    self.instance.employee_inherit.id) == str(employee_current.id):
+                    self.instance.employee_inherit.id
+            ) == str(employee_current.id):
                 check_permit = True
             if self.instance.project.project_status == 4:
                 check_permit = False
@@ -746,3 +775,46 @@ class OpportunityTaskStatusListSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpportunityTaskStatus
         fields = ('id', 'title', 'translate_name', 'order', 'task_color', 'is_finish')
+
+
+class OpportunityTaskEmployeeGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaskAssigneeGroup
+        fields = ('id', 'title', 'employee_list_access')
+
+    def create(self, validated_data):
+        group = TaskAssigneeGroup.objects.create(**validated_data)
+        return group
+
+
+class OpportunityTaskListHasGroupSerializer(OpportunityTaskListSerializer):
+    group_assignee = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_group_assignee(cls, obj):
+        return {
+            'id': str(obj.group_assignee.id),
+            'tile': obj.group_assignee.title
+        } if obj.group_assignee else {}
+
+    class Meta:
+        model = OpportunityTask
+        fields = (
+            'id',
+            'title',
+            'code',
+            'task_status',
+            'opportunity',
+            'start_date',
+            'end_date',
+            'priority',
+            'employee_inherit',
+            'checklist',
+            'parent_n',
+            'employee_created',
+            'date_created',
+            'child_task_count',
+            'percent_completed',
+            'project',
+            'group_assignee'
+        )

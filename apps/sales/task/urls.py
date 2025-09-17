@@ -1,7 +1,8 @@
 from django.urls import path
 
 from apps.sales.task.views import TaskConfigDetail, OpportunityTaskSwitchSTT, OpportunityTaskLogWork, \
-    OpportunityTaskStatusList, OpportunityTaskList, OpportunityTaskDetail
+    OpportunityTaskStatusList, OpportunityTaskList, OpportunityTaskDetail, GroupAssigneeList, \
+    OpportunityTaskWithGroupList
 from apps.sales.task.views_report import MyTaskReportView, MyTaskSummaryReportView
 
 urlpatterns = [
@@ -14,4 +15,14 @@ urlpatterns = [
 
     path('my-report', MyTaskReportView.as_view(), name='MyTaskReportView'),
     path('my-summary-report', MyTaskSummaryReportView.as_view(), name='MyTaskSummaryReportView'),
+
+    path(
+        'assignee-group/list', GroupAssigneeList.as_view(),
+        name='GroupAssigneeList'
+    ),
+    path(
+        'list-has-group-assign', OpportunityTaskWithGroupList.as_view(),
+        name='OpportunityTaskWithGroupList'
+    ),
+
 ]
