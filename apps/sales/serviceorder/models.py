@@ -188,7 +188,7 @@ class ServiceOrderWorkOrderContribution(SimpleAbstractModel):
     balance_quantity = models.FloatField(default=0)
     delivered_quantity = models.IntegerField(default=0)
 
-    #package feature
+    # package feature
     has_package = models.BooleanField(default=False)
     package_data = models.JSONField(default=list, null=True)
 
