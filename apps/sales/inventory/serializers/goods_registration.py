@@ -902,7 +902,7 @@ class GoodsRegisBorrowListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_regis_data(cls, obj):
         """
-        Available = số lượng đăng ký cho chính đơn hàng hiện tại
+        Available = số lượng đăng ký cho chính đơn bán hàng hiện tại
         (lấy từ bảng GReItemProductWarehouse field this_available)
         """
         return GReItemProductWarehouseSerializer(obj.gre_item_prd_wh.all(), many=True).data
@@ -910,7 +910,7 @@ class GoodsRegisBorrowListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_borrow_data(cls, obj):
         """
-        Available = số lượng mượn hàng từ đơn hàng khác
+        Available = số lượng mượn hàng từ đơn bán hàng khác
         (lấy từ bảng GReItemBorrow field base_available)
         """
         return GReItemBorrowListSerializer(obj.gre_item_src_borrow.all(), many=True).data
