@@ -163,7 +163,8 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             'attachment',
             'service_detail_data',
             'work_order_data',
-            'payment_data'
+            'payment_data',
+            'exchange_rate_data'
         )
 
 
@@ -300,6 +301,8 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                 'contribution_percent': contribution.contribution_percent,
                 'balance_quantity': contribution.balance_quantity,
                 'delivered_quantity': contribution.delivered_quantity,
+                'unit_cost': contribution.unit_cost,
+                'total_cost': contribution.total_cost,
                 'has_package': contribution.has_package,
                 'package_data': contribution.package_data,
             } for contribution in work_order.work_order_contributions.all()],
@@ -413,7 +416,8 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'service_detail_data',
             'work_order_data',
             'payment_data',
-            'expense'
+            'expense',
+            'exchange_rate_data'
         )
 
 
@@ -513,7 +517,8 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
             'attachment',
             'service_detail_data',
             'work_order_data',
-            'payment_data'
+            'payment_data',
+            'exchange_rate_data',
         )
 
 
@@ -862,6 +867,8 @@ class ServiceOrderCommonFunc:
                     contribution_percent=contribution.get('contribution_percent', 0),
                     balance_quantity=contribution.get('balance_quantity', 0),
                     delivered_quantity=contribution.get('delivered_quantity', 0),
+                    unit_cost=contribution.get('unit_cost', 0),
+                    total_cost=contribution.get('total_cost', 0),
                     has_package=contribution.get('has_package', False),
                     package_data=contribution.get('package_data', []),
                 )
