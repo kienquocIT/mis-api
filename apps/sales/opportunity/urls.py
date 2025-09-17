@@ -10,7 +10,7 @@ from .views import (
     OpportunityConfigStageList, OpportunityConfigStageDetail, OpportunityStageChecking,
     CustomerDecisionFactorList,
     CustomerDecisionFactorDetail,
-    OpportunityMemberDetail, OpportunityMemberList,
+    OpportunityMemberDetail, OpportunityMemberList, OpportunityContractSummary,
 )
 
 urlpatterns = [
@@ -42,4 +42,5 @@ urlpatterns = [
         OpportunityMemberDetail.as_view(),
         name='OpportunityMemberDetail'
     ),
+    path('contract-summary', OpportunityContractSummary.as_view(), name='OpportunityContractSummary'),
 ]

@@ -3,15 +3,13 @@ from uuid import uuid4
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.core.hr.models import Employee, DistributionApplication
-from apps.core.hr.serializers.common import validate_license_used
 from apps.core.process.utils import ProcessRuntimeControl
-from apps.core.tenant.models import TenantPlan
 from apps.masterdata.saledata.models import Contact
 from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.models.accounts import AccountActivity
 from apps.sales.lead.models import LeadStage, LeadHint, LeadChartInformation, LeadOpportunity, LeadParser
 from apps.sales.opportunity.models import (
-    Opportunity, OpportunitySaleTeamMember, OpportunityConfigStage, OpportunityStage, PlanMemberOpportunity,
+    Opportunity, OpportunitySaleTeamMember, OpportunityConfigStage, OpportunityStage,
 )
 from apps.sales.opportunity.serializers.opportunity_sub import (
     OpportunityCommonFunction,
@@ -20,8 +18,7 @@ from apps.sales.opportunity.serializers.opportunity_sub import (
 )
 from apps.sales.quotation.models import QuotationAppConfig
 from apps.sales.report.models import ReportPipeline
-from apps.shared import AccountsMsg, HRMsg, SaleMsg, DisperseModel, Caching
-from apps.shared.permissions.util import PermissionController
+from apps.shared import AccountsMsg, HRMsg, SaleMsg, DisperseModel
 from apps.shared.translations.opportunity import OpportunityMsg
 
 
@@ -30,10 +27,6 @@ __all__ = [
     'OpportunityCreateSerializer',
     'OpportunityUpdateSerializer',
     'OpportunityDetailSerializer',
-    'OpportunityMemberCreateSerializer',
-    'OpportunityMemberDetailSerializer',
-    'OpportunityMemberUpdateSerializer',
-    'OpportunityStageCheckingSerializer'
 ]
 
 
@@ -69,8 +62,9 @@ class OpportunityListSerializer(serializers.ModelSerializer):
         if obj.customer:
             return {
                 'id': obj.customer_id,
-                'title': obj.customer.name,
+                'name': obj.customer.name,
                 'code': obj.customer.code,
+                'tax_code': obj.customer.tax_code,
                 'contact_mapped': [{
                     'id': str(item.id),
                     'fullname': item.fullname,
@@ -812,189 +806,3 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
         # handle stage & win_rate
         instance.handle_stage_win_rate(obj=instance)
         return instance
-
-
-# related
-class OpportunityMemberCreateSerializer(serializers.Serializer):  # noqa
-    members = serializers.ListField(
-        child=serializers.UUIDField()
-    )
-
-    @classmethod
-    def validate_members(cls, attrs):
-        if len(attrs) > 0:
-            objs = DisperseModel(app_model='hr.Employee').get_model().objects.filter_current(
-                fill__tenant=True, fill__company=True, id__in=attrs
-            )
-            if objs.count() == len(attrs):
-                return objs
-            raise serializers.ValidationError({'members': OpportunityMsg.MEMBER_NOT_EXIST})
-        raise serializers.ValidationError({'members': OpportunityMsg.MEMBER_REQUIRED})
-
-    def create(self, validated_data):
-        opportunity_id = validated_data.get('opportunity_id')
-        tenant_id = validated_data.get('tenant_id')
-        company_id = validated_data.get('company_id')
-        members = validated_data.pop('members')
-        objs = []
-        for member_obj in members:
-            obj = OpportunitySaleTeamMember.objects.create(
-                opportunity_id=opportunity_id,
-                member=member_obj,
-                tenant_id=tenant_id,
-                company_id=company_id,
-            )
-            objs.append(obj)
-        return objs[0]
-
-
-class OpportunityMemberDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OpportunitySaleTeamMember
-        fields = (
-            'id', 'date_modified', 'permit_view_this_opp', 'permit_add_member',
-            'permission_by_configured',
-        )
-
-
-class OpportunityMemberUpdateSerializer(serializers.ModelSerializer):
-    permission_by_configured = serializers.JSONField(
-        required=False,
-        help_text=str(
-            [{
-                "id": "UUID or None",
-                "app_id": "UUID",
-                "plan_data": "UUID",
-                "create": bool,
-                "view": bool,
-                "edit": bool,
-                "delete": bool,
-                "range": 'CHOICE("1", "2", "3", "4")',
-            }]
-        ),
-    )
-
-    def validate_permission_by_configured(self, attrs):
-        return PermissionController(tenant_id=self.instance.tenant_id).valid(attrs=attrs, has_space=False)
-
-    class Meta:
-        model = OpportunitySaleTeamMember
-        fields = ('permit_view_this_opp', 'permit_add_member', 'permission_by_configured')
-
-    def validate(self, validate_data):
-        return validate_license_used(validate_data=validate_data)
-
-    @staticmethod
-    def set_up_data_plan_app(validated_data, instance=None):
-        cls_query = PlanMemberOpportunity
-        filter_query = {'opportunity_member': instance}
-        plan_application_dict = {}
-        plan_app_data = []
-        bulk_info = []
-        if 'plan_app' in validated_data:
-            plan_app_data = validated_data['plan_app']
-            del validated_data['plan_app']
-            if instance:
-                # delete old M2M PlanEmployee
-                plan_x_old = cls_query.objects.filter(**filter_query)
-                if plan_x_old:
-                    plan_x_old.delete()
-        if plan_app_data:
-            for plan_app in plan_app_data:
-                plan_code = None
-                app_code_list = []
-                if 'plan' in plan_app:
-                    plan_code = plan_app['plan'].code if plan_app['plan'] else None
-                if 'application' in plan_app:
-                    app_code_list = [app.code for app in plan_app['application']] if plan_app['application'] else []
-                if plan_code and app_code_list:
-                    plan_application_dict.update({plan_code: app_code_list})
-                    bulk_info.append(
-                        cls_query(
-                            **{
-                                'plan': plan_app['plan'],
-                                'application': [str(app.id) for app in plan_app['application']]
-                            }
-                        )
-                    )
-        return plan_application_dict, plan_app_data, bulk_info
-
-    @staticmethod
-    def create_plan_update_tenant_plan(instance, plan_app_data, bulk_info):
-        if instance and plan_app_data and bulk_info:
-            # create M2M PlanEmployee
-            for info in bulk_info:
-                info.opportunity_member = instance
-            PlanMemberOpportunity.objects.bulk_create(bulk_info)
-            # update TenantPlan
-            for plan_data in plan_app_data:
-                if 'plan' in plan_data and 'license_used' in plan_data:
-                    tenant_plan = TenantPlan.objects.filter(
-                        tenant=instance.tenant,
-                        plan=plan_data['plan']
-                    ).first()
-                    if tenant_plan:
-                        tenant_plan.license_used = plan_data['license_used']
-                        tenant_plan.save()
-        Caching().clean_by_prefix_many(table_name_list=['hr_PlanEmployee', 'tenant_TenantPlan'])
-        return True
-
-    def update(self, instance, validated_data):
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.save()
-        return instance
-
-
-# stage checking
-class OpportunityStageCheckingSerializer(serializers.ModelSerializer):
-    current_stage = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Opportunity
-        fields = (
-            'id',
-            'current_stage'
-        )
-
-    def get_current_stage(self, obj):
-        stages = OpportunityConfigStage.objects.filter(company_id=obj.company_id, is_delete=False).order_by('win_rate')
-        stage_lost = None
-        stage_delivery = None
-        stage_close = None
-        list_stage = []
-        # sort stage [stage 1, stage 2, ...., stage Close Lost, stage Delivery, stage Deal Close
-        for item in stages:
-            if item.is_closed_lost:
-                stage_lost = item
-            elif item.is_delivery:
-                stage_delivery = item
-            elif item.is_deal_closed:
-                stage_close = item
-            else:
-                list_stage.append(item)
-        if stage_lost:
-            list_stage.append(stage_lost)
-        if stage_delivery:
-            list_stage.append(stage_delivery)
-        if stage_close:
-            list_stage.append(stage_close)
-        # list stage instance
-        list_stage_instance = obj.parse_stage(list_stage=list_stage, obj=obj)
-        # check stage
-        stage_index = []
-        for idx, item in enumerate(list_stage):
-            if item.logical_operator == 0 and all(element in list_stage_instance for element in item.condition_datas):
-                stage_index.append(idx)
-            if item.logical_operator != 0 and any(element in list_stage_instance for element in item.condition_datas):
-                stage_index.append(idx)
-
-        current_stage = list_stage[stage_index[-1]]
-        return {
-            'id': str(current_stage.id),
-            'is_deal_closed': current_stage.is_deal_closed,
-            'is_closed_lost': current_stage.is_closed_lost,
-            'is_delivery': current_stage.is_delivery,
-            'indicator': current_stage.indicator,
-            'win_rate': current_stage.win_rate,
-        } if current_stage else {}

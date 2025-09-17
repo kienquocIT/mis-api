@@ -33,13 +33,13 @@ class TaskConfigDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OpportunityTaskConfig
-        fields = ('id', 'list_status', 'is_edit_date', 'is_edit_est')
+        fields = ('id', 'list_status', 'is_edit_date', 'is_edit_est', 'user_allow_group_handle')
 
 
 class TaskConfigUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpportunityTaskConfig
-        fields = ('list_status', 'is_edit_date', 'is_edit_est')
+        fields = ('list_status', 'is_edit_date', 'is_edit_est', 'user_allow_group_handle')
 
     @classmethod
     def handle_task_before(cls, obj_status, instance):
@@ -119,9 +119,7 @@ class TaskConfigUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         status_lst = validated_data['list_status']
         self.update_task_status(status_lst, instance)
-
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
         return instance

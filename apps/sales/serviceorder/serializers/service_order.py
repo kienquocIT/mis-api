@@ -389,10 +389,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'id': obj.opportunity_id,
             'title': obj.opportunity.title,
             'code': obj.opportunity.code,
-            'customer': {
-                'id': obj.opportunity.customer_id,
-                'title': obj.opportunity.customer.title
-            } if obj.opportunity.customer else {},
+            'customer': obj.customer_data,
             'is_deal_close': obj.opportunity.is_deal_close,
         } if obj.opportunity else {}
 
