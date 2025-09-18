@@ -5,6 +5,7 @@ __all__ = [
 
 import json
 import logging
+from copy import deepcopy
 
 from typing import Union
 from uuid import UUID
@@ -15,7 +16,8 @@ from django.db.models import Q
 from django.utils import timezone
 from django.utils.text import slugify
 
-from apps.shared import MasterDataAbstractModel, TypeCheck, StringHandler, HrMsg, AttMsg, SimpleAbstractModel
+from apps.shared import MasterDataAbstractModel, TypeCheck, StringHandler, HrMsg, AttMsg, SimpleAbstractModel, \
+    DisperseModel
 from apps.core.attachments.storages.aws.storages_backend import (
     PrivateMediaStorage, FileSystemStorage,
     PublicMediaStorage,
@@ -54,6 +56,80 @@ FILE_LIST = (
     (7, 'Edit file'),
 )
 
+MODULE_MAPPING = {
+    'system': {'name': 'System', 'id': '9ac02039-a9a4-42e9-825e-169f740b5b5b'},
+    'sale': {  # SAlE
+        'name': 'Sale', 'id': '76ab081b-eee4-4923-97b9-1cbb09deef78', 'plan': '4e082324-45e2-4c27-a5aa-e16a758d5627'
+    },
+    'kms': {  # KMS
+        'name': 'KMS', 'id': 'c7a702aa-10e7-487a-ab6c-3fd219930504', 'plan': '02793f68-3548-45c1-98f5-89899a963091'
+    },
+    'hrm': {  # HRM
+        'name': 'HRM', 'id': '3802739f-12c8-4f90-ac67-3f81e21ccffe', 'plan': '395eb68e-266f-45b9-b667-bd2086325522'
+    },
+    'e-office': {  # E-Office
+        'name': 'E-Office', 'id': '57bc22f9-08a8-4a4b-b207-51c0f6428c56', 'plan': 'a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8'
+    }
+
+}
+
+HIERARCHY_RULES = {
+    'sale': {
+        'apinvoice': {},
+        'arinvoice': {},
+        'bidding': {},
+        'advancepayment': {},
+        'payment': {},
+        'consulting': {},
+        'contractapproval': {},
+        'orderdeliverysub': {},
+        'equipmentloan': {},
+        'goodsissue': {},
+        'goodsreceipt': {},
+        'goodsreturn': {},
+        'leaseorder': {},
+        'opportunity': {
+            'child': {
+                'opportunitytask': {},
+                'serviceorder': {
+                    'child': {
+                        'opportunitytask'
+                    }
+                }
+            }
+        },
+        'purchaseorder': {},
+        'purchasequotationrequest': {},
+        'purchaserequest': {},
+        'quotation': {},
+        'saleorder': {},
+        'serviceorder': {
+            'child': {
+                'opportunitytask'
+            },
+        },
+        'opportunitytask': {}
+    },
+    'e-office': {
+        'assettoolsreturn': {},
+        'assettoolsdelivery': {},
+        'assettoolsprovide': {},
+        'businessrequest': {},
+        'meetingschedule': {},
+    },
+    'hrm': {
+        'employeeinfo': {
+            'child': {
+                'employeecontract': {}
+            }
+        },
+    },
+    'kms': {
+        'kmsdocumentapproval': {},
+        'kmsincomingdocument': {}
+    }
+}
+
 
 def make_sure_filename_length(_filename):
     if len(_filename) > 30:
@@ -91,6 +167,73 @@ def update_files_is_approved(doc_files_list):
         bulk_files_update.append(file.attachment)
     if bulk_files_update:
         Files.objects.bulk_update(bulk_files_update, fields=['is_approved'])
+
+
+def processing_folder(doc_id, doc_app):
+    # lấy doc obj theo doc app
+    # lấy code của doc (code của doc được setup để lấy theo cấu hình or generate tự động)
+    # filter folder theo application và document code nếu có thì trả về nếu không thì tạo mới theo cấu trúc thư mục
+    doc_code = doc_app.model_code
+
+    def get_doc_obj_from_id(id_doc, app_obj):
+        model_cls = DisperseModel(app_model=f'{app_obj.app_label}.{app_obj.model_code}').get_model()
+        if model_cls and hasattr(model_cls, 'objects'):
+            try:
+                return model_cls.objects.get(pk=id_doc)
+            except model_cls.DoesNotExist:
+                logger.error( f'[processing_folder] '
+                              f'Document Object is not found doc={id_doc}')
+                raise ValueError('Document Object is not found ' + id_doc)
+        logger.error(
+            f'[processing_folder] '
+            f'Model Doc not found: doc={doc_id} - app={doc_app}'
+        )
+        raise ValueError('Model Doc not found: ' + doc_id + ' - ' + doc_app)
+
+    doc_obj = get_doc_obj_from_id(doc_id, doc_app)
+    # get code of doc code via config
+    parsed_code = doc_obj.code
+    if not parsed_code:
+        raise ValueError('Code of document related attachment is Null can not create folder')
+
+    folder_obj_lst = Folder.objects.filter(application=doc_app, doc_code=parsed_code, is_system=True)
+    if folder_obj_lst.exists():
+        folder_obj = folder_obj_lst.first()
+    else:
+        # tạo hoặc get system folder
+        folder_system_obj, _ = Folder.objects.get_or_create(
+            id=MODULE_MAPPING['system']['id'],
+            defaults={
+                'title': MODULE_MAPPING['system']['name'],
+                'company': doc_obj.company,
+                'tenant': doc_obj.tenant,
+                'application': doc_app,
+                'is_system': True
+            }
+        )
+        folder_name = deepcopy(doc_obj.title)
+        folder_name_length = len(folder_name)
+        result_name = deepcopy(folder_name)
+        if folder_name_length > 35:
+            one_third = folder_name_length // 3
+            result_name = f'{folder_name[:one_third]}...{folder_name[-one_third:]}'
+        # tạo folder theo doc_code và app
+        folder_obj, _ = Folder.objects.create(
+            title=f'{parsed_code}-{result_name}',
+            doc_code=parsed_code,
+            application=doc_app,
+            is_system=True,
+            company=doc_obj.company,
+            tenant=doc_obj.tenant,
+        )
+        # todo here dang lam den day taoj folder moi
+        # check tieeps neeus doc ID co related app thi taoj hoawcj laasy thong tin folder parent
+        path_current = ''
+        # check service_order
+        doc_obj.service_order_work_order_task_task.exists()
+
+
+    return folder_obj
 
 
 class BastionFiles(MasterDataAbstractModel):
@@ -492,24 +635,8 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
             try:
                 with transaction.atomic():
                     if new_objs:
-                        folder_obj = Folder.objects.filter_on_company(application=doc_app, is_system=True)
-                        has_folder = folder_obj.exists()
-                        # create new if folder not exists
-                        if not has_folder:
-                            has_folder, _ = Folder.objects.get_or_create(
-                                application=doc_app,
-                                is_system=True,
-                                defaults={
-                                    'title': doc_app.title,
-                                    'company': new_objs[0].company,
-                                    'tenant': new_objs[0].tenant,
-                                    'application': doc_app,
-                                    'is_system': True
-                                }
-                            )
-                            folder_obj = has_folder
-                        else:
-                            folder_obj = folder_obj.first()
+                        # folder_obj = Folder.objects.filter_on_company(application=doc_app, is_system=True)
+                        folder_obj = processing_folder(doc_id, doc_app)
 
                         counter = len(new_objs) + 1
                         m2m_bulk = []
@@ -517,7 +644,7 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
                             m2m_bulk.append(cls(attachment=obj, order=counter, **{doc_field_name + '_id': doc_id}))
                             counter += 1
                             obj.link(doc_id=doc_id, doc_app=doc_app)
-                            if has_folder:
+                            if folder_obj:
                                 obj.folder = folder_obj
                                 obj.save(update_fields=['folder'])
                         cls.objects.bulk_create(m2m_bulk)
@@ -543,6 +670,7 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
 # BEGIN FOLDER
 class Folder(MasterDataAbstractModel):
     application = models.ForeignKey('base.Application', on_delete=models.CASCADE, null=True)
+    doc_code = models.CharField(unique=True, max_length=250, blank=True, null=True)
     parent_n = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,

@@ -209,9 +209,9 @@ class OpportunityTask(DataAbstractModel):
                 task = OpportunityTask.objects.filter_current(
                     fill__tenant=True, fill__company=True, is_delete=False
                 ).count()
-                char = "T"
+                char = "TASK"
                 temper = task + 1
-                code = f"{char}{temper:03d}"
+                code = f"{char}{temper:04d}"
                 self.code = code
             # include add child task count
             if self.parent_n:
