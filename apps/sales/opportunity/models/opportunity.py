@@ -10,10 +10,12 @@ from apps.shared import (
 )
 from .config import OpportunityConfigStage
 
+
 TYPE_CUSTOMER = [
     (0, _('Direct Customer')),
     (1, _('End Customer')),
 ]
+
 
 CONTACT_ROLE = [
     (0, _('Decision maker')),

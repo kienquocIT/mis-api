@@ -1,7 +1,7 @@
 from rest_framework import serializers
-
-from apps.sales.opportunity.models import CustomerDecisionFactor, OpportunityConfig, OpportunityConfigStage, \
-    StageCondition
+from apps.sales.opportunity.models import (
+    CustomerDecisionFactor, OpportunityConfig, OpportunityConfigStage, StageCondition
+)
 
 
 class OpportunityConfigDetailSerializer(serializers.ModelSerializer):

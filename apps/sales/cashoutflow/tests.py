@@ -323,7 +323,7 @@ class PaymentTestCase(AdvanceTestCase):
         url_account_group = reverse("AccountGroupList")
         data_account_group = {  # noqa
             "code": "AG01ORDER",
-            "title": "Nhóm khách hàng test đơn hàng",
+            "title": "Nhóm khách hàng test đơn bán hàng",
             "description": ""
         }
         response_account_group = self.client.post(url_account_group, data_account_group, format='json')
@@ -356,7 +356,7 @@ class PaymentTestCase(AdvanceTestCase):
         employee = self.get_employee().data['result'][0]['id']
         payment_term = self.create_config_payment_term().data['result']['id']
         data = {
-            "title": "Đơn hàng test",
+            "title": "Đơn bán hàng test",
             "opportunity_id": opportunity,
             "customer_id": customer,
             "contact_id": contact,

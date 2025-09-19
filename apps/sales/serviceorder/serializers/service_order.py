@@ -29,7 +29,7 @@ __all__ = [
     'ServiceOrderCreateSerializer',
     'ServiceOrderDetailSerializer',
     'ServiceOrderUpdateSerializer',
-    'ServiceOrderDetailSerializerForDashboard',
+    'ServiceOrderDetailDashboardSerializer',
 ]
 
 
@@ -517,7 +517,7 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
         )
 
 
-class ServiceOrderDetailSerializerForDashboard(AbstractDetailSerializerModel):
+class ServiceOrderDetailDashboardSerializer(AbstractDetailSerializerModel):
     contract_value = serializers.SerializerMethodField()
     contract_value_delivered = serializers.SerializerMethodField()
     service_order_detail_list = serializers.SerializerMethodField()
