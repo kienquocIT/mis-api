@@ -129,6 +129,18 @@ HIERARCHY_RULES = {
         'kmsincomingdocument': {}
     }
 }
+# trường này để truy vấn ngược từ app con lên app cha thông qua field dược khai báo
+APP_FIELD = {
+    'employeeinfo': ['employee_info'],
+    'serviceorder': ['service_order_work_order_task_task'],
+    'opportunity': ['opportunity']
+}
+xx = [
+    'sale.opportunitytask',
+    'sale.serviceorder.opportunitytask',
+    'sale.opportunity.serviceorder.opportunitytask',
+    'sale.opportunity.opportunitytask'
+]
 
 
 def make_sure_filename_length(_filename):
@@ -167,6 +179,123 @@ def update_files_is_approved(doc_files_list):
         bulk_files_update.append(file.attachment)
     if bulk_files_update:
         Files.objects.bulk_update(bulk_files_update, fields=['is_approved'])
+
+
+def find_function_in_hierarchy(module_name, search_string):
+    # Kiểm tra module có tồn tại không
+    if module_name not in HIERARCHY_RULES:
+        return ''
+
+    def search_in_dict(data, path="", parent_path=""):
+        """Hàm đệ quy để tìm kiếm trong cấu trúc lồng nhau"""
+        results = []
+        if isinstance(data, dict):
+            for key, value in data.items():
+                # Bỏ qua key 'child' vì nó không phải là tên chức năng
+                if key == 'child':
+                    # Tiếp tục tìm kiếm trong child
+                    if isinstance(value, dict):
+                        child_results = search_in_dict(value, path, parent_path)
+                        results.extend(child_results)
+                    elif isinstance(value, set):
+                        for item in value:
+                            if item == search_string:
+                                full_path = f"{parent_path}.{item}" if parent_path else item
+                                results.append(full_path)
+                else:
+                    # Xây dựng đường dẫn hiện tại
+                    current_path = f"{path}.{key}" if path else key
+
+                    # Kiểm tra xem key có phải là string cần tìm không
+                    if key == search_string:
+                        results.append(current_path)
+
+                    # Tiếp tục tìm kiếm sâu hơn
+                    if isinstance(value, dict):
+                        # Tìm trong value
+                        nested_results = search_in_dict(value, current_path, current_path)
+                        results.extend(nested_results)
+
+                        # Tìm trong child nếu có
+                        if 'child' in value:
+                            child_data = value['child']
+                            if isinstance(child_data, dict):
+                                child_results = search_in_dict(child_data, current_path, current_path)
+                                results.extend(child_results)
+                            elif isinstance(child_data, set):
+                                for item in child_data:
+                                    if item == search_string:
+                                        child_path = f"{current_path}.{item}"
+                                        results.append(child_path)
+
+        return results
+
+    # Bắt đầu tìm kiếm từ module được chỉ định
+    module_data = HIERARCHY_RULES[module_name]
+    found_paths = search_in_dict(module_data, module_name)
+    return list(set(found_paths))
+
+
+def get_parent_func(child_obj, parent_code):
+    if hasattr(child_obj, APP_FIELD[parent_code]):
+        parent_obj = getattr(child_obj, APP_FIELD[parent_code])
+        if parent_code == 'serviceorder':
+            return parent_obj.work_order.service_order
+        return parent_obj
+    return None
+
+
+def find_correct_path(object_name, object_instance, path_current_lst):
+    """
+    tìm đúng app đang trong danh sách path nào
+    """
+
+    def validate_path(path):
+        """Kiểm tra một path cụ thể xem có đây đủ các record không"""
+
+        path_parts = path.split('.')
+
+        obj_index = path_parts.index(object_name)
+
+        # Duyệt ngược từ object lên các parent
+        current_obj = object_instance
+        parent_obj_lst = {}
+        for i in range(obj_index - 1, -1, -1):
+            lst_app_code = path_parts[i]
+
+            # Lấy field cần kiểm tra cho parent này
+            parent_fields = APP_FIELD[lst_app_code]
+
+            # Nếu là 'root folder' hoặc không có trong APP_FIELD -> record này không có cấp cha
+            if lst_app_code in ['sale', 'e-ofice', 'hrm', 'kms'] or lst_app_code not in APP_FIELD:
+                continue
+
+            # Kiểm tra current object có parent này không
+            has_this_parent = False
+
+            for field in parent_fields:
+                if hasattr(current_obj, field) and getattr(current_obj, field):
+                    # Có parent, lấy parent object để kiểm tra tiếp
+                    parent_obj = getattr(current_obj, field)
+                    current_obj = get_parent_func(parent_fields, parent_obj)
+                    parent_obj_lst[lst_app_code] = deepcopy(current_obj)
+                    has_this_parent = True
+                    break
+
+            if not has_this_parent:
+                # Path này không khớp vì object ko có parent này
+                return False
+
+        # Đã kiểm tra hết chain và đều hợp lệ
+        return True, parent_obj_lst
+
+    # Tìm path đúng trong danh sách
+    for item in path_current_lst:
+        is_check, lst_match = validate_path(item)
+        if is_check:
+            return item, lst_match
+
+    return None, {}
 
 
 def processing_folder(doc_id, doc_app):
@@ -226,12 +355,18 @@ def processing_folder(doc_id, doc_app):
             company=doc_obj.company,
             tenant=doc_obj.tenant,
         )
-        # todo here dang lam den day taoj folder moi
-        # check tieeps neeus doc ID co related app thi taoj hoawcj laasy thong tin folder parent
-        path_current = ''
-        # check service_order
-        doc_obj.service_order_work_order_task_task.exists()
 
+        # lấy danh sách plan và kiểm tra doc code có trong tất cả app và plan
+        list_plans = [item.title for item in doc_app.plans]
+        path_current_lst = []
+        for plan in list_plans:
+            path_current_lst += find_function_in_hierarchy(plan, doc_code)
+
+        doc_path, obj_path_dict = find_correct_path(doc_code, doc_obj, path_current_lst)
+
+        if doc_path:
+            print('doc_path: >>', doc_path)
+            print('obj_path_dict: >>', obj_path_dict)
 
     return folder_obj
 
