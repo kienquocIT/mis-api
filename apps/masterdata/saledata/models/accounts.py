@@ -289,6 +289,7 @@ class AccountContacts(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
+
 # AccountEmployees
 class AccountEmployee(SimpleAbstractModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='account_employees_mapped')

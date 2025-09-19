@@ -16,7 +16,7 @@ class WareHouse(MasterDataAbstractModel):
         blank=True,
         verbose_name='Description of this records',
     )
-
+    # ============== TEMP =================
     city = models.ForeignKey(
         'base.City',
         on_delete=models.CASCADE,
@@ -51,7 +51,16 @@ class WareHouse(MasterDataAbstractModel):
         default='',
         blank=True
     )
+    # ============== TEMP =================
 
+    detail_address = models.CharField(blank=True, null=True, max_length=500)
+    address_data = models.JSONField(default=dict)
+    # {
+    # country_id:
+    # province_id:
+    # ward_id:
+    # detail_address:
+    # }
     products = models.ManyToManyField(
         'saledata.Product',
         through='saledata.ProductWareHouse',

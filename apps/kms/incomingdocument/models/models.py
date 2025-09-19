@@ -59,6 +59,13 @@ class KMSAttachIncomingDocuments(MasterDataAbstractModel):
         default=0,
         choices=SECURITY_LEVEL
     )
+    folder = models.ForeignKey(
+        'attachments.Folder',
+        on_delete=models.SET_NULL,
+        null=True,
+        default=None,
+        related_name='kms_incoming_document_folders'
+    )
     attachment = models.JSONField(
         default=list,
         null=True,
