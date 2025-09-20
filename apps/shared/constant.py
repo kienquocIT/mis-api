@@ -111,6 +111,7 @@ MAP_FIELD_TITLE = {
     'production.workorder': 'title',
     'leaseorder.leaseorder': 'title',
     'inventory.goodsrecovery': 'title',
+    'serviceorder.serviceorder': 'title',
     # haind
     'cashoutflow.advancepayment': 'title',
     'cashoutflow.payment': 'title',

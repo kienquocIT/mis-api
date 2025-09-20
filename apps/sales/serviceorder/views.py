@@ -30,12 +30,7 @@ class ServiceOrderList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .select_related("employee_created", "customer")
-            .prefetch_related("attachment_m2m")
-        )
+        return super().get_queryset().select_related("employee_created__group")
 
     @swagger_auto_schema(
         operation_summary="ServiceOrder list",
@@ -94,6 +89,10 @@ class ServiceOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
                     ),
                 ),
             ),
+            "service_order_shipment_service_order",
+            "attachment_m2m",
+            "payments",
+            "service_order_expense_service_order"
         )
 
     @swagger_auto_schema(operation_summary='Detail ServiceOrder')
