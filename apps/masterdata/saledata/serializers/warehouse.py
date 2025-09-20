@@ -28,6 +28,8 @@ __all__ = [
 
 
 class WareHouseListSerializer(serializers.ModelSerializer):
+    full_address = serializers.SerializerMethodField()
+
     class Meta:
         model = WareHouse
         fields = (
@@ -42,6 +44,10 @@ class WareHouseListSerializer(serializers.ModelSerializer):
             'use_for',
         )
 
+    @classmethod
+    def get_full_address(cls, obj):
+        return obj.detail_address
+
 
 class WareHouseCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -50,11 +56,13 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
             'title',
             'remarks',
             'is_active',
-            'city',
-            'district',
-            'ward',
-            'address',
-            'full_address',
+            'detail_address',
+            'address_data',
+            # 'city',
+            # 'district',
+            # 'ward',
+            # 'address',
+            # 'full_address',
             'is_dropship',
             'is_bin_location',
             'is_virtual',
@@ -70,9 +78,11 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
 
 
 class WareHouseDetailSerializer(serializers.ModelSerializer):
-    city = serializers.SerializerMethodField()
-    district = serializers.SerializerMethodField()
-    ward = serializers.SerializerMethodField()
+    # city = serializers.SerializerMethodField()
+    # district = serializers.SerializerMethodField()
+    # ward = serializers.SerializerMethodField()
+    address = serializers.SerializerMethodField()
+    full_address = serializers.SerializerMethodField()
     shelf_data = serializers.SerializerMethodField()
 
     class Meta:
@@ -85,41 +95,51 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             'address',
             'is_active',
             'full_address',
-            'city',
-            'ward',
-            'district',
+            # 'city',
+            # 'ward',
+            # 'district',
+            'detail_address',
+            'address_data',
             'is_dropship',
             'is_bin_location',
             'is_virtual',
             'shelf_data'
         )
 
-    @classmethod
-    def get_city(cls, obj):
-        if obj.city:
-            return {
-                'id': obj.city_id,
-                'title': obj.city.title,
-            }
-        return {}
+    # @classmethod
+    # def get_city(cls, obj):
+    #     if obj.city:
+    #         return {
+    #             'id': obj.city_id,
+    #             'title': obj.city.title,
+    #         }
+    #     return {}
+    #
+    # @classmethod
+    # def get_district(cls, obj):
+    #     if obj.district:
+    #         return {
+    #             'id': obj.district_id,
+    #             'title': obj.district.title,
+    #         }
+    #     return {}
+    #
+    # @classmethod
+    # def get_ward(cls, obj):
+    #     if obj.ward:
+    #         return {
+    #             'id': obj.ward_id,
+    #             'title': obj.ward.title,
+    #         }
+    #     return {}
 
     @classmethod
-    def get_district(cls, obj):
-        if obj.district:
-            return {
-                'id': obj.district_id,
-                'title': obj.district.title,
-            }
-        return {}
+    def get_address(cls, obj):
+        return obj.detail_address
 
     @classmethod
-    def get_ward(cls, obj):
-        if obj.ward:
-            return {
-                'id': obj.ward_id,
-                'title': obj.ward.title,
-            }
-        return {}
+    def get_full_address(cls, obj):
+        return obj.detail_address
 
     @classmethod
     def get_shelf_data(cls, obj):
@@ -140,11 +160,13 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
             'title',
             'remarks',
             'is_active',
-            'city',
-            'district',
-            'ward',
-            'address',
-            'full_address',
+            'detail_address',
+            'address_data',
+            # 'city',
+            # 'district',
+            # 'ward',
+            # 'address',
+            # 'full_address',
             'is_dropship',
             'is_bin_location',
             'is_virtual',

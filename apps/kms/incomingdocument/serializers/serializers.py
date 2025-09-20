@@ -1,24 +1,26 @@
 from django.db import transaction
 from rest_framework import serializers
+
+from apps.core.attachments.models import update_files_is_approved
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.kms.incomingdocument.models import (
     KMSIncomingDocument, IncomingAttachDocumentMapAttachFile,
-    KMSAttachIncomingDocuments, KMSInternalRecipientIncomingDocument
+    KMSAttachIncomingDocuments, KMSInternalRecipientIncomingDocument,
 )
 from apps.shared import (
     AbstractCreateSerializerModel, KMSMsg, AbstractDetailSerializerModel, AttachmentMsg,
-    SECURITY_LEVEL, SerializerCommonValidate, SerializerCommonHandle, AbstractListSerializerModel, BaseMsg
+    SECURITY_LEVEL, SerializerCommonValidate, SerializerCommonHandle, AbstractListSerializerModel, BaseMsg,
 )
-
 
 __all__ = [
     'KMSIncomingDocumentListSerializer',
     'KMSAttachedIncomingDocumentSerializers',
     'KMSInternalRecipientIncomingDocumentSerializers',
     'KMSIncomingDocumentCreateSerializer',
-    'KMSIncomingDocumentDetailSerializer'
+    'KMSIncomingDocumentDetailSerializer',
+    'KMSIncomingDocumentUpdateSerializer'
 ]
 
 
@@ -48,9 +50,11 @@ def create_attached_incoming_document(incoming_doc, attached_list):
         effective_date = item.get('effective_date', None)
         expired_date = item.get('expired_date', None)
         if effective_date and expired_date and expired_date <= effective_date:
-            raise serializers.ValidationError({
-                'expired_date': KMSMsg.EXPIRED_DATE_ERROR
-            })
+            raise serializers.ValidationError(
+                {
+                    'expired_date': KMSMsg.EXPIRED_DATE_ERROR
+                }
+            )
 
         temp = KMSAttachIncomingDocuments(
             title='',
@@ -60,6 +64,7 @@ def create_attached_incoming_document(incoming_doc, attached_list):
             sender=item.get('sender'),
             effective_date=effective_date,
             expired_date=expired_date,
+            folder_id=item.get('folder'),
             security_level=item.get('security_level'),
             company=incoming_doc.company,
             tenant=incoming_doc.tenant
@@ -73,10 +78,12 @@ def create_attached_incoming_document(incoming_doc, attached_list):
 def create_internal_recipient(incoming_doc, internal_list):
     new_list = []
     for item in internal_list:
-        new_list.append(KMSInternalRecipientIncomingDocument(
-            incoming_document=incoming_doc,
-            **item
-        ))
+        new_list.append(
+            KMSInternalRecipientIncomingDocument(
+                incoming_document=incoming_doc,
+                **item
+            )
+        )
     KMSInternalRecipientIncomingDocument.objects.filter(incoming_document=incoming_doc).delete()
     KMSInternalRecipientIncomingDocument.objects.bulk_create(new_list)
     return True
@@ -103,13 +110,25 @@ class KMSIncomingDocumentListSerializer(AbstractListSerializerModel):
         return ''
 
 
-class KMSAttachedIncomingDocumentSerializers(serializers.Serializer):
-    sender = serializers.CharField(max_length=100)
-    document_type = serializers.UUIDField(required=False, allow_null=True)
-    content_group = serializers.UUIDField(required=False, allow_null=True)
-    effective_date = serializers.DateField(required=False, allow_null=True)
-    expired_date = serializers.DateField(required=False, allow_null=True)
-    security_level = serializers.IntegerField(required=False, allow_null=True)
+class KMSAttachedIncomingDocumentSerializers(serializers.ModelSerializer):
+    document_type = serializers.JSONField(required=False, allow_null=True)
+    content_group = serializers.JSONField(required=False, allow_null=True)
+    folder = serializers.JSONField(required=False, allow_null=True)
+
+    class Meta:
+        model = KMSAttachIncomingDocuments
+        fields = (
+            'id',
+            'code',
+            'title',
+            'sender',
+            'document_type',
+            'content_group',
+            'effective_date',
+            'expired_date',
+            'security_level',
+            'folder'
+        )
 
 
 class KMSInternalRecipientIncomingDocumentSerializers(serializers.ModelSerializer):
@@ -157,6 +176,12 @@ class KMSIncomingDocumentCreateSerializer(AbstractCreateSerializerModel):
                 instance=incoming_doc,
                 attachment_result=attachment,
             )
+            # adhoc case update file to KMS
+            update_files_is_approved(
+                IncomingAttachDocumentMapAttachFile.objects.filter(
+                    incoming_document=incoming_doc, attachment__is_approved=False
+                )
+            )
             return incoming_doc
 
     class Meta:
@@ -180,29 +205,36 @@ class KMSIncomingDocumentDetailSerializer(AbstractDetailSerializerModel):
         item_list = obj.kms_attach_incoming_documents.all().select_related(
             'document_type',
             'content_group',
+            'folder'
         )
         attr_lst = []
         att_objs = IncomingAttachDocumentMapAttachFile.objects.select_related('attachment') \
             .filter(incoming_document=obj)
         for item in item_list:
             att_lst = att_objs.filter(attachment_id__in=item.attachment)
-            attr_lst.append({
-                'id': item.id,
-                # 'title': item.title,
-                'sender': item.sender,
-                'document_type': {
-                    'id': item.document_type.id,
-                    'title': item.document_type.title
-                } if item.document_type else {},
-                'content_group': {
-                    'id': item.content_group.id,
-                    'title': item.content_group.title
-                } if item.content_group else {},
-                'security_level': dict(SECURITY_LEVEL).get(item.security_level, 'Unknown'),
-                'effective_date': item.effective_date,
-                'expired_date': item.expired_date,
-                'attachment': [att.attachment.get_detail() for att in att_lst]
-            })
+            attr_lst.append(
+                {
+                    'id': item.id,
+                    # 'title': item.title,
+                    'sender': item.sender,
+                    'document_type': {
+                        'id': item.document_type.id,
+                        'title': item.document_type.title
+                    } if item.document_type else {},
+                    'content_group': {
+                        'id': item.content_group.id,
+                        'title': item.content_group.title
+                    } if item.content_group else {},
+                    'security_level': dict(SECURITY_LEVEL).get(item.security_level, 'Unknown'),
+                    'effective_date': item.effective_date,
+                    'expired_date': item.expired_date,
+                    'folder': {
+                        'id': item.folder.id,
+                        'title': item.folder.title
+                    } if item.folder else {},
+                    'attachment': [att.attachment.get_detail() for att in att_lst]
+                }
+            )
         return attr_lst
 
     @classmethod
@@ -210,11 +242,13 @@ class KMSIncomingDocumentDetailSerializer(AbstractDetailSerializerModel):
         item_list = obj.kms_kmsinternalrecipient_incoming_doc.all()
         res_list = []
         for item in item_list:
-            res_list.append({
-                'id': item.id,
-                'employee': item.employee.id,
-                'employee_access': item.employee_access,
-            })
+            res_list.append(
+                {
+                    'id': item.id,
+                    'employee': item.employee.id,
+                    'employee_access': item.employee_access,
+                }
+            )
         return res_list
 
     @classmethod
@@ -274,6 +308,12 @@ class KMSIncomingDocumentUpdateSerializer(AbstractCreateSerializerModel):
                 model_cls=IncomingAttachDocumentMapAttachFile,
                 instance=instance,
                 attachment_result=attachment,
+            )
+            # adhoc case update file to KMS
+            update_files_is_approved(
+                IncomingAttachDocumentMapAttachFile.objects.filter(
+                    incoming_document=instance, attachment__is_approved=False
+                )
             )
             return instance
 
