@@ -1,18 +1,19 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-from apps.sales.serviceorder.models import ServiceOrder, ServiceOrderServiceDetail, ServiceOrderWorkOrder, \
-    ServiceOrderWorkOrderTask
+from apps.sales.serviceorder.models import (
+    ServiceOrder, ServiceOrderServiceDetail, ServiceOrderWorkOrder, ServiceOrderWorkOrderTask
+)
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.serviceorder.serializers import (
     ServiceOrderListSerializer, ServiceOrderDetailSerializer,
-    ServiceOrderCreateSerializer, ServiceOrderUpdateSerializer, ServiceOrderDetailSerializerForDashboard,
+    ServiceOrderCreateSerializer, ServiceOrderUpdateSerializer, ServiceOrderDetailDashboardSerializer,
 )
 
 
 __all__ = [
     'ServiceOrderList',
     'ServiceOrderDetail',
-    'ServiceOrderDetailForDashboard',
+    'ServiceOrderDetailDashboard',
 ]
 
 
@@ -112,15 +113,15 @@ class ServiceOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
-class ServiceOrderDetailForDashboard(BaseRetrieveMixin):
+class ServiceOrderDetailDashboard(BaseRetrieveMixin):
     queryset = ServiceOrder.objects  # noqa
-    serializer_detail = ServiceOrderDetailSerializerForDashboard
+    serializer_detail = ServiceOrderDetailDashboardSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related().select_related()
 
-    @swagger_auto_schema(operation_summary='Detail Service Order For Dashboard')
+    @swagger_auto_schema(operation_summary='Service Order Detail Dashboard')
     @mask_view(
         login_require=True, auth_require=True,
         label_code='serviceorder', model_code='serviceorder', perm_code='view',

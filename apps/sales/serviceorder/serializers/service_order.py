@@ -29,7 +29,7 @@ __all__ = [
     'ServiceOrderCreateSerializer',
     'ServiceOrderDetailSerializer',
     'ServiceOrderUpdateSerializer',
-    'ServiceOrderDetailSerializerForDashboard',
+    'ServiceOrderDetailDashboardSerializer',
 ]
 
 
@@ -189,9 +189,9 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                         'id': str(item.id),
                         'containerName': item.title,
                         'containerType': {
-                            'id': str(item.container_type.id) if item.container_type else None,
-                            'code': item.container_type.code if item.container_type else None,
-                            'title': item.container_type.title if item.container_type else None,
+                            'id': str(item.container_type.id),
+                            'code': item.container_type.code,
+                            'title': item.container_type.title,
                         } if item.container_type else {},
                         'containerRefNumber': item.reference_number,
                         'containerWeight': item.weight,
@@ -207,9 +207,9 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                         'id': str(item.id),
                         'packageName': item.title,
                         'packageType': {
-                            'id':  str(item.package_type.id) if item.package_type else None,
-                            'code': item.package_type.code if item.package_type else None,
-                            'title': item.package_type.title if item.package_type else None,
+                            'id':  str(item.package_type.id),
+                            'code': item.package_type.code,
+                            'title': item.package_type.title,
                         },
                         'packageRefNumber': item.reference_number,
                         'packageWeight': item.weight,
@@ -519,7 +519,7 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
         )
 
 
-class ServiceOrderDetailSerializerForDashboard(AbstractDetailSerializerModel):
+class ServiceOrderDetailDashboardSerializer(AbstractDetailSerializerModel):
     contract_value = serializers.SerializerMethodField()
     contract_value_delivered = serializers.SerializerMethodField()
     service_order_detail_list = serializers.SerializerMethodField()
