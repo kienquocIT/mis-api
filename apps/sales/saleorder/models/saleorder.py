@@ -344,7 +344,7 @@ class SaleOrderProduct(MasterDataAbstractModel):
     )
     tax_data = models.JSONField(default=dict, help_text='data json of tax')
     # product information
-    product_title = models.CharField(max_length=100, blank=True, null=True)
+    product_title = models.TextField(blank=True)
     product_code = models.CharField(max_length=100, blank=True, null=True)
     product_description = models.TextField(blank=True, null=True)
     product_uom_title = models.CharField(max_length=100, blank=True, null=True)
@@ -460,7 +460,7 @@ class SaleOrderCost(MasterDataAbstractModel):
     )
     tax_data = models.JSONField(default=dict, help_text='data json of tax')
     # cost information
-    product_title = models.CharField(max_length=100, blank=True, null=True)
+    product_title = models.TextField(blank=True)
     product_code = models.CharField(max_length=100, blank=True, null=True)
     product_uom_title = models.CharField(max_length=100, blank=True, null=True)
     product_uom_code = models.CharField(max_length=100, blank=True, null=True)
@@ -542,7 +542,7 @@ class SaleOrderExpense(MasterDataAbstractModel):
     # expense information
     expense_title = models.CharField(max_length=100, blank=True, null=True)
     expense_code = models.CharField(max_length=100, blank=True, null=True)
-    product_title = models.CharField(max_length=100, blank=True, null=True)
+    product_title = models.TextField(blank=True)
     product_code = models.CharField(max_length=100, blank=True, null=True)
     expense_type_title = models.CharField(max_length=100, blank=True, null=True)
     expense_uom_title = models.CharField(max_length=100, blank=True, null=True)
