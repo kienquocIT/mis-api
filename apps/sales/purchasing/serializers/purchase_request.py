@@ -38,10 +38,7 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
     def validate_sale_order_product(cls, value):
         if value:
             try:
-                so_product = SaleOrderProduct.objects.get(
-                    id=value
-                )
-                return str(so_product.id)
+                return SaleOrderProduct.objects.get(id=value)
             except Product.DoesNotExist:
                 raise serializers.ValidationError({'product': PurchaseRequestMsg.NOT_IN_SALE_ORDER})
         return None
@@ -49,17 +46,7 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_product(cls, value):
         try:
-            product = Product.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-            return {
-                'id': str(product.id),
-                'title': product.title,
-                'code': product.code,
-                'uom_group': str(product.general_uom_group_id),
-            }
+            return Product.objects.get(id=value)
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': PurchaseRequestMsg.DOES_NOT_EXIST})
 
@@ -67,16 +54,7 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
     def validate_tax(cls, value):
         if value:
             try:
-                tax = Tax.objects.get_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=value
-                )
-                return {
-                    'id': str(tax.id),
-                    'title': tax.title,
-                    'rate': tax.rate,
-                }
+                return Tax.objects.get(id=value)
             except Tax.DoesNotExist:
                 raise serializers.ValidationError({'tax': PurchaseRequestMsg.DOES_NOT_EXIST})
         return None
@@ -84,35 +62,48 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_uom(cls, value):
         try:
-            uom = UnitOfMeasure.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-            return {
-                'id': str(uom.id),
-                'title': uom.title,
-            }
+            return UnitOfMeasure.objects.get(id=value)
         except UnitOfMeasure.DoesNotExist:
             raise serializers.ValidationError({'uom': PurchaseRequestMsg.DOES_NOT_EXIST})
 
-    @classmethod
-    def validate_unit_price(cls, value):
-        if value < 0:
+    def validate(self, validate_data):
+        if validate_data.get('unit_price', 0) < 0:
             raise serializers.ValidationError({'unit_price': PurchaseRequestMsg.GREATER_THAN_ZERO})
-        return value
 
-    @classmethod
-    def validate_sub_total_price(cls, value):
-        if value < 0:
+        if validate_data.get('sub_total_price', 0) < 0:
             raise serializers.ValidationError({'sub_total_price': PurchaseRequestMsg.GREATER_THAN_ZERO})
-        return value
 
-    @classmethod
-    def validate_quantity(cls, value):
-        if value < 0:
+        if validate_data.get('quantity', 0) < 0:
             raise serializers.ValidationError({'quantity': PurchaseRequestMsg.GREATER_THAN_ZERO})
-        return value
+
+        if 'product' in validate_data:
+            product_obj = validate_data.get('product')
+            validate_data['product_data'] = {
+                'id': str(product_obj.id),
+                'code': product_obj.code,
+                'title': product_obj.title,
+                'description': product_obj.description,
+            } if product_obj else {}
+
+        if 'uom' in validate_data:
+            uom_obj = validate_data.get('uom')
+            validate_data['uom_data'] = {
+                'id': str(uom_obj.id),
+                'code': uom_obj.code,
+                'title': uom_obj.title,
+                'group_id': str(uom_obj.group_id)
+            } if uom_obj else {}
+
+        if 'tax' in validate_data:
+            tax_obj = validate_data.get('tax')
+            validate_data['tax_data'] = {
+                'id': str(tax_obj.id),
+                'code': tax_obj.code,
+                'title': tax_obj.title,
+                'rate': tax_obj.rate,
+            } if tax_obj else {}
+
+        return validate_data
 
 
 # main
@@ -480,21 +471,15 @@ class PurchaseRequestCommonFunction:
     @classmethod
     def create_items_mapped(cls, purchase_request_obj, data_item_list):
         bulk_data = []
-        for data in data_item_list:
-            pr_product = PurchaseRequestProduct(
-                purchase_request=purchase_request_obj,
-                sale_order_product=data['sale_order_product'],
-                product=data['product'],
-                uom=data['uom'],
-                tax=data['tax'] if data.get('tax') else None,
-                quantity=data['quantity'],
-                remain_for_purchase_order=data['quantity'],
-                unit_price=data['unit_price'],
-                sub_total_price=data['sub_total_price'],
-                tenant=purchase_request_obj.tenant,
-                company=purchase_request_obj.company,
+        for item in data_item_list:
+            bulk_data.append(
+                PurchaseRequestProduct(
+                    purchase_request=purchase_request_obj,
+                    tenant=purchase_request_obj.tenant,
+                    company=purchase_request_obj.company,
+                    **item
+                )
             )
-            bulk_data.append(pr_product)
         PurchaseRequestProduct.objects.filter(purchase_request=purchase_request_obj).delete()
         PurchaseRequestProduct.objects.bulk_create(bulk_data)
         return True

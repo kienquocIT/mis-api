@@ -6392,3 +6392,66 @@ def update_invoice_payment_sale_order():
         )
     print('update_invoice_payment_sale_order done.')
     return True
+
+
+def update_purchase_request_data():
+    for pr_obj in PurchaseRequest.objects.all():
+        supplier_obj = pr_obj.supplier
+        pr_obj.supplier_data = {
+            'id': str(supplier_obj.id),
+            'name': supplier_obj.name,
+            'code': supplier_obj.code,
+            'tax_code': supplier_obj.tax_code,
+        } if supplier_obj else {}
+
+        contact_obj = pr_obj.contact
+        pr_obj.contact_data = {
+            'id': str(contact_obj.id),
+            'code': contact_obj.code,
+            'fullname': contact_obj.fullname,
+        } if contact_obj else {}
+
+        sale_order_obj = pr_obj.sale_order
+        pr_obj.sale_order_data = {
+            'id': str(sale_order_obj.id),
+            'code': sale_order_obj.code,
+            'title': sale_order_obj.title,
+        } if sale_order_obj else {}
+
+        distribution_plan_obj = pr_obj.distribution_plan
+        pr_obj.distribution_plan_data = {
+            'id': str(distribution_plan_obj.id),
+            'code': distribution_plan_obj.code,
+            'title': distribution_plan_obj.title,
+        } if distribution_plan_obj else {}
+
+        pr_obj.save(update_fields=['supplier_data', 'contact_data', 'sale_order_data', 'distribution_plan_data'])
+
+        for item in pr_obj.purchase_request.all():
+            product_obj = item.product
+            item.product_data = {
+                'id': str(product_obj.id),
+                'code': product_obj.code,
+                'title': product_obj.title,
+                'description': product_obj.description,
+            } if product_obj else {}
+
+            uom_obj = item.uom
+            item.uom_data = {
+                'id': str(uom_obj.id),
+                'code': uom_obj.code,
+                'title': uom_obj.title,
+                'group_id': str(uom_obj.group_id)
+            } if uom_obj else {}
+
+            tax_obj = item.tax
+            item.tax_data = {
+                'id': str(tax_obj.id),
+                'code': tax_obj.code,
+                'title': tax_obj.title,
+                'rate': tax_obj.rate,
+            } if tax_obj else {}
+
+            item.save(update_fields=['product_data', 'uom_data', 'tax_data'])
+        print(f'Done for {pr_obj.code} - {pr_obj.company.title}')
+    print('Done :))')
