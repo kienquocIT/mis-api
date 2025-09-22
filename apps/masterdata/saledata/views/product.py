@@ -268,6 +268,7 @@ class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
         'group': ['exact', 'in'],
         'group_id': ['exact', 'in'],
         'group__code': ['exact'],
+        'group__is_default': ['exact'],
     }
 
     def get_queryset(self):
