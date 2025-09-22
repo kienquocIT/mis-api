@@ -30,6 +30,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'price_list', 'product_choice', 'supplied_by', 'inventory_information',
             'general_traceability_method', 'bom_check_data', 'bom_data', 'standard_price',
             'avatar_img',
+            'general_product_category'
         )
 
     @classmethod
