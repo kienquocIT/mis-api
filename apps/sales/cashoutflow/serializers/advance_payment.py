@@ -524,7 +524,7 @@ class AdvancePaymentUpdateSerializer(AbstractCreateSerializerModel):
     def validate_attachment(self, value):
         user = self.context.get('user', None)
         return SerializerCommonValidate.validate_attachment(
-            user=user, model_cls=AdvancePaymentAttachmentFile, value=value
+            user=user, model_cls=AdvancePaymentAttachmentFile, value=value, doc_id=self.instance.id
         )
 
     def validate(self, validate_data):

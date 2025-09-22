@@ -8,59 +8,36 @@ from apps.shared import DataAbstractModel, MasterDataAbstractModel, REQUEST_FOR,
 
 
 class PurchaseRequest(DataAbstractModel):
+    request_for = models.SmallIntegerField(choices=REQUEST_FOR, default=0)
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder',
-        on_delete=models.CASCADE,
-        related_name="sale_order",
-        null=True,
+        'saleorder.SaleOrder', on_delete=models.CASCADE, related_name="sale_order", null=True
     )
+    sale_order_data = models.JSONField(default=dict)
     distribution_plan = models.ForeignKey(
         'distributionplan.DistributionPlan',
         on_delete=models.CASCADE,
         related_name="pr_distribution_plan",
-        null=True,
+        null=True
     )
+    distribution_plan_data = models.JSONField(default=dict)
     supplier = models.ForeignKey(
-        'saledata.Account',
-        on_delete=models.CASCADE,
-        related_name="purchase_supplier",
+        'saledata.Account', on_delete=models.CASCADE, related_name="purchase_supplier"
     )
-    request_for = models.SmallIntegerField(
-        choices=REQUEST_FOR,
-        default=0
-    )
+    supplier_data = models.JSONField(default=dict)
     contact = models.ForeignKey(
-        'saledata.Contact',
-        on_delete=models.CASCADE,
-        related_name="purchase_contact",
+        'saledata.Contact', on_delete=models.CASCADE, related_name="purchase_contact"
     )
-    delivered_date = models.DateTimeField(
-        help_text='Deadline for delivery'
-    )
-    purchase_status = models.SmallIntegerField(
-        choices=PURCHASE_STATUS,
-        default=0
-    )
-    note = models.CharField(
-        max_length=1000
-    )
+    contact_data = models.JSONField(default=dict)
+    delivered_date = models.DateTimeField(help_text='Deadline for delivery')
+    purchase_status = models.SmallIntegerField(choices=PURCHASE_STATUS, default=0)
+    note = models.CharField(max_length=1000)
     purchase_request_product_datas = models.JSONField(
-        default=list,
-        help_text="read data product, use for get list or detail purchase",
+        default=list, help_text="read data product, use for get list or detail purchase",
     )
-    pretax_amount = models.FloatField(
-        help_text='total price of products before tax'
-    )
-    taxes = models.FloatField(
-        help_text='total tax'
-    )
-    total_price = models.FloatField(
-        help_text='total price of products'
-    )
-    is_all_ordered = models.BooleanField(
-        default=False,
-        help_text="True if all products are ordered by Purchase Order"
-    )
+    pretax_amount = models.FloatField(help_text='total price of products before tax')
+    taxes = models.FloatField(help_text='total tax')
+    total_price = models.FloatField(help_text='total price of products')
+    is_all_ordered = models.BooleanField(default=False, help_text="True if all products are ordered by Purchase Order")
 
     class Meta:
         verbose_name = 'Purchase Request'
@@ -70,17 +47,8 @@ class PurchaseRequest(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def find_max_number(cls, codes):
-        num_max = None
-        for code in codes:
-            try:
-                if code != '':
-                    tmp = int(code.split('-', maxsplit=1)[0].split("PR")[1])
-                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
-                        num_max = tmp
-            except Exception as err:
-                print(err)
-        return num_max
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return 'fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf'
 
     @classmethod
     def update_remain_for_purchase_request_so(cls, instance):
@@ -120,40 +88,31 @@ class PurchaseRequest(DataAbstractModel):
 
 class PurchaseRequestProduct(MasterDataAbstractModel):
     purchase_request = models.ForeignKey(
-        PurchaseRequest,
-        on_delete=models.CASCADE,
-        related_name="purchase_request",
+        PurchaseRequest, on_delete=models.CASCADE, related_name="purchase_request"
     )
     sale_order_product = models.ForeignKey(
         'saleorder.SaleOrderProduct',
         on_delete=models.CASCADE,
         related_name="purchase_request_so_product",
-        null=True,
+        null=True
     )
     product = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.CASCADE,
-        related_name="purchase_request_product",
+        'saledata.Product', on_delete=models.CASCADE, related_name="purchase_request_product"
     )
+    product_data = models.JSONField(default=dict)
     uom = models.ForeignKey(
-        'saledata.UnitOfMeasure',
-        on_delete=models.CASCADE,
-        related_name="purchase_request_uom",
+        'saledata.UnitOfMeasure', on_delete=models.CASCADE, related_name="purchase_request_uom"
     )
+    uom_data = models.JSONField(default=dict)
     quantity = models.FloatField()
     unit_price = models.FloatField()
     tax = models.ForeignKey(
-        'saledata.Tax',
-        on_delete=models.CASCADE,
-        related_name="purchase_request_tax",
-        null=True
+        'saledata.Tax', on_delete=models.CASCADE, related_name="purchase_request_tax", null=True
     )
+    tax_data = models.JSONField(default=dict)
     sub_total_price = models.FloatField()
     # fields for purchase order
     remain_for_purchase_order = models.FloatField(default=0, help_text="minus when purchase")
-    date_modified = models.DateTimeField(
-        default=timezone.now,
-    )
 
     class Meta:
         verbose_name = 'Purchase Request Product'

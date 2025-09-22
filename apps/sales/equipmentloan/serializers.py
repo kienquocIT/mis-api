@@ -204,7 +204,7 @@ class EquipmentLoanUpdateSerializer(AbstractCreateSerializerModel):
     def validate_attachment(self, value):
         user = self.context.get('user', None)
         return SerializerCommonValidate.validate_attachment(
-            user=user, model_cls=EquipmentLoanAttachmentFile, value=value
+            user=user, model_cls=EquipmentLoanAttachmentFile, value=value, doc_id=self.instance.id
         )
 
     def validate(self, validate_data):
