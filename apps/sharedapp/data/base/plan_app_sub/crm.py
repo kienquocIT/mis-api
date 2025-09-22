@@ -3264,7 +3264,7 @@ SERVICEQUOTATION_APP_CONFIG = {
     "code": "servicequotation",
     "model_code": "servicequotation",
     "app_label": "servicequotation",
-    "is_workflow": False,
+    "is_workflow": True,
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
