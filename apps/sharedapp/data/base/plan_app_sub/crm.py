@@ -3258,6 +3258,45 @@ SERVICEORDER_APP_CONFIG = {
     "allow_permit": True,
 }
 
+SERVICEQUOTATION_APP_CONFIG = {
+    "id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+    "title": "Service Quotation",
+    "code": "servicequotation",
+    "model_code": "servicequotation",
+    "app_label": "servicequotation",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -3623,6 +3662,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "36f25733-a6e7-43ea-b710-38e2052f0f6d": ApplicationConfigFrame(**SERVICEORDER_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "c9e131ec-760c-45af-8ae6-5349f2bb542e": ApplicationConfigFrame(**SERVICEQUOTATION_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

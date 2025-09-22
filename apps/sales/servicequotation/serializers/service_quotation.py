@@ -133,7 +133,7 @@ class ServiceQuotationCreateSerializer(AbstractCreateSerializerModel):
             ServiceQuotationCommonFunc.create_expense(service_quotation_obj, expense_data)
 
             SerializerCommonHandle.handle_attach_file(
-                relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
+                relate_app=Application.objects.filter(id="c9e131ec-760c-45af-8ae6-5349f2bb542e").first(),
                 model_cls=ServiceQuotationAttachMapAttachFile,
                 instance=service_quotation_obj,
                 attachment_result=attachment
@@ -468,7 +468,7 @@ class ServiceQuotationUpdateSerializer(AbstractCreateSerializerModel):
             ServiceQuotationCommonFunc.create_expense(instance, expense_data)
 
             SerializerCommonHandle.handle_attach_file(
-                relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
+                relate_app=Application.objects.filter(id="c9e131ec-760c-45af-8ae6-5349f2bb542e").first(),
                 model_cls=ServiceQuotationAttachMapAttachFile,
                 instance=instance,
                 attachment_result=attachment
