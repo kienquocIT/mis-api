@@ -180,7 +180,7 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
     distribution_plan = serializers.UUIDField(required=False, allow_null=True)
     supplier = serializers.UUIDField(required=True)
     contact = serializers.UUIDField(required=True)
-    # purchase_request_product_datas = PurchaseRequestProductSerializer(many=True)
+    purchase_request_product_datas = PurchaseRequestProductSerializer(many=True)
     note = serializers.CharField(allow_blank=True, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
@@ -195,7 +195,7 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
             'distribution_plan',
             'delivered_date',
             'note',
-            # 'purchase_request_product_datas',
+            'purchase_request_product_datas',
             'pretax_amount',
             'taxes',
             'total_price',
@@ -339,7 +339,7 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_distribution_plan(cls, obj):
-        return obj.distribution_plan
+        return obj.distribution_plan_data
 
     @classmethod
     def get_supplier(cls, obj):
@@ -380,9 +380,9 @@ class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
     sale_order = serializers.UUIDField(required=False, allow_null=True)
     distribution_plan = serializers.UUIDField(required=False, allow_null=True)
-    supplier = serializers.UUIDField(required=False)
-    contact = serializers.UUIDField(required=False)
-    purchase_request_product_datas = PurchaseRequestProductSerializer(many=True, required=False)
+    supplier = serializers.UUIDField(required=True)
+    contact = serializers.UUIDField(required=True)
+    purchase_request_product_datas = PurchaseRequestProductSerializer(many=True)
     note = serializers.CharField(allow_blank=True, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 

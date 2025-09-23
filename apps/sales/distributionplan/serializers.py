@@ -330,3 +330,39 @@ class DistributionPlanUpdateSerializer(AbstractCreateSerializerModel):
         DistributionPlanFixedCost.objects.bulk_create(bulk_info_fixed_cost)
         DistributionPlanVariableCost.objects.bulk_create(bulk_info_variable_cost)
         return instance
+
+
+# related
+class DistributionPlanProductListSerializer(AbstractDetailSerializerModel):
+    product_data = serializers.SerializerMethodField()
+    uom_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DistributionPlan
+        fields = (
+            'id',
+            'product_data',
+            'uom_data',
+            'start_date',
+            'end_date',
+            'no_of_month',
+            'expected_number',
+            'purchase_request_number'
+        )
+
+    @classmethod
+    def get_product_data(cls, obj):
+        return {
+            'id': str(obj.product_id),
+            'code': obj.product.code,
+            'title': obj.product.title,
+            'description': obj.product.description
+        } if obj.product else {}
+
+    @classmethod
+    def get_uom_data(cls, obj):
+        return {
+            'id': str(obj.product.general_uom_group.uom_reference_id),
+            'code': obj.product.general_uom_group.uom_reference.code,
+            'title': obj.product.general_uom_group.uom_reference.title
+        } if obj.product.general_uom_group.uom_reference else {} if obj.product.general_uom_group else {}
