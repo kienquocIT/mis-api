@@ -92,7 +92,7 @@ class PurchaseRequestProduct(MasterDataAbstractModel):
     )
     sale_order_product = models.ForeignKey(
         'saleorder.SaleOrderProduct',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="purchase_request_so_product",
         null=True
     )
@@ -101,13 +101,13 @@ class PurchaseRequestProduct(MasterDataAbstractModel):
     )
     product_data = models.JSONField(default=dict)
     uom = models.ForeignKey(
-        'saledata.UnitOfMeasure', on_delete=models.CASCADE, related_name="purchase_request_uom"
+        'saledata.UnitOfMeasure', on_delete=models.SET_NULL, related_name="purchase_request_uom", null=True
     )
     uom_data = models.JSONField(default=dict)
     quantity = models.FloatField()
     unit_price = models.FloatField()
     tax = models.ForeignKey(
-        'saledata.Tax', on_delete=models.CASCADE, related_name="purchase_request_tax", null=True
+        'saledata.Tax', on_delete=models.SET_NULL, related_name="purchase_request_tax", null=True
     )
     tax_data = models.JSONField(default=dict)
     sub_total_price = models.FloatField()

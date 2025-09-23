@@ -666,80 +666,16 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product_data(cls, obj):
-        so_product = SaleOrderProduct.objects.select_related(
-            'product__purchase_default_uom',
-            'product__purchase_tax',
-            'product__general_uom_group',
-            'unit_of_measure',
-            'tax'
-        ).filter(
-            sale_order=obj,
-            product__isnull=False
-        )
-        product_data = []
-        for item in so_product:
-            product_data.append({
-                'id': item.id,
-                'product_quantity': item.product_quantity,
-                'remain_for_purchase_request': item.remain_for_purchase_request,
-                'product': {
-                    'id': item.product_id,
-                    'title': item.product.title,
-                    'code': item.product.code,
-                    'description': item.product.description,
-                    'product_choice': item.product.product_choice,
-                    'uom': {
-                        'id': item.product.purchase_default_uom_id,
-                        'title': item.product.purchase_default_uom.title if item.product.purchase_default_uom else ''
-                    } if item.product.purchase_default_uom else {},
-                    'uom_group': item.product.general_uom_group.title if item.product.general_uom_group else ''
-                } if item.product else {},
-                'uom': {
-                    'id': item.unit_of_measure_id,
-                    'title': item.unit_of_measure.title,
-                    'code': item.unit_of_measure.code,
-                    'ratio': item.unit_of_measure.ratio
-                } if item.unit_of_measure else {},
-                'tax': {
-                    'id': item.tax_id,
-                    'title': item.tax.title,
-                    'rate': item.tax.rate
-                } if item.tax else {},
-            })
-        return product_data
-
-
-class SaleOrderPurchasingStaffListSerializer(serializers.ModelSerializer):
-    is_create_purchase_request = serializers.SerializerMethodField()
-    employee_inherit = serializers.SerializerMethodField()
-
-    class Meta:
-        model = SaleOrder
-        fields = (
-            'id',
-            'code',
-            'title',
-            'employee_inherit',
-            'is_create_purchase_request',
-        )
-
-    @classmethod
-    def get_is_create_purchase_request(cls, obj):
-        so_product = obj.sale_order_product_sale_order.all()
-        return any(item.remain_for_purchase_request > 0 and item.product_id is not None for item in so_product)
-
-    @classmethod
-    def get_employee_inherit(cls, obj):
-        return {
-            "id": obj.employee_inherit_id,
-            "code": obj.employee_inherit.code,
-            "full_name": obj.employee_inherit.get_full_name(2),
-            "group": {
-                "id": str(obj.employee_inherit.group_id),
-                "title": obj.employee_inherit.group.title,
-                "code": obj.employee_inherit.group.code
-            } if obj.employee_inherit.group_id else {}
-        } if obj.employee_inherit else {}
+        return [{
+            'id': str(item.id),
+            'product_quantity': item.product_quantity,
+            'remain_for_purchase_request': item.remain_for_purchase_request,
+            'product_data': item.product_data,
+            'uom_data': item.uom_data,
+            'tax_data': item.tax_data,
+        } for item in SaleOrderProduct.objects.select_related('product').filter(
+            sale_order=obj, product__isnull=False
+        ) if 2 in item.product.product_choice and item.remain_for_purchase_request > 0]
 
 
 class SOProductWOListSerializer(serializers.ModelSerializer):

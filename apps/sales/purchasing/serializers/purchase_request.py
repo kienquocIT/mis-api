@@ -1,5 +1,4 @@
 from django.utils.datetime_safe import datetime
-from mongomock.codec_options import is_supported
 from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
@@ -17,10 +16,10 @@ from apps.shared.translations.sales import PurchaseRequestMsg
 
 # sub
 class PurchaseRequestProductSerializer(serializers.ModelSerializer):
+    sale_order_product = serializers.UUIDField(allow_null=True)
     product = serializers.UUIDField()
-    sale_order_product = serializers.UUIDField(allow_null=True, default=None)
     uom = serializers.UUIDField()
-    tax = serializers.UUIDField(allow_null=True, default=None)
+    tax = serializers.UUIDField(allow_null=True)
 
     class Meta:
         model = PurchaseRequestProduct
@@ -28,9 +27,9 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
             'sale_order_product',
             'product',
             'uom',
+            'tax',
             'quantity',
             'unit_price',
-            'tax',
             'sub_total_price'
         )
 
@@ -374,9 +373,9 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
         return [{
             "id": str(item.id),
             "sale_order_product_id": str(item.sale_order_product_id),
-            "tax": item.tax_data,
-            "uom": item.uom_data,
-            "product": item.product_data,
+            "product_data": item.product_data,
+            "uom_data": item.uom_data,
+            "tax_data": item.tax_data,
             "quantity": item.quantity,
             "unit_price": item.unit_price,
             "sub_total_price": item.sub_total_price
@@ -496,6 +495,31 @@ class PurchaseRequestCommonFunction:
 
 
 # related serializers
+class PurchaseRequestSaleOrderListSerializer(serializers.ModelSerializer):
+    is_create_purchase_request = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrder
+        fields = (
+            'id',
+            'code',
+            'title',
+            'employee_inherit',
+            'customer_data',
+            'is_create_purchase_request',
+        )
+
+    @classmethod
+    def get_is_create_purchase_request(cls, obj):
+        so_product = obj.sale_order_product_sale_order.all()
+        return any(item.remain_for_purchase_request > 0 and item.product_id is not None for item in so_product)
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return obj.employee_inherit.get_detail_with_group() if obj.employee_inherit else {}
+
+
 class PurchaseRequestListForPQRSerializer(serializers.ModelSerializer):
     product_list = serializers.SerializerMethodField()
 
