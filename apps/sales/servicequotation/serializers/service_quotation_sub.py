@@ -2,7 +2,8 @@ from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models import ExpenseItem, UnitOfMeasure, Tax, Product, Currency
 from apps.sales.servicequotation.models import (
-    ServiceQuotationShipment, ServiceQuotationExpense, ServiceQuotationServiceDetail, ServiceQuotationWorkOrder, ServiceQuotationPayment,
+    ServiceQuotationShipment, ServiceQuotationExpense, ServiceQuotationServiceDetail, ServiceQuotationWorkOrder,
+    ServiceQuotationPayment,
 )
 from apps.shared import SVOMsg
 
