@@ -1,4 +1,3 @@
-from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.inventory.models import (
     InventoryAdjustment, InventoryAdjustmentItem, IAItemBeingAdjusted
@@ -6,7 +5,7 @@ from apps.sales.inventory.models import (
 from apps.sales.inventory.serializers.inventory_adjustment import (
     InventoryAdjustmentListSerializer, InventoryAdjustmentDetailSerializer,
     InventoryAdjustmentCreateSerializer, InventoryAdjustmentUpdateSerializer, InventoryAdjustmentProductListSerializer,
-    IAGRListSerializer)
+    IAProductGRListSerializer, InventoryAdjustmentDDListSerializer)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -126,32 +125,49 @@ class InventoryAdjustmentProductList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-# Inventory adjustment list use GR
-class InventoryAdjustmentGRList(BaseListMixin):
-    queryset = InventoryAdjustment.objects
+# Inventory adjustment product list use GR
+class InventoryAdjustmentProductGRList(BaseListMixin):
+    queryset = InventoryAdjustmentItem.objects
     filterset_fields = {
-        'state': ['exact'],
+        'inventory_adjustment_mapped_id': ['exact', 'in'],
     }
-    serializer_list = IAGRListSerializer
-    serializer_detail = IAGRListSerializer
+    serializer_list = IAProductGRListSerializer
+    serializer_detail = IAProductGRListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related(
-            Prefetch(
-                'inventory_adjustment_item_mapped',
-                queryset=InventoryAdjustmentItem.objects.select_related(
-                    'product_mapped',
-                    'uom_mapped',
-                    'warehouse_mapped',
-                ),
-            ),
+        return super().get_queryset().filter(gr_remain_quantity__gt=0).select_related(
+            'product_mapped',
+            'uom_mapped',
+            'warehouse_mapped',
         )
 
     @swagger_auto_schema(
-        operation_summary="Inventory Adjustment Other List",
-        operation_description="Get Inventory Adjustment Other List",
+        operation_summary="Inventory Adjustment Product GR List",
+        operation_description="Get Inventory Adjustment Product GR List",
     )
     @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class InventoryAdjustmentDDList(
+    BaseListMixin,
+):
+    queryset = InventoryAdjustment.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'state': ['exact'],
+    }
+    serializer_list = InventoryAdjustmentDDListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Inventory Adjustment DD List",
+        operation_description="Get Inventory Adjustment DD List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

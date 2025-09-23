@@ -303,6 +303,7 @@ class QuotationProductSerializer(serializers.ModelSerializer):
     #     'required': SaleMsg.PRODUCT_UOM_REQUIRED,
     # })
     unit_of_measure_id = serializers.UUIDField(allow_null=True, required=False)
+    uom_time_id = serializers.UUIDField(allow_null=True, required=False)
     tax_id = serializers.UUIDField(required=False, allow_null=True)
     promotion_id = serializers.UUIDField(required=False, allow_null=True)
     shipping_id = serializers.UUIDField(required=False, allow_null=True)
@@ -314,6 +315,8 @@ class QuotationProductSerializer(serializers.ModelSerializer):
             'product_data',
             'unit_of_measure_id',
             'uom_data',
+            'uom_time_id',
+            'uom_time_data',
             'tax_id',
             'tax_data',
             # product information
@@ -323,6 +326,7 @@ class QuotationProductSerializer(serializers.ModelSerializer):
             'product_uom_title',
             'product_uom_code',
             'product_quantity',
+            'product_quantity_time',
             'product_unit_price',
             'product_discount_value',
             'product_discount_amount',
@@ -350,6 +354,10 @@ class QuotationProductSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_unit_of_measure_id(cls, value):
+        return QuotationCommonValidate().validate_unit_of_measure_id(value=value)
+
+    @classmethod
+    def validate_uom_time_id(cls, value):
         return QuotationCommonValidate().validate_unit_of_measure_id(value=value)
 
     @classmethod
