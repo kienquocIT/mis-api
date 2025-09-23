@@ -1,5 +1,4 @@
 from django.db import models
-from django.utils import timezone
 
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber

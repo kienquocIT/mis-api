@@ -8,9 +8,8 @@ from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
 from apps.sales.distributionplan.models import DistributionPlan
 from apps.shared import (
     REQUEST_FOR, PURCHASE_STATUS, AbstractCreateSerializerModel,
-    AbstractDetailSerializerModel, AbstractListSerializerModel, HRMsg, SerializerCommonHandle, SerializerCommonValidate
+    AbstractDetailSerializerModel, AbstractListSerializerModel, SerializerCommonHandle, SerializerCommonValidate
 )
-from apps.shared.translations.base import AttachmentMsg
 from apps.shared.translations.sales import PurchaseRequestMsg
 
 
