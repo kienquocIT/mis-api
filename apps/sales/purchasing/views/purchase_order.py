@@ -5,7 +5,7 @@ from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderQuotation, 
     PurchaseOrderRequestProduct
 from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer, \
     PurchaseOrderListSerializer, PurchaseOrderUpdateSerializer, PurchaseOrderDetailSerializer, \
-    PurchaseOrderSaleListSerializer, POProductGRListSerializer, PurchaseOrderMinimalListSerializer
+    PurchaseOrderSaleListSerializer, POProductGRListSerializer, PurchaseOrderDDListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -63,7 +63,7 @@ class PurchaseOrderDDList(
         'supplier_id': ['exact'],
         'contact_id': ['exact'],
     }
-    serializer_list = PurchaseOrderMinimalListSerializer
+    serializer_list = PurchaseOrderDDListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
