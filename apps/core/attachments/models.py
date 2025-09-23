@@ -109,6 +109,20 @@ class BastionFiles(MasterDataAbstractModel):
     relate_app_code = models.CharField(max_length=100, null=True)
     relate_doc_id = models.UUIDField(null=True)
 
+    # file attributes
+    document_type = models.ForeignKey(
+        'documentapproval.KMSDocumentType',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='%(app_label)s_%(class)s_document_type'
+    )
+    content_group = models.ForeignKey(
+        'documentapproval.KMSContentGroup',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='%(app_label)s_%(class)s_content_group'
+    )
+
     def get_url(self, expire=None):
         if self.file:
             return self.file.storage.url(self.file.name, expire=expire if expire else settings.FILE_STORAGE_EXPIRED)
@@ -124,6 +138,12 @@ class BastionFiles(MasterDataAbstractModel):
             'file_size': self.file_size,
             'file_type': str(self.file_type),
             'remarks': self.remarks,
+            'document_type': {
+                'id': str(self.document_type_id), 'title': self.document_type.title
+            } if self.document_type else {},
+            'content_group': {
+                'id': str(self.content_group_id), 'title': self.content_group.title
+            } if self.content_group else {},
             **(
                 {'link': self.get_url()} if has_link else {}
             )

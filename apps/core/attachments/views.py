@@ -29,7 +29,7 @@ from .serializers import (
     FolderListSerializer, FolderCreateSerializer, FolderDetailSerializer, FolderUpdateSerializer,
     FolderUploadFileSerializer, PublicFilesUploadSerializer, PublicFilesDetailSerializer, PublicFilesListSerializer,
     FileDeleteAllSerializer, FolderDeleteAllSerializer, FolderCheckPermSerializer, FileCheckPermSerializer,
-    FolderCheckPermDelAllSerializer,
+    FolderCheckPermDelAllSerializer, FilesUpdateAttributeSerializer,
 )
 
 from .utils import check_folder_perm, check_file_perm, check_perm_delete_access_list, check_create_sub_folder
@@ -99,6 +99,44 @@ class FilesEdit(BaseDestroyMixin):
         kwargs['is_purge'] = True
         kwargs['remove_file'] = True
         return self.destroy_list(request, *args, **kwargs)
+
+
+class FilesDetail(
+    BaseRetrieveMixin,
+    BaseUpdateMixin,
+):
+    queryset = Files.objects
+    serializer_detail = FilesDetailSerializer
+    serializer_update = FilesUpdateAttributeSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "document_type",
+            "content_group",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="File Detail",
+        operation_description="Get File Detail By ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update Attribute Of File",
+        operation_description="Update Attribute Of File By ID",
+        request_body=FilesUpdateAttributeSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 class PublicFilesUpload(BaseListMixin, BaseCreateMixin):
