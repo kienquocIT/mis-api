@@ -30,7 +30,7 @@ class PurchaseRequest(DataAbstractModel):
     contact_data = models.JSONField(default=dict)
     delivered_date = models.DateTimeField(help_text='Deadline for delivery')
     purchase_status = models.SmallIntegerField(choices=PURCHASE_STATUS, default=0)
-    note = models.CharField(max_length=1000)
+    note = models.TextField(blank=True, null=True)
     purchase_request_product_datas = models.JSONField(
         default=list, help_text="read data product, use for get list or detail purchase",
     )

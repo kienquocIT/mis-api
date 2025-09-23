@@ -175,12 +175,13 @@ class PurchaseRequestListSerializer(AbstractListSerializerModel):
 
 
 class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=150)
     sale_order = serializers.UUIDField(required=False, allow_null=True)
     distribution_plan = serializers.UUIDField(required=False, allow_null=True)
     supplier = serializers.UUIDField(required=True)
     contact = serializers.UUIDField(required=True)
-    purchase_request_product_datas = PurchaseRequestProductSerializer(many=True)
-    note = serializers.CharField(allow_blank=True)
+    # purchase_request_product_datas = PurchaseRequestProductSerializer(many=True)
+    note = serializers.CharField(allow_blank=True, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
@@ -193,9 +194,8 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
             'sale_order',
             'distribution_plan',
             'delivered_date',
-            'purchase_status',
             'note',
-            'purchase_request_product_datas',
+            # 'purchase_request_product_datas',
             'pretax_amount',
             'taxes',
             'total_price',
@@ -244,8 +244,6 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
         )
 
     def validate(self, validate_data):
-        context_user = self.context.get('user', None)
-
         if validate_data.get('pretax_amount', 0) < 0:
             raise serializers.ValidationError({'pretax_amount': PurchaseRequestMsg.GREATER_THAN_ZERO})
 
@@ -287,19 +285,6 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
                 'code': distribution_plan_obj.code,
                 'title': distribution_plan_obj.title,
             } if distribution_plan_obj else {}
-
-        if 'attachment' in validate_data:
-            if context_user and hasattr(context_user, 'employee_current_id'):
-                state, result = PurchaseRequestAttachmentFile.valid_change(
-                    current_ids=validate_data.get('attachment', []),
-                    employee_id=context_user.employee_current_id,
-                    doc_id=None
-                )
-                if state is True:
-                    validate_data['attachment'] = result
-                    return validate_data
-                raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-            raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
         return validate_data
 
@@ -392,19 +377,13 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
 
 
 class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
-    title = serializers.CharField(required=False)
+    title = serializers.CharField(max_length=150)
     sale_order = serializers.UUIDField(required=False, allow_null=True)
     distribution_plan = serializers.UUIDField(required=False, allow_null=True)
-    request_for = serializers.IntegerField(required=False)
     supplier = serializers.UUIDField(required=False)
     contact = serializers.UUIDField(required=False)
-    delivered_date = serializers.DateTimeField(required=False)
-    purchase_status = serializers.IntegerField(required=False)
     purchase_request_product_datas = PurchaseRequestProductSerializer(many=True, required=False)
-    note = serializers.CharField(allow_blank=True, required=False)
-    pretax_amount = serializers.FloatField(required=False)
-    taxes = serializers.FloatField(required=False)
-    total_price = serializers.FloatField(required=False)
+    note = serializers.CharField(allow_blank=True, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
@@ -417,7 +396,6 @@ class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
             'sale_order',
             'distribution_plan',
             'delivered_date',
-            'purchase_status',
             'note',
             'purchase_request_product_datas',
             'pretax_amount',
