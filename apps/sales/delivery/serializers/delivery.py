@@ -44,8 +44,6 @@ def handle_attach_file(instance, attachment_result):
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
     is_not_inventory = serializers.SerializerMethodField()
-    product_subtotal = serializers.SerializerMethodField()
-    product_subtotal_after_tax = serializers.SerializerMethodField()
 
     @classmethod
     def get_is_not_inventory(cls, obj):
@@ -56,16 +54,6 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             if obj.asset_type >= 1:
                 return bool(True)
         return bool(False)
-
-    @classmethod
-    def get_product_subtotal(cls, obj):
-        return round_by_company_config(company=obj.company, value=obj.product_cost * obj.picked_quantity)
-
-    @classmethod
-    def get_product_subtotal_after_tax(cls, obj):
-        subtotal = obj.product_cost * obj.picked_quantity
-        tax = subtotal * obj.tax_data.get('rate', 0) / 100
-        return round_by_company_config(company=obj.company, value=subtotal + tax)
 
     class Meta:
         model = OrderDeliveryProduct
@@ -91,9 +79,6 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'is_not_inventory',
 
             'product_cost',
-            'product_subtotal',
-            'product_subtotal_after_tax',
-
             'product_depreciation_subtotal',
             'product_depreciation_price',
             'product_depreciation_method',
@@ -162,6 +147,158 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
     attachments = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     sale_order = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_products(cls, obj):
+        prod = OrderDeliveryProductListSerializer(
+            obj.delivery_product_delivery_sub.all(),
+            many=True,
+        ).data
+        return prod
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
+            return {
+                "id": str(obj.employee_inherit_id),
+                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+            }
+        return {}
+
+    @classmethod
+    def get_attachments(cls, obj):
+        return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
+
+    @classmethod
+    def get_sale_order(cls, obj):
+        return {
+            'id': obj.sale_order_id,
+            'title': obj.sale_order.title,
+            'code': obj.sale_order.code,
+            'customer_data': obj.sale_order.customer_data,
+            'contact_data': obj.sale_order.contact_data,
+            'date_approved': obj.sale_order.date_approved.date().strftime("%d/%m/%Y")
+            if obj.sale_order.date_approved else None,
+        } if obj.sale_order else {}
+
+    class Meta:
+        model = OrderDeliverySub
+        fields = (
+            'order_delivery',
+            'id',
+            'remarks',
+            'times',
+            'delivery_quantity',
+            'delivered_quantity_before',
+            'remaining_quantity',
+            'ready_quantity',
+            'is_updated',
+            'products',
+            'state',
+            'code',
+            'sale_order_data',
+            'lease_order_data',
+            'estimated_delivery_date',
+            'actual_delivery_date',
+            'customer_data',
+            'contact_data',
+            'config_at_that_point',
+            'attachments',
+            'delivery_logistic',
+            'workflow_runtime_id',
+            'employee_inherit',
+            'sale_order',
+        )
+
+
+# PRINT SERIALIZER
+class OrderDeliveryProductListPrintSerializer(serializers.ModelSerializer):
+    product_data = serializers.SerializerMethodField()
+    product_description = serializers.SerializerMethodField()
+    is_not_inventory = serializers.SerializerMethodField()
+    product_subtotal = serializers.SerializerMethodField()
+    product_subtotal_after_tax = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_product_data(cls, obj):
+        return {
+            'id': str(obj.product_id),
+            'title': obj.product.title,
+            'code': obj.product.code,
+            'avatar_img': obj.product.avatar_img.url if obj.product.avatar_img else None
+        } if obj.product else {}
+
+    @classmethod
+    def get_product_description(cls, obj):
+        return obj.product_description if obj.product_description else (obj.product.description if obj.product else '')
+
+    @classmethod
+    def get_is_not_inventory(cls, obj):
+        if obj.product.product_choice:
+            if 1 in obj.product.product_choice:
+                return bool(True)
+        if obj.asset_type:
+            if obj.asset_type >= 1:
+                return bool(True)
+        return bool(False)
+
+    @classmethod
+    def get_product_subtotal(cls, obj):
+        return round_by_company_config(company=obj.company, value=obj.product_cost * obj.picked_quantity)
+
+    @classmethod
+    def get_product_subtotal_after_tax(cls, obj):
+        subtotal = obj.product_cost * obj.picked_quantity
+        tax = subtotal * obj.tax_data.get('rate', 0) / 100
+        return round_by_company_config(company=obj.company, value=subtotal + tax)
+
+    class Meta:
+        model = OrderDeliveryProduct
+        fields = (
+            'id',
+            'order',
+            'is_promotion',
+            'product_data',
+            'asset_type',
+            'offset_data',
+            'tool_data',
+            'asset_data',
+            'product_quantity',
+            'uom_data',
+            'tax_data',
+            'product_description',
+            'delivery_quantity',
+            'delivered_quantity_before',
+            'remaining_quantity',
+            'ready_quantity',
+            'delivery_data',
+            'picked_quantity',
+            'is_not_inventory',
+
+            'product_cost',
+            'product_subtotal',
+            'product_subtotal_after_tax',
+
+            'product_depreciation_subtotal',
+            'product_depreciation_price',
+            'product_depreciation_method',
+            'product_depreciation_adjustment',
+            'product_depreciation_time',
+            'product_depreciation_start_date',
+            'product_depreciation_end_date',
+
+            'product_lease_start_date',
+            'product_lease_end_date',
+
+            'depreciation_data',
+        )
+
+
+class OrderDeliverySubPrintSerializer(AbstractDetailSerializerModel):
+    products = serializers.SerializerMethodField()
+    attachments = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+    sale_order = serializers.SerializerMethodField()
     estimated_delivery_date_print = serializers.SerializerMethodField()
     actual_delivery_date_print = serializers.SerializerMethodField()
     pretax_amount = serializers.SerializerMethodField()
@@ -173,7 +310,7 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_products(cls, obj):
-        prod = OrderDeliveryProductListSerializer(
+        prod = OrderDeliveryProductListPrintSerializer(
             obj.delivery_product_delivery_sub.all(),
             many=True,
         ).data
@@ -223,7 +360,7 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_pretax_amount_word(cls, obj):
         return FORMATTING.number_to_vietnamese(
-            number=OrderDeliverySubDetailSerializer.get_pretax_amount(obj=obj)
+            number=OrderDeliverySubPrintSerializer.get_pretax_amount(obj=obj)
         ).capitalize()
 
     @classmethod
@@ -237,7 +374,7 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_tax_amount_word(cls, obj):
         return FORMATTING.number_to_vietnamese(
-            number=OrderDeliverySubDetailSerializer.get_tax_amount(obj=obj)
+            number=OrderDeliverySubPrintSerializer.get_tax_amount(obj=obj)
         ).capitalize()
 
     @classmethod
@@ -253,7 +390,7 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_total_amount_word(cls, obj):
         return FORMATTING.number_to_vietnamese(
-            number=OrderDeliverySubDetailSerializer.get_total_amount(obj=obj)
+            number=OrderDeliverySubPrintSerializer.get_total_amount(obj=obj)
         ).capitalize()
 
     class Meta:

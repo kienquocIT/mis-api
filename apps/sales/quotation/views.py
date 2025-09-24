@@ -11,7 +11,8 @@ from apps.sales.quotation.serializers.quotation_indicator import (
 )
 from apps.sales.quotation.serializers.quotation_serializers import (
     QuotationListSerializer, QuotationCreateSerializer,
-    QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer, QuotationMinimalListSerializer
+    QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer,
+    QuotationMinimalListSerializer, QuotationDetailPrintSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 
@@ -139,6 +140,35 @@ class QuotationDetail(
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+# PRINT VIEW
+class QuotationDetailPrint(
+    BaseRetrieveMixin,
+):
+    queryset = Quotation.objects
+    serializer_detail = QuotationDetailPrintSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter_on_company().select_related(
+            "opportunity",
+            "opportunity__customer",
+            "employee_inherit",
+            "process",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Quotation Detail Print",
+        operation_description="Get Quotation Detail Print By ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='quotation', model_code='quotation', perm_code='view',
+        opp_enabled=True, prj_enabled=True,
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
 
 class QuotationExpenseList(BaseListMixin):

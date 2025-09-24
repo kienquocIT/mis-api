@@ -1,14 +1,20 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.delivery.serializers.delivery import DeliveryProductLeaseListSerializer
+from apps.sales.delivery.serializers.delivery import DeliveryProductLeaseListSerializer, OrderDeliverySubPrintSerializer
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
 from apps.sales.delivery.models import OrderDeliverySub, OrderDeliveryProduct
 from apps.sales.delivery.serializers import OrderDeliverySubDetailSerializer, \
     OrderDeliverySubUpdateSerializer, OrderDeliverySubListSerializer, OrderDeliverySubMinimalListSerializer, \
     OrderDeliverySubRecoveryListSerializer
 
-__all__ = ['OrderDeliverySubList', 'OrderDeliverySubDetail', 'OrderDeliverySubRecoveryList']
+__all__ = [
+    'OrderDeliverySubList',
+    'OrderDeliverySubDetail',
+    'OrderDeliverySubRecoveryList',
+    'DeliveryProductLeaseList',
+    'OrderDeliverySubDetailPrint',
+]
 
 
 class OrderDeliverySubList(BaseListMixin):
@@ -52,7 +58,7 @@ class OrderDeliverySubDetail(
     queryset = OrderDeliverySub.objects
     serializer_detail = OrderDeliverySubDetailSerializer
     serializer_update = OrderDeliverySubUpdateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = ['tenant_id', 'company_id', 'employee_modified_id']
 
     def get_queryset(self):
@@ -64,10 +70,8 @@ class OrderDeliverySubDetail(
                 'delivery_product_delivery_sub',
                 queryset=OrderDeliveryProduct.objects.select_related(
                     'product',
-                    'uom',
                 )
             )
-
         )
 
     @swagger_auto_schema(
@@ -94,6 +98,41 @@ class OrderDeliverySubDetail(
             'user': request.user
         }
         return self.update(request, *args, pk, **kwargs)
+
+
+# PRINT VIEW
+class OrderDeliverySubDetailPrint(
+    BaseRetrieveMixin,
+):
+    queryset = OrderDeliverySub.objects
+    serializer_detail = OrderDeliverySubPrintSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = ['tenant_id', 'company_id', 'employee_modified_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'employee_inherit',
+            'sale_order',
+        ).prefetch_related(
+            Prefetch(
+                'delivery_product_delivery_sub',
+                queryset=OrderDeliveryProduct.objects.select_related(
+                    'product',
+                )
+            )
+
+        )
+
+    @swagger_auto_schema(
+        operation_summary='Order Delivery Sub Print Detail',
+        operation_description="Get delivery Sub print Detail by ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='delivery', model_code='orderdeliverysub', perm_code='view',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
 
 class OrderDeliverySubRecoveryList(BaseListMixin):

@@ -3,9 +3,8 @@ from django.urls import path
 from apps.sales.delivery.views import (
     DeliveryConfigDetail, SaleOrderActiveDelivery,
     OrderPickingSubList, OrderPickingSubDetail, OrderDeliverySubList, OrderDeliverySubDetail,
-    LeaseOrderActiveDelivery, OrderDeliverySubRecoveryList
+    LeaseOrderActiveDelivery, OrderDeliverySubRecoveryList, DeliveryProductLeaseList, OrderDeliverySubDetailPrint
 )
-from apps.sales.delivery.views.delivery import DeliveryProductLeaseList
 
 urlpatterns = [
     path('config', DeliveryConfigDetail.as_view(), name='DeliveryConfigDetail'),
@@ -16,6 +15,7 @@ urlpatterns = [
     path('picking/<str:pk>', OrderPickingSubDetail.as_view(), name='OrderPickingSubDetail'),
     path('', OrderDeliverySubList.as_view(), name='OrderDeliveryList'),
     path('sub/<str:pk>', OrderDeliverySubDetail.as_view(), name='OrderDeliverySubDetail'),
+    path('sub-print/<str:pk>', OrderDeliverySubDetailPrint.as_view(), name='OrderDeliverySubDetailPrint'),
 
     path('for-recovery', OrderDeliverySubRecoveryList.as_view(), name='OrderDeliverySubRecoveryList'),
     path('product-lease', DeliveryProductLeaseList.as_view(), name='DeliveryProductLeaseList'),
