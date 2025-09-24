@@ -261,6 +261,7 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
         for data in obj.quotation_products_data:
             product_obj = Product.objects.filter(id=data.get('product_id', None)).first()
             if product_obj:
+                product_description = data.get('product_description', "")
                 data.update({
                     'product_data': {
                         'id': str(product_obj.id),
@@ -268,6 +269,9 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
                         'code': product_obj.code,
                         'avatar_img': product_obj.avatar_img.url if product_obj.avatar_img else None
                     }
+                })
+                data.update({
+                    'product_description': product_description if product_description else product_obj.description
                 })
         return obj.quotation_products_data
 
