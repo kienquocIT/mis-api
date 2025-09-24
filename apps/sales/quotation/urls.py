@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import (
     QuotationList, QuotationDetail, QuotationExpenseList, QuotationConfigDetail,
-    QuotationIndicatorList, QuotationIndicatorDetail, QuotationIndicatorCompanyRestore
+    QuotationIndicatorList, QuotationIndicatorDetail, QuotationIndicatorCompanyRestore, QuotationDetailPrint
 )
 
 urlpatterns = [
@@ -14,5 +14,6 @@ urlpatterns = [
 
     path('list', QuotationList.as_view(), name='QuotationList'),
     path('<str:pk>', QuotationDetail.as_view(), name='QuotationDetail'),
+    path('print/<str:pk>', QuotationDetailPrint.as_view(), name='QuotationDetailPrint'),
     path('quotation-expense-list/lists', QuotationExpenseList.as_view(), name='QuotationExpenseList'),
 ]

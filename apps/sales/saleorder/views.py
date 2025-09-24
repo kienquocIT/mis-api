@@ -5,7 +5,8 @@ from apps.sales.saleorder.models import (
 from apps.sales.saleorder.serializers import (
     SaleOrderListSerializer, SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer,
     SaleOrderExpenseListSerializer, SaleOrderProductListSerializer, SaleOrderPurchasingStaffListSerializer,
-    SOProductWOListSerializer, SaleOrderMinimalListSerializer, SORecurrenceListSerializer
+    SOProductWOListSerializer, SaleOrderMinimalListSerializer, SORecurrenceListSerializer,
+    SaleOrderDetailPrintSerializer
 )
 from apps.sales.saleorder.serializers.sale_order_config import (
     SaleOrderConfigUpdateSerializer, SaleOrderConfigDetailSerializer
@@ -154,6 +155,32 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {'user': request.user}
         return self.update(request, *args, pk, **kwargs)
+
+
+# PRINT VIEW
+class SaleOrderDetailPrint(BaseRetrieveMixin):
+    queryset = SaleOrder.objects
+    serializer_detail = SaleOrderDetailPrintSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "opportunity",
+            "opportunity__customer",
+            "employee_inherit",
+            "process",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Sale Order Detail Print",
+        operation_description="Get Sale Order Detail Print By ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='saleorder', model_code='saleorder', perm_code='view',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
 
 class SaleOrderExpenseList(BaseListMixin):

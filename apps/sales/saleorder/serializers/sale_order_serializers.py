@@ -4,6 +4,7 @@ from apps.core.base.models import Application
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.recurrence.models import Recurrence
 from apps.core.workflow.tasks import decorator_run_workflow
+from apps.masterdata.saledata.models import Product
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
     SaleOrderProductSerializer, SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, \
@@ -217,6 +218,102 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_attachment(cls, obj):
         return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
+
+
+# PRINT SERIALIZER
+class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel):
+    opportunity = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+    sale_order_products_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+            'opportunity',
+            'customer_data',
+            'contact_data',
+            'sale_person',
+            'payment_term_data',
+            'quotation_data',
+            'system_status',
+            # sale order tabs
+            'sale_order_products_data',
+            'sale_order_logistic_data',
+            'customer_shipping_id',
+            'customer_billing_id',
+            'sale_order_costs_data',
+            'sale_order_expenses_data',
+            # total amount of products
+            'total_product_pretax_amount',
+            'total_product_discount_rate',
+            'total_product_discount',
+            'total_product_tax',
+            'total_product',
+            'total_product_revenue_before_tax',
+            # total amount of costs
+            'total_cost_pretax_amount',
+            'total_cost_tax',
+            'total_cost',
+            # total amount of expenses
+            'total_expense_pretax_amount',
+            'total_expense_tax',
+            'total_expense',
+            'date_created',
+            'delivery_call',
+            # indicator tab
+            'sale_order_indicators_data',
+            # indicators
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
+            # payment stage tab
+            'sale_order_payment_stage',
+            'sale_order_invoice',
+            # system
+            'workflow_runtime_id',
+            'is_active',
+            'employee_inherit',
+        )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        return {
+            'id': obj.opportunity_id,
+            'title': obj.opportunity.title,
+            'code': obj.opportunity.code,
+            'customer': {
+                'id': obj.opportunity.customer_id,
+                'title': obj.opportunity.customer.title
+            } if obj.opportunity.customer else {},
+            'is_deal_close': obj.opportunity.is_deal_close,
+        } if obj.opportunity else {}
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
+
+    @classmethod
+    def get_sale_order_products_data(cls, obj):
+        for data in obj.sale_order_products_data:
+            product_obj = Product.objects.filter(id=data.get('product_id', None)).first()
+            if product_obj:
+                data.update({
+                    'product_data': {
+                        'id': str(product_obj.id),
+                        'title': product_obj.title,
+                        'code': product_obj.code,
+                        'avatar_img': product_obj.avatar_img.url if product_obj.avatar_img else None
+                    }
+                })
+        return obj.sale_order_products_data
 
 
 class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
