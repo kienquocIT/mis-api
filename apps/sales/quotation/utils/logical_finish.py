@@ -11,7 +11,7 @@ class QuotationFinishHandler:
             instance.opportunity.quotation = instance if instance.system_status == 3 else None
             instance.opportunity.save(update_fields=['quotation'])
             # handle stage & win_rate
-            instance.opportunity.handle_stage_win_rate(obj=instance.opportunity)
+            instance.opportunity.handle_stage_and_win_rate(obj=instance.opportunity)
         return True
 
     # CUSTOMER ACTIVITY

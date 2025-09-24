@@ -479,7 +479,7 @@ class Opportunity(DataAbstractModel):
     #     return True
 
     @classmethod
-    def handle_stage_win_rate(cls, obj):
+    def handle_stage_and_win_rate(cls, obj):
         obj.win_rate, opp_stage_obj = obj.update_stage(obj=obj)
         obj.current_stage = opp_stage_obj.stage
         obj.current_stage_data = {

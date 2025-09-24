@@ -1,9 +1,13 @@
+from uuid import uuid4
+
 from rest_framework import serializers
 
+from apps.core.hr.models import DistributionApplication
 from apps.core.hr.serializers.common import validate_license_used
 from apps.core.tenant.models import TenantPlan
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
+from apps.sales.lead.models import LeadParser, LeadOpportunity, LeadStage
 from apps.sales.opportunity.models import (
     OpportunityProductCategory, OpportunityProduct,
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember,
@@ -582,6 +586,113 @@ class OpportunityCommonFunction:
                     {'Closed Lost': 'Can not update to stage "Closed Lost". You are having an Approved Sale Order.'}
                 )
         OpportunityStage.objects.bulk_create(data_bulk)
+        return True
+
+    @classmethod
+    def get_alias_permit_from_general(cls, employee_obj):
+        result = []
+        app_id_get = [
+            "e66cfb5a-b3ce-4694-a4da-47618f53de4c",  # Task
+            "b9650500-aba7-44e3-b6e0-2542622702a3",  # Quotation
+            "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sales Order
+            # "31c9c5b0-717d-4134-b3d0-cc4ca174b168",  # Contract
+            "57725469-8b04-428a-a4b0-578091d0e4f5",  # Advanced Payment
+            "1010563f-7c94-42f9-ba99-63d5d26a1aca",  # Payment
+            "65d36757-557e-4534-87ea-5579709457d7",  # Return Payment
+            "2de9fb91-4fb9-48c8-b54e-c03bd12f952b",  # BOM
+            "ad1e1c4e-2a7e-4b98-977f-88d069554657",  # Bidding
+            "58385bcf-f06c-474e-a372-cadc8ea30ecc",  # Contract approval
+            "14dbc606-1453-4023-a2cf-35b1cd9e3efd",  # Call log
+            "2fe959e3-9628-4f47-96a1-a2ef03e867e3",  # Meeting
+            "dec012bf-b931-48ba-a746-38b7fd7ca73b",  # Email
+            "3a369ba5-82a0-4c4d-a447-3794b67d1d02",  # Consulting Document
+            "010404b3-bb91-4b24-9538-075f5f00ef14",  # Lease Order
+            "36f25733-a6e7-43ea-b710-38e2052f0f6d",  # Service Order
+        ]
+        for obj in DistributionApplication.objects.select_related('app').filter(
+                employee=employee_obj, app_id__in=app_id_get
+        ):
+            permit_has_1_range = []
+            permit_has_4_range = []
+            for permit_code, permit_config in obj.app.permit_mapping.items():
+                if '1' in permit_config.get('range', []):
+                    permit_has_1_range.append(permit_code)
+                elif '4' in permit_config.get('range', []):
+                    permit_has_4_range.append(permit_code)
+
+            has_1 = False
+            data_tmp_for_1 = {
+                'id': str(uuid4()),
+                'app_id': str(obj.app_id),
+                'view': False,
+                'create': False,
+                'edit': False,
+                'delete': False,
+                'range': '1',
+                'space': '0',
+            }
+            has_4 = False
+            data_tmp_for_4 = {
+                'id': str(uuid4()),
+                'app_id': str(obj.app_id),
+                'view': False,
+                'create': False,
+                'edit': False,
+                'delete': False,
+                'range': '4',
+                'space': '0',
+            }
+
+            for key in ['view', 'create', 'edit', 'delete']:
+                if key in permit_has_1_range:
+                    has_1 = True
+                    data_tmp_for_1[key] = True
+                elif key in permit_has_4_range:
+                    has_4 = True
+                    data_tmp_for_4[key] = True
+
+            if has_1 is True:
+                result.append(data_tmp_for_1)
+            if has_4 is True:
+                result.append(data_tmp_for_4)
+        return result
+
+    @classmethod
+    def convert_opportunity(cls, lead_obj, lead_config, opp_mapped_obj):
+        # convert to a new opp (existed account)
+        current_stage = LeadStage.objects.filter_on_company(level=4).first()
+        lead_obj.current_lead_stage = current_stage
+        lead_obj.current_lead_stage_data = LeadParser.parse_data(current_stage, 'lead_stage')
+        lead_obj.lead_status = 4
+        lead_obj.save(update_fields=['current_lead_stage', 'current_lead_stage_data', 'lead_status'])
+
+        lead_config.opp_mapped = opp_mapped_obj
+        lead_config.opp_mapped_data = LeadParser.parse_data(opp_mapped_obj, 'opportunity')
+        lead_config.account_mapped = opp_mapped_obj.customer
+        lead_config.account_mapped_data = LeadParser.parse_data(opp_mapped_obj.customer, 'account')
+        lead_config.assign_to_sale_config = opp_mapped_obj.employee_inherit
+        lead_config.assign_to_sale_config_data = LeadParser.parse_data(
+            opp_mapped_obj.employee_inherit, 'assign_to_sale'
+        )
+        lead_config.convert_opp = True
+        lead_config.convert_opp_create = True
+        lead_config.save(update_fields=[
+            'opp_mapped', 'opp_mapped_data',
+            'account_mapped', 'account_mapped_data',
+            'assign_to_sale_config', 'assign_to_sale_config_data',
+            'convert_opp', 'convert_opp_create'
+        ])
+
+        LeadOpportunity.objects.create(
+            company=lead_obj.company,
+            tenant=lead_obj.tenant,
+            lead=lead_obj,
+            lead_data=LeadParser.parse_data(lead_obj, 'lead_mapped_opp'),
+            opportunity=opp_mapped_obj,
+            employee_created=lead_obj.employee_created,
+            employee_inherit=lead_obj.employee_inherit
+        )
+        LeadChartInformation.create_update_chart_information(opp_mapped_obj.tenant_id, opp_mapped_obj.company_id)
         return True
 
 
