@@ -118,6 +118,9 @@ class ProductTypeDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
 class ProductCategoryList(BaseListMixin, BaseCreateMixin):
     queryset = ProductCategory.objects
     search_fields = ['title']
+    filterset_fields = {
+        'id': ['exact', 'in']
+    }
     serializer_list = ProductCategoryListSerializer
     serializer_create = ProductCategoryCreateSerializer
     serializer_detail = ProductCategoryDetailSerializer
@@ -268,6 +271,7 @@ class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
         'group': ['exact', 'in'],
         'group_id': ['exact', 'in'],
         'group__code': ['exact'],
+        'group__is_default': ['exact'],
     }
 
     def get_queryset(self):
@@ -540,6 +544,7 @@ class ProductForSaleList(BaseListMixin):
     search_fields = ['title', 'code', 'description', 'general_product_category__title']
     filterset_fields = {
         'id': ['exact', 'in'],
+        'general_product_category_id': ['exact', 'in'],
         'general_product_types_mapped__is_goods': ['exact'],
         'general_product_types_mapped__is_finished_goods': ['exact'],
         'general_product_types_mapped__is_material': ['exact'],

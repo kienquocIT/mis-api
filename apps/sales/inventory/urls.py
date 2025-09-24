@@ -2,7 +2,7 @@ from django.urls import path
 
 from apps.sales.inventory.views import (
     GoodsReceiptList, GoodsReceiptDetail, GoodsTransferList, GoodsTransferDetail,
-    InventoryAdjustmentList, InventoryAdjustmentDetail, InventoryAdjustmentGRList, GoodsIssueList,
+    InventoryAdjustmentList, InventoryAdjustmentDetail, InventoryAdjustmentProductGRList, GoodsIssueList,
     GoodsIssueDetail, InventoryAdjustmentProductList, SaleOrderListForGoodsReturn, DeliveryListForGoodsReturn,
     GoodsReturnList, GoodsReturnDetail, GoodsDetailList, GoodsDetailDataList,
     GoodsRegistrationList,
@@ -16,7 +16,7 @@ from apps.sales.inventory.views import (
     ProductionOrderDetailForGIS, InventoryAdjustmentListForGIS, InventoryAdjustmentDetailForGIS,
     ProductWareHouseSerialListForGIS, ProductWareHouseLotListForGIS, ProductWareHouseListForGIS, WorkOrderListForGIS,
     WorkOrderDetailForGIS, GoodsIssueProductList, GoodsDetailListImportDB, GoodsDetailSerialDataList, GoodsRecoveryList,
-    GoodsRecoveryDetail
+    GoodsRecoveryDetail, InventoryAdjustmentDDList
 )
 
 urlpatterns = [
@@ -30,10 +30,11 @@ urlpatterns = [
     # inventory adjustment
     path('inventory-adjustments', InventoryAdjustmentList.as_view(), name='InventoryAdjustmentList'),
     path(
-        'inventory-adjustments-gr',
-        InventoryAdjustmentGRList.as_view(),
-        name='InventoryAdjustmentGRList'
+        'inventory-adjustments-product-gr',
+        InventoryAdjustmentProductGRList.as_view(),
+        name='InventoryAdjustmentProductGRList'
     ),
+    path('inventory-adjustments-dropdown', InventoryAdjustmentDDList.as_view(), name='InventoryAdjustmentDDList'),
     path('inventory-adjustment/<str:pk>', InventoryAdjustmentDetail.as_view(), name='InventoryAdjustmentDetail'),
     path(
         'inventory-adjustment/product/list/<str:inventory_adjustment_mapped_id>',

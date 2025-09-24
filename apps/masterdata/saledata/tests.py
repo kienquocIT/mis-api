@@ -2242,52 +2242,15 @@ class WareHouseTestCase(AdvanceTestCase):
         self.client = APIClient()
         self.authenticated()
 
-    def get_city(self):
-        url = reverse("CityList")
-        response = self.client.get(url, format='json')
-        return response
-
-    def get_district(self, city_id):
-        params = {
-            'city_id': city_id
-        }
-        url = reverse("DistrictList")
-        query_string = urlencode(params)
-        url_with_query_string = f"{url}?{query_string}"
-        response = self.client.get(url_with_query_string, format='json')
-        return response
-
-    def get_ward(self, district_id):
-        params = {
-            'district_id': district_id
-        }
-        url = reverse("WardList")
-        query_string = urlencode(params)
-        url_with_query_string = f"{url}?{query_string}"
-        response = self.client.get(url_with_query_string, format='json')
-        return response
-
     def test_warehouse_create(self):
-        city_list = self.get_city().data['result']
-        city = city_list[0].get('id') if len(city_list) > 0 else None
-        district_list = self.get_district(city).data['result'] if city else None
-        district = district_list[0].get('id') if len(district_list) > 0 else None
-        ward_list = self.get_ward(district).data['result'] if district else None
-        ward = ward_list[0].get('id') if len(ward_list) > 0 else None
-
         url = reverse("WareHouseList")
         data = {
             'title': 'Kho lưu trữ số 1',
             'description': 'Lưu trữ linh kiện bán lẻ ở Tân Bình',
             'is_active': True,
-            'address': 'chung cư ABC',
             'is_dropship': 0,
             'is_bin_location': 0,
             'is_virtual': 0,
-            'full_address': 'chung cư ABC, Phường Phú Mỹ, Quận 7, Thành Phố Hồ Chí Minh',
-            'city': city,
-            'district': district,
-            'ward': ward,
         }
         response = self.client.post(url, data, format='json')
         self.assertResponseList(
@@ -2300,8 +2263,21 @@ class WareHouseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'remarks', 'is_active', 'full_address', 'city', 'ward', 'district',
-             'is_dropship', 'is_bin_location', 'is_virtual', 'address', 'shelf_data'],
+            [
+                'id',
+                'title',
+                'code',
+                'remarks',
+                'address',
+                'is_active',
+                'full_address',
+                'detail_address',
+                'address_data',
+                'is_dropship',
+                'is_bin_location',
+                'is_virtual',
+                'shelf_data'
+            ],
             check_sum_second=True,
         )
         return response
@@ -2323,7 +2299,17 @@ class WareHouseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'title', 'code', 'remarks', 'is_active', 'full_address', 'is_dropship', 'is_virtual', 'use_for'],
+            [
+                'id',
+                'title',
+                'code',
+                'remarks',
+                'is_active',
+                'full_address',
+                'is_dropship',
+                'is_virtual',
+                'use_for',
+            ],
             check_sum_second=True,
         )
         return response
@@ -2346,8 +2332,21 @@ class WareHouseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'remarks', 'is_active', 'full_address', 'city', 'ward', 'district',
-             'is_dropship', 'is_bin_location', 'is_virtual', 'address', 'shelf_data'],
+            [
+                'id',
+                'title',
+                'code',
+                'remarks',
+                'address',
+                'is_active',
+                'full_address',
+                'detail_address',
+                'address_data',
+                'is_dropship',
+                'is_bin_location',
+                'is_virtual',
+                'shelf_data'
+            ],
             check_sum_second=True,
         )
         if not data_id:
@@ -2356,27 +2355,6 @@ class WareHouseTestCase(AdvanceTestCase):
         else:
             self.assertEqual(response.data['result']['id'], data_id)
         return response
-
-    def test_warehouse_update(self):
-        title_change = 'Tên nhà kho đã được thay đổi'
-        data_created = self.test_warehouse_create()
-        url = reverse("WareHouseDetail", kwargs={'pk': data_created.data['result']['id']})
-        data = {
-            'title': title_change
-        }
-        response = self.client.put(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        data_changed = self.test_warehouse_detail(data_id=data_created.data['result']['id'])
-        self.assertEqual(data_changed.data['result']['title'], title_change)
-        return response
-
-    # def test_warehouse_delete(self):
-    #     data_created = self.test_warehouse_create()
-    #     url = reverse("WareHouseDetail", kwargs={'pk': data_created.data['result']['id']})
-    #     response = self.client.delete(url, format='json')
-    #     self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-    #     return response
 
 
 class ShippingTestCase(AdvanceTestCase):

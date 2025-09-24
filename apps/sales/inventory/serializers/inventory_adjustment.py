@@ -297,66 +297,190 @@ class IACommonFunc:
 
 
 # Inventory adjustment list use for other apps
-class IAGRListSerializer(serializers.ModelSerializer):
-    gr_products_data = serializers.SerializerMethodField()
+class IAProductGRListSerializer(serializers.ModelSerializer):
+    ia_item_id = serializers.SerializerMethodField()
+    pr_products_data = serializers.SerializerMethodField()
+    product_id = serializers.SerializerMethodField()
+    product_data = serializers.SerializerMethodField()
+    uom_id = serializers.SerializerMethodField()
+    uom_data = serializers.SerializerMethodField()
+    gr_warehouse_data = serializers.SerializerMethodField()
+    product_quantity_order_actual = serializers.SerializerMethodField()
+    product_unit_price = serializers.SerializerMethodField()
+    product_subtotal_price = serializers.SerializerMethodField()
+    product_cost_price = serializers.SerializerMethodField()
+    gr_completed_quantity = serializers.SerializerMethodField()
+    gr_remain_quantity = serializers.SerializerMethodField()
 
+    class Meta:
+        model = InventoryAdjustmentItem
+        fields = (
+            'ia_item_id',
+            'pr_products_data',
+            'product_id',
+            'product_data',
+            'uom_id',
+            'uom_data',
+            'gr_warehouse_data',
+            'product_quantity_order_actual',
+            'select_for_action',
+            'action_status',
+            'product_unit_price',
+            'product_subtotal_price',
+            'product_cost_price',
+            'gr_completed_quantity',
+            'gr_remain_quantity',
+        )
+
+    @classmethod
+    def calculate(cls, obj):
+        difference = obj.count - obj.book_quantity
+        remain = obj.gr_remain_quantity
+        completed = difference - remain
+        return {
+            'difference': difference,
+            'remain': remain,
+            'completed': completed,
+        }
+
+    @classmethod
+    def get_ia_item_id(cls, obj):
+        return str(obj.id)
+
+    @classmethod
+    def get_pr_products_data(cls, obj):
+        return [] if obj else []
+
+    @classmethod
+    def get_product_id(cls, obj):
+        return str(obj.product_mapped_id)
+
+    @classmethod
+    def get_product_data(cls, obj):
+        return {
+            'id': str(obj.product_mapped_id),
+            'title': obj.product_mapped.title,
+            'code': obj.product_mapped.code,
+            'general_traceability_method': obj.product_mapped.general_traceability_method,
+            'description': obj.product_mapped.description,
+            'product_choice': obj.product_mapped.product_choice,
+        } if obj.product_mapped else {}
+
+    @classmethod
+    def get_uom_id(cls, obj):
+        return str(obj.uom_mapped_id)
+
+    @classmethod
+    def get_uom_data(cls, obj):
+        return {
+            'id': str(obj.uom_mapped_id),
+            'title': obj.uom_mapped.title,
+            'code': obj.uom_mapped.code,
+        } if obj.uom_mapped else {}
+
+    @classmethod
+    def get_gr_warehouse_data(cls, obj):
+        return [
+            {
+                'warehouse_id': str(obj.warehouse_mapped_id),
+                'warehouse_data': {
+                    'id': obj.warehouse_mapped_id,
+                    'title': obj.warehouse_mapped.title,
+                    'code': obj.warehouse_mapped.code,
+                } if obj.warehouse_mapped else {},
+            }
+        ]
+
+    @classmethod
+    def get_product_quantity_order_actual(cls, obj):
+        calculate = cls.calculate(obj)
+        return calculate.get('difference', 0)
+
+    @classmethod
+    def get_product_unit_price(cls, obj):
+        return obj.product_mapped.get_cost_info_by_warehouse(
+            warehouse_id=obj.warehouse_mapped_id, get_type=1
+        )
+
+    @classmethod
+    def get_product_subtotal_price(cls, obj):
+        return 0 if obj else 0
+
+    @classmethod
+    def get_product_cost_price(cls, obj):
+        return obj.product_mapped.get_cost_info_by_warehouse(
+            warehouse_id=obj.warehouse_mapped_id, get_type=1
+        )
+
+    @classmethod
+    def get_gr_completed_quantity(cls, obj):
+        calculate = cls.calculate(obj)
+        return calculate.get('completed', 0)
+
+    @classmethod
+    def get_gr_remain_quantity(cls, obj):
+        calculate = cls.calculate(obj)
+        return calculate.get('remain', 0)
+
+    # @classmethod
+    # def get_gr_products_data(cls, obj):
+    #     result = []
+    #     for ia_product in obj.inventory_adjustment_item_mapped.all():
+    #         difference = ia_product.count - ia_product.book_quantity
+    #         remain = ia_product.gr_remain_quantity
+    #         completed = difference - remain
+    #         if remain > 0:
+    #             result.append({
+    #                 'ia_item_id': str(ia_product.id),
+    #                 'pr_products_data': [],
+    #                 'product_id': str(ia_product.product_mapped_id),
+    #                 'product_data': {
+    #                     'id': str(ia_product.product_mapped_id),
+    #                     'title': ia_product.product_mapped.title,
+    #                     'code': ia_product.product_mapped.code,
+    #                     'general_traceability_method': ia_product.product_mapped.general_traceability_method,
+    #                     'description': ia_product.product_mapped.description,
+    #                     'product_choice': ia_product.product_mapped.product_choice,
+    #                 } if ia_product.product_mapped else {},
+    #                 'uom_id': str(ia_product.uom_mapped_id),
+    #                 'uom_data': {
+    #                     'id': str(ia_product.uom_mapped_id),
+    #                     'title': ia_product.uom_mapped.title,
+    #                     'code': ia_product.uom_mapped.code,
+    #                 } if ia_product.uom_mapped else {},
+    #                 'gr_warehouse_data': [
+    #                     {
+    #                         'warehouse_id': str(ia_product.warehouse_mapped_id),
+    #                         'warehouse_data': {
+    #                             'id': ia_product.warehouse_mapped_id,
+    #                             'title': ia_product.warehouse_mapped.title,
+    #                             'code': ia_product.warehouse_mapped.code,
+    #                         } if ia_product.warehouse_mapped else {},
+    #                     }
+    #                 ],
+    #                 'product_quantity_order_actual': difference if difference > 0 else 0,
+    #                 'quantity_import': difference,
+    #                 'select_for_action': ia_product.select_for_action,
+    #                 'action_status': ia_product.action_status,
+    #                 'product_unit_price': ia_product.product_mapped.get_cost_info_by_warehouse(
+    #                     warehouse_id=ia_product.warehouse_mapped_id, get_type=1
+    #                 ),
+    #                 'product_subtotal_price': 0,
+    #                 'product_cost_price': ia_product.product_mapped.get_cost_info_by_warehouse(
+    #                     warehouse_id=ia_product.warehouse_mapped_id, get_type=1
+    #                 ),
+    #                 'gr_completed_quantity': completed if completed > 0 else 0,
+    #                 'gr_remain_quantity': remain,
+    #             })
+    #     return result
+
+
+class InventoryAdjustmentDDListSerializer(serializers.ModelSerializer):
     class Meta:
         model = InventoryAdjustment
         fields = (
             'id',
-            'code',
             'title',
-            'gr_products_data',
+            'code',
+            'date_created',
         )
-
-    @classmethod
-    def get_gr_products_data(cls, obj):
-        result = []
-        for ia_product in obj.inventory_adjustment_item_mapped.all():
-            difference = ia_product.count - ia_product.book_quantity
-            remain = ia_product.gr_remain_quantity
-            completed = difference - remain
-            if remain > 0:
-                result.append({
-                    'ia_item_id': str(ia_product.id),
-                    'pr_products_data': [],
-                    'product_id': str(ia_product.product_mapped_id),
-                    'product_data': {
-                        'id': str(ia_product.product_mapped_id),
-                        'title': ia_product.product_mapped.title,
-                        'code': ia_product.product_mapped.code,
-                        'general_traceability_method': ia_product.product_mapped.general_traceability_method,
-                        'description': ia_product.product_mapped.description,
-                        'product_choice': ia_product.product_mapped.product_choice,
-                    } if ia_product.product_mapped else {},
-                    'uom_id': str(ia_product.uom_mapped_id),
-                    'uom_data': {
-                        'id': str(ia_product.uom_mapped_id),
-                        'title': ia_product.uom_mapped.title,
-                        'code': ia_product.uom_mapped.code,
-                    } if ia_product.uom_mapped else {},
-                    'gr_warehouse_data': [
-                        {
-                            'warehouse_id': str(ia_product.warehouse_mapped_id),
-                            'warehouse_data': {
-                                'id': ia_product.warehouse_mapped_id,
-                                'title': ia_product.warehouse_mapped.title,
-                                'code': ia_product.warehouse_mapped.code,
-                            } if ia_product.warehouse_mapped else {},
-                        }
-                    ],
-                    'product_quantity_order_actual': difference if difference > 0 else 0,
-                    'quantity_import': difference,
-                    'select_for_action': ia_product.select_for_action,
-                    'action_status': ia_product.action_status,
-                    'product_unit_price': ia_product.product_mapped.get_cost_info_by_warehouse(
-                        warehouse_id=ia_product.warehouse_mapped_id, get_type=1
-                    ),
-                    'product_subtotal_price': 0,
-                    'product_cost_price': ia_product.product_mapped.get_cost_info_by_warehouse(
-                        warehouse_id=ia_product.warehouse_mapped_id, get_type=1
-                    ),
-                    'gr_completed_quantity': completed if completed > 0 else 0,
-                    'gr_remain_quantity': remain,
-                })
-        return result

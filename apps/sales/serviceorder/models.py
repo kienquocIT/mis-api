@@ -37,6 +37,8 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
         blank=True,
         related_name='service_order_attachment_m2m'
     )
+    exchange_rate_data = models.JSONField(default=dict)
+
     # expense value
     expense_pretax_value = models.FloatField(default=0)
     expense_tax_value = models.FloatField(default=0)
@@ -187,8 +189,10 @@ class ServiceOrderWorkOrderContribution(SimpleAbstractModel):
     contribution_percent = models.FloatField(default=0)
     balance_quantity = models.FloatField(default=0)
     delivered_quantity = models.IntegerField(default=0)
+    unit_cost = models.FloatField(default=0)
+    total_cost = models.FloatField(default=0)
 
-    #package feature
+    # package feature
     has_package = models.BooleanField(default=False)
     package_data = models.JSONField(default=list, null=True)
 

@@ -983,7 +983,8 @@ def re_runtime_again(doc_id):
                 doc_obj = model_app.objects.filter(id=doc_id).first()
                 if doc_obj:
                     doc_obj.system_status = 0
-                    doc_obj.save(update_fields=['system_status'])
+                    doc_obj.code = ''
+                    doc_obj.save(update_fields=['system_status', 'code'])
         runtime.delete()
     print("re_runtime_again successfully.")
     return True

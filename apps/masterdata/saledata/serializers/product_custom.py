@@ -20,6 +20,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     inventory_information = serializers.SerializerMethodField()
     bom_check_data = serializers.SerializerMethodField()
     bom_data = serializers.SerializerMethodField()
+    duration_unit = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -29,7 +30,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'general_information', 'sale_information', 'purchase_information',
             'price_list', 'product_choice', 'supplied_by', 'inventory_information',
             'general_traceability_method', 'bom_check_data', 'bom_data', 'standard_price',
-            'avatar_img',
+            'avatar_img', 'duration_unit',
         )
 
     @classmethod
@@ -155,6 +156,14 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 } if bom.opportunity else {}
             }
         return {}
+
+    @classmethod
+    def get_duration_unit(cls, obj):
+        return {
+            'id': str(obj.duration_unit_id), 'title': obj.duration_unit.title,
+            'code': obj.duration_unit.code, 'ratio': obj.duration_unit.ratio,
+            'rounding': obj.duration_unit.rounding, 'is_referenced_unit': obj.duration_unit.is_referenced_unit
+        } if obj.duration_unit else {}
 
 
 class ProductForSaleDetailSerializer(serializers.ModelSerializer):

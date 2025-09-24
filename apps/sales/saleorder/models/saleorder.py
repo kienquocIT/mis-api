@@ -335,6 +335,14 @@ class SaleOrderProduct(MasterDataAbstractModel):
         null=True
     )
     uom_data = models.JSONField(default=dict, help_text='data json of uom')
+    uom_time = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="unit",
+        related_name="sale_order_product_uom_time",
+        null=True
+    )
+    uom_time_data = models.JSONField(default=dict, help_text='data json of uom')
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
@@ -344,12 +352,13 @@ class SaleOrderProduct(MasterDataAbstractModel):
     )
     tax_data = models.JSONField(default=dict, help_text='data json of tax')
     # product information
-    product_title = models.CharField(max_length=100, blank=True, null=True)
+    product_title = models.TextField(blank=True)
     product_code = models.CharField(max_length=100, blank=True, null=True)
     product_description = models.TextField(blank=True, null=True)
     product_uom_title = models.CharField(max_length=100, blank=True, null=True)
     product_uom_code = models.CharField(max_length=100, blank=True, null=True)
     product_quantity = models.FloatField(default=0)
+    product_quantity_time = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
     product_discount_value = models.FloatField(default=0)
     product_discount_amount = models.FloatField(default=0)
@@ -460,7 +469,7 @@ class SaleOrderCost(MasterDataAbstractModel):
     )
     tax_data = models.JSONField(default=dict, help_text='data json of tax')
     # cost information
-    product_title = models.CharField(max_length=100, blank=True, null=True)
+    product_title = models.TextField(blank=True)
     product_code = models.CharField(max_length=100, blank=True, null=True)
     product_uom_title = models.CharField(max_length=100, blank=True, null=True)
     product_uom_code = models.CharField(max_length=100, blank=True, null=True)
@@ -542,7 +551,7 @@ class SaleOrderExpense(MasterDataAbstractModel):
     # expense information
     expense_title = models.CharField(max_length=100, blank=True, null=True)
     expense_code = models.CharField(max_length=100, blank=True, null=True)
-    product_title = models.CharField(max_length=100, blank=True, null=True)
+    product_title = models.TextField(blank=True)
     product_code = models.CharField(max_length=100, blank=True, null=True)
     expense_type_title = models.CharField(max_length=100, blank=True, null=True)
     expense_uom_title = models.CharField(max_length=100, blank=True, null=True)

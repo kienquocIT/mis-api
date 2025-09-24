@@ -455,7 +455,7 @@ class PurchaseOrderListSerializer(AbstractListSerializerModel):
         } if obj.supplier else {}
 
 
-class PurchaseOrderMinimalListSerializer(serializers.ModelSerializer):
+class PurchaseOrderDDListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrder
         fields = (
