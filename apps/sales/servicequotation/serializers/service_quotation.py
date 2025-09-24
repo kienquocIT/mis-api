@@ -1,6 +1,5 @@
 from django.db import transaction
 from rest_framework import serializers
-
 from apps.core.attachments.models import update_files_is_approved
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
@@ -8,36 +7,36 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, ExpenseItem, UnitOfMeasure, Tax
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.opportunity.msg import OpportunityOnlyMsg
-from apps.sales.serviceorder.models import (
-    ServiceOrder, ServiceOrderAttachMapAttachFile, ServiceOrderShipment,
-    ServiceOrderWorkOrder, ServiceOrderServiceDetail, ServiceOrderExpense, ServiceOrderPayment, ServiceOrderContainer,
-    ServiceOrderPackage, ServiceOrderWorkOrderCost, ServiceOrderWorkOrderContribution, ServiceOrderPaymentDetail,
-    ServiceOrderPaymentReconcile, ServiceOrderWorkOrderTask,
+from apps.sales.servicequotation.models import (
+    ServiceQuotation, ServiceQuotationAttachMapAttachFile, ServiceQuotationShipment,
+    ServiceQuotationWorkOrder, ServiceQuotationServiceDetail, ServiceQuotationExpense, ServiceQuotationPayment,
+    ServiceQuotationContainer,
+    ServiceQuotationPackage, ServiceQuotationWorkOrderCost, ServiceQuotationWorkOrderContribution,
+    ServiceQuotationPaymentDetail,
+    ServiceQuotationPaymentReconcile,
 )
-from apps.sales.serviceorder.serializers.service_order_sub import (
-    ServiceOrderShipmentSerializer, ServiceOrderExpenseSerializer,
-    ServiceOrderServiceDetailSerializer, ServiceOrderWorkOrderSerializer, ServiceOrderPaymentSerializer,
+from apps.sales.servicequotation.serializers.service_quotation_sub import (
+    ServiceQuotationShipmentSerializer, ServiceQuotationExpenseSerializer,
+    ServiceQuotationServiceDetailSerializer, ServiceQuotationWorkOrderSerializer, ServiceQuotationPaymentSerializer,
 )
 from apps.shared import (
     AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel,
     SVOMsg, SerializerCommonHandle, SerializerCommonValidate
 )
 
-
 __all__ = [
-    'ServiceOrderListSerializer',
-    'ServiceOrderCreateSerializer',
-    'ServiceOrderDetailSerializer',
-    'ServiceOrderUpdateSerializer',
-    'ServiceOrderDetailDashboardSerializer',
+    'ServiceQuotationListSerializer',
+    'ServiceQuotationCreateSerializer',
+    'ServiceQuotationDetailSerializer',
+    'ServiceQuotationUpdateSerializer',
 ]
 
 
-class ServiceOrderListSerializer(AbstractListSerializerModel):
+class ServiceQuotationListSerializer(AbstractListSerializerModel):
     employee_created = serializers.SerializerMethodField()
 
     class Meta:
-        model = ServiceOrder
+        model = ServiceQuotation
         fields = (
             'id',
             'title',
@@ -53,16 +52,16 @@ class ServiceOrderListSerializer(AbstractListSerializerModel):
         return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
 
-class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
+class ServiceQuotationCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     customer = serializers.UUIDField()
     start_date = serializers.DateField()
     end_date = serializers.DateField()
-    shipment = ServiceOrderShipmentSerializer(many=True)
-    expense = ServiceOrderExpenseSerializer(many=True)
-    service_detail_data = ServiceOrderServiceDetailSerializer(many=True)
-    work_order_data = ServiceOrderWorkOrderSerializer(many=True)
-    payment_data = ServiceOrderPaymentSerializer(many=True)
+    shipment = ServiceQuotationShipmentSerializer(many=True)
+    expense = ServiceQuotationExpenseSerializer(many=True)
+    service_detail_data = ServiceQuotationServiceDetailSerializer(many=True)
+    work_order_data = ServiceQuotationWorkOrderSerializer(many=True)
+    payment_data = ServiceQuotationPaymentSerializer(many=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
     opportunity_id = serializers.UUIDField(required=False, allow_null=True)
     employee_inherit_id = serializers.UUIDField(required=False, allow_null=True)
@@ -70,7 +69,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     def validate_attachment(self, value):
         user = self.context.get('user', None)
         return SerializerCommonValidate.validate_attachment(
-            user=user, model_cls=ServiceOrderAttachMapAttachFile, value=value
+            user=user, model_cls=ServiceQuotationAttachMapAttachFile, value=value
         )
 
     @classmethod
@@ -114,7 +113,8 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'error': SVOMsg.DATE_COMPARE_ERROR})
 
         expense_data = validate_data.get('expense', [])
-        validate_data = ServiceOrderCommonFunc.calculate_total_expense(validate_data, expense_data)
+        validate_data = ServiceQuotationCommonFunc.calculate_total_expense(validate_data, expense_data)
+
         return validate_data
 
     @decorator_run_workflow
@@ -126,31 +126,37 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             service_detail_data = validated_data.pop('service_detail_data', [])
             work_order_data = validated_data.pop('work_order_data', [])
             payment_data = validated_data.pop('payment_data', [])
-            service_order_obj = ServiceOrder.objects.create(**validated_data)
-            shipment_map_id = ServiceOrderCommonFunc.create_shipment(service_order_obj, shipment_data)
-            ServiceOrderCommonFunc.create_expense(service_order_obj, expense_data)
+
+            service_quotation_obj = ServiceQuotation.objects.create(**validated_data)
+
+            shipment_map_id = ServiceQuotationCommonFunc.create_shipment(service_quotation_obj, shipment_data)
+            ServiceQuotationCommonFunc.create_expense(service_quotation_obj, expense_data)
+
             SerializerCommonHandle.handle_attach_file(
-                relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
-                model_cls=ServiceOrderAttachMapAttachFile,
-                instance=service_order_obj,
+                relate_app=Application.objects.filter(id="c9e131ec-760c-45af-8ae6-5349f2bb542e").first(),
+                model_cls=ServiceQuotationAttachMapAttachFile,
+                instance=service_quotation_obj,
                 attachment_result=attachment
             )
-            service_detail_id_map = ServiceOrderCommonFunc.create_service_detail(service_order_obj, service_detail_data)
-            ServiceOrderCommonFunc.create_work_order(
-                service_order_obj, work_order_data, service_detail_id_map, shipment_map_id
-            )
-            ServiceOrderCommonFunc.create_payment(service_order_obj, payment_data, service_detail_id_map)
 
-            # adhoc case after create SO
+            service_detail_id_map = ServiceQuotationCommonFunc.create_service_detail(service_quotation_obj,
+                                                                                     service_detail_data)
+            ServiceQuotationCommonFunc.create_work_order(
+                service_quotation_obj, work_order_data, service_detail_id_map, shipment_map_id
+            )
+            ServiceQuotationCommonFunc.create_payment(service_quotation_obj, payment_data, service_detail_id_map)
+
+            # adhoc case after create SQ
             update_files_is_approved(
-                ServiceOrderAttachMapAttachFile.objects.filter(
-                    service_order=service_order_obj, attachment__is_approved=False
+                ServiceQuotationAttachMapAttachFile.objects.filter(
+                    service_quotation=service_quotation_obj, attachment__is_approved=False
                 )
             )
-            return service_order_obj
+
+            return service_quotation_obj
 
     class Meta:
-        model = ServiceOrder
+        model = ServiceQuotation
         fields = (
             'opportunity_id',
             'employee_inherit_id',
@@ -168,7 +174,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
         )
 
 
-class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
+class ServiceQuotationDetailSerializer(AbstractDetailSerializerModel):
     shipment = serializers.SerializerMethodField()
     expense = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
@@ -181,7 +187,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_shipment(cls, obj):
         shipment_list = []
-        for item in obj.service_order_shipment_service_order.all():
+        for item in obj.service_quotation_shipment_service_quotation.all():
             is_container = item.is_container
             if is_container:
                 shipment_list.append(
@@ -207,7 +213,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                         'id': str(item.id),
                         'packageName': item.title,
                         'packageType': {
-                            'id':  str(item.package_type.id),
+                            'id': str(item.package_type.id),
                             'code': item.package_type.code,
                             'title': item.package_type.title,
                         },
@@ -275,8 +281,6 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'quantity': work_order.quantity,
             'unit_cost': work_order.unit_cost,
             'total_value': work_order.total_value,
-            'work_status': work_order.work_status,
-
             # nested costs
             'cost_data': [{
                 'id': cost.id,
@@ -290,7 +294,6 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                 'total_value': cost.total_value,
                 'exchanged_total_value': cost.exchanged_total_value,
             } for cost in work_order.work_order_costs.all()],
-
             # nested contributions
             'product_contribution_data': [{
                 'id': contribution.id,
@@ -306,21 +309,6 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                 'has_package': contribution.has_package,
                 'package_data': contribution.package_data,
             } for contribution in work_order.work_order_contributions.all()],
-
-            # tasks
-            'task_data': [
-                {
-                    'id': str(work_order_task.task_id),
-                    'title': work_order_task.task.title,
-                    'employee_created': work_order_task.task.employee_created.get_detail_minimal()
-                    if work_order_task.task.employee_created else {},
-                    'employee_inherit': work_order_task.task.employee_inherit.get_detail_minimal()
-                    if work_order_task.task.employee_inherit else {},
-                    'percent_completed': work_order_task.task.percent_completed,
-                } if work_order_task.task else {}
-                for work_order_task in work_order.service_order_work_order_task_wo.all()
-            ],
-
         } for work_order in obj.work_orders.all()]
 
     @classmethod
@@ -336,7 +324,6 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'reconcile_value': payment.reconcile_value,
             'receivable_value': payment.receivable_value,
             'due_date': payment.due_date,
-
             # nested details
             'payment_detail_data': [{
                 'id': detail.id,
@@ -348,18 +335,16 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                 'total_reconciled_value': detail.total_reconciled_value,
                 'issued_value': detail.issued_value,
                 'balance_value': detail.balance_value,
-
                 'tax_value': detail.tax_value,
                 'tax_data': detail.service_detail.tax_data if payment.is_invoice_required else None,
                 'reconcile_value': detail.reconcile_value,
                 'receivable_value': detail.receivable_value,
-
                 # nested reconciles
                 'reconcile_data': [{
                     'id': reconcile.id,
                     'advance_payment_detail_id': reconcile.advance_payment_detail_id,
-                    'advance_payment_id': reconcile.advance_payment_detail.service_order_payment.id
-                    if reconcile.advance_payment_detail.service_order_payment else None,
+                    'advance_payment_id': reconcile.advance_payment_detail.service_quotation_payment.id
+                    if reconcile.advance_payment_detail.service_quotation_payment else None,
                     'payment_detail_id': reconcile.payment_detail_id,
                     'service_id': reconcile.service_detail_id if reconcile.service_detail else None,
                     'installment': reconcile.installment,
@@ -367,7 +352,6 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                     'reconcile_value': reconcile.reconcile_value,
                 } for reconcile in detail.payment_detail_reconciles.all()]
             } for detail in payment.payment_details.all()]
-
         } for payment in obj.payments.all()]
 
     @classmethod
@@ -381,7 +365,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'expense_price': item.expense_price,
             'tax_data': item.tax_data,
             'subtotal_price': item.subtotal_price
-        } for item in obj.service_order_expense_service_order.all()]
+        } for item in obj.service_quotation_expense_service_quotation.all()]
 
     @classmethod
     def get_opportunity(cls, obj):
@@ -394,7 +378,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
         } if obj.opportunity else {}
 
     class Meta:
-        model = ServiceOrder
+        model = ServiceQuotation
         fields = (
             'opportunity',
             'employee_inherit',
@@ -418,25 +402,25 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
         )
 
 
-class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
+class ServiceQuotationUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     customer = serializers.UUIDField()
     start_date = serializers.DateField()
     end_date = serializers.DateField()
-    shipment = ServiceOrderShipmentSerializer(many=True)
-    expense = ServiceOrderExpenseSerializer(many=True)
+    shipment = ServiceQuotationShipmentSerializer(many=True)
+    expense = ServiceQuotationExpenseSerializer(many=True)
     expense_pretax_value = serializers.FloatField(required=False, allow_null=True)
     expense_tax_value = serializers.FloatField(required=False, allow_null=True)
     expense_total_value = serializers.FloatField(required=False, allow_null=True)
-    service_detail_data = ServiceOrderServiceDetailSerializer(many=True)
-    work_order_data = ServiceOrderWorkOrderSerializer(many=True)
-    payment_data = ServiceOrderPaymentSerializer(many=True)
+    service_detail_data = ServiceQuotationServiceDetailSerializer(many=True)
+    work_order_data = ServiceQuotationWorkOrderSerializer(many=True)
+    payment_data = ServiceQuotationPaymentSerializer(many=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
         return SerializerCommonValidate.validate_attachment(
-            user=user, model_cls=ServiceOrderAttachMapAttachFile, value=value, doc_id=self.instance.id
+            user=user, model_cls=ServiceQuotationAttachMapAttachFile, value=value, doc_id=self.instance.id
         )
 
     @classmethod
@@ -462,7 +446,8 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'error': SVOMsg.DATE_COMPARE_ERROR})
 
         expense_data = validate_data.get('expense', [])
-        validate_data = ServiceOrderCommonFunc.calculate_total_expense(validate_data, expense_data)
+        validate_data = ServiceQuotationCommonFunc.calculate_total_expense(validate_data, expense_data)
+
         return validate_data
 
     @decorator_run_workflow
@@ -478,29 +463,33 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
             for key, value in validated_data.items():
                 setattr(instance, key, value)
             instance.save()
-            shipment_map_id = ServiceOrderCommonFunc.create_shipment(instance, shipment_data)
 
-            ServiceOrderCommonFunc.create_shipment(instance, shipment_data)
-            ServiceOrderCommonFunc.create_expense(instance, expense_data)
+            shipment_map_id = ServiceQuotationCommonFunc.create_shipment(instance, shipment_data)
+            ServiceQuotationCommonFunc.create_expense(instance, expense_data)
+
             SerializerCommonHandle.handle_attach_file(
-                relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
-                model_cls=ServiceOrderAttachMapAttachFile,
+                relate_app=Application.objects.filter(id="c9e131ec-760c-45af-8ae6-5349f2bb542e").first(),
+                model_cls=ServiceQuotationAttachMapAttachFile,
                 instance=instance,
                 attachment_result=attachment
             )
-            service_detail_id_map = ServiceOrderCommonFunc.create_service_detail(instance, service_detail_data)
-            ServiceOrderCommonFunc.create_work_order(instance, work_order_data, service_detail_id_map, shipment_map_id)
-            ServiceOrderCommonFunc.create_payment(instance, payment_data, service_detail_id_map)
+
+            service_detail_id_map = ServiceQuotationCommonFunc.create_service_detail(instance, service_detail_data)
+            ServiceQuotationCommonFunc.create_work_order(instance, work_order_data, service_detail_id_map,
+                                                         shipment_map_id)
+            ServiceQuotationCommonFunc.create_payment(instance, payment_data, service_detail_id_map)
+
             # adhoc case update file to KMS
             update_files_is_approved(
-                ServiceOrderAttachMapAttachFile.objects.filter(
-                    service_order=instance, attachment__is_approved=False
+                ServiceQuotationAttachMapAttachFile.objects.filter(
+                    service_quotation=instance, attachment__is_approved=False
                 )
             )
+
             return instance
 
     class Meta:
-        model = ServiceOrder
+        model = ServiceQuotation
         fields = (
             'title',
             'customer',
@@ -519,98 +508,22 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
         )
 
 
-class ServiceOrderDetailDashboardSerializer(AbstractDetailSerializerModel):
-    contract_value = serializers.SerializerMethodField()
-    contract_value_delivered = serializers.SerializerMethodField()
-    service_order_detail_list = serializers.SerializerMethodField()
-
-    class Meta:
-        model = ServiceOrder
-        fields = (
-            'id',
-            'code',
-            'title',
-            'customer_data',
-            'start_date',
-            'end_date',
-            'contract_value',
-            'contract_value_delivered',
-            'service_order_detail_list'
-        )
-
-    @classmethod
-    def get_contract_value(cls, obj):
-        return sum(list(obj.service_details.all().values_list('total_value', flat=True)))
-
-    @classmethod
-    def get_contract_value_delivered(cls, obj):
-        return sum(list(obj.service_details.all().values_list('delivery_balance_value', flat=True)))
-
-    @classmethod
-    def get_service_order_detail_list(cls, obj):
-        service_order_detail_list = []
-        for item in obj.service_details.all():
-            service_order_detail_list.append({
-                'id': item.id,
-                'product_data': {
-                    'id': str(item.product_id),
-                    'code': item.product.code,
-                    'title': item.product.title
-                } if item.product else {},
-                'description': item.description,
-                'total_value': item.total_value,
-                'total_contribution_percent': item.total_contribution_percent,
-                'work_order_contribute_list': [{
-                    'id': str(wo_ctb_item.id),
-                    'is_selected': wo_ctb_item.is_selected,
-                    'title': wo_ctb_item.title,
-                    'contribution_percent': wo_ctb_item.contribution_percent,
-                    'balance_quantity': wo_ctb_item.balance_quantity,
-                    'delivered_quantity': wo_ctb_item.delivered_quantity,
-                    'work_order_data': {
-                        'id': str(wo_ctb_item.work_order.id),
-                        'code': wo_ctb_item.work_order.code,
-                        'title': wo_ctb_item.work_order.title,
-                        'start_date': wo_ctb_item.work_order.start_date,
-                        'end_date': wo_ctb_item.work_order.end_date,
-                        'is_delivery_point': wo_ctb_item.work_order.is_delivery_point,
-                        'quantity': wo_ctb_item.work_order.quantity,
-                        'unit_cost': wo_ctb_item.work_order.unit_cost,
-                        'total_value': wo_ctb_item.work_order.total_value,
-                        'work_status': wo_ctb_item.work_order.work_status,
-                        'task_data_list': [{
-                            'id': str(wo_task_item.task.id),
-                            'code': wo_task_item.task.code,
-                            'title': wo_task_item.task.title,
-                            'remark': wo_task_item.task.remark,
-                            'assignee_data': wo_task_item.task.employee_inherit.get_detail_with_group()
-                            if wo_task_item.task.employee_inherit else {},
-                            'percent_completed': wo_task_item.task.percent_completed,
-                        } for wo_task_item in wo_ctb_item.work_order.service_order_work_order_task_wo.all()]
-                    } if wo_ctb_item.work_order else {},
-                } for wo_ctb_item in item.service_detail_contributions.all().order_by("work_order__order")]
-            })
-        return service_order_detail_list
-
-
-class ServiceOrderCommonFunc:
+class ServiceQuotationCommonFunc:
     @staticmethod
-    def build_shipments(service_order_obj, shipment_data):
+    def build_shipments(service_quotation_obj, shipment_data):
         bulk_info_shipment, bulk_info_container = [], []
         ctn_shipment, ctn_order = 1, 1
-
         for shipment_data_item in shipment_data:
             package_type = shipment_data_item.get("package_type")
             container_type = shipment_data_item.get("container_type")
-
-            shipment_obj = ServiceOrderShipment(
-                service_order=service_order_obj,
+            shipment_obj = ServiceQuotationShipment(
+                service_quotation=service_quotation_obj,
                 order=ctn_shipment,
                 title=shipment_data_item.get("title", ""),
                 container_type_id=container_type.get("id") if container_type else None,
                 package_type_id=package_type.get("id") if package_type else None,
-                company=service_order_obj.company,
-                tenant=service_order_obj.tenant,
+                company=service_quotation_obj.company,
+                tenant=service_quotation_obj.tenant,
                 reference_number=shipment_data_item.get("reference_number"),
                 weight=shipment_data_item.get("weight", 0),
                 dimension=shipment_data_item.get("dimension", 0),
@@ -619,17 +532,16 @@ class ServiceOrderCommonFunc:
                 is_container=shipment_data_item.get("is_container", True),
             )
             bulk_info_shipment.append(shipment_obj)
-
             # get container
             if shipment_obj.is_container:
                 bulk_info_container.append(
-                    ServiceOrderContainer(
-                        service_order=service_order_obj,
+                    ServiceQuotationContainer(
+                        service_quotation=service_quotation_obj,
                         shipment=shipment_obj,
                         order=ctn_order,
                         container_type_id=container_type.get("id") if container_type else None,
-                        company=service_order_obj.company,
-                        tenant=service_order_obj.tenant,
+                        company=service_quotation_obj.company,
+                        tenant=service_quotation_obj.tenant,
                     )
                 )
                 ctn_order += 1
@@ -637,7 +549,7 @@ class ServiceOrderCommonFunc:
         return bulk_info_shipment, bulk_info_container
 
     @staticmethod
-    def build_packages(service_order_obj, shipment_data, container_created):
+    def build_packages(service_quotation_obj, shipment_data, container_created):
         bulk_info_packages = []
         pkg_order = 1
         for shipment_data_item in shipment_data:
@@ -650,30 +562,29 @@ class ServiceOrderCommonFunc:
                 )
                 if ctn_mapped:
                     bulk_info_packages.append(
-                        ServiceOrderPackage(
-                            service_order=service_order_obj,
+                        ServiceQuotationPackage(
+                            service_quotation=service_quotation_obj,
                             shipment=ctn_mapped.shipment,
                             order=pkg_order,
                             package_type_id=package_type.get("id") if package_type else None,
                             container_reference_id=str(ctn_mapped.id),
-                            company=service_order_obj.company,
-                            tenant=service_order_obj.tenant,
+                            company=service_quotation_obj.company,
+                            tenant=service_quotation_obj.tenant,
                         )
                     )
                     pkg_order += 1
         return bulk_info_packages
 
     @staticmethod
-    def create_shipment(service_order_obj, shipment_data):
+    def create_shipment(service_quotation_obj, shipment_data):
         shipment_map_id = {}
-
         # build shipment and containers
-        bulk_info_shipment, bulk_info_container = ServiceOrderCommonFunc.build_shipments(
-            service_order_obj, shipment_data
+        bulk_info_shipment, bulk_info_container = ServiceQuotationCommonFunc.build_shipments(
+            service_quotation_obj, shipment_data
         )
-        ServiceOrderShipment.objects.filter(service_order=service_order_obj).delete()
-        created_shipments = ServiceOrderShipment.objects.bulk_create(bulk_info_shipment)
-        container_created = ServiceOrderContainer.objects.bulk_create(bulk_info_container)
+        ServiceQuotationShipment.objects.filter(service_quotation=service_quotation_obj).delete()
+        created_shipments = ServiceQuotationShipment.objects.bulk_create(bulk_info_shipment)
+        container_created = ServiceQuotationContainer.objects.bulk_create(bulk_info_container)
 
         # Map temp id
         for shipment_data_item, created_shipment_item in zip(shipment_data, created_shipments):
@@ -682,15 +593,15 @@ class ServiceOrderCommonFunc:
                 shipment_map_id[temp_id] = created_shipment_item.id
 
         # build packages
-        bulk_info_packages = ServiceOrderCommonFunc.build_packages(service_order_obj, shipment_data, container_created)
-        ServiceOrderPackage.objects.bulk_create(bulk_info_packages)
+        bulk_info_packages = ServiceQuotationCommonFunc.build_packages(service_quotation_obj, shipment_data,
+                                                                       container_created)
+        ServiceQuotationPackage.objects.bulk_create(bulk_info_packages)
 
         return shipment_map_id
 
     @staticmethod
-    def create_expense(service_order_obj, expense_data):
+    def create_expense(service_quotation_obj, expense_data):
         bulk_info_expense = []
-
         for expense_data_item in expense_data:
             # Resolve UUID → instance
             expense_item_id = expense_data_item.get("expense_item")
@@ -701,8 +612,8 @@ class ServiceOrderCommonFunc:
             uom_obj = UnitOfMeasure.objects.filter(id=uom_id).first() if uom_id else None
             tax_obj = Tax.objects.filter(id=tax_id).first() if tax_id else None
 
-            expense_obj = ServiceOrderExpense(
-                service_order=service_order_obj,
+            expense_obj = ServiceQuotationExpense(
+                service_quotation=service_quotation_obj,
                 title=expense_data_item.get("title"),
                 expense_item=expense_item_obj,
                 expense_item_data={
@@ -726,25 +637,27 @@ class ServiceOrderCommonFunc:
                     "rate": tax_obj.rate,
                 } if tax_obj else {},
                 subtotal_price=expense_data_item.get("quantity", 0) * expense_data_item.get("expense_price", 0),
-                company=service_order_obj.company,
-                tenant=service_order_obj.tenant,
+                company=service_quotation_obj.company,
+                tenant=service_quotation_obj.tenant,
             )
             bulk_info_expense.append(expense_obj)
 
         # Replace old expenses
-        ServiceOrderExpense.objects.filter(service_order=service_order_obj).delete()
-        ServiceOrderExpense.objects.bulk_create(bulk_info_expense)
+        ServiceQuotationExpense.objects.filter(service_quotation=service_quotation_obj).delete()
+        ServiceQuotationExpense.objects.bulk_create(bulk_info_expense)
+
         return True
 
     @staticmethod
-    def create_service_detail(service_order, service_detail_data):
-        service_order_id = service_order.id
+    def create_service_detail(service_quotation, service_detail_data):
+        service_quotation_id = service_quotation.id
         bulk_data = []
         service_detail_id_map = {}
+
         for service_detail in service_detail_data:
             bulk_data.append(
-                ServiceOrderServiceDetail(
-                    service_order_id=service_order_id,
+                ServiceQuotationServiceDetail(
+                    service_quotation_id=service_quotation_id,
                     title=service_detail.get('title'),
                     code=service_detail.get('code'),
                     product_id=service_detail.get('product').id if service_detail.get('product') else None,
@@ -765,8 +678,8 @@ class ServiceOrderCommonFunc:
                 )
             )
 
-        service_order.service_details.all().delete()
-        created_service_details = ServiceOrderServiceDetail.objects.bulk_create(bulk_data)
+        service_quotation.service_details.all().delete()
+        created_service_details = ServiceQuotationServiceDetail.objects.bulk_create(bulk_data)
 
         for frontend_data, backend_data in zip(service_detail_data, created_service_details):
             temp_id = frontend_data.get('id')
@@ -776,12 +689,13 @@ class ServiceOrderCommonFunc:
         return service_detail_id_map
 
     @staticmethod
-    def create_work_order(service_order, work_order_data, service_detail_id_map, shipment_map_id):
-        service_order_id = service_order.id
+    def create_work_order(service_quotation, work_order_data, service_detail_id_map, shipment_map_id):
+        service_quotation_id = service_quotation.id
         bulk_data = []
+
         for work_order in work_order_data:
-            instance = ServiceOrderWorkOrder(
-                service_order_id=service_order_id,
+            instance = ServiceQuotationWorkOrder(
+                service_quotation_id=service_quotation_id,
                 title=work_order.get('title'),
                 code=work_order.get('code'),
                 product_id=work_order.get('product').id if work_order.get('product') else None,
@@ -792,26 +706,17 @@ class ServiceOrderCommonFunc:
                 quantity=work_order.get('quantity'),
                 unit_cost=work_order.get('unit_cost'),
                 total_value=work_order.get('total_value'),
-                work_status=work_order.get('work_status'),
-                task_data=work_order.get('task_data', []),
-                tenant_id=service_order.tenant_id,
-                company_id=service_order.company_id,
+                tenant_id=service_quotation.tenant_id,
+                company_id=service_quotation.company_id,
             )
             bulk_data.append(instance)
 
-        service_order.work_orders.all().delete()
-        created_work_orders = ServiceOrderWorkOrder.objects.bulk_create(bulk_data)
-        for created_work_order in created_work_orders:
-            ServiceOrderWorkOrderTask.objects.bulk_create([ServiceOrderWorkOrderTask(
-                work_order=created_work_order,
-                task_id=task_data.get('id', None),
-                tenant_id=created_work_order.tenant_id,
-                company_id=created_work_order.company_id,
-            ) for task_data in created_work_order.task_data])
+        service_quotation.work_orders.all().delete()
+        created_work_orders = ServiceQuotationWorkOrder.objects.bulk_create(bulk_data)
 
         for instance, raw_data in zip(created_work_orders, work_order_data):
-            ServiceOrderCommonFunc.create_work_order_cost(instance, raw_data.get('cost_data', []))
-            ServiceOrderCommonFunc.create_work_order_contribution(
+            ServiceQuotationCommonFunc.create_work_order_cost(instance, raw_data.get('cost_data', []))
+            ServiceQuotationCommonFunc.create_work_order_contribution(
                 instance,
                 raw_data.get('product_contribution', []),
                 service_detail_id_map,
@@ -823,7 +728,7 @@ class ServiceOrderCommonFunc:
         bulk_data = []
         for cost in cost_data:
             bulk_data.append(
-                ServiceOrderWorkOrderCost(
+                ServiceQuotationWorkOrderCost(
                     work_order=work_order,
                     order=cost.get('order', 0),
                     title=cost.get('title', ''),
@@ -836,9 +741,8 @@ class ServiceOrderCommonFunc:
                     exchanged_total_value=cost.get('exchanged_total_value', 0),
                 )
             )
-
         work_order.work_order_costs.all().delete()
-        ServiceOrderWorkOrderCost.objects.bulk_create(bulk_data)
+        ServiceQuotationWorkOrderCost.objects.bulk_create(bulk_data)
 
     @staticmethod
     def create_work_order_contribution(work_order, contribution_data, service_detail_id_map, shipment_map_id):
@@ -848,14 +752,16 @@ class ServiceOrderCommonFunc:
             service_detail_uuid = service_detail_id_map.get(temp_id)
             if not service_detail_uuid:
                 return
+
             package_data = contribution.get('package_data', [])
             if package_data:
                 for package in package_data:
                     package_temp_id = package.get('id')
                     package_uuid = shipment_map_id.get(package_temp_id)
                     package['id'] = str(package_uuid)
+
             bulk_data.append(
-                ServiceOrderWorkOrderContribution(
+                ServiceQuotationWorkOrderContribution(
                     work_order=work_order,
                     service_detail_id=service_detail_uuid,
                     order=contribution.get('order', 0),
@@ -871,16 +777,17 @@ class ServiceOrderCommonFunc:
                 )
             )
         work_order.work_order_contributions.all().delete()
-        ServiceOrderWorkOrderContribution.objects.bulk_create(bulk_data)
+        ServiceQuotationWorkOrderContribution.objects.bulk_create(bulk_data)
 
     @staticmethod
-    def create_payment(service_order, payment_data, service_detail_id_map):
-        service_order_id = service_order.id
+    def create_payment(service_quotation, payment_data, service_detail_id_map):
+        service_quotation_id = service_quotation.id
         bulk_data = []
+
         for payment in payment_data:
             bulk_data.append(
-                ServiceOrderPayment(
-                    service_order_id=service_order_id,
+                ServiceQuotationPayment(
+                    service_quotation_id=service_quotation_id,
                     installment=payment.get('installment', 0),
                     description=payment.get('description', ''),
                     payment_type=payment.get('payment_type', 1),
@@ -892,12 +799,14 @@ class ServiceOrderCommonFunc:
                     due_date=payment.get('due_date'),
                 )
             )
-        service_order.payments.all().delete()
-        created_payments = ServiceOrderPayment.objects.bulk_create(bulk_data)
+
+        service_quotation.payments.all().delete()
+        created_payments = ServiceQuotationPayment.objects.bulk_create(bulk_data)
+
         payment_detail_id_map = {}
         for instance, raw_data in zip(created_payments, payment_data):
             payment_detail_id_map.update(
-                ServiceOrderCommonFunc.create_payment_detail(
+                ServiceQuotationCommonFunc.create_payment_detail(
                     instance,
                     raw_data.get('payment_detail_data', []),
                     service_detail_id_map
@@ -905,7 +814,7 @@ class ServiceOrderCommonFunc:
             )
 
         for instance, raw_data in zip(created_payments, payment_data):
-            ServiceOrderCommonFunc.create_reconcile_data(
+            ServiceQuotationCommonFunc.create_reconcile_data(
                 raw_data.get('reconcile_data', []),
                 payment_detail_id_map,
                 service_detail_id_map
@@ -915,14 +824,16 @@ class ServiceOrderCommonFunc:
     def create_payment_detail(payment, payment_detail_data, service_detail_id_map):
         bulk_data = []
         payment_detail_id_map = {}
+
         for payment_detail in payment_detail_data:
             temp_id = payment_detail.get('service_id')
             payment_detail_uuid = service_detail_id_map.get(temp_id)
             if not payment_detail_uuid:
                 return {}
+
             bulk_data.append(
-                ServiceOrderPaymentDetail(
-                    service_order_payment=payment,
+                ServiceQuotationPaymentDetail(
+                    service_quotation_payment=payment,
                     service_detail_id=payment_detail_uuid,
                     title=payment_detail.get("title", ""),
                     sub_total_value=payment_detail.get("sub_total_value", 0),
@@ -937,7 +848,7 @@ class ServiceOrderCommonFunc:
                 )
             )
 
-        created_payment_details = ServiceOrderPaymentDetail.objects.bulk_create(bulk_data)
+        created_payment_details = ServiceQuotationPaymentDetail.objects.bulk_create(bulk_data)
 
         for frontend_data, backend_data in zip(payment_detail_data, created_payment_details):
             temp_id = frontend_data.get('id')
@@ -949,6 +860,7 @@ class ServiceOrderCommonFunc:
     @staticmethod
     def create_reconcile_data(reconcile_data, payment_detail_id_map, service_detail_id_map):
         bulk_data = []
+
         for reconcile in reconcile_data:
             temp_service_id = reconcile.get('service_id')
             service_uuid = service_detail_id_map.get(temp_service_id)
@@ -966,7 +878,7 @@ class ServiceOrderCommonFunc:
                 return
 
             bulk_data.append(
-                ServiceOrderPaymentReconcile(
+                ServiceQuotationPaymentReconcile(
                     advance_payment_detail_id=advance_payment_detail_uuid,
                     payment_detail_id=payment_detail_uuid,
                     service_detail_id=service_uuid,
@@ -975,21 +887,26 @@ class ServiceOrderCommonFunc:
                     reconcile_value=reconcile.get('reconcile_value', 0)
                 )
             )
-        ServiceOrderPaymentReconcile.objects.bulk_create(bulk_data)
+
+        ServiceQuotationPaymentReconcile.objects.bulk_create(bulk_data)
 
     @staticmethod
-    def calculate_total_expense(service_order_obj, expense_data: []):
-        service_order_obj['expense_pretax_value'] = 0
-        service_order_obj['expense_tax_value'] = 0
-        service_order_obj['expense_total_value'] = 0
+    def calculate_total_expense(service_quotation_obj, expense_data: []):
+        service_quotation_obj['expense_pretax_value'] = 0
+        service_quotation_obj['expense_tax_value'] = 0
+        service_quotation_obj['expense_total_value'] = 0
+
         if len(expense_data) > 0:
             for expense_item in expense_data:
                 pretax_value = expense_item.get('quantity', 0) * expense_item.get('expense_price', 0)
-                service_order_obj['expense_pretax_value'] += pretax_value
+                service_quotation_obj['expense_pretax_value'] += pretax_value
+
                 tax_id = expense_item.get("tax")
                 tax_obj = Tax.objects.filter(id=tax_id).first() if tax_id else None
                 tax_rate = tax_obj.rate if tax_obj else 0
-                service_order_obj['expense_tax_value'] += pretax_value * tax_rate / 100
-            service_order_obj['expense_total_value'] = service_order_obj['expense_pretax_value'] + service_order_obj[
-                'expense_tax_value']
-        return service_order_obj
+                service_quotation_obj['expense_tax_value'] += pretax_value * tax_rate / 100
+
+            service_quotation_obj['expense_total_value'] = service_quotation_obj['expense_pretax_value'] + \
+                                                           service_quotation_obj['expense_tax_value']
+
+        return service_quotation_obj

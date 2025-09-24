@@ -3585,6 +3585,16 @@ AppProp_SaleData_ServiceOrder_data = {
     }
 }
 
+AppProp_SaleData_ServiceQuotation_data = {
+    "fd0e714b-5a1e-4630-ac49-383b454410fa": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+        'is_wf_zone': True,
+    }
+}
+
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
