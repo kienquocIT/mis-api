@@ -356,7 +356,11 @@ def processing_folder(doc_id, doc_app):
                                 'parent_n': current_folder_path
                             }
                         )
-
+                    # check folder work order
+                    if current_folder_path.title == 'Work order' and current_folder_path.is_system is True:
+                        folder_obj.delete()
+                        folder_obj = current_folder_path
+                        break
                     folder_obj.parent_n = current_folder_path
                     folder_obj.save(update_fields=['parent_n'])
                     break
@@ -798,7 +802,9 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
 
             try:
                 with transaction.atomic():
+                    # handle add new files
                     if new_objs:
+                        # check and get folder system of files
                         folder_obj = processing_folder(doc_id, doc_app)
 
                         counter = len(new_objs) + 1
@@ -807,11 +813,16 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
                             m2m_bulk.append(cls(attachment=obj, order=counter, **{doc_field_name + '_id': doc_id}))
                             counter += 1
                             obj.link(doc_id=doc_id, doc_app=doc_app)
+                            update_fields = []
+                            if doc_app.is_workflow is False:
+                                obj.is_approved = True
+                                update_fields.append('is_approved')
                             if folder_obj:
                                 obj.folder = folder_obj
-                                obj.save(update_fields=['folder'])
+                                update_fields.append('folder')
+                            obj.save(update_fields=update_fields)
                         cls.objects.bulk_create(m2m_bulk)
-
+                    # handle remove files
                     if remove_objs:
                         # remove relate data after destroy m2m
                         for m2m_obj in cls.objects.filter(**{doc_field_name: doc_id}, attachment__in=remove_objs):
@@ -833,7 +844,7 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
 # BEGIN FOLDER
 class Folder(MasterDataAbstractModel):
     application = models.ForeignKey('base.Application', on_delete=models.CASCADE, null=True)
-    doc_code = models.CharField(unique=True, max_length=250, blank=True, null=True)
+    doc_code = models.CharField(max_length=250, blank=True, null=True)
     parent_n = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,
