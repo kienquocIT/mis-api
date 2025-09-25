@@ -50,6 +50,10 @@ msgstr "Hóa đơn mua hàng"
 msgid "AR Invoice"
 msgstr "Hóa đơn bán hàng"
 
+# d09c9846-a101-43fc-ba1d-6f666c8b03b4
+msgid "Delivery Service"
+msgstr "Giao hàng dịch vụ"
+
 # 41abd4e9-da89-450b-a44a-da1d6f8a5cd2
 msgid "Asset, Tools Delivery"
 msgstr "Phiếu bàn giao"

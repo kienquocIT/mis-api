@@ -303,6 +303,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "1d7291dd-1e59-4917-83a3-1cc07cfc4638",  # AR Invoice
     },
+    "d09c9846-a101-43fc-ba1d-6f666c8b03b4": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "d09c9846-a101-43fc-ba1d-6f666c8b03b4",  # Deliver Service
+    },
     "c05a6cf4-efff-47e0-afcf-072017b8141a": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "c05a6cf4-efff-47e0-afcf-072017b8141a",  # AP Invoice

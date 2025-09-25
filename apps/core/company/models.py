@@ -573,6 +573,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             'workorder': 'WO[n4]',
             'overtimerequest': 'OT[n4]',
             'serviceorder': 'SVO[n4]',
+            'deliveryservice': 'DS[n4]',
         }
 
         parsed_code = ''
