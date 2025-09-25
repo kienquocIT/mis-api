@@ -118,7 +118,6 @@ MAP_FIELD_TITLE = {
     'cashoutflow.payment': 'title',
     'apinvoice.apinvoice': 'title',
     'arinvoice.arinvoice': 'title',
-    'deliveryservice.deliveryservice': 'title',
     'inventory.goodsissue': 'title',
     'inventory.goodsreturn': 'title',
     'inventory.goodstransfer': 'title',
