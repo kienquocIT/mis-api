@@ -1700,46 +1700,6 @@ AR_INVOICE_APP_CONFIG = {
     "allow_recurrence": True,
 }
 
-DELIVERY_SERVICE_APP_CONFIG = {
-    "id": "d09c9846-a101-43fc-ba1d-6f666c8b03b4",
-    "title": "Delivery Service",
-    "code": "deliveryservice",
-    "model_code": "deliveryservice",
-    "app_label": "deliveryservice",
-    "is_workflow": True,
-    "app_depend_on": [],
-    "permit_mapping": {
-        "view": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {"view": "==", },
-        },
-        "create": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "edit": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "delete": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-    },
-    "allow_permit": True,
-    "allow_recurrence": True,
-}
-
 AP_INVOICE_APP_CONFIG = {
     "id": "c05a6cf4-efff-47e0-afcf-072017b8141a",
     "title": "AP Invoice",
@@ -3578,10 +3538,6 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "1d7291dd-1e59-4917-83a3-1cc07cfc4638": ApplicationConfigFrame(**AR_INVOICE_APP_CONFIG).data(
-        depend_follow_main=False,
-        filtering_inheritor=True,
-    ),
-    "d09c9846-a101-43fc-ba1d-6f666c8b03b4": ApplicationConfigFrame(**DELIVERY_SERVICE_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

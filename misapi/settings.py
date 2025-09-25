@@ -137,7 +137,6 @@ INSTALLED_APPS = \
         'apps.sales.equipmentreturn',
         'apps.sales.serviceorder',
         'apps.sales.servicequotation',
-        'apps.sales.deliveryservice',
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ] + [
