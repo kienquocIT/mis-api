@@ -159,9 +159,8 @@ class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
             if stage_obj.indicator == "Closed Won":
                 if not opp_obj.sale_order:
                     raise ValidationError({'detail': "Cannot find any Sale Order in this Opportunity."})
-                else:
-                    if not opp_obj.sale_order.system_status != 3:
-                        raise ValidationError({'detail': "Sale Order in this Opportunity have not approved."})
+                if not opp_obj.sale_order.system_status != 3:
+                    raise ValidationError({'detail': "Sale Order in this Opportunity have not approved."})
 
             if stage_obj.indicator == 'Delivery':
                 if not opp_obj.sale_order or opp_obj.sale_order.delivery_status not in [2, 3]:

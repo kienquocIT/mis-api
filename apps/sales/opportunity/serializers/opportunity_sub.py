@@ -758,7 +758,9 @@ class CheckOppStageFunction:
         opp_condition_data_list.append('SaleOrder Status=0' if sale_order_status == 3 else 'SaleOrder Status!=0')
         # Sale Order Delivery Status
         delivery_status = opp_obj.sale_order.delivery_status if opp_obj.sale_order else None
-        opp_condition_data_list.append('SaleOrder Delivery Status=0' if delivery_status == 3 else 'SaleOrder Delivery Status!=0')
+        opp_condition_data_list.append(
+            'SaleOrder Delivery Status=0' if delivery_status == 3 else 'SaleOrder Delivery Status!=0'
+        )
         # Customer Annual Revenue
         customer = opp_obj.customer if opp_obj.customer else None
         opp_condition_data_list.append('Customer=0' if not customer else 'Customer!=0')
@@ -777,12 +779,16 @@ class CheckOppStageFunction:
         opp_condition_data_list.append('Decision Maker=0' if not opp_obj.decision_maker else 'Decision Maker!=0')
         # Product Line Detail
         product_line = opp_obj.opportunity_product_opportunity.all()
-        opp_condition_data_list.append('Product Line Detail=0' if product_line.count() == 0 else 'Product Line Detail!=0')
+        opp_condition_data_list.append(
+            'Product Line Detail=0' if product_line.count() == 0 else 'Product Line Detail!=0'
+        )
         # Competitor Win
         competitors = opp_obj.opportunity_competitor_opportunity.filter(win_deal=True)
         opp_condition_data_list.append('Competitor Win!=0' if competitors.count() == 0 else 'Competitor Win=0')
         # Lost By Other Reason
-        opp_condition_data_list.append('Lost By Other Reason=0' if opp_obj.lost_by_other_reason else 'Lost By Other Reason!=0')
+        opp_condition_data_list.append(
+            'Lost By Other Reason=0' if opp_obj.lost_by_other_reason else 'Lost By Other Reason!=0'
+        )
         return opp_condition_data_list
 
     @classmethod

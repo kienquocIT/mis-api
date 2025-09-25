@@ -460,10 +460,10 @@ class Opportunity(DataAbstractModel):
     @classmethod
     def handle_stage_and_win_rate(cls, obj):
         opp_cfg_obj = OpportunityConfig.objects.filter(company=obj.company).first()
-        is_select_stage = False
+        # is_select_stage = False
         is_input_win_rate = False
         if opp_cfg_obj:
-            is_select_stage = opp_cfg_obj.is_select_stage
+            # is_select_stage = opp_cfg_obj.is_select_stage
             is_input_win_rate = opp_cfg_obj.is_input_win_rate
 
         opp_stage_win_rate, opp_stage_obj = obj.update_stage(obj=obj)
