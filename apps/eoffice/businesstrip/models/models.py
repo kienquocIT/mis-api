@@ -131,7 +131,7 @@ class BusinessRequest(DataAbstractModel):
         self.code_generator()
         update_files_is_approved(BusinessRequestAttachmentFile.objects.filter(
             business_request=self, attachment__is_approved=False
-        ))
+        ), self)
 
     def save(self, *args, **kwargs):
         if self.system_status > 2:

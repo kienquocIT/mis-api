@@ -52,6 +52,7 @@ APP_MAP_DATA = {
     'overtimerequest.overtimerequest': {
         'title': 'Overtime request', 'url': 'hrm/overtime-request/detail/'
     },
+    'servicequotation.servicequotation': {'title': 'Service Quotation', 'url': 'servicequotation/detail/'},
 }
 
 WORKFLOW_TYPE_MAP_TXT = {

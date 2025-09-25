@@ -113,7 +113,6 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
                     parsed_code = code_rule.replace(f'[{number_format}]', str(number+1).zfill(int(number_format[1])))
         return parsed_code
 
-
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
         raise ValueError(f'[{cls.__class__.__name__}][get_app_id] Not implement in extend model.')

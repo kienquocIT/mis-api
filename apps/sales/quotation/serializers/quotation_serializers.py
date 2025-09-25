@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.workflow.tasks import decorator_run_workflow
+from apps.masterdata.saledata.models import Product
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAttachment
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
@@ -174,6 +175,105 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel, AbstractCurrencyD
     @classmethod
     def get_attachment(cls, obj):
         return [file_obj.get_detail() for file_obj in obj.attachment_m2m.all()]
+
+
+# PRINT SERIALIZER
+class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurrencyDetailSerializerModel):
+    opportunity = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+    quotation_products_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Quotation
+        fields = (
+            'id',
+            'title',
+            'code',
+            'opportunity',
+            'customer_data',
+            'contact_data',
+            'sale_person',
+            'payment_term_data',
+            'system_status',
+            # quotation tabs
+            'quotation_products_data',
+            'quotation_logistic_data',
+            'customer_shipping_id',
+            'customer_billing_id',
+            'quotation_costs_data',
+            'quotation_expenses_data',
+            # total amount of products
+            'total_product_pretax_amount',
+            'total_product_discount_rate',
+            'total_product_discount',
+            'total_product_tax',
+            'total_product',
+            'total_product_revenue_before_tax',
+            # total amount of costs
+            'total_cost_pretax_amount',
+            'total_cost_tax',
+            'total_cost',
+            # total amount of expenses
+            'total_expense_pretax_amount',
+            'total_expense_tax',
+            'total_expense',
+            'is_customer_confirm',
+            'date_created',
+            # indicator tab
+            'quotation_indicators_data',
+            # indicators
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
+            # system
+            'workflow_runtime_id',
+            'is_active',
+            'employee_inherit',
+        )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        return {
+            'id': str(obj.opportunity_id),
+            'title': obj.opportunity.title,
+            'code': obj.opportunity.code,
+            'is_close_lost': obj.opportunity.is_close_lost,
+            'is_deal_close': obj.opportunity.is_deal_close,
+            'sale_order_id': str(obj.opportunity.sale_order_id),
+            'customer': {
+                'id': str(obj.opportunity.customer_id),
+                'title': obj.opportunity.customer.title
+            } if obj.opportunity.customer else {},
+            'quotation_id': str(obj.opportunity.quotation_id),
+        } if obj.opportunity else {}
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return obj.employee_inherit.get_detail_minimal() if obj.employee_inherit else {}
+
+    @classmethod
+    def get_quotation_products_data(cls, obj):
+        for data in obj.quotation_products_data:
+            product_obj = Product.objects.filter(id=data.get('product_id', None)).first()
+            if product_obj:
+                product_description = data.get('product_description', "")
+                data.update({
+                    'product_data': {
+                        'id': str(product_obj.id),
+                        'title': product_obj.title,
+                        'code': product_obj.code,
+                        'avatar_img': product_obj.avatar_img.url if product_obj.avatar_img else None
+                    }
+                })
+                data.update({
+                    'product_description': product_description if product_description else product_obj.description
+                })
+        return obj.quotation_products_data
 
 
 class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyCreateSerializerModel):

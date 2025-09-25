@@ -104,7 +104,8 @@ class EmployeeContract(MasterDataAbstractModel):
             update_files_is_approved(
                 EmployeeContractMapAttachment.objects.filter(
                     employee_contract=self, attachment__is_approved=False
-                )
+                ),
+                self
             )
         super().save(*args, **kwargs)
 

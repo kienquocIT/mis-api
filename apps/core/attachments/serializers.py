@@ -55,6 +55,9 @@ def update_folder_permission(perm, current_employee):
 
 
 class FilesUploadSerializer(serializers.ModelSerializer):
+    document_type_id = serializers.UUIDField(required=False, allow_null=True)
+    content_group_id = serializers.UUIDField(required=False, allow_null=True)
+
     def validate_file(self, attrs):
         user_obj = self.context.get('user_obj', None)
         if user_obj:  # pylint: disable=R1702
@@ -106,12 +109,29 @@ class FilesUploadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Files
-        fields = ('file', 'remarks', 'folder')
+        fields = ('file', 'remarks', 'folder', 'document_type_id', 'content_group_id')
+
+
+class FilesUpdateAttributeSerializer(serializers.ModelSerializer):
+    document_type_id = serializers.UUIDField(required=False, allow_null=True)
+    content_group_id = serializers.UUIDField(required=False, allow_null=True)
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
+
+    class Meta:
+        model = Files
+        fields = ('remarks', 'document_type_id', 'content_group_id')
 
 
 class FilesDetailSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()  # Add a custom field for the file URL
     employee_created = serializers.SerializerMethodField()  # Add a custom field for the file URL
+    document_type = serializers.SerializerMethodField()
+    content_group = serializers.SerializerMethodField()
 
     class Meta:
         model = Files
@@ -126,7 +146,9 @@ class FilesDetailSerializer(serializers.ModelSerializer):
             'remarks',
             'url',
             'date_modified',
-            'employee_created'
+            'employee_created',
+            'document_type',
+            'content_group',
         )
 
     @classmethod
@@ -138,6 +160,18 @@ class FilesDetailSerializer(serializers.ModelSerializer):
     def get_employee_created(cls, obj):
         # Return the file's URL
         return {'id': str(obj.employee_created.id), 'full_name': obj.employee_created.get_full_name()}
+
+    @classmethod
+    def get_document_type(cls, obj):
+        return {
+            'id': obj.document_type_id, 'title': obj.document_type.title, 'code': obj.document_type.code
+        } if obj.document_type else {}
+
+    @classmethod
+    def get_content_group(cls, obj):
+        return {
+            'id': obj.content_group_id, 'title': obj.content_group.title, 'code': obj.content_group.code
+        } if obj.content_group else {}
 
 
 class FilesListSerializer(serializers.ModelSerializer):

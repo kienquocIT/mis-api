@@ -3,7 +3,7 @@ from .views import (
     FilesUpload, FilesUnused,
     ImageWebBuilderUpload, ImageWebBuilderList, FolderList, FolderDetail, FolderUploadFileList, FilesDownload,
     FilesInformation, PublicFilesUpload, FolderListSharedToMe, FolderMySpaceList, FilesEdit, FolderCheckPermList,
-    FileCheckPermList, FolderDownload
+    FileCheckPermList, FolderDownload, FilesDetail
 )
 
 urlpatterns = [
@@ -11,6 +11,7 @@ urlpatterns = [
     path('upload', FilesUpload.as_view(), name='FilesUpload'),
     path('edit', FilesEdit.as_view(), name='FilesEdit'),
     path('public-upload', PublicFilesUpload.as_view(), name='PublicFilesUpload'),
+    path('detail/<str:pk>', FilesDetail.as_view(), name='FilesDetail'),
     path('download/<str:pk>', FilesDownload.as_view(), name='FilesDownload'),
     path('info/<str:pk>', FilesInformation.as_view(), name='FilesInformation'),
     path('web-builder/upload', ImageWebBuilderUpload.as_view(), name='ImageWebBuilderUpload'),
