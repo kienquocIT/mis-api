@@ -566,54 +566,70 @@ class OpportunityCommonFunction:
 
     @classmethod
     def update_opportunity_stage(cls, opp_obj):
-        opp_config_stage_data_list = CheckOppStageFunction.get_opp_config_stage_data_list(opp_obj)
-        opp_condition_data_list = CheckOppStageFunction.get_opp_condition_data_list(opp_obj)
-        new_opp_stage_data_list = CheckOppStageFunction.get_new_opp_stage_data_list(
-            opp_config_stage_data_list, opp_condition_data_list, opp_obj
-        )
-        data_bulk = []
-        current_stage_item = None
-        for item in new_opp_stage_data_list:
-            if item.get('current'):
-                current_stage_item = item
-            data_bulk.append(
-                OpportunityStage(
-                    opportunity=opp_obj,
-                    stage_id=str(item.get('id')),
-                    stage_data={
-                        'id': str(item.get('id')),
-                        'indicator': item.get('indicator'),
-                        'win_rate': item.get('win_rate')
-                    },
-                    is_current=item.get('current')
-                )
-            )
-        if len(data_bulk) > 0:
-            if data_bulk[-1].stage.indicator == 'Closed Lost' and 'SaleOrder Status=0' in opp_condition_data_list:
-                raise serializers.ValidationError(
-                    {'Closed Lost': 'Can not update to stage "Closed Lost". You are having an Approved Sale Order.'}
-                )
-        OpportunityStage.objects.filter(opportunity=opp_obj).delete()
-        OpportunityStage.objects.bulk_create(data_bulk)
+        """
+        Hàm cập nhập trạng thái cho OPP (tạo record vào bảng Many + update trạng thái của OPP vào list)
+        """
 
-        # update stage and winrate for list
         opp_cfg_obj = OpportunityConfig.objects.filter(company=opp_obj.company).first()
+        is_select_stage = False
         is_input_win_rate = False
         if opp_cfg_obj:
+            is_select_stage = opp_cfg_obj.is_select_stage
             is_input_win_rate = opp_cfg_obj.is_input_win_rate
-        if current_stage_item:
-            opp_obj.win_rate = current_stage_item.get('win_rate')
-            opp_obj.current_stage_id = current_stage_item.get('id')
-            opp_obj.current_stage_data = {
-                'id': str(current_stage_item.get('id')),
-                'indicator': current_stage_item.get('indicator'),
-                'win_rate': current_stage_item.get('win_rate')
-            }
-            if is_input_win_rate and opp_obj.is_input_rate:
-                opp_obj.save(update_fields=['current_stage', 'current_stage_data'])
-            else:
-                opp_obj.save(update_fields=['win_rate', 'current_stage', 'current_stage_data'])
 
+        # Chỉ cập nhập trạng thái nếu OPP này không chọn update thủ công hoặc config không cho update thủ công
+        if not opp_obj.active_go_to_stage or not is_select_stage:
+            # Cập nhập stage tự động
+            opp_config_stage_data_list = CheckOppStageFunction.get_opp_config_stage_data_list(opp_obj)
+            opp_condition_data_list = CheckOppStageFunction.get_opp_condition_data_list(opp_obj)
+            new_opp_stage_data_list = CheckOppStageFunction.get_new_opp_stage_data_list(
+                opp_config_stage_data_list, opp_condition_data_list, opp_obj
+            )
+            data_bulk = []
+            current_stage_item = None
+            for item in new_opp_stage_data_list:
+                if item.get('current'):
+                    current_stage_item = item
+                data_bulk.append(
+                    OpportunityStage(
+                        opportunity=opp_obj,
+                        stage_id=str(item.get('id')),
+                        stage_data={
+                            'id': str(item.get('id')),
+                            'indicator': item.get('indicator'),
+                            'win_rate': item.get('win_rate')
+                        },
+                        is_current=item.get('current')
+                    )
+                )
+            if len(data_bulk) > 0:
+                if data_bulk[-1].stage.indicator == 'Closed Lost' and 'SaleOrder Status=0' in opp_condition_data_list:
+                    raise serializers.ValidationError(
+                        {'Closed Lost': 'Can not update to stage "Closed Lost". You are having an Approved Sale Order.'}
+                    )
+            OpportunityStage.objects.filter(opportunity=opp_obj).delete()
+            OpportunityStage.objects.bulk_create(data_bulk)
+
+            # update stage and winrate for list
+            if current_stage_item:
+                opp_obj.win_rate = current_stage_item.get('win_rate')
+                opp_obj.current_stage_id = current_stage_item.get('id')
+                opp_obj.current_stage_data = {
+                    'id': str(current_stage_item.get('id')),
+                    'indicator': current_stage_item.get('indicator'),
+                    'win_rate': current_stage_item.get('win_rate')
+                }
+                # Nếu OPP check tự nhập winrate + config check tự nhập winrate thì không update winrate theo stage,
+                # còn không thì winrate buộc phải theo stage
+                opp_obj.save(update_fields=[
+                    'current_stage', 'active_go_to_stage', 'current_stage_data'
+                ] if opp_obj.is_input_rate and is_input_win_rate else [
+                    'current_stage', 'active_go_to_stage', 'current_stage_data', 'win_rate'
+                ])
+        else:
+            if opp_obj.current_stage:
+                opp_obj.win_rate = opp_obj.current_stage.win_rate
+                opp_obj.save(update_fields=['win_rate'] if not opp_obj.is_input_rate else [])
         return True
 
     @classmethod

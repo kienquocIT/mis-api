@@ -1741,3 +1741,31 @@ msgstr "Đã có đơn cho thuê được tạo với cơ hội kinh doanh này"
 #
 msgid "Overtime request"
 msgstr "Đăng ký làm ngoài giờ"
+
+#
+msgid "Cannot find this Opportunity."
+msgstr "Không tìm thấy Cơ hội kinh doanh."
+
+#
+msgid "This opportunity is in 'Deal Close' stage."
+msgstr "Cơ hội kinh doanh này đang ở trạng thái 'Deal Close'."
+
+#
+msgid "Cannot find this stage."
+msgstr "Không tìm thất trạng thái."
+
+#
+msgid "Cannot find any Sale Order in this Opportunity."
+msgstr "Không tìm thấy bất kì Đơn hàng nào trong Cơ hội kinh doanh này."
+
+#
+msgid "Sale Order in this Opportunity have not approved."
+msgstr "Đơn hàng trong CHKD này chưa được duyệt."
+
+#
+msgid "Cannot find any Delivery that is in progress."
+msgstr "Không thể tìm thấy bất kì phiếu Giao hàng nào đang diễn ra."
+
+#
+msgid "You are not allowed to select stage manually."
+msgstr "Bạn không được phép chọn trạng thái thủ công."
