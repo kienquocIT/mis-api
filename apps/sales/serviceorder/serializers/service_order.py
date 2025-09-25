@@ -145,7 +145,8 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             update_files_is_approved(
                 ServiceOrderAttachMapAttachFile.objects.filter(
                     service_order=service_order_obj, attachment__is_approved=False
-                )
+                ),
+                service_order_obj
             )
             return service_order_obj
 
@@ -494,7 +495,8 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
             update_files_is_approved(
                 ServiceOrderAttachMapAttachFile.objects.filter(
                     service_order=instance, attachment__is_approved=False
-                )
+                ),
+                instance
             )
             return instance
 

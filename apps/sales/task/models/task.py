@@ -237,12 +237,13 @@ class OpportunityTask(DataAbstractModel):
             "title": str(self.project.title),
             "code": str(self.project.code),
         } if self.project else {}
-        if self.task_status.is_finish or self.percent_completed == 100:
-            update_files_is_approved(
-                TaskAttachmentFile.objects.filter(
-                    task=self, attachment__is_approved=False
-                )
-            )
+        # if self.task_status.is_finish or self.percent_completed == 100:
+        update_files_is_approved(
+            TaskAttachmentFile.objects.filter(
+                task=self, attachment__is_approved=False
+            ),
+            self
+        )
 
     def save(self, *args, **kwargs):
         self.before_save()
@@ -294,7 +295,7 @@ class OpportunityLogWork(MasterDataAbstractModel):
 
 class TaskAttachmentFile(M2MFilesAbstractModel):
     task = models.ForeignKey(
-        'task.OpportunityTask',
+        OpportunityTask,
         on_delete=models.CASCADE,
         verbose_name='Attachment file of task'
     )

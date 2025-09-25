@@ -41,7 +41,8 @@ class KMSDocumentApproval(DataAbstractModel):
             update_files_is_approved(
                 AttachDocumentMapAttachmentFile.objects.filter(
                     document_approval=self, attachment__is_approved=False
-                )
+                ),
+                self
             )
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:

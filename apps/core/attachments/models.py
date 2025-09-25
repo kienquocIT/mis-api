@@ -16,6 +16,7 @@ from django.db.models import Q
 from django.utils import timezone
 from django.utils.text import slugify
 
+from apps.core.attachments.folder_utils import HIERARCHY_RULES, MODULE_MAPPING, APP_FIELD, APP_NAME
 from apps.shared import MasterDataAbstractModel, TypeCheck, StringHandler, HrMsg, AttMsg, SimpleAbstractModel, \
     DisperseModel
 from apps.core.attachments.storages.aws.storages_backend import (
@@ -56,92 +57,6 @@ FILE_LIST = (
     (7, 'Edit file'),
 )
 
-MODULE_MAPPING = {
-    'system': {'name': 'System', 'id': '9ac02039-a9a4-42e9-825e-169f740b5b5b'},
-    'sale': {  # SAlE
-        'name': 'Sale', 'id': '76ab081b-eee4-4923-97b9-1cbb09deef78', 'plan': '4e082324-45e2-4c27-a5aa-e16a758d5627'
-    },
-    'kms': {  # KMS
-        'name': 'KMS', 'id': 'c7a702aa-10e7-487a-ab6c-3fd219930504', 'plan': '02793f68-3548-45c1-98f5-89899a963091'
-    },
-    'hrm': {  # HRM
-        'name': 'HRM', 'id': '3802739f-12c8-4f90-ac67-3f81e21ccffe', 'plan': '395eb68e-266f-45b9-b667-bd2086325522'
-    },
-    'e-office': {  # E-Office
-        'name': 'E-Office', 'id': '57bc22f9-08a8-4a4b-b207-51c0f6428c56', 'plan': 'a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8'
-    }
-
-}
-
-HIERARCHY_RULES = {
-    'sale': {
-        'apinvoice': {},
-        'arinvoice': {},
-        'bidding': {},
-        'advancepayment': {},
-        'payment': {},
-        'consulting': {},
-        'contractapproval': {},
-        'orderdeliverysub': {},
-        'equipmentloan': {},
-        'goodsissue': {},
-        'goodsreceipt': {},
-        'goodsreturn': {},
-        'leaseorder': {},
-        'opportunity': {
-            'child': {
-                'opportunitytask': {},
-                'serviceorder': {
-                    'child': {
-                        'opportunitytask'
-                    }
-                }
-            }
-        },
-        'purchaseorder': {},
-        'purchasequotationrequest': {},
-        'purchaserequest': {},
-        'quotation': {},
-        'saleorder': {},
-        'serviceorder': {
-            'child': {
-                'opportunitytask'
-            },
-        },
-        'opportunitytask': {}
-    },
-    'e-office': {
-        'assettoolsreturn': {},
-        'assettoolsdelivery': {},
-        'assettoolsprovide': {},
-        'businessrequest': {},
-        'meetingschedule': {},
-    },
-    'hrm': {
-        'employeeinfo': {
-            'child': {
-                'employeecontract': {}
-            }
-        },
-    },
-    'kms': {
-        'kmsdocumentapproval': {},
-        'kmsincomingdocument': {}
-    }
-}
-# trường này để truy vấn ngược từ app con lên app cha thông qua field dược khai báo
-APP_FIELD = {
-    'employeeinfo': ['employee_info'],
-    'serviceorder': ['service_order_work_order_task_task'],
-    'opportunity': ['opportunity']
-}
-xx = [
-    'sale.opportunitytask',
-    'sale.serviceorder.opportunitytask',
-    'sale.opportunity.serviceorder.opportunitytask',
-    'sale.opportunity.opportunitytask'
-]
-
 
 def make_sure_filename_length(_filename):
     if len(_filename) > 30:
@@ -172,13 +87,27 @@ def generate_path_public_file(instance, filename):
     raise ValueError('Attachment require company related')
 
 
-def update_files_is_approved(doc_files_list):
+def update_folder_title(doc_obj=None, folder_obj=None):
+    result_name = deepcopy(doc_obj.title)
+    if len(result_name) > 35:
+        one_third = len(result_name) // 3
+        result_name = f'{result_name[:one_third]}...{result_name[-one_third:]}'
+    if doc_obj and folder_obj:
+        folder_obj.doc_code = doc_obj.code
+        folder_obj.title = f'{doc_obj.code}-{result_name}'
+        folder_obj.save(update_fields=['doc_code', 'title'])
+
+
+def update_files_is_approved(doc_files_list, doc_obj):
     bulk_files_update = []
+    folder_obj = None
     for file in doc_files_list:
         file.attachment.is_approved = True
+        folder_obj = file.attachment.folder
         bulk_files_update.append(file.attachment)
     if bulk_files_update:
         Files.objects.bulk_update(bulk_files_update, fields=['is_approved'])
+    update_folder_title(doc_obj, folder_obj)
 
 
 def find_function_in_hierarchy(module_name, search_string):
@@ -186,72 +115,68 @@ def find_function_in_hierarchy(module_name, search_string):
     if module_name not in HIERARCHY_RULES:
         return ''
 
+    def process_child_content(child_value, doc_models_code, path, base_path):
+        this_path = []
+        if isinstance(child_value, dict):
+            this_path = search_in_dict(child_value, path, base_path)
+        elif isinstance(child_value, set):
+            for item in child_value:
+                if item == doc_models_code:
+                    full_path = f"{base_path}.{item}" if base_path else item
+                    this_path.append(full_path)
+        return this_path
+
     def search_in_dict(data, path="", parent_path=""):
         """Hàm đệ quy để tìm kiếm trong cấu trúc lồng nhau"""
+
         results = []
-        if isinstance(data, dict):
-            for key, value in data.items():
-                # Bỏ qua key 'child' vì nó không phải là tên chức năng
-                if key == 'child':
-                    # Tiếp tục tìm kiếm trong child
-                    if isinstance(value, dict):
-                        child_results = search_in_dict(value, path, parent_path)
-                        results.extend(child_results)
-                    elif isinstance(value, set):
-                        for item in value:
-                            if item == search_string:
-                                full_path = f"{parent_path}.{item}" if parent_path else item
-                                results.append(full_path)
-                else:
-                    # Xây dựng đường dẫn hiện tại
-                    current_path = f"{path}.{key}" if path else key
+        if not isinstance(data, dict):
+            return results
+        for key, value in data.items():
+            # Bỏ qua key 'child' vì nó không phải là tên chức năng
+            if key == 'child':
+                # Tiếp tục tìm kiếm trong child
+                results.extend(process_child_content(value, search_string, path, parent_path))
 
-                    # Kiểm tra xem key có phải là string cần tìm không
-                    if key == search_string:
-                        results.append(current_path)
+            else:
+                # Xây dựng đường dẫn hiện tại
+                current_path = f"{path}.{key}" if path else key
 
-                    # Tiếp tục tìm kiếm sâu hơn
-                    if isinstance(value, dict):
-                        # Tìm trong value
-                        nested_results = search_in_dict(value, current_path, current_path)
-                        results.extend(nested_results)
+                # Kiểm tra xem key có phải là string cần tìm không
+                if key == search_string:
+                    results.append(current_path)
 
-                        # Tìm trong child nếu có
-                        if 'child' in value:
-                            child_data = value['child']
-                            if isinstance(child_data, dict):
-                                child_results = search_in_dict(child_data, current_path, current_path)
-                                results.extend(child_results)
-                            elif isinstance(child_data, set):
-                                for item in child_data:
-                                    if item == search_string:
-                                        child_path = f"{current_path}.{item}"
-                                        results.append(child_path)
+                # Tiếp tục tìm kiếm sâu hơn
+                if isinstance(value, dict):
+                    # Tìm trong value
+                    nested_results = search_in_dict(value, current_path, current_path)
+                    results.extend(nested_results)
+
+                    # Tìm trong child nếu có
+                    if 'child' in value:
+                        results.extend(process_child_content(value['child'], search_string, current_path, current_path))
 
         return results
 
     # Bắt đầu tìm kiếm từ module được chỉ định
-    module_data = HIERARCHY_RULES[module_name]
-    found_paths = search_in_dict(module_data, module_name)
-    return list(set(found_paths))
+    found_paths = search_in_dict(HIERARCHY_RULES[module_name], module_name)
+    temp_lst = list(set(found_paths))
+    sorted_lst = sorted(temp_lst, key=len, reverse=True)
+    return sorted_lst
 
 
 def get_parent_func(child_obj, parent_code):
-    if hasattr(child_obj, APP_FIELD[parent_code]):
-        parent_obj = getattr(child_obj, APP_FIELD[parent_code])
-        if parent_code == 'serviceorder':
-            return parent_obj.work_order.service_order
-        return parent_obj
-    return None
+    parent_obj = getattr(child_obj, parent_code, None)
+    if parent_code == 'service_order_work_order_task_task':
+        is_all = parent_obj.all()
+        if is_all.exists():
+            return is_all.first().work_order.service_order
+        return None
+    return parent_obj
 
 
 def find_correct_path(object_name, object_instance, path_current_lst):
-    """
-    tìm đúng app đang trong danh sách path nào
-    """
-
     def validate_path(path):
-        """Kiểm tra một path cụ thể xem có đây đủ các record không"""
 
         path_parts = path.split('.')
 
@@ -260,32 +185,25 @@ def find_correct_path(object_name, object_instance, path_current_lst):
         # Duyệt ngược từ object lên các parent
         current_obj = object_instance
         parent_obj_lst = {}
-        for i in range(obj_index - 1, -1, -1):
-            lst_app_code = path_parts[i]
-
-            # Lấy field cần kiểm tra cho parent này
-            parent_fields = APP_FIELD[lst_app_code]
+        for idx in range(obj_index - 1, -1, -1):
+            lst_app_code = path_parts[idx]
 
             # Nếu là 'root folder' hoặc không có trong APP_FIELD -> record này không có cấp cha
             if lst_app_code in ['sale', 'e-ofice', 'hrm', 'kms'] or lst_app_code not in APP_FIELD:
                 continue
 
-            # Kiểm tra current object có parent này không
-            has_this_parent = False
+            # Lấy field cần kiểm tra cho parent này
+            parent_fields = APP_FIELD[lst_app_code]
 
-            for field in parent_fields:
-                if hasattr(current_obj, field) and getattr(current_obj, field):
-                    # Có parent, lấy parent object để kiểm tra tiếp
-                    parent_obj = getattr(current_obj, field)
-                    current_obj = get_parent_func(parent_fields, parent_obj)
-                    parent_obj_lst[lst_app_code] = deepcopy(current_obj)
-                    has_this_parent = True
-                    break
-
-            if not has_this_parent:
-                # Path này không khớp vì object ko có parent này
-                return False
-
+            if hasattr(current_obj, parent_fields) and getattr(current_obj, parent_fields):
+                temp_obj = get_parent_func(current_obj, parent_fields)
+                if temp_obj:
+                    current_obj = temp_obj
+                    parent_obj_lst[lst_app_code] = current_obj
+                else:
+                    return False, {}
+            else:
+                return False, {}
         # Đã kiểm tra hết chain và đều hợp lệ
         return True, parent_obj_lst
 
@@ -298,76 +216,167 @@ def find_correct_path(object_name, object_instance, path_current_lst):
     return None, {}
 
 
-def processing_folder(doc_id, doc_app):
-    # lấy doc obj theo doc app
-    # lấy code của doc (code của doc được setup để lấy theo cấu hình or generate tự động)
-    # filter folder theo application và document code nếu có thì trả về nếu không thì tạo mới theo cấu trúc thư mục
-    doc_code = doc_app.model_code
+def cu_folder_form_path(app_code, obj_doc, parent_folder):
+    app_models = DisperseModel(app_model='base.Application').get_model()
+    application_flt = app_models.objects.filter(model_code=app_code)
+    if application_flt.exists():
+        app_current_obj = application_flt.first()
+    else:
+        return False
 
-    def get_doc_obj_from_id(id_doc, app_obj):
-        model_cls = DisperseModel(app_model=f'{app_obj.app_label}.{app_obj.model_code}').get_model()
-        if model_cls and hasattr(model_cls, 'objects'):
-            try:
-                return model_cls.objects.get(pk=id_doc)
-            except model_cls.DoesNotExist:
-                logger.error( f'[processing_folder] '
-                              f'Document Object is not found doc={id_doc}')
-                raise ValueError('Document Object is not found ' + id_doc)
-        logger.error(
-            f'[processing_folder] '
-            f'Model Doc not found: doc={doc_id} - app={doc_app}'
+    folder_label, _ = Folder.objects.get_or_create(
+        company_id=obj_doc.company_id,
+        tenant_id=obj_doc.tenant_id,
+        parent_n=parent_folder,
+        title=APP_NAME[app_code],
+        is_system=True,
+        defaults={
+            'title': APP_NAME[app_code],
+            'company_id': obj_doc.company_id,
+            'tenant_id': obj_doc.tenant_id,
+            'parent_n': parent_folder,
+            'is_system': True
+        }
+    )
+    # generate name for app folder
+    result_name = deepcopy(obj_doc.title)
+    if len(result_name) > 35:
+        one_third = len(result_name) // 3
+        result_name = f'{result_name[:one_third]}...{result_name[-one_third:]}'
+
+    folder_app, _ = Folder.objects.get_or_create(
+        application=app_current_obj,
+        doc_code=obj_doc.code,
+        is_system=True,
+        parent_n=folder_label,
+        defaults={
+            'title': f'{obj_doc.code}-{result_name}',
+            'doc_code': obj_doc.code,
+            'application': app_current_obj,
+            'company_id': obj_doc.company_id,
+            'tenant_id': obj_doc.tenant_id,
+            'parent_n': folder_label,
+            'is_system': True
+        }
+    )
+    current_folder = folder_app
+    if app_code == 'serviceorder':
+        current_folder, _ = Folder.objects.get_or_create(
+            is_system=True,
+            parent_n=current_folder,
+            defaults={
+                'title': 'Work order',
+                'parent_n': current_folder,
+                'is_system': True,
+                'company_id': obj_doc.company_id,
+                'tenant_id': obj_doc.tenant_id,
+            }
         )
-        raise ValueError('Model Doc not found: ' + doc_id + ' - ' + doc_app)
+    return current_folder
+
+
+def get_doc_obj_from_id(id_doc, app_obj):
+    model_cls = DisperseModel(app_model=f'{app_obj.app_label}.{app_obj.model_code}').get_model()
+    if model_cls and hasattr(model_cls, 'objects'):
+        try:
+            return model_cls.objects.get(pk=id_doc)
+        except model_cls.DoesNotExist:
+            raise ValueError('Document Object is not found ' + id_doc)
+    raise ValueError('Model Doc not found: ' + id_doc)
+
+
+def processing_folder(doc_id, doc_app):
+    """logic của func:
+    - từ thông tin có sẵn tìm ra danh sách path folder đúng của doc_obj
+    - loop trong danh sách path chính xác tạo folder theo path và trả về folder của chính phiếu đó
+    """
 
     doc_obj = get_doc_obj_from_id(doc_id, doc_app)
     # get code of doc code via config
-    parsed_code = doc_obj.code
-    if not parsed_code:
-        raise ValueError('Code of document related attachment is Null can not create folder')
-
-    folder_obj_lst = Folder.objects.filter(application=doc_app, doc_code=parsed_code, is_system=True)
+    folder_obj_lst = Folder.objects.filter(
+        application=doc_app,
+        is_system=True,
+        **({'doc_code': doc_obj.code} if doc_obj.code else {'title': f'-{doc_obj.title}'})
+    )
     if folder_obj_lst.exists():
         folder_obj = folder_obj_lst.first()
     else:
-        # tạo hoặc get system folder
         folder_system_obj, _ = Folder.objects.get_or_create(
             id=MODULE_MAPPING['system']['id'],
             defaults={
+                'id': MODULE_MAPPING['system']['id'],
                 'title': MODULE_MAPPING['system']['name'],
                 'company': doc_obj.company,
                 'tenant': doc_obj.tenant,
-                'application': doc_app,
                 'is_system': True
             }
         )
-        folder_name = deepcopy(doc_obj.title)
-        folder_name_length = len(folder_name)
-        result_name = deepcopy(folder_name)
-        if folder_name_length > 35:
-            one_third = folder_name_length // 3
-            result_name = f'{folder_name[:one_third]}...{folder_name[-one_third:]}'
+        result_name = doc_obj.title if len(
+            doc_obj.title
+        ) > 35 else f'{doc_obj.title[:len(doc_obj.title) // 3]}...{doc_obj.title[-(len(doc_obj.title) // 3):]}'
         # tạo folder theo doc_code và app
-        folder_obj, _ = Folder.objects.create(
-            title=f'{parsed_code}-{result_name}',
-            doc_code=parsed_code,
+        folder_obj, _ = Folder.objects.get_or_create(
             application=doc_app,
+            doc_code=doc_obj.code,
             is_system=True,
-            company=doc_obj.company,
-            tenant=doc_obj.tenant,
+            defaults={
+                'title': f'{doc_obj.code}-{result_name}',
+                'company': doc_obj.company,
+                'tenant': doc_obj.tenant,
+                'application': doc_app,
+                'doc_code': doc_obj.code if doc_obj.code else None,
+                'is_system': True
+            }
         )
 
         # lấy danh sách plan và kiểm tra doc code có trong tất cả app và plan
-        list_plans = [item.title for item in doc_app.plans]
+        list_plans = [item.title for item in doc_app.plans.all()]
         path_current_lst = []
         for plan in list_plans:
-            path_current_lst += find_function_in_hierarchy(plan, doc_code)
+            path_current_lst += find_function_in_hierarchy(plan.lower(), doc_app.model_code)
 
-        doc_path, obj_path_dict = find_correct_path(doc_code, doc_obj, path_current_lst)
+        path_str, obj_path_dict = find_correct_path(doc_app.model_code, doc_obj, path_current_lst)
 
-        if doc_path:
-            print('doc_path: >>', doc_path)
-            print('obj_path_dict: >>', obj_path_dict)
+        if path_str:
+            path_lst = path_str.split('.')
+            current_folder_path = None
+            for path in path_lst:
+                if path == doc_app.model_code:
+                    if len(path_lst) == 2 and path_lst[0] in ['sale', 'e-office', 'hrm', 'kms']:
+                        current_folder_path, _ = Folder.objects.get_or_create(
+                            title=APP_NAME[path],
+                            parent_n=current_folder_path,
+                            company_id=doc_obj.company_id,
+                            tenant_id=doc_obj.tenant_id,
+                            defaults={
+                                'title': APP_NAME[path],
+                                'company_id': doc_obj.company_id,
+                                'tenant_id': doc_obj.tenant_id,
+                                'is_system': True,
+                                'parent_n': current_folder_path
+                            }
+                        )
 
+                    folder_obj.parent_n = current_folder_path
+                    folder_obj.save(update_fields=['parent_n'])
+                    break
+                if path in MODULE_MAPPING:
+                    current_folder_path, _ = Folder.objects.get_or_create(
+                        id=MODULE_MAPPING['project']['id'] if path == 'sale' else MODULE_MAPPING[path]['id'],
+                        company_id=doc_obj.company_id,
+                        tenant_id=doc_obj.tenant_id,
+                        defaults={
+                            'id': MODULE_MAPPING['project']['id'] if path == 'sale' else MODULE_MAPPING[path]['id'],
+                            'title': MODULE_MAPPING['project']['name'] if path == 'sale' else MODULE_MAPPING[path][
+                                'name'],
+                            'company_id': doc_obj.company_id,
+                            'tenant_id': doc_obj.tenant_id,
+                            'is_system': True,
+                            'parent_n': folder_system_obj
+                        }
+                    )
+                else:
+                    current_folder_path = cu_folder_form_path(path, obj_path_dict[path], current_folder_path)
     return folder_obj
 
 
@@ -770,7 +779,6 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
             try:
                 with transaction.atomic():
                     if new_objs:
-                        # folder_obj = Folder.objects.filter_on_company(application=doc_app, is_system=True)
                         folder_obj = processing_folder(doc_id, doc_app)
 
                         counter = len(new_objs) + 1
