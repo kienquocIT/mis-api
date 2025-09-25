@@ -5,6 +5,7 @@ __all__ = [
 
 import json
 import logging
+from copy import deepcopy
 
 from typing import Union
 from uuid import UUID
@@ -15,7 +16,9 @@ from django.db.models import Q
 from django.utils import timezone
 from django.utils.text import slugify
 
-from apps.shared import MasterDataAbstractModel, TypeCheck, StringHandler, HrMsg, AttMsg, SimpleAbstractModel
+from apps.core.attachments.folder_utils import HIERARCHY_RULES, MODULE_MAPPING, APP_FIELD, APP_NAME
+from apps.shared import MasterDataAbstractModel, TypeCheck, StringHandler, HrMsg, AttMsg, SimpleAbstractModel, \
+    DisperseModel
 from apps.core.attachments.storages.aws.storages_backend import (
     PrivateMediaStorage, FileSystemStorage,
     PublicMediaStorage,
@@ -84,13 +87,297 @@ def generate_path_public_file(instance, filename):
     raise ValueError('Attachment require company related')
 
 
-def update_files_is_approved(doc_files_list):
+def update_folder_title(doc_obj=None, folder_obj=None):
+    result_name = deepcopy(doc_obj.title)
+    if len(result_name) > 35:
+        one_third = len(result_name) // 3
+        result_name = f'{result_name[:one_third]}...{result_name[-one_third:]}'
+    if doc_obj and folder_obj:
+        folder_obj.doc_code = doc_obj.code
+        folder_obj.title = f'{doc_obj.code}-{result_name}'
+        folder_obj.save(update_fields=['doc_code', 'title'])
+
+
+def update_files_is_approved(doc_files_list, doc_obj):
     bulk_files_update = []
+    folder_obj = None
     for file in doc_files_list:
         file.attachment.is_approved = True
+        folder_obj = file.attachment.folder
         bulk_files_update.append(file.attachment)
     if bulk_files_update:
         Files.objects.bulk_update(bulk_files_update, fields=['is_approved'])
+    update_folder_title(doc_obj, folder_obj)
+
+
+def find_function_in_hierarchy(module_name, search_string):
+    # Kiểm tra module có tồn tại không
+    if module_name not in HIERARCHY_RULES:
+        return ''
+
+    def process_child_content(child_value, doc_models_code, path, base_path):
+        this_path = []
+        if isinstance(child_value, dict):
+            this_path = search_in_dict(child_value, path, base_path)
+        elif isinstance(child_value, set):
+            for item in child_value:
+                if item == doc_models_code:
+                    full_path = f"{base_path}.{item}" if base_path else item
+                    this_path.append(full_path)
+        return this_path
+
+    def search_in_dict(data, path="", parent_path=""):
+        """Hàm đệ quy để tìm kiếm trong cấu trúc lồng nhau"""
+
+        results = []
+        if not isinstance(data, dict):
+            return results
+        for key, value in data.items():
+            # Bỏ qua key 'child' vì nó không phải là tên chức năng
+            if key == 'child':
+                # Tiếp tục tìm kiếm trong child
+                results.extend(process_child_content(value, search_string, path, parent_path))
+
+            else:
+                # Xây dựng đường dẫn hiện tại
+                current_path = f"{path}.{key}" if path else key
+
+                # Kiểm tra xem key có phải là string cần tìm không
+                if key == search_string:
+                    results.append(current_path)
+
+                # Tiếp tục tìm kiếm sâu hơn
+                if isinstance(value, dict):
+                    # Tìm trong value
+                    nested_results = search_in_dict(value, current_path, current_path)
+                    results.extend(nested_results)
+
+                    # Tìm trong child nếu có
+                    if 'child' in value:
+                        results.extend(process_child_content(value['child'], search_string, current_path, current_path))
+
+        return results
+
+    # Bắt đầu tìm kiếm từ module được chỉ định
+    found_paths = search_in_dict(HIERARCHY_RULES[module_name], module_name)
+    temp_lst = list(set(found_paths))
+    sorted_lst = sorted(temp_lst, key=len, reverse=True)
+    return sorted_lst
+
+
+def get_parent_func(child_obj, parent_code):
+    parent_obj = getattr(child_obj, parent_code, None)
+    if parent_code == 'service_order_work_order_task_task':
+        is_all = parent_obj.all()
+        if is_all.exists():
+            return is_all.first().work_order.service_order
+        return None
+    return parent_obj
+
+
+def find_correct_path(object_name, object_instance, path_current_lst):
+    def validate_path(path):
+
+        path_parts = path.split('.')
+
+        obj_index = path_parts.index(object_name)
+
+        # Duyệt ngược từ object lên các parent
+        current_obj = object_instance
+        parent_obj_lst = {}
+        for idx in range(obj_index - 1, -1, -1):
+            lst_app_code = path_parts[idx]
+
+            # Nếu là 'root folder' hoặc không có trong APP_FIELD -> record này không có cấp cha
+            if lst_app_code in ['sale', 'e-ofice', 'hrm', 'kms'] or lst_app_code not in APP_FIELD:
+                continue
+
+            # Lấy field cần kiểm tra cho parent này
+            parent_fields = APP_FIELD[lst_app_code]
+
+            if hasattr(current_obj, parent_fields) and getattr(current_obj, parent_fields):
+                temp_obj = get_parent_func(current_obj, parent_fields)
+                if temp_obj:
+                    current_obj = temp_obj
+                    parent_obj_lst[lst_app_code] = current_obj
+                else:
+                    return False, {}
+            else:
+                return False, {}
+        # Đã kiểm tra hết chain và đều hợp lệ
+        return True, parent_obj_lst
+
+    # Tìm path đúng trong danh sách
+    for item in path_current_lst:
+        is_check, lst_match = validate_path(item)
+        if is_check:
+            return item, lst_match
+
+    return None, {}
+
+
+def cu_folder_form_path(app_code, obj_doc, parent_folder):
+    app_models = DisperseModel(app_model='base.Application').get_model()
+    application_flt = app_models.objects.filter(model_code=app_code)
+    if application_flt.exists():
+        app_current_obj = application_flt.first()
+    else:
+        return False
+
+    folder_label, _ = Folder.objects.get_or_create(
+        company_id=obj_doc.company_id,
+        tenant_id=obj_doc.tenant_id,
+        parent_n=parent_folder,
+        title=APP_NAME[app_code],
+        is_system=True,
+        defaults={
+            'title': APP_NAME[app_code],
+            'company_id': obj_doc.company_id,
+            'tenant_id': obj_doc.tenant_id,
+            'parent_n': parent_folder,
+            'is_system': True
+        }
+    )
+    # generate name for app folder
+    result_name = deepcopy(obj_doc.title)
+    if len(result_name) > 35:
+        one_third = len(result_name) // 3
+        result_name = f'{result_name[:one_third]}...{result_name[-one_third:]}'
+
+    folder_app, _ = Folder.objects.get_or_create(
+        application=app_current_obj,
+        doc_code=obj_doc.code,
+        is_system=True,
+        parent_n=folder_label,
+        defaults={
+            'title': f'{obj_doc.code}-{result_name}',
+            'doc_code': obj_doc.code,
+            'application': app_current_obj,
+            'company_id': obj_doc.company_id,
+            'tenant_id': obj_doc.tenant_id,
+            'parent_n': folder_label,
+            'is_system': True
+        }
+    )
+    current_folder = folder_app
+    if app_code == 'serviceorder':
+        current_folder, _ = Folder.objects.get_or_create(
+            is_system=True,
+            parent_n=current_folder,
+            defaults={
+                'title': 'Work order',
+                'parent_n': current_folder,
+                'is_system': True,
+                'company_id': obj_doc.company_id,
+                'tenant_id': obj_doc.tenant_id,
+            }
+        )
+    return current_folder
+
+
+def get_doc_obj_from_id(id_doc, app_obj):
+    model_cls = DisperseModel(app_model=f'{app_obj.app_label}.{app_obj.model_code}').get_model()
+    if model_cls and hasattr(model_cls, 'objects'):
+        try:
+            return model_cls.objects.get(pk=id_doc)
+        except model_cls.DoesNotExist:
+            raise ValueError('Document Object is not found ' + id_doc)
+    raise ValueError('Model Doc not found: ' + id_doc)
+
+
+def processing_folder(doc_id, doc_app):
+    """logic của func:
+    - từ thông tin có sẵn tìm ra danh sách path folder đúng của doc_obj
+    - loop trong danh sách path chính xác tạo folder theo path và trả về folder của chính phiếu đó
+    """
+
+    doc_obj = get_doc_obj_from_id(doc_id, doc_app)
+    # get code of doc code via config
+    folder_obj_lst = Folder.objects.filter(
+        application=doc_app,
+        is_system=True,
+        **({'doc_code': doc_obj.code} if doc_obj.code else {'title': f'-{doc_obj.title}'})
+    )
+    if folder_obj_lst.exists():
+        folder_obj = folder_obj_lst.first()
+    else:
+        folder_system_obj, _ = Folder.objects.get_or_create(
+            id=MODULE_MAPPING['system']['id'],
+            defaults={
+                'id': MODULE_MAPPING['system']['id'],
+                'title': MODULE_MAPPING['system']['name'],
+                'company': doc_obj.company,
+                'tenant': doc_obj.tenant,
+                'is_system': True
+            }
+        )
+        result_name = doc_obj.title if len(
+            doc_obj.title
+        ) > 35 else f'{doc_obj.title[:len(doc_obj.title) // 3]}...{doc_obj.title[-(len(doc_obj.title) // 3):]}'
+        # tạo folder theo doc_code và app
+        folder_obj, _ = Folder.objects.get_or_create(
+            application=doc_app,
+            doc_code=doc_obj.code,
+            is_system=True,
+            defaults={
+                'title': f'{doc_obj.code}-{result_name}',
+                'company': doc_obj.company,
+                'tenant': doc_obj.tenant,
+                'application': doc_app,
+                'doc_code': doc_obj.code if doc_obj.code else None,
+                'is_system': True
+            }
+        )
+
+        # lấy danh sách plan và kiểm tra doc code có trong tất cả app và plan
+        list_plans = [item.title for item in doc_app.plans.all()]
+        path_current_lst = []
+        for plan in list_plans:
+            path_current_lst += find_function_in_hierarchy(plan.lower(), doc_app.model_code)
+
+        path_str, obj_path_dict = find_correct_path(doc_app.model_code, doc_obj, path_current_lst)
+
+        if path_str:
+            path_lst = path_str.split('.')
+            current_folder_path = None
+            for path in path_lst:
+                if path == doc_app.model_code:
+                    if len(path_lst) == 2 and path_lst[0] in ['sale', 'e-office', 'hrm', 'kms']:
+                        current_folder_path, _ = Folder.objects.get_or_create(
+                            title=APP_NAME[path],
+                            parent_n=current_folder_path,
+                            company_id=doc_obj.company_id,
+                            tenant_id=doc_obj.tenant_id,
+                            defaults={
+                                'title': APP_NAME[path],
+                                'company_id': doc_obj.company_id,
+                                'tenant_id': doc_obj.tenant_id,
+                                'is_system': True,
+                                'parent_n': current_folder_path
+                            }
+                        )
+
+                    folder_obj.parent_n = current_folder_path
+                    folder_obj.save(update_fields=['parent_n'])
+                    break
+                if path in MODULE_MAPPING:
+                    current_folder_path, _ = Folder.objects.get_or_create(
+                        id=MODULE_MAPPING['project']['id'] if path == 'sale' else MODULE_MAPPING[path]['id'],
+                        company_id=doc_obj.company_id,
+                        tenant_id=doc_obj.tenant_id,
+                        defaults={
+                            'id': MODULE_MAPPING['project']['id'] if path == 'sale' else MODULE_MAPPING[path]['id'],
+                            'title': MODULE_MAPPING['project']['name'] if path == 'sale' else MODULE_MAPPING[path][
+                                'name'],
+                            'company_id': doc_obj.company_id,
+                            'tenant_id': doc_obj.tenant_id,
+                            'is_system': True,
+                            'parent_n': folder_system_obj
+                        }
+                    )
+                else:
+                    current_folder_path = cu_folder_form_path(path, obj_path_dict[path], current_folder_path)
+    return folder_obj
 
 
 class BastionFiles(MasterDataAbstractModel):
@@ -512,24 +799,7 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
             try:
                 with transaction.atomic():
                     if new_objs:
-                        folder_obj = Folder.objects.filter_on_company(application=doc_app, is_system=True)
-                        has_folder = folder_obj.exists()
-                        # create new if folder not exists
-                        if not has_folder:
-                            has_folder, _ = Folder.objects.get_or_create(
-                                application=doc_app,
-                                is_system=True,
-                                defaults={
-                                    'title': doc_app.title,
-                                    'company': new_objs[0].company,
-                                    'tenant': new_objs[0].tenant,
-                                    'application': doc_app,
-                                    'is_system': True
-                                }
-                            )
-                            folder_obj = has_folder
-                        else:
-                            folder_obj = folder_obj.first()
+                        folder_obj = processing_folder(doc_id, doc_app)
 
                         counter = len(new_objs) + 1
                         m2m_bulk = []
@@ -537,7 +807,7 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
                             m2m_bulk.append(cls(attachment=obj, order=counter, **{doc_field_name + '_id': doc_id}))
                             counter += 1
                             obj.link(doc_id=doc_id, doc_app=doc_app)
-                            if has_folder:
+                            if folder_obj:
                                 obj.folder = folder_obj
                                 obj.save(update_fields=['folder'])
                         cls.objects.bulk_create(m2m_bulk)
@@ -563,6 +833,7 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
 # BEGIN FOLDER
 class Folder(MasterDataAbstractModel):
     application = models.ForeignKey('base.Application', on_delete=models.CASCADE, null=True)
+    doc_code = models.CharField(unique=True, max_length=250, blank=True, null=True)
     parent_n = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,

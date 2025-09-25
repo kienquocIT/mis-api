@@ -1,5 +1,6 @@
 __all__ = ['EmployeeContractListSerializers', 'EmployeeContractCreateSerializers', 'EmployeeContractDetailSerializers',
-           'EmployeeContractRuntimeCreateSerializers', 'EmployeeContractRuntimeUpdateSerializers']
+           'EmployeeContractRuntimeCreateSerializers', 'EmployeeContractRuntimeUpdateSerializers',
+           'EmployeeContractRuntimeDetailSerializers']
 
 
 from django.db import transaction

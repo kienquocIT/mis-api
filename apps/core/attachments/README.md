@@ -161,7 +161,8 @@ thêm hàm **update_files_is_approved** vào hàm save của models chức năng
   update_files_is_approved(
     BusinessRequestAttachmentFile.objects.filter(
       business_request=self, attachment__is_approved=False
-    )
+    ),
+    self
   )
 ```
 

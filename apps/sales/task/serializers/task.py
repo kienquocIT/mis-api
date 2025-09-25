@@ -281,7 +281,8 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
             update_files_is_approved(
                 TaskAttachmentFile.objects.filter(
                     task=task, attachment__is_approved=False
-                )
+                ),
+                task
             )
         if task and 'log_time' in validated_data:
             log_time = validated_data['log_time']
@@ -536,7 +537,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_task_status(cls, attrs):
         if attrs:
-            return attrs
+            return OpportunityTaskStatus.objects.get(id=attrs)
         raise serializers.ValidationError(
             {'status': SaleTask.STT_REQUIRED}
         )
@@ -572,10 +573,11 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         if config.exists():
             config = config.first()
             # nếu user nằm trong group assign và phiếu đang có người thụ hưởng là trống
-            if str(assignee) in current_data.group_assignee.employee_list_access \
-                    and current_data.employee_inherit is None and len(update_data) == 2 and (
-                    'employee_inherit_id' in update_data and 'employee_modified_id' in update_data):
-                return True
+            if current_data.group_assignee and getattr(current_data.group_assignee, 'employee_list_access', []):
+                if str(assignee) in current_data.group_assignee.employee_list_access \
+                        and current_data.employee_inherit is None and len(update_data) == 2 and (
+                        'employee_inherit_id' in update_data and 'employee_modified_id' in update_data):
+                    return True
 
             # nếu người gửi là người thụ hưởng và ko phải là người tạo
             if employee_request.id == assignee and not employee_request == current_data.employee_created:
@@ -587,7 +589,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
                 if not config.is_edit_est and current_data.estimate != update_data['estimate']:
                     raise serializers.ValidationError({'system': SaleTask.NOT_CHANGE_ESTIMATE})
             # group có bị thay đổi ko và ng update group phải nằm trong danh sách được cấp quyền trong config
-            if update_data['group_assignee'] is not None and hasattr(current_data, 'group_assignee'):
+            if hasattr(update_data, 'group_assignee') and hasattr(current_data, 'group_assignee'):
                 if update_data['group_assignee'] != current_data['group_assignee'] and \
                         employee_request.id not in config.user_allow_group_handle:
                     raise serializers.ValidationError({'group_assignee': SaleTask.ASSIGNEE_GROUP_NOT_PERMISSION})
