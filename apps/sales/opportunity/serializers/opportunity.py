@@ -670,10 +670,8 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
 
-        OpportunityCommonFunction.update_opportunity_stage_for_list(instance)
+        OpportunityCommonFunction.update_opportunity_stage(instance)
 
-        LeadHint.check_and_create_lead_hint(instance, None, )
-
-        instance.handle_stage_and_win_rate(obj=instance)
+        LeadHint.check_and_create_lead_hint(instance, None)
 
         return instance

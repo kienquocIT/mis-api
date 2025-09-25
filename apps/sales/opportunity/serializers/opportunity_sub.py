@@ -7,11 +7,11 @@ from apps.core.hr.serializers.common import validate_license_used
 from apps.core.tenant.models import TenantPlan
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
-from apps.sales.lead.models import LeadParser, LeadOpportunity, LeadStage
+from apps.sales.lead.models import LeadParser, LeadOpportunity, LeadStage, LeadChartInformation
 from apps.sales.opportunity.models import (
     OpportunityProductCategory, OpportunityProduct,
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember,
-    OpportunityConfigStage, OpportunityStage, PlanMemberOpportunity, Opportunity,
+    OpportunityConfigStage, OpportunityStage, PlanMemberOpportunity, Opportunity, OpportunityConfig,
 )
 from apps.shared import DisperseModel, Caching
 from apps.shared.permissions.util import PermissionController
@@ -221,9 +221,7 @@ class OpportunityMemberCreateSerializer(serializers.Serializer):  # noqa
     @classmethod
     def validate_members(cls, attrs):
         if len(attrs) > 0:
-            objs = DisperseModel(app_model='hr.Employee').get_model().objects.filter_current(
-                fill__tenant=True, fill__company=True, id__in=attrs
-            )
+            objs = DisperseModel(app_model='hr.Employee').get_model().objects.filter_on_company(id__in=attrs)
             if objs.count() == len(attrs):
                 return objs
             raise serializers.ValidationError({'members': OpportunityMsg.MEMBER_NOT_EXIST})
@@ -567,25 +565,55 @@ class OpportunityCommonFunction:
         return True
 
     @classmethod
-    def update_opportunity_stage_for_list(cls, instance):
-        opp_config_stage = CheckOppStageFunction.get_opp_config_stage(instance)
-        instance_stage = CheckOppStageFunction.get_instance_stage(instance)
-        instance_current_stage = CheckOppStageFunction.get_instance_current_stage(
-            opp_config_stage, instance_stage, instance
+    def update_opportunity_stage(cls, opp_obj):
+        opp_config_stage_data_list = CheckOppStageFunction.get_opp_config_stage_data_list(opp_obj)
+        opp_condition_data_list = CheckOppStageFunction.get_opp_condition_data_list(opp_obj)
+        new_opp_stage_data_list = CheckOppStageFunction.get_new_opp_stage_data_list(
+            opp_config_stage_data_list, opp_condition_data_list, opp_obj
         )
-
-        OpportunityStage.objects.filter(opportunity=instance).delete()
         data_bulk = []
-        for item in instance_current_stage:
+        current_stage_item = None
+        for item in new_opp_stage_data_list:
+            if item.get('current'):
+                current_stage_item = item
             data_bulk.append(
-                OpportunityStage(opportunity=instance, stage_id=item['id'], is_current=item['current'])
+                OpportunityStage(
+                    opportunity=opp_obj,
+                    stage_id=str(item.get('id')),
+                    stage_data={
+                        'id': str(item.get('id')),
+                        'indicator': item.get('indicator'),
+                        'win_rate': item.get('win_rate')
+                    },
+                    is_current=item.get('current')
+                )
             )
         if len(data_bulk) > 0:
-            if data_bulk[-1].stage.indicator == 'Closed Lost' and 'SaleOrder Status=0' in instance_stage:
+            if data_bulk[-1].stage.indicator == 'Closed Lost' and 'SaleOrder Status=0' in opp_condition_data_list:
                 raise serializers.ValidationError(
                     {'Closed Lost': 'Can not update to stage "Closed Lost". You are having an Approved Sale Order.'}
                 )
+        OpportunityStage.objects.filter(opportunity=opp_obj).delete()
         OpportunityStage.objects.bulk_create(data_bulk)
+
+        # update stage and winrate for list
+        opp_cfg_obj = OpportunityConfig.objects.filter(company=opp_obj.company).first()
+        is_input_win_rate = False
+        if opp_cfg_obj:
+            is_input_win_rate = opp_cfg_obj.is_input_win_rate
+        if current_stage_item:
+            opp_obj.win_rate = current_stage_item.get('win_rate')
+            opp_obj.current_stage_id = current_stage_item.get('id')
+            opp_obj.current_stage_data = {
+                'id': str(current_stage_item.get('id')),
+                'indicator': current_stage_item.get('indicator'),
+                'win_rate': current_stage_item.get('win_rate')
+            }
+            if is_input_win_rate and opp_obj.is_input_rate:
+                opp_obj.save(update_fields=['current_stage', 'current_stage_data'])
+            else:
+                opp_obj.save(update_fields=['win_rate', 'current_stage', 'current_stage_data'])
+
         return True
 
     @classmethod
@@ -698,11 +726,9 @@ class OpportunityCommonFunction:
 
 class CheckOppStageFunction:
     @classmethod
-    def get_opp_config_stage(cls, instance):
-        opp_config_stage = []
-        for item in OpportunityConfigStage.objects.filter_current(
-                company=instance.company, is_delete=False
-        ):
+    def get_opp_config_stage_data_list(cls, opp_obj):
+        opp_config_stage_data_list = []
+        for item in OpportunityConfigStage.objects.filter(company=opp_obj.company, is_delete=False):
             condition_datas = []
             for data in item.condition_datas:
                 condition_datas.append(
@@ -712,146 +738,156 @@ class CheckOppStageFunction:
                     .replace("b'\\xe2\\x89\\xa0'", '!=')
                     + str(data['compare_data'])
                 )
-            opp_config_stage.append({
-                'id': item.id,
+            opp_config_stage_data_list.append({
+                'id': str(item.id),
                 'indicator': item.indicator,
                 'win_rate': item.win_rate,
                 'logical_operator': item.logical_operator,
                 'condition': condition_datas
             })
-        return opp_config_stage
+        return opp_config_stage_data_list
 
     @classmethod
-    def get_instance_stage(cls, instance):
-        instance_stage = []
-        quotation_status = instance.quotation.system_status if instance.quotation else None
+    def get_opp_condition_data_list(cls, opp_obj):
+        opp_condition_data_list = []
+        quotation_status = opp_obj.quotation.system_status if opp_obj.quotation else None
         # Quotation Status
-        instance_stage.append('Quotation Status=0' if quotation_status == 3 else 'Quotation Status!=0')
+        opp_condition_data_list.append('Quotation Status=0' if quotation_status == 3 else 'Quotation Status!=0')
         # Sale Order Status
-        sale_order_status = instance.sale_order.system_status if instance.sale_order else None
-        instance_stage.append('SaleOrder Status=0' if sale_order_status == 3 else 'SaleOrder Status!=0')
+        sale_order_status = opp_obj.sale_order.system_status if opp_obj.sale_order else None
+        opp_condition_data_list.append('SaleOrder Status=0' if sale_order_status == 3 else 'SaleOrder Status!=0')
         # Sale Order Delivery Status
-        delivery_status = instance.sale_order.delivery_status if instance.sale_order else None
-        instance_stage.append('SaleOrder Delivery Status=0' if delivery_status == 3 else 'SaleOrder Delivery Status!=0')
+        delivery_status = opp_obj.sale_order.delivery_status if opp_obj.sale_order else None
+        opp_condition_data_list.append('SaleOrder Delivery Status=0' if delivery_status == 3 else 'SaleOrder Delivery Status!=0')
         # Customer Annual Revenue
-        customer = instance.customer if instance.customer else None
-        instance_stage.append('Customer=0' if not customer else 'Customer!=0')
-        if 'Customer!=0' in instance_stage:
-            instance_stage.append('Customer=' + str(customer.total_employees))
+        customer = opp_obj.customer if opp_obj.customer else None
+        opp_condition_data_list.append('Customer=0' if not customer else 'Customer!=0')
+        if 'Customer!=0' in opp_condition_data_list:
+            opp_condition_data_list.append('Customer=' + str(customer.total_employees))
         # Product Category
-        product_category = instance.product_category.all()
-        instance_stage.append('Product Category=0' if product_category.count() == 0 else 'Product Category!=0')
+        product_category = opp_obj.product_category.all()
+        opp_condition_data_list.append('Product Category=0' if product_category.count() == 0 else 'Product Category!=0')
         # Budget
-        instance_stage.append('Budget=0' if instance.budget_value <= 0 else 'Budget!=0')
+        opp_condition_data_list.append('Budget=0' if opp_obj.budget_value <= 0 else 'Budget!=0')
         # Open Date
-        instance_stage.append('Open Date=0' if not instance.open_date else 'Open Date!=0')
+        opp_condition_data_list.append('Open Date=0' if not opp_obj.open_date else 'Open Date!=0')
         # Close Date
-        instance_stage.append('Close Date=0' if not instance.close_date else 'Close Date!=0')
+        opp_condition_data_list.append('Close Date=0' if not opp_obj.close_date else 'Close Date!=0')
         # Decision Maker
-        instance_stage.append('Decision Maker=0' if not instance.decision_maker else 'Decision Maker!=0')
+        opp_condition_data_list.append('Decision Maker=0' if not opp_obj.decision_maker else 'Decision Maker!=0')
         # Product Line Detail
-        product_line = instance.opportunity_product_opportunity.all()
-        instance_stage.append('Product Line Detail=0' if product_line.count() == 0 else 'Product Line Detail!=0')
+        product_line = opp_obj.opportunity_product_opportunity.all()
+        opp_condition_data_list.append('Product Line Detail=0' if product_line.count() == 0 else 'Product Line Detail!=0')
         # Competitor Win
-        competitors = instance.opportunity_competitor_opportunity.filter(win_deal=True)
-        instance_stage.append('Competitor Win!=0' if competitors.count() == 0 else 'Competitor Win=0')
+        competitors = opp_obj.opportunity_competitor_opportunity.filter(win_deal=True)
+        opp_condition_data_list.append('Competitor Win!=0' if competitors.count() == 0 else 'Competitor Win=0')
         # Lost By Other Reason
-        instance_stage.append('Lost By Other Reason=0' if instance.lost_by_other_reason else 'Lost By Other Reason!=0')
-        return instance_stage
+        opp_condition_data_list.append('Lost By Other Reason=0' if opp_obj.lost_by_other_reason else 'Lost By Other Reason!=0')
+        return opp_condition_data_list
 
     @classmethod
-    def get_instance_current_stage_range(cls, stages, current_stage_indicator):
-        new_instance_current_stage = []
-        for stage in stages:
-            if stage.indicator in ['Closed Lost', 'Delivery', 'Deal Close']:
-                if stage.indicator in current_stage_indicator:
-                    if not stage.win_rate:
-                        new_instance_current_stage[0]['current'] = 0
-                        new_instance_current_stage.append({
-                            'id': stage.id,
-                            'indicator': stage.indicator,
-                            'win_rate': stage.win_rate,
+    def index_current_stage(cls, passed_stage_list, current_stage_indicator):
+        new_opp_stage_data_list = []
+        for stage in passed_stage_list:
+            if stage.get('indicator') in ['Closed Lost', 'Delivery', 'Deal Close']:
+                if stage.get('indicator') in current_stage_indicator:
+                    if stage.get('win_rate') == 0:
+                        new_opp_stage_data_list[0]['current'] = 0
+                        new_opp_stage_data_list.append({
+                            'id': str(stage.get('id')),
+                            'indicator': stage.get('indicator'),
+                            'win_rate': stage.get('win_rate'),
                             'current': 1
                         })
                     else:
-                        new_instance_current_stage.append({
-                            'id': stage.id,
-                            'indicator': stage.indicator,
-                            'win_rate': stage.win_rate,
-                            'current': 1 if len(new_instance_current_stage) == 0 else 0
+                        new_opp_stage_data_list.append({
+                            'id': str(stage.get('id')),
+                            'indicator': stage.get('indicator'),
+                            'win_rate': stage.get('win_rate'),
+                            'current': 1 if len(new_opp_stage_data_list) == 0 else 0
                         })
             else:
-                if not stage.win_rate:
-                    new_instance_current_stage[0]['current'] = 0
-                    new_instance_current_stage.append({
-                        'id': stage.id,
-                        'indicator': stage.indicator,
-                        'win_rate': stage.win_rate,
+                if stage.get('win_rate') == 0:
+                    new_opp_stage_data_list[0]['current'] = 0
+                    new_opp_stage_data_list.append({
+                        'id': str(stage.get('id')),
+                        'indicator': stage.get('indicator'),
+                        'win_rate': stage.get('win_rate'),
                         'current': 1
                     })
                 else:
-                    new_instance_current_stage.append({
-                        'id': stage.id,
-                        'indicator': stage.indicator,
-                        'win_rate': stage.win_rate,
-                        'current': 1 if len(new_instance_current_stage) == 0 else 0
+                    new_opp_stage_data_list.append({
+                        'id': str(stage.get('id')),
+                        'indicator': stage.get('indicator'),
+                        'win_rate': stage.get('win_rate'),
+                        'current': 1 if len(new_opp_stage_data_list) == 0 else 0
                     })
-        return new_instance_current_stage
+        return new_opp_stage_data_list
 
     @classmethod
-    def check_or(cls, stage_condition, instance_stage):
+    def check_or_logic(cls, stage_condition, opp_condition_data_list):
         flag = False
         for item in stage_condition:
-            if item in instance_stage:
+            if item in opp_condition_data_list:
                 flag = True
                 break
         return flag
 
     @classmethod
-    def check_and(cls, stage_condition, instance_stage):
+    def check_and_logic(cls, stage_condition, opp_condition_data_list):
         flag = True
         for item in stage_condition:
-            if item not in instance_stage:
+            if item not in opp_condition_data_list:
                 flag = False
         return flag
 
     @classmethod
-    def get_instance_current_stage(cls, opp_config_stage, instance_stage, instance):
-        instance_current_stage = []
+    def get_new_opp_stage_data_list(cls, opp_config_stage_data_list, opp_condition_data_list, opp_obj):
+        opp_range_stage_list = []
         current_stage_indicator = []
-        for stage in opp_config_stage:
-            if stage['logical_operator']:
-                if cls.check_or(stage['condition'], instance_stage):
-                    current_stage_indicator.append(stage['indicator'])
-                    instance_current_stage.append({
-                        'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
+        for stage in opp_config_stage_data_list:
+            if stage.get('logical_operator') == 1:
+                if cls.check_or_logic(stage.get('condition'), opp_condition_data_list):
+                    current_stage_indicator.append(stage.get('indicator'))
+                    opp_range_stage_list.append({
+                        'id': str(stage.get('id')),
+                        'indicator': stage.get('indicator'),
+                        'win_rate': stage.get('win_rate'),
+                        'current': 0
                     })
             else:
-                if cls.check_and(stage['condition'], instance_stage):
-                    current_stage_indicator.append(stage['indicator'])
-                    instance_current_stage.append({
-                        'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
+                if cls.check_and_logic(stage.get('condition'), opp_condition_data_list):
+                    current_stage_indicator.append(stage.get('indicator'))
+                    opp_range_stage_list.append({
+                        'id': str(stage.get('id')),
+                        'indicator': stage.get('indicator'),
+                        'win_rate': stage.get('win_rate'),
+                        'current': 0
                     })
 
-            if stage['indicator'] == 'Deal Close' and instance.is_deal_close:
-                current_stage_indicator.append(stage['indicator'])
-                instance_current_stage.append({
-                    'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
+            if stage.get('indicator') == 'Deal Close' and opp_obj.is_deal_close:
+                current_stage_indicator.append(stage.get('indicator'))
+                opp_range_stage_list.append({
+                    'id': str(stage.get('id')),
+                    'indicator': stage.get('indicator'),
+                    'win_rate': stage.get('win_rate'),
+                    'current': 0
                 })
 
-        if len(instance_current_stage) > 0:
-            instance_current_stage = sorted(instance_current_stage, key=lambda x: x['win_rate'], reverse=True)
-            if instance_current_stage[-1]['win_rate'] == 0:
-                instance_current_stage[-1]['current'] = 1
+        if len(opp_range_stage_list) > 0:
+            # lớn tới bé
+            sorted_opp_range_stage_list = sorted(opp_range_stage_list, key=lambda x: x['win_rate'], reverse=True)
+            if sorted_opp_range_stage_list[-1].get('win_rate') == 0:
+                sorted_opp_range_stage_list[-1]['current'] = 1
             else:
-                instance_current_stage[0]['current'] = 1
+                sorted_opp_range_stage_list[0]['current'] = 1
 
-            stages = OpportunityConfigStage.objects.filter(
-                company_id=instance.company_id,
-                win_rate__lte=instance_current_stage[0]['win_rate'],
-                is_delete=False
-            ).order_by('-win_rate')
-            new_instance_current_stage = cls.get_instance_current_stage_range(stages, current_stage_indicator)
-
-            return new_instance_current_stage
+            passed_stage_list = [
+                item for item in opp_config_stage_data_list if
+                item.get('win_rate', 0) <= sorted_opp_range_stage_list[0].get('win_rate')
+            ]
+            print(passed_stage_list)
+            new_opp_stage_data_list = cls.index_current_stage(passed_stage_list, current_stage_indicator)
+            print(new_opp_stage_data_list)
+            return new_opp_stage_data_list
         raise serializers.ValidationError({'current stage': OpportunityMsg.ERROR_WHEN_GET_NULL_CURRENT_STAGE})

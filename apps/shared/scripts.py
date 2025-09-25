@@ -1322,21 +1322,6 @@ class SubScripts:
         return True
 
     @classmethod
-    def update_opp_current_stage(cls):
-        for obj in Opportunity.objects.all():
-            if obj.check_config_auto_update_stage(obj=obj):
-                obj.win_rate, opp_stage_obj = obj.update_stage(obj=obj)
-                obj.current_stage = opp_stage_obj.stage
-                obj.current_stage_data = {
-                    'id': str(obj.current_stage.id),
-                    'indicator': obj.current_stage.indicator,
-                    'win_rate': obj.current_stage.win_rate
-                } if obj.current_stage else {}
-                obj.save(update_fields=['win_rate', 'current_stage', 'current_stage_data'])
-        print('Done :))')
-        return True
-
-    @classmethod
     def update_order_delivery_has_ar_invoice_already(cls):
         for obj in OrderDeliverySub.objects.all():
             obj.has_ar_invoice_already = ARInvoiceDelivery.objects.filter(
