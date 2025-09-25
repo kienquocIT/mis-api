@@ -5,7 +5,7 @@ from apps.sales.purchasing.views import (
     PurchaseRequestListForPQR, PurchaseRequestProductList, PurchaseOrderDetail, PurchaseOrderList,
     PurchaseQuotationRequestListForPQ, PurchaseQuotationList, PurchaseQuotationDetail, PurchaseQuotationProductList,
     PurchaseOrderProductGRList, PurchaseOrderSaleList, PurchaseRequestConfigDetail, PurchaseRequestSaleList,
-    PurchaseQuotationSaleList, PurchaseOrderDDList
+    PurchaseQuotationSaleList, PurchaseOrderDDList, PurchaseRequestSaleOrderList
 )
 
 urlpatterns = [
@@ -16,6 +16,7 @@ urlpatterns = [
     path('purchase-request-for-pqr/list', PurchaseRequestListForPQR.as_view(), name='PurchaseRequestListForPQR'),
     path('purchase-request/<str:pk>', PurchaseRequestDetail.as_view(), name='PurchaseRequestDetail'),
     path('purchase-request-product/list', PurchaseRequestProductList.as_view(), name='PurchaseRequestProductList'),
+    path('purchase-request-so-list', PurchaseRequestSaleOrderList.as_view(), name='PurchaseRequestSaleOrderList'),
 
     # purchase quotation request
     path(

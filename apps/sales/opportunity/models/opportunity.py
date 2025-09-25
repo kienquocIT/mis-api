@@ -2,14 +2,12 @@ import json
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
 from apps.core.company.models import CompanyFunctionNumber
 from apps.core.hr.models import PermissionAbstractModel
 from apps.shared import (
     DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 )
-from .config import OpportunityConfigStage
-
+from .config import OpportunityConfigStage, OpportunityConfig
 
 TYPE_CUSTOMER = [
     (0, _('Direct Customer')),
@@ -90,19 +88,9 @@ class Opportunity(DataAbstractModel):
         help_text="read data product, use for get list or detail opportunity"
     )
 
-    total_product_pretax_amount = models.FloatField(
-        default=0,
-        help_text="total pretax amount of tab product"
-    )
-
-    total_product_tax = models.FloatField(
-        default=0,
-        help_text="total tax of tab product"
-    )
-    total_product = models.FloatField(
-        default=0,
-        help_text="total amount of tab product"
-    )
+    total_product_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab product")
+    total_product_tax = models.FloatField(default=0, help_text="total tax of tab product")
+    total_product = models.FloatField(default=0, help_text="total amount of tab product")
 
     opportunity_competitors_datas = models.JSONField(
         default=list,
@@ -119,9 +107,7 @@ class Opportunity(DataAbstractModel):
         help_text='possibility of win deal of opportunity'
     )
 
-    is_input_rate = models.BooleanField(
-        default=False,
-    )
+    is_input_rate = models.BooleanField(default=False,)
 
     customer_decision_factor = models.ManyToManyField(
         'opportunity.CustomerDecisionFactor',
@@ -171,17 +157,11 @@ class Opportunity(DataAbstractModel):
     )
     current_stage_data = models.JSONField(default=dict)
 
-    lost_by_other_reason = models.BooleanField(
-        default=False,
-    )
+    lost_by_other_reason = models.BooleanField(default=False,)
 
-    is_close_lost = models.BooleanField(
-        default=False
-    )
+    is_close_lost = models.BooleanField(default=False)
 
-    is_deal_close = models.BooleanField(
-        default=False
-    )
+    is_deal_close = models.BooleanField(default=False)
 
     delivery = models.OneToOneField(
         'delivery.OrderDelivery',
@@ -200,16 +180,10 @@ class Opportunity(DataAbstractModel):
         blank=True,
         related_name='member_of_opp'
     )
-    estimated_gross_profit_percent = models.FloatField(
-        default=0
-    )
-    estimated_gross_profit_value = models.FloatField(
-        default=0
-    )
-
-    def get_members(self, return_obj_or_id='id'):
-        key_return = 'member' if return_obj_or_id == 'obj' else 'member_id'
-        return OpportunitySaleTeamMember.objects.filter(opportunity=self).values_list(key_return, flat=True)
+    estimated_gross_profit_percent = models.FloatField(default=0)
+    estimated_gross_profit_value = models.FloatField(default=0)
+    active_input_winrate = models.BooleanField(default=False)
+    active_go_to_stage = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Opportunity'
@@ -217,6 +191,10 @@ class Opportunity(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    def get_members(self, return_obj_or_id='id'):
+        key_return = 'member' if return_obj_or_id == 'obj' else 'member_id'
+        return OpportunitySaleTeamMember.objects.filter(opportunity=self).values_list(key_return, flat=True)
 
     @classmethod
     def parse_stage_common(cls, condition_id, condition_title, compare_data, obj):
@@ -426,9 +404,7 @@ class Opportunity(DataAbstractModel):
 
     @classmethod
     def update_stage(cls, obj):
-        stages = OpportunityConfigStage.objects.filter(
-            company_id=obj.company_id, is_delete=False
-        ).order_by('win_rate')
+        stages = OpportunityConfigStage.objects.filter(company=obj.company, is_delete=False).order_by('win_rate')
         stage_lost = None
         stage_delivery = None
         stage_close = None
@@ -464,30 +440,45 @@ class Opportunity(DataAbstractModel):
         bulk_data = []
         for index in stage_index:
             stage = list_stage[index]
-            bulk_data.append(OpportunityStage(opportunity=obj, stage_id=stage.id, is_current=False))
+            bulk_data.append(
+                OpportunityStage(
+                    opportunity=obj,
+                    stage=stage,
+                    stage_data={
+                        'id': str(stage.id),
+                        'indicator': stage.indicator,
+                        'win_rate': stage.win_rate
+                    },
+                    is_current=False
+                )
+            )
         bulk_data[-1].is_current = True
         obj.opportunity_stage_opportunity.all().delete()
         OpportunityStage.objects.bulk_create(bulk_data)
         return win_rate, bulk_data[-1]
 
-    # @classmethod
-    # def check_config_auto_update_stage(cls, obj):
-    #     if hasattr(obj, 'company_id'):
-    #         config = OpportunityConfig.objects.filter(company_id=obj.company_id).first()
-    #         if config.is_select_stage:
-    #             return False
-    #     return True
-
     @classmethod
-    def handle_stage_win_rate(cls, obj):
-        obj.win_rate, opp_stage_obj = obj.update_stage(obj=obj)
+    def handle_stage_and_win_rate(cls, obj):
+        opp_cfg_obj = OpportunityConfig.objects.filter(company=obj.company).first()
+        # is_select_stage = False
+        is_input_win_rate = False
+        if opp_cfg_obj:
+            # is_select_stage = opp_cfg_obj.is_select_stage
+            is_input_win_rate = opp_cfg_obj.is_input_win_rate
+
+        opp_stage_win_rate, opp_stage_obj = obj.update_stage(obj=obj)
+        obj.win_rate = opp_stage_win_rate
         obj.current_stage = opp_stage_obj.stage
         obj.current_stage_data = {
             'id': str(obj.current_stage.id),
             'indicator': obj.current_stage.indicator,
             'win_rate': obj.current_stage.win_rate
         } if obj.current_stage else {}
-        obj.save(update_fields=['win_rate', 'current_stage', 'current_stage_data'])
+        if is_input_win_rate and obj.is_input_rate:
+            obj.save(update_fields=['current_stage', 'current_stage_data'])
+        else:
+            obj.save(update_fields=['win_rate', 'current_stage', 'current_stage_data'])
+
         return True
 
     def save(self, *args, **kwargs):
