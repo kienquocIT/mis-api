@@ -1,10 +1,10 @@
 from typing import Union
 from django.conf import settings
 from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from django.utils.translation import gettext_lazy as _
 from apps.sales.opportunity.filters import OpportunityListFilters
 from apps.sales.lead.models import Lead
 from apps.sales.opportunity.models import (
