@@ -820,7 +820,8 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
                             if folder_obj:
                                 obj.folder = folder_obj
                                 update_fields.append('folder')
-                            obj.save(update_fields=update_fields)
+                            if len(update_fields) > 0:
+                                obj.save(update_fields=update_fields)
                         cls.objects.bulk_create(m2m_bulk)
                     # handle remove files
                     if remove_objs:
@@ -828,6 +829,9 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
                         for m2m_obj in cls.objects.filter(**{doc_field_name: doc_id}, attachment__in=remove_objs):
                             if m2m_obj.attachment:
                                 m2m_obj.attachment.unlink()
+                                if m2m_obj.attachment.folder:
+                                    m2m_obj.attachment.folder = None
+                                    m2m_obj.attachment.save(update_fields=['folder'])
                             m2m_obj.delete()
 
                     return True
