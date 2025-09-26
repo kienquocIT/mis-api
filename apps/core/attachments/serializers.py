@@ -459,10 +459,10 @@ class FolderDetailSerializer(serializers.ModelSerializer):
             for child in obj.folder_parent_n.select_related('employee_inherit').all()
         ]
 
-    @classmethod
-    def get_files(cls, obj):
+    def get_files(self, obj):
         file_list = []
-        for file in obj.files_folder.select_related('employee_created').all():
+        file_filter = self.context.get('file_filter', {})
+        for file in obj.files_folder.select_related('employee_created').filter(**file_filter):
             if (file.is_approved and (obj.is_system or obj.is_admin)) or obj.is_owner:
                 file_list.append(
                     {
