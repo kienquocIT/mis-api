@@ -610,8 +610,9 @@ class OpportunityCommonFunction:
             OpportunityStage.objects.filter(opportunity=opp_obj).delete()
             OpportunityStage.objects.bulk_create(data_bulk)
 
-            # update stage and winrate for list
+            # update stage và winrate cho OPP
             if current_stage_item:
+                opp_obj.active_go_to_stage = False
                 opp_obj.win_rate = current_stage_item.get('win_rate')
                 opp_obj.current_stage_id = current_stage_item.get('id')
                 opp_obj.current_stage_data = {
@@ -627,6 +628,7 @@ class OpportunityCommonFunction:
                     'current_stage', 'active_go_to_stage', 'current_stage_data', 'win_rate'
                 ])
         else:
+            # chỉ cập nhập winrate
             if opp_obj.current_stage:
                 opp_obj.win_rate = opp_obj.current_stage.win_rate
                 opp_obj.save(update_fields=['win_rate'] if not opp_obj.is_input_rate else [])
