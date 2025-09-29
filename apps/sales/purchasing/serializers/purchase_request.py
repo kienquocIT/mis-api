@@ -122,6 +122,7 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
 class PurchaseRequestListSerializer(AbstractListSerializerModel):
     sale_order = serializers.SerializerMethodField()
     distribution_plan = serializers.SerializerMethodField()
+    service_order = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
     request_for_string = serializers.SerializerMethodField()
     purchase_status_string = serializers.SerializerMethodField()
@@ -137,6 +138,7 @@ class PurchaseRequestListSerializer(AbstractListSerializerModel):
             'request_for_string',
             'sale_order',
             'distribution_plan',
+            'service_order',
             'supplier',
             'delivered_date',
             'purchase_status',
@@ -151,32 +153,19 @@ class PurchaseRequestListSerializer(AbstractListSerializerModel):
 
     @classmethod
     def get_sale_order(cls, obj):
-        if obj.sale_order:
-            return {
-                'id': obj.sale_order_id,
-                'code': obj.sale_order.code,
-                'title': obj.sale_order.title,
-            }
-        return None
+        return obj.sale_order_data
 
     @classmethod
     def get_distribution_plan(cls, obj):
-        if obj.distribution_plan:
-            return {
-                'id': obj.distribution_plan_id,
-                'code': obj.distribution_plan.code,
-                'title': obj.distribution_plan.title,
-            }
-        return None
+        return obj.distribution_plan_data
+
+    @classmethod
+    def get_service_order(cls, obj):
+        return obj.service_order_data
 
     @classmethod
     def get_supplier(cls, obj):
-        if obj.supplier:
-            return {
-                'id': obj.supplier_id,
-                'title': obj.supplier.name,
-            }
-        return None
+        return obj.supplier_data
 
     @classmethod
     def get_purchase_status_string(cls, obj):
