@@ -472,7 +472,13 @@ class FolderDetailSerializer(serializers.ModelSerializer):
                         'employee_inherit': {
                             'id': file.employee_created_id,
                             'full_name': file.employee_created.get_full_name()
-                        } if file.employee_created else {}
+                        } if file.employee_created else {},
+                        'document_type': {
+                            'id': file.document_type_id, 'title': file.document_type.title,
+                        } if file.document_type else {},
+                        'content_group': {
+                            'id': file.content_group_id, 'title': file.content_group.title,
+                        } if file.content_group else {},
                     }
                 )
         return file_list

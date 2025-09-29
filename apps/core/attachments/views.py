@@ -3,7 +3,7 @@ from wsgiref.util import FileWrapper
 from datetime import datetime
 from stat import S_IFDIR
 
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.contrib.auth.models import AnonymousUser
 
 from django.conf import settings
@@ -506,7 +506,17 @@ class FolderDetail(
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related("parent_n").prefetch_related('files_folder', 'folder_parent_n')
+        return super().get_queryset().select_related("parent_n").prefetch_related(
+            Prefetch(
+                'files_folder',
+                queryset=Files.objects.select_related(
+                    'employee_created',
+                    'document_type',
+                    'content_group',
+                ),
+            ),
+            'folder_parent_n',
+        )
 
     @swagger_auto_schema(
         operation_summary="Folder Detail",

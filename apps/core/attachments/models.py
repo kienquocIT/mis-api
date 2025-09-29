@@ -328,15 +328,12 @@ def processing_folder(doc_id, doc_app):
                 'is_system': True
             }
         )
-
         # lấy danh sách plan và kiểm tra doc code có trong tất cả app và plan
         list_plans = [item.title for item in doc_app.plans.all()]
         path_current_lst = []
         for plan in list_plans:
             path_current_lst += find_function_in_hierarchy(plan.lower(), doc_app.model_code)
-
         path_str, obj_path_dict = find_correct_path(doc_app.model_code, doc_obj, path_current_lst)
-
         if path_str:
             path_lst = path_str.split('.')
             current_folder_path = None
@@ -562,12 +559,10 @@ class Files(BastionFiles):
                 file_objs = Files.objects.filter(id__in=file_objs_or_ids)
                 if file_objs.count() != len(file_objs_or_ids):
                     file_objs = None
-
             if file_objs:
                 relate_app_code = getattr(relate_app, 'code', '')
                 result = []
                 doc_ids_registered = []
-
                 # file_objs register with args:relate_doc_id
                 for obj in file_objs:
                     obj.relate_app = relate_app
@@ -580,7 +575,6 @@ class Files(BastionFiles):
                     )
                     doc_ids_registered.append(obj.id)
                     result.append(obj)
-
                 # reset Files registered with  args:relate_doc_id
                 unused_linked = cls.objects.filter(relate_doc_id=relate_doc_id).exclude(id__in=doc_ids_registered)
                 if unused_linked:
@@ -743,16 +737,13 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
                 **{doc_field_name + '_id': doc_id}
             ) if doc_id and doc_field_name else cls.objects.none()
             old_ids = [str(obj.attachment_id) for obj in old_objs]
-
             if not cls.has_change(current_ids=current_ids, old_ids=old_ids):
                 result['keep'] = list(old_objs)
                 return True, result
-
             file_objs = Files.objects.filter(id__in=current_ids)
             if file_objs.count() == len(current_ids):
                 new_ids = cls.get_new(current_ids=current_ids, old_ids=old_ids)
                 remove_ids = cls.get_remove(current_ids=current_ids, old_ids=old_ids)
-
                 new_errs, new_objs, keep_objs, remove_objs = [], [], [], []
                 for obj in file_objs:
                     if str(obj.id) in new_ids:
@@ -766,12 +757,10 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
                 for old_obj in old_objs:
                     if str(old_obj.attachment.id) in remove_ids:
                         remove_objs.append(old_obj.attachment)
-
                 result['errors'] = new_errs
                 result['new'] = new_objs
                 result['keep'] = keep_objs
                 result['remove'] = remove_objs
-
                 if new_errs:
                     return False, result
                 return True, result
@@ -798,14 +787,12 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
         if result and isinstance(result, dict) and not result.get('errors', []) and doc_field_name:
             new_objs: list[Files] = result['new']
             remove_objs = result['remove']
-
             try:
                 with transaction.atomic():
                     # handle add new files
                     if new_objs:
                         # check and get folder system of files
                         folder_obj = processing_folder(doc_id, doc_app)
-
                         counter = len(new_objs) + 1
                         m2m_bulk = []
                         for obj in new_objs:
@@ -832,7 +819,6 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
                                     m2m_obj.attachment.folder = None
                                     m2m_obj.attachment.save(update_fields=['folder'])
                             m2m_obj.delete()
-
                     return True
             except Exception as err:
                 logger.error(msg=f'[M2MFiles][resolve_change] errors: {str(err)}')
@@ -919,14 +905,11 @@ class PermissionAbstractModel(SimpleAbstractModel):
         """
         if not obj:
             return False
-
         # Normalize ID
         employee_id = str(employee_id).replace('-', '')
-
         # Creator always has full access
         if str(obj.employee_created_id).replace('-', '') == employee_id:
             return True
-
         # Capability must be in list
         if capability not in obj.capability_list:
             return False
