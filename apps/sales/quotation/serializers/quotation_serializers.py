@@ -127,6 +127,7 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel, AbstractCurrencyD
             'process_stage_app',
 
             'attachment',
+            'valid_until',
         )
 
     @classmethod
@@ -189,6 +190,7 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
     total_product_tax = serializers.SerializerMethodField()
     total_product = serializers.SerializerMethodField()
     total_product_revenue_before_tax = serializers.SerializerMethodField()
+    roles_title = serializers.SerializerMethodField()
 
     class Meta:
         model = Quotation
@@ -236,6 +238,8 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
             'workflow_runtime_id',
             'is_active',
             'employee_inherit',
+            'valid_until',
+            'roles_title',
         )
 
     @classmethod
@@ -300,6 +304,14 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
     @classmethod
     def get_total_product_revenue_before_tax(cls, obj):
         return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_revenue_before_tax)
+
+    @classmethod
+    def get_roles_title(cls, obj):
+        if obj.employee_inherit:
+            return ", ".join(
+                role.title for role in obj.employee_inherit.role.all()
+            ) if obj.employee_inherit.role else ""
+        return ""
 
 
 class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyCreateSerializerModel):
@@ -394,6 +406,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
             'indicator_net_income',
             'attachment',
             'date_created',
+            'valid_until',
         )
 
     @classmethod
@@ -578,6 +591,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel):
             'indicator_net_income',
             'attachment',
             'date_created',
+            'valid_until',
         )
 
     @classmethod

@@ -168,7 +168,6 @@ class SaleOrderDetailPrint(BaseRetrieveMixin):
             "opportunity",
             "opportunity__customer",
             "employee_inherit",
-            "process",
         )
 
     @swagger_auto_schema(

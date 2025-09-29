@@ -155,7 +155,9 @@ class QuotationDetailPrint(
             "opportunity",
             "opportunity__customer",
             "employee_inherit",
-            "process",
+            "company",
+        ).prefetch_related(
+            "employee_inherit__role",
         )
 
     @swagger_auto_schema(

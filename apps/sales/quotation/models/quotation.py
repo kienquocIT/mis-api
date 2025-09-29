@@ -261,6 +261,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel, CurrencyAbstractMo
         default=timezone.now,
         help_text='The record created at value',
     )
+    valid_until = models.DateTimeField(null=True)
 
     class Meta:
         verbose_name = 'Quotation'
