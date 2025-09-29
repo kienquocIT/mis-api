@@ -300,6 +300,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel, CurrencyAbstractMo
                     CompanyFunctionNumber.auto_gen_code_based_on_config('quotation', True, self, kwargs)
                     QuotationFinishHandler.update_opportunity(instance=self)  # opportunity
                     QuotationFinishHandler.push_to_customer_activity(instance=self)  # customer
+                    QuotationFinishHandler.set_true_file_is_approved(instance=self)  # file
         if self.system_status in [4]:  # cancel
             # opportunity
             QuotationFinishHandler.update_opportunity(instance=self)

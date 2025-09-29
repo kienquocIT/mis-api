@@ -52,3 +52,13 @@ class QuotationFinishHandler:
                 'net_income': instance.indicator_net_income,
             })
         return True
+
+    # FILE
+    @classmethod
+    def set_true_file_is_approved(cls, instance):
+        for m2m_attachment in instance.quotation_attachment_quotation.all():
+            attachment = m2m_attachment.attachment
+            if attachment:
+                attachment.is_approved = True
+                attachment.save(update_fields=['is_approved'])
+        return True

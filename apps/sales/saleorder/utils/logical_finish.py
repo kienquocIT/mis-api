@@ -215,6 +215,16 @@ class SOFinishHandler:
             instance.recurrence_task.save(update_fields=['recurrence_action'])
         return True
 
+    # FILE
+    @classmethod
+    def set_true_file_is_approved(cls, instance):
+        for m2m_attachment in instance.sale_order_attachment_sale_order.all():
+            attachment = m2m_attachment.attachment
+            if attachment:
+                attachment.is_approved = True
+                attachment.save(update_fields=['is_approved'])
+        return True
+
 
 class DocumentChangeHandler:
 
