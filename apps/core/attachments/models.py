@@ -362,13 +362,12 @@ def processing_folder(doc_id, doc_app):
                     break
                 if path in MODULE_MAPPING:
                     current_folder_path, _ = Folder.objects.get_or_create(
-                        id=MODULE_MAPPING['project']['id'] if path == 'sale' else MODULE_MAPPING[path]['id'],
+                        id=MODULE_MAPPING[path]['id'],
                         company_id=doc_obj.company_id,
                         tenant_id=doc_obj.tenant_id,
                         defaults={
-                            'id': MODULE_MAPPING['project']['id'] if path == 'sale' else MODULE_MAPPING[path]['id'],
-                            'title': MODULE_MAPPING['project']['name'] if path == 'sale' else MODULE_MAPPING[path][
-                                'name'],
+                            'id': MODULE_MAPPING[path]['id'],
+                            'title': MODULE_MAPPING[path]['name'],
                             'company_id': doc_obj.company_id,
                             'tenant_id': doc_obj.tenant_id,
                             'is_system': True,
