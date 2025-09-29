@@ -3,9 +3,10 @@ from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models import ExpenseItem, UnitOfMeasure, Tax, Product, Currency
 from apps.sales.serviceorder.models import (
     ServiceOrderShipment, ServiceOrderExpense, ServiceOrderServiceDetail, ServiceOrderWorkOrder, ServiceOrderPayment,
+    ServiceOrder, ServiceOrderContainer, ServiceOrderPackage, ServiceOrderWorkOrderCost, ServiceOrderWorkOrderTask,
+    ServiceOrderPaymentReconcile, ServiceOrderPaymentDetail, ServiceOrderWorkOrderContribution,
 )
-from apps.shared import SVOMsg
-
+from apps.shared import SVOMsg, AbstractDetailSerializerModel
 
 __all__ = [
     'ServiceOrderServiceDetailSerializer',
@@ -547,6 +548,7 @@ class ServiceOrderCommonFunc:
                 service_detail_id_map,
                 shipment_map_id
             )
+        return True
 
     @staticmethod
     def create_work_order_cost(work_order, cost_data):
@@ -569,6 +571,7 @@ class ServiceOrderCommonFunc:
 
         work_order.work_order_costs.all().delete()
         ServiceOrderWorkOrderCost.objects.bulk_create(bulk_data)
+        return True
 
     @staticmethod
     def create_work_order_contribution(work_order, contribution_data, service_detail_id_map, shipment_map_id):
@@ -602,6 +605,7 @@ class ServiceOrderCommonFunc:
             )
         work_order.work_order_contributions.all().delete()
         ServiceOrderWorkOrderContribution.objects.bulk_create(bulk_data)
+        return True
 
     @staticmethod
     def create_payment(service_order, payment_data, service_detail_id_map):
@@ -640,6 +644,7 @@ class ServiceOrderCommonFunc:
                 payment_detail_id_map,
                 service_detail_id_map
             )
+        return True
 
     @staticmethod
     def create_payment_detail(payment, payment_detail_data, service_detail_id_map):
@@ -706,6 +711,7 @@ class ServiceOrderCommonFunc:
                 )
             )
         ServiceOrderPaymentReconcile.objects.bulk_create(bulk_data)
+        return True
 
     @staticmethod
     def calculate_total_expense(service_order_obj, expense_data: []):
