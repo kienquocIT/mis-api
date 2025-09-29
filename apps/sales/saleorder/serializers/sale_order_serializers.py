@@ -781,30 +781,6 @@ class SaleOrderExpenseListSerializer(serializers.ModelSerializer):
         return {}
 
 
-class SaleOrderProductListSerializer(serializers.ModelSerializer):
-    product_data = serializers.SerializerMethodField()
-
-    class Meta:
-        model = SaleOrder
-        fields = (
-            'id',
-            'product_data',
-        )
-
-    @classmethod
-    def get_product_data(cls, obj):
-        return [{
-            'id': str(item.id),
-            'product_quantity': item.product_quantity,
-            'remain_for_purchase_request': item.remain_for_purchase_request,
-            'product_data': item.product_data,
-            'uom_data': item.uom_data,
-            'tax_data': item.tax_data,
-        } for item in SaleOrderProduct.objects.select_related('product').filter(
-            sale_order=obj, product__isnull=False
-        ) if 2 in item.product.product_choice and item.remain_for_purchase_request > 0]
-
-
 class SOProductWOListSerializer(serializers.ModelSerializer):
     quantity_so = serializers.SerializerMethodField()
     quantity_wo_completed = serializers.SerializerMethodField()

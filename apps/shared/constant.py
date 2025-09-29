@@ -254,6 +254,7 @@ REQUEST_FOR = [
     (1, _('For Stock Free')),
     (2, _('For Fixed Asset')),
     (3, _('For Stock Plan')),
+    (4, _('For Service Order')),
 ]
 
 PURCHASE_STATUS = [

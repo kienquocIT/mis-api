@@ -4,7 +4,7 @@ from apps.sales.saleorder.models import (
 )
 from apps.sales.saleorder.serializers import (
     SaleOrderListSerializer, SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer,
-    SaleOrderExpenseListSerializer, SaleOrderProductListSerializer,
+    SaleOrderExpenseListSerializer,
     SOProductWOListSerializer, SaleOrderMinimalListSerializer, SORecurrenceListSerializer,
     SaleOrderDetailPrintSerializer
 )
@@ -307,19 +307,6 @@ class SaleOrderIndicatorCompanyRestore(
     @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
-
-
-class ProductListSaleOrder(BaseRetrieveMixin):
-    queryset = SaleOrder.objects
-    serializer_detail = SaleOrderProductListSerializer
-
-    @swagger_auto_schema(
-        operation_summary="SaleOrder Detail / Product List",
-        operation_description="Get SaleOrder Detail / Product List",
-    )
-    @mask_view(login_require=True, auth_require=False)
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
 
 
 class SOProductWOList(BaseListMixin, BaseCreateMixin):

@@ -4,7 +4,7 @@ from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateM
 from apps.sales.distributionplan.models import DistributionPlan
 from apps.sales.distributionplan.serializers import (
     DistributionPlanListSerializer, DistributionPlanDetailSerializer,
-    DistributionPlanCreateSerializer, DistributionPlanUpdateSerializer, DistributionPlanProductListSerializer,
+    DistributionPlanCreateSerializer, DistributionPlanUpdateSerializer,
 )
 
 __all__ = [
@@ -99,22 +99,3 @@ class DistributionPlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.serializer_class = DistributionPlanUpdateSerializer
         return self.update(request, *args, **kwargs)
-
-
-class ProductListDistributionPlan(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = DistributionPlan.objects
-    serializer_detail = DistributionPlanProductListSerializer
-
-    def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related(
-            'product',
-            'product__general_uom_group',
-            'product__general_uom_group__uom_reference',
-        )
-
-    @swagger_auto_schema(operation_summary='Product List Distribution Plan')
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)

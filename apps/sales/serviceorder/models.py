@@ -44,6 +44,8 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
     expense_tax_value = models.FloatField(default=0)
     expense_total_value = models.FloatField(default=0)
 
+    is_done_purchase_request = models.BooleanField(default=False)
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
@@ -73,6 +75,7 @@ class ServiceOrderServiceDetail(MasterDataAbstractModel):
         on_delete=models.SET_NULL,
         null=True,
     )
+    product_data = models.JSONField(default=dict)
     order = models.IntegerField(default=0)
     description = models.TextField(blank=True)
     quantity = models.PositiveIntegerField(default=0)
@@ -99,6 +102,8 @@ class ServiceOrderServiceDetail(MasterDataAbstractModel):
     # data related to payment
     total_payment_percent = models.FloatField(default=0)
     total_payment_value = models.FloatField(default=0)
+
+    remain_for_purchase_request = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Service order service detail'

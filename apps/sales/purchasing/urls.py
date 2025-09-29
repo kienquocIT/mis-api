@@ -5,7 +5,8 @@ from apps.sales.purchasing.views import (
     PurchaseRequestListForPQR, PurchaseRequestProductList, PurchaseOrderDetail, PurchaseOrderList,
     PurchaseQuotationRequestListForPQ, PurchaseQuotationList, PurchaseQuotationDetail, PurchaseQuotationProductList,
     PurchaseOrderProductGRList, PurchaseOrderSaleList, PurchaseRequestConfigDetail, PurchaseRequestSaleList,
-    PurchaseQuotationSaleList, PurchaseOrderDDList, PurchaseRequestSaleOrderList
+    PurchaseQuotationSaleList, PurchaseOrderDDList, SaleOrderListForPR, SaleOrderProductListForPR,
+    DistributionPlanProductListForPR, DistributionPlanListForPR, ServiceOrderListForPR, ServiceOrderProductListForPR
 )
 
 urlpatterns = [
@@ -13,10 +14,26 @@ urlpatterns = [
     path('purchase-request/config', PurchaseRequestConfigDetail.as_view(), name='PurchaseRequestConfigDetail'),
     path('purchase-request/list', PurchaseRequestList.as_view(), name='PurchaseRequestList'),
     path('purchase-request/list-sale', PurchaseRequestSaleList.as_view(), name='PurchaseRequestSaleList'),
-    path('purchase-request-for-pqr/list', PurchaseRequestListForPQR.as_view(), name='PurchaseRequestListForPQR'),
     path('purchase-request/<str:pk>', PurchaseRequestDetail.as_view(), name='PurchaseRequestDetail'),
-    path('purchase-request-product/list', PurchaseRequestProductList.as_view(), name='PurchaseRequestProductList'),
-    path('purchase-request-so-list', PurchaseRequestSaleOrderList.as_view(), name='PurchaseRequestSaleOrderList'),
+    path('pr-product/list', PurchaseRequestProductList.as_view(), name='PurchaseRequestProductList'),
+    path('pr-so-list', SaleOrderListForPR.as_view(), name='SaleOrderListForPR'),
+    path(
+        'pr-so-product-list/<str:pk>',
+        SaleOrderProductListForPR.as_view(),
+        name='SaleOrderProductListForPR'
+    ),
+    path('pr-dp-list', DistributionPlanListForPR.as_view(), name='DistributionPlanListForPR'),
+    path(
+        'pr-dp-product-list/<str:pk>',
+        DistributionPlanProductListForPR.as_view(),
+        name='DistributionPlanProductListForPR'
+    ),
+    path('pr-svo-list', ServiceOrderListForPR.as_view(), name='ServiceOrderListForPR'),
+    path(
+        'pr-svo-product-list/<str:pk>',
+        ServiceOrderProductListForPR.as_view(),
+        name='ServiceOrderProductListForPR'
+    ),
 
     # purchase quotation request
     path(
@@ -34,6 +51,7 @@ urlpatterns = [
         PurchaseQuotationRequestListForPQ.as_view(),
         name='PurchaseQuotationRequestListForPQ'
     ),
+    path('purchase-request-for-pqr/list', PurchaseRequestListForPQR.as_view(), name='PurchaseRequestListForPQR'),
 
     # purchase order
     path('purchase-order/list', PurchaseOrderList.as_view(), name='PurchaseOrderList'),

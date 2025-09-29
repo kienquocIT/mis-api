@@ -234,6 +234,8 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
         help_text='The record created at value',
     )
 
+    is_done_purchase_request = models.BooleanField(default=False)
+
     class Meta:
         verbose_name = 'Sale Order'
         verbose_name_plural = 'Sale Orders'

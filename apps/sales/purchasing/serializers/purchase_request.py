@@ -6,6 +6,7 @@ from apps.masterdata.saledata.models import Account, Contact, Product, UnitOfMea
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct, PurchaseRequestAttachmentFile
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
 from apps.sales.distributionplan.models import DistributionPlan
+from apps.sales.serviceorder.models import ServiceOrder, ServiceOrderServiceDetail
 from apps.shared import (
     REQUEST_FOR, PURCHASE_STATUS, AbstractCreateSerializerModel,
     AbstractDetailSerializerModel, AbstractListSerializerModel, SerializerCommonHandle, SerializerCommonValidate
@@ -15,15 +16,17 @@ from apps.shared.translations.sales import PurchaseRequestMsg
 
 # sub
 class PurchaseRequestProductSerializer(serializers.ModelSerializer):
-    sale_order_product = serializers.UUIDField(allow_null=True)
+    sale_order_product = serializers.UUIDField(required=False, allow_null=True)
+    service_order_product = serializers.UUIDField(required=False, allow_null=True)
     product = serializers.UUIDField()
     uom = serializers.UUIDField()
-    tax = serializers.UUIDField(allow_null=True)
+    tax = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = PurchaseRequestProduct
         fields = (
             'sale_order_product',
+            'service_order_product',
             'product',
             'uom',
             'tax',
@@ -37,8 +40,19 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
         if value:
             try:
                 return SaleOrderProduct.objects.get(id=value)
-            except Product.DoesNotExist:
-                raise serializers.ValidationError({'product': PurchaseRequestMsg.NOT_IN_SALE_ORDER})
+            except SaleOrderProduct.DoesNotExist:
+                raise serializers.ValidationError({'product': PurchaseRequestMsg.SALE_ORDER_PRODUCT_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_service_order_product(cls, value):
+        if value:
+            try:
+                return ServiceOrderServiceDetail.objects.get(id=value)
+            except ServiceOrderServiceDetail.DoesNotExist:
+                raise serializers.ValidationError(
+                    {'service_order_product': PurchaseRequestMsg.SERVICE_ORDER_PRODUCT_NOT_EXIST}
+                )
         return None
 
     @classmethod
@@ -108,6 +122,7 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
 class PurchaseRequestListSerializer(AbstractListSerializerModel):
     sale_order = serializers.SerializerMethodField()
     distribution_plan = serializers.SerializerMethodField()
+    service_order = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
     request_for_string = serializers.SerializerMethodField()
     purchase_status_string = serializers.SerializerMethodField()
@@ -123,6 +138,7 @@ class PurchaseRequestListSerializer(AbstractListSerializerModel):
             'request_for_string',
             'sale_order',
             'distribution_plan',
+            'service_order',
             'supplier',
             'delivered_date',
             'purchase_status',
@@ -137,32 +153,19 @@ class PurchaseRequestListSerializer(AbstractListSerializerModel):
 
     @classmethod
     def get_sale_order(cls, obj):
-        if obj.sale_order:
-            return {
-                'id': obj.sale_order_id,
-                'code': obj.sale_order.code,
-                'title': obj.sale_order.title,
-            }
-        return None
+        return obj.sale_order_data
 
     @classmethod
     def get_distribution_plan(cls, obj):
-        if obj.distribution_plan:
-            return {
-                'id': obj.distribution_plan_id,
-                'code': obj.distribution_plan.code,
-                'title': obj.distribution_plan.title,
-            }
-        return None
+        return obj.distribution_plan_data
+
+    @classmethod
+    def get_service_order(cls, obj):
+        return obj.service_order_data
 
     @classmethod
     def get_supplier(cls, obj):
-        if obj.supplier:
-            return {
-                'id': obj.supplier_id,
-                'title': obj.supplier.name,
-            }
-        return None
+        return obj.supplier_data
 
     @classmethod
     def get_purchase_status_string(cls, obj):
@@ -177,6 +180,7 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
     sale_order = serializers.UUIDField(required=False, allow_null=True)
     distribution_plan = serializers.UUIDField(required=False, allow_null=True)
+    service_order = serializers.UUIDField(required=False, allow_null=True)
     supplier = serializers.UUIDField(required=True)
     contact = serializers.UUIDField(required=True)
     purchase_request_product_datas = PurchaseRequestProductSerializer(many=True)
@@ -192,6 +196,7 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
             'request_for',
             'sale_order',
             'distribution_plan',
+            'service_order',
             'delivered_date',
             'note',
             'purchase_request_product_datas',
@@ -234,6 +239,15 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
                 return distribution_plan_obj
             except DistributionPlan.DoesNotExist:
                 raise serializers.ValidationError({'distribution_plan': PurchaseRequestMsg.DOES_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_service_order(cls, value):
+        if value:
+            try:
+                return ServiceOrder.objects.get_on_company(id=value)
+            except ServiceOrder.DoesNotExist:
+                raise serializers.ValidationError({'service_order': PurchaseRequestMsg.DOES_NOT_EXIST})
         return None
 
     def validate_attachment(self, value):
@@ -285,6 +299,14 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
                 'title': distribution_plan_obj.title,
             } if distribution_plan_obj else {}
 
+        if 'service_order' in validate_data:
+            service_order_obj = validate_data.get('service_order')
+            validate_data['service_order_data'] = {
+                'id': str(service_order_obj.id),
+                'code': service_order_obj.code,
+                'title': service_order_obj.title,
+            } if service_order_obj else {}
+
         return validate_data
 
     @decorator_run_workflow
@@ -303,6 +325,7 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
 class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
     sale_order = serializers.SerializerMethodField()
     distribution_plan = serializers.SerializerMethodField()
+    service_order = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
     purchase_status = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
@@ -324,6 +347,7 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
             'note',
             'sale_order',
             'distribution_plan',
+            'service_order',
             'purchase_request_product_datas',
             'pretax_amount',
             'taxes',
@@ -339,6 +363,10 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_distribution_plan(cls, obj):
         return obj.distribution_plan_data
+
+    @classmethod
+    def get_service_order(cls, obj):
+        return obj.service_order_data
 
     @classmethod
     def get_supplier(cls, obj):
@@ -357,6 +385,7 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
         return [{
             "id": str(item.id),
             "sale_order_product_id": str(item.sale_order_product_id),
+            "service_order_product_id": str(item.service_order_product_id),
             "product_data": item.product_data,
             "uom_data": item.uom_data,
             "tax_data": item.tax_data,
@@ -379,6 +408,7 @@ class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=150)
     sale_order = serializers.UUIDField(required=False, allow_null=True)
     distribution_plan = serializers.UUIDField(required=False, allow_null=True)
+    service_order = serializers.UUIDField(required=False, allow_null=True)
     supplier = serializers.UUIDField(required=True)
     contact = serializers.UUIDField(required=True)
     purchase_request_product_datas = PurchaseRequestProductSerializer(many=True)
@@ -394,6 +424,7 @@ class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
             'request_for',
             'sale_order',
             'distribution_plan',
+            'service_order',
             'delivered_date',
             'note',
             'purchase_request_product_datas',
@@ -418,6 +449,10 @@ class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_distribution_plan(cls, value):
         return PurchaseRequestCreateSerializer.validate_distribution_plan(value)
+
+    @classmethod
+    def validate_service_order(cls, value):
+        return PurchaseRequestCreateSerializer.validate_service_order(value)
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
@@ -473,7 +508,7 @@ class PurchaseRequestCommonFunction:
 
 
 # related serializers
-class PurchaseRequestSaleOrderListSerializer(serializers.ModelSerializer):
+class SaleOrderListForPRSerializer(serializers.ModelSerializer):
     is_create_purchase_request = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
 
@@ -498,42 +533,130 @@ class PurchaseRequestSaleOrderListSerializer(serializers.ModelSerializer):
         return obj.employee_inherit.get_detail_with_group() if obj.employee_inherit else {}
 
 
-class PurchaseRequestListForPQRSerializer(serializers.ModelSerializer):
-    product_list = serializers.SerializerMethodField()
+class SaleOrderProductListForPRSerializer(serializers.ModelSerializer):
+    product_data = serializers.SerializerMethodField()
 
     class Meta:
-        model = PurchaseRequest
+        model = SaleOrder
+        fields = (
+            'id',
+            'product_data',
+        )
+
+    @classmethod
+    def get_product_data(cls, obj):
+        return [{
+            'id': str(item.id),
+            'product_quantity': item.product_quantity,
+            'remain_for_purchase_request': item.remain_for_purchase_request,
+            'product_data': item.product_data,
+            'uom_data': item.uom_data,
+            'tax_data': item.tax_data,
+        } for item in obj.sale_order_product_sale_order.filter(
+            product__isnull=False
+        ) if 2 in item.product.product_choice and item.remain_for_purchase_request > 0]
+
+
+class DistributionPlanListForPRSerializer(AbstractListSerializerModel):
+    is_expired = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DistributionPlan
         fields = (
             'id',
             'code',
             'title',
-            'product_list'
+            'start_date',
+            'end_date',
+            'is_expired',
+            'employee_inherit'
         )
 
     @classmethod
-    def get_product_list(cls, obj):
-        product_list = []
-        for item in obj.purchase_request.all().select_related('product', 'uom', 'tax'):
-            product_list.append(
-                {
-                    'id': item.product_id,
-                    'title': item.product.title,
-                    'description': item.product.description,
-                    'uom': {'id': item.uom_id, 'title': item.uom.title, 'ratio': item.uom.ratio},
-                    'uom_group': {
-                        'id': item.uom.group_id, 'code': item.uom.group.code, 'title': item.uom.group.title
-                    } if item.uom.group else {},
-                    'quantity': item.quantity,
-                    'purchase_request_id': item.purchase_request_id,
-                    'purchase_request_code': item.purchase_request.code,
-                    'product_unit_price': item.unit_price,
-                    'product_subtotal_price': item.sub_total_price,
-                    'tax': {
-                        'id': item.tax_id, 'title': item.tax.title, 'code': item.tax.code, 'value': item.tax.rate
-                    } if item.tax else {},
-                }
-            )
-        return product_list
+    def get_is_expired(cls, obj):
+        return obj.end_date < datetime.now().date()
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return obj.employee_inherit.get_detail_with_group() if obj.employee_inherit else {}
+
+
+class DistributionPlanProductListForPRSerializer(AbstractDetailSerializerModel):
+    product_data = serializers.SerializerMethodField()
+    uom_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DistributionPlan
+        fields = (
+            'id',
+            'product_data',
+            'uom_data',
+            'start_date',
+            'end_date',
+            'no_of_month',
+            'expected_number',
+            'purchase_request_number'
+        )
+
+    @classmethod
+    def get_product_data(cls, obj):
+        return {
+            'id': str(obj.product_id),
+            'code': obj.product.code,
+            'title': obj.product.title,
+            'description': obj.product.description
+        } if obj.product and 2 in obj.product.product_choice else {}
+
+    @classmethod
+    def get_uom_data(cls, obj):
+        return {
+            'id': str(obj.product.general_uom_group.uom_reference_id),
+            'code': obj.product.general_uom_group.uom_reference.code,
+            'title': obj.product.general_uom_group.uom_reference.title,
+            'group_id': str(obj.product.general_uom_group_id),
+        } if obj.product.general_uom_group.uom_reference else {} if obj.product.general_uom_group else {}
+
+
+class ServiceOrderListForPRSerializer(AbstractListSerializerModel):
+    employee_inherit = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ServiceOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+            'customer_data',
+            'employee_inherit',
+        )
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return obj.employee_inherit.get_detail_with_group() if obj.employee_created else {}
+
+
+class ServiceOrderProductListForPRSerializer(AbstractListSerializerModel):
+    product_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ServiceOrder
+        fields = (
+            'id',
+            'product_data'
+        )
+
+    @classmethod
+    def get_product_data(cls, obj):
+        return [{
+            'id': str(item.id),
+            'product_quantity': item.quantity,
+            'remain_for_purchase_request': item.remain_for_purchase_request,
+            'product_data': item.product_data,
+            'uom_data': item.uom_data,
+            'tax_data': item.tax_data,
+        } for item in obj.service_details.all() if
+            2 in item.product.product_choice and item.remain_for_purchase_request > 0]
 
 
 class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
