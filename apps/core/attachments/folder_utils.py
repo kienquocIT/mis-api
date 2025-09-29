@@ -4,9 +4,9 @@ from django.utils.translation import gettext_lazy as _
 
 MODULE_MAPPING = {
     'system': {'name': 'System', 'id': '9ac02039-a9a4-42e9-825e-169f740b5b5b'},
-    'project': {'name': 'Sale Projects', 'id': 'cda6b61f-f00f-4cbd-8ce2-e89c8a2f7aa7'},
     'sale': {  # SAlE
-        'name': 'Sale', 'id': '76ab081b-eee4-4923-97b9-1cbb09deef78', 'plan': '4e082324-45e2-4c27-a5aa-e16a758d5627'
+        'name': 'Sales', 'id': '76ab081b-eee4-4923-97b9-1cbb09deef78',
+        'plan': '4e082324-45e2-4c27-a5aa-e16a758d5627'
     },
     'kms': {  # KMS
         'name': 'KMS', 'id': 'c7a702aa-10e7-487a-ab6c-3fd219930504', 'plan': '02793f68-3548-45c1-98f5-89899a963091'
@@ -96,7 +96,7 @@ APP_NAME = {
     'goodsreceipt': _('Good Receipt'),
     'goodsreturn': _('Good Return'),
     'leaseorder': _('Lease Order'),
-    'opportunity': _('Opportunity'),
+    'opportunity': _('Sale Projects'),
     'purchaseorder': _('Purchase Order'),
     'purchasequotationrequest': _('Purchase Quotation Request'),
     'purchaserequest': _('Purchase Request'),

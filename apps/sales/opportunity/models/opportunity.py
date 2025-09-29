@@ -182,7 +182,7 @@ class Opportunity(DataAbstractModel):
     )
     estimated_gross_profit_percent = models.FloatField(default=0)
     estimated_gross_profit_value = models.FloatField(default=0)
-    active_input_winrate = models.BooleanField(default=False)
+
     active_go_to_stage = models.BooleanField(default=False)
 
     class Meta:

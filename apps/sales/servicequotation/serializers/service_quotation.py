@@ -150,7 +150,7 @@ class ServiceQuotationCreateSerializer(AbstractCreateSerializerModel):
             update_files_is_approved(
                 ServiceQuotationAttachMapAttachFile.objects.filter(
                     service_quotation=service_quotation_obj, attachment__is_approved=False
-                )
+                ), service_quotation_obj,
             )
 
             return service_quotation_obj
@@ -483,7 +483,7 @@ class ServiceQuotationUpdateSerializer(AbstractCreateSerializerModel):
             update_files_is_approved(
                 ServiceQuotationAttachMapAttachFile.objects.filter(
                     service_quotation=instance, attachment__is_approved=False
-                )
+                ), instance,
             )
 
             return instance
