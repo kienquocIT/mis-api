@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.base.models import Application
+from apps.core.company.utils import CompanyHandler
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel, \
     HRMsg, FORMATTING
@@ -18,15 +19,6 @@ __all__ = [
     'OrderDeliverySubMinimalListSerializer',
     'OrderDeliverySubRecoveryListSerializer',
 ]
-
-
-def round_by_company_config(company, value):
-    round_num = None
-    if company:
-        company_config = company.config
-        if company_config:
-            round_num = int(company_config.currency_rule.get('precision', '0'))
-    return round(value, round_num) if round_num or round_num == 0 else value
 
 
 def handle_attach_file(instance, attachment_result):
@@ -244,13 +236,13 @@ class OrderDeliveryProductListPrintSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product_subtotal(cls, obj):
-        return round_by_company_config(company=obj.company, value=obj.product_cost * obj.picked_quantity)
+        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.product_cost * obj.picked_quantity)
 
     @classmethod
     def get_product_subtotal_after_tax(cls, obj):
         subtotal = obj.product_cost * obj.picked_quantity
         tax = subtotal * obj.tax_data.get('rate', 0) / 100
-        return round_by_company_config(company=obj.company, value=subtotal + tax)
+        return CompanyHandler.round_by_company_config(company=obj.company, value=subtotal + tax)
 
     class Meta:
         model = OrderDeliveryProduct
@@ -355,7 +347,7 @@ class OrderDeliverySubPrintSerializer(AbstractDetailSerializerModel):
         for delivery_product in obj.delivery_product_delivery_sub.all():
             subtotal = delivery_product.product_cost * delivery_product.picked_quantity
             pretax += subtotal
-        return round_by_company_config(company=obj.company, value=pretax)
+        return CompanyHandler.round_by_company_config(company=obj.company, value=pretax)
 
     @classmethod
     def get_pretax_amount_word(cls, obj):
@@ -369,7 +361,7 @@ class OrderDeliverySubPrintSerializer(AbstractDetailSerializerModel):
         for delivery_product in obj.delivery_product_delivery_sub.all():
             subtotal = delivery_product.product_cost * delivery_product.picked_quantity
             tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
-        return round_by_company_config(company=obj.company, value=tax)
+        return CompanyHandler.round_by_company_config(company=obj.company, value=tax)
 
     @classmethod
     def get_tax_amount_word(cls, obj):
@@ -385,7 +377,7 @@ class OrderDeliverySubPrintSerializer(AbstractDetailSerializerModel):
             subtotal = delivery_product.product_cost * delivery_product.picked_quantity
             pretax += subtotal
             tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
-        return round_by_company_config(company=obj.company, value=pretax + tax)
+        return CompanyHandler.round_by_company_config(company=obj.company, value=pretax + tax)
 
     @classmethod
     def get_total_amount_word(cls, obj):
