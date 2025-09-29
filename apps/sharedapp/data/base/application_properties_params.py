@@ -333,7 +333,7 @@ Quotation_data__params = {
     },
     '8cd58593-6ebc-4f3e-9ffc-3858f697b9c4': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Sale person fullname',
+        'title': 'Sale person - Fullname',
         'code': 'sale_person__full_name',
         'remark': '',
         'type': 1,
@@ -341,7 +341,7 @@ Quotation_data__params = {
     },
     '52eebc42-6ca2-480f-bcb0-ce8e200891e2': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Sale person email',
+        'title': 'Sale person - Email',
         'code': 'sale_person__email',
         'remark': '',
         'type': 1,
@@ -349,8 +349,16 @@ Quotation_data__params = {
     },
     '9352e974-3ecb-4248-b210-2f6cd3b5cb8c': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Sale person phone',
+        'title': 'Sale person - Phone',
         'code': 'sale_person__phone',
+        'remark': '',
+        'type': 1,
+        'is_print': True,
+    },
+    '4327d912-010e-449d-b64a-e25a71ef5d46': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Sale person - Roles',
+        'code': 'roles_title',
         'remark': '',
         'type': 1,
         'is_print': True,
@@ -608,7 +616,7 @@ SaleOrder_data__params = {
     },
     'e4532eb5-7909-4b60-9736-0997d744efaa': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
-        'title': 'Sale person fullname',
+        'title': 'Sale person - Fullname',
         'code': 'sale_person__full_name',
         'remark': '',
         'type': 1,
@@ -616,7 +624,7 @@ SaleOrder_data__params = {
     },
     '3d4d410c-f660-4bf5-95f1-6f8d414bed81': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
-        'title': 'Sale person email',
+        'title': 'Sale person - Email',
         'code': 'sale_person__email',
         'remark': '',
         'type': 1,
@@ -624,7 +632,7 @@ SaleOrder_data__params = {
     },
     '557aa17d-0f6a-4f74-aeaf-4e1dea4d89dc': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
-        'title': 'Sale person phone',
+        'title': 'Sale person - Phone',
         'code': 'sale_person__phone',
         'remark': '',
         'type': 1,
@@ -1938,7 +1946,7 @@ LeaseOrder_data__params = {
     },
     '212ed129-710c-4dc0-9cdb-91f5ea1f7463': {
         'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
-        'title': 'Sale person fullname',
+        'title': 'Sale person - Fullname',
         'code': 'sale_person__full_name',
         'remark': '',
         'type': 1,
@@ -1946,7 +1954,7 @@ LeaseOrder_data__params = {
     },
     '9610d5fb-2587-4713-9b65-25e25a047793': {
         'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
-        'title': 'Sale person email',
+        'title': 'Sale person - Email',
         'code': 'sale_person__email',
         'remark': '',
         'type': 1,
@@ -1954,7 +1962,7 @@ LeaseOrder_data__params = {
     },
     '6829a8ac-af32-410f-87af-ec3eb4f5e610': {
         'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
-        'title': 'Sale person phone',
+        'title': 'Sale person - Phone',
         'code': 'sale_person__phone',
         'remark': '',
         'type': 1,

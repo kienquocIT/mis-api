@@ -3,7 +3,7 @@ from wsgiref.util import FileWrapper
 from datetime import datetime
 from stat import S_IFDIR
 
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.contrib.auth.models import AnonymousUser
 
 from django.conf import settings
@@ -506,7 +506,17 @@ class FolderDetail(
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related("parent_n").prefetch_related('files_folder', 'folder_parent_n')
+        return super().get_queryset().select_related("parent_n").prefetch_related(
+            Prefetch(
+                'files_folder',
+                queryset=Files.objects.select_related(
+                    'employee_created',
+                    'document_type',
+                    'content_group',
+                ),
+            ),
+            'folder_parent_n',
+        )
 
     @swagger_auto_schema(
         operation_summary="Folder Detail",
@@ -523,6 +533,13 @@ class FolderDetail(
                     "detail": HttpMsg.FORBIDDEN,
                 }, status=status.HTTP_403_FORBIDDEN, is_errors=True
             )
+        r_query_params = request.query_params
+        file_filter = {}
+        if 'document_type_id' in r_query_params:
+            file_filter['document_type_id'] = r_query_params.get('document_type_id', None)
+        if 'content_group_id' in r_query_params:
+            file_filter['content_group_id'] = r_query_params.get('content_group_id', None)
+        self.ser_context = {'file_filter': file_filter}
         return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(

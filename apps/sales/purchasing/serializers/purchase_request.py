@@ -499,6 +499,7 @@ class PurchaseRequestCommonFunction:
                     purchase_request=purchase_request_obj,
                     tenant=purchase_request_obj.tenant,
                     company=purchase_request_obj.company,
+                    remain_for_purchase_order=item.get('quantity', 0),
                     **item
                 )
             )

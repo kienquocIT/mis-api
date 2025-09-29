@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.base.models import Application
+from apps.core.company.utils import CompanyHandler
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.recurrence.models import Recurrence
 from apps.core.workflow.tasks import decorator_run_workflow
@@ -226,6 +227,11 @@ class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel):
     sale_person = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     sale_order_products_data = serializers.SerializerMethodField()
+    total_product_pretax_amount = serializers.SerializerMethodField()
+    total_product_discount = serializers.SerializerMethodField()
+    total_product_tax = serializers.SerializerMethodField()
+    total_product = serializers.SerializerMethodField()
+    total_product_revenue_before_tax = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -318,6 +324,26 @@ class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel):
                     'product_description': product_description if product_description else product_obj.description
                 })
         return obj.sale_order_products_data
+
+    @classmethod
+    def get_total_product_pretax_amount(cls, obj):
+        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_pretax_amount)
+
+    @classmethod
+    def get_total_product_discount(cls, obj):
+        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_discount)
+
+    @classmethod
+    def get_total_product_tax(cls, obj):
+        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_tax)
+
+    @classmethod
+    def get_total_product(cls, obj):
+        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product)
+
+    @classmethod
+    def get_total_product_revenue_before_tax(cls, obj):
+        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_revenue_before_tax)
 
 
 class SaleOrderCreateSerializer(AbstractCreateSerializerModel):

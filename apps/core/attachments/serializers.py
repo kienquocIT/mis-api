@@ -459,10 +459,10 @@ class FolderDetailSerializer(serializers.ModelSerializer):
             for child in obj.folder_parent_n.select_related('employee_inherit').all()
         ]
 
-    @classmethod
-    def get_files(cls, obj):
+    def get_files(self, obj):
         file_list = []
-        for file in obj.files_folder.select_related('employee_created').all():
+        file_filter = self.context.get('file_filter', {})
+        for file in obj.files_folder.select_related('employee_created').filter(**file_filter):
             if (file.is_approved and (obj.is_system or obj.is_admin)) or obj.is_owner:
                 file_list.append(
                     {
@@ -472,7 +472,13 @@ class FolderDetailSerializer(serializers.ModelSerializer):
                         'employee_inherit': {
                             'id': file.employee_created_id,
                             'full_name': file.employee_created.get_full_name()
-                        } if file.employee_created else {}
+                        } if file.employee_created else {},
+                        'document_type': {
+                            'id': file.document_type_id, 'title': file.document_type.title,
+                        } if file.document_type else {},
+                        'content_group': {
+                            'id': file.content_group_id, 'title': file.content_group.title,
+                        } if file.content_group else {},
                     }
                 )
         return file_list
