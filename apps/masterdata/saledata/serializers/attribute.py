@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.masterdata.saledata.models import Attribute, AttributeNumeric, AttributeList, AttributeWarranty, \
     AttributeListItem
+from apps.masterdata.saledata.models.product import Product
 from apps.shared import BaseMsg
 
 
@@ -134,3 +135,34 @@ class AttributeUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         AttributeHandler.create_update_subs(attribute=instance)
         return instance
+
+
+class ProductAttributeDetailSerializer(serializers.ModelSerializer):
+    attribute_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = (
+            'id',
+            'attribute_list',
+        )
+
+    @classmethod
+    def get_attribute_list(cls, obj):
+        attribute_list = []
+
+        for product_attribute in obj.product_attributes.all():
+            attribute = product_attribute.attribute  # the related Attribute object
+
+            if attribute:
+                attribute_list.append({
+                    # fields from Attribute
+                    'id': attribute.id,
+                    'title': attribute.title,
+                    'price_config_type': attribute.price_config_type,
+                    'price_config_data': attribute.price_config_data,
+                    'is_category': attribute.is_category,
+                    'is_inventory': attribute.is_inventory,
+                })
+        return attribute_list
+

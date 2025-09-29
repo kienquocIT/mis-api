@@ -28,6 +28,8 @@ class ProductListSerializer(serializers.ModelSerializer):
     general_uom_group = serializers.SerializerMethodField()
     inventory_uom = serializers.SerializerMethodField()
     purchase_information = serializers.SerializerMethodField()
+    attribute_list_data = serializers.SerializerMethodField()
+    duration_unit_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -42,6 +44,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             'sale_tax', 'sale_default_uom', 'is_public_website',
             'inventory_uom', 'valuation_method',
             'purchase_information',
+            'duration_unit_data',
+            'attribute_list_data',
             # Transaction information
             'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount'
         )
@@ -105,6 +109,23 @@ class ProductListSerializer(serializers.ModelSerializer):
             'supplied_by': obj.supplied_by
         }
         return result
+
+    @classmethod
+    def get_attribute_list_data(cls, obj):
+        return list(obj.product_attributes.all().values_list('attribute_id', flat=True))
+
+    @classmethod
+    def get_duration_unit_data(cls, obj):
+        return {
+            'id': obj.duration_unit_id,
+            'title': obj.duration_unit.title,
+            'code': obj.duration_unit.code,
+            'group': {
+                'id': obj.duration_unit.group_id,
+                'title': obj.duration_unit.group.title,
+                'code': obj.duration_unit.group.code
+            } if obj.duration_unit.group else {},
+        } if obj.duration_unit else {}
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
