@@ -1,6 +1,4 @@
-from django.db import transaction
 from rest_framework import serializers
-
 from apps.core.attachments.models import update_files_is_approved
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee

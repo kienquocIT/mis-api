@@ -582,7 +582,7 @@ class ServiceOrderCommonFunc:
             temp_id = contribution.get('service_id')
             service_detail_uuid = service_detail_id_map.get(temp_id)
             if not service_detail_uuid:
-                return
+                return False
             package_data = contribution.get('package_data', [])
             if package_data:
                 for package in package_data:
@@ -690,17 +690,17 @@ class ServiceOrderCommonFunc:
             temp_service_id = reconcile.get('service_id')
             service_uuid = service_detail_id_map.get(temp_service_id)
             if not service_uuid:
-                return
+                return False
 
             temp_advance_payment_detail_id = reconcile.get('advance_payment_detail_id')
             advance_payment_detail_uuid = payment_detail_id_map.get(temp_advance_payment_detail_id)
             if not advance_payment_detail_uuid:
-                return
+                return False
 
             temp_payment_detail_id = reconcile.get('payment_detail_id')
             payment_detail_uuid = payment_detail_id_map.get(temp_payment_detail_id)
             if not payment_detail_uuid:
-                return
+                return False
 
             bulk_data.append(
                 ServiceOrderPaymentReconcile(
