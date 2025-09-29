@@ -11,7 +11,7 @@ from apps.sales.purchasing.serializers import (
 )
 from apps.sales.saleorder.models import SaleOrder
 from apps.sales.serviceorder.models import ServiceOrder
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, mask_view
 
 
 # main
