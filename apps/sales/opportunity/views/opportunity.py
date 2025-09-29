@@ -1,11 +1,15 @@
 from typing import Union
 from django.conf import settings
 from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from apps.sales.opportunity.filters import OpportunityListFilters
 from apps.sales.lead.models import Lead
-from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
+from apps.sales.opportunity.models import (
+    Opportunity, OpportunitySaleTeamMember, OpportunityConfigStage, OpportunityStage, OpportunityConfig
+)
 from apps.sales.opportunity.serializers import (
     OpportunityListSerializer, OpportunityUpdateSerializer,
     OpportunityCreateSerializer, OpportunityDetailSerializer
@@ -139,6 +143,65 @@ class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
 
+    def go_to_stage_handle(self):
+        if 'current_stage_id_manual_update' in self.request.query_params:
+            opp_obj = self.get_object()
+            if not opp_obj:
+                raise ValidationError({'detail': _("Cannot find this Opportunity.")})
+
+            opp_cfg_obj = OpportunityConfig.objects.filter(company=opp_obj.company).first()
+            is_select_stage = False
+            is_input_win_rate = False
+            if opp_cfg_obj:
+                is_select_stage = opp_cfg_obj.is_select_stage
+                is_input_win_rate = opp_cfg_obj.is_input_win_rate
+
+            if is_select_stage:
+                if opp_obj.is_deal_close:
+                    raise ValidationError({'detail': _("This opportunity is in 'Deal Close' stage.")})
+
+                stage_id = self.request.query_params.get('current_stage_id_manual_update')
+                stage_obj = OpportunityConfigStage.objects.filter(id=stage_id).first()
+                if not stage_obj:
+                    raise ValidationError({'detail': _("Cannot find this stage.")})
+
+                stage_data = {
+                    'id': str(stage_obj.id),
+                    'indicator': stage_obj.indicator,
+                    'win_rate': stage_obj.win_rate
+                }
+
+                if stage_obj.indicator == "Closed Won":
+                    if not opp_obj.sale_order:
+                        raise ValidationError({'detail': _("Cannot find any Sale Order in this Opportunity.")})
+                    if not opp_obj.sale_order.system_status != 3:
+                        raise ValidationError({'detail': _("Sale Order in this Opportunity have not approved.")})
+
+                if stage_obj.indicator == 'Delivery':
+                    if not opp_obj.sale_order or opp_obj.sale_order.delivery_status not in [2, 3]:
+                        raise ValidationError({'detail': _("Cannot find any Delivery that is in progress.")})
+
+                opp_obj.current_stage = stage_obj
+                opp_obj.current_stage_data = stage_data
+                opp_obj.win_rate = stage_obj.win_rate
+                opp_obj.active_go_to_stage = True
+
+                # Nếu OPP check tự nhập winrate + config check tự nhập winrate thì không update winrate theo stage,
+                # để nó tự nhập, còn false 1 trong 2 thì winrate buộc phải theo stage
+                opp_obj.save(update_fields=[
+                    'current_stage', 'active_go_to_stage', 'current_stage_data'
+                ] if opp_obj.is_input_rate and is_input_win_rate else [
+                    'current_stage', 'active_go_to_stage', 'current_stage_data', 'win_rate'
+                ])
+                opp_obj.opportunity_stage_opportunity.filter(stage__win_rate__gte=stage_obj.win_rate).delete()
+                OpportunityStage.objects.create(
+                    opportunity=opp_obj, stage=stage_obj, stage_data=stage_data, is_current=True
+                )
+                print(f'{opp_obj.code} ---> {stage_obj.indicator}')
+                return True
+            raise ValidationError({'detail': _("You are not allowed to select stage manually.")})
+        return True
+
     def get_queryset(self):
         return super().get_queryset().select_related(
             "customer",
@@ -243,6 +306,7 @@ class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='opportunity', model_code='opportunity', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
+        self.go_to_stage_handle()
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(

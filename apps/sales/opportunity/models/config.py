@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel
 
+
 STAGE_CONDITION_ATTRIBUTE = [
     (0, _('Customer')),
     (1, _('Product Category')),
@@ -19,10 +20,12 @@ STAGE_CONDITION_ATTRIBUTE = [
     (12, _('Close Deal')),
 ]
 
+
 LOGICAL_OPERATORS = [
     (0, _('and')),
     (1, _('or')),
 ]
+
 
 COMPARISON_OPERATORS = [
     ('=', _('equal')),
@@ -35,6 +38,10 @@ class OpportunityConfig(SimpleAbstractModel):
         'company.Company', on_delete=models.CASCADE,
         related_name='sales_opportunity_config_detail',
     )
+    is_account_manager_create = models.BooleanField(
+        default=False,
+        verbose_name='only Am of Customer is allowed create Opportunity for Customer'
+    )
     is_select_stage = models.BooleanField(
         default=False,
         verbose_name='user select stage of Opp',
@@ -42,10 +49,6 @@ class OpportunityConfig(SimpleAbstractModel):
     is_input_win_rate = models.BooleanField(
         default=False,
         verbose_name='user input win rate of Opp',
-    )
-    is_account_manager_create = models.BooleanField(
-        default=False,
-        verbose_name='only Am of Customer is allowed create Opportunity for Customer'
     )
 
     class Meta:

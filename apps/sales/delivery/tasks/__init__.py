@@ -382,7 +382,7 @@ class OrderActiveDeliverySerializer:
         )
         # handle opp stage & win_rate
         if self.order_obj.opportunity:
-            self.order_obj.opportunity.handle_stage_win_rate(obj=self.order_obj.opportunity)
+            self.order_obj.opportunity.handle_stage_and_win_rate(obj=self.order_obj.opportunity)
         return order_delivery
 
     def _create_order_delivery_sub(self, obj_delivery, sub_id, delivery_quantity):

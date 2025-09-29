@@ -318,6 +318,8 @@ class TestCaseOpportunity(AdvanceTestCase):
                 'opportunity_competitors_datas',
                 'opportunity_contact_role_datas',
                 'win_rate',
+                'current_stage_data',
+                'active_go_to_stage',
                 'is_input_rate',
                 'customer_decision_factor',
                 'sale_person',

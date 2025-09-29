@@ -3,11 +3,13 @@ from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.purchasing.serializers import (
     PurchaseRequestListSerializer, PurchaseRequestCreateSerializer, PurchaseRequestDetailSerializer,
     PurchaseRequestListForPQRSerializer, PurchaseRequestProductListSerializer, PurchaseRequestUpdateSerializer,
-    PurchaseRequestSaleListSerializer
+    PurchaseRequestSaleListSerializer, PurchaseRequestSaleOrderListSerializer
 )
+from apps.sales.saleorder.models import SaleOrder
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
+# main
 class PurchaseRequestList(BaseListMixin, BaseCreateMixin):
     queryset = PurchaseRequest.objects
     filterset_fields = {
@@ -96,6 +98,33 @@ class PurchaseRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
+
+
+# related
+class PurchaseRequestSaleOrderList(BaseListMixin):
+    queryset = SaleOrder.objects
+    serializer_list = PurchaseRequestSaleOrderListSerializer
+    filterset_fields = {
+        'employee_inherit_id': ['exact', 'in'],
+        'system_status': ['exact', 'in'],
+        'opportunity__is_deal_close': ['exact'],
+        'customer_id': ['exact'],
+    }
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().filter(delivery_status__in=[0, 1, 2], system_status=3).select_related(
+            'employee_inherit',
+            'employee_inherit__group'
+        ).prefetch_related('sale_order_product_sale_order')
+
+    @swagger_auto_schema(
+        operation_summary="Sale Order List For Purchasing Staff",
+        operation_description="Get Sale Order List For Purchasing Staff"
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class PurchaseRequestListForPQR(BaseListMixin):

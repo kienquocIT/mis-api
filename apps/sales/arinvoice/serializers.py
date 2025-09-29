@@ -153,7 +153,10 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
         customer_mapped = validate_data.get('customer_mapped')
         if customer_mapped:
             if not AccountBillingAddress.objects.filter(id=billing_address_id).exists():
-                raise serializers.ValidationError({'billing_address_id': "Billing address does not exist."})
+                if customer_mapped.account_type_selection == 1:
+                    raise serializers.ValidationError({
+                        'billing_address': "Billing address is required for organization customer."
+                    })
             validate_data['customer_mapped_data'] = {
                 'id': str(customer_mapped.id),
                 'code': customer_mapped.code,
@@ -393,7 +396,9 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
-        return SerializerCommonValidate.validate_attachment(user=user, model_cls=ARInvoiceAttachmentFile, value=value)
+        return SerializerCommonValidate.validate_attachment(
+            user=user, model_cls=ARInvoiceAttachmentFile, value=value, doc_id=self.instance.id
+        )
 
     def validate(self, validate_data):
         return ARInvoiceCreateSerializer().validate(validate_data)

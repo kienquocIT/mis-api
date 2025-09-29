@@ -180,7 +180,7 @@ class KMSIncomingDocumentCreateSerializer(AbstractCreateSerializerModel):
             update_files_is_approved(
                 IncomingAttachDocumentMapAttachFile.objects.filter(
                     incoming_document=incoming_doc, attachment__is_approved=False
-                )
+                ), incoming_doc,
             )
             return incoming_doc
 
@@ -313,7 +313,7 @@ class KMSIncomingDocumentUpdateSerializer(AbstractCreateSerializerModel):
             update_files_is_approved(
                 IncomingAttachDocumentMapAttachFile.objects.filter(
                     incoming_document=instance, attachment__is_approved=False
-                )
+                ), instance,
             )
             return instance
 

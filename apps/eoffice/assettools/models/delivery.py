@@ -181,7 +181,8 @@ class AssetToolsDelivery(DataAbstractModel):
             update_files_is_approved(
                 AssetToolsDeliveryAttachmentFile.objects.filter(
                     asset_tools_delivery=self, attachment__is_approved=False
-                )
+                ),
+                self
             )
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
