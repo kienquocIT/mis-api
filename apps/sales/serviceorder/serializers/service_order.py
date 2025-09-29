@@ -5,14 +5,11 @@ from apps.core.attachments.models import update_files_is_approved
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import Account, ExpenseItem, UnitOfMeasure, Tax
+from apps.masterdata.saledata.models import Account
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.opportunity.msg import OpportunityOnlyMsg
 from apps.sales.serviceorder.models import (
-    ServiceOrder, ServiceOrderAttachMapAttachFile, ServiceOrderShipment,
-    ServiceOrderWorkOrder, ServiceOrderServiceDetail, ServiceOrderExpense, ServiceOrderPayment, ServiceOrderContainer,
-    ServiceOrderPackage, ServiceOrderWorkOrderCost, ServiceOrderWorkOrderContribution, ServiceOrderPaymentDetail,
-    ServiceOrderPaymentReconcile, ServiceOrderWorkOrderTask,
+    ServiceOrder, ServiceOrderAttachMapAttachFile
 )
 from apps.sales.serviceorder.serializers.service_order_sub import (
     ServiceOrderShipmentSerializer, ServiceOrderExpenseSerializer,

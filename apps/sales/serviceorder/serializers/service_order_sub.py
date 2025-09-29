@@ -8,13 +8,15 @@ from apps.sales.serviceorder.models import (
 )
 from apps.shared import SVOMsg, AbstractDetailSerializerModel
 
+
 __all__ = [
     'ServiceOrderServiceDetailSerializer',
     'ServiceOrderWorkOrderSerializer',
     'ServiceOrderShipmentSerializer',
     'ServiceOrderExpenseSerializer',
     'ServiceOrderPaymentSerializer',
-    'ServiceOrderDetailDashboardSerializer'
+    'ServiceOrderDetailDashboardSerializer',
+    'ServiceOrderCommonFunc'
 ]
 
 
