@@ -4,7 +4,7 @@ from apps.sales.distributionplan.models import DistributionPlan
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.purchasing.serializers import (
     PurchaseRequestListSerializer, PurchaseRequestCreateSerializer, PurchaseRequestDetailSerializer,
-    PurchaseRequestListForPQRSerializer, PurchaseRequestProductListSerializer, PurchaseRequestUpdateSerializer,
+    PurchaseRequestProductListSerializer, PurchaseRequestUpdateSerializer,
     PurchaseRequestSaleListSerializer, SaleOrderListForPRSerializer, SaleOrderProductListForPRSerializer,
     DistributionPlanProductListForPRSerializer, DistributionPlanListForPRSerializer, ServiceOrderListForPRSerializer,
     ServiceOrderProductListForPRSerializer
