@@ -1,9 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.sales.purchasing.models import PurchaseQuotationRequest
+from apps.sales.purchasing.models import PurchaseQuotationRequest, PurchaseRequest
 from apps.sales.purchasing.serializers import (
     PurchaseQuotationRequestListSerializer, PurchaseQuotationRequestDetailSerializer,
     PurchaseQuotationRequestCreateSerializer, PurchaseQuotationRequestListForPQSerializer,
-    PurchaseQuotationRequestUpdateSerializer
+    PurchaseQuotationRequestUpdateSerializer, PurchaseRequestListForPQRSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -105,6 +105,26 @@ class PurchaseQuotationRequestListForPQ(BaseListMixin):
     @mask_view(
         login_require=True, auth_require=False,
         label_code='purchasing', model_code='purchasequotationrequest', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class PurchaseRequestListForPQR(BaseListMixin):
+    queryset = PurchaseRequest.objects
+    serializer_list = PurchaseRequestListForPQRSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().filter(system_status=3).select_related()
+
+    @swagger_auto_schema(
+        operation_summary="Purchase Request List For Purchase Quotation Request",
+        operation_description="Get Purchase Request List For Purchase Quotation Request",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='purchasing', model_code='purchaserequest', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

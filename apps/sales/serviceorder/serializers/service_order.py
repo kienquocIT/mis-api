@@ -744,16 +744,23 @@ class ServiceOrderCommonFunc:
         bulk_data = []
         service_detail_id_map = {}
         for service_detail in service_detail_data:
+            product_obj = service_detail.get('product')
             bulk_data.append(
                 ServiceOrderServiceDetail(
                     service_order_id=service_order_id,
                     title=service_detail.get('title'),
                     code=service_detail.get('code'),
-                    product_id=service_detail.get('product').id if service_detail.get('product') else None,
+                    product=product_obj,
+                    product_data={
+                        "id": str(product_obj.id),
+                        "code": product_obj.code,
+                        "title": product_obj.title,
+                        "description": product_obj.description,
+                    } if product_obj else {},
                     order=service_detail.get('order'),
                     description=service_detail.get('description'),
                     quantity=service_detail.get('quantity'),
-                    uom_id=service_detail.get('uom_data', {}).get('id'),
+                    uom=service_detail.get('uom'),
                     uom_data=service_detail.get('uom_data'),
                     price=service_detail.get('price'),
                     tax_id=service_detail.get('tax_data', {}).get('id'),
@@ -764,6 +771,7 @@ class ServiceOrderCommonFunc:
                     total_contribution_percent=service_detail.get('total_contribution_percent'),
                     total_payment_percent=service_detail.get('total_payment_percent'),
                     total_payment_value=service_detail.get('total_payment_value'),
+                    remain_for_purchase_request=service_detail.get('quantity')
                 )
             )
 

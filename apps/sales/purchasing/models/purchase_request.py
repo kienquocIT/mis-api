@@ -9,7 +9,10 @@ from apps.shared import DataAbstractModel, MasterDataAbstractModel, REQUEST_FOR,
 class PurchaseRequest(DataAbstractModel):
     request_for = models.SmallIntegerField(choices=REQUEST_FOR, default=0)
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder', on_delete=models.CASCADE, related_name="sale_order", null=True
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE,
+        related_name="pr_sale_order",
+        null=True
     )
     sale_order_data = models.JSONField(default=dict)
     distribution_plan = models.ForeignKey(
@@ -19,6 +22,13 @@ class PurchaseRequest(DataAbstractModel):
         null=True
     )
     distribution_plan_data = models.JSONField(default=dict)
+    service_order = models.ForeignKey(
+        'serviceorder.ServiceOrder',
+        on_delete=models.CASCADE,
+        related_name="pr_service_order",
+        null=True
+    )
+    service_order_data = models.JSONField(default=dict)
     supplier = models.ForeignKey(
         'saledata.Account', on_delete=models.CASCADE, related_name="purchase_supplier"
     )
@@ -56,12 +66,23 @@ class PurchaseRequest(DataAbstractModel):
                 if pr_product.sale_order_product:
                     pr_product.sale_order_product.remain_for_purchase_request -= pr_product.quantity
                     pr_product.sale_order_product.save(update_fields=['remain_for_purchase_request'])
-        if instance.request_for == 3:
+            if not instance.sale_order.sale_order_product_sale_order.exclude(remain_for_purchase_request=0).exists():
+                instance.sale_order.is_done_purchase_request = True
+                instance.sale_order.save(update_fields=['is_done_purchase_request'])
+        elif instance.request_for == 3:
             request_quantity = 0
             for pr_product in instance.purchase_request.all():
                 request_quantity += pr_product.quantity
             instance.distribution_plan.purchase_request_number += request_quantity
             instance.distribution_plan.save(update_fields=['purchase_request_number'])
+        elif instance.request_for == 4:
+            for svo_product in instance.purchase_request.all():
+                if svo_product.service_order_product:
+                    svo_product.service_order_product.remain_for_purchase_request -= svo_product.quantity
+                    svo_product.service_order_product.save(update_fields=['remain_for_purchase_request'])
+            if not instance.service_order.service_details.exclude(remain_for_purchase_request=0).exists():
+                instance.service_order.is_done_purchase_request = True
+                instance.service_order.save(update_fields=['is_done_purchase_request'])
         return True
 
     @classmethod
@@ -93,6 +114,12 @@ class PurchaseRequestProduct(MasterDataAbstractModel):
         'saleorder.SaleOrderProduct',
         on_delete=models.SET_NULL,
         related_name="purchase_request_so_product",
+        null=True
+    )
+    service_order_product = models.ForeignKey(
+        'serviceorder.ServiceOrderServiceDetail',
+        on_delete=models.SET_NULL,
+        related_name="purchase_request_svo_product",
         null=True
     )
     product = models.ForeignKey(
