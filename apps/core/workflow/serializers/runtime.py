@@ -1,6 +1,6 @@
 from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-
 from apps.core.base.models import ApplicationProperty
 from apps.core.workflow.models import Runtime, RuntimeStage, RuntimeAssignee, CollaborationOutForm
 from apps.core.workflow.tasks import call_approval_task
@@ -55,6 +55,11 @@ class RuntimeListSerializer(serializers.ModelSerializer):
 class RuntimeMeListSerializer(serializers.ModelSerializer):
     stage_currents = serializers.SerializerMethodField()
     assignees = serializers.SerializerMethodField()
+    app_code_parsed = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_app_code_parsed(cls, obj):
+        return _(obj.app.title) if obj.app else ''
 
     @classmethod
     def get_stage_currents(cls, obj):
@@ -85,7 +90,8 @@ class RuntimeMeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Runtime
         fields = (
-            'id', 'doc_id', 'doc_title', 'app_code', 'app_id', 'doc_employee_created_id', 'flow_id', 'state', 'status',
+            'id', 'doc_id', 'doc_title', 'app_code', 'app_code_parsed', 'app_id',
+            'doc_employee_created_id', 'flow_id', 'state', 'status',
             'date_created', 'date_finished',
             'stage_currents', 'assignees',
             'doc_pined_id',
@@ -170,6 +176,15 @@ class RuntimeAssigneeListSerializer(serializers.ModelSerializer):
     stage__runtime = serializers.SerializerMethodField()
     doc_title = serializers.SerializerMethodField()
     app_code = serializers.SerializerMethodField()
+    app_code_parsed = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_app_code_parsed(cls, obj):
+        app_code_parsed = ''
+        if obj.stage:
+            if obj.stage.runtime:
+                app_code_parsed = obj.stage.runtime.app.title if obj.stage.runtime.app else ''
+        return app_code_parsed
 
     @classmethod
     def get_employee(cls, obj):
@@ -220,7 +235,8 @@ class RuntimeAssigneeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = RuntimeAssignee
         fields = (
-            'id', 'doc_title', 'app_code', 'stage', 'stage__runtime', 'employee', 'is_done', 'date_created'
+            'id', 'doc_title', 'app_code', 'stage', 'stage__runtime', 'employee',
+            'is_done', 'date_created', 'app_code_parsed'
         )
 
 
