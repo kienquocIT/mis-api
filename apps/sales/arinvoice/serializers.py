@@ -68,7 +68,7 @@ class ARInvoiceListSerializer(AbstractListSerializerModel):
 class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     customer_mapped = serializers.UUIDField()
-    billing_address_id = serializers.UUIDField()
+    billing_address_id = serializers.UUIDField(allow_null=True)
     company_bank_account = serializers.UUIDField(allow_null=True)
     sale_order_mapped = serializers.UUIDField(allow_null=True)
     delivery_mapped_list = serializers.JSONField(default=list)
@@ -349,7 +349,7 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
 class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     customer_mapped = serializers.UUIDField()
-    billing_address_id = serializers.UUIDField()
+    billing_address_id = serializers.UUIDField(allow_null=True)
     company_bank_account = serializers.UUIDField(allow_null=True)
     sale_order_mapped = serializers.UUIDField(allow_null=True)
     delivery_mapped_list = serializers.JSONField(default=list)

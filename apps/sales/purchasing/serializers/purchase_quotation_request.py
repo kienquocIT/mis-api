@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.sales.purchasing.models import (
+    PurchaseRequest,
     PurchaseQuotationRequest, PurchaseQuotationRequestProduct, PurchaseQuotationRequestPurchaseRequest,
     PurchaseQuotationRequestAttachmentFile,
 )
@@ -321,4 +322,42 @@ class PurchaseQuotationRequestListForPQSerializer(serializers.ModelSerializer):
                 'product_subtotal_price': item.subtotal_price,
                 'tax': {'id': item.tax_id, 'title': item.tax.title, 'code': item.tax.code, 'value': item.tax.rate},
             })
+        return product_list
+
+
+class PurchaseRequestListForPQRSerializer(serializers.ModelSerializer):
+    product_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PurchaseRequest
+        fields = (
+            'id',
+            'code',
+            'title',
+            'product_list'
+        )
+
+    @classmethod
+    def get_product_list(cls, obj):
+        product_list = []
+        for item in obj.purchase_request.all().select_related('product', 'uom', 'tax'):
+            product_list.append(
+                {
+                    'id': item.product_id,
+                    'title': item.product.title,
+                    'description': item.product.description,
+                    'uom': {'id': item.uom_id, 'title': item.uom.title, 'ratio': item.uom.ratio},
+                    'uom_group': {
+                        'id': item.uom.group_id, 'code': item.uom.group.code, 'title': item.uom.group.title
+                    } if item.uom.group else {},
+                    'quantity': item.quantity,
+                    'purchase_request_id': item.purchase_request_id,
+                    'purchase_request_code': item.purchase_request.code,
+                    'product_unit_price': item.unit_price,
+                    'product_subtotal_price': item.sub_total_price,
+                    'tax': {
+                        'id': item.tax_id, 'title': item.tax.title, 'code': item.tax.code, 'value': item.tax.rate
+                    } if item.tax else {},
+                }
+            )
         return product_list

@@ -1276,7 +1276,11 @@ msgstr "Đã đặt hàng"
 
 #
 msgid "For Sale Order"
-msgstr "Cho Đơn hàng"
+msgstr "Cho Đơn bán hàng"
+
+#
+msgid "For Service Order"
+msgstr "Cho Đơn dịch vụ"
 
 #
 msgid "For Other"
