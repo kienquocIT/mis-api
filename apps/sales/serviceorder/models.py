@@ -103,6 +103,18 @@ class ServiceOrderServiceDetail(MasterDataAbstractModel):
     total_payment_percent = models.FloatField(default=0)
     total_payment_value = models.FloatField(default=0)
 
+    # data attribute
+    selected_attributes = models.JSONField(default=dict)
+    attributes_total_cost = models.FloatField(default=0)
+    duration_value = models.IntegerField(default=0)
+    duration = models.ForeignKey(
+        UnitOfMeasure,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='service_order_service_details'
+    )
+    duration_unit_data = models.JSONField(default=dict)
+
     remain_for_purchase_request = models.FloatField(default=0)
 
     class Meta:
