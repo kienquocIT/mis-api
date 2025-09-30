@@ -535,10 +535,10 @@ class FolderDetail(
             )
         r_query_params = request.query_params
         file_filter = {}
-        if 'document_type_id' in r_query_params:
-            file_filter['document_type_id'] = r_query_params.get('document_type_id', None)
-        if 'content_group_id' in r_query_params:
-            file_filter['content_group_id'] = r_query_params.get('content_group_id', None)
+        if 'document_type_id__in' in r_query_params:
+            file_filter['document_type_id__in'] = r_query_params.get('document_type_id__in', "").split(',')
+        if 'content_group_id__in' in r_query_params:
+            file_filter['content_group_id__in'] = r_query_params.get('content_group_id__in', "").split(',')
         self.ser_context = {'file_filter': file_filter}
         return self.retrieve(request, *args, pk, **kwargs)
 
