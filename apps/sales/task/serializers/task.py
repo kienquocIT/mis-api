@@ -220,29 +220,21 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
                 )
         return value
 
-    def validate_attach(self, attrs):
-        user = self.context.get('user', None)
-        if user and hasattr(user, 'employee_current_id'):
-            state, result = TaskAttachmentFile.valid_change(
-                current_ids=attrs, employee_id=user.employee_current_id, doc_id=None
-            )
-            if state is True:
-                return result
-            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
-
-    def validate_attach_assignee(self, attrs):
-        user = self.context.get('user', None)
-        if user and hasattr(user, 'employee_current_id'):
-            state, result = TaskAttachmentFile.valid_change(
-                current_ids=attrs, employee_id=user.employee_current_id, doc_id=None
-            )
-            if state is True:
-                return result
-            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
-
     def validate(self, attrs):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id') and ('attach' in attrs or 'attach_assignee' in attrs):
+            new_attrs = attrs.get('attach', []) + attrs.get('attach_assignee', [])
+            state, result = TaskAttachmentFile.valid_change(
+                current_ids=new_attrs, employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                if 'attach_assignee' in attrs:
+                    attach_assignee = attrs.get('attach_assignee', [])
+                    attrs['attach_assignee'] = [item for item in result['new'] if str(item.id) in attach_assignee]
+                attrs['attach'] = result
+            else:
+                raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+
         if 'project' in attrs:
             prj_obj = attrs['project']
             employee_current = self.context.get('user', None).employee_current
@@ -268,15 +260,15 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context.get('user', None)
+        attach_assignee = validated_data.pop('attach_assignee', None)
         project_work = validated_data.pop('work', None)
         attachment = validated_data.pop('attach', None)
-        attach_assignee = validated_data.pop('attach_assignee', None)
         task = OpportunityTask.objects.create(**validated_data)
+
         if attachment is not None:
             handle_attachment(task, attachment)
         if attach_assignee is not None:
-            handle_attachment(task, attach_assignee)
-            update_models_attachment_assignee(attach_assignee['new'])
+            update_models_attachment_assignee(attach_assignee)
         if task.task_status.is_finish or task.percent_completed == 100:
             update_files_is_approved(
                 TaskAttachmentFile.objects.filter(
@@ -596,31 +588,22 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
             return True
         raise serializers.ValidationError({'system': SaleTask.NOT_CONFIG})
 
-    def validate_attach(self, attrs):
-        user = self.context.get('user', None)
-        instance = self.instance
-        if user and hasattr(user, 'employee_current_id'):
-            state, result = TaskAttachmentFile.valid_change(
-                current_ids=attrs, employee_id=user.employee_current_id, doc_id=instance.id
-            )
-            if state is True:
-                return result
-            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
-
-    def validate_attach_assignee(self, attrs):
-        user = self.context.get('user', None)
-        instance = self.instance
-        if user and hasattr(user, 'employee_current_id'):
-            state, result = TaskAttachmentFile.valid_change(
-                current_ids=attrs, employee_id=user.employee_current_id, doc_id=instance.id
-            )
-            if state is True:
-                return result
-            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
-        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
-
     def validate(self, attrs):
+        user = self.context.get('user', None)
+        instance = self.instance
+        if user and hasattr(user, 'employee_current_id') and ('attach' in attrs or 'attach_assignee' in attrs):
+            new_attrs = attrs.get('attach', []) + attrs.get('attach_assignee', [])
+            state, result = TaskAttachmentFile.valid_change(
+                current_ids=new_attrs, employee_id=user.employee_current_id, doc_id=instance.id
+            )
+            if state is True:
+                if 'attach_assignee' in attrs:
+                    attach_assignee = attrs.get('attach_assignee', [])
+                    attrs['attach_assignee'] = [item for item in result['new'] if str(item.id) in attach_assignee]
+                attrs['attach'] = result
+            else:
+                raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+
         if 'project' in attrs:
             employee_current = self.context.get('user', None).employee_current
             check_permit = check_permit_add_member_pj(attrs['project'], employee_current)
@@ -649,9 +632,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         if attachment is not None:
             handle_attachment(instance, attachment)
         if attach_assignee is not None:
-            handle_attachment(instance, attach_assignee)
-            if len(attach_assignee['new']):
-                update_models_attachment_assignee(attach_assignee['new'])
+            update_models_attachment_assignee(attach_assignee)
 
         if instance.project:
             project_work = validated_data.pop('work', None)
