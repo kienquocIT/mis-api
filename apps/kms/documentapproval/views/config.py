@@ -3,14 +3,17 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 from ..models import KMSDocumentType, KMSContentGroup
 from ..serializers import KMSDocumentTypeSerializer, KMSContentGroupSerializer, \
-    KMSDocumentTypeUpdateSerializer
+    KMSDocumentTypeUpdateSerializer, KMSDocumentTypeCreateSerializer
 
 
 class KSMDocumentTypeList(BaseListMixin, BaseCreateMixin):
     queryset = KMSDocumentType.objects
+    filterset_fields = {
+        'applications__id': ['exact', 'in'],
+    }
     serializer_list = KMSDocumentTypeSerializer
     serializer_detail = KMSDocumentTypeSerializer
-    serializer_create = KMSDocumentTypeSerializer
+    serializer_create = KMSDocumentTypeCreateSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     search_fields = ('code', 'title')
