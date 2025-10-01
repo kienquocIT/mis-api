@@ -4,6 +4,7 @@ from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Tax, UnitOfMeasure, Currency, Product
 from apps.sales.cashoutflow.utils import AdvanceHandler
+from apps.sales.serviceorder.utils.logical_finish import ServiceOrderFinishHandler
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel, BastionFieldAbstractModel
 
 # work order tab
@@ -51,6 +52,7 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('serviceorder', True, self, kwargs)
+                    ServiceOrderFinishHandler.re_processing_folder_task_files(instance=self)
         # hit DB
         AdvanceHandler.push_opportunity_log(self)
         super().save(*args, **kwargs)
@@ -136,6 +138,13 @@ class ServiceOrderWorkOrder(MasterDataAbstractModel):
         choices=WORK_ORDER_STATUS
     )
     task_data = models.JSONField(default=list, help_text="list task data, records in ServiceOrderWorkOrderTask")
+    tasks = models.ManyToManyField(
+        'task.OpportunityTask',
+        through="ServiceOrderWorkOrderTask",
+        symmetrical=False,
+        blank=True,
+        related_name='service_order_work_order_m2m_task'
+    )
 
     class Meta:
         verbose_name = 'Service order work order'

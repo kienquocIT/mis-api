@@ -297,7 +297,8 @@ class TaskAttachmentFile(M2MFilesAbstractModel):
     task = models.ForeignKey(
         OpportunityTask,
         on_delete=models.CASCADE,
-        verbose_name='Attachment file of task'
+        verbose_name='Attachment file of task',
+        related_name='task_attachment_file_task'
     )
     is_assignee_file = models.BooleanField(
         default=False,
