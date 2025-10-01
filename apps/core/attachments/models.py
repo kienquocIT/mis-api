@@ -5,7 +5,6 @@ __all__ = [
 
 import json
 import logging
-from copy import deepcopy
 
 from typing import Union
 from uuid import UUID
@@ -88,13 +87,13 @@ def generate_path_public_file(instance, filename):
 
 
 def update_folder_title(doc_obj=None, folder_obj=None):
-    result_name = deepcopy(doc_obj.title)
-    if len(result_name) > 35:
-        one_third = len(result_name) // 3
-        result_name = f'{result_name[:one_third]}...{result_name[-one_third:]}'
+    # result_name = deepcopy(doc_obj.title)
+    # if len(result_name) > 35:
+    #     one_third = len(result_name) // 3
+    #     result_name = f'{result_name[:one_third]}...{result_name[-one_third:]}'
     if doc_obj and folder_obj:
         folder_obj.doc_code = doc_obj.code
-        folder_obj.title = f'{doc_obj.code}-{result_name}'
+        folder_obj.title = f'{doc_obj.code}-{doc_obj.title}'
         folder_obj.save(update_fields=['doc_code', 'title'])
 
 
@@ -239,10 +238,10 @@ def cu_folder_form_path(app_code, obj_doc, parent_folder):
         }
     )
     # generate name for app folder
-    result_name = deepcopy(obj_doc.title)
-    if len(result_name) > 35:
-        one_third = len(result_name) // 3
-        result_name = f'{result_name[:one_third]}...{result_name[-one_third:]}'
+    # result_name = deepcopy(obj_doc.title)
+    # if len(result_name) > 35:
+    #     one_third = len(result_name) // 3
+    #     result_name = f'{result_name[:one_third]}...{result_name[-one_third:]}'
 
     folder_app, _ = Folder.objects.get_or_create(
         application=app_current_obj,
@@ -250,7 +249,7 @@ def cu_folder_form_path(app_code, obj_doc, parent_folder):
         is_system=True,
         parent_n=folder_label,
         defaults={
-            'title': f'{obj_doc.code}-{result_name}',
+            'title': f'{obj_doc.code}-{obj_doc.title}',
             'doc_code': obj_doc.code,
             'application': app_current_obj,
             'company_id': obj_doc.company_id,
@@ -311,16 +310,16 @@ def processing_folder(doc_id, doc_app):
                 'is_system': True
             }
         )
-        result_name = doc_obj.title if len(
-            doc_obj.title
-        ) > 35 else f'{doc_obj.title[:len(doc_obj.title) // 3]}...{doc_obj.title[-(len(doc_obj.title) // 3):]}'
+        # result_name = doc_obj.title if len(
+        #     doc_obj.title
+        # ) <= 35 else f'{doc_obj.title[:len(doc_obj.title) // 3]}...{doc_obj.title[-(len(doc_obj.title) // 3):]}'
         # tạo folder theo doc_code và app
         folder_obj, _ = Folder.objects.get_or_create(
             application=doc_app,
             doc_code=doc_obj.code,
             is_system=True,
             defaults={
-                'title': f'{doc_obj.code}-{result_name}',
+                'title': f'{doc_obj.code}-{doc_obj.title}',
                 'company': doc_obj.company,
                 'tenant': doc_obj.tenant,
                 'application': doc_app,

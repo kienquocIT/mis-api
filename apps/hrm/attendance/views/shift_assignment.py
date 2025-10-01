@@ -10,6 +10,7 @@ class ShiftAssignmentList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         'employee_id': ['exact', 'in'],
         'shift_id': ['exact', 'in'],
+        'date': ['exact', 'gte', 'lte'],
     }
     serializer_list = ShiftAssignmentListSerializer
     serializer_detail = ShiftAssignmentListSerializer
