@@ -190,6 +190,7 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
     total_product_tax = serializers.SerializerMethodField()
     total_product = serializers.SerializerMethodField()
     total_product_revenue_before_tax = serializers.SerializerMethodField()
+    valid_until = serializers.SerializerMethodField()
     roles_title = serializers.SerializerMethodField()
 
     class Meta:
@@ -304,6 +305,10 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
     @classmethod
     def get_total_product_revenue_before_tax(cls, obj):
         return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_revenue_before_tax)
+
+    @classmethod
+    def get_valid_until(cls, obj):
+        return obj.valid_until.date().strftime("%d/%m/%Y") if obj.valid_until else None
 
     @classmethod
     def get_roles_title(cls, obj):

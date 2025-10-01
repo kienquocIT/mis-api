@@ -131,6 +131,14 @@ Quotation_data__params = {
         'type': 1,
         'is_print': True,
     },
+    '018d839c-1271-4d6a-97ed-ad35c8f43061': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Valid until',
+        'code': 'valid_until',
+        'remark': '',
+        'type': 1,
+        'is_print': True,
+    },
     '6a4808cf-5e65-4a25-b745-ad3c1c896b04': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Contact - Name',
