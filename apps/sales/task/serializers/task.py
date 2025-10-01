@@ -616,8 +616,8 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
             # nếu người gửi là người thụ hưởng và ko phải là người tạo
             if employee_request.id == assignee and not employee_request == current_data.employee_created:
                 # cấu hình ko cho update time
-                if not config.is_edit_date and (current_data.start_date != update_data['start_date']
-                                                or current_data.end_date != update_data['end_date']):
+                if not config.is_edit_date and (current_data.start_date.date() != update_data['start_date']
+                                                or current_data.end_date.date() != update_data['end_date']):
                     raise serializers.ValidationError({'system': SaleTask.ERROR_NOT_LOGWORK})
                 # cấu hình ko cho update estimate
                 if not config.is_edit_est and current_data.estimate != update_data['estimate']:
