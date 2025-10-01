@@ -1,6 +1,7 @@
 __all__ = [
     'Files', 'M2MFilesAbstractModel',
-    'PublicFiles', 'Folder', 'FolderPermission', 'FilePermission', 'update_files_is_approved'
+    'PublicFiles', 'Folder', 'FolderPermission', 'FilePermission', 'update_files_is_approved',
+    'processing_folder',
 ]
 
 import json
@@ -246,12 +247,14 @@ def cu_folder_form_path(app_code, obj_doc, parent_folder):
 
     folder_app, _ = Folder.objects.get_or_create(
         application=app_current_obj,
-        doc_code=obj_doc.code,
+        doc_id=obj_doc.id,
+        # doc_code=obj_doc.code,
         is_system=True,
         parent_n=folder_label,
         defaults={
             'title': f'{obj_doc.code}-{result_name}',
-            'doc_code': obj_doc.code,
+            'doc_id': obj_doc.id,
+            'doc_code': obj_doc.code if obj_doc.code else None,
             'application': app_current_obj,
             'company_id': obj_doc.company_id,
             'tenant_id': obj_doc.tenant_id,
@@ -317,13 +320,15 @@ def processing_folder(doc_id, doc_app):
         # tạo folder theo doc_code và app
         folder_obj, _ = Folder.objects.get_or_create(
             application=doc_app,
-            doc_code=doc_obj.code,
+            doc_id=doc_obj.id,
+            # doc_code=doc_obj.code,
             is_system=True,
             defaults={
                 'title': f'{doc_obj.code}-{result_name}',
                 'company': doc_obj.company,
                 'tenant': doc_obj.tenant,
                 'application': doc_app,
+                'doc_id': doc_obj.id,
                 'doc_code': doc_obj.code if doc_obj.code else None,
                 'is_system': True
             }
@@ -488,7 +493,7 @@ class Files(BastionFiles):
     file = models.FileField(storage=PrivateMediaStorage, upload_to=generate_path_file)
     folder = models.ForeignKey(
         'attachments.Folder',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name='folder of file',
         related_name='files_folder',
         null=True,
@@ -833,6 +838,7 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
 # BEGIN FOLDER
 class Folder(MasterDataAbstractModel):
     application = models.ForeignKey('base.Application', on_delete=models.CASCADE, null=True)
+    doc_id = models.UUIDField(verbose_name='Document ID', null=True)
     doc_code = models.CharField(max_length=250, blank=True, null=True)
     parent_n = models.ForeignKey(
         "self",
