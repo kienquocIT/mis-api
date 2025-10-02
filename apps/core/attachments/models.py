@@ -16,7 +16,7 @@ from django.db.models import Q
 from django.utils import timezone
 from django.utils.text import slugify
 
-from apps.core.attachments.folder_utils import HIERARCHY_RULES, MODULE_MAPPING, APP_FIELD, APP_NAME
+from apps.core.attachments.folder_utils import HIERARCHY_RULES, MODULE_MAPPING, APP_FIELD
 from apps.shared import MasterDataAbstractModel, TypeCheck, StringHandler, HrMsg, AttMsg, SimpleAbstractModel, \
     DisperseModel
 from apps.core.attachments.storages.aws.storages_backend import (
