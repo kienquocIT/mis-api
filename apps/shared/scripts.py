@@ -6440,3 +6440,9 @@ def update_purchase_request_data():
             item.save(update_fields=['product_data', 'uom_data', 'tax_data'])
         print(f'Done for {pr_obj.code} - {pr_obj.company.title}')
     print('Done :))')
+
+
+def delete_folders():
+    Folder.objects.all().delete()
+    print('delete_folders done.')
+    return True

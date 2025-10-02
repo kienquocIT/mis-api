@@ -224,14 +224,15 @@ def cu_folder_form_path(app_code, obj_doc, parent_folder):
     else:
         return False
 
+    # Case folder is system application (quotation, sale order, task,...)
     folder_label, _ = Folder.objects.get_or_create(
+        application=app_current_obj,
+        parent_n=parent_folder,
+        is_system=True,
         company_id=obj_doc.company_id,
         tenant_id=obj_doc.tenant_id,
-        parent_n=parent_folder,
-        title=APP_NAME[app_code],
-        is_system=True,
         defaults={
-            'title': APP_NAME[app_code],
+            'title': app_current_obj.title,
             'company_id': obj_doc.company_id,
             'tenant_id': obj_doc.tenant_id,
             'parent_n': parent_folder,
@@ -244,12 +245,14 @@ def cu_folder_form_path(app_code, obj_doc, parent_folder):
     #     one_third = len(result_name) // 3
     #     result_name = f'{result_name[:one_third]}...{result_name[-one_third:]}'
 
+    # Case folder is document created by user
     folder_app, _ = Folder.objects.get_or_create(
         application=app_current_obj,
-        doc_id=obj_doc.id,
-        # doc_code=obj_doc.code,
-        is_system=True,
         parent_n=folder_label,
+        is_system=True,
+        doc_id=obj_doc.id,
+        company_id=obj_doc.company_id,
+        tenant_id=obj_doc.tenant_id,
         defaults={
             'title': f'{obj_doc.code}-{obj_doc.title}',
             'doc_id': obj_doc.id,
@@ -262,6 +265,7 @@ def cu_folder_form_path(app_code, obj_doc, parent_folder):
         }
     )
     current_folder = folder_app
+    # Case special
     if app_code == 'serviceorder':
         current_folder, _ = Folder.objects.get_or_create(
             is_system=True,
@@ -345,12 +349,12 @@ def processing_folder(doc_id, doc_app):
                 if path == doc_app.model_code:
                     if len(path_lst) == 2 and path_lst[0] in ['sale', 'e-office', 'hrm', 'kms']:
                         current_folder_path, _ = Folder.objects.get_or_create(
-                            title=APP_NAME[path],
+                            application=doc_app,
                             parent_n=current_folder_path,
                             company_id=doc_obj.company_id,
                             tenant_id=doc_obj.tenant_id,
                             defaults={
-                                'title': APP_NAME[path],
+                                'title': doc_app.title,
                                 'company_id': doc_obj.company_id,
                                 'tenant_id': doc_obj.tenant_id,
                                 'is_system': True,
