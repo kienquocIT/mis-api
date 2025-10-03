@@ -389,6 +389,8 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
             kw_parameter['sale_order_id'] = obj.sale_order_id
             kw_parameter['lease_order_id'] = obj.lease_order_id
 
+        kw_parameter['serial_mapped_id'] = obj.serial_mapped_id
+
         for log in obj.product.report_stock_log_product.filter(
                 report_stock__period_mapped_id=obj.period_mapped_id,
                 report_stock__sub_period_order=obj.sub_period_order,

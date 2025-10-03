@@ -577,3 +577,59 @@ class PWModifiedComponentDetail(SimpleAbstractModel):
         ordering = ()
         default_permissions = ()
         permissions = ()
+
+
+class ProductSpecificIdentificationSerial(SimpleAbstractModel):
+    """
+    Model lưu trữ thông tin về giá của 1 serial quản lí tồn kho theo thực tế đích danh.
+    Vì sản phẩm này được đính giá trị theo từng serial nên không phân biệt kho nào cả, chỉ đơn giản: product - serial
+    """
+    product = models.ForeignKey(
+        'saledata.Product', on_delete=models.CASCADE, related_name='pw_si_serial_product',
+    )
+    vendor_serial_number = models.CharField(max_length=100, blank=True, null=True)
+    serial_number = models.CharField(max_length=100, blank=True, null=True)
+    expire_date = models.DateTimeField(null=True)
+    manufacture_date = models.DateTimeField(null=True)
+    warranty_start = models.DateTimeField(null=True)
+    warranty_end = models.DateTimeField(null=True)
+    # trường này lưu giá trị thực tế đích danh (PP này chỉ apply cho SP serial)
+    specific_value = models.FloatField(default=0)
+
+    @staticmethod
+    def create_or_update_si_product_serial(product, serial_obj, specific_value):
+        """ Cập nhập hoặc tạo giá đich danh """
+        si_serial_obj = ProductSpecificIdentificationSerial.objects.filter(
+            product=product,
+            serial_number=serial_obj.serial_number
+        ).first()
+        if not si_serial_obj:
+            ProductSpecificIdentificationSerial.objects.create(
+                product=product,
+                vendor_serial_number=serial_obj.vendor_serial_number,
+                serial_number=serial_obj.serial_number,
+                expire_date=serial_obj.expire_date,
+                manufacture_date=serial_obj.manufacture_date,
+                warranty_start=serial_obj.warranty_start,
+                warranty_end=serial_obj.warranty_end,
+                specific_value=specific_value
+            )
+        else:
+            si_serial_obj.specific_value = specific_value
+            si_serial_obj.save(update_fields=['specific_value'])
+        return True
+
+    @staticmethod
+    def get_specific_value(product, serial_number):
+        """Lấy giá đich danh """
+        si_product_serial_obj = ProductSpecificIdentificationSerial.objects.filter(
+            product=product, serial_number=serial_number
+        ).first()
+        return si_product_serial_obj.specific_value if si_product_serial_obj else 0
+
+    class Meta:
+        verbose_name = 'Product Specific Identification Serial'
+        verbose_name_plural = 'Product Specific Identification Serials'
+        ordering = ('serial_number',)
+        default_permissions = ()
+        permissions = ()

@@ -306,6 +306,11 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validate_data):
+        if validate_data.get('valuation_method') == 2 and validate_data.get('general_traceability_method') != 2:
+            raise serializers.ValidationError(
+                {'valuation_method': _('The specific identification is only available for serial products.')}
+            )
+
         # validate dimension
         validate_data['width'] = ProductCommonFunction.validate_dimension(
             validate_data.get('width'), 'width', ProductMsg.W_IS_WRONG
@@ -798,6 +803,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return ProductCreateSerializer.validate_duration_unit(value)
 
     def validate(self, validate_data):
+        if validate_data.get('valuation_method') == 2 and validate_data.get('general_traceability_method') != 2:
+            raise serializers.ValidationError(
+                {'valuation_method': _('The specific identification is only available for serial products.')}
+            )
+
         # validate dimension
         validate_data['width'] = ProductCommonFunction.validate_dimension(
             validate_data.get('width'), 'width', ProductMsg.W_IS_WRONG
