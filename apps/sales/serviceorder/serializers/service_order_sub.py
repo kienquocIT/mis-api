@@ -161,22 +161,17 @@ class ServiceOrderWorkOrderSerializer(serializers.ModelSerializer):
 
 
 class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
-    product_list = serializers.SerializerMethodField()
 
-    @classmethod
-    def get_product_list(cls, obj):
-        product_list = []
-        for item in obj.work_order_contribution.all():
-            service_detail_obj = item.service_detail
-            if service_detail_obj:
-                product_list.append({
-                    'id': str(service_detail_obj.product_id),
-                    'code': service_detail_obj.product.code,
-                    'title': service_detail_obj.product.title,
-                    'description': service_detail_obj.description,
-                    'work_order_quantity': item.delivered_quantity
-                })
-        return product_list
+    class Meta:
+        model = ServiceOrderWorkOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+            'start_date',
+            'end_date',
+            'quantity'
+        )
 
 
 # SHIPMENT

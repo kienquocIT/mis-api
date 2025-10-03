@@ -138,9 +138,9 @@ class SVODeliveryWorkOrderDetail(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        if 'work_order_id' in self.request.query_params:
+        if 'service_order_id' in self.request.query_params:
             return super().get_queryset().filter(
-                id=self.request.query_params.get('work_order_id'),
+                service_order_id=self.request.query_params.get('service_order_id'),
                 is_delivery_point=True
             )
         return super().get_queryset().none()
