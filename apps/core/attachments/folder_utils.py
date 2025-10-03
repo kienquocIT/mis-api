@@ -38,6 +38,9 @@ HIERARCHY_RULES = {
         'opportunity': {
             'child': {
                 'opportunitytask': {},
+                'quotation': {},
+                'saleorder': {},
+                'leaseorder': {},
                 'serviceorder': {
                     'child': {
                         'opportunitytask'
@@ -113,3 +116,5 @@ APP_NAME = {
     'kmsdocumentapproval': _('Document Approval'),
     'kmsincomingdocument': _('Incoming Document')
 }
+
+# APP_NAME = {**Application_crm_data, **Application_eOffice_data, **Application_hrm_data, **Application_kms_data}

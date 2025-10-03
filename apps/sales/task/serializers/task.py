@@ -64,6 +64,7 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     employee_created = serializers.SerializerMethodField()
     project = serializers.SerializerMethodField()
+    service_order = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_created(cls, obj):
@@ -117,6 +118,25 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             return obj.project_data
         return {}
 
+    @classmethod
+    def get_service_order(cls, obj):
+        data = {}
+        for work_order_task in obj.service_order_work_order_task_task.all():
+            work_order = work_order_task.work_order
+            if work_order:
+                data = {
+                    'id': work_order.service_order_id,
+                    'title': work_order.service_order.title,
+                    'code': work_order.service_order.code,
+                    'opportunity': {
+                        'id': work_order.service_order.opportunity_id,
+                        'title': work_order.service_order.opportunity.title,
+                        'code': work_order.service_order.opportunity.code,
+                    } if work_order.service_order.opportunity else {}
+                } if work_order.service_order else {}
+                break
+        return data
+
     class Meta:
         model = OpportunityTask
         fields = (
@@ -136,6 +156,7 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             'child_task_count',
             'percent_completed',
             'project',
+            'service_order'
         )
 
 
@@ -330,6 +351,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
     process = serializers.SerializerMethodField()
     process_stage_app = serializers.SerializerMethodField()
     group_assignee = serializers.SerializerMethodField()
+    service_order = serializers.SerializerMethodField()
 
     @classmethod
     def get_process(cls, obj):
@@ -475,6 +497,25 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
             'title': obj.group_assignee.title
         } if obj.group_assignee else {}
 
+    @classmethod
+    def get_service_order(cls, obj):
+        data = {}
+        for work_order_task in obj.service_order_work_order_task_task.all():
+            work_order = work_order_task.work_order
+            if work_order:
+                data = {
+                    'id': work_order.service_order_id,
+                    'title': work_order.service_order.title,
+                    'code': work_order.service_order.code,
+                    'opportunity': {
+                        'id': work_order.service_order.opportunity_id,
+                        'title': work_order.service_order.opportunity.title,
+                        'code': work_order.service_order.opportunity.code,
+                    } if work_order.service_order.opportunity else {}
+                } if work_order.service_order else {}
+                break
+        return data
+
     class Meta:
         model = OpportunityTask
         fields = (
@@ -501,6 +542,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
             'process',
             'process_stage_app',
             'group_assignee',
+            'service_order'
         )
 
 
@@ -574,8 +616,8 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
             # nếu người gửi là người thụ hưởng và ko phải là người tạo
             if employee_request.id == assignee and not employee_request == current_data.employee_created:
                 # cấu hình ko cho update time
-                if not config.is_edit_date and (current_data.start_date != update_data['start_date']
-                                                or current_data.end_date != update_data['end_date']):
+                if not config.is_edit_date and (current_data.start_date.date() != update_data['start_date']
+                                                or current_data.end_date.date() != update_data['end_date']):
                     raise serializers.ValidationError({'system': SaleTask.ERROR_NOT_LOGWORK})
                 # cấu hình ko cho update estimate
                 if not config.is_edit_est and current_data.estimate != update_data['estimate']:

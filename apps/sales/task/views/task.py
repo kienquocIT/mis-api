@@ -1,9 +1,11 @@
 import uuid
 
 from django.contrib.auth.models import AnonymousUser
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 
+from apps.sales.serviceorder.models import ServiceOrderWorkOrderTask
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, TaskAssigneeGroup, \
     OpportunityTaskConfig
 from apps.sales.task.serializers import (
@@ -43,6 +45,14 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         return self.queryset.select_related(
             'parent_n', 'employee_inherit', 'opportunity', 'employee_created', 'task_status', 'project'
+        ).prefetch_related(
+            Prefetch(
+                'service_order_work_order_task_task',
+                queryset=ServiceOrderWorkOrderTask.objects.select_related(
+                    'work_order__service_order',
+                    'work_order__service_order__opportunity',
+                ),
+            ),
         )
 
     @swagger_auto_schema(
@@ -129,6 +139,14 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
         return self.queryset.select_related(
             'parent_n', 'employee_inherit', 'employee_created', 'process', 'process_stage_app', 'task_status',
             'opportunity', 'project', 'group_assignee',
+        ).prefetch_related(
+            Prefetch(
+                'service_order_work_order_task_task',
+                queryset=ServiceOrderWorkOrderTask.objects.select_related(
+                    'work_order__service_order',
+                    'work_order__service_order__opportunity',
+                ),
+            ),
         )
 
     def manual_check_obj_retrieve(self, instance, **kwargs):
