@@ -167,7 +167,6 @@ class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'title',
-            'code',
             'start_date',
             'end_date',
             'quantity'
