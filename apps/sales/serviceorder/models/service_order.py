@@ -40,6 +40,12 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
     )
     exchange_rate_data = models.JSONField(default=dict)
 
+    # total product
+    # total_product_pretax_amount = models.FloatField(default=0, help_text="total pretax of tab product")
+    # total_product_tax = models.FloatField(default=0, help_text="total tax of tab product")
+    # total_product = models.FloatField(default=0, help_text="total of tab product")
+    # total_product_revenue_before_tax = models.FloatField(default=0, help_text="total before tax of tab product")
+
     # expense value
     expense_pretax_value = models.FloatField(default=0)
     expense_tax_value = models.FloatField(default=0)
@@ -513,3 +519,38 @@ class ServiceOrderAttachMapAttachFile(M2MFilesAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+# indicator
+# class ServiceOrderIndicator(MasterDataAbstractModel):
+#     service_order = models.ForeignKey(
+#         'serviceorder.ServiceOrder',
+#         on_delete=models.CASCADE,
+#         verbose_name="service order",
+#         related_name="service_order_indicator_service_order",
+#     )
+#     indicator = models.ForeignKey(
+#         'quotation.QuotationIndicatorConfig',
+#         on_delete=models.CASCADE,
+#         verbose_name="indicator",
+#         related_name="service_order_indicator_indicator",
+#     )
+#     indicator_data = models.JSONField(default=dict, help_text='data json of indicator')
+#     indicator_value = models.FloatField(
+#         default=0,
+#         help_text="value of specific indicator for service order"
+#     )
+#     indicator_rate = models.FloatField(
+#         default=0,
+#         help_text="rate value of specific indicator for service order"
+#     )
+#     order = models.IntegerField(
+#         default=1
+#     )
+#
+#     class Meta:
+#         verbose_name = 'Service Order Indicator'
+#         verbose_name_plural = 'Service Order Indicators'
+#         ordering = ('order',)
+#         default_permissions = ()
+#         permissions = ()
