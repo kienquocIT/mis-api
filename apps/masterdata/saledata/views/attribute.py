@@ -11,6 +11,7 @@ class AttributeViewList(BaseListMixin, BaseCreateMixin):
     search_fields = ["title"]
     filterset_fields = {
         'parent_n_id': ['exact', 'isnull'],
+        'is_category': ['exact'],
     }
     serializer_list = AttributeListSerializer
     serializer_detail = AttributeListSerializer
@@ -21,6 +22,14 @@ class AttributeViewList(BaseListMixin, BaseCreateMixin):
         'company_id',
         'employee_created_id',
     ]
+
+    def get_queryset(self):
+        request_qs = self.request.query_params.dict()
+        if 'exclude_id' in request_qs:
+            exclude_id = request_qs.pop('exclude_id')
+            return super().get_queryset().select_related('parent_n').exclude(id=exclude_id)
+
+        return super().get_queryset().select_related('parent_n')
 
     @swagger_auto_schema(
         operation_summary="Attribute List",
