@@ -87,35 +87,71 @@ class IRForGoodsReturnHandler:
             else:
                 print('Delivery information is not found. Can not log.')
         for item in product_detail_list.filter(type=2):
-            delivery_item = ReportStockLog.objects.filter(
-                product=item.product, trans_id=str(instance.delivery_id)
-            ).first()
-            if delivery_item:
-                casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, float(item.is_return))
-                casted_cost = (
-                    delivery_item.cost * float(item.is_return) / casted_quantity
-                ) if casted_quantity > 0 else 0
-                data = {
-                    'sale_order': instance.delivery.order_delivery.sale_order,
-                    'product': item.product,
-                    'warehouse': item.return_to_warehouse,
-                    'system_date': instance.date_approved,
-                    'posting_date': instance.date_approved,
-                    'document_date': instance.date_approved,
-                    'stock_type': 1,
-                    'trans_id': str(instance.id),
-                    'trans_code': instance.code,
-                    'trans_title': 'Goods return',
-                    'quantity': casted_quantity,
-                    'cost': casted_cost,
-                    'value': casted_quantity * casted_cost,
-                    'lot_data': {}
-                }
-                doc_data, is_append = cls.check_exists(doc_data, data)
-                if not is_append:
-                    doc_data.append(data)
+            if item.product.valuation_method == 2:
+                delivery_item = ReportStockLog.objects.filter(
+                    product=item.product, trans_id=str(instance.delivery_id), serial_mapped=item.serial_no
+                ).first()
+                if delivery_item:
+                    data = {
+                        'sale_order': instance.delivery.order_delivery.sale_order,
+                        'product': item.product,
+                        'warehouse': item.return_to_warehouse,
+                        'system_date': instance.date_approved,
+                        'posting_date': instance.date_approved,
+                        'document_date': instance.date_approved,
+                        'stock_type': 1,
+                        'trans_id': str(instance.id),
+                        'trans_code': instance.code,
+                        'trans_title': 'Goods return',
+                        'quantity': 1,
+                        'cost': delivery_item.cost,
+                        'value': delivery_item.cost * 1,
+                        'lot_data': {},
+                        'serial_data': {
+                            'serial_id': str(item.serial_no_id),
+                            'serial_number': item.serial_no.serial_number,
+                            'vendor_serial_number': item.serial_no.vendor_serial_number,
+                            'expire_date': str(
+                                item.serial_no.expire_date) if item.serial_no.expire_date else None,
+                            'manufacture_date': str(
+                                item.serial_no.manufacture_date) if item.serial_no.manufacture_date else None,
+                            'warranty_start': str(
+                                item.serial_no.warranty_start) if item.serial_no.warranty_start else None,
+                            'warranty_end': str(
+                                item.serial_no.warranty_end) if item.serial_no.warranty_end else None,
+                        }
+                    }
+                    doc_data, is_append = cls.check_exists(doc_data, data)
+                    if not is_append:
+                        doc_data.append(data)
+                else:
+                    print('Delivery information is not found. Can not log.')
             else:
-                print('Delivery information is not found. Can not log.')
+                delivery_item = ReportStockLog.objects.filter(
+                    product=item.product, trans_id=str(instance.delivery_id)
+                ).first()
+                if delivery_item:
+                    data = {
+                        'sale_order': instance.delivery.order_delivery.sale_order,
+                        'product': item.product,
+                        'warehouse': item.return_to_warehouse,
+                        'system_date': instance.date_approved,
+                        'posting_date': instance.date_approved,
+                        'document_date': instance.date_approved,
+                        'stock_type': 1,
+                        'trans_id': str(instance.id),
+                        'trans_code': instance.code,
+                        'trans_title': 'Goods return',
+                        'quantity': 1,
+                        'cost': delivery_item.cost,
+                        'value': delivery_item.cost,
+                        'lot_data': {}
+                    }
+                    doc_data, is_append = cls.check_exists(doc_data, data)
+                    if not is_append:
+                        doc_data.append(data)
+                else:
+                    print('Delivery information is not found. Can not log.')
         return doc_data
 
     @classmethod
@@ -169,26 +205,53 @@ class IRForGoodsReturnHandler:
                 }
             })
         for item in product_detail_list.filter(type=2):
-            casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, float(item.is_return))
-            casted_cost = (
-                    item.cost_for_periodic * float(item.is_return) / casted_quantity
-            ) if casted_quantity > 0 else 0
-            doc_data.append({
-                'sale_order': instance.delivery.order_delivery.sale_order,
-                'product': item.product,
-                'warehouse': item.return_to_warehouse,
-                'system_date': instance.date_approved,
-                'posting_date': instance.date_approved,
-                'document_date': instance.date_approved,
-                'stock_type': 1,
-                'trans_id': str(instance.id),
-                'trans_code': instance.code,
-                'trans_title': 'Goods return',
-                'quantity': casted_quantity,
-                'cost': casted_cost,
-                'value': casted_quantity * casted_cost,
-                'lot_data': {}
-            })
+            if item.product.valuation_method == 2:
+                doc_data.append({
+                    'sale_order': instance.delivery.order_delivery.sale_order,
+                    'product': item.product,
+                    'warehouse': item.return_to_warehouse,
+                    'system_date': instance.date_approved,
+                    'posting_date': instance.date_approved,
+                    'document_date': instance.date_approved,
+                    'stock_type': 1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Goods return',
+                    'quantity': 1,
+                    'cost': item.cost_for_periodic,
+                    'value': item.cost_for_periodic,
+                    'lot_data': {},
+                    'serial_data': {
+                        'serial_id': str(item.serial_no_id),
+                        'serial_number': item.serial_no.serial_number,
+                        'vendor_serial_number': item.serial_no.vendor_serial_number,
+                        'expire_date': str(
+                            item.serial_no.expire_date) if item.serial_no.expire_date else None,
+                        'manufacture_date': str(
+                            item.serial_no.manufacture_date) if item.serial_no.manufacture_date else None,
+                        'warranty_start': str(
+                            item.serial_no.warranty_start) if item.serial_no.warranty_start else None,
+                        'warranty_end': str(
+                            item.serial_no.warranty_end) if item.serial_no.warranty_end else None,
+                    }
+                })
+            else:
+                doc_data.append({
+                    'sale_order': instance.delivery.order_delivery.sale_order,
+                    'product': item.product,
+                    'warehouse': item.return_to_warehouse,
+                    'system_date': instance.date_approved,
+                    'posting_date': instance.date_approved,
+                    'document_date': instance.date_approved,
+                    'stock_type': 1,
+                    'trans_id': str(instance.id),
+                    'trans_code': instance.code,
+                    'trans_title': 'Goods return',
+                    'quantity': 1,
+                    'cost': item.cost_for_periodic,
+                    'value': item.cost_for_periodic,
+                    'lot_data': {}
+                })
         return doc_data
 
     @classmethod

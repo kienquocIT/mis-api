@@ -1311,14 +1311,6 @@ Goods_Return_data__params = {
         "type": 1,
         "is_print": True,
     },
-    "70fc68d7-b886-4ace-bf12-0b7591ce1f81": {
-        "application_id": "0242ba77-8b02-4589-8ed9-239788083f2b",
-        "title": "Product return status",
-        "code": "product_detail_list___is_return",
-        "remark": "",
-        "type": 1,
-        "is_print": True,
-    },
     "6b66609a-6af3-4a46-997f-405500485b16": {
         "application_id": "0242ba77-8b02-4589-8ed9-239788083f2b",
         "title": "Product redelivery status",

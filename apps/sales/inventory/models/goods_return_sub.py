@@ -384,7 +384,7 @@ class GoodsReturnSubSerializerForNonPicking:
                 return_quantity = item.lot_return_number
                 redelivery_quantity = item.lot_redelivery_number
             elif item.type == 2:
-                return_quantity = item.is_return
+                return_quantity = 1
                 redelivery_quantity = item.is_redelivery
 
             if redelivery_quantity > return_quantity:
@@ -520,7 +520,7 @@ class GoodsReturnSubSerializerForPicking:
                 return_quantity = item.lot_return_number
                 redelivery_quantity = item.lot_redelivery_number
             elif item.type == 2:
-                return_quantity = item.is_return
+                return_quantity = 1
                 redelivery_quantity = item.is_redelivery
 
             picking_obj = goods_return.sale_order.picking_of_sale_order
