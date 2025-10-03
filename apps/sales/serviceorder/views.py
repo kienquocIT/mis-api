@@ -7,6 +7,7 @@ from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateM
 from apps.sales.serviceorder.serializers import (
     ServiceOrderListSerializer, ServiceOrderDetailSerializer,
     ServiceOrderCreateSerializer, ServiceOrderUpdateSerializer, ServiceOrderDetailDashboardSerializer,
+    SVODeliveryWorkOrderDetailSerializer,
 )
 
 
@@ -14,6 +15,7 @@ __all__ = [
     'ServiceOrderList',
     'ServiceOrderDetail',
     'ServiceOrderDetailDashboard',
+    'SVODeliveryWorkOrderDetail'
 ]
 
 
@@ -128,3 +130,22 @@ class ServiceOrderDetailDashboard(BaseRetrieveMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+
+class SVODeliveryWorkOrderDetail(BaseListMixin):
+    queryset = ServiceOrderWorkOrder.objects
+    serializer_list = SVODeliveryWorkOrderDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        if 'work_order_id' in self.request.query_params:
+            return super().get_queryset().filter(
+                id=self.request.query_params.get('work_order_id'),
+                is_delivery_point=True
+            )
+        return super().get_queryset().none()
+
+    @swagger_auto_schema(operation_summary="Delivery Service Work Order Detail")
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
