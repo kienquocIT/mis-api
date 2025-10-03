@@ -327,7 +327,9 @@ class ServiceOrderDetailDashboardSerializer(AbstractDetailSerializerModel):
                             'percent_completed': wo_task_item.task.percent_completed,
                         } for wo_task_item in wo_ctb_item.work_order.service_order_work_order_task_wo.all()]
                     } if wo_ctb_item.work_order else {},
-                } for wo_ctb_item in item.service_detail_contributions.all().order_by("work_order__order")]
+                } for wo_ctb_item in item.service_detail_contributions.filter(
+                    is_selected=True
+                ).order_by("work_order__order")]
             })
         return service_order_detail_list
 
