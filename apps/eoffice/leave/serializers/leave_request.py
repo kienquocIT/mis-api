@@ -66,8 +66,8 @@ class LeaveRequestDateListRegisterSerializer(serializers.ModelSerializer):
             'id',
             'date_from',
             'date_to',
-            'morning_shift_f',
-            'morning_shift_t',
+            'first_half',
+            'second_half',
             'remark',
             'employee_inherit',
             'title'
@@ -112,8 +112,6 @@ class LeaveRequestCreateSerializer(AbstractCreateSerializerModel):
             d_to = datetime.strptime(item["date_to"], "%Y-%m-%d")
             if d_from > d_to:
                 raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_DATE_ERROR})
-            if d_from == d_to and (not item['morning_shift_f'] and item['morning_shift_t']):
-                raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_DATE_ERROR})
             if available["check_balance"]:
                 crt_time = timezone.now().date()
                 leave_exp = datetime.strptime(available['expiration_date'], '%Y-%m-%d').date()
@@ -141,9 +139,9 @@ class LeaveRequestCreateSerializer(AbstractCreateSerializerModel):
                         order=item["order"],
                         leave_type_id=leave_type_id,
                         date_from=item["date_from"],
-                        morning_shift_f=item["morning_shift_f"],
                         date_to=item["date_to"],
-                        morning_shift_t=item["morning_shift_t"],
+                        first_half=item.get("first_half", False),
+                        second_half=item.get("second_half", False),
                         subtotal=float(item["subtotal"]),
                         remark=item["remark"],
                         leave_id=str(leave.id)
@@ -188,6 +186,7 @@ class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
         if obj.detail_data:
             # code new
             for item in obj.detail_data:
+                item['all_day'] = not item.get('first_half', False) and not item.get('second_haft', False)
                 try:
                     available = LeaveAvailable.objects.select_related('leave_type').get_current(
                         employee_inherit_id=obj.employee_inherit_id, company=obj.company,
@@ -258,9 +257,9 @@ class LeaveRequestUpdateSerializer(AbstractCreateSerializerModel):
                     order=item["order"],
                     leave_type_id=item['leave_available']['leave_type']['id'],
                     date_from=item["date_from"],
-                    morning_shift_f=item["morning_shift_f"],
                     date_to=item["date_to"],
-                    morning_shift_t=item["morning_shift_t"],
+                    first_half=item.get("first_half", False),
+                    second_half=item.get("second_half", False),
                     subtotal=float(item["subtotal"]),
                     remark=item["remark"],
                     leave=instance
