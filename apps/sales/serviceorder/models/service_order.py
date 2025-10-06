@@ -4,6 +4,7 @@ from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Tax, UnitOfMeasure, Currency, Product
 from apps.sales.cashoutflow.utils import AdvanceHandler
+from apps.sales.serviceorder.utils.logical_finish import ServiceOrderFinishHandler
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel, BastionFieldAbstractModel
 
 # work order tab
@@ -39,6 +40,12 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
     )
     exchange_rate_data = models.JSONField(default=dict)
 
+    # total product
+    # total_product_pretax_amount = models.FloatField(default=0, help_text="total pretax of tab product")
+    # total_product_tax = models.FloatField(default=0, help_text="total tax of tab product")
+    # total_product = models.FloatField(default=0, help_text="total of tab product")
+    # total_product_revenue_before_tax = models.FloatField(default=0, help_text="total before tax of tab product")
+
     # expense value
     expense_pretax_value = models.FloatField(default=0)
     expense_tax_value = models.FloatField(default=0)
@@ -46,11 +53,30 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
 
     is_done_purchase_request = models.BooleanField(default=False)
 
+    @classmethod
+    def check_change_document(cls, instance):
+        # check if there is CR not done
+        if cls.objects.filter_on_company(document_root_id=instance.document_root_id, system_status__in=[1, 2]).exists():
+            return False
+        if not instance:
+            return False
+        return True
+
+    @classmethod
+    def check_reject_document(cls, instance):
+        # check if there is CR not done
+        if cls.objects.filter_on_company(document_root_id=instance.document_root_id, system_status__in=[1, 2]).exists():
+            return False
+        if not instance:
+            return False
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('serviceorder', True, self, kwargs)
+                    ServiceOrderFinishHandler.re_processing_folder_task_files(instance=self)
         # hit DB
         AdvanceHandler.push_opportunity_log(self)
         super().save(*args, **kwargs)
@@ -103,6 +129,18 @@ class ServiceOrderServiceDetail(MasterDataAbstractModel):
     total_payment_percent = models.FloatField(default=0)
     total_payment_value = models.FloatField(default=0)
 
+    # data attribute
+    selected_attributes = models.JSONField(default=dict)
+    attributes_total_cost = models.FloatField(default=0)
+    duration_value = models.IntegerField(default=0)
+    duration = models.ForeignKey(
+        UnitOfMeasure,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='service_order_service_details'
+    )
+    duration_unit_data = models.JSONField(default=dict)
+
     remain_for_purchase_request = models.FloatField(default=0)
 
     class Meta:
@@ -136,6 +174,13 @@ class ServiceOrderWorkOrder(MasterDataAbstractModel):
         choices=WORK_ORDER_STATUS
     )
     task_data = models.JSONField(default=list, help_text="list task data, records in ServiceOrderWorkOrderTask")
+    tasks = models.ManyToManyField(
+        'task.OpportunityTask',
+        through="ServiceOrderWorkOrderTask",
+        symmetrical=False,
+        blank=True,
+        related_name='service_order_work_order_m2m_task'
+    )
 
     class Meta:
         verbose_name = 'Service order work order'
@@ -474,3 +519,38 @@ class ServiceOrderAttachMapAttachFile(M2MFilesAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+# indicator
+# class ServiceOrderIndicator(MasterDataAbstractModel):
+#     service_order = models.ForeignKey(
+#         'serviceorder.ServiceOrder',
+#         on_delete=models.CASCADE,
+#         verbose_name="service order",
+#         related_name="service_order_indicator_service_order",
+#     )
+#     indicator = models.ForeignKey(
+#         'quotation.QuotationIndicatorConfig',
+#         on_delete=models.CASCADE,
+#         verbose_name="indicator",
+#         related_name="service_order_indicator_indicator",
+#     )
+#     indicator_data = models.JSONField(default=dict, help_text='data json of indicator')
+#     indicator_value = models.FloatField(
+#         default=0,
+#         help_text="value of specific indicator for service order"
+#     )
+#     indicator_rate = models.FloatField(
+#         default=0,
+#         help_text="rate value of specific indicator for service order"
+#     )
+#     order = models.IntegerField(
+#         default=1
+#     )
+#
+#     class Meta:
+#         verbose_name = 'Service Order Indicator'
+#         verbose_name_plural = 'Service Order Indicators'
+#         ordering = ('order',)
+#         default_permissions = ()
+#         permissions = ()

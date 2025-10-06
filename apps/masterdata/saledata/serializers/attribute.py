@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.masterdata.saledata.models import Attribute, AttributeNumeric, AttributeList, AttributeWarranty, \
     AttributeListItem
+from apps.masterdata.saledata.models.product import Product
 from apps.shared import BaseMsg
 
 
@@ -134,3 +135,46 @@ class AttributeUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         AttributeHandler.create_update_subs(attribute=instance)
         return instance
+
+
+class ProductAttributeDetailSerializer(serializers.ModelSerializer):
+    attribute_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = (
+            'id',
+            'attribute_list',
+        )
+
+    @classmethod
+    def get_attribute_list(cls, obj):
+        attribute_list = []
+
+        for product_attribute in obj.product_attributes.all():
+            attribute = product_attribute.attribute  # the related Attribute object
+
+            # Check if this attribute is a category
+            if attribute and attribute.is_category:
+                # Get all child attributes of this category
+                child_attributes = Attribute.objects.filter(
+                    parent_n=attribute,
+                    is_category=False  # Only get attribute
+                )
+
+                for child_attr in child_attributes:
+                    attribute_list.append({
+                        'id': child_attr.id,
+                        'title': child_attr.title,
+                        'price_config_type': child_attr.price_config_type,
+                        'price_config_data': child_attr.price_config_data,
+                        'is_category': child_attr.is_category,
+                        'is_inventory': child_attr.is_inventory,
+                        'parent_n': {
+                            'id': attribute.id,
+                            'title': attribute.title,
+                            'code': attribute.code,
+                        },
+                    })
+
+        return attribute_list

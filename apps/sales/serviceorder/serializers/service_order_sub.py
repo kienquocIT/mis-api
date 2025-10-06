@@ -26,6 +26,7 @@ class ServiceOrderServiceDetailSerializer(serializers.ModelSerializer):
     uom = serializers.UUIDField(required=False, allow_null=True)
     tax = serializers.UUIDField(required=False, allow_null=True)
     id = serializers.CharField(required=False)
+    duration = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = ServiceOrderServiceDetail
@@ -47,7 +48,12 @@ class ServiceOrderServiceDetailSerializer(serializers.ModelSerializer):
             'delivery_balance_value',
             'total_contribution_percent',
             'total_payment_percent',
-            'total_payment_value'
+            'total_payment_value',
+            'selected_attributes',
+            'attributes_total_cost',
+            'duration_value',
+            'duration',
+            'duration_unit_data'
         )
 
     @classmethod
@@ -80,7 +86,15 @@ class ServiceOrderServiceDetailSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'tax': _('Tax does not exist')})
         raise serializers.ValidationError({'tax': _('Tax is required')})
 
-
+    @classmethod
+    def validate_duration(cls, value):
+        if value:
+            try:
+                duration = UnitOfMeasure.objects.get_on_company(id=value)
+                return duration
+            except UnitOfMeasure.DoesNotExist:
+                raise serializers.ValidationError({'duration': _('Duration does not exist')})
+        raise serializers.ValidationError({'duration': _('Duration is required')})
 # WORK ORDER
 class ServiceOrderWorkOrderSerializer(serializers.ModelSerializer):
     product = serializers.UUIDField(allow_null=True, required=False)
@@ -313,7 +327,9 @@ class ServiceOrderDetailDashboardSerializer(AbstractDetailSerializerModel):
                             'percent_completed': wo_task_item.task.percent_completed,
                         } for wo_task_item in wo_ctb_item.work_order.service_order_work_order_task_wo.all()]
                     } if wo_ctb_item.work_order else {},
-                } for wo_ctb_item in item.service_detail_contributions.all().order_by("work_order__order")]
+                } for wo_ctb_item in item.service_detail_contributions.filter(
+                    is_selected=True
+                ).order_by("work_order__order")]
             })
         return service_order_detail_list
 
@@ -468,6 +484,17 @@ class ServiceOrderCommonFunc:
         service_detail_id_map = {}
         for service_detail in service_detail_data:
             product_obj = service_detail.get('product')
+            duration_obj = service_detail.get('duration')
+
+            # Prepare duration_unit_data based on duration object
+            duration_unit_data = {}
+            if duration_obj:
+                duration_unit_data = {
+                    "id": str(duration_obj.id),
+                    "code": duration_obj.code,
+                    "title": duration_obj.title,
+                }
+
             bulk_data.append(
                 ServiceOrderServiceDetail(
                     service_order_id=service_order_id,
@@ -494,7 +521,12 @@ class ServiceOrderCommonFunc:
                     total_contribution_percent=service_detail.get('total_contribution_percent'),
                     total_payment_percent=service_detail.get('total_payment_percent'),
                     total_payment_value=service_detail.get('total_payment_value'),
-                    remain_for_purchase_request=service_detail.get('quantity')
+                    remain_for_purchase_request=service_detail.get('quantity'),
+                    selected_attributes=service_detail.get('selected_attributes', {}),
+                    attributes_total_cost=service_detail.get('attributes_total_cost', 0),
+                    duration=duration_obj,
+                    duration_value=service_detail.get('duration_value', 0),
+                    duration_unit_data=duration_unit_data or service_detail.get('duration_unit_data', {}),
                 )
             )
 

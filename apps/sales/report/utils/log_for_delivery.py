@@ -81,9 +81,9 @@ class IRForDeliveryHandler:
                                 'lease_order': lease_order_obj,
                                 'product': product_obj,
                                 'warehouse': warehouse_obj,
-                                'system_date': instance.date_done,
-                                'posting_date': instance.date_done,
-                                'document_date': instance.date_done,
+                                'system_date': instance.date_approved,
+                                'posting_date': instance.date_approved,
+                                'document_date': instance.date_approved,
                                 'stock_type': -1,
                                 'trans_id': str(instance.id),
                                 'trans_code': instance.code,
@@ -115,5 +115,5 @@ class IRForDeliveryHandler:
                                 sale_order_obj,
                                 lease_order_obj
                             )
-        ReportInvLog.log(instance, instance.date_done, doc_data)
+        ReportInvLog.log(instance, instance.date_approved, doc_data)
         return True

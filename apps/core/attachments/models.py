@@ -1,6 +1,7 @@
 __all__ = [
     'Files', 'M2MFilesAbstractModel',
-    'PublicFiles', 'Folder', 'FolderPermission', 'FilePermission', 'update_files_is_approved'
+    'PublicFiles', 'Folder', 'FolderPermission', 'FilePermission', 'update_files_is_approved',
+    'processing_folder',
 ]
 
 import json
@@ -15,7 +16,7 @@ from django.db.models import Q
 from django.utils import timezone
 from django.utils.text import slugify
 
-from apps.core.attachments.folder_utils import HIERARCHY_RULES, MODULE_MAPPING, APP_FIELD, APP_NAME
+from apps.core.attachments.folder_utils import HIERARCHY_RULES, MODULE_MAPPING, APP_FIELD
 from apps.shared import MasterDataAbstractModel, TypeCheck, StringHandler, HrMsg, AttMsg, SimpleAbstractModel, \
     DisperseModel
 from apps.core.attachments.storages.aws.storages_backend import (
@@ -223,14 +224,15 @@ def cu_folder_form_path(app_code, obj_doc, parent_folder):
     else:
         return False
 
+    # Case folder is system application (quotation, sale order, task,...)
     folder_label, _ = Folder.objects.get_or_create(
+        application=app_current_obj,
+        parent_n=parent_folder,
+        is_system=True,
         company_id=obj_doc.company_id,
         tenant_id=obj_doc.tenant_id,
-        parent_n=parent_folder,
-        title=APP_NAME[app_code],
-        is_system=True,
         defaults={
-            'title': APP_NAME[app_code],
+            'title': app_current_obj.title,
             'company_id': obj_doc.company_id,
             'tenant_id': obj_doc.tenant_id,
             'parent_n': parent_folder,
@@ -243,14 +245,18 @@ def cu_folder_form_path(app_code, obj_doc, parent_folder):
     #     one_third = len(result_name) // 3
     #     result_name = f'{result_name[:one_third]}...{result_name[-one_third:]}'
 
+    # Case folder is document created by user
     folder_app, _ = Folder.objects.get_or_create(
         application=app_current_obj,
-        doc_code=obj_doc.code,
-        is_system=True,
         parent_n=folder_label,
+        is_system=True,
+        doc_id=obj_doc.id,
+        company_id=obj_doc.company_id,
+        tenant_id=obj_doc.tenant_id,
         defaults={
             'title': f'{obj_doc.code}-{obj_doc.title}',
-            'doc_code': obj_doc.code,
+            'doc_id': obj_doc.id,
+            'doc_code': obj_doc.code if obj_doc.code else None,
             'application': app_current_obj,
             'company_id': obj_doc.company_id,
             'tenant_id': obj_doc.tenant_id,
@@ -259,6 +265,7 @@ def cu_folder_form_path(app_code, obj_doc, parent_folder):
         }
     )
     current_folder = folder_app
+    # Case special
     if app_code == 'serviceorder':
         current_folder, _ = Folder.objects.get_or_create(
             is_system=True,
@@ -316,13 +323,15 @@ def processing_folder(doc_id, doc_app):
         # tạo folder theo doc_code và app
         folder_obj, _ = Folder.objects.get_or_create(
             application=doc_app,
-            doc_code=doc_obj.code,
+            doc_id=doc_obj.id,
+            # doc_code=doc_obj.code,
             is_system=True,
             defaults={
                 'title': f'{doc_obj.code}-{doc_obj.title}',
                 'company': doc_obj.company,
                 'tenant': doc_obj.tenant,
                 'application': doc_app,
+                'doc_id': doc_obj.id,
                 'doc_code': doc_obj.code if doc_obj.code else None,
                 'is_system': True
             }
@@ -340,12 +349,12 @@ def processing_folder(doc_id, doc_app):
                 if path == doc_app.model_code:
                     if len(path_lst) == 2 and path_lst[0] in ['sale', 'e-office', 'hrm', 'kms']:
                         current_folder_path, _ = Folder.objects.get_or_create(
-                            title=APP_NAME[path],
+                            application=doc_app,
                             parent_n=current_folder_path,
                             company_id=doc_obj.company_id,
                             tenant_id=doc_obj.tenant_id,
                             defaults={
-                                'title': APP_NAME[path],
+                                'title': doc_app.title,
                                 'company_id': doc_obj.company_id,
                                 'tenant_id': doc_obj.tenant_id,
                                 'is_system': True,
@@ -487,7 +496,7 @@ class Files(BastionFiles):
     file = models.FileField(storage=PrivateMediaStorage, upload_to=generate_path_file)
     folder = models.ForeignKey(
         'attachments.Folder',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name='folder of file',
         related_name='files_folder',
         null=True,
@@ -832,6 +841,7 @@ class M2MFilesAbstractModel(SimpleAbstractModel):
 # BEGIN FOLDER
 class Folder(MasterDataAbstractModel):
     application = models.ForeignKey('base.Application', on_delete=models.CASCADE, null=True)
+    doc_id = models.UUIDField(verbose_name='Document ID', null=True)
     doc_code = models.CharField(max_length=250, blank=True, null=True)
     parent_n = models.ForeignKey(
         "self",

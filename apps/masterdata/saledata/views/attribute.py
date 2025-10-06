@@ -1,9 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.masterdata.saledata.models import Attribute
+from apps.masterdata.saledata.models import Attribute, Product
 from apps.masterdata.saledata.serializers.attribute import AttributeListSerializer, AttributeCreateSerializer, \
-    AttributeUpdateSerializer
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseUpdateMixin
+    AttributeUpdateSerializer, ProductAttributeDetailSerializer
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseUpdateMixin, BaseRetrieveMixin
 
 
 class AttributeViewList(BaseListMixin, BaseCreateMixin):
@@ -11,6 +11,7 @@ class AttributeViewList(BaseListMixin, BaseCreateMixin):
     search_fields = ["title"]
     filterset_fields = {
         'parent_n_id': ['exact', 'isnull'],
+        'is_category': ['exact'],
     }
     serializer_list = AttributeListSerializer
     serializer_detail = AttributeListSerializer
@@ -21,6 +22,14 @@ class AttributeViewList(BaseListMixin, BaseCreateMixin):
         'company_id',
         'employee_created_id',
     ]
+
+    def get_queryset(self):
+        request_qs = self.request.query_params.dict()
+        if 'exclude_id' in request_qs:
+            exclude_id = request_qs.pop('exclude_id')
+            return super().get_queryset().select_related('parent_n').exclude(id=exclude_id)
+
+        return super().get_queryset().select_related('parent_n')
 
     @swagger_auto_schema(
         operation_summary="Attribute List",
@@ -60,3 +69,17 @@ class AttributeViewDetail(BaseUpdateMixin):
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+
+class ProductAttributeDetail(BaseRetrieveMixin):
+    queryset = Product.objects
+    serializer_detail = ProductAttributeDetailSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(operation_summary='Product Attribute List')
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='saledata', model_code='product', perm_code='view',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)

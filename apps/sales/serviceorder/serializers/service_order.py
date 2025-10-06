@@ -250,6 +250,12 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'total_contribution_percent': service_detail.total_contribution_percent,
             'total_payment_percent': service_detail.total_payment_percent,
             'total_payment_value': service_detail.total_payment_value,
+            'selected_attributes': service_detail.selected_attributes,
+            'attributes_total_cost': service_detail.attributes_total_cost,
+            'duration_id': service_detail.duration_id if service_detail.duration else None,
+            'duration_unit_data': service_detail.duration_unit_data,
+            'duration': service_detail.duration_value if hasattr(service_detail, 'duration_value') else 0,
+            'has_attributes': bool(service_detail.selected_attributes and service_detail.selected_attributes != {}),
         } for service_detail in obj.service_details.all()]
 
     @classmethod

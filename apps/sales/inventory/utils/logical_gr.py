@@ -146,17 +146,23 @@ class GRFromPMHandler:
                     } if pm_obj.prd_wh.warehouse else {},
                     'quantity_import': 1,
                     'serial_data': [{
-                        'expire_date': str(pm_obj.prd_wh_serial.expire_date),
-                        'manufacture_date': str(pm_obj.prd_wh_serial.manufacture_date),
+                        'expire_date': str(pm_obj.prd_wh_serial.expire_date)
+                        if pm_obj.prd_wh_serial.expire_date is not None else None,
+                        'manufacture_date': str(pm_obj.prd_wh_serial.manufacture_date)
+                        if pm_obj.prd_wh_serial.manufacture_date is not None else None,
                         'serial_number': pm_obj.prd_wh_serial.serial_number,
                         'vendor_serial_number': pm_obj.prd_wh_serial.vendor_serial_number,
-                        'warranty_start': str(pm_obj.prd_wh_serial.warranty_start),
-                        'warranty_end': str(pm_obj.prd_wh_serial.warranty_end),
+                        'warranty_start': str(pm_obj.prd_wh_serial.warranty_start)
+                        if pm_obj.prd_wh_serial.warranty_start is not None else None,
+                        'warranty_end': str(pm_obj.prd_wh_serial.warranty_end)
+                        if pm_obj.prd_wh_serial.warranty_end is not None else None,
                     }] if pm_obj.prd_wh_serial else [],
                     'lot_data': [{
                         "lot_number": pm_obj.prd_wh_lot.lot_number,
-                        "expire_date": str(pm_obj.prd_wh_lot.expire_date),
-                        "manufacture_date": str(pm_obj.prd_wh_lot.manufacture_date),
+                        "expire_date": str(pm_obj.prd_wh_lot.expire_date)
+                        if pm_obj.prd_wh_lot.expire_date is not None else None,
+                        "manufacture_date": str(pm_obj.prd_wh_lot.manufacture_date)
+                        if pm_obj.prd_wh_lot.manufacture_date is not None else None,
                         "quantity_import": 1,
                     }] if pm_obj.prd_wh_lot else [],
                 }]
