@@ -31,7 +31,8 @@ class ReportStockListSerializer(serializers.ModelSerializer):
             'title': obj.product.title,
             'lot_number': obj.lot_mapped.lot_number if obj.lot_mapped else '',
             'serial_number': obj.serial_mapped.serial_number if obj.serial_mapped else '',
-            'order_id': str(obj.sale_order.id) if obj.sale_order else str(obj.lease_order.id) if obj.lease_order else '',
+            'order_id': str(obj.sale_order_id) if obj.sale_order else str(
+                obj.lease_order_id) if obj.lease_order else '',
             'order_code': obj.sale_order.code if obj.sale_order else obj.lease_order.code if obj.lease_order else '',
             'code': obj.product.code,
             'description': obj.product.description,

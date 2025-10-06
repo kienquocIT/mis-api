@@ -1,7 +1,5 @@
 from django.db import models
 from rest_framework import serializers
-
-from apps.masterdata.saledata.models import ProductWareHouseSerial
 from apps.masterdata.saledata.models.product_warehouse import ProductSpecificIdentificationSerial
 from apps.sales.inventory.models.goods_registration import GoodsRegistration
 from apps.shared import DataAbstractModel, SimpleAbstractModel
@@ -217,27 +215,29 @@ class ReportStockLog(DataAbstractModel):
     fifo_pushed_quantity = models.IntegerField(default=0) # để biết được đã bị lấy bao nhiêu rồi
     fifo_cost_detail = models.JSONField(default=list)
 
+    @staticmethod
+    def parse_param(doc_item, cost_cfg):
+        kw_parameter = {}
+        if 1 in cost_cfg:
+            kw_parameter['warehouse_id'] = doc_item.get('warehouse').id if doc_item.get('warehouse') else None
+        if 2 in cost_cfg:
+            kw_parameter['lot_mapped_id'] = (doc_item.get('lot_data') or {}).get('lot_id')
+        if 3 in cost_cfg:
+            kw_parameter['sale_order_id'] = doc_item.get('sale_order').id if doc_item.get('sale_order') else None
+            kw_parameter['lease_order_id'] = doc_item.get('lease_order').id if doc_item.get('lease_order') else None
+        kw_parameter['serial_mapped_id'] = (doc_item.get('serial_data') or {}).get('serial_id')
+        return kw_parameter
+
     @classmethod
     def create_new_logs(cls, doc_obj, doc_data, period_obj, sub_period_order, cost_cfg):
         """ Step 1: Hàm tạo các log mới """
         bulk_info = []
         log_order_number = 0
         for item in doc_data:
-            kw_parameter = {}
-            if 1 in cost_cfg:
-                kw_parameter['warehouse_id'] = item.get('warehouse').id if item.get('warehouse') else None
-            if 2 in cost_cfg:
-                kw_parameter['lot_mapped_id'] = (item.get('lot_data') or {}).get('lot_id')
-            if 3 in cost_cfg:
-                kw_parameter['sale_order_id'] = item.get('sale_order').id if item.get('sale_order') else None
-                kw_parameter['lease_order_id'] = item.get('lease_order').id if item.get('lease_order') else None
-
-            kw_parameter['serial_mapped_id'] = (item.get('serial_data') or {}).get('serial_id')
-
+            kw_parameter = ReportStockLog.parse_param(item, cost_cfg)
             rp_stock = ReportStock.get_or_create_report_stock(
                 doc_obj, period_obj, sub_period_order, item['product'], **kw_parameter
             )
-
             latest_cost = {}
             if item['product'].valuation_method == 0:
                 if item['stock_type'] == -1:
@@ -260,13 +260,10 @@ class ReportStockLog(DataAbstractModel):
                         product=item['product'],
                         serial_number=(item.get('serial_data') or {}).get('serial_number')
                     )
-
             item['value'] = item['cost'] * item['quantity']
-
             if len(item.get('lot_data', {})) != 0:   # update Lot
                 item['lot_data']['lot_quantity'] = item['quantity']
                 item['lot_data']['lot_value'] = item['value']
-
             if float(item['quantity']) > 0:
                 log_order_number += 1
                 new_log = cls(
@@ -296,7 +293,6 @@ class ReportStockLog(DataAbstractModel):
                     **kw_parameter
                 )
                 bulk_info.append(new_log)
-
                 if 'sale_order_id' in kw_parameter:  # Project
                     GoodsRegistration.update_registration_inventory(item, doc_obj)
         new_logs = cls.objects.bulk_create(bulk_info)
@@ -366,21 +362,15 @@ class ReportStockLog(DataAbstractModel):
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = log.sale_order_id
             kw_parameter['lease_order_id'] = log.lease_order_id
-
         kw_parameter['serial_mapped_id'] = log.serial_mapped_id
-
         div = log.company.company_config.definition_inventory_valuation
-
         latest_cost = ReportInventorySubFunction.get_latest_log_cost_dict(
             div, log.product, log.physical_warehouse, **kw_parameter
         )
-
         updated_log = cls.update_log_cost_dict(div, log, latest_cost)
-
         cls.create_or_update_this_sub_period_cost(
             updated_log, period_obj, sub_period_order, latest_cost, div, **kw_parameter
         )
-
         return True
 
     @classmethod
@@ -510,7 +500,6 @@ class ReportStockLog(DataAbstractModel):
                 sub_period=sub_period_obj,
                 **kwargs
             ).first()
-
             this_sub_period_cost = cls.for_perpetual(
                 this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, **kwargs
             ) if div == 0 else cls.for_periodic(
@@ -823,7 +812,6 @@ class ReportInventorySubFunction:
                         record.fifo_flag_log = stock_log
                         record.save(update_fields=['fifo_flag_log'])
                     break
-
             export_fifo_cost = (sum(item['log_value'] for item in fifo_cost_detail) / quantity) if quantity > 0 else 0
             return {'cost': export_fifo_cost, 'fifo_cost_detail': fifo_cost_detail} if div == 0 else 0
         return {

@@ -144,10 +144,18 @@ class IRForGoodsReceiptHandler:
                                         'serial_id': str(serial_mapped.id),
                                         'serial_number': serial_mapped.serial_number,
                                         'vendor_serial_number': serial_mapped.vendor_serial_number,
-                                        'expire_date': str(serial_mapped.expire_date) if serial_mapped.expire_date else None,
-                                        'manufacture_date': str(serial_mapped.manufacture_date) if serial_mapped.manufacture_date else None,
-                                        'warranty_start': str(serial_mapped.warranty_start) if serial_mapped.expire_dwarranty_startate else None,
-                                        'warranty_end': str(serial_mapped.warranty_end) if serial_mapped.warranty_end else None,
+                                        'expire_date': str(
+                                            serial_mapped.expire_date
+                                        ) if serial_mapped.expire_date else None,
+                                        'manufacture_date': str(
+                                            serial_mapped.manufacture_date
+                                        ) if serial_mapped.manufacture_date else None,
+                                        'warranty_start': str(
+                                            serial_mapped.warranty_start
+                                        ) if serial_mapped.expire_dwarranty_startate else None,
+                                        'warranty_end': str(
+                                            serial_mapped.warranty_end
+                                        ) if serial_mapped.warranty_end else None,
                                     }
                                 })
 

@@ -2,10 +2,10 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.accounting.accountingsettings.utils import AccountDeterminationForProductHandler
 from apps.core.company.models import CompanyFunctionNumber
-from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, \
-    Manufacturer
+from apps.masterdata.saledata.models.product import (
+    ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer
+)
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
-from apps.sales.report.utils.inventory_log import ReportInvCommonFunc
 from apps.shared import ProductMsg, PriceMsg, BaseMsg
 from .product_sub import ProductCommonFunction
 from ..models import ProductWareHouse

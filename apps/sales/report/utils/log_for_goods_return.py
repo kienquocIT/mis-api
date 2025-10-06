@@ -1,3 +1,5 @@
+from sqlalchemy.orm.base import state_attribute_str
+
 from apps.sales.report.models import ReportStockLog
 from apps.sales.report.utils.inventory_log import ReportInvLog, ReportInvCommonFunc
 
@@ -19,9 +21,7 @@ class IRForGoodsReturnHandler:
         return doc_data, False
 
     @classmethod
-    def for_perpetual_inventory(cls, instance):
-        product_detail_list = instance.goods_return_product_detail.all()
-        doc_data = []
+    def for_none(cls, instance, product_detail_list, doc_data):
         for item in product_detail_list.filter(type=0):
             delivery_item = ReportStockLog.objects.filter(
                 product=item.product, trans_id=str(instance.delivery_id)
@@ -52,6 +52,10 @@ class IRForGoodsReturnHandler:
                     doc_data.append(data)
             else:
                 print('Delivery information is not found. Can not log.')
+        return doc_data
+
+    @classmethod
+    def for_lot(cls, instance, product_detail_list, doc_data):
         for item in product_detail_list.filter(type=1):
             delivery_item = ReportStockLog.objects.filter(
                 product=item.product, trans_id=str(instance.delivery_id)
@@ -59,7 +63,7 @@ class IRForGoodsReturnHandler:
             if delivery_item:
                 casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.lot_return_number)
                 casted_cost = (
-                    delivery_item.cost * item.lot_return_number / casted_quantity
+                        delivery_item.cost * item.lot_return_number / casted_quantity
                 ) if casted_quantity > 0 else 0
                 data = {
                     'sale_order': instance.delivery.order_delivery.sale_order,
@@ -86,6 +90,10 @@ class IRForGoodsReturnHandler:
                     doc_data.append(data)
             else:
                 print('Delivery information is not found. Can not log.')
+        return doc_data
+
+    @classmethod
+    def for_serial(cls, instance, product_detail_list, doc_data):
         for item in product_detail_list.filter(type=2):
             if item.product.valuation_method == 2:
                 delivery_item = ReportStockLog.objects.filter(
@@ -152,6 +160,15 @@ class IRForGoodsReturnHandler:
                         doc_data.append(data)
                 else:
                     print('Delivery information is not found. Can not log.')
+        return doc_data
+
+    @classmethod
+    def for_perpetual_inventory(cls, instance):
+        product_detail_list = instance.goods_return_product_detail.all()
+        doc_data = []
+        doc_data = cls.for_none(instance, product_detail_list, doc_data)
+        doc_data = cls.for_lot(instance, product_detail_list, doc_data)
+        doc_data = cls.for_serial(instance, product_detail_list, doc_data)
         return doc_data
 
     @classmethod
