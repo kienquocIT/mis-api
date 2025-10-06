@@ -1,10 +1,11 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models import ExpenseItem, UnitOfMeasure, Tax, Product, Currency
+from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.sales.serviceorder.models import (
     ServiceOrderShipment, ServiceOrderExpense, ServiceOrderServiceDetail, ServiceOrderWorkOrder, ServiceOrderPayment,
     ServiceOrder, ServiceOrderContainer, ServiceOrderPackage, ServiceOrderWorkOrderCost, ServiceOrderWorkOrderTask,
-    ServiceOrderPaymentReconcile, ServiceOrderPaymentDetail, ServiceOrderWorkOrderContribution,
+    ServiceOrderPaymentReconcile, ServiceOrderPaymentDetail, ServiceOrderWorkOrderContribution, ServiceOrderIndicator,
 )
 from apps.shared import SVOMsg, AbstractDetailSerializerModel
 
@@ -761,3 +762,42 @@ class ServiceOrderCommonFunc:
             service_order_obj['expense_total_value'] = service_order_obj['expense_pretax_value'] + service_order_obj[
                 'expense_tax_value']
         return service_order_obj
+
+    @classmethod
+    def create_indicator(cls, validated_data, instance):
+        instance.service_order_indicator_service_order.all().delete()
+        for service_order_indicator in validated_data['service_order_indicators_data']:
+            quotation_indicator_id = service_order_indicator.get('quotation_indicator', {}).get('id')
+            quotation_indicator_code = service_order_indicator.get('quotation_indicator', {}).get('code')
+            if quotation_indicator_id:
+                del service_order_indicator['quotation_indicator']
+                ServiceOrderIndicator.objects.create(
+                    service_order=instance,
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
+                    quotation_indicator_id=quotation_indicator_id,
+                    code=quotation_indicator_code,
+                    **service_order_indicator
+                )
+        return True
+
+
+class ServiceOrderIndicatorSerializer(serializers.ModelSerializer):
+    quotation_indicator = serializers.UUIDField()
+
+    class Meta:
+        model = ServiceOrderIndicator
+        fields = (
+            'quotation_indicator',
+            'quotation_indicator_data',
+            'indicator_value',
+            'indicator_rate',
+            'quotation_indicator_value',
+            'quotation_indicator_rate',
+            'difference_indicator_value',
+            'order',
+        )
+
+    @classmethod
+    def validate_quotation_indicator(cls, value):
+        return QuotationCommonValidate().validate_indicator(value=value)

@@ -12,7 +12,7 @@ from apps.sales.serviceorder.models import (
 from apps.sales.serviceorder.serializers.service_order_sub import (
     ServiceOrderShipmentSerializer, ServiceOrderExpenseSerializer,
     ServiceOrderServiceDetailSerializer, ServiceOrderWorkOrderSerializer, ServiceOrderPaymentSerializer,
-    ServiceOrderCommonFunc,
+    ServiceOrderCommonFunc, ServiceOrderIndicatorSerializer,
 )
 from apps.shared import (
     AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel,
@@ -61,6 +61,8 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
     opportunity_id = serializers.UUIDField(required=False, allow_null=True)
     employee_inherit_id = serializers.UUIDField(required=False, allow_null=True)
+    # indicator
+    service_order_indicators_data = ServiceOrderIndicatorSerializer(many=True, required=False)
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
@@ -123,6 +125,8 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
         service_order_obj = ServiceOrder.objects.create(**validated_data)
         shipment_map_id = ServiceOrderCommonFunc.create_shipment(service_order_obj, shipment_data)
         ServiceOrderCommonFunc.create_expense(service_order_obj, expense_data)
+        ServiceOrderCommonFunc.create_indicator(validated_data=validated_data, instance=service_order_obj)
+
         SerializerCommonHandle.handle_attach_file(
             relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
             model_cls=ServiceOrderAttachMapAttachFile,
@@ -159,7 +163,14 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             'service_detail_data',
             'work_order_data',
             'payment_data',
-            'exchange_rate_data'
+            'exchange_rate_data',
+
+            'total_product_pretax_amount',
+            'total_product_tax',
+            'total_product',
+            'total_product_revenue_before_tax',
+
+            'service_order_indicators_data',
         )
 
 
@@ -415,7 +426,12 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'work_order_data',
             'payment_data',
             'expense',
-            'exchange_rate_data'
+            'exchange_rate_data',
+
+            'total_product_pretax_amount',
+            'total_product_tax',
+            'total_product',
+            'total_product_revenue_before_tax',
         )
 
 
