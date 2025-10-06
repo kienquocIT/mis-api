@@ -11,8 +11,6 @@ def cast_unit_to_inv_quantity(inventory_uom, log_quantity):
 
 class ReportStockListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
-    lot_mapped = serializers.SerializerMethodField()
-    sale_order = serializers.SerializerMethodField()
     period_mapped = serializers.SerializerMethodField()
     stock_activities = serializers.SerializerMethodField()
 
@@ -21,8 +19,6 @@ class ReportStockListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'product',
-            'lot_mapped',
-            'sale_order',
             'period_mapped',
             'sub_period_order',
             'stock_activities'
@@ -34,7 +30,9 @@ class ReportStockListSerializer(serializers.ModelSerializer):
             'id': obj.product_id,
             'title': obj.product.title,
             'lot_number': obj.lot_mapped.lot_number if obj.lot_mapped else '',
-            'sale_order_code': obj.sale_order.code if obj.sale_order else '',
+            'serial_number': obj.serial_mapped.serial_number if obj.serial_mapped else '',
+            'order_id': str(obj.sale_order.id) if obj.sale_order else str(obj.lease_order.id) if obj.lease_order else '',
+            'order_code': obj.sale_order.code if obj.sale_order else obj.lease_order.code if obj.lease_order else '',
             'code': obj.product.code,
             'description': obj.product.description,
             'uom': {
@@ -44,16 +42,6 @@ class ReportStockListSerializer(serializers.ModelSerializer):
             } if obj.product.inventory_uom else {},
             'valuation_method': obj.product.valuation_method
         } if obj.product else {}
-
-    @classmethod
-    def get_lot_mapped(cls, obj):
-        return {'id': obj.lot_mapped_id, 'lot_number': obj.lot_mapped.lot_number} if obj.lot_mapped else {}
-
-    @classmethod
-    def get_sale_order(cls, obj):
-        return {
-            'id': obj.sale_order_id, 'code': obj.sale_order.code, 'title': obj.sale_order.title
-        } if obj.sale_order else {}
 
     @classmethod
     def get_period_mapped(cls, obj):
@@ -68,18 +56,12 @@ class ReportStockListSerializer(serializers.ModelSerializer):
         if 'sale_order_id' in kwargs:
             kwargs['physical_warehouse_id'] = physical_warehouse_id
         for log in all_logs_by_month.filter(product_id=obj.product_id, **kwargs):
-            casted_quantity = cast_unit_to_inv_quantity(
-                obj.product.inventory_uom, log.quantity
-            )
+            casted_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, log.quantity)
             casted_value = log.value
             casted_cost = (casted_value / casted_quantity) if casted_quantity else 0
             casted_current_quantity = [
-                cast_unit_to_inv_quantity(
-                    obj.product.inventory_uom, log.perpetual_current_quantity
-                ),
-                cast_unit_to_inv_quantity(
-                    obj.product.inventory_uom, log.periodic_current_quantity
-                )
+                cast_unit_to_inv_quantity(obj.product.inventory_uom, log.perpetual_current_quantity),
+                cast_unit_to_inv_quantity(obj.product.inventory_uom, log.periodic_current_quantity)
             ][div]
             casted_current_value = [log.perpetual_current_value, log.periodic_current_value][div]
             casted_current_cost = (casted_current_value / casted_current_quantity) if casted_current_quantity else 0
@@ -111,6 +93,10 @@ class ReportStockListSerializer(serializers.ModelSerializer):
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = obj.sale_order_id
             kw_parameter['lease_order_id'] = obj.lease_order_id
+
+        if obj.product.valuation_method == 2:
+            kw_parameter['serial_mapped_id'] = obj.serial_mapped_id
+
         result = []
         for warehouse_item in self.context.get('wh_list', []):
             # warehouse_item: [id, code, title]
@@ -185,7 +171,8 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
             'title': obj.product.title,
             'valuation_method': obj.product.valuation_method,
             'lot_number': obj.lot_mapped.lot_number if obj.lot_mapped else '',
-            'sale_order_code': obj.sale_order.code if obj.sale_order else '',
+            'serial_number': obj.serial_mapped.serial_number if obj.serial_mapped else '',
+            'order_code': obj.sale_order.code if obj.sale_order else obj.lease_order.code if obj.lease_order else '',
             'code': obj.product.code,
             'description': obj.product.description,
             'uom': {
@@ -221,14 +208,10 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
     def get_data_stock_activity_for_in(cls, log, data_stock_activity, product):
         if len(log.lot_data) > 0:
             lot = log.lot_data
-            casted_in_quantity = cast_unit_to_inv_quantity(
-                product.inventory_uom, lot.get('lot_quantity', 0)
-            )
+            casted_in_quantity = cast_unit_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity', 0))
             data_stock_activity.append({
                 'in_quantity': casted_in_quantity,
                 'in_value': lot.get('lot_value'),
-                'out_quantity': '',
-                'out_value': '',
                 'system_date': log.system_date,
                 'lot_number': lot.get('lot_number'),
                 'expire_date': lot.get('lot_expire_date'),
@@ -236,18 +219,23 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                 'trans_title': log.trans_title,
                 'trans_code': log.trans_code,
             })
+        if len(log.serial_data) > 0:
+            serial = log.serial_data
+            data_stock_activity.append({
+                'in_quantity': 1,
+                'in_value': log.value,
+                'system_date': log.system_date,
+                'serial_number': serial.get('serial_number'),
+                'log_order': log.log_order,
+                'trans_title': log.trans_title,
+                'trans_code': log.trans_code,
+            })
         else:
-            casted_in_quantity = cast_unit_to_inv_quantity(
-                product.inventory_uom, log.quantity
-            )
+            casted_in_quantity = cast_unit_to_inv_quantity(product.inventory_uom, log.quantity)
             data_stock_activity.append({
                 'in_quantity': casted_in_quantity,
                 'in_value': log.value,
-                'out_quantity': '',
-                'out_value': '',
                 'system_date': log.system_date,
-                'lot_number': '',
-                'expire_date': '',
                 'log_order': log.log_order,
                 'trans_title': log.trans_title,
                 'trans_code': log.trans_code,
@@ -258,12 +246,8 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
     def get_data_stock_activity_for_out(cls, log, data_stock_activity, product):
         if len(log.lot_data) > 0:
             lot = log.lot_data
-            casted_out_quantity = cast_unit_to_inv_quantity(
-                product.inventory_uom, lot.get('lot_quantity', 0)
-            )
+            casted_out_quantity = cast_unit_to_inv_quantity(product.inventory_uom, lot.get('lot_quantity', 0))
             data_stock_activity.append({
-                'in_quantity': '',
-                'in_value': '',
                 'out_quantity': casted_out_quantity,
                 'out_value': lot.get('lot_value'),
                 'system_date': log.system_date,
@@ -273,18 +257,23 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                 'trans_title': log.trans_title,
                 'trans_code': log.trans_code,
             })
-        else:
-            casted_out_quantity = cast_unit_to_inv_quantity(
-                product.inventory_uom, log.quantity
-            )
+        if len(log.serial_data) > 0:
+            serial = log.serial_data
             data_stock_activity.append({
-                'in_quantity': '',
-                'in_value': '',
+                'out_quantity': 1,
+                'out_value': log.value,
+                'system_date': log.system_date,
+                'serial_number': serial.get('serial_number'),
+                'log_order': log.log_order,
+                'trans_title': log.trans_title,
+                'trans_code': log.trans_code,
+            })
+        else:
+            casted_out_quantity = cast_unit_to_inv_quantity(product.inventory_uom, log.quantity)
+            data_stock_activity.append({
                 'out_quantity': casted_out_quantity,
                 'out_value': log.value,
                 'system_date': log.system_date,
-                'lot_number': '',
-                'expire_date': '',
                 'log_order': log.log_order,
                 'trans_title': log.trans_title,
                 'trans_code': log.trans_code,
@@ -302,7 +291,8 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
             sum_out_value = 0
             kw_parameter = {
                 'physical_warehouse_id': wh_sub.warehouse_id,
-                'sale_order_id': obj.sale_order_id
+                'sale_order_id': obj.sale_order_id,
+                'serial_mapped_id': obj.serial_mapped_id
             }
 
             for log in obj.product.report_stock_log_product.filter(
@@ -323,16 +313,12 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                         'Goods receipt', 'Goods receipt (IA)', 'Goods return',
                         'Goods transfer (in)', 'Balance init input'
                     ]:
-                        data_stock_activity = cls.get_data_stock_activity_for_in(
-                            log, data_stock_activity, obj.product
-                        )
+                        data_stock_activity = cls.get_data_stock_activity_for_in(log, data_stock_activity, obj.product)
                     elif log.trans_title in [
                         'Delivery (sale)', 'Delivery (lease)',
                         'Goods issue', 'Goods transfer (out)'
                     ]:
-                        data_stock_activity = cls.get_data_stock_activity_for_out(
-                            log, data_stock_activity, obj.product
-                        )
+                        data_stock_activity = cls.get_data_stock_activity_for_out(log, data_stock_activity, obj.product)
             data_stock_activity = sorted( data_stock_activity, key=lambda key: (key['system_date'], key['log_order']))
 
             # lấy inventory_cost_data của kì hiện tại
@@ -380,7 +366,10 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
         sum_out_quantity = 0
         sum_in_value = 0
         sum_out_value = 0
-        kw_parameter = {'physical_warehouse_id': obj.warehouse_id}
+        kw_parameter = {
+            'physical_warehouse_id': obj.warehouse_id,
+            'serial_mapped_id': obj.serial_mapped_id
+        }
         if 1 in cost_cfg:
             kw_parameter['warehouse_id'] = obj.warehouse_id
         if 2 in cost_cfg:
@@ -388,8 +377,6 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = obj.sale_order_id
             kw_parameter['lease_order_id'] = obj.lease_order_id
-
-        kw_parameter['serial_mapped_id'] = obj.serial_mapped_id
 
         for log in obj.product.report_stock_log_product.filter(
                 report_stock__period_mapped_id=obj.period_mapped_id,
@@ -409,16 +396,12 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                     'Goods receipt', 'Goods receipt (IA)', 'Goods return',
                     'Goods transfer (in)', 'Balance init input'
                 ]:
-                    data_stock_activity = cls.get_data_stock_activity_for_in(
-                        log, data_stock_activity, obj.product
-                    )
+                    data_stock_activity = cls.get_data_stock_activity_for_in(log, data_stock_activity, obj.product)
                 elif log.trans_title in [
                     'Delivery (sale)', 'Delivery (lease)',
                     'Goods issue', 'Goods transfer (out)'
                 ]:
-                    data_stock_activity = cls.get_data_stock_activity_for_out(
-                        log, data_stock_activity, obj.product
-                    )
+                    data_stock_activity = cls.get_data_stock_activity_for_out(log, data_stock_activity, obj.product)
 
         data_stock_activity = sorted(
             data_stock_activity, key=lambda key: (key['system_date'], key['log_order'])
@@ -428,19 +411,11 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
         this_sub_value = ReportInventorySubFunction.get_this_sub_period_cost_dict(obj)
 
         if div == 0:
-            sum_in_quantity = cast_unit_to_inv_quantity(
-                obj.product.inventory_uom, sum_in_quantity
-            )
-            sum_out_quantity = cast_unit_to_inv_quantity(
-                obj.product.inventory_uom, sum_out_quantity
-            )
+            sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_in_quantity)
+            sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, sum_out_quantity)
         else:
-            sum_in_quantity = cast_unit_to_inv_quantity(
-                obj.product.inventory_uom, obj.sum_input_quantity
-            )
-            sum_out_quantity = cast_unit_to_inv_quantity(
-                obj.product.inventory_uom, obj.sum_output_quantity
-            )
+            sum_in_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_input_quantity)
+            sum_out_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, obj.sum_output_quantity)
             sum_in_value = obj.sum_input_value
             sum_out_value = obj.sum_output_value
 
