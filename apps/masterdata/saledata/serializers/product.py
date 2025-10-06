@@ -579,7 +579,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             } if obj.inventory_uom else {},
             'inventory_level_min': obj.inventory_level_min,
             'inventory_level_max': obj.inventory_level_max,
-            'valuation_method': obj.valuation_method
+            'valuation_method': obj.valuation_method,
+            'data_specific_serial': [{
+                'id': str(item.id),
+                'serial_number': item.serial_number,
+                'specific_value': item.specific_value,
+            } for item in obj.pw_si_serial_product.all()]
         }
         return result
 
@@ -608,7 +613,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             for item in product_warehouse:
                 if item.stock_amount > 0:
                     casted_stock_amount = cast_unit_to_inv_quantity(obj.inventory_uom, item.stock_amount)
-                    cost_cfg = ReportInvCommonFunc.get_cost_config(obj.company)
+                    # cost_cfg = ReportInvCommonFunc.get_cost_config(obj.company)
 
                     result.append({
                         'id': item.id,
@@ -616,9 +621,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                             'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
                         } if item.warehouse else {},
                         'stock_amount': casted_stock_amount,
-                        'cost': obj.get_cost_info_by_warehouse(
-                            warehouse_id=item.warehouse_id, get_type=2
-                        ) / casted_stock_amount if cost_cfg == [1] else None
+                        # 'cost': obj.get_cost_info_by_warehouse(
+                        #     warehouse_id=item.warehouse_id, get_type=2
+                        # ) / casted_stock_amount if cost_cfg == [1] else None
                     })
         return result
 
