@@ -59,7 +59,11 @@ class GoodsReturn(DataAbstractModel):
 
 
 class GoodsReturnProductDetail(DataAbstractModel):
-    goods_return = models.ForeignKey(GoodsReturn, on_delete=models.CASCADE, related_name='goods_return_product_detail')
+    goods_return = models.ForeignKey(
+        GoodsReturn,
+        on_delete=models.CASCADE,
+        related_name='goods_return_product_detail'
+    )
     type = models.SmallIntegerField(choices=((0, 'Default'), (1, 'LOT'), (2, 'Serial')), default=0)
 
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
@@ -76,7 +80,6 @@ class GoodsReturnProductDetail(DataAbstractModel):
     lot_redelivery_number = models.FloatField(default=0)
 
     serial_no = models.ForeignKey('saledata.ProductWareHouseSerial', on_delete=models.CASCADE, null=True)
-    is_return = models.BooleanField(default=False)
     is_redelivery = models.BooleanField(default=False)
 
     cost_for_periodic = models.FloatField(default=0)

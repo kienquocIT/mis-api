@@ -4,7 +4,8 @@ from apps.masterdata.saledata.serializers.warehouse import (
     ProductWarehouseLotListSerializer,
     ProductWarehouseSerialListSerializer,
     ProductWarehouseAssetToolsListSerializer,
-    ProductWareHouseListSerializerForGoodsTransfer, WareHouseForInventoryListSerializer
+    ProductWareHouseListSerializerForGoodsTransfer,
+    WareHouseForInventoryListSerializer,
 )
 from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view, ResponseController,

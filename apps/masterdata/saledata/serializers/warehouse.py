@@ -23,7 +23,8 @@ __all__ = [
     'WarehouseEmployeeConfigListSerializer',
     'WarehouseEmployeeConfigCreateSerializer',
     'WarehouseEmployeeConfigDetailSerializer',
-    'ProductWareHouseListSerializerForGoodsTransfer'
+    'ProductWareHouseListSerializerForGoodsTransfer',
+    'WareHouseForInventoryListSerializer'
 ]
 
 

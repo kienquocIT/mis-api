@@ -13,8 +13,7 @@ from apps.core.recurrence.models import RecurrenceTask
 from apps.eoffice.meeting.models import MeetingSchedule
 from apps.eoffice.businesstrip.models import BusinessRequest
 from apps.eoffice.leave.models import (
-    LeaveRequestDateListRegister, WorkingHolidayConfig, WorkingCalendarConfig,
-    WorkingYearConfig,
+    LeaveRequestDateListRegister, WorkingHolidayConfig, WorkingYearConfig,
 )
 from apps.sales.opportunity.models import OpportunityMeeting, OpportunityMeetingEmployeeAttended
 from apps.shared import mask_view, ResponseController, FORMATTING, Caching, AuthMsg
@@ -277,26 +276,24 @@ class CalendarByDay(APIView):
                             )
                     if 'holiday' in category:
                         result['holiday'] = []
-                        working_config = WorkingCalendarConfig.objects.filter_current(fill__company=True).first()
-                        if working_config:
-                            year_config = WorkingYearConfig.objects.filter(
-                                working_calendar=working_config, config_year=timezone.now().year
-                            ).first()
-                            if year_config:
-                                objs = WorkingHolidayConfig.objects.filter(holiday_date_to=day_check, year=year_config)
-                                for obj in objs:
-                                    result['holiday'].append(
-                                        {
-                                            'category': 'Holiday',
-                                            'id': obj.id,
-                                            'title': obj.remark,
-                                            'remark': '',
-                                            'start_date': None,
-                                            'end_date': None,
-                                            'location_address': '',
-                                            'location_title': '',
-                                        }
-                                    )
+                        year_config = WorkingYearConfig.objects.filter_on_company(
+                            config_year=timezone.now().year
+                        ).first()
+                        if year_config:
+                            objs = WorkingHolidayConfig.objects.filter(holiday_date_to=day_check, year=year_config)
+                            for obj in objs:
+                                result['holiday'].append(
+                                    {
+                                        'category': 'Holiday',
+                                        'id': obj.id,
+                                        'title': obj.remark,
+                                        'remark': '',
+                                        'start_date': None,
+                                        'end_date': None,
+                                        'location_address': '',
+                                        'location_title': '',
+                                    }
+                                )
                     if 'birthday' in category:
                         objs = Employee.objects.filter_current(
                             fill__tenant=True,

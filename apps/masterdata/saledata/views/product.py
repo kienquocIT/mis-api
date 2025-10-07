@@ -510,6 +510,7 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'product_variant_attributes',
             'product_variants',
             'product_warehouse_product',
+            'pw_si_serial_product'
         ).select_related(
             'general_product_category',
             'general_uom_group',
