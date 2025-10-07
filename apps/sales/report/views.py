@@ -318,11 +318,11 @@ class ReportInventoryCostList(BaseListMixin):
                 )
                 return return_query.order_by(
                     'warehouse__code',
-                    'sale_order__code',
-                    'lease_order__code',
+                    '-sale_order__code',
+                    '-lease_order__code',
                     '-product__code',
-                    'lot_mapped__lot_number',
-                    'serial_mapped__serial_number'
+                    '-lot_mapped__lot_number',
+                    '-serial_mapped__serial_number'
                 )
 
             return_query = super().get_queryset().select_related(
@@ -337,11 +337,11 @@ class ReportInventoryCostList(BaseListMixin):
             )
             return return_query.order_by(
                 'warehouse__code',
-                'sale_order__code',
-                'lease_order__code',
+                '-sale_order__code',
+                '-lease_order__code',
                 '-product__code',
-                'lot_mapped__lot_number',
-                'serial_mapped__serial_number'
+                '-lot_mapped__lot_number',
+                '-serial_mapped__serial_number'
             )
         except KeyError:
             return super().get_queryset().none()
