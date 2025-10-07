@@ -430,11 +430,7 @@ class GoodsReceiptProduct(SimpleAbstractModel):
     warehouse_data = models.JSONField(default=dict, help_text='data JSON of warehouse')
     product_quantity_order_actual = models.FloatField(default=0, help_text='quantity order')
     quantity_import = models.FloatField(default=0, help_text='quantity goods receipt this time')
-    product_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
+    product_title = models.TextField(blank=True)
     product_code = models.CharField(
         max_length=100,
         blank=True,

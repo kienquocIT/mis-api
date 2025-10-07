@@ -611,6 +611,8 @@ class RuntimeStageHandler:
                     )
                 return self.run_next(workflow=workflow, stage_obj_currently=next_stage)
             self.set_state_task_bg('SUCCESS')
+            # check next stage have node type is in_workflow and same employee => auto approved
+            RuntimeStageHandler.check_auto_approved_next_stage(cur_stage=stage_obj_currently, next_stage=next_stage)
             return next_stage
         # update some field when go to completed
         if stage_obj_currently.code == 'completed':
@@ -757,6 +759,28 @@ class RuntimeStageHandler:
             field_saved += ['status']
             DocHandler.force_finish_with_runtime(self.runtime_obj)
         self.set_state_task_bg(state_task, field_saved=field_saved)
+        return True
+
+    @classmethod
+    def check_auto_approved_next_stage(cls, cur_stage, next_stage):
+        if cur_stage.node and next_stage.node:
+            if cur_stage.node.option_collaborator == 2 and next_stage.node.option_collaborator == 2:
+                associates = next_stage.node.transition_node_input.all()
+                if associates.count() == 1:
+                    cur_rt_assign = cur_stage.assignee_of_runtime_stage.first()
+                    next_rt_assign = next_stage.assignee_of_runtime_stage.first()
+                    cur_rt_assignee = cur_rt_assign.employee if cur_rt_assign else None
+                    next_rt_assignee = next_rt_assign.employee if next_rt_assign else None
+                    if cur_rt_assignee == next_rt_assignee:
+                        RuntimeHandler().action_perform(
+                            rt_assignee=next_rt_assign,
+                            employee_assignee_obj=next_rt_assignee,
+                            action_code=1,
+                            remark='',  # use for action return
+                            next_association_id=associates.first().id,  # next association after check condition
+                            next_node_collab_id=None,
+                            # use for action approve if next node is OUT FORM node
+                        )
         return True
 
 
