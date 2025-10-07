@@ -28,18 +28,10 @@ class LeaveRequestDateListRegister(DataAbstractModel):
         verbose_name='Date from leave',
         help_text='date register from'
     )
-    morning_shift_f = models.BooleanField(
-        verbose_name='morning or afternoon shift of date from',
-        help_text='morning or afternoon shift of date from'
-    )
     date_to = models.DateField(
         null=True,
         verbose_name='Date to leave',
         help_text='date to register to'
-    )
-    morning_shift_t = models.BooleanField(
-        verbose_name='morning or afternoon shift of date to',
-        help_text='morning or afternoon shift of date to'
     )
     subtotal = models.FloatField(
         verbose_name='total day per line detail',
@@ -57,6 +49,16 @@ class LeaveRequestDateListRegister(DataAbstractModel):
         related_name="leave_request_date_leave",
         null=False,
         help_text='Leave request ID'
+    )
+    first_half = models.BooleanField(
+        verbose_name='first half shift',
+        help_text='morning shift of shift assignment',
+        default=False
+    )
+    second_half = models.BooleanField(
+        verbose_name='second half shift',
+        help_text='afternoon shift of shift assignment',
+        default=False
     )
 
     class Meta:
