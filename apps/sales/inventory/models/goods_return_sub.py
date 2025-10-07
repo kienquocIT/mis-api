@@ -53,7 +53,6 @@ class GoodsReturnSubSerializerForNonPicking:
             + Else: giữ nguyên 'delivered_quantity_before', 'remaining_quantity' và 'ready_quantity' = 0
         B3: Done
         """
-        print('update')
         for obj in ready_sub.delivery_product_delivery_sub.all():
             obj_return_quantity = return_quantity if obj.product == product else 0
             obj_redelivery_quantity = redelivery_quantity if obj.product == product else 0
@@ -384,7 +383,7 @@ class GoodsReturnSubSerializerForNonPicking:
                 return_quantity = item.lot_return_number
                 redelivery_quantity = item.lot_redelivery_number
             elif item.type == 2:
-                return_quantity = item.is_return
+                return_quantity = 1
                 redelivery_quantity = item.is_redelivery
 
             if redelivery_quantity > return_quantity:
@@ -520,7 +519,7 @@ class GoodsReturnSubSerializerForPicking:
                 return_quantity = item.lot_return_number
                 redelivery_quantity = item.lot_redelivery_number
             elif item.type == 2:
-                return_quantity = item.is_return
+                return_quantity = 1
                 redelivery_quantity = item.is_redelivery
 
             picking_obj = goods_return.sale_order.picking_of_sale_order

@@ -2,10 +2,10 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.accounting.accountingsettings.utils import AccountDeterminationForProductHandler
 from apps.core.company.models import CompanyFunctionNumber
-from apps.masterdata.saledata.models.product import ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, \
-    Manufacturer
+from apps.masterdata.saledata.models.product import (
+    ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer
+)
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
-from apps.sales.report.utils.inventory_log import ReportInvCommonFunc
 from apps.shared import ProductMsg, PriceMsg, BaseMsg
 from .product_sub import ProductCommonFunction
 from ..models import ProductWareHouse
@@ -306,6 +306,11 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validate_data):
+        if validate_data.get('valuation_method') == 2 and validate_data.get('general_traceability_method') != 2:
+            raise serializers.ValidationError(
+                {'valuation_method': _('The specific identification is only available for serial products.')}
+            )
+
         # validate dimension
         validate_data['width'] = ProductCommonFunction.validate_dimension(
             validate_data.get('width'), 'width', ProductMsg.W_IS_WRONG
@@ -574,7 +579,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             } if obj.inventory_uom else {},
             'inventory_level_min': obj.inventory_level_min,
             'inventory_level_max': obj.inventory_level_max,
-            'valuation_method': obj.valuation_method
+            'valuation_method': obj.valuation_method,
+            'data_specific_serial': [{
+                'id': str(item.id),
+                'serial_number': item.serial_number,
+                'specific_value': item.specific_value,
+            } for item in obj.pw_si_serial_product.all()]
         }
         return result
 
@@ -603,7 +613,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             for item in product_warehouse:
                 if item.stock_amount > 0:
                     casted_stock_amount = cast_unit_to_inv_quantity(obj.inventory_uom, item.stock_amount)
-                    cost_cfg = ReportInvCommonFunc.get_cost_config(obj.company)
+                    # cost_cfg = ReportInvCommonFunc.get_cost_config(obj.company)
 
                     result.append({
                         'id': item.id,
@@ -611,9 +621,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                             'id': item.warehouse_id, 'title': item.warehouse.title, 'code': item.warehouse.code,
                         } if item.warehouse else {},
                         'stock_amount': casted_stock_amount,
-                        'cost': obj.get_cost_info_by_warehouse(
-                            warehouse_id=item.warehouse_id, get_type=2
-                        ) / casted_stock_amount if cost_cfg == [1] else None
+                        # 'cost': obj.get_cost_info_by_warehouse(
+                        #     warehouse_id=item.warehouse_id, get_type=2
+                        # ) / casted_stock_amount if cost_cfg == [1] else None
                     })
         return result
 
@@ -798,6 +808,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return ProductCreateSerializer.validate_duration_unit(value)
 
     def validate(self, validate_data):
+        if validate_data.get('valuation_method') == 2 and validate_data.get('general_traceability_method') != 2:
+            raise serializers.ValidationError(
+                {'valuation_method': _('The specific identification is only available for serial products.')}
+            )
+
         # validate dimension
         validate_data['width'] = ProductCommonFunction.validate_dimension(
             validate_data.get('width'), 'width', ProductMsg.W_IS_WRONG

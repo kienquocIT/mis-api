@@ -18,7 +18,7 @@ class ReportInvLog:
             tenant = doc_obj.tenant
             company = doc_obj.company
             with transaction.atomic():
-                # lấy pp tính giá cost (0_FIFO, 1_WA, 2_SIM)
+                # lấy pp tính giá cost (0_FIFO, 1_WA, 2_SI)
                 cost_cfg = ReportInvCommonFunc.get_cost_config(company)
                 period_obj = Periods.get_period_by_doc_date(tenant.id, company.id, doc_date)
                 if period_obj:

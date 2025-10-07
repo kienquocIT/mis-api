@@ -215,7 +215,7 @@ class PurchaseOrderProduct(SimpleAbstractModel):
     )
     stock = models.FloatField(default=0, help_text='quantity of product in stock')
     # product information
-    product_title = models.CharField(max_length=100, blank=True)
+    product_title = models.TextField(blank=True)
     product_code = models.CharField(max_length=100, blank=True)
     product_description = models.TextField(blank=True)
     product_quantity_order_request = models.FloatField(
