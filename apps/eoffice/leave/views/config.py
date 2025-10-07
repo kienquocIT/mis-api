@@ -5,8 +5,7 @@ from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarCon
     WorkingHolidayConfig
 from apps.eoffice.leave.serializers import LeaveConfigDetailSerializer, LeaveTypeConfigCreateSerializer, \
     LeaveTypeConfigUpdateSerializer, LeaveTypeConfigDetailSerializer, LeaveTypeConfigDeleteSerializer, \
-    WorkingCalendarConfigListSerializer, WorkingYearSerializer, WorkingHolidaySerializer, \
-    WorkingCalendarConfigUpdateSerializer
+    WorkingCalendarConfigListSerializer, WorkingYearSerializer, WorkingHolidaySerializer
 from apps.shared import BaseRetrieveMixin, BaseUpdateMixin, mask_view, BaseCreateMixin, BaseDestroyMixin
 
 __all__ = ['LeaveConfigDetail', 'LeaveTypeConfigCreate', 'LeaveTypeConfigUpdate', 'WorkingCalendarConfigDetail',
@@ -97,10 +96,9 @@ class LeaveTypeConfigUpdate(BaseUpdateMixin, LeaveDestroyMixin):
         return self.destroy(request, *args, **kwargs)
 
 
-class WorkingCalendarConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
+class WorkingCalendarConfigDetail(BaseRetrieveMixin):
     queryset = WorkingCalendarConfig.objects
     serializer_detail = WorkingCalendarConfigListSerializer
-    serializer_update = WorkingCalendarConfigUpdateSerializer
     list_hidden_field = ['company_id']
     create_hidden_field = ['company_id']
 
@@ -116,23 +114,12 @@ class WorkingCalendarConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         }
         return self.retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_summary="Leave Config Update",
-        request_body=WorkingCalendarConfigUpdateSerializer,
-    )
-    @mask_view(
-        login_require=True, auth_require=True, allow_admin_company=True, allow_admin_tenant=True
-    )
-    def put(self, request, *args, **kwargs):
-        self.lookup_field = 'company_id'
-        self.kwargs['company_id'] = request.user.company_current_id
-        return self.update(request, *args, **kwargs)
-
 
 class WorkingYearCreate(BaseRetrieveMixin, BaseCreateMixin):
     queryset = WorkingYearConfig.objects
     serializer_create = WorkingYearSerializer
     serializer_detail = WorkingYearSerializer
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Working Year config create",
@@ -151,7 +138,7 @@ class WorkingYearDetail(BaseDestroyMixin):
     )
     @mask_view(login_require=True, auth_require=True, allow_admin_company=True, allow_admin_tenant=True)
     def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
+        return self.destroy(request, *args, is_purge=True, **kwargs)
 
 
 class WorkingHolidayCreate(BaseRetrieveMixin, BaseCreateMixin):
