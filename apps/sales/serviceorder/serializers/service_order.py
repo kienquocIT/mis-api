@@ -255,7 +255,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'attributes_total_cost': service_detail.attributes_total_cost,
             'duration_id': service_detail.duration_id if service_detail.duration else None,
             'duration_unit_data': service_detail.duration_unit_data,
-            'duration': service_detail.duration_value if hasattr(service_detail, 'duration_value') else 0,
+            'duration': service_detail.duration_value if hasattr(service_detail, 'duration_value') and service_detail.duration else 1,
             'has_attributes': bool(service_detail.selected_attributes and service_detail.selected_attributes != {}),
         } for service_detail in obj.service_details.all()]
 
