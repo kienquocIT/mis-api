@@ -30,7 +30,7 @@ class ReportStockListSerializer(serializers.ModelSerializer):
             'id': obj.product_id,
             'title': obj.product.title,
             'lot_number': obj.lot_mapped.lot_number if obj.lot_mapped else '',
-            'serial_number': obj.serial_mapped.serial_number if obj.serial_mapped else '',
+            'serial_number': obj.serial_number or '',
             'order_id': str(obj.sale_order_id) if obj.sale_order else str(
                 obj.lease_order_id) if obj.lease_order else '',
             'order_code': obj.sale_order.code if obj.sale_order else obj.lease_order.code if obj.lease_order else '',
@@ -96,7 +96,7 @@ class ReportStockListSerializer(serializers.ModelSerializer):
             kw_parameter['lease_order_id'] = obj.lease_order_id
 
         if obj.product.valuation_method == 2:
-            kw_parameter['serial_mapped_id'] = obj.serial_mapped_id
+            kw_parameter['serial_number'] = obj.serial_number
 
         result = []
         for warehouse_item in self.context.get('wh_list', []):
@@ -172,7 +172,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
             'title': obj.product.title,
             'valuation_method': obj.product.valuation_method,
             'lot_number': obj.lot_mapped.lot_number if obj.lot_mapped else '',
-            'serial_number': obj.serial_mapped.serial_number if obj.serial_mapped else '',
+            'serial_number': obj.serial_number or '',
             'order_code': obj.sale_order.code if obj.sale_order else obj.lease_order.code if obj.lease_order else '',
             'code': obj.product.code,
             'description': obj.product.description,
@@ -293,7 +293,8 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
             kw_parameter = {
                 'physical_warehouse_id': wh_sub.warehouse_id,
                 'sale_order_id': obj.sale_order_id,
-                'serial_mapped_id': obj.serial_mapped_id
+                'lease_order_id': obj.lease_order_id,
+                'serial_number': obj.serial_number
             }
 
             for log in obj.product.report_stock_log_product.filter(
@@ -369,7 +370,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
         sum_out_value = 0
         kw_parameter = {
             'physical_warehouse_id': obj.warehouse_id,
-            'serial_mapped_id': obj.serial_mapped_id
+            'serial_number': obj.serial_number
         }
         if 1 in cost_cfg:
             kw_parameter['warehouse_id'] = obj.warehouse_id
