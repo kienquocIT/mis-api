@@ -143,13 +143,6 @@ class WorkingCalendarConfig(MasterDataAbstractModel):
 
 
 class WorkingYearConfig(MasterDataAbstractModel):
-    working_calendar = models.ForeignKey(
-        'leave.WorkingCalendarConfig',
-        on_delete=models.CASCADE,
-        verbose_name="working calendar config",
-        related_name="working_year_working_calendar",
-        null=True
-    )
     config_year = models.IntegerField(
         default=1995,
         verbose_name='number year holiday',
