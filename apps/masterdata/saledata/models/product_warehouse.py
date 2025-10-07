@@ -10,6 +10,7 @@ __all__ = [
     'PWModified',
     'PWModifiedComponent',
     'PWModifiedComponentDetail',
+    'ProductSpecificIdentificationSerial'
 ]
 
 
