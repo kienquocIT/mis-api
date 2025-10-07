@@ -294,7 +294,7 @@ class ProductWareHouseSerialListForGIS(BaseListMixin):
             detail_list = self.request.query_params.get('detail_list', '')
             if detail_list:
                 return super().get_queryset().filter(id__in=detail_list.split(','))
-        return super().get_queryset()
+        return super().get_queryset().filter(serial_status=0)
 
     @swagger_auto_schema(operation_summary='Product WareHouse Serial For GIS')
     @mask_view(login_require=True, auth_require=False)

@@ -65,8 +65,8 @@ class HasPurchaseRequestHandler:
         all_serial = IRForGoodsReceiptHandler.get_all_serial(instance)
         if gr_item.product.valuation_method == 2:
             for item in prd_wh.goods_receipt_serial_gr_warehouse.all():
-                serial_mapped = all_serial.filter(serial_number=item.serial_number).first()
-                if serial_mapped:
+                serial_obj = all_serial.filter(serial_number=item.serial_number).first()
+                if serial_obj:
                     doc_data.append({
                         'sale_order': sale_order,
                         'product': gr_item.product,
@@ -83,24 +83,28 @@ class HasPurchaseRequestHandler:
                         'value': gr_item.product_unit_price * 1,
                         'lot_data': {},
                         'serial_data': {
-                            'serial_id': str(serial_mapped.id),
-                            'serial_number': serial_mapped.serial_number,
-                            'vendor_serial_number': serial_mapped.vendor_serial_number,
+                            'serial_id': str(serial_obj.id),
+                            'serial_number': serial_obj.serial_number,
+                            'vendor_serial_number': serial_obj.vendor_serial_number,
                             'expire_date': str(
-                                serial_mapped.expire_date) if serial_mapped.expire_date else None,
+                                serial_obj.expire_date
+                            ) if serial_obj.expire_date else None,
                             'manufacture_date': str(
-                                serial_mapped.manufacture_date) if serial_mapped.manufacture_date else None,
+                                serial_obj.manufacture_date
+                            ) if serial_obj.manufacture_date else None,
                             'warranty_start': str(
-                                serial_mapped.warranty_start) if serial_mapped.warranty_start else None,
+                                serial_obj.warranty_start
+                            ) if serial_obj.warranty_start else None,
                             'warranty_end': str(
-                                serial_mapped.warranty_end) if serial_mapped.warranty_end else None,
+                                serial_obj.warranty_end
+                            ) if serial_obj.warranty_end else None,
                         }
                     })
 
                     # cập nhập hoặc tạo giá đich danh khi nhập
                     ProductSpecificIdentificationSerial.create_or_update_si_product_serial(
                         product=gr_item.product,
-                        serial_obj=serial_mapped,
+                        serial_obj=serial_obj,
                         specific_value=gr_item.product_unit_price
                     )
         else:
@@ -215,8 +219,8 @@ class NoPurchaseRequestHandler:
         if gr_item.product.valuation_method == 2:
             for gr_prd_wh in goods_receipt_warehouses.filter(goods_receipt_product__product=gr_item.product):
                 for item in gr_prd_wh.goods_receipt_serial_gr_warehouse.all():
-                    serial_mapped = all_serial.filter(serial_number=item.serial_number).first()
-                    if serial_mapped:
+                    serial_obj = all_serial.filter(serial_number=item.serial_number).first()
+                    if serial_obj:
                         doc_data.append({
                             'product': gr_item.product,
                             'warehouse': gr_prd_wh.warehouse,
@@ -233,28 +237,28 @@ class NoPurchaseRequestHandler:
                             'value': gr_item.product_unit_price * 1,
                             'lot_data': {},
                             'serial_data': {
-                                'serial_id': str(serial_mapped.id),
-                                'serial_number': serial_mapped.serial_number,
-                                'vendor_serial_number': serial_mapped.vendor_serial_number,
+                                'serial_id': str(serial_obj.id),
+                                'serial_number': serial_obj.serial_number,
+                                'vendor_serial_number': serial_obj.vendor_serial_number,
                                 'expire_date': str(
-                                    serial_mapped.expire_date
-                                ) if serial_mapped.expire_date else None,
+                                    serial_obj.expire_date
+                                ) if serial_obj.expire_date else None,
                                 'manufacture_date': str(
-                                    serial_mapped.manufacture_date
-                                ) if serial_mapped.manufacture_date else None,
+                                    serial_obj.manufacture_date
+                                ) if serial_obj.manufacture_date else None,
                                 'warranty_start': str(
-                                    serial_mapped.warranty_start
-                                ) if serial_mapped.expire_dwarranty_startate else None,
+                                    serial_obj.warranty_start
+                                ) if serial_obj.expire_dwarranty_startate else None,
                                 'warranty_end': str(
-                                    serial_mapped.warranty_end
-                                ) if serial_mapped.warranty_end else None,
+                                    serial_obj.warranty_end
+                                ) if serial_obj.warranty_end else None,
                             }
                         })
 
                         # cập nhập hoặc tạo giá đich danh khi nhập
                         ProductSpecificIdentificationSerial.create_or_update_si_product_serial(
                             product=gr_item.product,
-                            serial_obj=serial_mapped,
+                            serial_obj=serial_obj,
                             specific_value=gr_item.product_unit_price
                         )
         else:

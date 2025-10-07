@@ -37,8 +37,8 @@ class IRForGoodsIssueHandler:
             elif len(item.sn_data) > 0:
                 if item.product.valuation_method == 2:
                     for serial_id in item.sn_data:
-                        serial_mapped = ProductWareHouseSerial.objects.filter(id=serial_id).first()
-                        if serial_mapped:
+                        serial_obj = ProductWareHouseSerial.objects.filter(id=serial_id).first()
+                        if serial_obj:
                             doc_data.append({
                                 'product': item.product,
                                 'warehouse': item.warehouse,
@@ -54,17 +54,21 @@ class IRForGoodsIssueHandler:
                                 'value': 0,  # theo gia cost
                                 'lot_data': {},
                                 'serial_data': {
-                                    'serial_id': str(serial_mapped.id),
-                                    'serial_number': serial_mapped.serial_number,
-                                    'vendor_serial_number': serial_mapped.vendor_serial_number,
+                                    'serial_id': str(serial_obj.id),
+                                    'serial_number': serial_obj.serial_number,
+                                    'vendor_serial_number': serial_obj.vendor_serial_number,
                                     'expire_date': str(
-                                        serial_mapped.expire_date) if serial_mapped.expire_date else None,
+                                        serial_obj.expire_date
+                                    ) if serial_obj.expire_date else None,
                                     'manufacture_date': str(
-                                        serial_mapped.manufacture_date) if serial_mapped.manufacture_date else None,
+                                        serial_obj.manufacture_date
+                                    ) if serial_obj.manufacture_date else None,
                                     'warranty_start': str(
-                                        serial_mapped.warranty_start) if serial_mapped.warranty_start else None,
+                                        serial_obj.warranty_start
+                                    ) if serial_obj.warranty_start else None,
                                     'warranty_end': str(
-                                        serial_mapped.warranty_end) if serial_mapped.warranty_end else None,
+                                        serial_obj.warranty_end
+                                    ) if serial_obj.warranty_end else None,
                                 }
                             })
                 else:

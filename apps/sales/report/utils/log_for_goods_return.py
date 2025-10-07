@@ -94,8 +94,9 @@ class IRForGoodsReturnHandler:
     def for_serial(cls, instance, product_detail_list, doc_data):
         for item in product_detail_list.filter(type=2):
             if item.product.valuation_method == 2:
+                serial_obj = item.serial_no
                 delivery_item = ReportStockLog.objects.filter(
-                    product=item.product, trans_id=str(instance.delivery_id), serial_mapped=item.serial_no
+                    product=item.product, trans_id=str(instance.delivery_id), serial_mapped=serial_obj
                 ).first()
                 if delivery_item:
                     data = {
@@ -114,17 +115,17 @@ class IRForGoodsReturnHandler:
                         'value': delivery_item.cost * 1,
                         'lot_data': {},
                         'serial_data': {
-                            'serial_id': str(item.serial_no_id),
-                            'serial_number': item.serial_no.serial_number,
-                            'vendor_serial_number': item.serial_no.vendor_serial_number,
+                            'serial_id': str(serial_obj.id),
+                            'serial_number': serial_obj.serial_number,
+                            'vendor_serial_number': serial_obj.vendor_serial_number,
                             'expire_date': str(
-                                item.serial_no.expire_date) if item.serial_no.expire_date else None,
+                                serial_obj.expire_date) if serial_obj.expire_date else None,
                             'manufacture_date': str(
-                                item.serial_no.manufacture_date) if item.serial_no.manufacture_date else None,
+                                serial_obj.manufacture_date) if serial_obj.manufacture_date else None,
                             'warranty_start': str(
-                                item.serial_no.warranty_start) if item.serial_no.warranty_start else None,
+                                serial_obj.warranty_start) if serial_obj.warranty_start else None,
                             'warranty_end': str(
-                                item.serial_no.warranty_end) if item.serial_no.warranty_end else None,
+                                serial_obj.warranty_end) if serial_obj.warranty_end else None,
                         }
                     }
                     doc_data, is_append = cls.check_exists(doc_data, data)
@@ -221,6 +222,7 @@ class IRForGoodsReturnHandler:
             })
         for item in product_detail_list.filter(type=2):
             if item.product.valuation_method == 2:
+                serial_obj = item.serial_no
                 doc_data.append({
                     'sale_order': instance.delivery.order_delivery.sale_order,
                     'product': item.product,
@@ -237,17 +239,21 @@ class IRForGoodsReturnHandler:
                     'value': item.cost_for_periodic,
                     'lot_data': {},
                     'serial_data': {
-                        'serial_id': str(item.serial_no_id),
-                        'serial_number': item.serial_no.serial_number,
-                        'vendor_serial_number': item.serial_no.vendor_serial_number,
+                        'serial_id': str(serial_obj.id),
+                        'serial_number': serial_obj.serial_number,
+                        'vendor_serial_number': serial_obj.vendor_serial_number,
                         'expire_date': str(
-                            item.serial_no.expire_date) if item.serial_no.expire_date else None,
+                            serial_obj.expire_date
+                        ) if serial_obj.expire_date else None,
                         'manufacture_date': str(
-                            item.serial_no.manufacture_date) if item.serial_no.manufacture_date else None,
+                            serial_obj.manufacture_date
+                        ) if serial_obj.manufacture_date else None,
                         'warranty_start': str(
-                            item.serial_no.warranty_start) if item.serial_no.warranty_start else None,
+                            serial_obj.warranty_start
+                        ) if serial_obj.warranty_start else None,
                         'warranty_end': str(
-                            item.serial_no.warranty_end) if item.serial_no.warranty_end else None,
+                            serial_obj.warranty_end
+                        ) if serial_obj.warranty_end else None,
                     }
                 })
             else:
@@ -276,6 +282,5 @@ class IRForGoodsReturnHandler:
             doc_data = cls.for_perpetual_inventory(instance)
         else:
             doc_data = cls.for_periodic_inventory(instance)
-
         ReportInvLog.log(instance, instance.date_created, doc_data)
         return True
