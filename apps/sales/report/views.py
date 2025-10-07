@@ -322,7 +322,7 @@ class ReportInventoryCostList(BaseListMixin):
                     '-lease_order__code',
                     '-product__code',
                     '-lot_mapped__lot_number',
-                    '-serial_mapped__serial_number'
+                    '-serial_number'
                 )
 
             return_query = super().get_queryset().select_related(
@@ -341,7 +341,7 @@ class ReportInventoryCostList(BaseListMixin):
                 '-lease_order__code',
                 '-product__code',
                 '-lot_mapped__lot_number',
-                '-serial_mapped__serial_number'
+                '-serial_number'
             )
         except KeyError:
             return super().get_queryset().none()
@@ -398,7 +398,7 @@ class ReportStockList(BaseListMixin):
                     'sale_order__code',
                     'lease_order__code',
                     'lot_mapped__lot_number',
-                    'serial_mapped__serial_number'
+                    'serial_number'
                 )
             return super().get_queryset().select_related(
                 "product", "period_mapped"
@@ -412,7 +412,7 @@ class ReportStockList(BaseListMixin):
                 'sale_order__code',
                 'lease_order__code',
                 'lot_mapped__lot_number',
-                'serial_mapped__serial_number'
+                'serial_number'
             )
         except KeyError:
             return super().get_queryset().none()

@@ -1,4 +1,4 @@
-from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouseSerial
+from apps.masterdata.saledata.models import ProductWareHouseLot
 from apps.masterdata.saledata.models.product_warehouse import ProductSpecificIdentificationSerial
 from apps.sales.report.utils.inventory_log import ReportInvLog, ReportInvCommonFunc
 
@@ -308,8 +308,7 @@ class IRForGoodsReceiptHandler:
 
     @classmethod
     def get_all_serial(cls, instance):
-        all_serial_in_gr = list({item.serial_number for item in instance.goods_receipt_serial_goods_receipt.all()})
-        all_serial = ProductWareHouseSerial.objects.filter(serial_number__in=all_serial_in_gr)
+        all_serial = instance.pw_serial_goods_receipt.all()
         return all_serial
 
     @classmethod
