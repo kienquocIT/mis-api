@@ -1,4 +1,4 @@
-from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouseSerial
+from apps.masterdata.saledata.models import ProductWareHouseLot
 from apps.masterdata.saledata.models.product_warehouse import ProductSpecificIdentificationSerial
 from apps.sales.report.utils.inventory_log import ReportInvLog, ReportInvCommonFunc
 
