@@ -51,6 +51,15 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
     expense_tax_value = models.FloatField(default=0)
     expense_total_value = models.FloatField(default=0)
 
+    # indicators
+    service_order_indicators_data = models.JSONField(
+        default=list,
+        help_text="read data indicators, records in model ServiceOrderIndicator"
+    )
+    indicator_revenue = models.FloatField(default=0, help_text="value of indicator revenue (IN0001)")
+    indicator_gross_profit = models.FloatField(default=0, help_text="value of indicator gross profit (IN0003)")
+    indicator_net_income = models.FloatField(default=0, help_text="value of indicator net income (IN0006)")
+
     is_done_purchase_request = models.BooleanField(default=False)
 
     @classmethod

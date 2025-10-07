@@ -170,7 +170,11 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             'total_product',
             'total_product_revenue_before_tax',
 
+            # indicators
             'service_order_indicators_data',
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
         )
 
 
@@ -432,6 +436,12 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'total_product_tax',
             'total_product',
             'total_product_revenue_before_tax',
+
+            # indicators
+            'service_order_indicators_data',
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
         )
 
 
@@ -449,6 +459,8 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
     work_order_data = ServiceOrderWorkOrderSerializer(many=True)
     payment_data = ServiceOrderPaymentSerializer(many=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
+    # indicator
+    service_order_indicators_data = ServiceOrderIndicatorSerializer(many=True, required=False)
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
@@ -507,6 +519,7 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
         service_detail_id_map = ServiceOrderCommonFunc.create_service_detail(instance, service_detail_data)
         ServiceOrderCommonFunc.create_work_order(instance, work_order_data, service_detail_id_map, shipment_map_id)
         ServiceOrderCommonFunc.create_payment(instance, payment_data, service_detail_id_map)
+        ServiceOrderCommonFunc.create_indicator(validated_data=validated_data, instance=instance)
         # adhoc case update file to KMS
         update_files_is_approved(
             ServiceOrderAttachMapAttachFile.objects.filter(
@@ -533,4 +546,10 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
             'work_order_data',
             'payment_data',
             'exchange_rate_data',
+
+            # indicators
+            'service_order_indicators_data',
+            'indicator_revenue',
+            'indicator_gross_profit',
+            'indicator_net_income',
         )
