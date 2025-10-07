@@ -1,5 +1,3 @@
-from sqlalchemy.orm.base import state_attribute_str
-
 from apps.sales.report.models import ReportStockLog
 from apps.sales.report.utils.inventory_log import ReportInvLog, ReportInvCommonFunc
 
