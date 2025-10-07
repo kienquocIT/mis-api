@@ -276,7 +276,9 @@ class CalendarByDay(APIView):
                             )
                     if 'holiday' in category:
                         result['holiday'] = []
-                        year_config = WorkingYearConfig.objects.filter(config_year=timezone.now().year).first()
+                        year_config = WorkingYearConfig.objects.filter_on_company(
+                            config_year=timezone.now().year
+                        ).first()
                         if year_config:
                             objs = WorkingHolidayConfig.objects.filter(holiday_date_to=day_check, year=year_config)
                             for obj in objs:
