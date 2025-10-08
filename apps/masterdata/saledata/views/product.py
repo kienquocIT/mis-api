@@ -717,9 +717,12 @@ class ProductSpecificIdentificationSerialNumberList(BaseListMixin):
         'product_id': ['exact'],
         'vendor_serial_number': ['exact'],
         'serial_number': ['exact'],
+        'serial_status': ['exact'],
     }
 
     def get_queryset(self):
+        if 'product_id' not in self.request.query_params:
+            return super().get_queryset().none()
         return super().get_queryset().select_related().prefetch_related()
 
     @swagger_auto_schema(
