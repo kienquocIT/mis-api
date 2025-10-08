@@ -2,12 +2,11 @@ import logging
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
 from apps.core.attachments.storages.aws.storages_backend import PublicMediaStorage
 from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.inventory import WareHouse
 from apps.masterdata.saledata.utils import ProductHandler
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, DisperseModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, DisperseModel, SERIAL_STATUS
 
 
 __all__ = [
