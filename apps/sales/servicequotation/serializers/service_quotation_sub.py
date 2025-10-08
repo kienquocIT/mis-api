@@ -33,6 +33,7 @@ class ServiceQuotationServiceDetailSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'description',
+            'service_percent',
             'quantity',
             'uom',
             'uom_data',
