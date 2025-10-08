@@ -97,7 +97,7 @@ class DocHandler:
         setattr(obj, 'date_approved', timezone.now())  # date finish (approved)
         update_fields = ['system_status', 'date_approved']
         if hasattr(obj, 'is_change'):
-            if obj.is_change is False:
+            if obj.is_change is False and obj.document_root_id is None:
                 setattr(obj, 'document_root_id', obj.id)  # store obj.id to document_root_id for change
                 setattr(obj, 'document_change_order', 1)  # set document_change_order = 1 (document root)
                 update_fields.append('document_root_id')
@@ -228,15 +228,6 @@ class DocHandler:
         document_target = None
         if all(hasattr(document_change, attr) for attr in ('document_change_order', 'document_root_id')):
             if document_change.document_change_order and document_change.document_root_id:
-                # if document_change.document_change_order == 1:
-                #     document_target = DocHandler(
-                #         document_change.document_root_id, document_change.__class__.get_model_code()
-                #     ).get_obj(
-                #         default_filter={
-                #             'tenant_id': document_change.tenant_id,
-                #             'company_id': document_change.company_id
-                #         }
-                #     )
                 if document_change.document_change_order > 1:
                     document_target = DocHandler(None, document_change.__class__.get_model_code()).filter_first_obj(
                         default_filter={
