@@ -134,8 +134,8 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
         ).first()
         if not goods_detail_obj:
             raise serializers.ValidationError({'goods_detail_obj': "Can not find Goods detail object."})
-        if goods_detail_obj.status:
-            raise serializers.ValidationError({'goods_detail_obj': "This Goods detail has completed already."})
+        # if goods_detail_obj.status:
+        #     raise serializers.ValidationError({'goods_detail_obj': "This Goods detail has completed already."})
         validate_data['goods_detail_obj'] = goods_detail_obj
         return validate_data
 
@@ -143,7 +143,7 @@ class GoodsDetailDataCreateSerializer(serializers.ModelSerializer):
     def update_serial(cls, serial_item):
         serial_obj = ProductWareHouseSerial.objects.filter(id=serial_item.get('serial_id')).first()
         if serial_obj:
-            if serial_obj.is_delete is False:
+            if serial_obj.serial_status == 0:
                 serial_obj.vendor_serial_number = serial_item.get('vendor_serial_number')
                 serial_obj.serial_number = serial_item.get('serial_number')
                 serial_obj.expire_date = serial_item.get('expire_date')
@@ -360,8 +360,8 @@ class GoodsDetailCreateSerializerImportDB(GoodsDetailDataCreateSerializer):
             ).first()
             if not goods_detail_obj:
                 raise serializers.ValidationError({'goods_detail_obj': "Can not find Goods detail object."})
-            if goods_detail_obj.status:
-                raise serializers.ValidationError({'goods_detail_obj': "This Goods detail has completed already."})
+            # if goods_detail_obj.status:
+            #     raise serializers.ValidationError({'goods_detail_obj': "This Goods detail has completed already."})
             validate_data['goods_detail_obj'] = goods_detail_obj
             return validate_data
         raise serializers.ValidationError({'validate_data': "Import data is invalid."})
