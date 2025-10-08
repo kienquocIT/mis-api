@@ -888,7 +888,7 @@ class ProductSpecificIdentificationSerialNumber(MasterDataAbstractModel):
         return True
 
     @staticmethod
-    def get_specific_value(product, serial_number, disable_serial=False):
+    def get_specific_value(product, serial_number):
         """ Lấy giá đich danh """
         specific_value = 0
         si_product_serial_obj = ProductSpecificIdentificationSerialNumber.objects.filter(
