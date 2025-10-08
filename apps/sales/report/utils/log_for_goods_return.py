@@ -96,7 +96,7 @@ class IRForGoodsReturnHandler:
             if item.product.valuation_method == 2:
                 serial_obj = item.serial_no
                 delivery_item = ReportStockLog.objects.filter(
-                    product=item.product, trans_id=str(instance.delivery_id), serial_mapped=serial_obj
+                    product=item.product, trans_id=str(instance.delivery_id), serial_number=serial_obj.serial_number
                 ).first()
                 if delivery_item:
                     data = {
