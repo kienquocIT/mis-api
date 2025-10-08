@@ -250,6 +250,19 @@ class ReportStockLog(DataAbstractModel):
                         product=item['product'],
                         serial_number=(item.get('serial_data') or {}).get('serial_number')
                     )
+                    # tắt serial đích danh này đi
+                    ProductSpecificIdentificationSerialNumber.on_off_specific_serial(
+                        product=item['product'],
+                        serial_number=(item.get('serial_data') or {}).get('serial_number'),
+                        is_off=True
+                    )
+                else:
+                    # bật lại serial đích danh này
+                    ProductSpecificIdentificationSerialNumber.on_off_specific_serial(
+                        product=item['product'],
+                        serial_number=(item.get('serial_data') or {}).get('serial_number'),
+                        is_off=False
+                    )
             item['value'] = item['cost'] * item['quantity']
             if len(item.get('lot_data', {})) != 0:   # update Lot
                 item['lot_data']['lot_quantity'] = item['quantity']

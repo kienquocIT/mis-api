@@ -581,10 +581,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'inventory_level_min': obj.inventory_level_min,
             'inventory_level_max': obj.inventory_level_max,
             'valuation_method': obj.valuation_method,
-            'data_specific_serial': [{
+            'data_specific_serial_number': [{
                 'id': str(item.id),
+                'vendor_serial_number': item.vendor_serial_number,
                 'serial_number': item.serial_number,
                 'specific_value': item.specific_value,
+                'serial_status': item.serial_status,
             } for item in obj.product_si_serial_number.all()]
         }
         return result
@@ -946,4 +948,5 @@ class ProductSpecificIdentificationSerialNumberListSerializer(serializers.ModelS
             'warranty_end',
             # trường này lưu giá trị thực tế đích danh (PP này chỉ apply cho SP serial)
             'specific_value',
+            'serial_status'
         )

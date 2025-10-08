@@ -888,12 +888,26 @@ class ProductSpecificIdentificationSerialNumber(MasterDataAbstractModel):
         return True
 
     @staticmethod
-    def get_specific_value(product, serial_number):
-        """Lấy giá đich danh """
+    def get_specific_value(product, serial_number, disable_serial=False):
+        """ Lấy giá đich danh """
+        specific_value = 0
         si_product_serial_obj = ProductSpecificIdentificationSerialNumber.objects.filter(
             product=product, serial_number=serial_number
         ).first()
-        return si_product_serial_obj.specific_value if si_product_serial_obj else 0
+        if si_product_serial_obj:
+            specific_value = si_product_serial_obj.specific_value
+        return specific_value
+
+    @staticmethod
+    def on_off_specific_serial(product, serial_number, is_off=True):
+        """ Tắt serial này nếu is_off===True else bật lại """
+        si_product_serial_obj = ProductSpecificIdentificationSerialNumber.objects.filter(
+            product=product, serial_number=serial_number
+        ).first()
+        if si_product_serial_obj:
+            si_product_serial_obj.serial_status = is_off
+            si_product_serial_obj.save(update_fields=['serial_status'])
+        return True
 
     class Meta:
         verbose_name = 'Product Specific Identification Serial'
