@@ -256,6 +256,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'quantity': service_detail.quantity,
             'uom_title': service_detail.uom_data.get('title', ''),
             'uom_data': service_detail.uom_data,
+            'service_percent': service_detail.service_percent,
             'price': service_detail.price,
             'tax_data': service_detail.tax_data,
             'tax_code': service_detail.tax_data.get('code', ''),
@@ -269,7 +270,8 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'attributes_total_cost': service_detail.attributes_total_cost,
             'duration_id': service_detail.duration_id if service_detail.duration else None,
             'duration_unit_data': service_detail.duration_unit_data,
-            'duration': service_detail.duration_value if hasattr(service_detail, 'duration_value') else 0,
+            'duration': service_detail.duration_value if hasattr(service_detail,
+                                                                 'duration_value') and service_detail.duration else 1,
             'has_attributes': bool(service_detail.selected_attributes and service_detail.selected_attributes != {}),
         } for service_detail in obj.service_details.all()]
 
@@ -300,6 +302,12 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                 'title': cost.title,
                 'description': cost.description,
                 'quantity': cost.quantity,
+                'expense_data': {
+                    'id': cost.expense_item.id,
+                    'title': cost.expense_item.title,
+                    'code': cost.expense_item.code,
+                } if cost.expense_item else {},
+                'expense_item_id': cost.expense_item.id if cost.expense_item else None,
                 'unit_cost': cost.unit_cost,
                 'currency_id': cost.currency_id,
                 'tax_id': cost.tax_id,

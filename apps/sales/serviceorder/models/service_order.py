@@ -120,6 +120,7 @@ class ServiceOrderServiceDetail(MasterDataAbstractModel):
         null=True,
     )
     uom_data = models.JSONField(default=dict)
+    service_percent = models.FloatField(default=0, help_text='Weighting factor for service detail')
     price = models.FloatField(default=0)
     tax = models.ForeignKey(
         Tax,
@@ -208,6 +209,12 @@ class ServiceOrderWorkOrderCost(SimpleAbstractModel):
     order = models.IntegerField(default=0)
     title = models.CharField(max_length=100, blank=True)
     description = models.TextField()
+    expense_item = models.ForeignKey(
+        'saledata.ExpenseItem',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="service_order_work_order_costs"
+    )
     quantity = models.PositiveIntegerField(default=0)
     unit_cost = models.FloatField(default=0)
     currency = models.ForeignKey(
