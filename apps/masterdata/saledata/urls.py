@@ -18,6 +18,7 @@ from apps.masterdata.saledata.views.product import (
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail, UnitOfMeasureList, UnitOfMeasureDetail, ProductList,
     ProductDetail, ProductForSaleList, UnitOfMeasureOfGroupLaborList, ProductForSaleDetail, ProductQuickCreateList,
     ProductQuotationListLoadDB, ManufacturerList, ManufacturerDetail, ProductUploadAvatar,
+    ProductSpecificIdentificationSerialNumberList,
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
@@ -39,6 +40,7 @@ from apps.masterdata.saledata.views.warehouse import (
     ProductWareHouseAssetToolsList, ProductWareHouseListForGoodsTransfer,
     WarehouseEmployeeConfigList, WarehouseEmployeeConfigDetail, WareHouseForInventoryList,
 )
+
 
 urlpatterns = [
     path('salutations', SalutationList.as_view(), name='SalutationList'),
@@ -106,6 +108,11 @@ urlpatterns += [
     path('product/<str:pk>/upload-avatar', ProductUploadAvatar.as_view(), name='ProductUploadAvatar'),
     path('products-sale/list', ProductForSaleList.as_view(), name='ProductForSaleList'),
     path('products-sale/<str:pk>', ProductForSaleDetail.as_view(), name='ProductForSaleDetail'),
+    path(
+        'product-si-serial-number-list',
+        ProductSpecificIdentificationSerialNumberList.as_view(),
+        name='ProductSpecificIdentificationSerialNumberList'
+    ),
 ]
 
 urlpatterns += [

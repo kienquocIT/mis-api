@@ -1,6 +1,6 @@
 from django.db import models
 from rest_framework import serializers
-from apps.masterdata.saledata.models.product_warehouse import ProductSpecificIdentificationSerial
+from apps.masterdata.saledata.models.product import ProductSpecificIdentificationSerialNumber
 from apps.sales.inventory.models.goods_registration import GoodsRegistration
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
@@ -246,7 +246,7 @@ class ReportStockLog(DataAbstractModel):
             if item['product'].valuation_method == 2:
                 if item['stock_type'] == -1:
                     # thực tế đích danh sẽ lấy giá xuất theo từng serial
-                    item['cost'] = ProductSpecificIdentificationSerial.get_specific_value(
+                    item['cost'] = ProductSpecificIdentificationSerialNumber.get_specific_value(
                         product=item['product'],
                         serial_number=(item.get('serial_data') or {}).get('serial_number')
                     )

@@ -3,12 +3,13 @@ from rest_framework import serializers
 from apps.accounting.accountingsettings.utils import AccountDeterminationForProductHandler
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import (
-    ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer
+    ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer, ProductSpecificIdentificationSerialNumber
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
 from apps.shared import ProductMsg, PriceMsg, BaseMsg
 from .product_sub import ProductCommonFunction
 from ..models import ProductWareHouse
+
 
 PRODUCT_OPTION = [(0, _('Sale')), (1, _('Inventory')), (2, _('Purchase'))]
 
@@ -584,7 +585,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 'id': str(item.id),
                 'serial_number': item.serial_number,
                 'specific_value': item.specific_value,
-            } for item in obj.pw_si_serial_product.all()]
+            } for item in obj.product_si_serial_number.all()]
         }
         return result
 
@@ -928,3 +929,21 @@ class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
         return {
             'id': obj.group_id, 'title': obj.group.title, 'is_referenced_unit': obj.is_referenced_unit
         } if obj.group else {}
+
+
+class ProductSpecificIdentificationSerialNumberListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ProductSpecificIdentificationSerialNumber
+        fields = (
+            'id',
+            'product_id',
+            'vendor_serial_number',
+            'serial_number',
+            'expire_date',
+            'manufacture_date',
+            'warranty_start',
+            'warranty_end',
+            # trường này lưu giá trị thực tế đích danh (PP này chỉ apply cho SP serial)
+            'specific_value',
+        )

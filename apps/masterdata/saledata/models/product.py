@@ -9,10 +9,12 @@ from apps.masterdata.saledata.models.inventory import WareHouse
 from apps.masterdata.saledata.utils import ProductHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, DisperseModel
 
+
 __all__ = [
     'ProductType', 'ProductCategory', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
     'ExpensePrice', 'ExpenseRole', 'ProductMeasurements', 'ProductProductType',
-    'ProductVariantAttribute', 'ProductVariant', 'Manufacturer', 'ProductComponent'
+    'ProductVariantAttribute', 'ProductVariant', 'Manufacturer', 'ProductComponent',
+    'ProductSpecificIdentificationSerialNumber'
 ]
 
 
@@ -22,10 +24,12 @@ TRACEABILITY_METHOD_SELECTION = [
     (2, _('Serial number'))
 ]
 
+
 SUPPLIED_BY = [
     (0, _('Purchasing')),
     (1, _('Making')),
 ]
+
 
 ATTRIBUTE_CONFIG = [
     (0, _('Dropdown List')),
@@ -35,11 +39,13 @@ ATTRIBUTE_CONFIG = [
     (4, _('Select (Fill by photo)'))
 ]
 
+
 VALUATION_METHOD = [
     (0, _('FIFO')),
     (1, _('Weighted average')),
     (2, _('Specific identification'))
 ]
+
 
 logger = logging.getLogger(__name__)
 
@@ -833,5 +839,66 @@ class ProductAttribute(MasterDataAbstractModel):
         verbose_name = 'Product Attribute'
         verbose_name_plural = 'Products Attributes'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class ProductSpecificIdentificationSerialNumber(MasterDataAbstractModel):
+    """
+    Model lưu trữ thông tin về giá của 1 serial quản lí tồn kho theo thực tế đích danh.
+    Vì sản phẩm này được đính giá trị theo từng serial nên không phân biệt kho nào cả.
+    chỉ đơn giản là mối quan hệ: product - serial number
+    """
+    product = models.ForeignKey(
+        'saledata.Product', on_delete=models.CASCADE, related_name='product_si_serial_number',
+    )
+    vendor_serial_number = models.CharField(max_length=100, blank=True, null=True)
+    serial_number = models.CharField(max_length=100, blank=True, null=True)
+    expire_date = models.DateTimeField(null=True)
+    manufacture_date = models.DateTimeField(null=True)
+    warranty_start = models.DateTimeField(null=True)
+    warranty_end = models.DateTimeField(null=True)
+    # trường này lưu giá trị thực tế đích danh (PP này chỉ apply cho SP serial)
+    specific_value = models.FloatField(default=0)
+    serial_status = models.SmallIntegerField(choices=SERIAL_STATUS, default=0)
+
+    @staticmethod
+    def create_or_update_si_product_serial(product, serial_obj, specific_value):
+        """ Cập nhập hoặc tạo giá đich danh """
+        si_serial_obj = ProductSpecificIdentificationSerialNumber.objects.filter(
+            product=product,
+            serial_number=serial_obj.serial_number
+        ).first()
+        if not si_serial_obj:
+            ProductSpecificIdentificationSerialNumber.objects.create(
+                product=product,
+                vendor_serial_number=serial_obj.vendor_serial_number,
+                serial_number=serial_obj.serial_number,
+                expire_date=serial_obj.expire_date,
+                manufacture_date=serial_obj.manufacture_date,
+                warranty_start=serial_obj.warranty_start,
+                warranty_end=serial_obj.warranty_end,
+                specific_value=specific_value,
+                employee_created=product.employee_created,
+                tenant=product.tenant,
+                company=product.company,
+            )
+        else:
+            si_serial_obj.specific_value = specific_value
+            si_serial_obj.save(update_fields=['specific_value'])
+        return True
+
+    @staticmethod
+    def get_specific_value(product, serial_number):
+        """Lấy giá đich danh """
+        si_product_serial_obj = ProductSpecificIdentificationSerialNumber.objects.filter(
+            product=product, serial_number=serial_number
+        ).first()
+        return si_product_serial_obj.specific_value if si_product_serial_obj else 0
+
+    class Meta:
+        verbose_name = 'Product Specific Identification Serial'
+        verbose_name_plural = 'Product Specific Identification Serials'
+        ordering = ('serial_number',)
         default_permissions = ()
         permissions = ()
