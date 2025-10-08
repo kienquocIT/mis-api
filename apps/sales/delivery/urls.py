@@ -5,6 +5,7 @@ from apps.sales.delivery.views import (
     OrderPickingSubList, OrderPickingSubDetail, OrderDeliverySubList, OrderDeliverySubDetail,
     LeaseOrderActiveDelivery, OrderDeliverySubRecoveryList, DeliveryProductLeaseList, OrderDeliverySubDetailPrint
 )
+from apps.sales.delivery.views.config import ServiceOrderActiveDelivery
 
 urlpatterns = [
     path('config', DeliveryConfigDetail.as_view(), name='DeliveryConfigDetail'),
@@ -19,4 +20,5 @@ urlpatterns = [
 
     path('for-recovery', OrderDeliverySubRecoveryList.as_view(), name='OrderDeliverySubRecoveryList'),
     path('product-lease', DeliveryProductLeaseList.as_view(), name='DeliveryProductLeaseList'),
+    path('create-delivery-service-order', ServiceOrderActiveDelivery.as_view(), name='ServiceOrderActiveDelivery'),
 ]
