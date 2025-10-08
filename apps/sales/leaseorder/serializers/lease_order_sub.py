@@ -80,21 +80,18 @@ class LeaseOrderCommonCreate:
     @classmethod
     def create_indicator(cls, validated_data, instance):
         instance.lease_order_indicator_lease_order.all().delete()
-        for sale_order_indicator in validated_data['lease_indicators_data']:
-            # indicator_id = sale_order_indicator.get('indicator', {}).get('id')
-            quotation_indicator_id = sale_order_indicator.get('quotation_indicator', {}).get('id')
-            quotation_indicator_code = sale_order_indicator.get('quotation_indicator', {}).get('code')
-            # if indicator_id:
+        for lease_order_indicator in validated_data['lease_indicators_data']:
+            quotation_indicator_id = lease_order_indicator.get('quotation_indicator', {}).get('id')
+            quotation_indicator_code = lease_order_indicator.get('quotation_indicator', {}).get('code')
             if quotation_indicator_id:
-                # del sale_order_indicator['indicator']
-                del sale_order_indicator['quotation_indicator']
+                del lease_order_indicator['quotation_indicator']
                 LeaseOrderIndicator.objects.create(
                     lease_order=instance,
                     tenant_id=instance.tenant_id,
                     company_id=instance.company_id,
                     quotation_indicator_id=quotation_indicator_id,
                     code=quotation_indicator_code,
-                    **sale_order_indicator
+                    **lease_order_indicator
                 )
         return True
 

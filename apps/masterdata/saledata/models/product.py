@@ -38,7 +38,7 @@ ATTRIBUTE_CONFIG = [
 VALUATION_METHOD = [
     (0, _('FIFO')),
     (1, _('Weighted average')),
-    (2, _('Specific identification method'))
+    (2, _('Specific identification'))
 ]
 
 logger = logging.getLogger(__name__)

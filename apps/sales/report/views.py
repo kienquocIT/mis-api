@@ -317,7 +317,12 @@ class ReportInventoryCostList(BaseListMixin):
                     **filter_fields
                 )
                 return return_query.order_by(
-                    "warehouse__code", 'sale_order__code', '-product__code', 'lot_mapped__lot_number'
+                    'warehouse__code',
+                    '-sale_order__code',
+                    '-lease_order__code',
+                    '-product__code',
+                    '-lot_mapped__lot_number',
+                    '-serial_number'
                 )
 
             return_query = super().get_queryset().select_related(
@@ -331,7 +336,12 @@ class ReportInventoryCostList(BaseListMixin):
                 **filter_fields
             )
             return return_query.order_by(
-                'warehouse__code', 'sale_order__code', '-product__code', 'lot_mapped__lot_number'
+                'warehouse__code',
+                '-sale_order__code',
+                '-lease_order__code',
+                '-product__code',
+                '-lot_mapped__lot_number',
+                '-serial_number'
             )
         except KeyError:
             return super().get_queryset().none()
@@ -383,7 +393,13 @@ class ReportStockList(BaseListMixin):
                     'product__report_inventory_cost_product__period_mapped',
                 ).filter(
                     period_mapped=period_mapped, sub_period_order=sub_period_order, product_id__in=prd_id_list
-                ).order_by('product__code', 'lot_mapped__lot_number')
+                ).order_by(
+                    'product__code',
+                    'sale_order__code',
+                    'lease_order__code',
+                    'lot_mapped__lot_number',
+                    'serial_number'
+                )
             return super().get_queryset().select_related(
                 "product", "period_mapped"
             ).prefetch_related(
@@ -391,7 +407,13 @@ class ReportStockList(BaseListMixin):
                 'product__report_inventory_cost_product__period_mapped',
             ).filter(
                 period_mapped=period_mapped, sub_period_order=sub_period_order
-            ).order_by('product__code', 'sale_order__code', 'lot_mapped__lot_number')
+            ).order_by(
+                'product__code',
+                'sale_order__code',
+                'lease_order__code',
+                'lot_mapped__lot_number',
+                'serial_number'
+            )
         except KeyError:
             return super().get_queryset().none()
 

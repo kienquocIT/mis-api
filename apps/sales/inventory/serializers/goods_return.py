@@ -79,28 +79,14 @@ def create_item_mapped(goods_return):
         default_redelivery_number = 0
         lot_return_number = 0
         lot_redelivery_number = 0
-        is_return = False
         is_redelivery = False
         if data_type == 0:
             default_return_number = float(item.get('is_return', 0))
             default_redelivery_number = float(item.get('is_redelivery', 0))
-            lot_return_number = 0
-            lot_redelivery_number = 0
-            is_return = False
-            is_redelivery = False
         elif data_type == 1:
-            default_return_number = 0
-            default_redelivery_number = 0
             lot_return_number = float(item.get('is_return', 0))
             lot_redelivery_number = float(item.get('is_redelivery', 0))
-            is_return = False
-            is_redelivery = False
         elif data_type == 2:
-            default_return_number = 0
-            default_redelivery_number = 0
-            lot_return_number = 0
-            lot_redelivery_number = 0
-            is_return = item.get('is_return', False)
             is_redelivery = item.get('is_redelivery', False)
 
         if all([
@@ -126,7 +112,6 @@ def create_item_mapped(goods_return):
                     lot_redelivery_number=lot_redelivery_number,
                     # sn
                     serial_no_id=item.get('serial_id'),
-                    is_return=is_return,
                     is_redelivery=is_redelivery
                 )
             )

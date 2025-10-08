@@ -1,4 +1,4 @@
-from apps.masterdata.saledata.models import ProductWareHouseLot
+from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouseSerial
 from apps.sales.report.utils.inventory_log import ReportInvLog, ReportInvCommonFunc
 
 
@@ -34,6 +34,60 @@ class IRForGoodsIssueHandler:
                                 'lot_expire_date': str(prd_wh_lot.expire_date) if prd_wh_lot.expire_date else None
                             }
                         })
+            elif len(item.sn_data) > 0:
+                if item.product.valuation_method == 2:
+                    for serial_id in item.sn_data:
+                        serial_obj = ProductWareHouseSerial.objects.filter(id=serial_id).first()
+                        if serial_obj:
+                            doc_data.append({
+                                'product': item.product,
+                                'warehouse': item.warehouse,
+                                'system_date': instance.date_approved,
+                                'posting_date': instance.date_approved,
+                                'document_date': instance.date_approved,
+                                'stock_type': -1,
+                                'trans_id': str(instance.id),
+                                'trans_code': instance.code,
+                                'trans_title': 'Goods issue',
+                                'quantity': 1,
+                                'cost': 0,  # theo gia cost
+                                'value': 0,  # theo gia cost
+                                'lot_data': {},
+                                'serial_data': {
+                                    'serial_id': str(serial_obj.id),
+                                    'serial_number': serial_obj.serial_number,
+                                    'vendor_serial_number': serial_obj.vendor_serial_number,
+                                    'expire_date': str(
+                                        serial_obj.expire_date
+                                    ) if serial_obj.expire_date else None,
+                                    'manufacture_date': str(
+                                        serial_obj.manufacture_date
+                                    ) if serial_obj.manufacture_date else None,
+                                    'warranty_start': str(
+                                        serial_obj.warranty_start
+                                    ) if serial_obj.warranty_start else None,
+                                    'warranty_end': str(
+                                        serial_obj.warranty_end
+                                    ) if serial_obj.warranty_end else None,
+                                }
+                            })
+                else:
+                    casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.issued_quantity)
+                    doc_data.append({
+                        'product': item.product,
+                        'warehouse': item.warehouse,
+                        'system_date': instance.date_approved,
+                        'posting_date': instance.date_approved,
+                        'document_date': instance.date_approved,
+                        'stock_type': -1,
+                        'trans_id': str(instance.id),
+                        'trans_code': instance.code,
+                        'trans_title': 'Goods issue',
+                        'quantity': casted_quantity,
+                        'cost': 0,  # theo gia cost
+                        'value': 0,  # theo gia cost
+                        'lot_data': {}
+                    })
             else:
                 casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(item.uom, item.issued_quantity)
                 doc_data.append({

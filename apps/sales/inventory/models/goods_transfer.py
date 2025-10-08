@@ -148,20 +148,15 @@ class GoodsTransfer(DataAbstractModel, AutoDocumentAbstractModel):
     def update_prd_wh_serial(cls, src_prd_wh, des_prd_wh, sn_data, tenant_id, company_id):
         # tìm tất cả serial đang tồn tại trong kho gốc
         all_sn_src = src_prd_wh.product_warehouse_serial_product_warehouse.filter(serial_status=0)
-        for item in all_sn_src:
-            print(item.id, item.serial_number, item.product_warehouse.warehouse.title)
         # tìm tất cả serial trong kho đich
         all_sn_des = des_prd_wh.product_warehouse_serial_product_warehouse.all()
         bulk_info = []
         for sn_id in sn_data:
-            print(sn_id)
-            # nếu serial này đang tồn tại trong kho gốc thì tắt nó đi, không thì là lỗi
+            # nếu serial này đang tồn tại trong kho gốc thì tắt nó đi
             sn_src_obj = all_sn_src.filter(id=sn_id).first()
             if sn_src_obj:
                 sn_src_obj.serial_status = 1
                 sn_src_obj.save(update_fields=['serial_status'])
-            else:
-                print('Error. This serial does not exist in source warehouse.')
             # nếu serial này đã từng tồn tại trong kho đích thì bật lên lại, không thì tạo mới
             sn_des_obj = all_sn_des.filter(serial_number=sn_src_obj.serial_number).first()
             if sn_des_obj:

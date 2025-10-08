@@ -113,6 +113,7 @@ class DocPinedListSerializer(serializers.ModelSerializer):
                 'id': str(obj.runtime_id),
                 'doc_id': str(obj.runtime.doc_id),
                 'doc_title': str(obj.runtime.doc_title),
+                'app_title': str(obj.runtime.app.title) if obj.runtime.app else '',
                 'app_code': str(obj.runtime.app_code),
                 'app_id': str(obj.runtime.app_id),
                 'stage_currents': {
