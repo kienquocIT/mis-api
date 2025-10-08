@@ -39,7 +39,7 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
         'task_status': ['exact'],
         'priority': ['exact'],
         'id': ['exact', 'in'],
-        'end_date': ['lte', 'gte']
+        'end_date': ['exact', 'range']
     }
 
     def get_queryset(self):
