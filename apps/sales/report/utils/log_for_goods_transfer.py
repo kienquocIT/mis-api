@@ -1,5 +1,5 @@
 from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouseSerial
-from apps.masterdata.saledata.models.product_warehouse import ProductSpecificIdentificationSerial
+from apps.masterdata.saledata.models.product import ProductSpecificIdentificationSerialNumber
 from apps.sales.report.utils.inventory_log import ReportInvLog, ReportInvCommonFunc
 
 
@@ -94,11 +94,11 @@ class IRForGoodsTransferHandler:
                 if item.product.valuation_method == 2:
                     for serial_id in item.sn_data:
                         serial_obj = ProductWareHouseSerial.objects.filter(id=serial_id).first()
-                        specific_value = ProductSpecificIdentificationSerial.get_specific_value(
-                            product=item.product,
-                            serial_number=serial_obj.serial_number
-                        )
                         if serial_obj:
+                            specific_value = ProductSpecificIdentificationSerialNumber.get_specific_value(
+                                product=item.product,
+                                serial_number=serial_obj.serial_number
+                            )
                             doc_data_out.append({
                                 'sale_order': item.sale_order,
                                 'product': item.product,

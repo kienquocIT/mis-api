@@ -12,7 +12,7 @@ class ReportInvLog:
     def log(cls, doc_obj, doc_date, doc_data, for_balance_init=False):
         print('Start log...')
         if not doc_obj or not doc_date or len(doc_data) == 0:
-            print(f'Not log (detail: {doc_obj.code}, {doc_date.date()}, {len(doc_data)})')
+            print(f'>>>>>>>>>>>>>>>>>>>> Not log (doc detail: {doc_obj.code}, {doc_date.date()}, {len(doc_data)})')
             return None
         try:
             tenant = doc_obj.tenant

@@ -68,6 +68,7 @@ class ServiceQuotationServiceDetail(MasterDataAbstractModel):
     order = models.IntegerField(default=0)
     description = models.TextField(blank=True)
     quantity = models.PositiveIntegerField(default=0)
+    service_percent = models.FloatField(default=0, help_text='Weighting factor for service detail')
     uom = models.ForeignKey(
         UnitOfMeasure,
         on_delete=models.SET_NULL,
@@ -136,6 +137,12 @@ class ServiceQuotationWorkOrderCost(SimpleAbstractModel):
     order = models.IntegerField(default=0)
     title = models.CharField(max_length=100, blank=True)
     description = models.TextField()
+    expense_item = models.ForeignKey(
+        'saledata.ExpenseItem',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="service_quotation_work_order_costs"
+    )
     quantity = models.PositiveIntegerField(default=0)
     unit_cost = models.FloatField(default=0)
     currency = models.ForeignKey(

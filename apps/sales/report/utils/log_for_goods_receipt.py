@@ -1,5 +1,5 @@
-from apps.masterdata.saledata.models import ProductWareHouseLot, ProductWareHouseSerial
-from apps.masterdata.saledata.models.product_warehouse import ProductSpecificIdentificationSerial
+from apps.masterdata.saledata.models import ProductWareHouseLot
+from apps.masterdata.saledata.models.product import ProductSpecificIdentificationSerialNumber
 from apps.sales.report.utils.inventory_log import ReportInvLog, ReportInvCommonFunc
 
 
@@ -102,7 +102,7 @@ class HasPurchaseRequestHandler:
                     })
 
                     # cập nhập hoặc tạo giá đich danh khi nhập
-                    ProductSpecificIdentificationSerial.create_or_update_si_product_serial(
+                    ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
                         product=gr_item.product,
                         serial_obj=serial_obj,
                         specific_value=gr_item.product_unit_price
@@ -256,7 +256,7 @@ class NoPurchaseRequestHandler:
                         })
 
                         # cập nhập hoặc tạo giá đich danh khi nhập
-                        ProductSpecificIdentificationSerial.create_or_update_si_product_serial(
+                        ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
                             product=gr_item.product,
                             serial_obj=serial_obj,
                             specific_value=gr_item.product_unit_price
@@ -308,8 +308,7 @@ class IRForGoodsReceiptHandler:
 
     @classmethod
     def get_all_serial(cls, instance):
-        all_serial_in_gr = list({item.serial_number for item in instance.goods_receipt_serial_goods_receipt.all()})
-        all_serial = ProductWareHouseSerial.objects.filter(serial_number__in=all_serial_in_gr)
+        all_serial = instance.pw_serial_goods_receipt.all()
         return all_serial
 
     @classmethod

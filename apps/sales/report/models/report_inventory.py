@@ -1,6 +1,6 @@
 from django.db import models
 from rest_framework import serializers
-from apps.masterdata.saledata.models.product_warehouse import ProductSpecificIdentificationSerial
+from apps.masterdata.saledata.models.product import ProductSpecificIdentificationSerialNumber
 from apps.sales.inventory.models.goods_registration import GoodsRegistration
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
@@ -66,12 +66,7 @@ class ReportStock(DataAbstractModel):
         related_name='report_stock_lot_mapped',
         null=True
     )
-    serial_mapped = models.ForeignKey(
-        'saledata.ProductWareHouseSerial',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_serial_mapped',
-        null=True
-    )
+    serial_number = models.CharField(max_length=100, blank=True, null=True)
     sale_order = models.ForeignKey(
         'saleorder.SaleOrder',
         on_delete=models.SET_NULL,
@@ -156,12 +151,7 @@ class ReportStockLog(DataAbstractModel):
         related_name='report_stock_log_lot_mapped',
         null=True
     )
-    serial_mapped = models.ForeignKey(
-        'saledata.ProductWareHouseSerial',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_log_serial_mapped',
-        null=True
-    )
+    serial_number = models.CharField(max_length=100, blank=True, null=True)
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.SET_NULL,
@@ -225,7 +215,7 @@ class ReportStockLog(DataAbstractModel):
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = doc_item.get('sale_order').id if doc_item.get('sale_order') else None
             kw_parameter['lease_order_id'] = doc_item.get('lease_order').id if doc_item.get('lease_order') else None
-        kw_parameter['serial_mapped_id'] = (doc_item.get('serial_data') or {}).get('serial_id')
+        kw_parameter['serial_number'] = (doc_item.get('serial_data') or {}).get('serial_number')
         return kw_parameter
 
     @classmethod
@@ -256,9 +246,22 @@ class ReportStockLog(DataAbstractModel):
             if item['product'].valuation_method == 2:
                 if item['stock_type'] == -1:
                     # thực tế đích danh sẽ lấy giá xuất theo từng serial
-                    item['cost'] = ProductSpecificIdentificationSerial.get_specific_value(
+                    item['cost'] = ProductSpecificIdentificationSerialNumber.get_specific_value(
                         product=item['product'],
                         serial_number=(item.get('serial_data') or {}).get('serial_number')
+                    )
+                    # tắt serial đích danh này đi
+                    ProductSpecificIdentificationSerialNumber.on_off_specific_serial(
+                        product=item['product'],
+                        serial_number=(item.get('serial_data') or {}).get('serial_number'),
+                        is_off=True
+                    )
+                else:
+                    # bật lại serial đích danh này
+                    ProductSpecificIdentificationSerialNumber.on_off_specific_serial(
+                        product=item['product'],
+                        serial_number=(item.get('serial_data') or {}).get('serial_number'),
+                        is_off=False
                     )
             item['value'] = item['cost'] * item['quantity']
             if len(item.get('lot_data', {})) != 0:   # update Lot
@@ -362,7 +365,7 @@ class ReportStockLog(DataAbstractModel):
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = log.sale_order_id
             kw_parameter['lease_order_id'] = log.lease_order_id
-        kw_parameter['serial_mapped_id'] = log.serial_mapped_id
+        kw_parameter['serial_number'] = log.serial_number
         div = log.company.company_config.definition_inventory_valuation
         latest_cost = ReportInventorySubFunction.get_latest_log_cost_dict(
             div, log.product, log.physical_warehouse, **kw_parameter
@@ -588,12 +591,7 @@ class ReportInventoryCost(DataAbstractModel):
         related_name='report_inventory_cost_lot_mapped',
         null=True
     )
-    serial_mapped = models.ForeignKey(
-        'saledata.ProductWareHouseSerial',
-        on_delete=models.SET_NULL,
-        related_name='report_inventory_cost_serial_mapped',
-        null=True
-    )
+    serial_number = models.CharField(max_length=100, blank=True, null=True)
 
     period_mapped = models.ForeignKey(
         'saledata.Periods',
@@ -696,12 +694,7 @@ class ReportInventoryCostLatestLog(SimpleAbstractModel):
         related_name='rp_inv_cost_lot_mapped',
         null=True
     )
-    serial_mapped = models.ForeignKey(
-        'saledata.ProductWareHouseSerial',
-        on_delete=models.SET_NULL,
-        related_name='rp_inv_cost_serial_mapped',
-        null=True
-    )
+    serial_number = models.CharField(max_length=100, blank=True, null=True)
     sale_order = models.ForeignKey(
         'saleorder.SaleOrder',
         on_delete=models.SET_NULL,

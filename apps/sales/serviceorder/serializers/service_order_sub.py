@@ -41,6 +41,7 @@ class ServiceOrderServiceDetailSerializer(serializers.ModelSerializer):
             'quantity',
             'uom',
             'uom_data',
+            'service_percent',
             'price',
             'tax',
             'tax_data',
@@ -517,6 +518,7 @@ class ServiceOrderCommonFunc:
                     quantity=service_detail.get('quantity'),
                     uom=service_detail.get('uom'),
                     uom_data=service_detail.get('uom_data'),
+                    service_percent=service_detail.get('service_percent'),
                     price=service_detail.get('price'),
                     tax_id=service_detail.get('tax_data', {}).get('id'),
                     tax_data=service_detail.get('tax_data'),
@@ -601,6 +603,7 @@ class ServiceOrderCommonFunc:
                     order=cost.get('order', 0),
                     title=cost.get('title', ''),
                     description=cost.get('description', ''),
+                    expense_item_id=cost.get('expense_item_id'),
                     quantity=cost.get('quantity', 0),
                     unit_cost=cost.get('unit_cost', 0),
                     currency_id=cost.get('currency_id'),
@@ -807,6 +810,8 @@ class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
                         'description': service_detail_obj.product.description,
                         'delivered_quantity': item.delivered_quantity,
                         'product_data': service_detail_obj.product_data,
+                        'tax': service_detail_obj.product.sale_tax_data,
+                        'uom': service_detail_obj.product.sale_default_uom_data
                     }
                 )
         return product_list
