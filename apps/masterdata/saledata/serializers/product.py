@@ -398,7 +398,7 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
         fields = (
             'code', 'title', 'product_choice',
             'general_product_category', 'general_uom_group', 'general_traceability_method',
-            'sale_default_uom', 'sale_tax',
+            'sale_default_uom', 'sale_tax', 'description',
         )
 
     @classmethod
