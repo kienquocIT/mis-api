@@ -3,12 +3,13 @@ from rest_framework import serializers
 from apps.accounting.accountingsettings.utils import AccountDeterminationForProductHandler
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import (
-    ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer
+    ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer, ProductSpecificIdentificationSerialNumber
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
 from apps.shared import ProductMsg, PriceMsg, BaseMsg
 from .product_sub import ProductCommonFunction
 from ..models import ProductWareHouse
+
 
 PRODUCT_OPTION = [(0, _('Sale')), (1, _('Inventory')), (2, _('Purchase'))]
 
@@ -397,7 +398,7 @@ class ProductQuickCreateSerializer(serializers.ModelSerializer):
         fields = (
             'code', 'title', 'product_choice',
             'general_product_category', 'general_uom_group', 'general_traceability_method',
-            'sale_default_uom', 'sale_tax',
+            'sale_default_uom', 'sale_tax', 'description',
         )
 
     @classmethod
@@ -580,11 +581,13 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'inventory_level_min': obj.inventory_level_min,
             'inventory_level_max': obj.inventory_level_max,
             'valuation_method': obj.valuation_method,
-            'data_specific_serial': [{
+            'data_specific_serial_number': [{
                 'id': str(item.id),
+                'vendor_serial_number': item.vendor_serial_number,
                 'serial_number': item.serial_number,
                 'specific_value': item.specific_value,
-            } for item in obj.pw_si_serial_product.all()]
+                'serial_status': item.serial_status,
+            } for item in obj.product_si_serial_number.all()]
         }
         return result
 
@@ -928,3 +931,22 @@ class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
         return {
             'id': obj.group_id, 'title': obj.group.title, 'is_referenced_unit': obj.is_referenced_unit
         } if obj.group else {}
+
+
+class ProductSpecificIdentificationSerialNumberListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ProductSpecificIdentificationSerialNumber
+        fields = (
+            'id',
+            'product_id',
+            'vendor_serial_number',
+            'serial_number',
+            'expire_date',
+            'manufacture_date',
+            'warranty_start',
+            'warranty_end',
+            # trường này lưu giá trị thực tế đích danh (PP này chỉ apply cho SP serial)
+            'specific_value',
+            'serial_status'
+        )

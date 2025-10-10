@@ -811,6 +811,8 @@ class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
                         'description': service_detail_obj.product.description,
                         'delivered_quantity': item.delivered_quantity,
                         'product_data': service_detail_obj.product_data,
+                        'tax': service_detail_obj.product.sale_tax_data,
+                        'uom': service_detail_obj.product.sale_default_uom_data
                     }
                 )
         return product_list

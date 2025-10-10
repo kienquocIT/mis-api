@@ -1,5 +1,5 @@
 from apps.masterdata.saledata.models import ProductWareHouseLot
-from apps.masterdata.saledata.models.product_warehouse import ProductSpecificIdentificationSerial
+from apps.masterdata.saledata.models.product import ProductSpecificIdentificationSerialNumber
 from apps.sales.report.utils.inventory_log import ReportInvLog, ReportInvCommonFunc
 
 
@@ -102,7 +102,7 @@ class HasPurchaseRequestHandler:
                     })
 
                     # cập nhập hoặc tạo giá đich danh khi nhập
-                    ProductSpecificIdentificationSerial.create_or_update_si_product_serial(
+                    ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
                         product=gr_item.product,
                         serial_obj=serial_obj,
                         specific_value=gr_item.product_unit_price
@@ -248,7 +248,7 @@ class NoPurchaseRequestHandler:
                                 ) if serial_obj.manufacture_date else None,
                                 'warranty_start': str(
                                     serial_obj.warranty_start
-                                ) if serial_obj.expire_dwarranty_startate else None,
+                                ) if serial_obj.warranty_start else None,
                                 'warranty_end': str(
                                     serial_obj.warranty_end
                                 ) if serial_obj.warranty_end else None,
@@ -256,7 +256,7 @@ class NoPurchaseRequestHandler:
                         })
 
                         # cập nhập hoặc tạo giá đich danh khi nhập
-                        ProductSpecificIdentificationSerial.create_or_update_si_product_serial(
+                        ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
                             product=gr_item.product,
                             serial_obj=serial_obj,
                             specific_value=gr_item.product_unit_price
