@@ -248,7 +248,7 @@ class NoPurchaseRequestHandler:
                                 ) if serial_obj.manufacture_date else None,
                                 'warranty_start': str(
                                     serial_obj.warranty_start
-                                ) if serial_obj.expire_dwarranty_startate else None,
+                                ) if serial_obj.warranty_start else None,
                                 'warranty_end': str(
                                     serial_obj.warranty_end
                                 ) if serial_obj.warranty_end else None,
