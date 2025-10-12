@@ -62,21 +62,23 @@ class GRFromPMHandler:
         if pm_obj and model_cls and hasattr(model_cls, 'objects'):
             gr_products_data1 = GRFromPMHandler.setup_product(pm_obj=pm_obj, issue_data=issue_data)
             if gr_products_data1:
-                GRFromPMHandler.run_create(
+                goods_receipt_obj = GRFromPMHandler.run_create(
                     pm_obj=pm_obj,
                     gr_products_data=gr_products_data1,
                     model_cls=model_cls,
                     system_status=3,
                 )
+                return goods_receipt_obj
             gr_products_data2 = GRFromPMHandler.setup_component(pm_obj=pm_obj)
             if gr_products_data2:
-                GRFromPMHandler.run_create(
+                goods_receipt_obj = GRFromPMHandler.run_create(
                     pm_obj=pm_obj,
                     gr_products_data=gr_products_data2,
                     model_cls=model_cls,
                     system_status=0,
                 )
-        return True
+                return goods_receipt_obj
+        return None
 
     @classmethod
     def setup_product(cls, pm_obj, issue_data):
@@ -247,7 +249,7 @@ class GRFromPMHandler:
                 goods_receipt.save(update_fields=[
                     'total_pretax', 'total', 'total_revenue_before_tax', 'system_status', 'date_approved'
                 ])
-        return True
+        return goods_receipt
 
     @classmethod
     def run_create_sub_product(cls, goods_receipt):
