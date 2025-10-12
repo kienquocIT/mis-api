@@ -24,6 +24,7 @@ __all__ = [
     'DeliveryConfigDetail',
     'SaleOrderActiveDelivery',
     'LeaseOrderActiveDelivery',
+    'ServiceOrderActiveDelivery'
 ]
 
 from apps.shared.translations.sales import DeliverMsg
@@ -218,6 +219,37 @@ class LeaseOrderActiveDelivery(APIView):
                 serializer = DeliveryConfigDetailSerializer(config)
                 return ResponseController.success_200(
                     data={'state': 'Successfully', 'config': serializer.data, 'is_not_picking': is_not_picking},
+                    key_data='result'
+                )
+            except cls_model.DoesNotExist:
+                pass
+            except DeliveryConfig.DoesNotExist:
+                pass
+        return ResponseController.notfound_404()
+
+
+class ServiceOrderActiveDelivery(APIView):
+    @swagger_auto_schema(
+        operation_summary='Call delivery at ServiceOrder detail',
+        operation_description='Call delivery at ServiceOrder detail by Id'
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def post(self, request, *args, **kwargs):
+        cls_model = DisperseModel(app_model='serviceorder.ServiceOrder').get_model()
+        payload = request.data
+        if cls_model and payload:
+            try:
+                obj = cls_model.objects.get_on_company(id=payload.get('service_order_id'))
+                payload['company_id'] = obj.company_id
+                payload['tenant_id'] = obj.tenant_id
+                config = DeliveryConfig.objects.get(company=obj.company)
+                serializer = DeliveryConfigDetailSerializer(config)
+                return ResponseController.success_200(
+                    data={
+                        'state': 'Successfully',
+                        'config': serializer.data,
+                        'is_not_picking': False
+                    },
                     key_data='result'
                 )
             except cls_model.DoesNotExist:

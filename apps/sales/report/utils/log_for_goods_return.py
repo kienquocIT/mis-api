@@ -119,13 +119,17 @@ class IRForGoodsReturnHandler:
                             'serial_number': serial_obj.serial_number,
                             'vendor_serial_number': serial_obj.vendor_serial_number,
                             'expire_date': str(
-                                serial_obj.expire_date) if serial_obj.expire_date else None,
+                                serial_obj.expire_date
+                            ) if serial_obj.expire_date else None,
                             'manufacture_date': str(
-                                serial_obj.manufacture_date) if serial_obj.manufacture_date else None,
+                                serial_obj.manufacture_date
+                            ) if serial_obj.manufacture_date else None,
                             'warranty_start': str(
-                                serial_obj.warranty_start) if serial_obj.warranty_start else None,
+                                serial_obj.warranty_start
+                            ) if serial_obj.warranty_start else None,
                             'warranty_end': str(
-                                serial_obj.warranty_end) if serial_obj.warranty_end else None,
+                                serial_obj.warranty_end
+                            ) if serial_obj.warranty_end else None,
                         }
                     }
                     doc_data, is_append = cls.check_exists(doc_data, data)

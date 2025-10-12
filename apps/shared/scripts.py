@@ -2163,6 +2163,19 @@ def hong_quang_delete_runtime_assignee():
     return True
 
 
+def clean_data_svn():
+    company_id = '696bbe7f-1d47-4752-ad3e-ce25881cf975'
+    quotations = Quotation.objects.filter(company_id=company_id, system_status=0)
+    if quotations:
+        quotations.delete()
+    products = Product.objects.filter(company_id=company_id)
+    if products:
+        products.delete()
+    InventoryReportRun.run(company_id=company_id, fiscal_year=2025)
+    print('clean_data_svn done.')
+    return True
+
+
 def run_push_diagram():
     for sale_order in SaleOrder.objects.all():
         SOHandler.push_diagram(instance=sale_order)
