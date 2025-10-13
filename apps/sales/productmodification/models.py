@@ -328,12 +328,13 @@ class ProductModification(DataAbstractModel):
 
                     issue_data = self.auto_create_goods_issue(self)
 
-                    # cập nhập hoặc tạo giá đich danh khi nhập
-                    ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
-                        product=self.product_modified,
-                        serial_obj=self.prd_wh_serial,
-                        specific_value=0
-                    )
+                    if self.prd_wh_serial:
+                        # cập nhập hoặc tạo giá đich danh khi nhập
+                        ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
+                            product=self.product_modified,
+                            serial_obj=self.prd_wh_serial,
+                            specific_value=0
+                        )
 
                     GRFromPMHandler.create_new(pm_obj=self, issue_data=issue_data) # Create goods receipt
                     self.update_current_product_component(self)
