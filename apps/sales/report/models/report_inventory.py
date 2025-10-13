@@ -263,6 +263,7 @@ class ReportStockLog(DataAbstractModel):
                         serial_number=(item.get('serial_data') or {}).get('serial_number'),
                         is_off=False
                     )
+            print(item['stock_type'], item['cost'])
             item['value'] = item['cost'] * item['quantity']
             if len(item.get('lot_data', {})) != 0:   # update Lot
                 item['lot_data']['lot_quantity'] = item['quantity']

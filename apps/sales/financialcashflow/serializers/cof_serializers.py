@@ -18,7 +18,7 @@ __all__ = [
     'CashOutflowDetailSerializer',
     'CashOutflowUpdateSerializer',
     'AdvanceForSupplierForCashOutflowSerializer',
-    'APInvoiceListForCashOutflowSerializer',
+    'APInvoiceListForCOFSerializer',
 ]
 
 # main serializers
@@ -590,7 +590,7 @@ class AdvanceForSupplierForCashOutflowSerializer(serializers.ModelSerializer):
         return obj.value_total - cash_out_value
 
 
-class APInvoiceListForCashOutflowSerializer(serializers.ModelSerializer):
+class APInvoiceListForCOFSerializer(serializers.ModelSerializer):
     supplier_mapped = serializers.SerializerMethodField()
     document_type = serializers.SerializerMethodField()
     recon_total = serializers.SerializerMethodField()

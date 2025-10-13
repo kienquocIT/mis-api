@@ -5,7 +5,7 @@ from apps.sales.financialcashflow.models.cof_models import CashOutflow
 from apps.sales.financialcashflow.serializers.cof_serializers import (
     CashOutflowListSerializer, CashOutflowCreateSerializer,
     CashOutflowUpdateSerializer, CashOutflowDetailSerializer,
-    AdvanceForSupplierForCashOutflowSerializer, APInvoiceListForCashOutflowSerializer
+    AdvanceForSupplierForCashOutflowSerializer, APInvoiceListForCOFSerializer
 )
 from apps.sales.purchasing.models import PurchaseOrderPaymentStage
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -13,8 +13,8 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 __all__ = [
     'CashOutflowList',
     'CashOutflowDetail',
-    'AdvanceForSupplierListForCashOutflow',
-    'APInvoiceListForCashOutflow',
+    'AdvanceForSupplierListForCOF',
+    'APInvoiceListForCOF',
 ]
 
 
@@ -84,7 +84,7 @@ class CashOutflowDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 # related views
-class AdvanceForSupplierListForCashOutflow(BaseListMixin):
+class AdvanceForSupplierListForCOF(BaseListMixin):
     queryset = PurchaseOrderPaymentStage.objects
     filterset_fields = {
         'id': ['in'],
@@ -113,7 +113,7 @@ class AdvanceForSupplierListForCashOutflow(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class APInvoiceListForCashOutflow(BaseListMixin):
+class APInvoiceListForCOF(BaseListMixin):
     queryset = APInvoice.objects
     search_fields = [
         'title',
@@ -124,7 +124,7 @@ class APInvoiceListForCashOutflow(BaseListMixin):
         'supplier_mapped_id': ['exact'],
         'cash_outflow_done': ['exact']
     }
-    serializer_list = APInvoiceListForCashOutflowSerializer
+    serializer_list = APInvoiceListForCOFSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
