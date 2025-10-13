@@ -436,6 +436,13 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         verbose_name='Product Data backup',
         help_text='data json of product'
     )
+    product_specific = models.ForeignKey(
+        'saledata.ProductSpecificIdentificationSerialNumber',
+        on_delete=models.CASCADE,
+        verbose_name="product specific",
+        related_name="delivery_product_product_specific",
+        null=True
+    )
     asset_type = models.SmallIntegerField(null=True, help_text='choices= ' + str(ASSET_TYPE))
     offset = models.ForeignKey(
         'saledata.Product',

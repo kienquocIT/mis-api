@@ -208,6 +208,7 @@ class OrderActiveDeliverySerializer:
                 delivery_sub_id=sub_id,
                 product=m2m_obj.product,
                 product_data=m2m_obj.product_data,
+                product_specific=m2m_obj.product_specific,
                 uom=m2m_obj.unit_of_measure,
                 uom_data=m2m_obj.uom_data,
                 tax=m2m_obj.tax,

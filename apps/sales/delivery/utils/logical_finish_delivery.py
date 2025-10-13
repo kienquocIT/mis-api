@@ -280,6 +280,11 @@ class DeliFinishHandler:
         if lease_order:
             target_obj = deli_product.offset
         if target_obj:
+            spec_id = deli_product.product_data.get('specific_data', {}).get('id', None)
+            if spec_id:
+                spec_value = deli_product.product_data.get('specific_data', {}).get('specific_value', 0)
+                actual_value = spec_value * deli_product.picked_quantity
+                return actual_value
             if 1 in target_obj.product_choice:
                 for data_deli in deli_product.delivery_data:
                     if all(key in data_deli for key in ('warehouse_id', 'picked_quantity')):
