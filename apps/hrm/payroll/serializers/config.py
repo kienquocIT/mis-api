@@ -46,7 +46,7 @@ class PayrollConfigTaxBracketSerializer(serializers.ModelSerializer):
 class PayrollConfigCommonFunction:
     @staticmethod
     def create_insurance_data(payroll_config_obj, insurance_data):
-        PayrollInsuranceRule.objects.filter_on_company(payroll_config=payroll_config_obj).delete()
+        PayrollInsuranceRule.objects.filter(payroll_config=payroll_config_obj).delete()
         PayrollInsuranceRule.objects.create(
             title='',
             payroll_config_id=str(payroll_config_obj.id),
@@ -57,7 +57,7 @@ class PayrollConfigCommonFunction:
 
     @staticmethod
     def create_personal_income_tax(payroll_config_obj, personal_income_tax):
-        PayrollDeductionRule.objects.filter_on_company(payroll_config=payroll_config_obj).delete()
+        PayrollDeductionRule.objects.filter(payroll_config=payroll_config_obj).delete()
         PayrollDeductionRule.objects.create(
             title='',
             payroll_config_id=str(payroll_config_obj.id),
@@ -68,13 +68,21 @@ class PayrollConfigCommonFunction:
 
     @staticmethod
     def create_tax_bracket(payroll_config_obj, tax_bracket_data):
-        PayrollTaxBracket.objects.filter_on_company(payroll_config=payroll_config_obj).delete()
-        PayrollTaxBracket.objects.create(
-            title='',
-            payroll_config_id=str(payroll_config_obj.id),
-            company=payroll_config_obj.company,
-            **tax_bracket_data
-        )
+        bulk_info_tax_bracket = []
+
+        for tax_bracket_item in tax_bracket_data:
+            tax_bracket_obj = PayrollTaxBracket(
+                payroll_config=payroll_config_obj,
+                title='',
+                order=tax_bracket_item.get('order'),
+                min_amount=tax_bracket_item.get('min_amount'),
+                max_amount=tax_bracket_item.get('max_amount'),
+                rate=tax_bracket_item.get('rate'),
+            )
+            bulk_info_tax_bracket.append(tax_bracket_obj)
+
+        PayrollTaxBracket.objects.filter(payroll_config=payroll_config_obj).delete()
+        PayrollTaxBracket.objects.bulk_create(bulk_info_tax_bracket)
         return True
 
 
@@ -105,6 +113,8 @@ class PayrollConfigCreateSerializer(AbstractCreateSerializerModel):
 
     def create(self, validate_data):
         with transaction.atomic():
+            for field in ['system_status', 'is_change', 'employee_inherit_id']:
+                validate_data.pop(field, None)
             insurance_data = validate_data.pop('insurance_data', [])
             personal_income_tax = validate_data.pop('personal_income_tax', [])
             tax_bracket_data = validate_data.pop('tax_bracket_data', [])
@@ -120,5 +130,5 @@ class PayrollConfigCreateSerializer(AbstractCreateSerializerModel):
             'company',
             'insurance_data',
             'personal_income_tax',
-            'tax_bracket_data'
+            'tax_bracket_data',
         )
