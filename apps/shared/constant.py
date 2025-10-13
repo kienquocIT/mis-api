@@ -147,6 +147,7 @@ MAP_FIELD_TITLE = {
     # HRM
     'absenceexplanation.absenceexplanation': 'title',
     'overtimerequest.overtimerequest': 'title',
+    'payrolltemplate.payrolltemplate': 'title'
 }
 
 CURRENCY_MASK_MONEY = {

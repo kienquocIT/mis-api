@@ -38,6 +38,7 @@ from ..core.provisioning.utils import TenantController
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig, LeaveRequest
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
+from ..hrm.payrolltemplate.models import AttributeComponent
 from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..sales.arinvoice.models import ARInvoice, ARInvoiceItems, ARInvoiceDelivery
@@ -6446,3 +6447,111 @@ def delete_folders():
     Folder.objects.all().delete()
     print('delete_folders done.')
     return True
+
+
+def make_system_component():
+    data_list = [
+        {
+            'title': 'Tên NV',
+            'name': 'Employee name',
+            'code': 'employee_name',
+            'type': 1,
+        },
+        {
+            'title': 'Mã NV',
+            'name': 'Employee code',
+            'code': 'employee_code',
+            'type': 1,
+        },
+        {
+            'title': 'Phòng ban',
+            'name': 'Department',
+            'code': 'employee_group',
+            'type': 1,
+        },
+        {
+            'title': 'Lương',
+            'name': 'Salary',
+            'code': 'employee_salary',
+            'type': 1,
+        },
+        {
+            'title': 'BHXH',
+            'name': 'Social insurance',
+            'code': 'employee_social_insurance',
+            'type': 1,
+        },
+        {
+            'title': 'BHYT',
+            'name': 'Health insurance',
+            'code': 'employee_health_insurance',
+            'type': 1,
+        },
+        {
+            'title': 'BHTN',
+            'name': 'Unemployment insurance',
+            'code': 'employee_health_insurance',
+            'type': 1,
+        },
+        {
+            'title': 'BHCD',
+            'name': 'Union insurance',
+            'code': 'employee_union_insurance',
+            'type': 1,
+        },
+        {
+            'title': 'Giảm trừ bản thân',
+            'name': 'Personal deduction',
+            'code': 'employee_personal_deduction',
+            'type': 0,
+        },
+        {
+            'title': 'Giảm trừ phụ thuộc',
+            'name': 'Dependant deduction',
+            'code': 'employee_dependant_deduction',
+            'type': 0,
+        },
+        {
+            'title': 'Phần trăm hưởng lương',
+            'name': 'Salary ratio',
+            'code': 'employee_salary_ratio',
+            'type': 0,
+        },
+        {
+            'title': 'Hệ số',
+            'name': 'salary coefficient',
+            'code': 'employee_salary_coefficient',
+            'type': 0,
+        },
+        {
+            'title': 'Số giờ tăng ca',
+            'name': 'Overtime hours',
+            'code': 'employee_overtime_hours',
+            'type': 0,
+        },
+        {
+            'title': 'Số giờ tăng ca trong tuần',
+            'name': 'Overtime weekly hours',
+            'code': 'employee_overtime_weekly_hours',
+            'type': 0,
+        },
+        {
+            'title': 'Số giờ tăng ca ngày lễ',
+            'name': 'Overtime holiday hours',
+            'code': 'employee_overtime_holiday_hours',
+            'type': 0,
+        },
+    ]
+    create_bulk_lst = []
+    company_obj_list = Company.objects.all()
+    for company_obj in company_obj_list:
+        for item in data_list:
+            create_bulk_lst.append(AttributeComponent(
+                component_title=item.title,
+                component_name=item.name,
+                component_code=item.code,
+                component_type=item.type,
+                component_mandatory=True,
+                company=company_obj
+            ))
+    AttributeComponent.objects.bulk_create(create_bulk_lst)

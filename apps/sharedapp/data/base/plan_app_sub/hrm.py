@@ -170,6 +170,42 @@ HRM_OVERTIME_REQUEST = {
     "allow_print": True,
 }
 
+HRM_PAYROLL_TEMPLATE = {
+    "id": "fc16cfb2-da09-4735-aba5-c476489b4d0e",
+    "title": "Payroll template",
+    "code": "payrolltemplate",
+    "model_code": "payrolltemplate",
+    "app_label": "payroll",
+    "is_workflow": True,
+    "allow_permit": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+    },
+    "allow_import": False,
+    "allow_print": False,
+    "allow_mail": True,
+}
+
 Application_hrm_data = {
     "7436c857-ad09-4213-a190-c1c7472e99be": ApplicationConfigFrame(**EMPLOYEE_INFO).data(
         depend_follow_main=False,
@@ -184,6 +220,10 @@ Application_hrm_data = {
         filtering_inheritor=False,
     ),
     "4a996500-fcc4-484f-be62-b3c73a2db927": ApplicationConfigFrame(**HRM_OVERTIME_REQUEST).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "fc16cfb2-da09-4735-aba5-c476489b4d0e": ApplicationConfigFrame(**HRM_PAYROLL_TEMPLATE).data(
         depend_follow_main=False,
         filtering_inheritor=False,
     ),
