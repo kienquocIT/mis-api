@@ -93,7 +93,7 @@ class IRForGoodsReturnHandler:
     @classmethod
     def for_serial(cls, instance, product_detail_list, doc_data):
         for item in product_detail_list.filter(type=2):
-            if item.product.valuation_method == 2:
+            if item.product.valuation_method == 2 or item.product.product_si_serial_number.exists():
                 serial_obj = item.serial_no
                 delivery_item = ReportStockLog.objects.filter(
                     product=item.product, trans_id=str(instance.delivery_id), serial_number=serial_obj.serial_number
@@ -225,7 +225,7 @@ class IRForGoodsReturnHandler:
                 }
             })
         for item in product_detail_list.filter(type=2):
-            if item.product.valuation_method == 2:
+            if item.product.valuation_method == 2 or item.product.product_si_serial_number.exists():
                 serial_obj = item.serial_no
                 doc_data.append({
                     'sale_order': instance.delivery.order_delivery.sale_order,
