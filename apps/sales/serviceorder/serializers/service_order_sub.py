@@ -304,6 +304,7 @@ class ServiceOrderDetailDashboardSerializer(AbstractDetailSerializerModel):
                     'description': item.description,
                     'total_value': item.total_value,
                     'total_contribution_percent': item.total_contribution_percent,
+                    'service_percent': item.service_percent,
                     'work_order_contribute_list': [{
                         'id': str(wo_ctb_item.id),
                         'is_selected': wo_ctb_item.is_selected,
