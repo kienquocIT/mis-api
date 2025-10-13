@@ -1,7 +1,6 @@
 from django.db import models
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel, TYPE_LOT_TRANSACTION, SERIAL_STATUS
-from .product import UnitOfMeasure
-
+from .product import UnitOfMeasure, ProductSpecificIdentificationSerialNumber
 
 __all__ = [
     'ProductWareHouse',
@@ -494,7 +493,10 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
             for serial in serial_data:
                 if serial_old.serial_number == serial.get('serial_number', ''):
                     serial_old.serial_status = 0
-                    serial_old.save(update_fields=['serial_status'])
+                    serial_old.goods_receipt_id = serial.get('goods_receipt_id', None)
+                    serial_old.save(update_fields=['serial_status', 'goods_receipt'])
+                    # update specific value
+                    ProductSpecificIdentificationSerialNumber.update_specific_value(pw_serial=serial_old)
                     break
         return True
 

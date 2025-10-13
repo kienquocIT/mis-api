@@ -24,6 +24,7 @@ class SaleOrderCommonCreate:
         SaleOrderProduct.objects.bulk_create(
             [SaleOrderProduct(
                 sale_order=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                product_specific_id=sale_order_product.get('product_data', {}).get('specific_data', {}).get('id', None),
                 **sale_order_product,
             ) for sale_order_product in validated_data['sale_order_products_data']]
         )

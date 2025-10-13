@@ -851,6 +851,13 @@ class ProductSpecificIdentificationSerialNumber(MasterDataAbstractModel):
     product = models.ForeignKey(
         'saledata.Product', on_delete=models.CASCADE, related_name='product_si_serial_number',
     )
+    product_warehouse_serial = models.ForeignKey(
+        'saledata.ProductWareHouseSerial',
+        on_delete=models.CASCADE,
+        verbose_name="product warehouse serial",
+        related_name="product_spec_product_warehouse_serial",
+        null=True
+    )
     vendor_serial_number = models.CharField(max_length=100, blank=True, null=True)
     serial_number = models.CharField(max_length=100, blank=True, null=True)
     expire_date = models.DateTimeField(null=True)
@@ -871,6 +878,7 @@ class ProductSpecificIdentificationSerialNumber(MasterDataAbstractModel):
         if not si_serial_obj:
             ProductSpecificIdentificationSerialNumber.objects.create(
                 product=product,
+                product_warehouse_serial=serial_obj,
                 vendor_serial_number=serial_obj.vendor_serial_number,
                 serial_number=serial_obj.serial_number,
                 expire_date=serial_obj.expire_date,
@@ -909,6 +917,19 @@ class ProductSpecificIdentificationSerialNumber(MasterDataAbstractModel):
         if si_product_serial_obj:
             si_product_serial_obj.serial_status = is_off
             si_product_serial_obj.save(update_fields=['serial_status'])
+        return True
+
+    @classmethod
+    def update_specific_value(cls, pw_serial):
+        specific_obj = cls.objects.filter(product_warehouse_serial=pw_serial).first()
+        if specific_obj:
+            if specific_obj.product and pw_serial.goods_receipt:
+                gr_product = specific_obj.product.goods_receipt_product_product.filter(
+                    goods_receipt=pw_serial.goods_receipt
+                ).first()
+                if gr_product:
+                    specific_obj.specific_value = gr_product.product_unit_price
+                    specific_obj.save(update_fields=['specific_value'])
         return True
 
     class Meta:
