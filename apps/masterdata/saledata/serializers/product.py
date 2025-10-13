@@ -934,12 +934,14 @@ class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
 
 
 class ProductSpecificIdentificationSerialNumberListSerializer(serializers.ModelSerializer):
+    new_description = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductSpecificIdentificationSerialNumber
         fields = (
             'id',
             'product_id',
+            'product_warehouse_serial_id',
             'vendor_serial_number',
             'serial_number',
             'expire_date',
@@ -948,5 +950,13 @@ class ProductSpecificIdentificationSerialNumberListSerializer(serializers.ModelS
             'warranty_end',
             # trường này lưu giá trị thực tế đích danh (PP này chỉ apply cho SP serial)
             'specific_value',
-            'serial_status'
+            'serial_status',
+            'new_description',
         )
+
+    @classmethod
+    def get_new_description(cls, obj):
+        if obj.product_warehouse_serial:
+            for pw_modified in obj.product_warehouse_serial.pw_modified_pw_serial.all():
+                return pw_modified.new_description
+        return ''

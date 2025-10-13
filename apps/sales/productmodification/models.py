@@ -326,7 +326,7 @@ class ProductModification(DataAbstractModel):
                     CompanyFunctionNumber.auto_gen_code_based_on_config('productmodification', True, self, kwargs)
                     self.create_remove_component_product_mapped(self)
                     issue_data = self.auto_create_goods_issue(self)
-                    GRFromPMHandler.create_new(pm_obj=self, issue_data=issue_data) # Create goods receipt
+                    GRFromPMHandler.create_new(pm_obj=self, issue_data=issue_data)  # Create goods receipt
                     self.update_current_product_component(self)
 
                     if self.prd_wh_serial:
