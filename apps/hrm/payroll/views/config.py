@@ -1,6 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.hrm.payroll.serializers import PayrollConfigListSerializer, PayrollConfigCreateSerializer
+from apps.hrm.payroll.serializers import (
+    PayrollConfigListSerializer, PayrollConfigCreateSerializer,
+    PayrollConfigDetailSerializer,
+)
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view
 from apps.hrm.payroll.models import PayrollConfig
 
@@ -8,7 +11,7 @@ from apps.hrm.payroll.models import PayrollConfig
 class PayrollConfigList(BaseListMixin, BaseCreateMixin):
     queryset = PayrollConfig.objects
     serializer_list = PayrollConfigListSerializer
-    # serializer_detail = PayrollDetailSerializer
+    serializer_detail = PayrollConfigDetailSerializer
     serializer_create = PayrollConfigCreateSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT

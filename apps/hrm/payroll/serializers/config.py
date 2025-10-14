@@ -2,7 +2,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from apps.hrm.payroll.models import PayrollConfig, PayrollInsuranceRule, PayrollDeductionRule, PayrollTaxBracket
-from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel
+from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel
 
 
 class PayrollConfigInsuranceSerializer(serializers.ModelSerializer):
@@ -132,3 +132,9 @@ class PayrollConfigCreateSerializer(AbstractCreateSerializerModel):
             'personal_income_tax',
             'tax_bracket_data',
         )
+
+
+class PayrollConfigDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PayrollConfig
+        fields = '__all__'

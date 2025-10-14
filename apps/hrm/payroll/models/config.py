@@ -6,7 +6,7 @@ class PayrollConfig(MasterDataAbstractModel):
     company = models.OneToOneField(
         'company.Company',
         on_delete=models.CASCADE,
-        related_name='company_payroll_config'
+        related_name='payroll_config_detail'
     )
 
     class Meta:
@@ -54,22 +54,7 @@ class PayrollDeductionRule(MasterDataAbstractModel):
     status = models.BooleanField(default=True)
 
 
-# class PayrollIncomeTaxRule(MasterDataAbstractModel):
-#     payroll_config = models.ForeignKey(
-#         PayrollConfig,
-#         on_delete=models.CASCADE,
-#         related_name='payroll_income_tax_rule_config'
-#     )
-#     effective_date = models.DateField(null=True)
-#     status = models.BooleanField(default=True)
-
-
 class PayrollTaxBracket(MasterDataAbstractModel):
-    # income_tax_rule = models.ForeignKey(
-    #     PayrollIncomeTaxRule,
-    #     on_delete=models.SET_NULL,
-    #     related_name='payroll_tax_bracket_income_tax_rule'
-    # )
     payroll_config = models.ForeignKey(
         PayrollConfig,
         on_delete=models.CASCADE,
