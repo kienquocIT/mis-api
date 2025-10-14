@@ -176,7 +176,6 @@ class Product(DataAbstractModel):
         default=list,
         help_text='product for sale: 0, inventory: 1, purchase: 2'
     )
-    avatar = models.TextField(null=True, verbose_name='avatar path')
     description = models.TextField(blank=True)
 
     warehouses = models.ManyToManyField(
