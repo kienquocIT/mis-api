@@ -72,6 +72,7 @@ class WareHouse(MasterDataAbstractModel):
     is_dropship = models.BooleanField(default=False)
     is_bin_location = models.BooleanField(default=False)
     is_virtual = models.BooleanField(default=False)
+    is_pm_warehouse = models.BooleanField(default=False)
 
     use_for = models.SmallIntegerField(choices=[(0, _('None')), (1, _('For Equipment Loan'))], default=0)
 

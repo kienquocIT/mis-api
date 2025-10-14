@@ -587,6 +587,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 'serial_number': item.serial_number,
                 'specific_value': item.specific_value,
                 'serial_status': item.serial_status,
+                'from_pm': item.from_pm,
+                'product_modification_code': item.product_modification.code if item.product_modification else '',
             } for item in obj.product_si_serial_number.all()]
         }
         return result
