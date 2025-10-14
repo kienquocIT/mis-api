@@ -2,7 +2,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from apps.hrm.payroll.models import PayrollConfig, PayrollInsuranceRule, PayrollDeductionRule, PayrollTaxBracket
-from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel
+from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel
 
 
 class PayrollConfigInsuranceSerializer(serializers.ModelSerializer):
