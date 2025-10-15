@@ -38,7 +38,7 @@ class IRForDeliveryHandler:
     def for_sn(
             cls, instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj, sale_order_obj, lease_order_obj
     ):
-        if product_obj.valuation_method == 2 or product_obj.product_si_serial_number.exists():
+        if product_obj.valuation_method == 2:
             for serial in sn_data:
                 serial_obj = ProductWareHouseSerial.objects.filter(id=serial.get('product_warehouse_serial_id')).first()
                 if serial_obj:

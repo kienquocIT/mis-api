@@ -676,6 +676,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
 
 
 class CustomerListSimpleSerializer(serializers.ModelSerializer):
+    owner = serializers.SerializerMethodField()
     bank_accounts_mapped = serializers.SerializerMethodField()
 
     class Meta:
@@ -685,8 +686,17 @@ class CustomerListSimpleSerializer(serializers.ModelSerializer):
             'code',
             "name",
             "tax_code",
+            "owner",
             "bank_accounts_mapped"
         )
+
+    @classmethod
+    def get_owner(cls, obj):
+        return {
+            'id': obj.owner_id,
+            'code': obj.owner.code,
+            'fullname': obj.owner.fullname,
+        } if obj.owner else {}
 
     @classmethod
     def get_bank_accounts_mapped(cls, obj):
@@ -703,6 +713,7 @@ class CustomerListSimpleSerializer(serializers.ModelSerializer):
 
 
 class SupplierListSimpleSerializer(serializers.ModelSerializer):
+    owner = serializers.SerializerMethodField()
     bank_accounts_mapped = serializers.SerializerMethodField()
 
     class Meta:
@@ -712,8 +723,17 @@ class SupplierListSimpleSerializer(serializers.ModelSerializer):
             'code',
             "name",
             "tax_code",
+            "owner",
             "bank_accounts_mapped"
         )
+
+    @classmethod
+    def get_owner(cls, obj):
+        return {
+            'id': obj.owner_id,
+            'code': obj.owner.code,
+            'fullname': obj.owner.fullname,
+        } if obj.owner else {}
 
     @classmethod
     def get_bank_accounts_mapped(cls, obj):

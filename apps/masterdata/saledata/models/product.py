@@ -176,7 +176,6 @@ class Product(DataAbstractModel):
         default=list,
         help_text='product for sale: 0, inventory: 1, purchase: 2'
     )
-    avatar = models.TextField(null=True, verbose_name='avatar path')
     description = models.TextField(blank=True)
 
     warehouses = models.ManyToManyField(
@@ -867,9 +866,18 @@ class ProductSpecificIdentificationSerialNumber(MasterDataAbstractModel):
     # trường này lưu giá trị thực tế đích danh (PP này chỉ apply cho SP serial)
     specific_value = models.FloatField(default=0)
     serial_status = models.SmallIntegerField(choices=SERIAL_STATUS, default=0)
+    from_pm = models.BooleanField(default=False)
+    product_modification = models.ForeignKey(
+        'productmodification.ProductModification',
+        on_delete=models.CASCADE,
+        related_name='product_si_pm',
+        null=True,
+    )
 
     @staticmethod
-    def create_or_update_si_product_serial(product, serial_obj, specific_value):
+    def create_or_update_si_product_serial(
+            product, serial_obj, specific_value, from_pm=False, product_modification=None
+    ):
         """ Cập nhập hoặc tạo giá đich danh """
         si_serial_obj = ProductSpecificIdentificationSerialNumber.objects.filter(
             product=product,
@@ -886,13 +894,17 @@ class ProductSpecificIdentificationSerialNumber(MasterDataAbstractModel):
                 warranty_start=serial_obj.warranty_start,
                 warranty_end=serial_obj.warranty_end,
                 specific_value=specific_value,
+                from_pm=from_pm,
+                product_modification=product_modification,
                 employee_created=product.employee_created,
                 tenant=product.tenant,
                 company=product.company,
             )
+            print(f"Created serial number {serial_obj.serial_number} - specific_value = {specific_value}")
         else:
             si_serial_obj.specific_value = specific_value
             si_serial_obj.save(update_fields=['specific_value'])
+            print(f"Updated serial number {serial_obj.serial_number} - specific_value = {specific_value}")
         return True
 
     @staticmethod

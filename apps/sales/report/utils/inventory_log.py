@@ -10,7 +10,6 @@ from apps.sales.report.models import (
 class ReportInvLog:
     @classmethod
     def log(cls, doc_obj, doc_date, doc_data, for_balance_init=False):
-        print('Start log...')
         if not doc_obj or not doc_date or len(doc_data) == 0:
             print(f'>>>>>>>>>>>>>>>>>>>> Not log (doc detail: {doc_obj.code}, {doc_date.date()}, {len(doc_data)})')
             return None
@@ -47,7 +46,7 @@ class ReportInvLog:
                     for log in new_logs:
                         ReportStockLog.update_log_cost(log, period_obj, sub_period_order, cost_cfg)
                     print('# Add log for balance init successfully!\n'
-                          if for_balance_init else '# Write to Inventory Report successfully!\n')
+                          if for_balance_init else f'# Write {doc_obj.code} to Inventory Report successfully!\n')
                     return new_logs
                 raise serializers.ValidationError({'period_obj': f'Fiscal year {doc_date.year} does not exist.'})
         except Exception as err:

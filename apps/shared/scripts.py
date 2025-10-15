@@ -6538,6 +6538,48 @@ def delete_folders():
     return True
 
 
+def rerun_convert_ap_cost_for_payment():
+    # 1. Reset toàn bộ AP sum_converted_value về 0
+    for ap_item in AdvancePaymentCost.objects.all():
+        ap_item.sum_converted_value = 0
+        ap_item.save(update_fields=['sum_converted_value'])
+
+    # 2. Gom toàn bộ giá trị convert theo AP ID
+    ap_convert_map = {}
+    for payment in Payment.objects.all():
+        print(f"Converting {payment.code}")
+        for item in payment.payment.all():
+            for child in item.ap_cost_converted_list:
+                ap_id = child.get('ap_cost_converted_id')
+                value = child.get('value_converted')
+                if ap_id and value:
+                    if ap_id in ap_convert_map:
+                        ap_convert_map[ap_id] += float(value)
+                    else:
+                        ap_convert_map[ap_id] = float(value)
+
+    # 3. Kiểm tra hợp lệ và cập nhật
+    for ap_id, total_convert in ap_convert_map.items():
+        ap_item = AdvancePaymentCost.objects.filter(id=ap_id).first()
+        if not ap_item:
+            raise ValueError(f"AdvancePaymentCost (ID {ap_id}) not found")
+
+        available = (ap_item.expense_after_tax_price +
+                     ap_item.sum_return_value -
+                     ap_item.sum_converted_value)
+
+        if available < total_convert:
+            raise ValueError(
+                f"Cannot convert advance payment (ID {ap_id}). "
+                f"Available: {available}, Requested: {total_convert}"
+            )
+
+        ap_item.sum_converted_value += total_convert
+        ap_item.save(update_fields=['sum_converted_value'])
+
+    return True
+
+
 def make_sure_payroll_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).payroll_config()

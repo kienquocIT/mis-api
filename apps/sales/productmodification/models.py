@@ -333,7 +333,9 @@ class ProductModification(DataAbstractModel):
                         ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
                             product=self.product_modified,
                             serial_obj=self.prd_wh_serial,
-                            specific_value=0
+                            specific_value=0,
+                            from_pm=True,
+                            product_modification=self
                         )
 
                     GRFromPMHandler.create_new(pm_obj=self, issue_data=issue_data) # Create goods receipt
