@@ -16,9 +16,9 @@ class IRForDeliveryHandler:
                     'lease_order': lease_order_obj,
                     'product': product_obj,
                     'warehouse': warehouse_obj,
-                    'system_date': instance.date_done,
-                    'posting_date': instance.date_done,
-                    'document_date': instance.date_done,
+                    'system_date': instance.date_approved,
+                    'posting_date': instance.date_approved,
+                    'document_date': instance.date_approved,
                     'stock_type': -1,
                     'trans_id': str(instance.id),
                     'trans_code': instance.code,
@@ -38,7 +38,7 @@ class IRForDeliveryHandler:
     def for_sn(
             cls, instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj, sale_order_obj, lease_order_obj
     ):
-        if product_obj.valuation_method == 2:
+        if product_obj.valuation_method == 2 or product_obj.product_si_serial_number.exists():
             for serial in sn_data:
                 serial_obj = ProductWareHouseSerial.objects.filter(id=serial.get('product_warehouse_serial_id')).first()
                 if serial_obj:
@@ -47,9 +47,9 @@ class IRForDeliveryHandler:
                         'lease_order': lease_order_obj,
                         'product': product_obj,
                         'warehouse': warehouse_obj,
-                        'system_date': instance.date_done,
-                        'posting_date': instance.date_done,
-                        'document_date': instance.date_done,
+                        'system_date': instance.date_approved,
+                        'posting_date': instance.date_approved,
+                        'document_date': instance.date_approved,
                         'stock_type': -1,
                         'trans_id': str(instance.id),
                         'trans_code': instance.code,
@@ -83,9 +83,9 @@ class IRForDeliveryHandler:
                 'lease_order': lease_order_obj,
                 'product': product_obj,
                 'warehouse': warehouse_obj,
-                'system_date': instance.date_done,
-                'posting_date': instance.date_done,
-                'document_date': instance.date_done,
+                'system_date': instance.date_approved,
+                'posting_date': instance.date_approved,
+                'document_date': instance.date_approved,
                 'stock_type': -1,
                 'trans_id': str(instance.id),
                 'trans_code': instance.code,

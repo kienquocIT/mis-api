@@ -22,6 +22,7 @@ class QuotationCommonCreate:
         QuotationProduct.objects.bulk_create(
             [QuotationProduct(
                 quotation=instance, tenant_id=instance.tenant_id, company_id=instance.company_id,
+                product_specific_id=quotation_product.get('product_data', {}).get('specific_data', {}).get('id', None),
                 **quotation_product,
             ) for quotation_product in validated_data['quotation_products_data']]
         )

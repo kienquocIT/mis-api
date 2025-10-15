@@ -791,9 +791,7 @@ def send_mail_annual_leave(leave_id, tenant_id, company_id, employee_id, email_l
                 tenant_obj=leave_obj.tenant,
                 employee=employee_off,
                 day_off=leave_obj.total,
-                date_back=(leave_obj.start_day + timedelta(
-                    leave_obj.total + 1 if str(leave_obj.total).split('.')[1] != '5' else leave_obj.total
-                )).strftime("%d/%m/%Y"),
+                date_back=(leave_obj.start_day + timedelta(leave_obj.total)).strftime("%d/%m/%Y"),
                 link_id=leave_id,
                 employee_lead={
                     'full_name': employee_lead.get_full_name() if employee_lead else _("Missing info"),

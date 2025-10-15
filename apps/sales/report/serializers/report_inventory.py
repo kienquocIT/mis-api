@@ -95,7 +95,7 @@ class ReportStockListSerializer(serializers.ModelSerializer):
             kw_parameter['sale_order_id'] = obj.sale_order_id
             kw_parameter['lease_order_id'] = obj.lease_order_id
 
-        if obj.product.valuation_method == 2:
+        if obj.product.valuation_method == 2 or obj.product.product_si_serial_number.exists():
             kw_parameter['serial_number'] = obj.serial_number
 
         result = []

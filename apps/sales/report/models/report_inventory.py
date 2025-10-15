@@ -243,7 +243,7 @@ class ReportStockLog(DataAbstractModel):
                         item['product'], item['warehouse'], **kw_parameter
                     )
                     item['cost'] = latest_cost['cost']
-            if item['product'].valuation_method == 2:
+            if item['product'].valuation_method == 2 or item['product'].product_si_serial_number.exists():
                 if item['stock_type'] == -1:
                     # thực tế đích danh sẽ lấy giá xuất theo từng serial
                     item['cost'] = ProductSpecificIdentificationSerialNumber.get_specific_value(
@@ -325,7 +325,7 @@ class ReportStockLog(DataAbstractModel):
                     'perpetual_current_cost',
                     'perpetual_current_value'
                 ])
-            if log.product.valuation_method == 2:
+            if log.product.valuation_method == 2 or log.product.product_si_serial_number.exists():
                 new_cost_dict = ReportInventoryValuationMethod.specific_identification_in_perpetual(log)
                 log.perpetual_current_quantity = new_cost_dict['quantity'] if new_cost_dict['quantity'] > 0 else 0
                 log.perpetual_current_cost = new_cost_dict['cost'] if new_cost_dict['quantity'] > 0 else 0
@@ -350,7 +350,7 @@ class ReportStockLog(DataAbstractModel):
                     'periodic_current_cost',
                     'periodic_current_value'
                 ])
-            if log.product.valuation_method == 2:
+            if log.product.valuation_method == 2 or log.product.product_si_serial_number.exists():
                 pass
         return log
 
@@ -544,7 +544,7 @@ class ReportStockLog(DataAbstractModel):
                         ReportInventoryCostLatestLog.objects.create(
                             product=log.product, latest_log=log, **kwargs
                         )
-                    if log.product.valuation_method == 2:
+                    if log.product.valuation_method == 2 or log.product.product_si_serial_number.exists():
                         ReportInventoryCostLatestLog.objects.create(
                             product=log.product, latest_log=log, **kwargs
                         )
