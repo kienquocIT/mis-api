@@ -126,25 +126,31 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
     @classmethod
     def convert_ap_cost(cls, instance):
         payment_cost_list = instance.payment.all()
-        ap_item_valid = []
-        ap_item_value_converted_valid = []
+        ap_convert_map = {}
         for item in payment_cost_list:
             for child in item.ap_cost_converted_list:
-                ap_item_id = child.get('ap_cost_converted_id', None)
-                ap_item_value_converted = child.get('value_converted', None)
-                if ap_item_id and ap_item_value_converted:
-                    ap_item = AdvancePaymentCost.objects.filter(id=ap_item_id).first()
-                    if ap_item:
-                        available = (ap_item.expense_after_tax_price + ap_item.sum_return_value -
-                                     ap_item.sum_converted_value)
-                        if available >= ap_item_value_converted:
-                            ap_item_valid.append(ap_item)
-                            ap_item_value_converted_valid.append(ap_item_value_converted)
-                        else:
-                            raise ValueError('Can not convert advance payment expenses to payment')
-        for index, item in enumerate(ap_item_valid):
-            item.sum_converted_value += float(ap_item_value_converted_valid[index])
-            item.save(update_fields=['sum_converted_value'])
+                ap_id = child.get('ap_cost_converted_id')
+                value = child.get('value_converted')
+                if ap_id and value:
+                    if ap_id in ap_convert_map:
+                        ap_convert_map[ap_id] += float(value)
+                    else:
+                        ap_convert_map[ap_id] = float(value)
+        for ap_id, total_convert in ap_convert_map.items():
+            ap_item = AdvancePaymentCost.objects.filter(id=ap_id).first()
+            if not ap_item:
+                raise ValueError('ap_item is not found')
+            available = ap_item.expense_after_tax_price + ap_item.sum_return_value - ap_item.sum_converted_value
+            if available < total_convert:
+                raise ValueError(
+                    f"Cannot convert advance payment (ID {ap_id}). "
+                    f"Available: {available}, Requested: {total_convert}"
+                )
+        for ap_id, total_convert in ap_convert_map.items():
+            ap_item = AdvancePaymentCost.objects.filter(id=ap_id).first()
+            if ap_item:
+                ap_item.sum_converted_value += total_convert
+                ap_item.save(update_fields=['sum_converted_value'])
         return True
 
     def save(self, *args, **kwargs):
