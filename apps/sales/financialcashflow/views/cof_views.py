@@ -5,9 +5,11 @@ from apps.sales.financialcashflow.models.cof_models import CashOutflow
 from apps.sales.financialcashflow.serializers.cof_serializers import (
     CashOutflowListSerializer, CashOutflowCreateSerializer,
     CashOutflowUpdateSerializer, CashOutflowDetailSerializer,
-    POPaymentStageForCashOutflowSerializer, APInvoicePOPaymentStageListForCOFSerializer
+    POPaymentStageForCashOutflowSerializer, APInvoicePOPaymentStageListForCOFSerializer,
+    SaleOrderExpenseListForCOFSerializer
 )
 from apps.sales.purchasing.models import PurchaseOrderPaymentStage
+from apps.sales.saleorder.models import SaleOrderExpense
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 __all__ = [
@@ -150,33 +152,23 @@ class APInvoicePOPaymentStageListForCOF(BaseListMixin):
 
 
 class SaleOrderExpenseListForCOF(BaseListMixin):
-    queryset = APInvoice.objects
+    queryset = SaleOrderExpense.objects
     search_fields = [
-        'title',
-        'code',
+        'expense__title',
     ]
     filterset_fields = {
         'id': ['in'],
-        'supplier_mapped_id': ['exact'],
-        'cash_outflow_done': ['exact']
+        'sale_order_id': ['exact'],
     }
-    serializer_list = APInvoicePOPaymentStageListForCOFSerializer
+    serializer_list = SaleOrderExpenseListForCOFSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(
-            system_status=3
-        ).prefetch_related(
-            'ap_invoice_items',
-            'purchase_order_mapped__purchase_order_payment_stage_po'
-        ).select_related(
-            'supplier_mapped',
-            'purchase_order_mapped',
-        ).order_by('date_created')
+        return super().get_queryset().filter().prefetch_related().select_related()
 
     @swagger_auto_schema(
-        operation_summary="AP Invoice PO Payment Stage List For COF",
-        operation_description="AP Invoice PO Payment Stage List For COF",
+        operation_summary="Sale Order Expense List For COF",
+        operation_description="Sale Order Expense List For COF",
     )
     @mask_view(
         login_require=True, auth_require=False,

@@ -5,6 +5,7 @@ from apps.sales.financialcashflow.views import (
     CashOutflowList, CashOutflowDetail,
     POPaymentStageListForCOF, APInvoicePOPaymentStageListForCOF
 )
+from apps.sales.financialcashflow.views.cof_views import SaleOrderExpenseListForCOF
 
 urlpatterns = [
     path('cashinflows', CashInflowList.as_view(), name='CashInflowList'),
@@ -31,5 +32,10 @@ urlpatterns = [
         'ap-invoice-po-payment-stage-list-for-cof',
         APInvoicePOPaymentStageListForCOF.as_view(),
         name='APInvoicePOPaymentStageListForCOF'
+    ),
+    path(
+        'so-expense-list-for-cof',
+        SaleOrderExpenseListForCOF.as_view(),
+        name='SaleOrderExpenseListForCOF'
     ),
 ]

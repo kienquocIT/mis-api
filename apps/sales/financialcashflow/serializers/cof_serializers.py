@@ -7,6 +7,7 @@ from apps.sales.apinvoice.models import APInvoice
 from apps.sales.financialcashflow.models import CashOutflow, CashOutflowItem, CashOutflowItemDetail
 from apps.sales.purchasing.models import PurchaseOrderPaymentStage
 from apps.sales.reconciliation.models import ReconciliationItem
+from apps.sales.saleorder.models import SaleOrderExpense
 from apps.shared import (
     AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel, CashOutflowMsg
 )
@@ -664,3 +665,14 @@ class APInvoicePOPaymentStageListForCOFSerializer(serializers.ModelSerializer):
                 'order': item.order
             } for item in obj.purchase_order_mapped.purchase_order_payment_stage_po.all()]
         return []
+
+
+class SaleOrderExpenseListForCOFSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = SaleOrderExpense
+        fields = (
+            'id',
+            'expense_item_data',
+            'expense_subtotal_price_after_tax',
+        )
