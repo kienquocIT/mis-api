@@ -346,18 +346,11 @@ class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
 
 class BusinessRequestUpdateSerializer(AbstractCreateSerializerModel):
     expense_items = ExpenseItemListUpdateSerializer(many=True)
-    employee_inherit_id = serializers.UUIDField()
 
     @classmethod
     def validate_expense_items(cls, value):
         if not len(value) > 0:
             raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EXPENSE_ITEMS})
-        return value
-
-    @classmethod
-    def validate_employee_inherit(cls, value):
-        if not value:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
         return value
 
     @classmethod
@@ -465,7 +458,6 @@ class BusinessRequestUpdateSerializer(AbstractCreateSerializerModel):
             'title',
             'code',
             'remark',
-            'employee_inherit_id',
             'attachment',
             'expense_items',
             'date_created',
