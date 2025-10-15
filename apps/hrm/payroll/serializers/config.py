@@ -1,11 +1,12 @@
 from rest_framework import serializers
 from apps.hrm.payroll.models import PayrollConfig, PayrollInsuranceRule, PayrollDeductionRule, PayrollTaxBracket
+from apps.shared import HRMsg
 
 
 class PayrollConfigDetailSerializer(serializers.ModelSerializer):
-    insurance_data = serializers.JSONField()
-    personal_tax_data = serializers.JSONField()
-    tax_bracket_data = serializers.JSONField()
+    insurance_data = serializers.SerializerMethodField()
+    personal_tax_data = serializers.SerializerMethodField()
+    tax_bracket_data = serializers.SerializerMethodField()
 
     class Meta:
         model = PayrollConfig
@@ -75,24 +76,19 @@ class PayrollConfigUpdateSerializer(serializers.ModelSerializer):
         )
 
     def update(self, instance, validated_data):
-        insurance_data = validated_data.pop('insurance_data', [])
+        insurance_data = validated_data.pop('insurance_data', {})
         personal_tax_data = validated_data.pop('personal_tax_data', {})
         tax_bracket_data = validated_data.pop('tax_bracket_data', [])
 
         # ------------ Update insurance data ------------
         instance.payroll_insurance_rule_config.all().delete()
-        PayrollInsuranceRule.objects.bulk_create([
-            PayrollInsuranceRule(payroll_config=instance, **data)
-            for data in insurance_data
-        ])
+        if insurance_data:
+            PayrollInsuranceRule.objects.create(payroll_config=instance, **insurance_data)
 
         # ------------ Update personal tax data ------------
         instance.payroll_deduction_rule_config.all().delete()
         if personal_tax_data:
-            PayrollDeductionRule.objects.create(
-                payroll_config=instance,
-                **personal_tax_data
-            )
+            PayrollDeductionRule.objects.create(payroll_config=instance, **personal_tax_data)
 
         # ------------ Update tax bracket data ------------
         instance.payroll_tax_bracket_config.all().delete()

@@ -1192,9 +1192,9 @@ class ConfigDefaultData:
             {
                 'social_insurance_employee': 0,
                 'social_insurance_employer': 0,
-                'social_insurance_ceiling': 00,
-                'unemployment_insurance_employee': 00,
-                'unemployment_insurance_employer': 00,
+                'social_insurance_ceiling': 0,
+                'unemployment_insurance_employee': 0,
+                'unemployment_insurance_employer': 0,
                 'unemployment_insurance_ceiling': 0,
                 'health_insurance_employee': 0,
                 'health_insurance_employer': 0,
