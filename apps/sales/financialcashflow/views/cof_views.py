@@ -147,3 +147,39 @@ class APInvoicePOPaymentStageListForCOF(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class SaleOrderExpenseListForCOF(BaseListMixin):
+    queryset = APInvoice.objects
+    search_fields = [
+        'title',
+        'code',
+    ]
+    filterset_fields = {
+        'id': ['in'],
+        'supplier_mapped_id': ['exact'],
+        'cash_outflow_done': ['exact']
+    }
+    serializer_list = APInvoicePOPaymentStageListForCOFSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            system_status=3
+        ).prefetch_related(
+            'ap_invoice_items',
+            'purchase_order_mapped__purchase_order_payment_stage_po'
+        ).select_related(
+            'supplier_mapped',
+            'purchase_order_mapped',
+        ).order_by('date_created')
+
+    @swagger_auto_schema(
+        operation_summary="AP Invoice PO Payment Stage List For COF",
+        operation_description="AP Invoice PO Payment Stage List For COF",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
