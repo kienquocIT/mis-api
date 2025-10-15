@@ -5,7 +5,7 @@ from apps.sales.financialcashflow.models.cof_models import CashOutflow
 from apps.sales.financialcashflow.serializers.cof_serializers import (
     CashOutflowListSerializer, CashOutflowCreateSerializer,
     CashOutflowUpdateSerializer, CashOutflowDetailSerializer,
-    AdvanceForSupplierForCashOutflowSerializer, APInvoiceListForCOFSerializer
+    POPaymentStageForCashOutflowSerializer, APInvoicePOPaymentStageListForCOFSerializer
 )
 from apps.sales.purchasing.models import PurchaseOrderPaymentStage
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -13,12 +13,12 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 __all__ = [
     'CashOutflowList',
     'CashOutflowDetail',
-    'AdvanceForSupplierListForCOF',
-    'APInvoiceListForCOF',
+    'POPaymentStageListForCOF',
+    'APInvoicePOPaymentStageListForCOF',
 ]
 
 
-# main views
+# main
 class CashOutflowList(BaseListMixin, BaseCreateMixin):
     queryset = CashOutflow.objects
     search_fields = ['title', 'code']
@@ -83,15 +83,15 @@ class CashOutflowDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
-# related views
-class AdvanceForSupplierListForCOF(BaseListMixin):
+# related
+class POPaymentStageListForCOF(BaseListMixin):
     queryset = PurchaseOrderPaymentStage.objects
     filterset_fields = {
         'id': ['in'],
         'purchase_order__supplier_id': ['exact'],
         'cash_outflow_done': ['exact']
     }
-    serializer_list = AdvanceForSupplierForCashOutflowSerializer
+    serializer_list = POPaymentStageForCashOutflowSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
@@ -103,8 +103,8 @@ class AdvanceForSupplierListForCOF(BaseListMixin):
         ).select_related('purchase_order').order_by('due_date')
 
     @swagger_auto_schema(
-        operation_summary="Advance For Supplier list",
-        operation_description="Advance For Supplier list",
+        operation_summary="PO Payment Stage list for COF",
+        operation_description="PO Payment Stage list for COF",
     )
     @mask_view(
         login_require=True, auth_require=False,
@@ -113,7 +113,7 @@ class AdvanceForSupplierListForCOF(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class APInvoiceListForCOF(BaseListMixin):
+class APInvoicePOPaymentStageListForCOF(BaseListMixin):
     queryset = APInvoice.objects
     search_fields = [
         'title',
@@ -124,7 +124,7 @@ class APInvoiceListForCOF(BaseListMixin):
         'supplier_mapped_id': ['exact'],
         'cash_outflow_done': ['exact']
     }
-    serializer_list = APInvoiceListForCOFSerializer
+    serializer_list = APInvoicePOPaymentStageListForCOFSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
@@ -139,8 +139,8 @@ class APInvoiceListForCOF(BaseListMixin):
         ).order_by('date_created')
 
     @swagger_auto_schema(
-        operation_summary="ARInvoice list",
-        operation_description="ARInvoice list",
+        operation_summary="AP Invoice PO Payment Stage List For COF",
+        operation_description="AP Invoice PO Payment Stage List For COF",
     )
     @mask_view(
         login_require=True, auth_require=False,

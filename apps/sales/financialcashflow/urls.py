@@ -3,7 +3,7 @@ from apps.sales.financialcashflow.views import (
     CashInflowList, CashInflowDetail,
     CustomerAdvanceListForCashInflow, ARInvoiceListForCashInflow,
     CashOutflowList, CashOutflowDetail,
-    AdvanceForSupplierListForCOF, APInvoiceListForCOF
+    POPaymentStageListForCOF, APInvoicePOPaymentStageListForCOF
 )
 
 urlpatterns = [
@@ -23,11 +23,13 @@ urlpatterns = [
     path('cashoutflows', CashOutflowList.as_view(), name='CashOutflowList'),
     path('cashoutflow/<str:pk>', CashOutflowDetail.as_view(), name='CashOutflowDetail'),
     path(
-        'advance-for-supplier-list-for-cof',
-        AdvanceForSupplierListForCOF.as_view(),
-        name='AdvanceForSupplierListForCOF'
+        'po-payment-stage-list-for-cof',
+        POPaymentStageListForCOF.as_view(),
+        name='POPaymentStageListForCOF'
     ),
     path(
-        'ap-invoice-list-for-cof', APInvoiceListForCOF.as_view(), name='APInvoiceListForCOF'
+        'ap-invoice-po-payment-stage-list-for-cof',
+        APInvoicePOPaymentStageListForCOF.as_view(),
+        name='APInvoicePOPaymentStageListForCOF'
     ),
 ]
