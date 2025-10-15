@@ -207,7 +207,7 @@ class ReportStockLog(DataAbstractModel):
     fifo_cost_detail = models.JSONField(default=list)
 
     @staticmethod
-    def parse_param(doc_item, cost_cfg, doc_obj):
+    def parse_param(doc_item, cost_cfg):
         kw_parameter = {}
         if 1 in cost_cfg:
             kw_parameter['warehouse_id'] = doc_item.get('warehouse').id if doc_item.get('warehouse') else None
@@ -225,7 +225,7 @@ class ReportStockLog(DataAbstractModel):
         bulk_info = []
         log_order_number = 0
         for item in doc_data:
-            kw_parameter = ReportStockLog.parse_param(item, cost_cfg, doc_obj)
+            kw_parameter = ReportStockLog.parse_param(item, cost_cfg)
             rp_stock = ReportStock.get_or_create_report_stock(
                 doc_obj, period_obj, sub_period_order, item, **kw_parameter
             )
