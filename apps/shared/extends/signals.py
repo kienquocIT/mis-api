@@ -55,6 +55,7 @@ from .models import DisperseModel
 from .. import ProjectMsg
 from apps.core.printer.models import PrintTemplates
 from ...core.printer.template_content import TEMPLATE_CONTENT_MAP
+from ...hrm.payroll.models import PayrollConfig, PayrollInsuranceRule, PayrollDeductionRule, PayrollTaxBracket
 from ...sales.leaseorder.models import LeaseOrderAppConfig
 from apps.sales.project.tasks import create_project_news
 
@@ -126,11 +127,13 @@ class SaleDefaultData:
     ]
     Document_Type_data = [
         {'code': 'BDT001', 'title': 'Đơn dự thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
-        {'code': 'BDT002', 'title': 'Tài liệu chứng minh tư cách pháp nhân', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'BDT002', 'title': 'Tài liệu chứng minh tư cách pháp nhân', 'is_default': 1,
+         'doc_type_category': 'bidding'},
         {'code': 'BDT003', 'title': 'Giấy ủy quyền', 'is_default': 1, 'doc_type_category': 'bidding'},
         {'code': 'BDT004', 'title': 'Thỏa thuận liên doanh', 'is_default': 1, 'doc_type_category': 'bidding'},
         {'code': 'BDT005', 'title': 'Bảo đảm dự thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
-        {'code': 'BDT006', 'title': 'Tài liệu chứng minh năng lực nhà thầu', 'is_default': 1, 'doc_type_category': 'bidding'},
+        {'code': 'BDT006', 'title': 'Tài liệu chứng minh năng lực nhà thầu', 'is_default': 1,
+         'doc_type_category': 'bidding'},
         {'code': 'BDT007', 'title': 'Đề xuất kĩ thuật', 'is_default': 1, 'doc_type_category': 'bidding'},
         {'code': 'BDT008', 'title': 'Đề xuất giá', 'is_default': 1, 'doc_type_category': 'bidding'},
         {'code': 'CDT001', 'title': 'Tài liệu xác định yêu cầu', 'is_default': 0, 'doc_type_category': 'consulting'},
@@ -138,7 +141,8 @@ class SaleDefaultData:
         {'code': 'CDT003', 'title': 'Thuyết minh kĩ thuật', 'is_default': 0, 'doc_type_category': 'consulting'},
         {'code': 'CDT004', 'title': 'Tài liệu đề xuất giải pháp', 'is_default': 0, 'doc_type_category': 'consulting'},
         {'code': 'CDT005', 'title': 'BOM', 'is_default': 0, 'doc_type_category': 'consulting'},
-        {'code': 'CDT006', 'title': 'Giới thiệu dịch vụ hỗ trợ vận hành', 'is_default': 0, 'doc_type_category': 'consulting'},
+        {'code': 'CDT006', 'title': 'Giới thiệu dịch vụ hỗ trợ vận hành', 'is_default': 0,
+         'doc_type_category': 'consulting'},
         {'code': 'CDT007', 'title': 'Thuyết trình phạm vi dự án', 'is_default': 0, 'doc_type_category': 'consulting'},
     ]
     Fixed_Asset_Group_data = [
@@ -418,7 +422,7 @@ class SaleDefaultData:
         )
 
         # tai san co dinh vo hinh
-        intangible_fixed_asset_group_instance =  FixedAssetClassificationGroup.objects.create(
+        intangible_fixed_asset_group_instance = FixedAssetClassificationGroup.objects.create(
             tenant=self.company_obj.tenant,
             company=self.company_obj,
             **self.Fixed_Asset_Group_data[1]
@@ -431,7 +435,7 @@ class SaleDefaultData:
             **self.Fixed_Asset_Group_data[2]
         )
 
-        #create asset classification
+        # create asset classification
         for index, data in enumerate(self.Fixed_Asset_data):
             if index < 3:
                 # First 3 items belong to tangible_fixed_asset_group_instance
@@ -1183,6 +1187,59 @@ class ConfigDefaultData:
                 }
             )
 
+    def payroll_config(self):
+        insurance_data = [
+            {
+                'social_insurance_employee': 0,
+                'social_insurance_employer': 0,
+                'social_insurance_ceiling': 00,
+                'unemployment_insurance_employee': 00,
+                'unemployment_insurance_employer': 00,
+                'unemployment_insurance_ceiling': 0,
+                'health_insurance_employee': 0,
+                'health_insurance_employer': 0,
+                'union_insurance_employee': 0,
+                'union_insurance_employer': 0,
+                'effective_date': None,
+                'status': True,
+            }
+        ]
+        personal_tax_data = {
+            'personal_deduction': 0,
+            'dependent_deduction': 0,
+            'effective_date': None,
+            'status': True,
+        }
+        tax_bracket_data = [
+            {'order': 1, 'min_amount': 0, 'max_amount': 5000000, 'rate': 5},
+            {'order': 2, 'min_amount': 5000000, 'max_amount': 10000000, 'rate': 10},
+            {'order': 3, 'min_amount': 10000000, 'max_amount': 18000000, 'rate': 15},
+            {'order': 4, 'min_amount': 18000000, 'max_amount': 32000000, 'rate': 20},
+            {'order': 5, 'min_amount': 32000000, 'max_amount': 52000000, 'rate': 25},
+            {'order': 6, 'min_amount': 52000000, 'max_amount': 80000000, 'rate': 30},
+            {'order': 7, 'min_amount': 80000000, 'max_amount': 9999999999, 'rate': 35},
+        ]
+
+        config, created = PayrollConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={},
+        )
+
+        if created:
+            PayrollInsuranceRule.objects.bulk_create([
+                PayrollInsuranceRule(payroll_config=config, **data)
+                for data in insurance_data
+            ])
+            PayrollDeductionRule.objects.create(
+                payroll_config=config,
+                **personal_tax_data
+            )
+            PayrollTaxBracket.objects.bulk_create([
+                PayrollTaxBracket(payroll_config=config, **data)
+                for data in tax_bracket_data
+            ])
+
+
     def call_new(self):
         config = self.company_config()
         self.delivery_config()
@@ -1203,6 +1260,7 @@ class ConfigDefaultData:
         self.project_config()
         self.lease_order_config()
         self.create_print_template_default(config.company)
+        self.payroll_config()
         return True
 
 

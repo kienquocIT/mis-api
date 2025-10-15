@@ -1,7 +1,7 @@
 from django.urls import path
 
-from apps.hrm.payroll.views import PayrollConfigList
+from apps.hrm.payroll.views import PayrollConfigDetail
 
 urlpatterns = [
-    path('payrollconfig/list', PayrollConfigList.as_view(), name='PayrollConfigList'),
+    path('payrollconfig/config', PayrollConfigDetail.as_view(), name='PayrollConfigDetail'),
 ]

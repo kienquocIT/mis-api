@@ -1,140 +1,104 @@
-from django.db import transaction
 from rest_framework import serializers
-
 from apps.hrm.payroll.models import PayrollConfig, PayrollInsuranceRule, PayrollDeductionRule, PayrollTaxBracket
-from apps.shared import AbstractListSerializerModel, AbstractCreateSerializerModel
 
 
-class PayrollConfigInsuranceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PayrollInsuranceRule
-        fields = (
-            'social_insurance_employee',
-            'social_insurance_employer',
-            'social_insurance_ceiling',
-            'unemployment_insurance_employee',
-            'unemployment_insurance_employer',
-            'unemployment_insurance_ceiling',
-            'health_insurance_employee',
-            'health_insurance_employer',
-            'union_insurance_employee',
-            'union_insurance_employer'
-        )
-
-
-class PayrollConfigIncomeTaxSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PayrollDeductionRule
-        fields = (
-            'personal_deduction',
-            'dependent_deduction',
-            'effective_date'
-        )
-
-
-class PayrollConfigTaxBracketSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PayrollTaxBracket
-        fields = (
-            'order',
-            'min_amount',
-            'max_amount',
-            'rate'
-        )
-
-
-class PayrollConfigCommonFunction:
-    @staticmethod
-    def create_insurance_data(payroll_config_obj, insurance_data):
-        PayrollInsuranceRule.objects.filter(payroll_config=payroll_config_obj).delete()
-        PayrollInsuranceRule.objects.create(
-            title='',
-            payroll_config_id=str(payroll_config_obj.id),
-            company=payroll_config_obj.company,
-            **insurance_data
-        )
-        return True
-
-    @staticmethod
-    def create_personal_income_tax(payroll_config_obj, personal_income_tax):
-        PayrollDeductionRule.objects.filter(payroll_config=payroll_config_obj).delete()
-        PayrollDeductionRule.objects.create(
-            title='',
-            payroll_config_id=str(payroll_config_obj.id),
-            company=payroll_config_obj.company,
-            **personal_income_tax
-        )
-        return True
-
-    @staticmethod
-    def create_tax_bracket(payroll_config_obj, tax_bracket_data):
-        bulk_info_tax_bracket = []
-
-        for tax_bracket_item in tax_bracket_data:
-            tax_bracket_obj = PayrollTaxBracket(
-                payroll_config=payroll_config_obj,
-                title='',
-                order=tax_bracket_item.get('order'),
-                min_amount=tax_bracket_item.get('min_amount'),
-                max_amount=tax_bracket_item.get('max_amount'),
-                rate=tax_bracket_item.get('rate'),
-            )
-            bulk_info_tax_bracket.append(tax_bracket_obj)
-
-        PayrollTaxBracket.objects.filter(payroll_config=payroll_config_obj).delete()
-        PayrollTaxBracket.objects.bulk_create(bulk_info_tax_bracket)
-        return True
-
-
-class PayrollConfigListSerializer(AbstractListSerializerModel):
-    employee = serializers.SerializerMethodField()
+class PayrollConfigDetailSerializer(serializers.ModelSerializer):
+    insurance_data = serializers.JSONField()
+    personal_tax_data = serializers.JSONField()
+    tax_bracket_data = serializers.JSONField()
 
     class Meta:
         model = PayrollConfig
         fields = (
             'id',
-            'code',
-            'description',
-            'absence_type',
-            'employee',
-            'date_created',
-            'system_status'
+            'insurance_data',
+            'personal_tax_data',
+            'tax_bracket_data',
         )
 
     @classmethod
-    def get_employee(cls, obj):
-        return obj.employee.get_detail_minimal() if obj.employee else {}
+    def get_insurance_data(cls, obj):
+        rules = obj.payroll_insurance_rule_config.all()
+        return [
+            {
+                "id": rule.id,
+                "social_insurance_employee": rule.social_insurance_employee,
+                "social_insurance_employer": rule.social_insurance_employer,
+                "social_insurance_ceiling": rule.social_insurance_ceiling,
+                "unemployment_insurance_employee": rule.unemployment_insurance_employee,
+                "unemployment_insurance_employer": rule.unemployment_insurance_employer,
+                "unemployment_insurance_ceiling": rule.unemployment_insurance_ceiling,
+                "health_insurance_employee": rule.health_insurance_employee,
+                "health_insurance_employer": rule.health_insurance_employer,
+                "union_insurance_employee": rule.union_insurance_employee,
+                "union_insurance_employer": rule.union_insurance_employer,
+            } for rule in rules
+        ]
+
+    @classmethod
+    def get_personal_tax_data(cls, obj):
+        deduction_rules = obj.payroll_deduction_rule_config.all()
+        return [
+            {
+                "id": rule.id,
+                "personal_deduction": rule.personal_deduction,
+                "dependent_deduction": rule.dependent_deduction,
+                "effective_date": rule.effective_date
+            } for rule in deduction_rules
+        ]
+
+    @classmethod
+    def get_tax_bracket_data(cls, obj):
+        tax_bracket_data = obj.payroll_tax_bracket_config.all()
+        return [
+            {
+                "id": item.id,
+                "order": item.order,
+                "min_amount": item.min_amount,
+                "max_amount": item.max_amount,
+                "rate": item.rate
+            } for item in tax_bracket_data
+        ]
 
 
-class PayrollConfigCreateSerializer(AbstractCreateSerializerModel):
-    insurance_data = PayrollConfigInsuranceSerializer()
-    personal_income_tax = PayrollConfigIncomeTaxSerializer()
-    tax_bracket_data = PayrollConfigTaxBracketSerializer(many=True)
-
-    def create(self, validate_data):
-        with transaction.atomic():
-            for field in ['system_status', 'is_change', 'employee_inherit_id']:
-                validate_data.pop(field, None)
-            insurance_data = validate_data.pop('insurance_data', [])
-            personal_income_tax = validate_data.pop('personal_income_tax', [])
-            tax_bracket_data = validate_data.pop('tax_bracket_data', [])
-            payroll_config = PayrollConfig.objects.create(**validate_data)
-            PayrollConfigCommonFunction.create_insurance_data(payroll_config, insurance_data)
-            PayrollConfigCommonFunction.create_personal_income_tax(payroll_config, personal_income_tax)
-            PayrollConfigCommonFunction.create_tax_bracket(payroll_config, tax_bracket_data)
-            return payroll_config
+class PayrollConfigUpdateSerializer(serializers.ModelSerializer):
+    insurance_data = serializers.JSONField()
+    personal_tax_data = serializers.JSONField()
+    tax_bracket_data = serializers.JSONField()
 
     class Meta:
         model = PayrollConfig
         fields = (
-            'company',
             'insurance_data',
-            'personal_income_tax',
+            'personal_tax_data',
             'tax_bracket_data',
         )
 
+    def update(self, instance, validated_data):
+        insurance_data = validated_data.pop('insurance_data', [])
+        personal_tax_data = validated_data.pop('personal_tax_data', {})
+        tax_bracket_data = validated_data.pop('tax_bracket_data', [])
 
-class PayrollConfigDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PayrollConfig
-        fields = '__all__'
+        # ------------ Update insurance data ------------
+        instance.payroll_insurance_rule_config.all().delete()
+        PayrollInsuranceRule.objects.bulk_create([
+            PayrollInsuranceRule(payroll_config=instance, **data)
+            for data in insurance_data
+        ])
+
+        # ------------ Update personal tax data ------------
+        instance.payroll_deduction_rule_config.all().delete()
+        if personal_tax_data:
+            PayrollDeductionRule.objects.create(
+                payroll_config=instance,
+                **personal_tax_data
+            )
+
+        # ------------ Update tax bracket data ------------
+        instance.payroll_tax_bracket_config.all().delete()
+        PayrollTaxBracket.objects.bulk_create([
+            PayrollTaxBracket(payroll_config=instance, **data)
+            for data in tax_bracket_data
+        ])
+
+        return instance
