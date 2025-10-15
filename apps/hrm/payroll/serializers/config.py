@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from apps.hrm.payroll.models import PayrollConfig, PayrollInsuranceRule, PayrollDeductionRule, PayrollTaxBracket
-from apps.shared import HRMsg
 
 
 class PayrollConfigDetailSerializer(serializers.ModelSerializer):
