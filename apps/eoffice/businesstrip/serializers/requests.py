@@ -264,7 +264,7 @@ class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
                 return {
                     "id": str(group.first_manager.id),
                     "full_name": group.first_manager.get_full_name(),
-                }
+                } if group.first_manager else {}
             ceo = {}
             if obj.employee_inherit.group:
                 ceo = get_first_manager(obj.employee_inherit.group) or {}
@@ -272,7 +272,7 @@ class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
                 "id": str(obj.employee_inherit_id),
                 "last_name": obj.employee_inherit.last_name,
                 "first_name": obj.employee_inherit.first_name,
-                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}',
+                "full_name": obj.employee_inherit.get_full_name(),
                 "group": {
                     "id": str(obj.employee_inherit.group.id),
                     "title": obj.employee_inherit.group.title,
