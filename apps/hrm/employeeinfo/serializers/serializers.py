@@ -139,15 +139,19 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
         obj = None
         emp_frk = contract.get('employee_info', None)
         if contract and (emp_info or emp_frk):
+            effected_date = contract.get('effected_date')
+            expired_date = contract.get('expired_date')
+            if effected_date and expired_date and expired_date <= effected_date:
+                raise serializers.ValidationError({'expired_date': HrMsg.EXPIRED_DATE_ERROR})
             obj = EmployeeContract.objects.create(
                 company_id=self.context.get('company_id', None),
                 tenant_id=self.context.get('tenant_id', None),
                 employee_created_id=self.context.get('user', None).employee_current_id,
-                effected_date=contract['effected_date'],
+                effected_date=effected_date,
                 content=contract.get('content', ''),
                 contract_type=contract.get('contract_type'),
                 employee_info=emp_frk if emp_frk else emp_info,
-                expired_date=contract.get('expired_date'),
+                expired_date=expired_date,
                 file_type=contract.get('file_type'),
                 limit_time=contract.get('limit_time'),
                 represent=contract.get('represent'),
@@ -283,7 +287,7 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
     email = serializers.CharField(max_length=500)
     phone = serializers.IntegerField()
     date_joined = serializers.DateField()
-    dob = serializers.DateField(required=False)
+    dob = serializers.DateField(required=False, allow_null=True)
     code = serializers.CharField(max_length=500)
     contract = EmployeeContractCreateSerializers()
 
@@ -352,10 +356,11 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
             is_emp.email = attrs['email']
             is_emp.phone = attrs['phone']
             is_emp.date_joined = attrs['date_joined']
-            is_emp.dob = attrs['dob']
-            is_emp.save(update_fields=['code', 'first_name', 'last_name', 'email', 'phone', 'date_joined'])
+            is_emp.dob = attrs.get('dob', None)
+            is_emp.save(update_fields=['code', 'first_name', 'last_name', 'email', 'phone', 'date_joined', 'dob'])
             for attr in ['code', 'first_name', 'last_name', 'email', 'phone', 'date_joined', 'dob']:
-                attrs.pop(attr)
+                if attr in attrs:
+                    attrs.pop(attr)
 
     def create_contract(self, attrs):
         contract = attrs.pop('contract', None)
@@ -366,13 +371,17 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
             sign = contract.get('sign_status', None)
             if sign == 1:
                 raise serializers.ValidationError({'contract': HRMsg.UPDATE_CONTRACT_DENIED})
+            effected_date = contract.get('effected_date')
+            expired_date = contract.get('expired_date')
+            if effected_date and expired_date and expired_date <= effected_date:
+                raise serializers.ValidationError({'expired_date': HrMsg.EXPIRED_DATE_ERROR})
             if contract_id and (sign == 0 or sign is None):
                 try:
                     obj = EmployeeContract.objects.get(id=contract_id)
-                    obj.effected_date = contract.get('effected_date')
+                    obj.effected_date = effected_date
                     obj.content = contract.get('content')
                     obj.contract_type = contract.get('contract_type')
-                    obj.expired_date = contract.get('expired_date')
+                    obj.expired_date = expired_date
                     obj.file_type = contract.get('file_type')
                     obj.limit_time = contract.get('limit_time')
                     obj.represent = contract.get('represent')
@@ -389,11 +398,11 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
                     company_id=self.context.get('company_id', None),
                     tenant_id=self.context.get('tenant_id', None),
                     employee_created_id=self.context.get('user', None).employee_current_id,
-                    effected_date=contract['effected_date'],
+                    effected_date=effected_date,
                     content=contract.get('content', ''),
                     contract_type=contract.get('contract_type'),
                     employee_info=contract.get('employee_info'),
-                    expired_date=contract.get('expired_date'),
+                    expired_date=expired_date,
                     file_type=contract.get('file_type'),
                     limit_time=contract.get('limit_time'),
                     represent=contract.get('represent'),
