@@ -14,11 +14,13 @@ from apps.shared import (
 )
 from apps.masterdata.saledata.models.product import (
     ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer,
+    ProductSpecificIdentificationSerialNumber,
 )
 from apps.masterdata.saledata.serializers.product import (
     ProductListSerializer, ProductCreateSerializer,
     ProductDetailSerializer, ProductUpdateSerializer,
     UnitOfMeasureOfGroupLaborListSerializer, ProductQuickCreateSerializer,
+    ProductSpecificIdentificationSerialNumberListSerializer,
 )
 from apps.masterdata.saledata.serializers.product_masterdata import (
     ProductTypeListSerializer, ProductTypeCreateSerializer,
@@ -510,7 +512,7 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'product_variant_attributes',
             'product_variants',
             'product_warehouse_product',
-            'pw_si_serial_product'
+            'product_si_serial_number'
         ).select_related(
             'general_product_category',
             'general_uom_group',
@@ -553,6 +555,7 @@ class ProductForSaleList(BaseListMixin):
         'general_product_types_mapped__is_service': ['exact'],
         'bom_product__opportunity_id': ['exact', 'isnull'],
         'bom_product': ['isnull'],
+        'sale_default_uom_id': ['isnull'],
     }
     serializer_list = ProductForSaleListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
@@ -699,3 +702,36 @@ class ProductUploadAvatar(BaseUpdateMixin):
     )
     def post(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+
+class ProductSpecificIdentificationSerialNumberList(BaseListMixin):
+    queryset = ProductSpecificIdentificationSerialNumber.objects
+    serializer_list = ProductSpecificIdentificationSerialNumberListSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    search_fields = [
+        'product__code',
+        'product__title',
+        'vendor_serial_number',
+        'serial_number',
+    ]
+    filterset_fields = {
+        'product_id': ['exact'],
+        'vendor_serial_number': ['exact'],
+        'serial_number': ['exact'],
+        'serial_status': ['exact'],
+    }
+
+    def get_queryset(self):
+        if 'product_id' not in self.request.query_params:
+            return super().get_queryset().none()
+        return super().get_queryset().select_related().prefetch_related()
+
+    @swagger_auto_schema(
+        operation_summary="Product SI Serial Number List",
+        operation_description="Product SI Serial Number List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

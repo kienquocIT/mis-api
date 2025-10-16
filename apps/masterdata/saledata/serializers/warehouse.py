@@ -67,7 +67,14 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
             'is_dropship',
             'is_bin_location',
             'is_virtual',
+            'is_pm_warehouse',
         )
+
+    def validate(self, validate_data):
+        if validate_data.get('is_pm_warehouse'):
+            if WareHouse.objects.filter_on_company(is_pm_warehouse=True).exists():
+                raise serializers.ValidationError({'is_pm_warehouse': 'Warehouse for product modification is existed.'})
+        return validate_data
 
     def create(self, validated_data):
         warehouse_obj = WareHouse.objects.create(**validated_data)
@@ -104,6 +111,7 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             'is_dropship',
             'is_bin_location',
             'is_virtual',
+            'is_pm_warehouse',
             'shelf_data'
         )
 
@@ -171,7 +179,14 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
             'is_dropship',
             'is_bin_location',
             'is_virtual',
+            'is_pm_warehouse',
         )
+
+    def validate(self, validate_data):
+        if validate_data.get('is_pm_warehouse'):
+            if WareHouse.objects.filter_on_company(is_pm_warehouse=True).exclude(id=self.instance.id).exists():
+                raise serializers.ValidationError({'is_pm_warehouse': 'Warehouse for product modification is existed.'})
+        return validate_data
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():

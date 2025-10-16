@@ -330,6 +330,13 @@ class SaleOrderProduct(MasterDataAbstractModel):
         null=True
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
+    product_specific = models.ForeignKey(
+        'saledata.ProductSpecificIdentificationSerialNumber',
+        on_delete=models.CASCADE,
+        verbose_name="product specific",
+        related_name="sale_order_product_product_specific",
+        null=True
+    )
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,

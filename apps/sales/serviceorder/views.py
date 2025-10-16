@@ -25,6 +25,10 @@ class ServiceOrderList(BaseListMixin, BaseCreateMixin):
         'title',
         'code',
     ]
+    filterset_fields = {
+        'id': ['exact', 'in'],
+        'document_root_id': ['exact', 'in', 'isnull'],
+    }
     serializer_list = ServiceOrderListSerializer
     serializer_create = ServiceOrderCreateSerializer
     serializer_detail = ServiceOrderDetailSerializer

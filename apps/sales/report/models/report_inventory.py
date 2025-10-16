@@ -1,6 +1,6 @@
 from django.db import models
 from rest_framework import serializers
-from apps.masterdata.saledata.models.product_warehouse import ProductSpecificIdentificationSerial
+from apps.masterdata.saledata.models.product import ProductSpecificIdentificationSerialNumber
 from apps.sales.inventory.models.goods_registration import GoodsRegistration
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
@@ -96,9 +96,10 @@ class ReportStock(DataAbstractModel):
     )
 
     @classmethod
-    def get_or_create_report_stock(cls, doc_obj, period_obj, sub_period_order, product_obj, **kwargs):
+    def get_or_create_report_stock(cls, doc_obj, period_obj, sub_period_order, doc_item, **kwargs):
+        product_obj = doc_item['product']
         if 'warehouse_id' in kwargs:
-            del kwargs['warehouse_id']
+            kwargs.pop('warehouse_id')
         sub_period_obj = period_obj.sub_periods_period_mapped.filter(order=sub_period_order).first()
         if sub_period_obj:
             rp_stock = cls.objects.filter(
@@ -226,7 +227,7 @@ class ReportStockLog(DataAbstractModel):
         for item in doc_data:
             kw_parameter = ReportStockLog.parse_param(item, cost_cfg)
             rp_stock = ReportStock.get_or_create_report_stock(
-                doc_obj, period_obj, sub_period_order, item['product'], **kw_parameter
+                doc_obj, period_obj, sub_period_order, item, **kw_parameter
             )
             latest_cost = {}
             if item['product'].valuation_method == 0:
@@ -246,9 +247,22 @@ class ReportStockLog(DataAbstractModel):
             if item['product'].valuation_method == 2:
                 if item['stock_type'] == -1:
                     # thực tế đích danh sẽ lấy giá xuất theo từng serial
-                    item['cost'] = ProductSpecificIdentificationSerial.get_specific_value(
+                    item['cost'] = ProductSpecificIdentificationSerialNumber.get_specific_value(
                         product=item['product'],
                         serial_number=(item.get('serial_data') or {}).get('serial_number')
+                    )
+                    # tắt serial đích danh này đi
+                    ProductSpecificIdentificationSerialNumber.on_off_specific_serial(
+                        product=item['product'],
+                        serial_number=(item.get('serial_data') or {}).get('serial_number'),
+                        is_off=True
+                    )
+                else:
+                    # bật lại serial đích danh này
+                    ProductSpecificIdentificationSerialNumber.on_off_specific_serial(
+                        product=item['product'],
+                        serial_number=(item.get('serial_data') or {}).get('serial_number'),
+                        is_off=False
                     )
             item['value'] = item['cost'] * item['quantity']
             if len(item.get('lot_data', {})) != 0:   # update Lot
@@ -733,12 +747,12 @@ class ReportInventorySubFunction:
         return latest_month_log.sub_latest_log if latest_month_log else None
 
     @classmethod
-    def get_latest_log_cost_dict(cls, div, product, physical_warehouse, **kwargs):
+    def get_latest_log_cost_dict(cls, div, product_obj, physical_warehouse, **kwargs):
         """ lấy cost dict của log gần nhất """
         record = ReportInventoryCostLatestLog.objects.filter(
-            product=product, warehouse=physical_warehouse, **kwargs
+            product=product_obj, warehouse=physical_warehouse, **kwargs
         ).first() if 'warehouse_id' not in kwargs else ReportInventoryCostLatestLog.objects.filter(
-            product=product, **kwargs
+            product=product_obj, **kwargs
         ).first()
         latest_log = record.latest_log if record else None
         if latest_log:
@@ -751,7 +765,7 @@ class ReportInventorySubFunction:
                 'cost': 0,
                 'value': 0
             }
-        return cls.get_opening_cost_dict(product.id, 3, **kwargs)
+        return cls.get_opening_cost_dict(product_obj.id, 3, **kwargs)
 
     @classmethod
     def get_export_cost_for_fifo(cls, div, product, physical_warehouse, quantity, **kwargs):

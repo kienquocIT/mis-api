@@ -70,7 +70,8 @@ class ProductWareHouseListFilter(django_filters.FilterSet):
         model = ProductWareHouse
         fields = {
             'product_id': ['exact'],
-            'warehouse_id': ['exact']
+            'warehouse_id': ['exact'],
+            'product_warehouse_serial_product_warehouse__id': ['exact'],
         }
 
     def filter_is_asset(self, queryset, name, value):  # pylint: disable=W0613  # noqa

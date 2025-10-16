@@ -17,8 +17,8 @@ __all__ = [
     'CashOutflowCreateSerializer',
     'CashOutflowDetailSerializer',
     'CashOutflowUpdateSerializer',
-    'AdvanceForSupplierForCashOutflowSerializer',
-    'APInvoiceListForCashOutflowSerializer',
+    'POPaymentStageForCashOutflowSerializer',
+    'APInvoicePOPaymentStageListForCOFSerializer',
 ]
 
 # main serializers
@@ -543,7 +543,7 @@ class CashOutflowCommonFunction:
         return True
 
 # related serializers
-class AdvanceForSupplierForCashOutflowSerializer(serializers.ModelSerializer):
+class POPaymentStageForCashOutflowSerializer(serializers.ModelSerializer):
     purchase_order = serializers.SerializerMethodField()
     value_balance = serializers.SerializerMethodField()
 
@@ -590,7 +590,7 @@ class AdvanceForSupplierForCashOutflowSerializer(serializers.ModelSerializer):
         return obj.value_total - cash_out_value
 
 
-class APInvoiceListForCashOutflowSerializer(serializers.ModelSerializer):
+class APInvoicePOPaymentStageListForCOFSerializer(serializers.ModelSerializer):
     supplier_mapped = serializers.SerializerMethodField()
     document_type = serializers.SerializerMethodField()
     recon_total = serializers.SerializerMethodField()

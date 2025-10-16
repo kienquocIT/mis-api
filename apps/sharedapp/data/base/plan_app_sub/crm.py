@@ -3225,7 +3225,7 @@ SERVICEORDER_APP_CONFIG = {
     "code": "serviceorder",
     "model_code": "serviceorder",
     "app_label": "serviceorder",
-    "is_workflow": False,
+    "is_workflow": True,
     "app_depend_on": [],
     "permit_mapping": {
         "view": {

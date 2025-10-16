@@ -2164,6 +2164,19 @@ def hong_quang_delete_runtime_assignee():
     return True
 
 
+def clean_data_svn():
+    company_id = '696bbe7f-1d47-4752-ad3e-ce25881cf975'
+    quotations = Quotation.objects.filter(company_id=company_id, system_status=0)
+    if quotations:
+        quotations.delete()
+    products = Product.objects.filter(company_id=company_id)
+    if products:
+        products.delete()
+    InventoryReportRun.run(company_id=company_id, fiscal_year=2025)
+    print('clean_data_svn done.')
+    return True
+
+
 def run_push_diagram():
     for sale_order in SaleOrder.objects.all():
         SOHandler.push_diagram(instance=sale_order)
@@ -6446,6 +6459,48 @@ def update_purchase_request_data():
 def delete_folders():
     Folder.objects.all().delete()
     print('delete_folders done.')
+    return True
+
+
+def rerun_convert_ap_cost_for_payment():
+    # 1. Reset toàn bộ AP sum_converted_value về 0
+    for ap_item in AdvancePaymentCost.objects.all():
+        ap_item.sum_converted_value = 0
+        ap_item.save(update_fields=['sum_converted_value'])
+
+    # 2. Gom toàn bộ giá trị convert theo AP ID
+    ap_convert_map = {}
+    for payment in Payment.objects.all():
+        print(f"Converting {payment.code}")
+        for item in payment.payment.all():
+            for child in item.ap_cost_converted_list:
+                ap_id = child.get('ap_cost_converted_id')
+                value = child.get('value_converted')
+                if ap_id and value:
+                    if ap_id in ap_convert_map:
+                        ap_convert_map[ap_id] += float(value)
+                    else:
+                        ap_convert_map[ap_id] = float(value)
+
+    # 3. Kiểm tra hợp lệ và cập nhật
+    for ap_id, total_convert in ap_convert_map.items():
+        ap_item = AdvancePaymentCost.objects.filter(id=ap_id).first()
+        if not ap_item:
+            raise ValueError(f"AdvancePaymentCost (ID {ap_id}) not found")
+
+        available = (ap_item.expense_after_tax_price +
+                     ap_item.sum_return_value -
+                     ap_item.sum_converted_value)
+
+        if available < total_convert:
+            raise ValueError(
+                f"Cannot convert advance payment (ID {ap_id}). "
+                f"Available: {available}, Requested: {total_convert}"
+            )
+
+        ap_item.sum_converted_value += total_convert
+        ap_item.save(update_fields=['sum_converted_value'])
+
     return True
 
 

@@ -304,6 +304,7 @@ class ServiceOrderDetailDashboardSerializer(AbstractDetailSerializerModel):
                     'description': item.description,
                     'total_value': item.total_value,
                     'total_contribution_percent': item.total_contribution_percent,
+                    'service_percent': item.service_percent,
                     'work_order_contribute_list': [{
                         'id': str(wo_ctb_item.id),
                         'is_selected': wo_ctb_item.is_selected,
@@ -810,6 +811,8 @@ class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
                         'description': service_detail_obj.product.description,
                         'delivered_quantity': item.delivered_quantity,
                         'product_data': service_detail_obj.product_data,
+                        'tax': service_detail_obj.product.sale_tax_data,
+                        'uom': service_detail_obj.product.sale_default_uom_data
                     }
                 )
         return product_list
