@@ -481,6 +481,7 @@ class SaleOrderCost(MasterDataAbstractModel):
     # cost information
     product_title = models.TextField(blank=True)
     product_code = models.CharField(max_length=100, blank=True, null=True)
+    product_description = models.TextField(blank=True, null=True)
     product_uom_title = models.CharField(max_length=100, blank=True, null=True)
     product_uom_code = models.CharField(max_length=100, blank=True, null=True)
     product_quantity = models.FloatField(default=0)
