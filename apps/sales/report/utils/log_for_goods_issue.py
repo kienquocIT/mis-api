@@ -35,7 +35,7 @@ class IRForGoodsIssueHandler:
                             }
                         })
             elif len(item.sn_data) > 0:
-                if item.product.valuation_method == 2 or item.product.product_si_serial_number.exists():
+                if item.product.valuation_method == 2:
                     for serial_id in item.sn_data:
                         serial_obj = ProductWareHouseSerial.objects.filter(id=serial_id).first()
                         if serial_obj:

@@ -96,9 +96,10 @@ class ReportStock(DataAbstractModel):
     )
 
     @classmethod
-    def get_or_create_report_stock(cls, doc_obj, period_obj, sub_period_order, product_obj, **kwargs):
+    def get_or_create_report_stock(cls, doc_obj, period_obj, sub_period_order, doc_item, **kwargs):
+        product_obj = doc_item['product']
         if 'warehouse_id' in kwargs:
-            del kwargs['warehouse_id']
+            kwargs.pop('warehouse_id')
         sub_period_obj = period_obj.sub_periods_period_mapped.filter(order=sub_period_order).first()
         if sub_period_obj:
             rp_stock = cls.objects.filter(
@@ -226,7 +227,7 @@ class ReportStockLog(DataAbstractModel):
         for item in doc_data:
             kw_parameter = ReportStockLog.parse_param(item, cost_cfg)
             rp_stock = ReportStock.get_or_create_report_stock(
-                doc_obj, period_obj, sub_period_order, item['product'], **kw_parameter
+                doc_obj, period_obj, sub_period_order, item, **kw_parameter
             )
             latest_cost = {}
             if item['product'].valuation_method == 0:
@@ -243,7 +244,7 @@ class ReportStockLog(DataAbstractModel):
                         item['product'], item['warehouse'], **kw_parameter
                     )
                     item['cost'] = latest_cost['cost']
-            if item['product'].valuation_method == 2 or item['product'].product_si_serial_number.exists():
+            if item['product'].valuation_method == 2:
                 if item['stock_type'] == -1:
                     # thực tế đích danh sẽ lấy giá xuất theo từng serial
                     item['cost'] = ProductSpecificIdentificationSerialNumber.get_specific_value(
@@ -325,7 +326,7 @@ class ReportStockLog(DataAbstractModel):
                     'perpetual_current_cost',
                     'perpetual_current_value'
                 ])
-            if log.product.valuation_method == 2 or log.product.product_si_serial_number.exists():
+            if log.product.valuation_method == 2:
                 new_cost_dict = ReportInventoryValuationMethod.specific_identification_in_perpetual(log)
                 log.perpetual_current_quantity = new_cost_dict['quantity'] if new_cost_dict['quantity'] > 0 else 0
                 log.perpetual_current_cost = new_cost_dict['cost'] if new_cost_dict['quantity'] > 0 else 0
@@ -350,7 +351,7 @@ class ReportStockLog(DataAbstractModel):
                     'periodic_current_cost',
                     'periodic_current_value'
                 ])
-            if log.product.valuation_method == 2 or log.product.product_si_serial_number.exists():
+            if log.product.valuation_method == 2:
                 pass
         return log
 
@@ -544,7 +545,7 @@ class ReportStockLog(DataAbstractModel):
                         ReportInventoryCostLatestLog.objects.create(
                             product=log.product, latest_log=log, **kwargs
                         )
-                    if log.product.valuation_method == 2 or log.product.product_si_serial_number.exists():
+                    if log.product.valuation_method == 2:
                         ReportInventoryCostLatestLog.objects.create(
                             product=log.product, latest_log=log, **kwargs
                         )
@@ -746,12 +747,12 @@ class ReportInventorySubFunction:
         return latest_month_log.sub_latest_log if latest_month_log else None
 
     @classmethod
-    def get_latest_log_cost_dict(cls, div, product, physical_warehouse, **kwargs):
+    def get_latest_log_cost_dict(cls, div, product_obj, physical_warehouse, **kwargs):
         """ lấy cost dict của log gần nhất """
         record = ReportInventoryCostLatestLog.objects.filter(
-            product=product, warehouse=physical_warehouse, **kwargs
+            product=product_obj, warehouse=physical_warehouse, **kwargs
         ).first() if 'warehouse_id' not in kwargs else ReportInventoryCostLatestLog.objects.filter(
-            product=product, **kwargs
+            product=product_obj, **kwargs
         ).first()
         latest_log = record.latest_log if record else None
         if latest_log:
@@ -764,7 +765,7 @@ class ReportInventorySubFunction:
                 'cost': 0,
                 'value': 0
             }
-        return cls.get_opening_cost_dict(product.id, 3, **kwargs)
+        return cls.get_opening_cost_dict(product_obj.id, 3, **kwargs)
 
     @classmethod
     def get_export_cost_for_fifo(cls, div, product, physical_warehouse, quantity, **kwargs):
