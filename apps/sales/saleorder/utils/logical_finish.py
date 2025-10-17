@@ -1,3 +1,4 @@
+from apps.core.company.utils import CompanyHandler
 from apps.masterdata.saledata.models import AccountActivity
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.sales.delivery.models import OrderPickingSub, OrderPickingProduct
@@ -46,9 +47,15 @@ class SOFinishHandler:
             'employee_inherit_id': instance.employee_inherit_id,
             'group_inherit_id': instance.employee_inherit.group_id if instance.employee_inherit else None,
             'date_approved': instance.date_approved,
-            'revenue': instance.indicator_revenue,
-            'gross_profit': instance.indicator_gross_profit,
-            'net_income': instance.indicator_net_income,
+            'revenue': SOFinishSubHandler.exchange_to_currency_company(
+                instance=instance, value=instance.indicator_revenue
+            ),
+            'gross_profit': SOFinishSubHandler.exchange_to_currency_company(
+                instance=instance, value=instance.indicator_gross_profit
+            ),
+            'net_income': SOFinishSubHandler.exchange_to_currency_company(
+                instance=instance, value=instance.indicator_net_income
+            ),
         })
         return True
 
@@ -79,9 +86,15 @@ class SOFinishHandler:
                 employee_inherit_id=instance.employee_inherit_id,
                 group_inherit_id=instance.employee_inherit.group_id if instance.employee_inherit else None,
                 date_approved=instance.date_approved,
-                revenue=revenue,
-                gross_profit=gross_profit,
-                net_income=net_income,
+                revenue=SOFinishSubHandler.exchange_to_currency_company(
+                    instance=instance, value=revenue
+                ),
+                gross_profit=SOFinishSubHandler.exchange_to_currency_company(
+                    instance=instance, value=gross_profit
+                ),
+                net_income=SOFinishSubHandler.exchange_to_currency_company(
+                    instance=instance, value=net_income
+                ),
             )
         return True
 
@@ -97,9 +110,15 @@ class SOFinishHandler:
             employee_inherit_id=instance.employee_inherit_id,
             group_inherit_id=instance.employee_inherit.group_id if instance.employee_inherit else None,
             date_approved=instance.date_approved,
-            revenue=instance.indicator_revenue,
-            gross_profit=instance.indicator_gross_profit,
-            net_income=instance.indicator_net_income,
+            revenue=SOFinishSubHandler.exchange_to_currency_company(
+                instance=instance, value=instance.indicator_revenue
+            ),
+            gross_profit=SOFinishSubHandler.exchange_to_currency_company(
+                instance=instance, value=instance.indicator_gross_profit
+            ),
+            net_income=SOFinishSubHandler.exchange_to_currency_company(
+                instance=instance, value=instance.indicator_net_income
+            ),
         )
         return True
 
@@ -224,6 +243,17 @@ class SOFinishHandler:
                 attachment.is_approved = True
                 attachment.save(update_fields=['is_approved'])
         return True
+
+
+class SOFinishSubHandler:
+
+    @classmethod
+    def exchange_to_currency_company(cls, instance, value):
+        if instance.is_currency_exchange is True:
+            value = CompanyHandler.round_by_company_config(
+                company=instance.company, value=value * instance.currency_exchange_rate
+            )
+        return value
 
 
 class DocumentChangeHandler:

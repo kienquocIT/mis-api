@@ -244,6 +244,13 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
         )
 
     @classmethod
+    def parse_currency(cls, obj):
+        currency = obj.currency_company_data.get('abbreviation', '')
+        if obj.currency_exchange_id:
+            currency = obj.currency_exchange_data.get('abbreviation', '')
+        return currency
+
+    @classmethod
     def get_opportunity(cls, obj):
         return {
             'id': str(obj.opportunity_id),
@@ -288,23 +295,28 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
 
     @classmethod
     def get_total_product_pretax_amount(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_pretax_amount)
+        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_pretax_amount)
+        return str(value) + cls.parse_currency(obj=obj)
 
     @classmethod
     def get_total_product_discount(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_discount)
+        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_discount)
+        return str(value) + cls.parse_currency(obj=obj)
 
     @classmethod
     def get_total_product_tax(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_tax)
+        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_tax)
+        return str(value) + cls.parse_currency(obj=obj)
 
     @classmethod
     def get_total_product(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product)
+        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product)
+        return str(value) + cls.parse_currency(obj=obj)
 
     @classmethod
     def get_total_product_revenue_before_tax(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_revenue_before_tax)
+        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_revenue_before_tax)
+        return str(value) + cls.parse_currency(obj=obj)
 
     @classmethod
     def get_valid_until(cls, obj):
@@ -509,7 +521,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
         return quotation
 
 
-class QuotationUpdateSerializer(AbstractCreateSerializerModel):
+class QuotationUpdateSerializer(AbstractCreateSerializerModel, AbstractCurrencyCreateSerializerModel):
     opportunity_id = serializers.UUIDField(
         required=False,
         allow_null=True,
