@@ -36,6 +36,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
     stage = serializers.SerializerMethodField()
     is_close = serializers.SerializerMethodField()
     sale_order = serializers.SerializerMethodField()
+    lease_order = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
 
     class Meta:
@@ -49,6 +50,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             'open_date',
             'quotation',
             'sale_order',
+            'lease_order',
             'opportunity_sale_team_datas',
             'close_date',
             'date_created',
@@ -106,6 +108,15 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             'code': obj.sale_order.code,
             'title': obj.sale_order.title,
         } if obj.sale_order else {}
+
+    @classmethod
+    def get_lease_order(cls, obj):
+        lease_order_obj = obj.lease_opportunity.first()
+        return {
+            'id': str(lease_order_obj.id),
+            'code': lease_order_obj.code,
+            'title': lease_order_obj.title,
+        } if lease_order_obj else {}
 
     @classmethod
     def get_quotation(cls, obj):

@@ -6,10 +6,12 @@ from apps.sales.financialcashflow.serializers.cof_serializers import (
     CashOutflowListSerializer, CashOutflowCreateSerializer,
     CashOutflowUpdateSerializer, CashOutflowDetailSerializer,
     POPaymentStageForCashOutflowSerializer, APInvoicePOPaymentStageListForCOFSerializer,
-    SaleOrderExpenseListForCOFSerializer
+    SaleOrderExpenseListForCOFSerializer, SaleOrderListForCOFSerializer, LeaseOrderExpenseListForCOFSerializer,
+    LeaseOrderListForCOFSerializer
 )
+from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderExpense
 from apps.sales.purchasing.models import PurchaseOrderPaymentStage
-from apps.sales.saleorder.models import SaleOrderExpense
+from apps.sales.saleorder.models import SaleOrderExpense, SaleOrder
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 __all__ = [
@@ -151,6 +153,30 @@ class APInvoicePOPaymentStageListForCOF(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
+class SaleOrderForCOFList(BaseListMixin):
+    queryset = SaleOrder.objects
+    search_fields = ['title', 'code', 'customer__name']
+    filterset_fields = {}
+    serializer_list = SaleOrderListForCOFSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            system_status=3,
+            opportunity=None
+        ).select_related("quotation")
+
+    @swagger_auto_schema(
+        operation_summary="Sale Order List for COF",
+        operation_description="Get Sale Order List for COF",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
 class SaleOrderExpenseListForCOF(BaseListMixin):
     queryset = SaleOrderExpense.objects
     search_fields = [
@@ -169,6 +195,56 @@ class SaleOrderExpenseListForCOF(BaseListMixin):
     @swagger_auto_schema(
         operation_summary="Sale Order Expense List For COF",
         operation_description="Sale Order Expense List For COF",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class LeaseOrderForCOFList(BaseListMixin):
+    queryset = LeaseOrder.objects
+    search_fields = ['title', 'code', 'customer__name']
+    filterset_fields = {}
+    serializer_list = LeaseOrderListForCOFSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            system_status=3,
+            opportunity=None
+        ).select_related("quotation")
+
+    @swagger_auto_schema(
+        operation_summary="Lease Order List for COF",
+        operation_description="Get Lease Order List for COF",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class LeaseOrderExpenseListForCOF(BaseListMixin):
+    queryset = LeaseOrderExpense.objects
+    search_fields = [
+        'expense__title',
+    ]
+    filterset_fields = {
+        'id': ['in'],
+        'lease_order_id': ['exact'],
+    }
+    serializer_list = LeaseOrderExpenseListForCOFSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter().prefetch_related().select_related()
+
+    @swagger_auto_schema(
+        operation_summary="Lease Order Expense List For COF",
+        operation_description="Lease Order Expense List For COF",
     )
     @mask_view(
         login_require=True, auth_require=False,

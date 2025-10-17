@@ -5,7 +5,8 @@ from apps.sales.financialcashflow.views import (
     CashOutflowList, CashOutflowDetail,
     POPaymentStageListForCOF, APInvoicePOPaymentStageListForCOF
 )
-from apps.sales.financialcashflow.views.cof_views import SaleOrderExpenseListForCOF
+from apps.sales.financialcashflow.views.cof_views import SaleOrderExpenseListForCOF, SaleOrderForCOFList, \
+    LeaseOrderExpenseListForCOF, LeaseOrderForCOFList
 
 urlpatterns = [
     path('cashinflows', CashInflowList.as_view(), name='CashInflowList'),
@@ -34,8 +35,23 @@ urlpatterns = [
         name='APInvoicePOPaymentStageListForCOF'
     ),
     path(
+        'so-list-for-cof',
+        SaleOrderForCOFList.as_view(),
+        name='SaleOrderForCOFList'
+    ),
+    path(
         'so-expense-list-for-cof',
         SaleOrderExpenseListForCOF.as_view(),
         name='SaleOrderExpenseListForCOF'
+    ),
+    path(
+        'lo-list-for-cof',
+        LeaseOrderForCOFList.as_view(),
+        name='LeaseOrderForCOFList'
+    ),
+    path(
+        'lo-expense-list-for-cof',
+        LeaseOrderExpenseListForCOF.as_view(),
+        name='LeaseOrderExpenseListForCOF'
     ),
 ]
