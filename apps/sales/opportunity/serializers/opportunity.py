@@ -60,36 +60,32 @@ class OpportunityListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_customer(cls, obj):
-        if obj.customer:
-            return {
-                'id': obj.customer_id,
-                'name': obj.customer.name,
-                'code': obj.customer.code,
-                'tax_code': obj.customer.tax_code,
-                'contact_mapped': [{
-                    'id': str(item.id),
-                    'fullname': item.fullname,
-                    'email': item.email
-                } for item in obj.customer.contact_account_name.all()],
-                'phone': obj.customer.phone,
-                'email': obj.customer.email,
-                'shipping_address': [item.address_data for item in obj.customer.account_mapped_shipping_address.all()]
-            }
-        return {}
+        return {
+            'id': obj.customer_id,
+            'name': obj.customer.name,
+            'code': obj.customer.code,
+            'tax_code': obj.customer.tax_code,
+            'contact_mapped': [{
+                'id': str(item.id),
+                'fullname': item.fullname,
+                'email': item.email
+            } for item in obj.customer.contact_account_name.all()],
+            'phone': obj.customer.phone,
+            'email': obj.customer.email,
+            'shipping_address': [item.address_data for item in obj.customer.account_mapped_shipping_address.all()]
+        } if obj.customer else {}
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.employee_inherit:
-            return {
-                'id': obj.employee_inherit_id,
-                'full_name': obj.employee_inherit.get_full_name(),
-                'code': obj.employee_inherit.code,
-                'first_name': obj.employee_inherit.first_name,
-                'last_name': obj.employee_inherit.last_name,
-                'email': obj.employee_inherit.email,
-                'is_active': obj.employee_inherit.is_active,
-            }
-        return {}
+        return {
+            'id': obj.employee_inherit_id,
+            'full_name': obj.employee_inherit.get_full_name(),
+            'code': obj.employee_inherit.code,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'is_active': obj.employee_inherit.is_active,
+        } if obj.employee_inherit else {}
 
     @classmethod
     def get_stage(cls, obj):
