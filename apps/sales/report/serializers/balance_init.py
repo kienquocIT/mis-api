@@ -335,7 +335,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                         ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
                             product=instance.product,
                             serial_obj=serial_obj,
-                            specific_value=sn.get('specific_value', 0)
+                            specific_value=serial.get('specific_value', 0)
                         )
             else:
                 casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
