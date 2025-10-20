@@ -56,10 +56,13 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
         if 'get_all' in self.request.query_params:
             return queryset
 
-        if 'is_virtual' in self.request.query_params:
-            return queryset.filter(is_virtual=True)
+        if 'get_all_active' in self.request.query_params:
+            return queryset.filter(is_active=True)
 
-        queryset = queryset.filter(is_virtual=False)
+        if 'is_virtual' in self.request.query_params:
+            return queryset.filter(is_active=True, is_virtual=True)
+
+        queryset = queryset.filter(is_active=True, is_virtual=False)
 
         return queryset
 
