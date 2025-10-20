@@ -16,42 +16,6 @@ class WareHouse(MasterDataAbstractModel):
         blank=True,
         verbose_name='Description of this records',
     )
-    # ============== TEMP =================
-    city = models.ForeignKey(
-        'base.City',
-        on_delete=models.CASCADE,
-        null=True,
-        default=None,
-        related_name='warehouse_city'
-    )
-
-    district = models.ForeignKey(
-        'base.District',
-        on_delete=models.CASCADE,
-        null=True,
-        default=None,
-        related_name='warehouse_district'
-    )
-
-    ward = models.ForeignKey(
-        'base.Ward',
-        on_delete=models.CASCADE,
-        null=True,
-        default=None,
-        related_name='warehouse_ward'
-    )
-
-    address = models.CharField(
-        max_length=500,
-        default='',
-        blank=True
-    )
-    full_address = models.CharField(
-        max_length=1000,
-        default='',
-        blank=True
-    )
-    # ============== TEMP =================
 
     detail_address = models.CharField(blank=True, null=True, max_length=500)
     address_data = models.JSONField(default=dict)
@@ -84,16 +48,9 @@ class WareHouse(MasterDataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        # auto create code (temporary)
-        warehouse = WareHouse.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "W"
+        number = WareHouse.objects.filter_on_company(is_delete=False).count()
         if not self.code:
-            temper = "%04d" % (warehouse + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
+            code = f"W000{str(number + 1)}"
             self.code = code
         super().save(*args, **kwargs)
 

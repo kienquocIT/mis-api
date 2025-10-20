@@ -47,16 +47,19 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        if 'is_virtual' in self.request.query_params:
-            return queryset.filter(is_virtual=True)
-
-        queryset = queryset.filter(is_virtual=False)
-
         # Lọc quyền tương tác kho đặt biệt (nếu có)
         if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
             interact = self.request.user.employee_current.warehouse_employees_emp
             if len(interact.warehouse_list) > 0:
                 queryset = queryset.filter(id__in=interact.warehouse_list)
+
+        if 'get_all' in self.request.query_params:
+            return queryset
+
+        if 'is_virtual' in self.request.query_params:
+            return queryset.filter(is_virtual=True)
+
+        queryset = queryset.filter(is_virtual=False)
 
         return queryset
 
