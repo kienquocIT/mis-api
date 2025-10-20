@@ -56,7 +56,8 @@ class PayrollConfigDetailSerializer(serializers.ModelSerializer):
                 "order": item.order,
                 "min_amount": item.min_amount,
                 "max_amount": item.max_amount,
-                "rate": item.rate
+                "rate": item.rate,
+                "effective_date": item.effective_date,
             } for item in tax_bracket_data
         ]
 
@@ -95,5 +96,4 @@ class PayrollConfigUpdateSerializer(serializers.ModelSerializer):
             PayrollTaxBracket(payroll_config=instance, **data)
             for data in tax_bracket_data
         ])
-
         return instance

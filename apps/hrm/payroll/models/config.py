@@ -64,3 +64,5 @@ class PayrollTaxBracket(MasterDataAbstractModel):
     min_amount = models.FloatField(default=0)
     max_amount = models.FloatField(default=0)
     rate = models.FloatField(default=0)
+    effective_date = models.DateField(null=True)
+    status = models.BooleanField(default=True)
