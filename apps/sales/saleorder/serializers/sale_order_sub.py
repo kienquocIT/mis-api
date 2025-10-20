@@ -564,6 +564,7 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
             # product information
             'product_title',
             'product_code',
+            'product_description',
             'product_uom_title',
             'product_uom_code',
             'product_quantity',

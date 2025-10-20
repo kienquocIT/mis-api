@@ -719,6 +719,8 @@ class ProductSpecificIdentificationSerialNumberList(BaseListMixin):
         'vendor_serial_number': ['exact'],
         'serial_number': ['exact'],
         'serial_status': ['exact'],
+        'from_pm': ['exact'],
+        'product_warehouse_serial__serial_status': ['exact'],
     }
 
     def get_queryset(self):

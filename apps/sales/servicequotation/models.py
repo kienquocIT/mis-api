@@ -65,6 +65,7 @@ class ServiceQuotationServiceDetail(MasterDataAbstractModel):
         on_delete=models.SET_NULL,
         null=True,
     )
+    product_data = models.JSONField(default=dict)
     order = models.IntegerField(default=0)
     description = models.TextField(blank=True)
     quantity = models.PositiveIntegerField(default=0)
@@ -92,6 +93,18 @@ class ServiceQuotationServiceDetail(MasterDataAbstractModel):
     # data related to payment
     total_payment_percent = models.FloatField(default=0)
     total_payment_value = models.FloatField(default=0)
+
+    # data attribute
+    selected_attributes = models.JSONField(default=dict)
+    attributes_total_cost = models.FloatField(default=0)
+    duration_value = models.IntegerField(default=0)
+    duration = models.ForeignKey(
+        UnitOfMeasure,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='service_quotation_service_details'
+    )
+    duration_unit_data = models.JSONField(default=dict)
 
     class Meta:
         verbose_name = 'Service quotation service detail'

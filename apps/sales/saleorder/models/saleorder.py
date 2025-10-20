@@ -249,7 +249,7 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
         if cls.objects.filter_on_company(document_root_id=instance.document_root_id, system_status__in=[1, 2]).exists():
             return False
         # check if SO was used for PR
-        if instance.sale_order.filter(system_status__in=[1, 2, 3]).exists():
+        if instance.pr_sale_order.filter(system_status__in=[1, 2, 3]).exists():
             return False
         # check delivery (if SO was used for OrderDelivery and all OrderDeliverySub is done => can't change)
         # if hasattr(instance, 'delivery_of_sale_order'):
@@ -272,7 +272,7 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
         if cls.objects.filter_on_company(document_root_id=instance.document_root_id, system_status__in=[1, 2]).exists():
             return False
         # check if SO was used for PR
-        if instance.sale_order.filter(system_status__in=[1, 2, 3]).exists():
+        if instance.pr_sale_order.filter(system_status__in=[1, 2, 3]).exists():
             return False
         # check delivery (if SO was used for OrderDelivery => can't reject)
         if hasattr(instance, 'delivery_of_sale_order'):
@@ -481,6 +481,7 @@ class SaleOrderCost(MasterDataAbstractModel):
     # cost information
     product_title = models.TextField(blank=True)
     product_code = models.CharField(max_length=100, blank=True, null=True)
+    product_description = models.TextField(blank=True, null=True)
     product_uom_title = models.CharField(max_length=100, blank=True, null=True)
     product_uom_code = models.CharField(max_length=100, blank=True, null=True)
     product_quantity = models.FloatField(default=0)
