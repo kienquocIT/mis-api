@@ -296,8 +296,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         elif len(instance.data_sn) > 0:
             if instance.product.valuation_method == 2:
                 all_sn = prd_wh_obj.product_warehouse_serial_product_warehouse.all()
-                for sn in instance.data_sn:
-                    serial_obj = all_sn.filter(serial_number=sn.get('serial_number')).first()
+                for serial in instance.data_sn:
+                    serial_obj = all_sn.filter(serial_number=serial.get('serial_number')).first()
                     if serial_obj:
                         doc_data.append({
                             'product': instance.product,
@@ -310,8 +310,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                             'trans_code': '',
                             'trans_title': 'Balance init input',
                             'quantity': 1,
-                            'cost': sn.get('specific_value', 0),
-                            'value': sn.get('specific_value', 0) * 1,
+                            'cost': serial.get('specific_value', 0),
+                            'value': serial.get('specific_value', 0) * 1,
                             'serial_data': {
                                 'serial_id': str(serial_obj.id),
                                 'serial_number': serial_obj.serial_number,
@@ -413,7 +413,9 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def rerun_report_from_start_using_month(period_obj, context):
-        past_periods = Periods.objects.filter_on_company(fiscal_year__lte=period_obj.fiscal_year).order_by('fiscal_year')
+        past_periods = Periods.objects.filter_on_company(
+            fiscal_year__lte=period_obj.fiscal_year
+        ).order_by('fiscal_year')
         SubPeriods.objects.filter(
             period_mapped__in=past_periods.values_list('id', flat=True)
         ).update(run_report_inventory=False)
