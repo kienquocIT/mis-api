@@ -133,7 +133,7 @@ class SubPeriods(SimpleAbstractModel):
         if not this_period:
             raise serializers.ValidationError({"Error": "[check_period] Current period is not found."})
 
-        this_sub_period = Periods.get_current_sub_period(this_period)
+        this_sub_period = this_period.get_current_sub_period(this_period)
         if not this_sub_period:
             raise serializers.ValidationError({"Error": "[check_period] Current sub period is not found."})
 

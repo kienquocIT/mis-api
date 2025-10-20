@@ -11,6 +11,7 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel
 # - ReportInventoryCostByWarehouse: lưu kho vật lí của sản phẩm (cho TH tính cost theo dự án)
 # - ReportInventoryCostLatestLog: lưu giao dịch gần nhất của sản phẩm
 
+
 class BalanceInitialization(DataAbstractModel):
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE)
     warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE)
@@ -44,6 +45,7 @@ class BalanceInitializationLot(DataAbstractModel):
 class BalanceInitializationSerial(DataAbstractModel):
     balance_init = models.ForeignKey(BalanceInitialization, on_delete=models.CASCADE)
     serial_mapped = models.ForeignKey('saledata.ProductWareHouseSerial', on_delete=models.CASCADE)
+    specific_value = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Balance Initialization Serial'
