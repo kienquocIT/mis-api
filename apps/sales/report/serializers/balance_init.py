@@ -2,7 +2,7 @@ from django.db import transaction
 from rest_framework import serializers
 from apps.masterdata.saledata.models import (
     ProductWareHouse, SubPeriods, Periods, Product, WareHouse,
-    ProductWareHouseSerial, ProductWareHouseLot
+    ProductWareHouseSerial, ProductWareHouseLot, ProductSpecificIdentificationSerialNumber
 )
 from apps.sales.report.utils.inventory_log import ReportInvCommonFunc, ReportInvLog
 from apps.sales.report.models import (
@@ -36,6 +36,8 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
             'title': obj.product.title,
             'code': obj.product.code,
             'description': obj.product.description,
+            'general_traceability_method': obj.product.general_traceability_method,
+            'valuation_method': obj.product.valuation_method,
         } if obj.product else {}
 
     @classmethod
@@ -49,10 +51,14 @@ class BalanceInitializationListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_warehouse(cls, obj):
         if obj.warehouse:
-            return {'id': obj.warehouse_id, 'title': obj.warehouse.title, 'code': obj.warehouse.code}
+            return {
+                'id': obj.warehouse_id,
+                'title': obj.warehouse.title,
+                'code': obj.warehouse.code
+            }
         warehouse_sub = obj.report_inventory_cost_wh.first()
         return {
-            'id': warehouse_sub.warehouse.id,
+            'id': warehouse_sub.warehouse_id,
             'title': warehouse_sub.warehouse.title,
             'code': warehouse_sub.warehouse.code,
         } if warehouse_sub else {}
@@ -125,7 +131,12 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                         tenant_id=instance.tenant_id,
                         company_id=instance.company_id,
                         product_warehouse=prd_wh_obj,
-                        **serial
+                        vendor_serial_number=serial.get('vendor_serial_number'),
+                        serial_number=serial.get('serial_number'),
+                        expire_date=serial.get('expire_date'),
+                        manufacture_date=serial.get('manufacture_date'),
+                        warranty_start=serial.get('warranty_start'),
+                        warranty_end=serial.get('warranty_end'),
                     )
                 )
             ProductWareHouseSerial.objects.bulk_create(bulk_info_sn)
@@ -257,9 +268,9 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         """ Khởi tạo số dư đầu kì """
         doc_data = []
         if len(instance.data_lot) > 0:
-            all_lots = prd_wh_obj.product_warehouse_lot_product_warehouse.all()
+            all_lot = prd_wh_obj.product_warehouse_lot_product_warehouse.all()
             for lot in instance.data_lot:
-                lot_mapped = all_lots.filter(lot_number=lot.get('lot_number')).first()
+                lot_mapped = all_lot.filter(lot_number=lot.get('lot_number')).first()
                 if lot_mapped:
                     unit_price_by_inventory_uom = instance.value/instance.quantity
                     casted_cost = unit_price_by_inventory_uom/instance.product.inventory_uom.ratio
@@ -282,6 +293,70 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                             'lot_expire_date': str(lot_mapped.expire_date) if lot_mapped.expire_date else None
                         }
                     })
+        elif len(instance.data_sn) > 0:
+            if instance.product.valuation_method == 2:
+                all_sn = prd_wh_obj.product_warehouse_serial_product_warehouse.all()
+                for sn in instance.data_sn:
+                    serial_obj = all_sn.filter(serial_number=sn.get('serial_number')).first()
+                    if serial_obj:
+                        doc_data.append({
+                            'product': instance.product,
+                            'warehouse': instance.warehouse,
+                            'system_date': instance.date_created,
+                            'posting_date': instance.date_created,
+                            'document_date': instance.date_created,
+                            'stock_type': 1,
+                            'trans_id': '',
+                            'trans_code': '',
+                            'trans_title': 'Balance init input',
+                            'quantity': 1,
+                            'cost': sn.get('specific_value', 0),
+                            'value': sn.get('specific_value', 0) * 1,
+                            'serial_data': {
+                                'serial_id': str(serial_obj.id),
+                                'serial_number': serial_obj.serial_number,
+                                'vendor_serial_number': serial_obj.vendor_serial_number,
+                                'expire_date': str(
+                                    serial_obj.expire_date
+                                ) if serial_obj.expire_date else None,
+                                'manufacture_date': str(
+                                    serial_obj.manufacture_date
+                                ) if serial_obj.manufacture_date else None,
+                                'warranty_start': str(
+                                    serial_obj.warranty_start
+                                ) if serial_obj.warranty_start else None,
+                                'warranty_end': str(
+                                    serial_obj.warranty_end
+                                ) if serial_obj.warranty_end else None,
+                            }
+                        })
+
+                        # cập nhập hoặc tạo giá đich danh khi nhập
+                        ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
+                            product=instance.product,
+                            serial_obj=serial_obj,
+                            specific_value=sn.get('specific_value', 0)
+                        )
+            else:
+                casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
+                    instance.product.inventory_uom,
+                    instance.quantity
+                )
+                doc_data.append({
+                    'product': instance.product,
+                    'warehouse': instance.warehouse,
+                    'system_date': instance.date_created,
+                    'posting_date': instance.date_created,
+                    'document_date': instance.date_created,
+                    'stock_type': 1,
+                    'trans_id': '',
+                    'trans_code': '',
+                    'trans_title': 'Balance init input',
+                    'quantity': casted_quantity,
+                    'cost': instance.value / casted_quantity,
+                    'value': instance.value,
+                    'lot_data': {}
+                })
         else:
             casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(
                 instance.product.inventory_uom,
@@ -316,7 +391,8 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
             if serial_obj:
                 bulk_info_sn.append(BalanceInitializationSerial(
                     balance_init=instance,
-                    serial_mapped=serial_obj
+                    serial_mapped=serial_obj,
+                    specific_value=serial.get('specific_value', 0),
                 ))
         BalanceInitializationSerial.objects.bulk_create(bulk_info_sn)
 
@@ -333,6 +409,35 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                     quantity=lot.get('quantity_import')
                 ))
         BalanceInitializationLot.objects.bulk_create(bulk_info_lot)
+        return True
+
+    @staticmethod
+    def rerun_report_from_start_using_month(period_obj, context):
+        past_periods = Periods.objects.filter_on_company(fiscal_year__lte=period_obj.fiscal_year).order_by('fiscal_year')
+        SubPeriods.objects.filter(
+            period_mapped__in=past_periods.values_list('id', flat=True)
+        ).update(run_report_inventory=False)
+
+        for item in past_periods:
+            order_range = None
+            if item.fiscal_year < period_obj.fiscal_year:
+                order_range = range(1, 13)
+            else:
+                current_sub_period = period_obj.get_current_sub_period(period_obj)
+                if current_sub_period:
+                    sub_period_order = current_sub_period.order
+                    order_range = range(1, int(sub_period_order) + 1)
+            if order_range:
+                for order in order_range:
+                    run_state = ReportInvCommonFunc.check_and_push_to_next_sub(
+                        context.get('tenant_current'),
+                        context.get('company_current'),
+                        context.get('employee_current'),
+                        item,
+                        order
+                    )
+                    if run_state is False:
+                        break
         return True
 
     def create(self, validated_data):
@@ -352,47 +457,7 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
         prd_wh_obj = self.create_product_warehouse_data(instance, validated_data)
         self.create_m2m_balance_init_data(instance)
         self.push_to_inventory_report(instance, prd_wh_obj)
-        SubPeriods.objects.filter(period_mapped=validated_data['period_obj']).update(run_report_inventory=False)
-        return instance
-
-
-class BalanceInitializationCreateSerializerImportDB(BalanceInitializationCreateSerializer):
-    balance_init_data = serializers.JSONField(default=dict)
-
-    class Meta:
-        model = BalanceInitialization
-        fields = ('balance_init_data',)
-
-    def validate(self, validate_data):
-        tenant_current = self.context.get('tenant_current')
-        company_current = self.context.get('company_current')
-        if not tenant_current or not company_current:
-            raise serializers.ValidationError({"error": "Tenant or Company is missing."})
-
-        balance_init_data = validate_data.get('balance_init_data', {})
-        validate_data = BalanceInitCommonFunction.validate_balance_init_data(
-            balance_init_data, tenant_current, company_current
-        )
-        return validate_data
-
-    def create(self, validated_data):
-        instance = BalanceInitialization.objects.create(
-            product=validated_data.get('product'),
-            warehouse=validated_data.get('warehouse'),
-            uom=validated_data.get('uom'),
-            quantity=validated_data.get('quantity', 0),
-            value=validated_data.get('value', 0),
-            data_lot=validated_data.get('data_lot', []),
-            data_sn=validated_data.get('data_sn', []),
-            tenant=self.context.get('tenant_current'),
-            company=self.context.get('company_current'),
-            employee_created=self.context.get('employee_current'),
-            employee_inherit=self.context.get('employee_current'),
-        )
-        prd_wh_obj = self.create_product_warehouse_data(instance, validated_data)
-        self.create_m2m_balance_init_data(instance)
-        self.push_to_inventory_report(instance, prd_wh_obj)
-        SubPeriods.objects.filter(period_mapped=validated_data['period_obj']).update(run_report_inventory=False)
+        self.rerun_report_from_start_using_month(validated_data['period_obj'], self.context)
         return instance
 
 
