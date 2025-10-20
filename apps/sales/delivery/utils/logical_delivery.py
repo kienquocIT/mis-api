@@ -145,7 +145,11 @@ class DeliHandler:
                 spec_value = deli_product.product_data.get('specific_data', {}).get('specific_value', 0)
                 return deli_product.picked_quantity * spec_value
             if len(delivery_data) == 0:
-                return deli_product.picked_quantity * deli_product.product_cost
+                so_cost = product_obj.sale_order_cost_product.filter(
+                    sale_order_id=deli_product.delivery_sub.sale_order_id
+                ).first() if deli_product.delivery_sub else None
+                if so_cost:
+                    return deli_product.picked_quantity * so_cost.product_cost_price
             for data_deli in delivery_data:  # for in warehouse to get cost of warehouse
                 quantity_deli = data_deli.get('picked_quantity', 0)
                 cost = product_obj.get_cost_info_by_warehouse(
