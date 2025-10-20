@@ -16,7 +16,7 @@ from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, Abstrac
 
 
 # QUOTATION BEGIN
-class QuotationListSerializer(AbstractListSerializerModel):
+class QuotationListSerializer(AbstractListSerializerModel, AbstractCurrencyDetailSerializerModel):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
