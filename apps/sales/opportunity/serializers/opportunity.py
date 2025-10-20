@@ -104,7 +104,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_order(cls, obj):
         return {
-            'id': obj.sale_order_id,
+            'id': str(obj.sale_order_id),
             'code': obj.sale_order.code,
             'title': obj.sale_order.title,
         } if obj.sale_order else {}
@@ -121,7 +121,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_quotation(cls, obj):
         return {
-            'id': obj.quotation_id,
+            'id': str(obj.quotation_id),
             'code': obj.quotation.code,
             'title': obj.quotation.title,
         } if obj.quotation else {}
