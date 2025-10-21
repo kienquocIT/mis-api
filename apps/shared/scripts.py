@@ -6546,7 +6546,7 @@ def rerun_convert_ap_cost_for_payment():
 
     # 2. Gom toàn bộ giá trị convert theo AP ID
     ap_convert_map = {}
-    for payment in Payment.objects.all():
+    for payment in Payment.objects.filter(system_status=3).order_by('date_approved'):
         print(f"Converting {payment.code}")
         for item in payment.payment.all():
             for child in item.ap_cost_converted_list:
@@ -6569,10 +6569,11 @@ def rerun_convert_ap_cost_for_payment():
                      ap_item.sum_converted_value)
 
         if available < total_convert:
-            raise ValueError(
-                f"Cannot convert advance payment (ID {ap_id}). "
-                f"Available: {available}, Requested: {total_convert}"
-            )
+            continue
+            # raise ValueError(
+            #     f"Cannot convert advance payment (ID {ap_id}). "
+            #     f"Available: {available}, Requested: {total_convert}"
+            # )
 
         ap_item.sum_converted_value += total_convert
         ap_item.save(update_fields=['sum_converted_value'])

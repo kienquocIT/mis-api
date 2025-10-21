@@ -12,7 +12,8 @@ from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreat
     SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer, SaleOrderRuleValidate, SaleOrderInvoiceSerializer
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder, SaleOrderAttachment
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
-    AbstractListSerializerModel, SerializerCommonValidate, SerializerCommonHandle
+    AbstractListSerializerModel, SerializerCommonValidate, SerializerCommonHandle, \
+    AbstractCurrencyCreateSerializerModel, AbstractCurrencyDetailSerializerModel
 
 
 # SALE ORDER BEGIN
@@ -110,7 +111,7 @@ class SaleOrderMinimalListSerializer(serializers.ModelSerializer):
         )
 
 
-class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
+class SaleOrderDetailSerializer(AbstractDetailSerializerModel, AbstractCurrencyDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -222,7 +223,7 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
 
 
 # PRINT SERIALIZER
-class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel):
+class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurrencyDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -346,7 +347,7 @@ class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel):
         return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_revenue_before_tax)
 
 
-class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
+class SaleOrderCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     opportunity_id = serializers.UUIDField(
         required=False,
@@ -560,7 +561,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
         return sale_order
 
 
-class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
+class SaleOrderUpdateSerializer(AbstractCreateSerializerModel, AbstractCurrencyCreateSerializerModel):
     opportunity_id = serializers.UUIDField(
         required=False,
         allow_null=True,

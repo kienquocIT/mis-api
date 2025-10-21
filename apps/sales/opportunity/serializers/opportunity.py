@@ -36,6 +36,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
     stage = serializers.SerializerMethodField()
     is_close = serializers.SerializerMethodField()
     sale_order = serializers.SerializerMethodField()
+    lease_order = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
 
     class Meta:
@@ -49,6 +50,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             'open_date',
             'quotation',
             'sale_order',
+            'lease_order',
             'opportunity_sale_team_datas',
             'close_date',
             'date_created',
@@ -58,36 +60,32 @@ class OpportunityListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_customer(cls, obj):
-        if obj.customer:
-            return {
-                'id': obj.customer_id,
-                'name': obj.customer.name,
-                'code': obj.customer.code,
-                'tax_code': obj.customer.tax_code,
-                'contact_mapped': [{
-                    'id': str(item.id),
-                    'fullname': item.fullname,
-                    'email': item.email
-                } for item in obj.customer.contact_account_name.all()],
-                'phone': obj.customer.phone,
-                'email': obj.customer.email,
-                'shipping_address': [item.address_data for item in obj.customer.account_mapped_shipping_address.all()]
-            }
-        return {}
+        return {
+            'id': obj.customer_id,
+            'name': obj.customer.name,
+            'code': obj.customer.code,
+            'tax_code': obj.customer.tax_code,
+            'contact_mapped': [{
+                'id': str(item.id),
+                'fullname': item.fullname,
+                'email': item.email
+            } for item in obj.customer.contact_account_name.all()],
+            'phone': obj.customer.phone,
+            'email': obj.customer.email,
+            'shipping_address': [item.address_data for item in obj.customer.account_mapped_shipping_address.all()]
+        } if obj.customer else {}
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.employee_inherit:
-            return {
-                'id': obj.employee_inherit_id,
-                'full_name': obj.employee_inherit.get_full_name(),
-                'code': obj.employee_inherit.code,
-                'first_name': obj.employee_inherit.first_name,
-                'last_name': obj.employee_inherit.last_name,
-                'email': obj.employee_inherit.email,
-                'is_active': obj.employee_inherit.is_active,
-            }
-        return {}
+        return {
+            'id': obj.employee_inherit_id,
+            'full_name': obj.employee_inherit.get_full_name(),
+            'code': obj.employee_inherit.code,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'is_active': obj.employee_inherit.is_active,
+        } if obj.employee_inherit else {}
 
     @classmethod
     def get_stage(cls, obj):
@@ -102,15 +100,24 @@ class OpportunityListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_order(cls, obj):
         return {
-            'id': obj.sale_order_id,
+            'id': str(obj.sale_order_id),
             'code': obj.sale_order.code,
             'title': obj.sale_order.title,
         } if obj.sale_order else {}
 
     @classmethod
+    def get_lease_order(cls, obj):
+        lease_order_obj = obj.lease_opportunity.first()
+        return {
+            'id': str(lease_order_obj.id),
+            'code': lease_order_obj.code,
+            'title': lease_order_obj.title,
+        } if lease_order_obj else {}
+
+    @classmethod
     def get_quotation(cls, obj):
         return {
-            'id': obj.quotation_id,
+            'id': str(obj.quotation_id),
             'code': obj.quotation.code,
             'title': obj.quotation.title,
         } if obj.quotation else {}

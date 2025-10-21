@@ -25,6 +25,7 @@ __all__ = [
     'ELProductSerialListSerializer',
 ]
 
+
 # main
 class EquipmentLoanListSerializer(AbstractListSerializerModel):
     employee_created = serializers.SerializerMethodField()
@@ -41,7 +42,6 @@ class EquipmentLoanListSerializer(AbstractListSerializerModel):
             'return_date',
             'return_status',
             'employee_created',
-            'product_loan_data'
         )
 
     @classmethod

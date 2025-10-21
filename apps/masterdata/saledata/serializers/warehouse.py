@@ -29,7 +29,6 @@ __all__ = [
 
 
 class WareHouseListSerializer(serializers.ModelSerializer):
-    full_address = serializers.SerializerMethodField()
 
     class Meta:
         model = WareHouse
@@ -38,19 +37,19 @@ class WareHouseListSerializer(serializers.ModelSerializer):
             'title',
             'code',
             'remarks',
+            'detail_address',
             'is_active',
-            'full_address',
             'is_dropship',
             'is_virtual',
+            'is_pm_warehouse',
             'use_for',
         )
 
-    @classmethod
-    def get_full_address(cls, obj):
-        return obj.detail_address
-
 
 class WareHouseCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
+    shelf_data_new = serializers.JSONField(required=False, default=list)
+
     class Meta:
         model = WareHouse
         fields = (
@@ -59,25 +58,42 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
             'is_active',
             'detail_address',
             'address_data',
-            # 'city',
-            # 'district',
-            # 'ward',
-            # 'address',
-            # 'full_address',
             'is_dropship',
             'is_bin_location',
             'is_virtual',
             'is_pm_warehouse',
+            'shelf_data_new'
         )
 
     def validate(self, validate_data):
         if validate_data.get('is_pm_warehouse'):
+            if validate_data.get('is_dropship') or validate_data.get('is_virtual'):
+                raise serializers.ValidationError(
+                    {'is_pm_warehouse': 'Warehouse for product modification can not be dropship or virtual.'}
+                )
             if WareHouse.objects.filter_on_company(is_pm_warehouse=True).exists():
                 raise serializers.ValidationError({'is_pm_warehouse': 'Warehouse for product modification is existed.'})
         return validate_data
 
     def create(self, validated_data):
+        shelf_data_new = validated_data.pop('shelf_data_new', [])
         warehouse_obj = WareHouse.objects.create(**validated_data)
+
+        warehouse_obj.warehouse_shelf_position_warehouse.all().delete()
+        bulk_info = []
+        for shelf in shelf_data_new:
+            bulk_info.append(
+                WarehouseShelf(
+                    warehouse=warehouse_obj,
+                    shelf_title=shelf.get('shelf_title'),
+                    shelf_position=shelf.get('shelf_position'),
+                    shelf_order=shelf.get('shelf_order'),
+                    shelf_row=shelf.get('shelf_row'),
+                    shelf_column=shelf.get('shelf_column')
+                )
+            )
+        WarehouseShelf.objects.bulk_create(bulk_info)
+
         AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 0)
         AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 1)
         AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 2)
@@ -86,11 +102,6 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
 
 
 class WareHouseDetailSerializer(serializers.ModelSerializer):
-    # city = serializers.SerializerMethodField()
-    # district = serializers.SerializerMethodField()
-    # ward = serializers.SerializerMethodField()
-    address = serializers.SerializerMethodField()
-    full_address = serializers.SerializerMethodField()
     shelf_data = serializers.SerializerMethodField()
 
     class Meta:
@@ -100,12 +111,7 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             'title',
             'code',
             'remarks',
-            'address',
             'is_active',
-            'full_address',
-            # 'city',
-            # 'ward',
-            # 'district',
             'detail_address',
             'address_data',
             'is_dropship',
@@ -114,41 +120,6 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             'is_pm_warehouse',
             'shelf_data'
         )
-
-    # @classmethod
-    # def get_city(cls, obj):
-    #     if obj.city:
-    #         return {
-    #             'id': obj.city_id,
-    #             'title': obj.city.title,
-    #         }
-    #     return {}
-    #
-    # @classmethod
-    # def get_district(cls, obj):
-    #     if obj.district:
-    #         return {
-    #             'id': obj.district_id,
-    #             'title': obj.district.title,
-    #         }
-    #     return {}
-    #
-    # @classmethod
-    # def get_ward(cls, obj):
-    #     if obj.ward:
-    #         return {
-    #             'id': obj.ward_id,
-    #             'title': obj.ward.title,
-    #         }
-    #     return {}
-
-    @classmethod
-    def get_address(cls, obj):
-        return obj.detail_address
-
-    @classmethod
-    def get_full_address(cls, obj):
-        return obj.detail_address
 
     @classmethod
     def get_shelf_data(cls, obj):
@@ -163,6 +134,9 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
 
 
 class WareHouseUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
+    shelf_data_new = serializers.JSONField(required=False, default=list)
+
     class Meta:
         model = WareHouse
         fields = (
@@ -171,31 +145,33 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
             'is_active',
             'detail_address',
             'address_data',
-            # 'city',
-            # 'district',
-            # 'ward',
-            # 'address',
-            # 'full_address',
             'is_dropship',
             'is_bin_location',
             'is_virtual',
             'is_pm_warehouse',
+            'shelf_data_new'
         )
 
     def validate(self, validate_data):
         if validate_data.get('is_pm_warehouse'):
+            if validate_data.get('is_dropship') or validate_data.get('is_virtual'):
+                raise serializers.ValidationError(
+                    {'is_pm_warehouse': 'Warehouse for product modification can not be dropship or virtual.'}
+                )
             if WareHouse.objects.filter_on_company(is_pm_warehouse=True).exclude(id=self.instance.id).exists():
                 raise serializers.ValidationError({'is_pm_warehouse': 'Warehouse for product modification is existed.'})
         return validate_data
 
     def update(self, instance, validated_data):
+        shelf_data_new = validated_data.pop('shelf_data_new', [])
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
 
         instance.warehouse_shelf_position_warehouse.all().delete()
         bulk_info = []
-        for shelf in self.initial_data.get('shelf_data_new', []):
+        for shelf in shelf_data_new:
             bulk_info.append(
                 WarehouseShelf(
                     warehouse=instance,
@@ -207,6 +183,7 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
                 )
             )
         WarehouseShelf.objects.bulk_create(bulk_info)
+
         return instance
 
 
