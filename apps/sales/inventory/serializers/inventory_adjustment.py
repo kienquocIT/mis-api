@@ -30,17 +30,11 @@ class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_warehouses(cls, obj):
-        all_item = obj.warehouses_mapped.all()
-        data = []
-        for item in all_item:
-            data.append(
-                {
-                    'warehouse_id': str(item.id),
-                    'warehouse_code': item.code,
-                    'warehouse_title': item.title,
-                }
-            )
-        return data
+        return [{
+            'id': str(item.id),
+            'code': item.code,
+            'title': item.title,
+        } for item in obj.warehouses_mapped.all()]
 
     @classmethod
     def get_state_detail(cls, obj):
