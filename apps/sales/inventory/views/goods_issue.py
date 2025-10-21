@@ -29,7 +29,8 @@ class GoodsIssueList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return self.get_queryset_custom_direct_page()
+        main_queryset = super().get_queryset().select_related('employee_created')
+        return self.get_queryset_custom_direct_page(main_queryset=main_queryset)
 
     @swagger_auto_schema(
         operation_summary="Goods issue List",

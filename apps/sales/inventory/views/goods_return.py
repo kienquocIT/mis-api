@@ -20,7 +20,7 @@ class GoodsReturnList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         main_queryset = super().get_queryset().select_related(
-            'sale_order', 'delivery',
+            'sale_order', 'delivery', 'employee_created'
         )
         return self.get_queryset_custom_direct_page(main_queryset)
 
