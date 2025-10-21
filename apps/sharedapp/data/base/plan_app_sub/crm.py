@@ -341,7 +341,7 @@ TASK_APP_CONFIG = {
 
 QUOTATION_APP_CONFIG = {
     "id": "b9650500-aba7-44e3-b6e0-2542622702a3",
-    "title": "Quotation",
+    "title": "Sale quotation",
     "code": "quotation",
     "model_code": "quotation",
     "app_label": "quotation",

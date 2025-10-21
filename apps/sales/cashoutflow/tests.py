@@ -356,7 +356,7 @@ class PaymentTestCase(AdvanceTestCase):
         employee = self.get_employee().data['result'][0]['id']
         payment_term = self.create_config_payment_term().data['result']['id']
         data = {
-            "title": "Đơn bán hàng test",
+            "title": "Đơn hàng bán test",
             "opportunity_id": opportunity,
             "customer_id": customer,
             "contact_id": contact,
