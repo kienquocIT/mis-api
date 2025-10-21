@@ -108,7 +108,7 @@ class InventoryAdjustmentListForGIS(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter(state=2)
+        return super().get_queryset().filter(state=2).select_related('employee_created')
 
     @swagger_auto_schema(
         operation_summary="Inventory Adjustment List For GIS",
@@ -157,7 +157,7 @@ class ProductionOrderListForGIS(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter()
+        return super().get_queryset().filter(system_status=3).select_related('employee_created')
 
     @swagger_auto_schema(
         operation_summary="Production Order List",
@@ -202,7 +202,7 @@ class WorkOrderListForGIS(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().filter()
+        return super().get_queryset().filter(system_status=3).select_related('employee_created')
 
     @swagger_auto_schema(
         operation_summary="Work Order List",

@@ -679,6 +679,7 @@ class GoodsIssueCommonFunction:
 
 # related serializers
 class InventoryAdjustmentListSerializerForGIS(AbstractListSerializerModel):
+    employee_created = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryAdjustment
@@ -686,8 +687,13 @@ class InventoryAdjustmentListSerializerForGIS(AbstractListSerializerModel):
             'id',
             'title',
             'code',
+            'employee_created',
             'date_created'
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
 
 class InventoryAdjustmentDetailSerializerForGIS(AbstractDetailSerializerModel):
@@ -738,6 +744,7 @@ class InventoryAdjustmentDetailSerializerForGIS(AbstractDetailSerializerModel):
 
 
 class ProductionOrderListSerializerForGIS(AbstractListSerializerModel):
+    employee_created = serializers.SerializerMethodField()
     app = serializers.SerializerMethodField()
     type = serializers.SerializerMethodField()
 
@@ -749,8 +756,13 @@ class ProductionOrderListSerializerForGIS(AbstractListSerializerModel):
             'code',
             'app',
             'type',
+            'employee_created',
             'date_created'
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
     def get_app(cls, obj):
@@ -807,6 +819,7 @@ class ProductionOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
 
 
 class WorkOrderListSerializerForGIS(AbstractListSerializerModel):
+    employee_created = serializers.SerializerMethodField()
     app = serializers.SerializerMethodField()
     type = serializers.SerializerMethodField()
 
@@ -818,8 +831,13 @@ class WorkOrderListSerializerForGIS(AbstractListSerializerModel):
             'code',
             'app',
             'type',
+            'employee_created',
             'date_created'
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
     def get_app(cls, obj):
