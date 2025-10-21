@@ -32,6 +32,8 @@ __all__ = [
 
 
 class GoodsIssueListSerializer(AbstractListSerializerModel):
+    employee_created = serializers.SerializerMethodField()
+
     class Meta:
         model = GoodsIssue
         fields = (
@@ -40,8 +42,13 @@ class GoodsIssueListSerializer(AbstractListSerializerModel):
             'title',
             'goods_issue_type',
             'date_created',
+            'employee_created',
             'system_auto_create'
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
 
 class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):

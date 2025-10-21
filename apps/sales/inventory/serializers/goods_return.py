@@ -11,6 +11,7 @@ from apps.shared import (
 
 
 class GoodsReturnListSerializer(AbstractListSerializerModel):
+    employee_created = serializers.SerializerMethodField()
     sale_order = serializers.SerializerMethodField()
     delivery = serializers.SerializerMethodField()
 
@@ -23,8 +24,13 @@ class GoodsReturnListSerializer(AbstractListSerializerModel):
             'sale_order',
             'note',
             'delivery',
+            'employee_created',
             'date_created'
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
     def get_sale_order(cls, obj):

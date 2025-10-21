@@ -25,6 +25,7 @@ def cast_quantity_to_unit(uom, quantity):
 
 
 class GoodsRegistrationListSerializer(serializers.ModelSerializer):
+    employee_created = serializers.SerializerMethodField()
     sale_order = serializers.SerializerMethodField()
 
     class Meta:
@@ -34,8 +35,13 @@ class GoodsRegistrationListSerializer(serializers.ModelSerializer):
             'title',
             'code',
             'sale_order',
+            'employee_created',
             'date_created'
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
     def get_sale_order(cls, obj):
