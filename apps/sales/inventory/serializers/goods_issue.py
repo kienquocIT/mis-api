@@ -10,6 +10,8 @@ from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, Inventory
 from apps.sales.inventory.models.goods_issue import GoodsIssueAttachmentFile
 from apps.sales.production.models import ProductionOrder, ProductionOrderTask, WorkOrder, WorkOrderTask
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel, HRMsg
+from apps.shared.translations.base import AttachmentMsg
+
 
 __all__ = [
     'GoodsIssueListSerializer',
@@ -28,11 +30,8 @@ __all__ = [
     'GoodsIssueProductListSerializer',
 ]
 
-from apps.shared.translations.base import AttachmentMsg
-
 
 class GoodsIssueListSerializer(AbstractListSerializerModel):
-
     class Meta:
         model = GoodsIssue
         fields = (
@@ -111,6 +110,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
     inventory_adjustment = serializers.SerializerMethodField()
     production_order = serializers.SerializerMethodField()
     work_order = serializers.SerializerMethodField()
+    product_modification = serializers.SerializerMethodField()
     detail_data_ia = serializers.SerializerMethodField()
     detail_data_po = serializers.SerializerMethodField()
     detail_data_wo = serializers.SerializerMethodField()
@@ -128,6 +128,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             'inventory_adjustment',
             'production_order',
             'work_order',
+            'product_modification',
             'detail_data_ia',
             'detail_data_po',
             'detail_data_wo',
@@ -140,7 +141,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_inventory_adjustment(cls, obj):
         return {
-            'id': obj.inventory_adjustment_id,
+            'id': str(obj.inventory_adjustment_id),
             'title': obj.inventory_adjustment.title,
             'code': obj.inventory_adjustment.code,
         } if obj.inventory_adjustment else {}
@@ -148,7 +149,7 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_production_order(cls, obj):
         return {
-            'id': obj.production_order_id,
+            'id': str(obj.production_order_id),
             'title': obj.production_order.title,
             'code': obj.production_order.code,
             'type': 0
@@ -157,11 +158,20 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_work_order(cls, obj):
         return {
-            'id': obj.work_order_id,
+            'id': str(obj.work_order_id),
             'title': obj.work_order.title,
             'code': obj.work_order.code,
             'type': 1
         } if obj.work_order else {}
+
+    @classmethod
+    def get_product_modification(cls, obj):
+        return {
+            'id': str(obj.product_modification_id),
+            'title': obj.product_modification.title,
+            'code': obj.product_modification.code,
+            'type': 1
+        } if obj.product_modification else {}
 
     @classmethod
     def get_detail_data_ia(cls, obj):

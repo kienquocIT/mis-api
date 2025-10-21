@@ -66,6 +66,9 @@ class GoodsIssueDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def get_queryset(self):
         return super().get_queryset().select_related(
             "inventory_adjustment",
+            "production_order",
+            "work_order",
+            "product_modification",
         ).prefetch_related(
             'goods_issue_product__product',
             'goods_issue_product__uom',
