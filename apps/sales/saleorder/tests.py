@@ -312,6 +312,12 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'process_stage_app',
 
                 'attachment',
+                'is_currency_exchange',
+                'currency_company_id',
+                'currency_company_data',
+                'currency_exchange_id',
+                'currency_exchange_data',
+                'currency_exchange_rate',
             ],
             check_sum_second=True,
         )
@@ -457,6 +463,12 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'process_stage_app',
 
                 'attachment',
+                'is_currency_exchange',
+                'currency_company_id',
+                'currency_company_data',
+                'currency_exchange_id',
+                'currency_exchange_data',
+                'currency_exchange_rate',
             ],
             check_sum_second=True,
         )
