@@ -303,6 +303,32 @@ class OrderDeliverySubPrintSerializer(AbstractDetailSerializerModel):
     total_amount_word = serializers.SerializerMethodField()
 
     @classmethod
+    def cal_pretax(cls, obj):
+        pretax = 0
+        for delivery_product in obj.delivery_product_delivery_sub.all():
+            subtotal = delivery_product.product_cost * delivery_product.picked_quantity
+            pretax += subtotal
+        return pretax
+
+    @classmethod
+    def cal_tax(cls, obj):
+        tax = 0
+        for delivery_product in obj.delivery_product_delivery_sub.all():
+            subtotal = delivery_product.product_cost * delivery_product.picked_quantity
+            tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
+        return tax
+
+    @classmethod
+    def cal_total(cls, obj):
+        pretax = 0
+        tax = 0
+        for delivery_product in obj.delivery_product_delivery_sub.all():
+            subtotal = delivery_product.product_cost * delivery_product.picked_quantity
+            pretax += subtotal
+            tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
+        return pretax + tax
+
+    @classmethod
     def get_products(cls, obj):
         prod = OrderDeliveryProductListPrintSerializer(
             obj.delivery_product_delivery_sub.all(),
@@ -345,47 +371,32 @@ class OrderDeliverySubPrintSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_pretax_amount(cls, obj):
-        pretax = 0
-        for delivery_product in obj.delivery_product_delivery_sub.all():
-            subtotal = delivery_product.product_cost * delivery_product.picked_quantity
-            pretax += subtotal
-        return CompanyHandler.parse_currency(obj=obj, value=pretax)
+        return CompanyHandler.parse_currency(obj=obj, value=cls.cal_pretax(obj=obj))
 
     @classmethod
     def get_pretax_amount_word(cls, obj):
         return FORMATTING.number_to_vietnamese(
-            number=OrderDeliverySubPrintSerializer.get_pretax_amount(obj=obj)
+            number=cls.cal_pretax(obj=obj)
         ).capitalize()
 
     @classmethod
     def get_tax_amount(cls, obj):
-        tax = 0
-        for delivery_product in obj.delivery_product_delivery_sub.all():
-            subtotal = delivery_product.product_cost * delivery_product.picked_quantity
-            tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
-        return CompanyHandler.parse_currency(obj=obj, value=tax)
+        return CompanyHandler.parse_currency(obj=obj, value=cls.cal_tax(obj=obj))
 
     @classmethod
     def get_tax_amount_word(cls, obj):
         return FORMATTING.number_to_vietnamese(
-            number=OrderDeliverySubPrintSerializer.get_tax_amount(obj=obj)
+            number=cls.cal_tax(obj=obj)
         ).capitalize()
 
     @classmethod
     def get_total_amount(cls, obj):
-        pretax = 0
-        tax = 0
-        for delivery_product in obj.delivery_product_delivery_sub.all():
-            subtotal = delivery_product.product_cost * delivery_product.picked_quantity
-            pretax += subtotal
-            tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
-        value = pretax + tax
-        return CompanyHandler.parse_currency(obj=obj, value=value)
+        return CompanyHandler.parse_currency(obj=obj, value=cls.cal_total(obj=obj))
 
     @classmethod
     def get_total_amount_word(cls, obj):
         return FORMATTING.number_to_vietnamese(
-            number=OrderDeliverySubPrintSerializer.get_total_amount(obj=obj)
+            number=cls.cal_total(obj=obj)
         ).capitalize()
 
     class Meta:
