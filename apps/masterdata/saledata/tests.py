@@ -2276,7 +2276,6 @@ class WareHouseTestCase(AdvanceTestCase):
                 'is_dropship',
                 'is_bin_location',
                 'is_virtual',
-                'is_pm_warehouse',
                 'shelf_data'
             ],
             check_sum_second=True,
@@ -2309,7 +2308,6 @@ class WareHouseTestCase(AdvanceTestCase):
                 'is_active',
                 'is_dropship',
                 'is_virtual',
-                'is_pm_warehouse',
                 'use_for',
             ],
             check_sum_second=True,
@@ -2345,7 +2343,6 @@ class WareHouseTestCase(AdvanceTestCase):
                 'is_dropship',
                 'is_bin_location',
                 'is_virtual',
-                'is_pm_warehouse',
                 'shelf_data'
             ],
             check_sum_second=True,
