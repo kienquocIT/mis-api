@@ -25,7 +25,7 @@ class CompanyHandler:
         currency_rule = CompanyHandler.get_currency_rule(company=obj.company)
         prefix = currency_rule.get('prefix', '').replace(' ', '')
         suffix = currency_rule.get('suffix', '').replace(' ', '')
-        precision = int(currency_rule.get('precision', 2))
+        precision = int(currency_rule.get('precision', 0))
         thousands = currency_rule.get('thousands', ',')
         decimal = currency_rule.get('decimal', '.')
         allow_negative = currency_rule.get('allowNegative', True)
