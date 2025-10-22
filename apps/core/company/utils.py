@@ -30,10 +30,11 @@ class CompanyHandler:
         decimal = currency_rule.get('decimal', '.')
         allow_negative = currency_rule.get('allowNegative', True)
 
-        if obj.currency_exchange_id:
-            exchange = obj.currency_exchange_data.get('abbreviation', '')
-            prefix = exchange if prefix else ''
-            suffix = exchange if suffix else ''
+        if hasattr(obj, 'currency_exchange_id'):
+            if obj.currency_exchange_id:
+                exchange = obj.currency_exchange_data.get('abbreviation', '')
+                prefix = exchange if prefix else ''
+                suffix = exchange if suffix else ''
         if not allow_negative and value < 0:
             value = abs(value)
         if float(value).is_integer():
