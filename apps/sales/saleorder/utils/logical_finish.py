@@ -1,3 +1,4 @@
+from apps.core.company.utils import CompanyHandler
 from apps.masterdata.saledata.models import AccountActivity
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.sales.delivery.models import OrderPickingSub, OrderPickingProduct
@@ -133,8 +134,12 @@ class SOFinishHandler:
                         customer_data=instance.customer_data,
                         so_payment_stage_id=payment_obj.id,
                         so_payment_stage_data=payment_data,
-                        value_balance=payment_obj.value_total,
-                        value_pay=payment_obj.value_total,
+                        value_balance=CompanyHandler.exchange_to_company_currency(
+                            obj=instance, value=payment_obj.value_total
+                        ),
+                        value_pay=CompanyHandler.exchange_to_company_currency(
+                            obj=instance, value=payment_obj.value_total
+                        ),
                         invoice_planned_date=payment_obj.invoice_data.get('date', None)
                         if isinstance(payment_obj.invoice_data, dict) else None,
                         due_date=payment_obj.due_date,
