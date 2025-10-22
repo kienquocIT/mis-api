@@ -8,3 +8,14 @@ class CompanyHandler:
             if company_config:
                 round_num = int(company_config.currency_rule.get('precision', '0'))
         return round(value, round_num) if round_num or round_num == 0 else value
+
+    @classmethod
+    def currency_company_config(cls, company):
+        currency = ''
+        if company:
+            company_config = company.config
+            if company_config:
+                currency = company_config.currency_rule.get('prefix', '')
+                if not currency:
+                    currency = company_config.currency_rule.get('suffix', '')
+        return currency
