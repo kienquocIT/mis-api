@@ -232,6 +232,13 @@ class Product(DataAbstractModel):
     volume = models.JSONField(default=dict)
     weight = models.JSONField(default=dict)
 
+    representative_for_pm_product = models.ForeignKey(
+        'self',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='product_representative_for_pm_product'
+    )
+
     # Sale
     sale_default_uom = models.ForeignKey(
         UnitOfMeasure,

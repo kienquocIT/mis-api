@@ -24,6 +24,10 @@ class ProductModification(DataAbstractModel):
     created_goods_issue = models.BooleanField(default=False)
     created_goods_receipt = models.BooleanField(default=False)
 
+    root_product_modified = models.ForeignKey(
+        'saledata.Product', on_delete=models.CASCADE, related_name='root_product_modified', null=True
+    )
+
     @classmethod
     def get_modified_product_data(cls, pm_obj):
         modified_product_data = []

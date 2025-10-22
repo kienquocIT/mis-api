@@ -134,6 +134,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
     general_manufacturer = serializers.UUIDField(required=False, allow_null=True)
+    representative_for_pm_product = serializers.UUIDField(required=False, allow_null=True)
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
@@ -153,6 +154,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             # General
             'general_product_category', 'general_uom_group', 'general_traceability_method', 'general_manufacturer',
             'standard_price', 'width', 'height', 'length', 'volume', 'weight',
+            'representative_for_pm_product',
             # Sale
             'sale_default_uom', 'sale_tax', 'online_price_list', 'available_notify', 'available_notify_quantity',
             # Inventory
@@ -206,6 +208,15 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 return Manufacturer.objects.get(id=value)
             except Manufacturer.DoesNotExist:
                 raise serializers.ValidationError({'general_manufacturer': ProductMsg.MANUFACTURER_DOES_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_representative_for_pm_product(cls, value):
+        if value:
+            try:
+                return Product.objects.get(id=value)
+            except Product.DoesNotExist:
+                raise serializers.ValidationError({'representative_for_pm_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -532,7 +543,13 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                     "value": obj.weight['value']
                 } if 'id' in obj.weight else {}
             },
-            'standard_price': obj.standard_price
+            'standard_price': obj.standard_price,
+            'representative_for_pm_product': {
+                'id': str(obj.representative_for_pm_product_id),
+                'code': obj.representative_for_pm_product.code,
+                'title': obj.representative_for_pm_product.title,
+                'description': obj.representative_for_pm_product.description
+            } if obj.representative_for_pm_product else {}
         }
         return result
 
@@ -723,6 +740,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
     general_manufacturer = serializers.UUIDField(required=False, allow_null=True)
+    representative_for_pm_product = serializers.UUIDField(required=False, allow_null=True)
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
@@ -745,6 +763,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'general_product_category', 'general_uom_group', 'general_manufacturer', 'general_traceability_method',
             'standard_price',
             'width', 'height', 'length', 'volume', 'weight',
+            'representative_for_pm_product',
             'sale_default_uom', 'sale_tax', 'online_price_list', 'available_notify', 'available_notify_quantity',
             'inventory_uom', 'inventory_level_min', 'inventory_level_max',
             'valuation_method',
@@ -770,6 +789,15 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 return Manufacturer.objects.get(id=value)
             except Manufacturer.DoesNotExist:
                 raise serializers.ValidationError({'general_manufacturer': ProductMsg.MANUFACTURER_DOES_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_representative_for_pm_product(cls, value):
+        if value:
+            try:
+                return Product.objects.get(id=value)
+            except Product.DoesNotExist:
+                raise serializers.ValidationError({'representative_for_pm_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
         return None
 
     @classmethod
