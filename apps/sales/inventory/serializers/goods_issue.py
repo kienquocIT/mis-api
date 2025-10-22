@@ -9,6 +9,7 @@ from apps.masterdata.saledata.models import (
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct, InventoryAdjustmentItem, InventoryAdjustment
 from apps.sales.inventory.models.goods_issue import GoodsIssueAttachmentFile
 from apps.sales.production.models import ProductionOrder, ProductionOrderTask, WorkOrder, WorkOrderTask
+from apps.sales.productmodification.models import ProductModification
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel, HRMsg
 from apps.shared.translations.base import AttachmentMsg
 
@@ -27,6 +28,8 @@ __all__ = [
     'ProductWareHouseListSerializerForGIS',
     'WorkOrderListSerializerForGIS',
     'WorkOrderDetailSerializerForGIS',
+    'ProductModificationListSerializerForGIS',
+    'ProductModificationDetailSerializerForGIS',
     'GoodsIssueProductListSerializer',
 ]
 
@@ -891,6 +894,37 @@ class WorkOrderDetailSerializerForGIS(AbstractDetailSerializerModel):
                 'remain_quantity': remain_quantity,
             })
         return task_data
+
+
+class ProductModificationListSerializerForGIS(AbstractListSerializerModel):
+    employee_created = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductModification
+        fields = (
+            'id',
+            'title',
+            'code',
+            'employee_created',
+            'date_created'
+        )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
+
+
+class ProductModificationDetailSerializerForGIS(AbstractDetailSerializerModel):
+
+    class Meta:
+        model = ProductModification
+        fields = (
+            'id',
+            'title',
+            'prd_wh_data',
+            'prd_wh_lot_data',
+            'prd_wh_serial_data',
+        )
 
 
 class ProductWareHouseListSerializerForGIS(serializers.ModelSerializer):

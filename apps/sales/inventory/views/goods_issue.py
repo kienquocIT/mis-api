@@ -13,9 +13,10 @@ from apps.sales.inventory.serializers.goods_issue import (
     ProductWarehouseSerialListSerializerForGIS,
     ProductWarehouseLotListSerializerForGIS,
     ProductWareHouseListSerializerForGIS, WorkOrderListSerializerForGIS, WorkOrderDetailSerializerForGIS,
-    GoodsIssueProductListSerializer
+    GoodsIssueProductListSerializer, ProductModificationDetailSerializerForGIS, ProductModificationListSerializerForGIS
 )
 from apps.sales.production.models import ProductionOrder, WorkOrder
+from apps.sales.productmodification.models import ProductModification
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -231,6 +232,51 @@ class WorkOrderDetailForGIS(BaseRetrieveMixin):
     @mask_view(
         login_require=True, auth_require=True,
         label_code='production', model_code='workorder', perm_code='view',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
+
+
+class ProductModificationListForGIS(BaseListMixin):
+    queryset = ProductModification.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'employee_inherit_id': ['exact'],
+        'system_status': ['exact', 'in'],
+    }
+    serializer_list = ProductModificationListSerializerForGIS
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(system_status=3).select_related('employee_created')
+
+    @swagger_auto_schema(
+        operation_summary="Product Modification List",
+        operation_description="Get Product Modification List",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='productmodification', model_code='productmodification', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductModificationDetailForGIS(BaseRetrieveMixin):
+    queryset = ProductModification.objects
+    serializer_detail = ProductModificationDetailSerializerForGIS
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related().prefetch_related()
+
+    @swagger_auto_schema(
+        operation_summary="Product Modification Detail",
+        operation_description="Get Product Modification Detail By ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='productmodification', model_code='productmodification', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
