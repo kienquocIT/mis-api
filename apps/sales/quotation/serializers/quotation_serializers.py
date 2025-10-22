@@ -245,7 +245,7 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
 
     @classmethod
     def parse_currency(cls, obj):
-        currency = obj.currency_company_data.get('abbreviation', '')
+        currency = CompanyHandler.currency_company_config(company=obj.company)
         if obj.currency_exchange_id:
             currency = obj.currency_exchange_data.get('abbreviation', '')
         return currency
@@ -280,6 +280,12 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
             product_obj = Product.objects.filter(id=data.get('product_id', None)).first()
             if product_obj:
                 product_description = data.get('product_description', "")
+                price = data.get('product_unit_price', 0)
+                price = CompanyHandler.round_by_company_config(company=obj.company, value=price)
+                subtotal = data.get('product_subtotal_price', 0)
+                subtotal = CompanyHandler.round_by_company_config(company=obj.company, value=subtotal)
+                subtotal_at = data.get('product_subtotal_price_after_tax', 0)
+                subtotal_at = CompanyHandler.round_by_company_config(company=obj.company, value=subtotal_at)
                 data.update({
                     'product_data': {
                         'id': str(product_obj.id),
@@ -289,7 +295,10 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
                     }
                 })
                 data.update({
-                    'product_description': product_description if product_description else product_obj.description
+                    'product_description': product_description if product_description else product_obj.description,
+                    'product_unit_price': str(price) + cls.parse_currency(obj=obj),
+                    'product_subtotal_price': str(subtotal) + cls.parse_currency(obj=obj),
+                    'product_subtotal_price_after_tax': str(subtotal_at) + cls.parse_currency(obj=obj),
                 })
         return obj.quotation_products_data
 
