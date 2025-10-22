@@ -274,11 +274,8 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
             if product_obj:
                 product_description = data.get('product_description', "")
                 price = data.get('product_unit_price', 0)
-                price = CompanyHandler.round_by_company_config(company=obj.company, value=price)
                 subtotal = data.get('product_subtotal_price', 0)
-                subtotal = CompanyHandler.round_by_company_config(company=obj.company, value=subtotal)
                 subtotal_at = data.get('product_subtotal_price_after_tax', 0)
-                subtotal_at = CompanyHandler.round_by_company_config(company=obj.company, value=subtotal_at)
                 data.update({
                     'product_data': {
                         'id': str(product_obj.id),
@@ -297,28 +294,23 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
 
     @classmethod
     def get_total_product_pretax_amount(cls, obj):
-        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_pretax_amount)
-        return CompanyHandler.parse_currency(obj=obj, value=value)
+        return CompanyHandler.parse_currency(obj=obj, value=obj.total_product_pretax_amount)
 
     @classmethod
     def get_total_product_discount(cls, obj):
-        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_discount)
-        return CompanyHandler.parse_currency(obj=obj, value=value)
+        return CompanyHandler.parse_currency(obj=obj, value=obj.total_product_discount)
 
     @classmethod
     def get_total_product_tax(cls, obj):
-        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_tax)
-        return CompanyHandler.parse_currency(obj=obj, value=value)
+        return CompanyHandler.parse_currency(obj=obj, value=obj.total_product_tax)
 
     @classmethod
     def get_total_product(cls, obj):
-        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product)
-        return CompanyHandler.parse_currency(obj=obj, value=value)
+        return CompanyHandler.parse_currency(obj=obj, value=obj.total_product)
 
     @classmethod
     def get_total_product_revenue_before_tax(cls, obj):
-        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_revenue_before_tax)
-        return CompanyHandler.parse_currency(obj=obj, value=value)
+        return CompanyHandler.parse_currency(obj=obj, value=obj.total_product_revenue_before_tax)
 
     @classmethod
     def get_valid_until(cls, obj):
