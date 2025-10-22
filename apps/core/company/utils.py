@@ -36,7 +36,10 @@ class CompanyHandler:
             suffix = exchange if suffix else ''
         if not allow_negative and value < 0:
             value = abs(value)
-        formatted = f"{value:,.{precision}f}"
+        if float(value).is_integer():
+            formatted = f"{int(value):,}"
+        else:
+            formatted = f"{value:,.{precision}f}"
         formatted = formatted.replace(',', 'TEMP')  # giữ chỗ
         formatted = formatted.replace('.', decimal)  # đổi dấu thập phân
         formatted = formatted.replace('TEMP', thousands)  # đổi dấu phần nghìn
