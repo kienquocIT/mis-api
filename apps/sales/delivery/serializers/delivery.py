@@ -236,13 +236,15 @@ class OrderDeliveryProductListPrintSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product_subtotal(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.product_cost * obj.picked_quantity)
+        value = obj.product_cost * obj.picked_quantity
+        return CompanyHandler.parse_currency(obj=obj, value=value)
 
     @classmethod
     def get_product_subtotal_after_tax(cls, obj):
         subtotal = obj.product_cost * obj.picked_quantity
         tax = subtotal * obj.tax_data.get('rate', 0) / 100
-        return CompanyHandler.round_by_company_config(company=obj.company, value=subtotal + tax)
+        value = subtotal + tax
+        return CompanyHandler.parse_currency(obj=obj, value=value)
 
     class Meta:
         model = OrderDeliveryProduct
@@ -347,7 +349,7 @@ class OrderDeliverySubPrintSerializer(AbstractDetailSerializerModel):
         for delivery_product in obj.delivery_product_delivery_sub.all():
             subtotal = delivery_product.product_cost * delivery_product.picked_quantity
             pretax += subtotal
-        return CompanyHandler.round_by_company_config(company=obj.company, value=pretax)
+        return CompanyHandler.parse_currency(obj=obj, value=pretax)
 
     @classmethod
     def get_pretax_amount_word(cls, obj):
@@ -361,7 +363,7 @@ class OrderDeliverySubPrintSerializer(AbstractDetailSerializerModel):
         for delivery_product in obj.delivery_product_delivery_sub.all():
             subtotal = delivery_product.product_cost * delivery_product.picked_quantity
             tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
-        return CompanyHandler.round_by_company_config(company=obj.company, value=tax)
+        return CompanyHandler.parse_currency(obj=obj, value=tax)
 
     @classmethod
     def get_tax_amount_word(cls, obj):
@@ -377,7 +379,8 @@ class OrderDeliverySubPrintSerializer(AbstractDetailSerializerModel):
             subtotal = delivery_product.product_cost * delivery_product.picked_quantity
             pretax += subtotal
             tax += subtotal * delivery_product.tax_data.get('rate', 0) / 100
-        return CompanyHandler.round_by_company_config(company=obj.company, value=pretax + tax)
+        value = pretax + tax
+        return CompanyHandler.parse_currency(obj=obj, value=value)
 
     @classmethod
     def get_total_amount_word(cls, obj):

@@ -313,6 +313,12 @@ class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
             product_obj = Product.objects.filter(id=data.get('product_id', None)).first()
             if product_obj:
                 product_description = data.get('product_description', "")
+                price = data.get('product_unit_price', 0)
+                price = CompanyHandler.round_by_company_config(company=obj.company, value=price)
+                subtotal = data.get('product_subtotal_price', 0)
+                subtotal = CompanyHandler.round_by_company_config(company=obj.company, value=subtotal)
+                subtotal_at = data.get('product_subtotal_price_after_tax', 0)
+                subtotal_at = CompanyHandler.round_by_company_config(company=obj.company, value=subtotal_at)
                 data.update({
                     'product_data': {
                         'id': str(product_obj.id),
@@ -322,29 +328,37 @@ class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
                     }
                 })
                 data.update({
-                    'product_description': product_description if product_description else product_obj.description
+                    'product_description': product_description if product_description else product_obj.description,
+                    'product_unit_price': CompanyHandler.parse_currency(obj=obj, value=price),
+                    'product_subtotal_price': CompanyHandler.parse_currency(obj=obj, value=subtotal),
+                    'product_subtotal_price_after_tax': CompanyHandler.parse_currency(obj=obj, value=subtotal_at),
                 })
         return obj.sale_order_products_data
 
     @classmethod
     def get_total_product_pretax_amount(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_pretax_amount)
+        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_pretax_amount)
+        return CompanyHandler.parse_currency(obj=obj, value=value)
 
     @classmethod
     def get_total_product_discount(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_discount)
+        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_discount)
+        return CompanyHandler.parse_currency(obj=obj, value=value)
 
     @classmethod
     def get_total_product_tax(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_tax)
+        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_tax)
+        return CompanyHandler.parse_currency(obj=obj, value=value)
 
     @classmethod
     def get_total_product(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product)
+        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product)
+        return CompanyHandler.parse_currency(obj=obj, value=value)
 
     @classmethod
     def get_total_product_revenue_before_tax(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_revenue_before_tax)
+        value = CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_revenue_before_tax)
+        return CompanyHandler.parse_currency(obj=obj, value=value)
 
 
 class SaleOrderCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyCreateSerializerModel):
