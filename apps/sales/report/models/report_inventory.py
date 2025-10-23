@@ -358,7 +358,7 @@ class ReportStockLog(DataAbstractModel):
         return log
 
     @classmethod
-    def update_log_cost(cls, log, period_obj, sub_period_order, cost_cfg):
+    def update_log_cost(cls, log, period_obj, sub_period_order, cost_cfg, for_balance_init):
         """ Step 2: Hàm để cập nhập giá trị tồn kho khi log được ghi vào """
         kw_parameter = {}
         if 1 in cost_cfg:
@@ -375,12 +375,12 @@ class ReportStockLog(DataAbstractModel):
         )
         updated_log = cls.update_log_cost_dict(div, log, latest_cost)
         cls.create_or_update_this_sub_period_cost(
-            updated_log, period_obj, sub_period_order, latest_cost, div, **kw_parameter
+            updated_log, period_obj, sub_period_order, latest_cost, div, for_balance_init, **kw_parameter
         )
         return True
 
     @classmethod
-    def for_perpetual(cls, this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, **kwargs):
+    def for_perpetual(cls, this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, for_balance_init, **kwargs):
         ending_balance_quantity = new_cost_dict['quantity'] + (log.quantity * log.stock_type)
         if not this_sub_period_cost:  # không có thì tạo, gán sub_latest_log
             this_sub_period_cost = ReportInventoryCost.objects.create(
@@ -399,6 +399,7 @@ class ReportStockLog(DataAbstractModel):
                 ending_balance_cost=log.perpetual_current_cost,
                 ending_balance_value=ending_balance_quantity * log.perpetual_current_cost,
                 sub_latest_log=log,
+                for_balance_init=for_balance_init,
                 **kwargs
             )
         else:  # nếu có thì update giá cost, gán sub_latest_log
@@ -428,7 +429,7 @@ class ReportStockLog(DataAbstractModel):
         return this_sub_period_cost
 
     @classmethod
-    def for_periodic(cls, this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, **kwargs):
+    def for_periodic(cls, this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, for_balance_init, **kwargs):
         ending_balance_quantity = new_cost_dict['quantity'] + (log.quantity * log.stock_type)
         if not this_sub_period_cost:
             this_sub_period_cost = ReportInventoryCost.objects.create(
@@ -447,6 +448,7 @@ class ReportStockLog(DataAbstractModel):
                 periodic_ending_balance_cost=log.perpetual_current_cost,
                 periodic_ending_balance_value=ending_balance_quantity * log.perpetual_current_cost,
                 sub_latest_log=log,
+                for_balance_init=for_balance_init,
                 **kwargs
             )
         else:  # có thì update giá cost, gán sub
@@ -482,7 +484,7 @@ class ReportStockLog(DataAbstractModel):
         return this_sub_period_cost
 
     @classmethod
-    def create_or_update_this_sub_period_cost(cls, log, period_obj, sub_period_order, latest_cost, div, **kwargs):
+    def create_or_update_this_sub_period_cost(cls, log, period_obj, sub_period_order, latest_cost, div, for_balance_init, **kwargs):
         """
         Step 3: Hàm kiểm tra record cost của sp này trong kì nay đã có hay chưa ?
                 Chưa thì tạo mới - Có thì Update lại quantity-cost-value
@@ -507,9 +509,9 @@ class ReportStockLog(DataAbstractModel):
                 **kwargs
             ).first()
             this_sub_period_cost = cls.for_perpetual(
-                this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, **kwargs
+                this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, for_balance_init, **kwargs
             ) if div == 0 else cls.for_periodic(
-                this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, **kwargs
+                this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, for_balance_init, **kwargs
             )
 
             if this_sub_period_cost:

@@ -555,6 +555,8 @@ class ProductModificationCommonFunction:
 
 # related
 class ProductModifiedListSerializer(serializers.ModelSerializer):
+    representative_for_pm_product = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
         fields = (
@@ -564,7 +566,17 @@ class ProductModifiedListSerializer(serializers.ModelSerializer):
             'description',
             'general_traceability_method',
             'valuation_method',
+            'representative_for_pm_product'
         )
+
+    @classmethod
+    def get_representative_for_pm_product(cls, obj):
+        return {
+            'id': str(obj.representative_for_pm_product_id),
+            'code': obj.representative_for_pm_product.code,
+            'title': obj.representative_for_pm_product.title,
+            'description': obj.representative_for_pm_product.description
+        } if obj.representative_for_pm_product else {}
 
 
 class ProductModifiedBeforeListSerializer(serializers.ModelSerializer):
