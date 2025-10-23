@@ -47,9 +47,9 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
     total_product_revenue_before_tax = models.FloatField(default=0, help_text="total before tax of tab product")
 
     # expense value
-    expense_pretax_value = models.FloatField(default=0)
-    expense_tax_value = models.FloatField(default=0)
-    expense_total_value = models.FloatField(default=0)
+    total_expense_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab expense")
+    total_expense_tax = models.FloatField(default=0, help_text="total tax of tab expense")
+    total_expense = models.FloatField(default=0, help_text="total amount of tab expense")
 
     # indicators
     service_order_indicators_data = models.JSONField(
@@ -510,7 +510,7 @@ class ServiceOrderExpense(MasterDataAbstractModel):
         related_name="service_order_expense_tax"
     )
     tax_data = models.JSONField(default=dict)
-    subtotal_price = models.FloatField(default=0)
+    expense_subtotal_price = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Service order expense'
