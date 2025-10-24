@@ -90,6 +90,15 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
         return value
 
+    def validate(self, validate_data):
+        contract = validate_data.get('contract', None)
+        if contract:
+            effected_date = contract.get('effected_date', None)
+            expired_date = contract.get('expired_date', None)
+            if effected_date and expired_date and expired_date <= effected_date:
+                raise serializers.ValidationError({'expired_date': HrMsg.EXPIRED_DATE_ERROR})
+        return validate_data
+
     def check_is_map(self, attrs):
         emp_is_map = False
         if 'employee' in attrs:
@@ -141,19 +150,15 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
         obj = None
         emp_frk = contract.get('employee_info', None)
         if contract and (emp_info or emp_frk):
-            effected_date = contract.get('effected_date') or timezone.now()
-            expired_date = contract.get('expired_date', None)
-            if effected_date and expired_date and expired_date <= effected_date:
-                raise serializers.ValidationError({'expired_date': HrMsg.EXPIRED_DATE_ERROR})
             obj = EmployeeContract.objects.create(
                 company_id=self.context.get('company_id', None),
                 tenant_id=self.context.get('tenant_id', None),
                 employee_created_id=self.context.get('user', None).employee_current_id,
-                effected_date=effected_date,
+                effected_date=contract.get('effected_date') or timezone.now(),
                 content=contract.get('content', ''),
                 contract_type=contract.get('contract_type', None),
                 employee_info=emp_frk if emp_frk else emp_info,
-                expired_date=expired_date,
+                expired_date=contract.get('expired_date', None),
                 file_type=contract.get('file_type', 0),
                 limit_time=contract.get('limit_time', False),
                 represent=contract.get('represent', None),
@@ -308,6 +313,15 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee': HrMsg.EMPLOYEE_NOT_FOUND})
 
+    def validate(self, validate_data):
+        contract = validate_data.get('contract', None)
+        if contract:
+            effected_date = contract.get('effected_date', None)
+            expired_date = contract.get('expired_date', None)
+            if effected_date and expired_date and expired_date <= effected_date:
+                raise serializers.ValidationError({'expired_date': HrMsg.EXPIRED_DATE_ERROR})
+        return validate_data
+
     def validate_attachment(self, attrs):
         user = self.context.get('user', None)
         instance = self.instance
@@ -382,17 +396,13 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
             sign = contract.get('sign_status', None)
             if sign == 1:
                 raise serializers.ValidationError({'contract': HRMsg.UPDATE_CONTRACT_DENIED})
-            effected_date = contract.get('effected_date')
-            expired_date = contract.get('expired_date')
-            if effected_date and expired_date and expired_date <= effected_date:
-                raise serializers.ValidationError({'expired_date': HrMsg.EXPIRED_DATE_ERROR})
             if contract_id and (sign == 0 or sign is None):
                 try:
                     obj = EmployeeContract.objects.get(id=contract_id)
-                    obj.effected_date = effected_date
+                    obj.effected_date = contract.get('effected_date') or timezone.now()
                     obj.content = contract.get('content', '')
                     obj.contract_type = contract.get('contract_type')
-                    obj.expired_date = expired_date
+                    obj.expired_date = contract.get('expired_date')
                     obj.file_type = contract.get('file_type')
                     obj.limit_time = contract.get('limit_time')
                     obj.represent = contract.get('represent')
@@ -416,11 +426,11 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
                     company_id=self.context.get('company_id', None),
                     tenant_id=self.context.get('tenant_id', None),
                     employee_created_id=self.context.get('user', None).employee_current_id,
-                    effected_date=effected_date,
+                    effected_date=contract.get('effected_date') or timezone.now(),
                     content=contract.get('content', ''),
                     contract_type=contract.get('contract_type'),
                     employee_info=contract.get('employee_info'),
-                    expired_date=expired_date,
+                    expired_date=contract.get('expired_date'),
                     file_type=contract.get('file_type'),
                     limit_time=contract.get('limit_time'),
                     represent=contract.get('represent'),
