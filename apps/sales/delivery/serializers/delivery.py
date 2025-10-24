@@ -83,6 +83,8 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'product_lease_end_date',
 
             'depreciation_data',
+
+            'work_data',
         )
 
 
@@ -103,6 +105,7 @@ class OrderDeliverySubListSerializer(AbstractListSerializerModel):
             'code',
             'sale_order_data',
             'lease_order_data',
+            'service_order_data',
             'date_created',
             'estimated_delivery_date',
             'actual_delivery_date',
@@ -190,6 +193,7 @@ class OrderDeliverySubDetailSerializer(AbstractDetailSerializerModel):
             'code',
             'sale_order_data',
             'lease_order_data',
+            'service_order_data',
             'estimated_delivery_date',
             'actual_delivery_date',
             'customer_data',

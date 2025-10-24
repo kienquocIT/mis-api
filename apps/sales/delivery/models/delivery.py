@@ -51,6 +51,19 @@ class OrderDelivery(DataAbstractModel):
         verbose_name='Lease Order data',
         help_text='data json of lease order',
     )
+    # service order
+    service_order = models.ForeignKey(
+        'serviceorder.ServiceOrder',
+        on_delete=models.CASCADE,
+        verbose_name='Order Delivery of Service Order',
+        related_name='delivery_of_service_order',
+        null=True,
+    )
+    service_order_data = models.JSONField(
+        default=dict,
+        verbose_name='Service Order data',
+        help_text='data json of service order',
+    )
     from_picking_area = models.TextField(
         blank=True,
         verbose_name='From Picking Area'
@@ -305,6 +318,18 @@ class OrderDeliverySub(DataAbstractModel):
         verbose_name='Lease Order data',
         help_text='data json of lease order',
     )
+    service_order = models.ForeignKey(
+        'serviceorder.ServiceOrder',
+        on_delete=models.CASCADE,
+        verbose_name="service order",
+        related_name="delivery_sub_service_order",
+        null=True
+    )
+    service_order_data = models.JSONField(
+        default=dict,
+        verbose_name='Service Order data',
+        help_text='data json of service order',
+    )
     estimated_delivery_date = models.DateTimeField(
         null=True,
         verbose_name='Delivery Date '
@@ -534,6 +559,10 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
 
     # fields for recovery
     quantity_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
+
+    # work (service order)
+    work_data = models.JSONField(default=dict, help_text='data json of work(service order)')
+    contribution_data = models.JSONField(default=dict, help_text='data json of contribution(service order)')
 
     def put_backup_data(self):
         if self.product and not self.product_data:

@@ -18,6 +18,7 @@ from apps.sales.delivery.serializers import (
 )
 from apps.sales.delivery.tasks import (
     task_active_delivery_from_sale_order, task_active_delivery_from_lease_order,
+    task_active_delivery_from_service_order,
 )
 
 __all__ = [
@@ -229,27 +230,65 @@ class LeaseOrderActiveDelivery(APIView):
 
 
 class ServiceOrderActiveDelivery(APIView):
+
+    @classmethod
+    def check_config(cls, config):
+        if not config.lead_picking and config.is_picking or not config.lead_delivery:
+            # case 1: có setup picking mà ko chọn leader
+            # case 2: ko setup lead cho delivery
+            return False
+        return True
+
     @swagger_auto_schema(
-        operation_summary='Call delivery at ServiceOrder detail',
-        operation_description='Call delivery at ServiceOrder detail by Id'
+        operation_summary='Call delivery at ServiceOrder Detail',
+        operation_description='"id" is Service Order ID - Start delivery process of this'
     )
-    @mask_view(login_require=True, auth_require=False)
-    def post(self, request, *args, **kwargs):
-        cls_model = DisperseModel(app_model='serviceorder.ServiceOrder').get_model()
-        payload = request.data
-        if cls_model and payload:
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='delivery', model_code='orderDeliverySub', perm_code='create',
+    )
+    def post(self, request, *args, pk, **kwargs):  # pylint: disable=R0914
+        if not kwargs.pop('skip_check_period', False):
+            SubPeriods.check_period(request.user.tenant_current_id, request.user.company_current_id)
+
+        cls_model = DisperseModel(app_model='serviceorder.serviceorder').get_model()
+        if cls_model and TypeCheck.check_uuid(pk):
             try:
-                obj = cls_model.objects.get_on_company(id=payload.get('service_order_id'))
-                payload['company_id'] = obj.company_id
-                payload['tenant_id'] = obj.tenant_id
-                config = DeliveryConfig.objects.get(company=obj.company)
+                obj = cls_model.objects.get_current(pk=pk, fill__company=True)
+                is_not_picking = False
+
+                config = DeliveryConfig.objects.get(company_id=str(obj.company_id))
+                if not self.check_config(config):
+                    raise serializers.ValidationError({'detail': DeliverMsg.ERROR_CONFIG})
+
+                body_data = request.data
+                process_id = None
+                if 'process' in body_data:
+                    process_id = request.data['process']
+                    stage_app_id = request.data.get('process_stage_app', None)
+                    if not stage_app_id or not TypeCheck.check_uuid(stage_app_id):
+                        raise serializers.ValidationError({'process': ProcessMsg.PROCESS_STAGE_APP_NOT_FOUND})
+
+                    process_obj = ProcessRuntimeControl.get_process_obj(process_id=process_id)
+                    process_stage_app_obj = ProcessRuntimeControl.get_process_stage_app(
+                        stage_app_id=stage_app_id, app_id=OrderDeliverySub.get_app_id()
+                    )
+                    if process_obj:
+                        process_cls = ProcessRuntimeControl(process_obj=process_obj)
+                        process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=None)
+
+                call_task_background(
+                    my_task=task_active_delivery_from_service_order,
+                    **{
+                        'service_order_id': str(obj.id),
+                        'work_products': body_data.get('work_products', []),
+                        'process_id': process_id,
+                    }
+                )
+
                 serializer = DeliveryConfigDetailSerializer(config)
                 return ResponseController.success_200(
-                    data={
-                        'state': 'Successfully',
-                        'config': serializer.data,
-                        'is_not_picking': False
-                    },
+                    data={'state': 'Successfully', 'config': serializer.data, 'is_not_picking': is_not_picking},
                     key_data='result'
                 )
             except cls_model.DoesNotExist:

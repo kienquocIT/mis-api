@@ -29,6 +29,14 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
         related_name="service_order_customer"
     )
     customer_data = models.JSONField(default=dict)
+    contact = models.ForeignKey(
+        'saledata.Contact',
+        on_delete=models.CASCADE,
+        verbose_name="contact",
+        related_name="service_order_contact",
+        null=True
+    )
+    contact_data = models.JSONField(default=dict, help_text='data json of contact')
     start_date = models.DateField()
     end_date = models.DateField()
     attachment_m2m = models.ManyToManyField(
@@ -265,6 +273,11 @@ class ServiceOrderWorkOrderContribution(SimpleAbstractModel):
     # package feature
     has_package = models.BooleanField(default=False)
     package_data = models.JSONField(default=list, null=True)
+    delivery_call = models.BooleanField(
+        default=False,
+        verbose_name='Called delivery',
+        help_text='State call delivery of this',
+    )
 
     class Meta:
         verbose_name = 'Service order work order contribution'

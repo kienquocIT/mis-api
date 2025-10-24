@@ -48,6 +48,8 @@ class DeliFinishHandler:
                 sale_order_data=instance.sale_order_data,
                 lease_order_id=instance.lease_order_id,
                 lease_order_data=instance.lease_order_data,
+                service_order_id=instance.service_order_id,
+                service_order_data=instance.service_order_data,
                 estimated_delivery_date=instance.estimated_delivery_date,
                 actual_delivery_date=instance.actual_delivery_date,
                 customer_data=instance.customer_data,

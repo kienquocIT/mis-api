@@ -800,7 +800,7 @@ class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_list(cls, obj):
         product_list = []
-        for item in obj.work_order_contributions.all():
+        for item in obj.work_order_contributions.filter(delivery_call=False):
             service_detail_obj = item.service_detail
             if service_detail_obj:
                 product_list.append(
@@ -812,7 +812,8 @@ class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
                         'delivered_quantity': item.delivered_quantity,
                         'product_data': service_detail_obj.product_data,
                         'tax': service_detail_obj.product.sale_tax_data,
-                        'uom': service_detail_obj.product.sale_default_uom_data
+                        'uom': service_detail_obj.product.sale_default_uom_data,
+                        'contribution_data': {'id': str(item.id), 'unit_cost': item.unit_cost},
                     }
                 )
         return product_list
