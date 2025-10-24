@@ -134,7 +134,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
     general_manufacturer = serializers.UUIDField(required=False, allow_null=True)
-    representative_for_pm_product = serializers.UUIDField(required=False, allow_null=True)
+    representative_product = serializers.UUIDField(required=False, allow_null=True)
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
@@ -154,7 +154,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             # General
             'general_product_category', 'general_uom_group', 'general_traceability_method', 'general_manufacturer',
             'standard_price', 'width', 'height', 'length', 'volume', 'weight',
-            'representative_for_pm_product',
+            'representative_product',
             # Sale
             'sale_default_uom', 'sale_tax', 'online_price_list', 'available_notify', 'available_notify_quantity',
             # Inventory
@@ -211,12 +211,12 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         return None
 
     @classmethod
-    def validate_representative_for_pm_product(cls, value):
+    def validate_representative_product(cls, value):
         if value:
             try:
                 return Product.objects.get(id=value)
             except Product.DoesNotExist:
-                raise serializers.ValidationError({'representative_for_pm_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+                raise serializers.ValidationError({'representative_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -394,6 +394,12 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 2)
         AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 3)
         CompanyFunctionNumber.auto_code_update_latest_number(app_code='product')
+
+        representative_product_obj = product_obj.representative_product
+        if representative_product_obj:
+            representative_product_obj.is_representative_product = True
+            representative_product_obj.save(update_fields=['is_representative_product'])
+
         return product_obj
 
 
@@ -544,12 +550,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 } if 'id' in obj.weight else {}
             },
             'standard_price': obj.standard_price,
-            'representative_for_pm_product': {
-                'id': str(obj.representative_for_pm_product_id),
-                'code': obj.representative_for_pm_product.code,
-                'title': obj.representative_for_pm_product.title,
-                'description': obj.representative_for_pm_product.description
-            } if obj.representative_for_pm_product else {}
+            'representative_product': {
+                'id': str(obj.representative_product_id),
+                'code': obj.representative_product.code,
+                'title': obj.representative_product.title,
+                'description': obj.representative_product.description
+            } if obj.representative_product else {}
         }
         return result
 
@@ -740,7 +746,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
     general_manufacturer = serializers.UUIDField(required=False, allow_null=True)
-    representative_for_pm_product = serializers.UUIDField(required=False, allow_null=True)
+    representative_product = serializers.UUIDField(required=False, allow_null=True)
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
@@ -763,7 +769,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'general_product_category', 'general_uom_group', 'general_manufacturer', 'general_traceability_method',
             'standard_price',
             'width', 'height', 'length', 'volume', 'weight',
-            'representative_for_pm_product',
+            'representative_product',
             'sale_default_uom', 'sale_tax', 'online_price_list', 'available_notify', 'available_notify_quantity',
             'inventory_uom', 'inventory_level_min', 'inventory_level_max',
             'valuation_method',
@@ -792,12 +798,12 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return None
 
     @classmethod
-    def validate_representative_for_pm_product(cls, value):
+    def validate_representative_product(cls, value):
         if value:
             try:
                 return Product.objects.get(id=value)
             except Product.DoesNotExist:
-                raise serializers.ValidationError({'representative_for_pm_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+                raise serializers.ValidationError({'representative_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -896,6 +902,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def update(self, instance, validated_data):
+        old_representative_product_obj = instance.representative_product
+        if old_representative_product_obj:
+            old_representative_product_obj.is_representative_product = True
+            old_representative_product_obj.save(update_fields=['is_representative_product'])
+
         validated_data.update(
             {'volume': ProductCommonFunction.sub_validate_volume_obj(self.initial_data, validated_data)}
         )
@@ -946,6 +957,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 1)
         AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 2)
         AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 3)
+
+        representative_product_obj = instance.representative_product
+        if representative_product_obj:
+            representative_product_obj.is_representative_product = True
+            representative_product_obj.save(update_fields=['is_representative_product'])
         return instance
 
 

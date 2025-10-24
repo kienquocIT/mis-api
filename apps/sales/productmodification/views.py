@@ -103,6 +103,9 @@ class ProductModifiedList(BaseListMixin):
         'title',
         'code',
     ]
+    filterset_fields = {
+        'is_representative_product': ['exact'],
+    }
     serializer_list = ProductModifiedListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 

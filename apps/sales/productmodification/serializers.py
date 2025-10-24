@@ -44,7 +44,9 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
             'code',
             'date_created',
             'employee_created',
-            'created_goods_receipt'
+            'created_goods_receipt',
+            'created_goods_issue_for_root',
+            'root_product_modified'
         )
 
     @classmethod
@@ -89,9 +91,7 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
             try:
                 return Product.objects.get(id=value)
             except Product.DoesNotExist:
-                raise serializers.ValidationError(
-                    {'root_product_modified': "Root product modification does not exist."}
-                )
+                raise serializers.ValidationError({'root_product_modified': "Root product does not exist."})
         return None
 
     @classmethod
@@ -339,6 +339,8 @@ class ProductModificationDetailSerializer(AbstractDetailSerializerModel):
             'code': obj.root_product_modified.code,
             'title': obj.root_product_modified.title,
             'description': obj.root_product_modified.description,
+            'general_traceability_method': obj.root_product_modified.general_traceability_method,
+            'valuation_method': obj.root_product_modified.valuation_method,
         } if obj.root_product_modified else {}
 
     @classmethod
@@ -555,7 +557,7 @@ class ProductModificationCommonFunction:
 
 # related
 class ProductModifiedListSerializer(serializers.ModelSerializer):
-    representative_for_pm_product = serializers.SerializerMethodField()
+    representative_product = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -566,17 +568,18 @@ class ProductModifiedListSerializer(serializers.ModelSerializer):
             'description',
             'general_traceability_method',
             'valuation_method',
-            'representative_for_pm_product'
+            'representative_product',
+            'is_representative_product',
         )
 
     @classmethod
-    def get_representative_for_pm_product(cls, obj):
+    def get_representative_product(cls, obj):
         return {
-            'id': str(obj.representative_for_pm_product_id),
-            'code': obj.representative_for_pm_product.code,
-            'title': obj.representative_for_pm_product.title,
-            'description': obj.representative_for_pm_product.description
-        } if obj.representative_for_pm_product else {}
+            'id': str(obj.representative_product_id),
+            'code': obj.representative_product.code,
+            'title': obj.representative_product.title,
+            'description': obj.representative_product.description
+        } if obj.representative_product else {}
 
 
 class ProductModifiedBeforeListSerializer(serializers.ModelSerializer):

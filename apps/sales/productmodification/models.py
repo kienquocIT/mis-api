@@ -21,8 +21,8 @@ class ProductModification(DataAbstractModel):
     prd_wh_serial = models.ForeignKey('saledata.ProductWareHouseSerial', on_delete=models.CASCADE, null=True)
     prd_wh_serial_data = models.JSONField(default=dict)
 
-    created_goods_issue = models.BooleanField(default=False)
     created_goods_receipt = models.BooleanField(default=False)
+    created_goods_issue_for_root = models.BooleanField(default=False)
 
     root_product_modified = models.ForeignKey(
         'saledata.Product', on_delete=models.CASCADE, related_name='root_product_modified', null=True
@@ -208,9 +208,6 @@ class ProductModification(DataAbstractModel):
         # action sau khi duyệt
         gis_obj.update_related_app_after_issue(gis_obj)
         new_logs = IRForGoodsIssueHandler.push_to_inventory_report(gis_obj)
-
-        pm_obj.created_goods_issue = True
-        pm_obj.save(update_fields=['created_goods_issue'])
 
         return {'gis_obj': gis_obj, 'new_logs': new_logs}
 
