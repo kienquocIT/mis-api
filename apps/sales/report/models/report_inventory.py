@@ -57,44 +57,24 @@ class BalanceInitializationSerial(DataAbstractModel):
 
 class ReportStock(DataAbstractModel):
     product = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_product',
-        null=True
+        'saledata.Product', on_delete=models.SET_NULL, related_name='report_stock_product', null=True
     )
     lot_mapped = models.ForeignKey(
-        'saledata.ProductWareHouseLot',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_lot_mapped',
-        null=True
+        'saledata.ProductWareHouseLot', on_delete=models.SET_NULL, related_name='report_stock_lot_mapped', null=True
     )
     serial_number = models.CharField(max_length=100, blank=True, null=True)
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder',
-        on_delete=models.SET_NULL,
-        related_name="report_stock_sale_order",
-        null=True
+        'saleorder.SaleOrder', on_delete=models.SET_NULL, related_name="report_stock_sale_order", null=True
     )
     lease_order = models.ForeignKey(
-        'leaseorder.LeaseOrder',
-        on_delete=models.SET_NULL,
-        related_name="report_stock_lease_order",
-        null=True
+        'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="report_stock_lease_order", null=True
     )
-
     period_mapped = models.ForeignKey(
-        'saledata.Periods',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_period_mapped',
-        null=True,
+        'saledata.Periods', on_delete=models.SET_NULL, related_name='report_stock_period_mapped', null=True
     )
-
     sub_period_order = models.IntegerField()
     sub_period = models.ForeignKey(
-        'saledata.SubPeriods',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_sub_period',
-        null=True,
+        'saledata.SubPeriods', on_delete=models.SET_NULL, related_name='report_stock_sub_period', null=True
     )
 
     @classmethod
@@ -137,16 +117,9 @@ class ReportStock(DataAbstractModel):
 
 
 class ReportStockLog(DataAbstractModel):
-    report_stock = models.ForeignKey(
-        ReportStock,
-        on_delete=models.CASCADE,
-        related_name='report_stock_log',
-    )
+    report_stock = models.ForeignKey(ReportStock, on_delete=models.CASCADE, related_name='report_stock_log',)
     product = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_log_product',
-        null=True
+        'saledata.Product', on_delete=models.SET_NULL, related_name='report_stock_log_product', null=True
     )
     lot_mapped = models.ForeignKey(
         'saledata.ProductWareHouseLot',
@@ -156,10 +129,7 @@ class ReportStockLog(DataAbstractModel):
     )
     serial_number = models.CharField(max_length=100, blank=True, null=True)
     warehouse = models.ForeignKey(
-        'saledata.WareHouse',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_log_warehouse',
-        null=True
+        'saledata.WareHouse', on_delete=models.SET_NULL, related_name='report_stock_log_warehouse', null=True
     )
     physical_warehouse = models.ForeignKey(
         'saledata.WareHouse',
@@ -168,16 +138,10 @@ class ReportStockLog(DataAbstractModel):
         null=True
     ) # Kho vật lí (để hiển thị lên báo cáo trong trường hợp không quản lí tồn kho theo từng kho riêng biệt)
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder',
-        on_delete=models.SET_NULL,
-        related_name="report_stock_log_sale_order",
-        null=True
+        'saleorder.SaleOrder', on_delete=models.SET_NULL, related_name="report_stock_log_sale_order", null=True
     )
     lease_order = models.ForeignKey(
-        'leaseorder.LeaseOrder',
-        on_delete=models.SET_NULL,
-        related_name="report_stock_log_lease_order",
-        null=True
+        'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="report_stock_log_lease_order", null=True
     )
 
     system_date = models.DateTimeField(null=True)
@@ -577,30 +541,17 @@ class ReportStockLog(DataAbstractModel):
 
 class ReportInventoryCost(DataAbstractModel):
     product = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.SET_NULL,
-        related_name='report_inventory_cost_product',
-        null=True
+        'saledata.Product', on_delete=models.SET_NULL, related_name='report_inventory_cost_product', null=True
     )
     warehouse = models.ForeignKey(
-        'saledata.WareHouse',
-        on_delete=models.SET_NULL,
-        related_name='report_inventory_cost_warehouse',
-        null=True
+        'saledata.WareHouse', on_delete=models.SET_NULL, related_name='report_inventory_cost_warehouse', null=True
     )
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder',
-        on_delete=models.SET_NULL,
-        related_name="report_inventory_cost_sale_order",
-        null=True
+        'saleorder.SaleOrder', on_delete=models.SET_NULL, related_name="report_inventory_cost_sale_order", null=True
     )
     lease_order = models.ForeignKey(
-        'leaseorder.LeaseOrder',
-        on_delete=models.SET_NULL,
-        related_name="report_inventory_cost_lease_order",
-        null=True
+        'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="report_inventory_cost_lease_order", null=True
     )
-
     lot_mapped = models.ForeignKey(
         'saledata.ProductWareHouseLot',
         on_delete=models.SET_NULL,
@@ -608,19 +559,12 @@ class ReportInventoryCost(DataAbstractModel):
         null=True
     )
     serial_number = models.CharField(max_length=100, blank=True, null=True)
-
     period_mapped = models.ForeignKey(
-        'saledata.Periods',
-        on_delete=models.SET_NULL,
-        related_name='report_inventory_cost_period_mapped',
-        null=True,
+        'saledata.Periods', on_delete=models.SET_NULL, related_name='report_inventory_cost_period_mapped', null=True
     )
     sub_period_order = models.IntegerField()
     sub_period = models.ForeignKey(
-        'saledata.SubPeriods',
-        on_delete=models.SET_NULL,
-        related_name='report_inventory_cost_sub_period',
-        null=True,
+        'saledata.SubPeriods', on_delete=models.SET_NULL, related_name='report_inventory_cost_sub_period', null=True
     )
 
     opening_balance_quantity = models.FloatField(default=0)
@@ -659,15 +603,10 @@ class ReportInventoryCost(DataAbstractModel):
 
 class ReportInventoryCostByWarehouse(SimpleAbstractModel):
     report_inventory_cost = models.ForeignKey(
-        ReportInventoryCost,
-        on_delete=models.CASCADE,
-        related_name='report_inventory_cost_wh'
+        ReportInventoryCost, on_delete=models.CASCADE, related_name='report_inventory_cost_wh'
     )
     warehouse = models.ForeignKey(
-        'saledata.WareHouse',
-        on_delete=models.SET_NULL,
-        related_name='report_inventory_cost_wh_warehouse',
-        null=True
+        'saledata.WareHouse', on_delete=models.SET_NULL, related_name='report_inventory_cost_wh_warehouse', null=True
     )
     opening_quantity = models.FloatField(default=0)
     ending_quantity = models.FloatField(default=0)
@@ -693,16 +632,10 @@ class ReportInventoryCostByWarehouse(SimpleAbstractModel):
 
 class ReportInventoryCostLatestLog(SimpleAbstractModel):
     product = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.SET_NULL,
-        related_name='rp_inv_cost_product',
-        null=True
+        'saledata.Product', on_delete=models.SET_NULL, related_name='rp_inv_cost_product', null=True
     )
     warehouse = models.ForeignKey(
-        'saledata.WareHouse',
-        on_delete=models.SET_NULL,
-        related_name='rp_inv_cost_warehouse',
-        null=True
+        'saledata.WareHouse', on_delete=models.SET_NULL, related_name='rp_inv_cost_warehouse', null=True
     )
     lot_mapped = models.ForeignKey(
         'saledata.ProductWareHouseLot',
@@ -712,29 +645,17 @@ class ReportInventoryCostLatestLog(SimpleAbstractModel):
     )
     serial_number = models.CharField(max_length=100, blank=True, null=True)
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder',
-        on_delete=models.SET_NULL,
-        related_name="rp_inv_cost_sale_order",
-        null=True
+        'saleorder.SaleOrder', on_delete=models.SET_NULL, related_name="rp_inv_cost_sale_order", null=True
     )
     lease_order = models.ForeignKey(
-        'leaseorder.LeaseOrder',
-        on_delete=models.SET_NULL,
-        related_name="rp_inv_cost_lease_order",
-        null=True
+        'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="rp_inv_cost_lease_order", null=True
     )
     latest_log = models.ForeignKey(
-        ReportStockLog,
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='rp_inv_cost_latest_log'
+        ReportStockLog, on_delete=models.CASCADE, related_name='rp_inv_cost_latest_log', null=True
     ) # lấy giá cost hiện tại dựa vào latest_log này
 
     fifo_flag_log = models.ForeignKey(
-        ReportStockLog,
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='rp_inv_cost_fifo_flag_log'
+        ReportStockLog, on_delete=models.CASCADE, related_name='rp_inv_cost_fifo_flag_log', null=True
     ) # để biết được bắt đầu lấy cost từ đâu (cho SP FIFO)
 
     class Meta:
