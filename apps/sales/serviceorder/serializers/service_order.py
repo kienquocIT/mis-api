@@ -54,7 +54,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
     start_date = serializers.DateField()
     end_date = serializers.DateField()
     shipment = ServiceOrderShipmentSerializer(many=True)
-    expense = ServiceOrderExpenseSerializer(many=True)
+    expenses_data = ServiceOrderExpenseSerializer(many=True)
     service_detail_data = ServiceOrderServiceDetailSerializer(many=True)
     work_order_data = ServiceOrderWorkOrderSerializer(many=True)
     payment_data = ServiceOrderPaymentSerializer(many=True)
@@ -110,14 +110,14 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
         if start_date and end_date and start_date >= end_date:
             raise serializers.ValidationError({'error': SVOMsg.DATE_COMPARE_ERROR})
 
-        expense_data = validate_data.get('expense', [])
+        expense_data = validate_data.get('expenses_data', [])
         validate_data = ServiceOrderCommonFunc.calculate_total_expense(validate_data, expense_data)
         return validate_data
 
     @decorator_run_workflow
     def create(self, validated_data):
         shipment_data = validated_data.pop('shipment', [])
-        expense_data = validated_data.pop('expense', [])
+        expense_data = validated_data.pop('expenses_data', [])
         attachment = validated_data.pop('attachment', [])
         service_detail_data = validated_data.pop('service_detail_data', [])
         work_order_data = validated_data.pop('work_order_data', [])
@@ -158,7 +158,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             'start_date',
             'end_date',
             'shipment',
-            'expense',
+            'expenses_data',
             'attachment',
             'service_detail_data',
             'work_order_data',
@@ -170,6 +170,10 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             'total_product',
             'total_product_revenue_before_tax',
 
+            'total_expense_pretax_amount',
+            'total_expense_tax',
+            'total_expense',
+
             # indicators
             'service_order_indicators_data',
             'indicator_revenue',
@@ -180,7 +184,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
 
 class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
     shipment = serializers.SerializerMethodField()
-    expense = serializers.SerializerMethodField()
+    expenses_data = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
     service_detail_data = serializers.SerializerMethodField()
     work_order_data = serializers.SerializerMethodField()
@@ -395,7 +399,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
         } for payment in obj.payments.all()]
 
     @classmethod
-    def get_expense(cls, obj):
+    def get_expenses_data(cls, obj):
         return [{
             'id': str(item.id),
             'title': item.title,
@@ -404,7 +408,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'quantity': item.quantity,
             'expense_price': item.expense_price,
             'tax_data': item.tax_data,
-            'subtotal_price': item.subtotal_price
+            'expense_subtotal_price': item.expense_subtotal_price
         } for item in obj.service_order_expense_service_order.all()]
 
     @classmethod
@@ -430,20 +434,21 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'start_date',
             'end_date',
             'shipment',
-            'expense_pretax_value',
-            'expense_tax_value',
-            'expense_total_value',
             'attachment',
             'service_detail_data',
             'work_order_data',
             'payment_data',
-            'expense',
+            'expenses_data',
             'exchange_rate_data',
 
             'total_product_pretax_amount',
             'total_product_tax',
             'total_product',
             'total_product_revenue_before_tax',
+
+            'total_expense_pretax_amount',
+            'total_expense_tax',
+            'total_expense',
 
             # indicators
             'service_order_indicators_data',
@@ -459,10 +464,7 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
     start_date = serializers.DateField()
     end_date = serializers.DateField()
     shipment = ServiceOrderShipmentSerializer(many=True)
-    expense = ServiceOrderExpenseSerializer(many=True)
-    expense_pretax_value = serializers.FloatField(required=False, allow_null=True)
-    expense_tax_value = serializers.FloatField(required=False, allow_null=True)
-    expense_total_value = serializers.FloatField(required=False, allow_null=True)
+    expenses_data = ServiceOrderExpenseSerializer(many=True)
     service_detail_data = ServiceOrderServiceDetailSerializer(many=True)
     work_order_data = ServiceOrderWorkOrderSerializer(many=True)
     payment_data = ServiceOrderPaymentSerializer(many=True)
@@ -498,14 +500,14 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
         if start_date and end_date and start_date >= end_date:
             raise serializers.ValidationError({'error': SVOMsg.DATE_COMPARE_ERROR})
 
-        expense_data = validate_data.get('expense', [])
+        expense_data = validate_data.get('expenses_data', [])
         validate_data = ServiceOrderCommonFunc.calculate_total_expense(validate_data, expense_data)
         return validate_data
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
         shipment_data = validated_data.pop('shipment', [])
-        expense_data = validated_data.pop('expense', [])
+        expense_data = validated_data.pop('expenses_data', [])
         attachment = validated_data.pop('attachment', [])
         service_detail_data = validated_data.pop('service_detail_data', [])
         work_order_data = validated_data.pop('work_order_data', [])
@@ -545,15 +547,21 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
             'start_date',
             'end_date',
             'shipment',
-            'expense',
-            'expense_pretax_value',
-            'expense_tax_value',
-            'expense_total_value',
+            'expenses_data',
             'attachment',
             'service_detail_data',
             'work_order_data',
             'payment_data',
             'exchange_rate_data',
+
+            'total_product_pretax_amount',
+            'total_product_tax',
+            'total_product',
+            'total_product_revenue_before_tax',
+
+            'total_expense_pretax_amount',
+            'total_expense_tax',
+            'total_expense',
 
             # indicators
             'service_order_indicators_data',

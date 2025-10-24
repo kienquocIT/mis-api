@@ -208,7 +208,6 @@ class WarehouseListByProduct(BaseListMixin):
     ]
     filterset_fields = {
         'product_id': ['exact'],
-        'warehouse__is_pm_warehouse': ['exact'],
     }
     serializer_list = WarehouseListByProductSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
