@@ -55,6 +55,7 @@ class GoodsIssueListSerializer(AbstractListSerializerModel):
 
 
 class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=100)
     goods_issue_type = serializers.IntegerField()
     inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_ia = serializers.ListField()
@@ -62,6 +63,8 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
     detail_data_po = serializers.ListField()
     work_order_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_wo = serializers.ListField()
+    product_modification_id = serializers.UUIDField(required=False, allow_null=True)
+    detail_data_pm = serializers.ListField()
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
@@ -76,6 +79,8 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
             'detail_data_po',
             'work_order_id',
             'detail_data_wo',
+            'product_modification_id',
+            'detail_data_pm',
             'attachment'
         )
 
@@ -87,16 +92,13 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
         GoodsIssueCommonFunction.validate_detail_data_po(validate_data)
         GoodsIssueCommonFunction.validate_work_order_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_wo(validate_data)
+        GoodsIssueCommonFunction.validate_product_modification_id(validate_data)
+        GoodsIssueCommonFunction.validate_detail_data_pm(validate_data)
         GoodsIssueCommonFunction.validate_attachment(
             context_user=self.context.get('user', None),
             doc_id=None,
             validate_data=validate_data
         )
-        if 'title' in validate_data:
-            if validate_data.get('title'):
-                validate_data['title'] = validate_data.get('title')
-            else:
-                raise serializers.ValidationError({'title': "Title is not null"})
         print('*validate done')
         return validate_data
 
@@ -105,6 +107,7 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
         detail_data_ia = validated_data.pop('detail_data_ia', [])
         detail_data_po = validated_data.pop('detail_data_po', [])
         detail_data_wo = validated_data.pop('detail_data_wo', [])
+        detail_data_pm = validated_data.pop('detail_data_pm', [])
         attachment = validated_data.pop('attachment', [])
 
         instance = GoodsIssue.objects.create(**validated_data)
@@ -112,6 +115,7 @@ class GoodsIssueCreateSerializer(AbstractCreateSerializerModel):
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_ia)
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_po)
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_wo)
+        GoodsIssueCommonFunction.create_issue_item(instance, detail_data_pm)
         GoodsIssueCommonFunction.handle_attach_file(instance, attachment)
         return instance
 
@@ -320,9 +324,16 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
 
 
 class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
+    title = serializers.CharField(max_length=100)
+    goods_issue_type = serializers.IntegerField()
+    inventory_adjustment_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_ia = serializers.ListField()
+    production_order_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_po = serializers.ListField()
+    work_order_id = serializers.UUIDField(required=False, allow_null=True)
     detail_data_wo = serializers.ListField()
+    product_modification_id = serializers.UUIDField(required=False, allow_null=True)
+    detail_data_pm = serializers.ListField()
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
@@ -330,26 +341,33 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'note',
+            'goods_issue_type',
+            'inventory_adjustment_id',
             'detail_data_ia',
+            'production_order_id',
             'detail_data_po',
+            'work_order_id',
             'detail_data_wo',
+            'product_modification_id',
+            'detail_data_pm',
             'attachment'
         )
 
     def validate(self, validate_data):
+        GoodsIssueCommonFunction.validate_goods_issue_type(validate_data)
+        GoodsIssueCommonFunction.validate_inventory_adjustment_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_ia(validate_data)
+        GoodsIssueCommonFunction.validate_production_order_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_po(validate_data)
+        GoodsIssueCommonFunction.validate_work_order_id(validate_data)
         GoodsIssueCommonFunction.validate_detail_data_wo(validate_data)
+        GoodsIssueCommonFunction.validate_product_modification_id(validate_data)
+        GoodsIssueCommonFunction.validate_detail_data_pm(validate_data)
         GoodsIssueCommonFunction.validate_attachment(
             context_user=self.context.get('user', None),
             doc_id=self.instance.id,
             validate_data=validate_data
         )
-        if 'title' in validate_data:
-            if validate_data.get('title'):
-                validate_data['title'] = validate_data.get('title')
-            else:
-                raise serializers.ValidationError({'title': "Title is not null"})
         print('*validate done')
         return validate_data
 
@@ -358,6 +376,7 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
         detail_data_ia = validated_data.pop('detail_data_ia', [])
         detail_data_po = validated_data.pop('detail_data_po', [])
         detail_data_wo = validated_data.pop('detail_data_wo', [])
+        detail_data_pm = validated_data.pop('detail_data_pm', [])
         attachment = validated_data.pop('attachment', [])
 
         for key, value in validated_data.items():
@@ -367,6 +386,7 @@ class GoodsIssueUpdateSerializer(AbstractCreateSerializerModel):
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_ia)
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_po)
         GoodsIssueCommonFunction.create_issue_item(instance, detail_data_wo)
+        GoodsIssueCommonFunction.create_issue_item(instance, detail_data_pm)
         GoodsIssueCommonFunction.handle_attach_file(instance, attachment)
         return instance
 
@@ -375,7 +395,7 @@ class GoodsIssueCommonFunction:
     @classmethod
     def validate_goods_issue_type(cls, validate_data):
         goods_issue_type = validate_data.get('goods_issue_type')
-        if goods_issue_type in [0, 1, 2]:
+        if goods_issue_type in [0, 1, 2, 3]:
             validate_data['goods_issue_type'] = goods_issue_type
             print('1. validate_goods_issue_type --- ok')
             return True
@@ -421,6 +441,20 @@ class GoodsIssueCommonFunction:
                 raise serializers.ValidationError({'work_order': 'Work order does not exist'})
         else:
             validate_data['work_order_id'] = None
+        return True
+
+    @classmethod
+    def validate_product_modification_id(cls, validate_data):
+        if validate_data.get('product_modification_id'):
+            try:
+                validate_data['product_modification_id'] = str(ProductModification.objects.get(
+                    id=validate_data.get('product_modification_id')
+                ).id)
+                print('2. validate_product_modification_id  --- ok')
+            except ProductModification.DoesNotExist:
+                raise serializers.ValidationError({'product_modification': 'Product Modification does not exist'})
+        else:
+            validate_data['product_modification_id'] = None
         return True
 
     @classmethod
@@ -634,6 +668,57 @@ class GoodsIssueCommonFunction:
                         raise serializers.ValidationError({'error': "Some objects are not exist."})
             print('3. validate_detail_data_wo --- ok')
         validate_data['detail_data_wo'] = detail_data_wo
+        return True
+
+    @classmethod
+    def validate_detail_data_pm(cls, validate_data):
+        detail_data_pm = validate_data.get('detail_data_pm', [])
+        if len(detail_data_pm) > 0:
+            selected_sn = []
+            for item in detail_data_pm:
+                if all([
+                    float(item.get('issued_quantity', 0)) > 0,
+                    item.get('product_id'),
+                    item.get('warehouse_id'),
+                    item.get('uom_id')
+                ]):
+                    product_obj = Product.objects.filter(id=item.get('product_id')).first()
+                    warehouse_obj = WareHouse.objects.filter(id=item.get('warehouse_id')).first()
+                    uom_obj = UnitOfMeasure.objects.filter(id=item.get('uom_id')).first()
+                    prd_wh_obj = ProductWareHouse.objects.filter(product=product_obj, warehouse=warehouse_obj).first()
+                    if prd_wh_obj and warehouse_obj and uom_obj and prd_wh_obj:
+                        if prd_wh_obj.stock_amount < float(item.get('issued_quantity', 0)):
+                            raise serializers.ValidationError(
+                                {'issued_quantity': f"[{product_obj.title}] Issue quantity can't > stock quantity."}
+                            )
+
+                        selected_sn = cls.validate_sn_data(item, product_obj, selected_sn)
+                        cls.validate_lot_data(item, product_obj)
+
+                        item['product_id'] = str(product_obj.id)
+                        item['product_data'] = {
+                            'id': str(product_obj.id),
+                            'code': product_obj.code,
+                            'title': product_obj.title,
+                            'description': product_obj.description,
+                            'general_traceability_method': product_obj.general_traceability_method
+                        }
+                        item['warehouse_id'] = str(warehouse_obj.id)
+                        item['warehouse_data'] = {
+                            'id': str(warehouse_obj.id),
+                            'code': warehouse_obj.code,
+                            'title': warehouse_obj.title
+                        }
+                        item['uom_id'] = str(uom_obj.id)
+                        item['uom_data'] = {
+                            'id': str(uom_obj.id),
+                            'code': uom_obj.code,
+                            'title': uom_obj.title
+                        }
+                    else:
+                        raise serializers.ValidationError({'error': "Some objects are not exist."})
+            print('3. validate_detail_data_pm --- ok')
+        validate_data['detail_data_pm'] = detail_data_pm
         return True
 
     @classmethod
@@ -915,17 +1000,31 @@ class ProductModificationListSerializerForGIS(AbstractListSerializerModel):
 
 
 class ProductModificationDetailSerializerForGIS(AbstractDetailSerializerModel):
+    root_product_modified = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductModification
         fields = (
             'id',
             'title',
-            'prd_wh_data',
-            'prd_wh_lot_data',
-            'prd_wh_serial_data',
+            'root_product_modified'
         )
 
+    @classmethod
+    def get_root_product_modified(cls, obj):
+        return {
+            'id': str(obj.root_product_modified_id),
+            'code': obj.root_product_modified.code,
+            'title': obj.root_product_modified.title,
+            'description': obj.root_product_modified.description,
+            'general_traceability_method': obj.root_product_modified.general_traceability_method,
+            'valuation_method': obj.root_product_modified.valuation_method,
+            'uom_mapped': {
+                'id': str(obj.root_product_modified.general_uom_group.uom_reference_id),
+                'code': obj.root_product_modified.general_uom_group.uom_reference.code,
+                'title': obj.root_product_modified.general_uom_group.uom_reference.title,
+            } if obj.root_product_modified.general_uom_group else {}
+        } if obj.root_product_modified else {}
 
 class ProductWareHouseListSerializerForGIS(serializers.ModelSerializer):
     class Meta:
