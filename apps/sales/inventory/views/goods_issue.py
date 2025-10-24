@@ -1,11 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import ProductWareHouseSerial, ProductWareHouseLot, ProductWareHouse
 from apps.sales.inventory.models import GoodsIssue, InventoryAdjustment, GoodsIssueProduct
-from apps.sales.inventory.serializers import (
-    GoodsIssueListSerializer, GoodsIssueCreateSerializer, GoodsIssueDetailSerializer
-)
 from apps.sales.inventory.serializers.goods_issue import (
-    GoodsIssueUpdateSerializer,
+    GoodsIssueListSerializer, GoodsIssueCreateSerializer, GoodsIssueDetailSerializer, GoodsIssueUpdateSerializer
+)
+from apps.sales.inventory.serializers.goods_issue_sub import (
     ProductionOrderListSerializerForGIS,
     ProductionOrderDetailSerializerForGIS,
     InventoryAdjustmentListSerializerForGIS,
