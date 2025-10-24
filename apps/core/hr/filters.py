@@ -22,7 +22,10 @@ class EmployeeListFilter(BastionFieldAbstractListFilter):
 
     class Meta:
         model = Employee
-        fields = ('id', 'group_id')
+        fields = {
+            'id': ['exact', 'in'],
+            'group_id': ['exact', 'in'],
+        }
 
     def filter_group__first_manager(self, queryset, name, value):
         user_obj = getattr(self.request, 'user', None)
