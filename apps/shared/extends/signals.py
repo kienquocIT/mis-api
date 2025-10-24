@@ -1239,7 +1239,6 @@ class ConfigDefaultData:
                 for data in tax_bracket_data
             ])
 
-
     def call_new(self):
         config = self.company_config()
         self.delivery_config()
