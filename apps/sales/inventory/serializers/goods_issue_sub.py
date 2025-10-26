@@ -258,31 +258,31 @@ class ProductModificationListSerializerForGIS(AbstractListSerializerModel):
 
 
 class ProductModificationDetailSerializerForGIS(AbstractDetailSerializerModel):
-    root_product_modified = serializers.SerializerMethodField()
+    representative_product_modified = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductModification
         fields = (
             'id',
             'title',
-            'root_product_modified'
+            'representative_product_modified'
         )
 
     @classmethod
-    def get_root_product_modified(cls, obj):
+    def get_representative_product_modified(cls, obj):
         return {
-            'id': str(obj.root_product_modified_id),
-            'code': obj.root_product_modified.code,
-            'title': obj.root_product_modified.title,
-            'description': obj.root_product_modified.description,
-            'general_traceability_method': obj.root_product_modified.general_traceability_method,
-            'valuation_method': obj.root_product_modified.valuation_method,
+            'id': str(obj.representative_product_modified_id),
+            'code': obj.representative_product_modified.code,
+            'title': obj.representative_product_modified.title,
+            'description': obj.representative_product_modified.description,
+            'general_traceability_method': obj.representative_product_modified.general_traceability_method,
+            'valuation_method': obj.representative_product_modified.valuation_method,
             'uom_mapped': {
-                'id': str(obj.root_product_modified.general_uom_group.uom_reference_id),
-                'code': obj.root_product_modified.general_uom_group.uom_reference.code,
-                'title': obj.root_product_modified.general_uom_group.uom_reference.title,
-            } if obj.root_product_modified.general_uom_group else {}
-        } if obj.root_product_modified else {}
+                'id': str(obj.representative_product_modified.general_uom_group.uom_reference_id),
+                'code': obj.representative_product_modified.general_uom_group.uom_reference.code,
+                'title': obj.representative_product_modified.general_uom_group.uom_reference.title,
+            } if obj.representative_product_modified.general_uom_group else {}
+        } if obj.representative_product_modified else {}
 
 
 class ProductWareHouseListSerializerForGIS(serializers.ModelSerializer):

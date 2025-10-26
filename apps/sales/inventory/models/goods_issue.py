@@ -137,7 +137,7 @@ class GoodsIssue(DataAbstractModel, AutoDocumentAbstractModel):
                     for item in instance.goods_issue_product.all():
                         cls.update_product_warehouse_data(item)
 
-                    if instance.product_modification.root_product_modified:
+                    if instance.product_modification.representative_product_modified:
                         instance.product_modification.created_goods_issue_for_root = True
                         instance.product_modification.save(update_fields=['created_goods_issue_for_root'])
                 return True

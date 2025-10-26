@@ -389,7 +389,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 3)
         CompanyFunctionNumber.auto_code_update_latest_number(app_code='product')
 
-        representative_product_obj = product_obj.representative_product
+        representative_product_obj = product_obj.representative_product_modified
         if representative_product_obj:
             representative_product_obj.is_representative_product = True
             representative_product_obj.save(update_fields=['is_representative_product'])

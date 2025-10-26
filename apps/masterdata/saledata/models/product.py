@@ -908,11 +908,11 @@ class ProductSpecificIdentificationSerialNumber(MasterDataAbstractModel):
                 tenant=product.tenant,
                 company=product.company,
             )
-            print(f"Created serial number {serial_obj.serial_number} - specific_value = {specific_value}")
+            print(f"Created specific {serial_obj.serial_number} ({product.code}): value = {specific_value}")
         else:
             si_serial_obj.specific_value = specific_value
             si_serial_obj.save(update_fields=['specific_value'])
-            print(f"Updated serial number {serial_obj.serial_number} - specific_value = {specific_value}")
+            print(f"Updated specific {serial_obj.serial_number} ({product.code}): value = {specific_value}")
         return True
 
     @staticmethod

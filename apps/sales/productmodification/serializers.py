@@ -46,7 +46,7 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
             'employee_created',
             'created_goods_receipt',
             'created_goods_issue_for_root',
-            'root_product_modified'
+            'representative_product_modified'
         )
 
     @classmethod
@@ -57,7 +57,7 @@ class ProductModificationListSerializer(AbstractListSerializerModel):
 class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     product_modified = serializers.UUIDField()
-    root_product_modified = serializers.UUIDField(required=False, allow_null=True)
+    representative_product_modified = serializers.UUIDField(required=False, allow_null=True)
     warehouse_id = serializers.UUIDField()
     prd_wh_lot = serializers.UUIDField(required=False, allow_null=True)
     prd_wh_serial = serializers.UUIDField(required=False, allow_null=True)
@@ -69,7 +69,7 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'product_modified',
-            'root_product_modified',
+            'representative_product_modified',
             'new_description',
             'warehouse_id',
             'prd_wh_lot',
@@ -86,12 +86,14 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'product_modified': "Product modification does not exist."})
 
     @classmethod
-    def validate_root_product_modified(cls, value):
+    def validate_representative_product_modified(cls, value):
         if value:
             try:
                 return Product.objects.get(id=value)
             except Product.DoesNotExist:
-                raise serializers.ValidationError({'root_product_modified': "Root product does not exist."})
+                raise serializers.ValidationError(
+                    {'representative_product_modified': "Representative product does not exist."}
+                )
         return None
 
     @classmethod
@@ -233,10 +235,10 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
 
     def validate(self, validate_data):
         product_modified_obj = validate_data.get('product_modified')
-        root_product_modified_obj = validate_data.get('root_product_modified')
+        representative_product_modified_obj = validate_data.get('representative_product_modified')
 
-        if root_product_modified_obj:
-            if str(product_modified_obj.id) == str(root_product_modified_obj.id):
+        if representative_product_modified_obj:
+            if str(product_modified_obj.id) == str(representative_product_modified_obj.id):
                 raise serializers.ValidationError(
                     {'error': "Root product modification have to different from representative product."}
                 )
@@ -312,7 +314,7 @@ class ProductModificationCreateSerializer(AbstractCreateSerializerModel):
 
 
 class ProductModificationDetailSerializer(AbstractDetailSerializerModel):
-    root_product_modified = serializers.SerializerMethodField()
+    representative_product_modified = serializers.SerializerMethodField()
     current_component_data = serializers.SerializerMethodField()
     removed_component_data = serializers.SerializerMethodField()
 
@@ -324,7 +326,7 @@ class ProductModificationDetailSerializer(AbstractDetailSerializerModel):
             'title',
             'date_created',
             'new_description',
-            'root_product_modified',
+            'representative_product_modified',
             'prd_wh_data',
             'prd_wh_lot_data',
             'prd_wh_serial_data',
@@ -333,15 +335,15 @@ class ProductModificationDetailSerializer(AbstractDetailSerializerModel):
         )
 
     @classmethod
-    def get_root_product_modified(cls, obj):
+    def get_representative_product_modified(cls, obj):
         return {
-            'id': str(obj.root_product_modified_id),
-            'code': obj.root_product_modified.code,
-            'title': obj.root_product_modified.title,
-            'description': obj.root_product_modified.description,
-            'general_traceability_method': obj.root_product_modified.general_traceability_method,
-            'valuation_method': obj.root_product_modified.valuation_method,
-        } if obj.root_product_modified else {}
+            'id': str(obj.representative_product_modified_id),
+            'code': obj.representative_product_modified.code,
+            'title': obj.representative_product_modified.title,
+            'description': obj.representative_product_modified.description,
+            'general_traceability_method': obj.representative_product_modified.general_traceability_method,
+            'valuation_method': obj.representative_product_modified.valuation_method,
+        } if obj.representative_product_modified else {}
 
     @classmethod
     def get_current_component_data(cls, obj):
@@ -395,7 +397,7 @@ class ProductModificationDetailSerializer(AbstractDetailSerializerModel):
 class ProductModificationUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     product_modified = serializers.UUIDField()
-    root_product_modified = serializers.UUIDField(required=False, allow_null=True)
+    representative_product_modified = serializers.UUIDField(required=False, allow_null=True)
     warehouse_id = serializers.UUIDField()
     prd_wh_lot = serializers.UUIDField(required=False, allow_null=True)
     prd_wh_serial = serializers.UUIDField(required=False, allow_null=True)
@@ -407,7 +409,7 @@ class ProductModificationUpdateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'product_modified',
-            'root_product_modified',
+            'representative_product_modified',
             'new_description',
             'warehouse_id',
             'prd_wh_lot',
@@ -421,8 +423,8 @@ class ProductModificationUpdateSerializer(AbstractCreateSerializerModel):
         return ProductModificationCreateSerializer.validate_product_modified(value)
 
     @classmethod
-    def validate_root_product_modified(cls, value):
-        return ProductModificationCreateSerializer.validate_root_product_modified(value)
+    def validate_representative_product_modified(cls, value):
+        return ProductModificationCreateSerializer.validate_representative_product_modified(value)
 
     @classmethod
     def validate_warehouse_id(cls, value):
