@@ -84,7 +84,8 @@ class GRFromPMHandler:
     @classmethod
     def setup_product(cls, pm_obj, issue_data, re_prd_prd_wh_obj, re_prd_prd_wh_lot_obj, re_prd_prd_wh_serial_obj):
         new_logs = issue_data.get('new_logs', [])
-        if pm_obj.representative_product_modified:
+        re_product_obj = pm_obj.representative_product_modified
+        if re_product_obj:
             if pm_obj.product_modified and new_logs:
                 uom_obj = None
                 product_modified_value = 0
@@ -92,23 +93,23 @@ class GRFromPMHandler:
                 value_minus = 0
                 for log in new_logs:
                     if log.product_id != pm_obj.product_modified_id:
-                        if log.product_id == pm_obj.representative_product_modified_id:
-                            uom_obj = pm_obj.representative_product_modified.inventory_uom
+                        if log.product_id == re_product_obj.id:
+                            uom_obj = re_product_obj.inventory_uom
                             product_modified_value = log.value
                             for pm_product_obj in pm_obj.removed_components.all():
                                 value_minus += pm_product_obj.fair_value * pm_product_obj.component_quantity
-                        if log.product_id != pm_obj.representative_product_modified_id:
+                        if log.product_id != re_product_obj.id:
                             value_plus += log.value
                 return [{
                     'order': 1,
-                    'product_id': str(pm_obj.representative_product_modified_id),
+                    'product_id': str(re_product_obj.id),
                     'product_data': {
-                        'id': str(pm_obj.representative_product_modified_id),
-                        'title': pm_obj.representative_product_modified.title,
-                        'code': pm_obj.representative_product_modified.code,
-                        'general_traceability_method': pm_obj.representative_product_modified.general_traceability_method,
-                        'description': pm_obj.representative_product_modified.description,
-                        'product_choice': pm_obj.representative_product_modified.product_choice,
+                        'id': str(re_product_obj.id),
+                        'title': re_product_obj.title,
+                        'code': re_product_obj.code,
+                        'general_traceability_method': re_product_obj.general_traceability_method,
+                        'description': re_product_obj.description,
+                        'product_choice': re_product_obj.product_choice,
                     },
                     'uom_id': str(uom_obj.id) if uom_obj else None,
                     'uom_data': {
