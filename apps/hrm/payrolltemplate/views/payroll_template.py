@@ -11,12 +11,12 @@ class PayrollTemplateList(BaseListMixin, BaseCreateMixin):
     serializer_list = PayrollTemplateListSerializers
     serializer_detail = PayrollTemplateDetailSerializers
     serializer_create = PayrollTemplateCreateSerializers
-    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    list_hidden_field = ['company_id']
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
     search_fields = ('code', 'title')
 
     def get_queryset(self):
-        return super().get_queryset().select_related('employee_inherit')
+        return super().get_queryset().select_related('employee_inherit', 'employee_created')
 
     @swagger_auto_schema(
         operation_summary="Payroll Template list",

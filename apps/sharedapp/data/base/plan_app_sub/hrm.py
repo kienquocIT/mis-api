@@ -175,7 +175,7 @@ HRM_PAYROLL_TEMPLATE = {
     "title": "Payroll template",
     "code": "payrolltemplate",
     "model_code": "payrolltemplate",
-    "app_label": "payroll",
+    "app_label": "payrolltemplate",
     "is_workflow": True,
     "allow_permit": True,
     "app_depend_on": [],

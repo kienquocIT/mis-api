@@ -6504,7 +6504,7 @@ def rerun_convert_ap_cost_for_payment():
     return True
 
 
-def make_system_component():
+def make_system_payroll_component():
     data_list = [
         {
             'title': 'Tên NV',
@@ -6528,31 +6528,37 @@ def make_system_component():
             'title': 'Lương',
             'name': 'Salary',
             'code': 'employee_salary',
-            'type': 1,
+            'type': 0,
+        },
+        {
+            'title': 'Thuế TNCN',
+            'name': 'Income Tax',
+            'code': 'income_tax',
+            'type': 0,
         },
         {
             'title': 'BHXH',
             'name': 'Social insurance',
             'code': 'employee_social_insurance',
-            'type': 1,
+            'type': 0,
         },
         {
             'title': 'BHYT',
             'name': 'Health insurance',
             'code': 'employee_health_insurance',
-            'type': 1,
+            'type': 0,
         },
         {
             'title': 'BHTN',
             'name': 'Unemployment insurance',
             'code': 'employee_health_insurance',
-            'type': 1,
+            'type': 0,
         },
         {
             'title': 'BHCD',
             'name': 'Union insurance',
             'code': 'employee_union_insurance',
-            'type': 1,
+            'type': 0,
         },
         {
             'title': 'Giảm trừ bản thân',
@@ -6596,17 +6602,31 @@ def make_system_component():
             'code': 'employee_overtime_holiday_hours',
             'type': 0,
         },
+        {
+            'title': 'Số ngày công chuẩn',
+            'name': 'Shift standard work',
+            'code': 'shift_standard_work',
+            'type': 0,
+        },
+        {
+            'title': 'Số ngày công thực tế',
+            'name': 'Actual work',
+            'code': 'actual_work',
+            'type': 0,
+        },
     ]
     create_bulk_lst = []
     company_obj_list = Company.objects.all()
     for company_obj in company_obj_list:
         for item in data_list:
             create_bulk_lst.append(AttributeComponent(
-                component_title=item.title,
-                component_name=item.name,
-                component_code=item.code,
-                component_type=item.type,
+                component_title=item['title'],
+                component_name=item['name'],
+                component_code=item['code'],
+                component_type=item['type'],
                 component_mandatory=True,
                 company=company_obj
             ))
+    AttributeComponent.objects.all().delete()
     AttributeComponent.objects.bulk_create(create_bulk_lst)
+    print('Completed create system payroll attribute')

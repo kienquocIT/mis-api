@@ -1,3 +1,5 @@
+import json
+
 from django.db import models
 
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
@@ -35,6 +37,13 @@ class PayrollAttribute(MasterDataAbstractModel):
     data_source = models.IntegerField(
         verbose_name="Data source",
         choices=DATA_SOURCE
+    )
+    data_source_component_data = models.JSONField(
+        default=dict,
+        null=True,
+        blank=True,
+        verbose_name='Save data_source selected',
+        help_text=json.dumps({'id': 'uuid', 'component_name': 'name', 'component_code': 'code'})
     )
     formula = models.CharField(
         max_length=500,

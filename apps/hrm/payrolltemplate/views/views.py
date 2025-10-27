@@ -19,7 +19,7 @@ class PayrollComponentList(BaseListMixin, BaseCreateMixin):
     serializer_list = PayrollComponentListSerializers
     serializer_detail = PayrollComponentListSerializers
     serializer_create = PayrollComponentCreateSerializers
-    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    list_hidden_field = ['company_id']
     create_hidden_field = ['company_id']
     search_fields = ('code', 'title')
 
@@ -28,8 +28,7 @@ class PayrollComponentList(BaseListMixin, BaseCreateMixin):
         operation_description="get payroll component list",
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        label_code='payrolltemplate', model_code='payrolltemplate', perm_code='view',
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

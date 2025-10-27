@@ -1,8 +1,10 @@
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.shared import AbstractCreateSerializerModel, BaseMsg, DisperseModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
+from apps.shared.translations.hrm import HRMMsg
 from ..models import PayrollTemplate, SalaryTemplateEmployeeGroup
 
 class AttributeListSerializers(serializers.Serializer):  # noqa
@@ -10,19 +12,36 @@ class AttributeListSerializers(serializers.Serializer):  # noqa
     code = serializers.CharField()
     type = serializers.IntegerField()
     source = serializers.IntegerField()
-    formula = serializers.CharField(required=False, allow_null=True)
+    formula = serializers.JSONField(required=False, allow_null=True)
+    data_source_component_data = serializers.JSONField(required=False, allow_null=True)
     mandatory = serializers.BooleanField()
     order = serializers.IntegerField()
 
 
 class PayrollTemplateListSerializers(AbstractListSerializerModel):
+    employee_created = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee_created(cls, attrs):
+        return {
+            'id': str(attrs.employee_created.id), 'full_name': attrs.employee_created.get_full_name()
+        } if attrs.employee_created else {}
+
+    @classmethod
+    def get_employee_inherit(cls, attrs):
+        return {
+            'id': str(attrs.employee_inherit.id), 'full_name': attrs.employee_inherit.get_full_name()
+        } if attrs.employee_inherit else {}
+
     class Meta:
         model = PayrollTemplate
         fields = (
             'id',
             'title',
-            'department_applied_data',
+            'code',
             'remarks',
+            'department_applied_data',
             'employee_inherit',
             'employee_created',
             'date_created',
@@ -30,33 +49,24 @@ class PayrollTemplateListSerializers(AbstractListSerializerModel):
 
 
 class PayrollTemplateCreateSerializers(AbstractCreateSerializerModel):
-    attribute_list = AttributeListSerializers(many=True)
+    attribute_list = AttributeListSerializers(many=True, allow_null=True, default=[])
     department_applied = serializers.ListSerializer(child=serializers.UUIDField())
     department_applied_data = serializers.JSONField(required=False, allow_null=True)
 
     @classmethod
     def validate_attribute_list(cls, value):
         if not len(value) > 0:
-            raise serializers.ValidationError({'detail': BaseMsg.DOES_NOT_EXIST})
+            raise serializers.ValidationError({'detail': HRMMsg.PAYROLL_TEMPLATE + BaseMsg.DOES_NOT_EXIST})
         return value
 
-    def validate(self, validate_data):
-        department = validate_data.get('department_applied')
-        if department:
+    @classmethod
+    def validate_department_applied(cls, value):
+        if value:
             group_models = DisperseModel(app_model='hr.group').get_model()
-            list_group = group_models.objects.filter(id__in=department)
-            if len(department) != list_group.count():
-                raise serializers.ValidationError({'detail': BaseMsg.DOES_NOT_EXIST})
-            data = []
-            for group in list_group:
-                data.append({
-                    'id': str(group.id),
-                    'title': group.title,
-                    'code': group.code
-                })
-            validate_data['validate_data'] = list_group
-            validate_data['department_applied_data'] = data
-        return validate_data
+            list_group = group_models.objects.filter(id__in=value)
+            if list_group.count() != len(value):
+                raise serializers.ValidationError({'detail': _('Some Group') + BaseMsg.DOES_NOT_EXIST})
+        return value
 
     @decorator_run_workflow
     def create(self, validated_data):
@@ -67,7 +77,7 @@ class PayrollTemplateCreateSerializers(AbstractCreateSerializerModel):
             for group in employee_group:
                 group_mapped_list.append(SalaryTemplateEmployeeGroup(
                     salary_template=template,
-                    department_applied=group
+                    department_applied_id=group
                 ))
             SalaryTemplateEmployeeGroup.objects.bulk_create(group_mapped_list)
         return template
@@ -98,6 +108,7 @@ class PayrollTemplateDetailSerializers(AbstractDetailSerializerModel):
         fields = (
             'id',
             'title',
+            'code',
             'department_applied_data',
             'remarks',
             'employee_inherit',
@@ -123,25 +134,24 @@ class PayrollTemplateUpdateSerializers(AbstractCreateSerializerModel):
             list_group = group_models.objects.filter(id__in=department)
             if len(department) != list_group.count():
                 raise serializers.ValidationError({'detail': BaseMsg.DOES_NOT_EXIST})
-            data = []
-            for group in list_group:
-                data.append(
-                    {
-                        'id': str(group.id),
-                        'title': group.title,
-                        'code': group.code
-                    }
-                )
-            validate_data['validate_data'] = list_group
-            validate_data['department_applied_data'] = data
         return validate_data
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
-
+        employee_group = validated_data.pop('department_applied', None)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
+        if employee_group:
+            SalaryTemplateEmployeeGroup.objects.filter(salary_template=instance).delete()
+            group_mapped_list = []
+            for group in employee_group:
+                group_mapped_list.append(SalaryTemplateEmployeeGroup(
+                    salary_template=instance,
+                    department_applied_id=group
+                ))
+            SalaryTemplateEmployeeGroup.objects.bulk_create(group_mapped_list)
         return instance
 
     class Meta:
