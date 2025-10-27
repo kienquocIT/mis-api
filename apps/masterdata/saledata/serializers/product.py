@@ -328,6 +328,10 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {'representative_product': _('This representative product is belong to another product.')}
                 )
+            if validate_data.get('general_traceability_method') != 2:
+                raise serializers.ValidationError(
+                    {'representative_product': _('Can not assign representative product for non-serial products.')}
+                )
 
         # validate dimension
         validate_data['width'] = ProductCommonFunction.validate_dimension(
@@ -798,8 +802,14 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         representative_product_obj = validate_data.get('representative_product')
         if representative_product_obj:
             if representative_product_obj.is_representative_product:
+                # check trùng sp đại diện (trừ chính nó)
+                if self.instance.representative_product_id != representative_product_obj.id:
+                    raise serializers.ValidationError(
+                        {'representative_product': _('This representative product is belong to another product.')}
+                    )
+            if validate_data.get('general_traceability_method') != 2:
                 raise serializers.ValidationError(
-                    {'representative_product': _('This representative product is belong to another product.')}
+                    {'representative_product': _('Can not assign representative product for non-serial products.')}
                 )
 
         # validate dimension
