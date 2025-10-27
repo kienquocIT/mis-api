@@ -208,7 +208,12 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     def validate_representative_product(cls, value):
         if value:
             try:
-                return Product.objects.get(id=value)
+                representative_product = Product.objects.get(id=value)
+                if representative_product.general_traceability_method != 2:
+                    raise serializers.ValidationError(
+                        {'representative_product': ProductMsg.REPRESENTATIVE_PRODUCT_MUST_BE_SERIAL}
+                    )
+                return representative_product
             except Product.DoesNotExist:
                 raise serializers.ValidationError({'representative_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
         return None
@@ -316,6 +321,13 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'valuation_method': _('The specific identification is only available for serial products.')}
             )
+
+        representative_product_obj = validate_data.get('representative_product')
+        if representative_product_obj:
+            if representative_product_obj.is_representative_product:
+                raise serializers.ValidationError(
+                    {'representative_product': _('This representative product is belong to another product.')}
+                )
 
         # validate dimension
         validate_data['width'] = ProductCommonFunction.validate_dimension(
@@ -727,7 +739,12 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     def validate_representative_product(cls, value):
         if value:
             try:
-                return Product.objects.get(id=value)
+                representative_product = Product.objects.get(id=value)
+                if representative_product.general_traceability_method != 2:
+                    raise serializers.ValidationError(
+                        {'representative_product': ProductMsg.REPRESENTATIVE_PRODUCT_MUST_BE_SERIAL}
+                    )
+                return representative_product
             except Product.DoesNotExist:
                 raise serializers.ValidationError({'representative_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
         return None
@@ -777,6 +794,13 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'valuation_method': _('The specific identification is only available for serial products.')}
             )
+
+        representative_product_obj = validate_data.get('representative_product')
+        if representative_product_obj:
+            if representative_product_obj.is_representative_product:
+                raise serializers.ValidationError(
+                    {'representative_product': _('This representative product is belong to another product.')}
+                )
 
         # validate dimension
         validate_data['width'] = ProductCommonFunction.validate_dimension(
