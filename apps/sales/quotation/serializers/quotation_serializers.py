@@ -274,6 +274,7 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
             if product_obj:
                 product_description = data.get('product_description', "")
                 price = data.get('product_unit_price', 0)
+                discount = data.get('product_discount_amount', 0)
                 subtotal = data.get('product_subtotal_price', 0)
                 subtotal_at = data.get('product_subtotal_price_after_tax', 0)
                 data.update({
@@ -287,6 +288,7 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
                 data.update({
                     'product_description': product_description if product_description else product_obj.description,
                     'product_unit_price': CompanyHandler.parse_currency(obj=obj, value=price),
+                    'product_discount_amount': CompanyHandler.parse_currency(obj=obj, value=discount),
                     'product_subtotal_price': CompanyHandler.parse_currency(obj=obj, value=subtotal),
                     'product_subtotal_price_after_tax': CompanyHandler.parse_currency(obj=obj, value=subtotal_at),
                 })
