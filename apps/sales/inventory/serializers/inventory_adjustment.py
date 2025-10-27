@@ -7,6 +7,7 @@ from apps.sales.inventory.models import (
 
 
 class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
+    employee_created = serializers.SerializerMethodField()
     warehouses = serializers.SerializerMethodField()
     state_detail = serializers.SerializerMethodField()
 
@@ -17,24 +18,23 @@ class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'warehouses',
+            'employee_created',
             'date_created',
             'state',
             'state_detail'
         )
 
     @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
+
+    @classmethod
     def get_warehouses(cls, obj):
-        all_item = obj.warehouses_mapped.all()
-        data = []
-        for item in all_item:
-            data.append(
-                {
-                    'warehouse_id': str(item.id),
-                    'warehouse_code': item.code,
-                    'warehouse_title': item.title,
-                }
-            )
-        return data
+        return [{
+            'id': str(item.id),
+            'code': item.code,
+            'title': item.title,
+        } for item in obj.warehouses_mapped.all()]
 
     @classmethod
     def get_state_detail(cls, obj):

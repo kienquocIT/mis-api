@@ -29,6 +29,7 @@ class EmployeeContractListSerializers(serializers.ModelSerializer):
 
 class EmployeeContractCreateSerializers(serializers.ModelSerializer):
     id = serializers.UUIDField(required=False)
+    attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     @classmethod
     def validate_employee_info(cls, value):
@@ -69,6 +70,11 @@ class EmployeeContractCreateSerializers(serializers.ModelSerializer):
             'content',
             'sign_status',
             'content_info',
+            'employee_salary_level',
+            'employee_salary',
+            'employee_salary_insurance',
+            'employee_salary_rate',
+            'employee_salary_coefficient'
         )
 
 
@@ -102,6 +108,11 @@ class EmployeeContractDetailSerializers(serializers.ModelSerializer):
             'content',
             'sign_status',
             'content_info',
+            'employee_salary_level',
+            'employee_salary',
+            'employee_salary_insurance',
+            'employee_salary_rate',
+            'employee_salary_coefficient'
         )
 
 

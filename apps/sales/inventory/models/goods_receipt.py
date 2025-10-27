@@ -280,7 +280,6 @@ class GoodsReceipt(DataAbstractModel):
                         date_created=goods_receipt_obj.date_approved
                     ))
         GoodsDetail.objects.bulk_create(bulk_info)
-        print('Done')
         return True
 
     def save(self, *args, **kwargs):

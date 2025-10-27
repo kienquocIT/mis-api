@@ -1,7 +1,6 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.parsers import MultiPartParser
-
 from apps.masterdata.saledata.models import ProductPriceList
 from apps.masterdata.saledata.serializers.product_import_db import (
     ProductQuotationCreateSerializerLoadDB, ProductQuotationDetailSerializerLoadDB
@@ -18,9 +17,12 @@ from apps.masterdata.saledata.models.product import (
 )
 from apps.masterdata.saledata.serializers.product import (
     ProductListSerializer, ProductCreateSerializer,
-    ProductDetailSerializer, ProductUpdateSerializer,
-    UnitOfMeasureOfGroupLaborListSerializer, ProductQuickCreateSerializer,
-    ProductSpecificIdentificationSerialNumberListSerializer,
+    ProductDetailSerializer, ProductUpdateSerializer
+)
+from apps.masterdata.saledata.serializers.product_sub import (
+    ProductQuickCreateSerializer,
+    UnitOfMeasureOfGroupLaborListSerializer, ProductSpecificIdentificationSerialNumberListSerializer,
+    ProductForSaleListSerializer, ProductForSaleDetailSerializer, ProductUploadAvatarSerializer
 )
 from apps.masterdata.saledata.serializers.product_masterdata import (
     ProductTypeListSerializer, ProductTypeCreateSerializer,
@@ -32,9 +34,6 @@ from apps.masterdata.saledata.serializers.product_masterdata import (
     UnitOfMeasureListSerializer, UnitOfMeasureCreateSerializer,
     UnitOfMeasureGroupUpdateSerializer, UnitOfMeasureDetailSerializer, ManufacturerListSerializer,
     ManufacturerCreateSerializer, ManufacturerDetailSerializer, ManufacturerUpdateSerializer
-)
-from apps.masterdata.saledata.serializers.product_custom import (
-    ProductForSaleListSerializer, ProductForSaleDetailSerializer, ProductUploadAvatarSerializer
 )
 
 

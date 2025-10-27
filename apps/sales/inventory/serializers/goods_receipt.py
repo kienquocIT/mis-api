@@ -457,6 +457,7 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
 
 # GOODS RECEIPT BEGIN
 class GoodsReceiptListSerializer(AbstractListSerializerModel):
+    employee_created = serializers.SerializerMethodField()
     production_order_data = serializers.SerializerMethodField()
 
     class Meta:
@@ -470,9 +471,15 @@ class GoodsReceiptListSerializer(AbstractListSerializerModel):
             'inventory_adjustment_data',
             'production_order_data',
             'product_modification_data',
+            'employee_created',
+            'date_created',
             'date_received',
             'system_status',
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
     def get_production_order_data(cls, obj):

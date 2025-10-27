@@ -25,6 +25,7 @@ def cast_quantity_to_unit(uom, quantity):
 
 
 class GoodsRegistrationListSerializer(serializers.ModelSerializer):
+    employee_created = serializers.SerializerMethodField()
     sale_order = serializers.SerializerMethodField()
 
     class Meta:
@@ -34,8 +35,13 @@ class GoodsRegistrationListSerializer(serializers.ModelSerializer):
             'title',
             'code',
             'sale_order',
+            'employee_created',
             'date_created'
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
     def get_sale_order(cls, obj):
@@ -902,7 +908,7 @@ class GoodsRegisBorrowListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_regis_data(cls, obj):
         """
-        Available = số lượng đăng ký cho chính đơn bán hàng hiện tại
+        Available = số lượng đăng ký cho chính Đơn hàng bán hiện tại
         (lấy từ bảng GReItemProductWarehouse field this_available)
         """
         return GReItemProductWarehouseSerializer(obj.gre_item_prd_wh.all(), many=True).data
@@ -910,7 +916,7 @@ class GoodsRegisBorrowListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_borrow_data(cls, obj):
         """
-        Available = số lượng mượn hàng từ đơn bán hàng khác
+        Available = số lượng mượn hàng từ Đơn hàng bán khác
         (lấy từ bảng GReItemBorrow field base_available)
         """
         return GReItemBorrowListSerializer(obj.gre_item_src_borrow.all(), many=True).data

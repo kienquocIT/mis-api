@@ -119,6 +119,7 @@ class EmployeeInfo(TenantAbstractModel):
         blank=True,
         related_name='signature_of_employee_info',
     )
+    dependent_deduction = models.JSONField(default=list, verbose_name="employee's dependent information")
 
     class Meta:
         verbose_name = 'Employee Info'

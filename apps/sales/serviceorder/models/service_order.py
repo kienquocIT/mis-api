@@ -29,6 +29,14 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
         related_name="service_order_customer"
     )
     customer_data = models.JSONField(default=dict)
+    contact = models.ForeignKey(
+        'saledata.Contact',
+        on_delete=models.CASCADE,
+        verbose_name="contact",
+        related_name="service_order_contact",
+        null=True
+    )
+    contact_data = models.JSONField(default=dict, help_text='data json of contact')
     start_date = models.DateField()
     end_date = models.DateField()
     attachment_m2m = models.ManyToManyField(
@@ -47,9 +55,9 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
     total_product_revenue_before_tax = models.FloatField(default=0, help_text="total before tax of tab product")
 
     # expense value
-    expense_pretax_value = models.FloatField(default=0)
-    expense_tax_value = models.FloatField(default=0)
-    expense_total_value = models.FloatField(default=0)
+    total_expense_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab expense")
+    total_expense_tax = models.FloatField(default=0, help_text="total tax of tab expense")
+    total_expense = models.FloatField(default=0, help_text="total amount of tab expense")
 
     # indicators
     service_order_indicators_data = models.JSONField(
@@ -265,6 +273,11 @@ class ServiceOrderWorkOrderContribution(SimpleAbstractModel):
     # package feature
     has_package = models.BooleanField(default=False)
     package_data = models.JSONField(default=list, null=True)
+    delivery_call = models.BooleanField(
+        default=False,
+        verbose_name='Called delivery',
+        help_text='State call delivery of this',
+    )
 
     class Meta:
         verbose_name = 'Service order work order contribution'
@@ -510,7 +523,7 @@ class ServiceOrderExpense(MasterDataAbstractModel):
         related_name="service_order_expense_tax"
     )
     tax_data = models.JSONField(default=dict)
-    subtotal_price = models.FloatField(default=0)
+    expense_subtotal_price = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Service order expense'

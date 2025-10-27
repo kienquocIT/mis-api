@@ -107,7 +107,7 @@ msgstr "Hoàn ứng"
 
 #
 msgid "APP_Sale Order"
-msgstr "Đơn bán hàng"
+msgstr "Đơn hàng bán"
 
 #
 msgid "APP_Project"

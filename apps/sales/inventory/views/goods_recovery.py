@@ -18,13 +18,7 @@ class GoodsRecoveryList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        is_minimal = self.get_param(key='is_minimal')
-        if is_minimal:
-            return super().get_queryset()
-
-        return super().get_queryset().select_related(
-            "customer",
-        )
+        return super().get_queryset().select_related("customer", 'employee_created')
 
     @swagger_auto_schema(
         operation_summary="Goods Recovery List",
