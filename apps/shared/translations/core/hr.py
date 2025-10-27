@@ -15,3 +15,4 @@ class HrMsg:
     EMPLOYEE_REQUIRED = _('Employee must be required')
     EMPLOYEE_WAS_LINKED = _('User still not map with The employee please contact your Admin!')
     EMPLOYEE_SOME_NOT_FOUND = _('Some employee is not available')
+    EXPIRED_DATE_ERROR = _('Expired date must be later than effective date')

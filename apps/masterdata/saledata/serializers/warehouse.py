@@ -41,7 +41,6 @@ class WareHouseListSerializer(serializers.ModelSerializer):
             'is_active',
             'is_dropship',
             'is_virtual',
-            'is_pm_warehouse',
             'use_for',
         )
 
@@ -61,18 +60,10 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
             'is_dropship',
             'is_bin_location',
             'is_virtual',
-            'is_pm_warehouse',
             'shelf_data_new'
         )
 
     def validate(self, validate_data):
-        if validate_data.get('is_pm_warehouse'):
-            if validate_data.get('is_dropship') or validate_data.get('is_virtual'):
-                raise serializers.ValidationError(
-                    {'is_pm_warehouse': 'Warehouse for product modification can not be dropship or virtual.'}
-                )
-            if WareHouse.objects.filter_on_company(is_pm_warehouse=True).exists():
-                raise serializers.ValidationError({'is_pm_warehouse': 'Warehouse for product modification is existed.'})
         return validate_data
 
     def create(self, validated_data):
@@ -117,7 +108,6 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             'is_dropship',
             'is_bin_location',
             'is_virtual',
-            'is_pm_warehouse',
             'shelf_data'
         )
 
@@ -148,18 +138,11 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
             'is_dropship',
             'is_bin_location',
             'is_virtual',
-            'is_pm_warehouse',
             'shelf_data_new'
         )
 
     def validate(self, validate_data):
-        if validate_data.get('is_pm_warehouse'):
-            if validate_data.get('is_dropship') or validate_data.get('is_virtual'):
-                raise serializers.ValidationError(
-                    {'is_pm_warehouse': 'Warehouse for product modification can not be dropship or virtual.'}
-                )
-            if WareHouse.objects.filter_on_company(is_pm_warehouse=True).exclude(id=self.instance.id).exists():
-                raise serializers.ValidationError({'is_pm_warehouse': 'Warehouse for product modification is existed.'})
+
         return validate_data
 
     def update(self, instance, validated_data):
