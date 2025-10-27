@@ -149,9 +149,11 @@ class ProductAttributeDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_attribute_list(cls, obj):
+        is_inventory_tracking = 1 in obj.product_choice
         attribute_list = []
 
         for product_attribute in obj.product_attributes.all():
+
             attribute = product_attribute.attribute  # the related Attribute object
 
             # Check if this attribute is a category
@@ -159,7 +161,8 @@ class ProductAttributeDetailSerializer(serializers.ModelSerializer):
                 # Get all child attributes of this category
                 child_attributes = Attribute.objects.filter(
                     parent_n=attribute,
-                    is_category=False  # Only get attribute
+                    is_category=False,  # Only get attribute
+                    is_inventory=is_inventory_tracking
                 )
 
                 for child_attr in child_attributes:
