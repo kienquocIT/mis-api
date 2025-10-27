@@ -11,3 +11,5 @@ class HRMMsg:
     BREAK_IN_TIME_ERROR = _('Break in time must be later than check-in time.')
     BREAK_OUT_TIME_ERROR = _('Break out time must be later than break-in time.')
     CHECKOUT_TIME_ERROR = _('Checkout time must be later than break-out time.')
+
+    PAYROLL_TEMPLATE = _('Payroll template')

@@ -58,7 +58,7 @@ class EmployeeInfoDetail(BaseRetrieveMixin, BaseUpdateMixin):
     retrieve_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('nationality', 'place_of_birth', 'place_of_origin')
+        return super().get_queryset().select_related('nationality', 'place_birth', 'place_origin')
 
     @swagger_auto_schema(
         operation_summary="Employee Info detail",

@@ -199,9 +199,9 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
             'citizen_id',
             'date_of_issue',
             'place_of_issue',
-            'place_of_birth',
+            'place_birth',
             'nationality',
-            'place_of_origin',
+            'place_origin',
             'ethnicity',
             'religion',
             'gender',
@@ -226,8 +226,8 @@ class EmployeeInfoCreateSerializers(serializers.ModelSerializer):
 class EmployeeInfoDetailSerializers(serializers.ModelSerializer):
     employee = serializers.SerializerMethodField()
     nationality = serializers.SerializerMethodField()
-    place_of_birth = serializers.SerializerMethodField()
-    place_of_origin = serializers.SerializerMethodField()
+    place_birth = serializers.SerializerMethodField()
+    place_origin = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee(cls, obj):
@@ -256,18 +256,18 @@ class EmployeeInfoDetailSerializers(serializers.ModelSerializer):
         } if obj.nationality else {}
 
     @classmethod
-    def get_place_of_birth(cls, obj):
+    def get_place_birth(cls, obj):
         return {
-            'id': str(obj.place_of_birth.id),
-            'title': obj.place_of_birth.title
-        } if obj.place_of_birth else {}
+            'id': str(obj.place_birth.id),
+            'title': obj.place_birth.fullname
+        } if obj.place_birth else {}
 
     @classmethod
-    def get_place_of_origin(cls, obj):
+    def get_place_origin(cls, obj):
         return {
-            'id': str(obj.place_of_origin.id),
-            'title': obj.place_of_origin.title
-        } if obj.place_of_origin else {}
+            'id': str(obj.place_origin.id),
+            'title': obj.place_origin.fullname
+        } if obj.place_origin else {}
 
     class Meta:
         model = EmployeeInfo
@@ -277,9 +277,9 @@ class EmployeeInfoDetailSerializers(serializers.ModelSerializer):
             'citizen_id',
             'date_of_issue',
             'place_of_issue',
-            'place_of_birth',
+            'place_birth',
             'nationality',
-            'place_of_origin',
+            'place_origin',
             'ethnicity',
             'religion',
             'gender',
@@ -342,9 +342,9 @@ class EmployeeInfoUpdateSerializers(serializers.ModelSerializer):
             'citizen_id',
             'date_of_issue',
             'place_of_issue',
-            'place_of_birth',
+            'place_birth',
             'nationality',
-            'place_of_origin',
+            'place_origin',
             'ethnicity',
             'religion',
             'gender',
