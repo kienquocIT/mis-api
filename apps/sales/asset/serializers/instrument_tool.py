@@ -1,11 +1,12 @@
 import logging
 from django.db import transaction
+from django.db.models import Sum
 from rest_framework import serializers
 
 from apps.core.hr.models import Group
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Product, ToolClassification
-from apps.sales.apinvoice.models import APInvoice
+from apps.sales.apinvoice.models import APInvoice, APInvoiceItems
 from apps.sales.asset.models import InstrumentTool, InstrumentToolUseDepartment, InstrumentToolSource, \
     InstrumentToolAPInvoiceItems
 from apps.sales.asset.serializers.handler import CommonHandler
@@ -188,6 +189,63 @@ class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
                 raise serializers.ValidationError({"asset_code": FixedAssetMsg.CODE_EXIST})
             return value
         raise serializers.ValidationError({"asset_code": BaseMsg.REQUIRED})
+
+    @classmethod
+    def validate_increase_fa_list(self, value):
+        """
+        Validate that the increased FA value doesn't exceed AP invoice item subtotal
+        Expected format: {
+            "instrument_tool_id": {
+                "ap_invoice_item_id": increased_FA_value,
+                ...
+            },
+            ...
+        }
+        """
+        if not value:
+            return value
+
+        # Loop through each instrument tool
+        for instrument_tool_id, ap_invoice_items in value.items():
+            if not isinstance(ap_invoice_items, dict):
+                continue
+
+            # Loop through each AP invoice item for this instrument tool
+            for ap_invoice_item_id, new_increased_value in ap_invoice_items.items():
+                new_increased_value = float(new_increased_value)
+
+                # Skip if value is 0
+                if new_increased_value == 0:
+                    continue
+
+                try:
+                    ap_invoice_item = APInvoiceItems.objects.get(id=ap_invoice_item_id)
+
+                    # Get sum of existing increased FA values for this AP invoice item
+                    # Exclude the current instrument tool if it already exists (for updates)
+                    existing_total = InstrumentToolAPInvoiceItems.objects.filter(
+                        ap_invoice_item_id=ap_invoice_item_id
+                    ).exclude(
+                        instrument_tool_id=instrument_tool_id
+                    ).aggregate(
+                        total=Sum('increased_FA_value')
+                    )['total'] or 0
+
+                    # Check if new value + existing total exceeds product_subtotal
+                    total_increased_value = existing_total + new_increased_value
+
+                    if total_increased_value > ap_invoice_item.product_subtotal:
+                        raise serializers.ValidationError({
+                            'increase_fa_list': f'Total increased FA value '
+                                                f'exceeds AP invoice item subtotal'
+                        })
+
+                except APInvoiceItems.DoesNotExist:
+                    raise serializers.ValidationError({
+                        'increase_fa_list': f'AP Invoice Item with id {ap_invoice_item_id} does not exist'
+                    })
+
+        return value
 
     def validate(self, validate_data):
         asset_sources = validate_data.get('asset_sources')
