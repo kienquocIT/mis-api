@@ -22,6 +22,7 @@ from apps.masterdata.saledata.serializers.product import (
 from apps.masterdata.saledata.serializers.product_sub import (
     ProductQuickCreateSerializer,
     UnitOfMeasureOfGroupLaborListSerializer, ProductSpecificIdentificationSerialNumberListSerializer,
+    ProductForSaleListSerializer, ProductForSaleDetailSerializer, ProductUploadAvatarSerializer
 )
 from apps.masterdata.saledata.serializers.product_masterdata import (
     ProductTypeListSerializer, ProductTypeCreateSerializer,
@@ -33,9 +34,6 @@ from apps.masterdata.saledata.serializers.product_masterdata import (
     UnitOfMeasureListSerializer, UnitOfMeasureCreateSerializer,
     UnitOfMeasureGroupUpdateSerializer, UnitOfMeasureDetailSerializer, ManufacturerListSerializer,
     ManufacturerCreateSerializer, ManufacturerDetailSerializer, ManufacturerUpdateSerializer
-)
-from apps.masterdata.saledata.serializers.product_custom import (
-    ProductForSaleListSerializer, ProductForSaleDetailSerializer, ProductUploadAvatarSerializer
 )
 
 
