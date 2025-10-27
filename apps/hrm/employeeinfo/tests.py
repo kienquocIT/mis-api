@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.core.base.models import Country, City
+from apps.core.base.models import Country, NProvince
 from apps.core.hr.models import Employee
 from apps.shared.extends.tests import AdvanceTestCase
 from apps.shared.scripts import create_empl_map_hrm
@@ -21,7 +21,7 @@ class EmployeeInfoTestCase(AdvanceTestCase):
         self.employee = employee_obj
         self.company = employee_obj.company
         self.country = Country.objects.first()
-        self.city = City.objects.first()
+        self.city = NProvince.objects.first()
         # run script employee map employee info
         create_empl_map_hrm()
         emp_not_map_res = self.client.get(reverse("EmployeeNotMapHRMList"), format='json')
