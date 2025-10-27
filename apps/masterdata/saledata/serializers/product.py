@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models.product import (
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
 from apps.shared import ProductMsg, PriceMsg, BaseMsg
-from .product_sub import ProductCommonFunction
+from apps.masterdata.saledata.serializers.product_sub import ProductCommonFunction
 from ..models import ProductWareHouse
 
 
