@@ -10,7 +10,7 @@ from apps.shared import ResponseController, BaseListMixin, mask_view, BaseRetrie
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
     Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication, Zones,
-    ApplicationEmpConfig, NProvince, NWard
+    ApplicationEmpConfig, NProvince, NWard,
 )
 
 from apps.core.base.serializers import (
@@ -67,7 +67,6 @@ APP_MODEL_CODE = [
     'instrumenttoolwriteoff'
     # thêm model_code của app đã cấu hình sinh code theo công thức vào đây
 ]
-
 
 MASTER_DATA_MODEL_CODE = [
     'account',
@@ -191,7 +190,7 @@ class ApplicationPropertyList(BaseListMixin):
     @swagger_auto_schema(operation_summary="Application Property list", operation_description="")
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs   )
+        return self.list(request, *args, **kwargs)
 
 
 class ApplicationPropertyForPrintList(BaseListMixin):
@@ -567,6 +566,7 @@ class AppEmpConfigList(BaseListMixin, BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
+
 
 # New address
 class NProvinceList(BaseListMixin):

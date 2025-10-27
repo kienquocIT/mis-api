@@ -522,6 +522,7 @@ class Ward(SimpleAbstractModel):
         verbose_name = 'Ward'
         verbose_name_plural = 'Ward'
 
+
 # New Base Viet Nam info
 class NProvince(SimpleAbstractModel):
     """
@@ -583,6 +584,7 @@ class NWard(SimpleAbstractModel):
         ordering = ('fullname',)
         verbose_name = 'NWard'
         verbose_name_plural = 'NWards'
+
 
 # Currency
 class Currency(SimpleAbstractModel):

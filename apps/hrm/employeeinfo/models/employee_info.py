@@ -45,7 +45,7 @@ class EmployeeInfo(TenantAbstractModel):
         help_text="The place of issue refers to the city where the passport processing took place",
     )
     place_of_birth = models.ForeignKey(
-        'base.City',
+        'base.NProvince',
         on_delete=models.SET_NULL,
         verbose_name="Place of birth",
         null=True,
@@ -61,7 +61,7 @@ class EmployeeInfo(TenantAbstractModel):
         related_name='nationality_employee_info_set'
     )
     place_of_origin = models.ForeignKey(
-        'base.City',
+        'base.NProvince',
         on_delete=models.SET_NULL,
         null=True,
         blank=True
