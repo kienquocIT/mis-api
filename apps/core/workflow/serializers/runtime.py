@@ -184,7 +184,7 @@ class RuntimeAssigneeListSerializer(serializers.ModelSerializer):
         if obj.stage:
             if obj.stage.runtime:
                 app_code_parsed = obj.stage.runtime.app.title if obj.stage.runtime.app else ''
-        return app_code_parsed
+        return _(app_code_parsed)
 
     @classmethod
     def get_employee(cls, obj):
