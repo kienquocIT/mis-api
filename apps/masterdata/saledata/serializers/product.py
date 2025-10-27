@@ -405,7 +405,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 3)
         CompanyFunctionNumber.auto_code_update_latest_number(app_code='product')
 
-        representative_product_obj = product_obj.representative_product_modified
+        representative_product_obj = product_obj.representative_product
         if representative_product_obj:
             representative_product_obj.is_representative_product = True
             representative_product_obj.save(update_fields=['is_representative_product'])
@@ -801,6 +801,10 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 
         representative_product_obj = validate_data.get('representative_product')
         if representative_product_obj:
+            if self.instance.id == representative_product_obj.id:
+                raise serializers.ValidationError(
+                    {'representative_product': _('Can not assign itself as a representative product.')}
+                )
             if representative_product_obj.is_representative_product:
                 # check trùng sp đại diện (trừ chính nó)
                 if self.instance.representative_product_id != representative_product_obj.id:
@@ -858,6 +862,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 
         if 1 in validate_data.get('product_choice', []):
             validate_data['duration_unit'] = None
+
+        representative_product_obj = instance.representative_product
+        if representative_product_obj:
+            representative_product_obj.is_representative_product = True
+            representative_product_obj.save(update_fields=['is_representative_product'])
 
         return validate_data
 
