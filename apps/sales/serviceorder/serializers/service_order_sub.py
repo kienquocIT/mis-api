@@ -826,7 +826,8 @@ class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
             'code',
             'start_date',
             'end_date',
-            'product_list'
+            'product_list',
+            'order',
         )
 
 
