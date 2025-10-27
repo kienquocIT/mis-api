@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models import (
@@ -7,7 +8,7 @@ from apps.masterdata.saledata.models.price import ProductPriceList, Price, Curre
 from apps.masterdata.saledata.models.product import (
     ProductComponent, ProductAttribute, UnitOfMeasure, ProductSpecificIdentificationSerialNumber, Product
 )
-from apps.masterdata.saledata.serializers import ProductCreateSerializer
+from apps.masterdata.saledata.serializers.product import ProductCreateSerializer
 from apps.shared import ProductMsg
 
 
