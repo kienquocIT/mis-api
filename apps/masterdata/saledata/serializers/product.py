@@ -6,8 +6,8 @@ from apps.masterdata.saledata.models.product import (
     ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
+from apps.masterdata.saledata.serializers.product_common import ProductCommonFunction
 from apps.shared import ProductMsg, PriceMsg, BaseMsg
-from apps.masterdata.saledata.serializers.product_sub import ProductCommonFunction
 from ..models import ProductWareHouse
 
 
