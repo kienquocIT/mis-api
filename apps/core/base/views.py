@@ -10,7 +10,7 @@ from apps.shared import ResponseController, BaseListMixin, mask_view, BaseRetrie
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
     Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication, Zones,
-    ApplicationEmpConfig, NProvince, NWard,
+    ApplicationEmpConfig, NProvince, NWard
 )
 
 from apps.core.base.serializers import (
