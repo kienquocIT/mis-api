@@ -10,6 +10,7 @@ from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerM
 
 # GOODS RECOVERY BEGIN
 class GoodsRecoveryListSerializer(AbstractListSerializerModel):
+    employee_created = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
 
     class Meta:
@@ -19,8 +20,13 @@ class GoodsRecoveryListSerializer(AbstractListSerializerModel):
             'title',
             'code',
             'customer',
+            'employee_created',
             'date_created',
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
     def get_customer(cls, obj):

@@ -672,6 +672,109 @@ def put(self, request, *args, pk, **kwargs):
 ---
 
 
+## CÁCH TẠO CẤU HÌNH CHO CHỨC NĂNG
+```python
+
+BƯỚC 1: Model:
+- Thêm model kế thừa MasterDataAbstractModel:
+VD:
+class QuotationAppConfig(MasterDataAbstractModel):
+    ...
+
+    class Meta:
+        verbose_name = 'Quotation Config'
+        verbose_name_plural = 'Quotation Configs'
+        default_permissions = ()
+        permissions = ()
+   
+BƯỚC 2: Serialier:
+- Do cấu hình chức năng tạo tự động (Khai tạo company mới) nên chỉ có method detail & put
+class QuotationConfigDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = QuotationAppConfig
+        fields = ()
+
+class QuotationConfigUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = QuotationAppConfig
+        fields = ()
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
+
+BƯỚC 3: Views:
+VD:
+class QuotationConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = QuotationAppConfig.objects
+    serializer_detail = QuotationConfigDetailSerializer
+    serializer_update = QuotationConfigUpdateSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Quotation Config Detail",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def get(self, request, *args, **kwargs):
+        self.lookup_field = 'company_id'
+        self.kwargs['company_id'] = request.user.company_current_id
+        return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Quotation Config Update",
+        request_body=QuotationConfigUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def put(self, request, *args, **kwargs):
+        self.lookup_field = 'company_id'
+        self.kwargs['company_id'] = request.user.company_current_id
+        return self.update(request, *args, **kwargs)
+    
+BƯỚC 4: URLs:
+VD:
+path('config', QuotationConfigDetail.as_view(), name='QuotationConfigDetail'),
+
+BƯỚC 5: Viết func để tạo tự động cấu hình:
+- Vào file apps/shared/extends/signals.py
+- Trong class ConfigDefaultData: 
+thêm hàm mới cho chức năng mình
+VD:
+    def quotation_config(self):
+        QuotationAppConfig.objects.create(
+            company=self.company_obj,
+            tenant=self.company_obj.tenant
+        )
+thêm hàm mới tạo trên vào hàm call_new():
+VD:
+    def call_new(self):
+        self.quotation_config()
+        ...
+
+BƯỚC 6: Chạy tạo cấu hình cho các company cũ:
+- Vào file apps/shared/scripts.py
+- thêm hàm mới để tạo cấu hình cho các company cũ
+VD:
+    def make_sure_quotation_config():
+        for obj in Company.objects.all():
+            ConfigDefaultData(obj).quotation_config()
+        print('Make sure quotation config is done!')
+- Chạy hàm trên trong shell (Python console):
+VD:
+    from apps.shared.scripts import make_sure_quotation_config; make_sure_quotation_config()
+
+```
+---
+
+
 #### MEDIA CLOUD Config
 <p style="font-weight: bold;color: red;">JSON trong value của .env luôn sử dunng `"`, không được sử dụng `'`.</p>
 

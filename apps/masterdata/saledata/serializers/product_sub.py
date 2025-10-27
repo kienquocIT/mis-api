@@ -4,8 +4,52 @@ from apps.masterdata.saledata.models import (
     ProductMeasurements, ProductProductType, ProductVariantAttribute, ProductVariant
 )
 from apps.masterdata.saledata.models.price import ProductPriceList, Price, Currency
-from apps.masterdata.saledata.models.product import ProductComponent, ProductAttribute
+from apps.masterdata.saledata.models.product import ProductComponent, ProductAttribute, UnitOfMeasure, \
+    ProductSpecificIdentificationSerialNumber
 from apps.shared import ProductMsg
+
+
+class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
+    group = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UnitOfMeasure
+        fields = ('id', 'title', 'code', 'group', 'ratio')
+
+    @classmethod
+    def get_group(cls, obj):
+        return {
+            'id': obj.group_id, 'title': obj.group.title, 'is_referenced_unit': obj.is_referenced_unit
+        } if obj.group else {}
+
+
+class ProductSpecificIdentificationSerialNumberListSerializer(serializers.ModelSerializer):
+    new_description = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductSpecificIdentificationSerialNumber
+        fields = (
+            'id',
+            'product_id',
+            'product_warehouse_serial_id',
+            'vendor_serial_number',
+            'serial_number',
+            'expire_date',
+            'manufacture_date',
+            'warranty_start',
+            'warranty_end',
+            # trường này lưu giá trị thực tế đích danh (PP này chỉ apply cho SP serial)
+            'specific_value',
+            'serial_status',
+            'new_description',
+        )
+
+    @classmethod
+    def get_new_description(cls, obj):
+        if obj.product_warehouse_serial:
+            for pw_modified in obj.product_warehouse_serial.pw_modified_pw_serial.all():
+                return pw_modified.new_description
+        return ''
 
 
 class ProductCommonFunction:

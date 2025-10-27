@@ -34,6 +34,7 @@ def handle_attach_file(instance, attachment_result):
 class BusinessRequestExpenseItemListSerializer(serializers.ModelSerializer):
     expense_item_data = serializers.SerializerMethodField()
     tax_data = serializers.SerializerMethodField()
+    uom_txt = serializers.CharField(allow_null=True)
 
     @classmethod
     def get_expense_item_data(cls, obj):
@@ -76,6 +77,50 @@ class ExpenseItemListUpdateSerializer(serializers.Serializer):  # noqa
     subtotal = serializers.FloatField()
     order = serializers.IntegerField()
     id = serializers.UUIDField(allow_null=True, required=False)
+
+    @classmethod
+    def validate_expense_item(cls, value):
+        expense = DisperseModel(app_model='saledata.ExpenseItem').get_model()
+        try:
+            return expense.objects.get(pk=value)
+        except expense.DoesNotExist:
+            raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EXPENSE_ITEMS})
+
+    @classmethod
+    def validate_title(cls, value):
+        if not value:
+            raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EXPENSE_TITLE})
+        return value
+
+    @classmethod
+    def validate_uom_txt(cls, value):
+        if not value:
+            raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EXPENSE_UOM})
+        return value
+
+    @classmethod
+    def validate_quantity(cls, value):
+        if not value:
+            raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EXPENSE_QUANTITY})
+        return value
+
+    @classmethod
+    def validate_price(cls, value):
+        if not value:
+            raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EXPENSE_PRICE})
+        return value
+
+    @classmethod
+    def validate_subtotal(cls, value):
+        if not value:
+            raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EXPENSE_SUBTOTAL})
+        return value
+
+    @classmethod
+    def validate_order(cls, value):
+        if value is None:
+            raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EXPENSE_ORDER})
+        return value
 
 
 class BusinessRequestListSerializer(serializers.ModelSerializer):
@@ -124,16 +169,9 @@ class BusinessRequestListSerializer(serializers.ModelSerializer):
 
 
 class BusinessRequestCreateSerializer(AbstractCreateSerializerModel):
-    employee_inherit_id = serializers.UUIDField()
     departure = serializers.UUIDField()
     destination = serializers.UUIDField()
     expense_items = ExpenseItemListUpdateSerializer(many=True)
-
-    @classmethod
-    def validate_employee_inherit_id(cls, value):
-        if not value:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return value
 
     @classmethod
     def validate_expense_items(cls, value):
@@ -170,9 +208,9 @@ class BusinessRequestCreateSerializer(AbstractCreateSerializerModel):
             expense = ExpenseItemMapBusinessRequest(
                 title=item['title'],
                 business_request=instance,
-                expense_item_id=str(item['expense_item']),
+                expense_item_id=str(item['expense_item'].id),
                 tax_id=str(item['tax']) if 'tax' in item else None,
-                uom_txt=item['uom_txt'],
+                uom_txt=item.get('uom_txt'),
                 quantity=item['quantity'],
                 price=item['price'],
                 subtotal=item['subtotal'],
@@ -219,7 +257,6 @@ class BusinessRequestCreateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'remark',
-            'employee_inherit_id',
             'attachment',
             'expense_items',
             'date_created',
@@ -272,7 +309,7 @@ class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
                 return {
                     "id": str(group.first_manager.id),
                     "full_name": group.first_manager.get_full_name(),
-                }
+                } if group.first_manager else {}
             ceo = {}
             if obj.employee_inherit.group:
                 ceo = get_first_manager(obj.employee_inherit.group) or {}
@@ -280,7 +317,7 @@ class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
                 "id": str(obj.employee_inherit_id),
                 "last_name": obj.employee_inherit.last_name,
                 "first_name": obj.employee_inherit.first_name,
-                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}',
+                "full_name": obj.employee_inherit.get_full_name(),
                 "group": {
                     "id": str(obj.employee_inherit.group.id),
                     "title": obj.employee_inherit.group.title,
@@ -354,18 +391,11 @@ class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
 
 class BusinessRequestUpdateSerializer(AbstractCreateSerializerModel):
     expense_items = ExpenseItemListUpdateSerializer(many=True)
-    employee_inherit_id = serializers.UUIDField()
 
     @classmethod
     def validate_expense_items(cls, value):
         if not len(value) > 0:
             raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EXPENSE_ITEMS})
-        return value
-
-    @classmethod
-    def validate_employee_inherit(cls, value):
-        if not value:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
         return value
 
     @classmethod
@@ -388,7 +418,7 @@ class BusinessRequestUpdateSerializer(AbstractCreateSerializerModel):
                     id=item['id'],
                     title=item['title'],
                     business_request=instance,
-                    expense_item_id=str(item['expense_item']),
+                    expense_item_id=str(item['expense_item'].id),
                     tax_id=str(item['tax']) if 'tax' in item else None,
                     uom_txt=item['uom_txt'],
                     quantity=item['quantity'],
@@ -400,7 +430,19 @@ class BusinessRequestUpdateSerializer(AbstractCreateSerializerModel):
                 list_update.append(expense)
                 has_item.append(str(expense.id))
             else:
-                list_create.append(item)
+                expense = ExpenseItemMapBusinessRequest(
+                    title=item['title'],
+                    business_request=instance,
+                    expense_item_id=str(item['expense_item'].id),
+                    tax_id=str(item['tax']) if 'tax' in item else None,
+                    uom_txt=item['uom_txt'],
+                    quantity=item['quantity'],
+                    price=item['price'],
+                    subtotal=item['subtotal'],
+                    order=item['order'],
+                )
+                expense.before_save()
+                list_create.append(expense)
 
         if len(list_update) > 0:
             ExpenseItemMapBusinessRequest.objects.bulk_update(
@@ -473,7 +515,6 @@ class BusinessRequestUpdateSerializer(AbstractCreateSerializerModel):
             'title',
             'code',
             'remark',
-            'employee_inherit_id',
             'attachment',
             'expense_items',
             'date_created',

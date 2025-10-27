@@ -653,7 +653,7 @@ class OpportunityCommonFunction:
             "dec012bf-b931-48ba-a746-38b7fd7ca73b",  # Email
             "3a369ba5-82a0-4c4d-a447-3794b67d1d02",  # Consulting Document
             "010404b3-bb91-4b24-9538-075f5f00ef14",  # Lease Order
-            "36f25733-a6e7-43ea-b710-38e2052f0f6d",  # Service Order
+            "c51857ef-513f-4dbf-babd-26d68950ad6e",  # COF
         ]
         for obj in DistributionApplication.objects.select_related('app').filter(
                 employee=employee_obj, app_id__in=app_id_get
@@ -810,42 +810,26 @@ class CheckOppStageFunction:
         return opp_condition_data_list
 
     @classmethod
-    def index_current_stage(cls, passed_stage_list, current_stage_indicator):
+    def index_current_stage(cls, passed_stage_list, current_stage_indicator, current_stage_id):
         new_opp_stage_data_list = []
         for stage in passed_stage_list:
             if stage.get('indicator') in ['Closed Lost', 'Delivery', 'Deal Close']:
                 if stage.get('indicator') in current_stage_indicator:
-                    if stage.get('win_rate') == 0:
-                        new_opp_stage_data_list[0]['current'] = 0
-                        new_opp_stage_data_list.append({
-                            'id': str(stage.get('id')),
-                            'indicator': stage.get('indicator'),
-                            'win_rate': stage.get('win_rate'),
-                            'current': 1
-                        })
-                    else:
-                        new_opp_stage_data_list.append({
-                            'id': str(stage.get('id')),
-                            'indicator': stage.get('indicator'),
-                            'win_rate': stage.get('win_rate'),
-                            'current': 1 if len(new_opp_stage_data_list) == 0 else 0
-                        })
+                    current = 1 if str(stage.get('id')) == current_stage_id else 0
+                    new_opp_stage_data_list.append({
+                        'id': str(stage.get('id')),
+                        'indicator': stage.get('indicator'),
+                        'win_rate': stage.get('win_rate'),
+                        'current': current
+                    })
             else:
-                if stage.get('win_rate') == 0:
-                    new_opp_stage_data_list[0]['current'] = 0
-                    new_opp_stage_data_list.append({
-                        'id': str(stage.get('id')),
-                        'indicator': stage.get('indicator'),
-                        'win_rate': stage.get('win_rate'),
-                        'current': 1
-                    })
-                else:
-                    new_opp_stage_data_list.append({
-                        'id': str(stage.get('id')),
-                        'indicator': stage.get('indicator'),
-                        'win_rate': stage.get('win_rate'),
-                        'current': 1 if len(new_opp_stage_data_list) == 0 else 0
-                    })
+                current = 1 if str(stage.get('id')) == current_stage_id else 0
+                new_opp_stage_data_list.append({
+                    'id': str(stage.get('id')),
+                    'indicator': stage.get('indicator'),
+                    'win_rate': stage.get('win_rate'),
+                    'current': current
+                })
         return new_opp_stage_data_list
 
     @classmethod
@@ -900,18 +884,30 @@ class CheckOppStageFunction:
 
         if len(opp_range_stage_list) > 0:
             # lớn tới bé
+            current_stage_id = None
             sorted_opp_range_stage_list = sorted(opp_range_stage_list, key=lambda x: x['win_rate'], reverse=True)
             if sorted_opp_range_stage_list[-1].get('win_rate') == 0:
                 sorted_opp_range_stage_list[-1]['current'] = 1
+                current_stage_id = str(sorted_opp_range_stage_list[-1]['id'])
             else:
                 sorted_opp_range_stage_list[0]['current'] = 1
+                current_stage_id = str(sorted_opp_range_stage_list[0]['id'])
 
+            print('sorted_opp_range_stage_list')
+            for item in sorted_opp_range_stage_list:
+                print(item)
             passed_stage_list = [
                 item for item in opp_config_stage_data_list if
                 item.get('win_rate', 0) <= sorted_opp_range_stage_list[0].get('win_rate')
             ]
-            print(passed_stage_list)
-            new_opp_stage_data_list = cls.index_current_stage(passed_stage_list, current_stage_indicator)
-            print(new_opp_stage_data_list)
+            print('passed_stage_list')
+            for item in passed_stage_list:
+                print(item)
+            new_opp_stage_data_list = cls.index_current_stage(
+                passed_stage_list, current_stage_indicator, current_stage_id
+            )
+            print('new_opp_stage_data_list')
+            for item in new_opp_stage_data_list:
+                print(item)
             return new_opp_stage_data_list
         raise serializers.ValidationError({'current stage': OpportunityMsg.ERROR_WHEN_GET_NULL_CURRENT_STAGE})

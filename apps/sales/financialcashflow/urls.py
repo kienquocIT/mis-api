@@ -3,8 +3,10 @@ from apps.sales.financialcashflow.views import (
     CashInflowList, CashInflowDetail,
     CustomerAdvanceListForCashInflow, ARInvoiceListForCashInflow,
     CashOutflowList, CashOutflowDetail,
-    AdvanceForSupplierListForCashOutflow, APInvoiceListForCashOutflow
+    POPaymentStageListForCOF, APInvoicePOPaymentStageListForCOF
 )
+from apps.sales.financialcashflow.views.cof_views import SaleOrderExpenseListForCOF, SaleOrderForCOFList, \
+    LeaseOrderExpenseListForCOF, LeaseOrderForCOFList
 
 urlpatterns = [
     path('cashinflows', CashInflowList.as_view(), name='CashInflowList'),
@@ -23,13 +25,33 @@ urlpatterns = [
     path('cashoutflows', CashOutflowList.as_view(), name='CashOutflowList'),
     path('cashoutflow/<str:pk>', CashOutflowDetail.as_view(), name='CashOutflowDetail'),
     path(
-        'advance-for-supplier-for-cashoutflow/list',
-        AdvanceForSupplierListForCashOutflow.as_view(),
-        name='AdvanceForSupplierListForCashOutflow'
+        'po-payment-stage-list-for-cof',
+        POPaymentStageListForCOF.as_view(),
+        name='POPaymentStageListForCOF'
     ),
     path(
-        'ap-invoice-for-cashoutflow/list',
-        APInvoiceListForCashOutflow.as_view(),
-        name='APInvoiceListForCashOutflow'
+        'ap-invoice-po-payment-stage-list-for-cof',
+        APInvoicePOPaymentStageListForCOF.as_view(),
+        name='APInvoicePOPaymentStageListForCOF'
+    ),
+    path(
+        'so-list-for-cof',
+        SaleOrderForCOFList.as_view(),
+        name='SaleOrderForCOFList'
+    ),
+    path(
+        'so-expense-list-for-cof',
+        SaleOrderExpenseListForCOF.as_view(),
+        name='SaleOrderExpenseListForCOF'
+    ),
+    path(
+        'lo-list-for-cof',
+        LeaseOrderForCOFList.as_view(),
+        name='LeaseOrderForCOFList'
+    ),
+    path(
+        'lo-expense-list-for-cof',
+        LeaseOrderExpenseListForCOF.as_view(),
+        name='LeaseOrderExpenseListForCOF'
     ),
 ]

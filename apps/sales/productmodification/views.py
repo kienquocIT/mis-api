@@ -103,6 +103,9 @@ class ProductModifiedList(BaseListMixin):
         'title',
         'code',
     ]
+    filterset_fields = {
+        'is_representative_product': ['exact'],
+    }
     serializer_list = ProductModifiedListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
@@ -212,8 +215,6 @@ class WarehouseListByProduct(BaseListMixin):
     serializer_list = WarehouseListByProductSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
-    # def get_queryset(self):
-    #     return super().get_queryset()
 
     @swagger_auto_schema(
         operation_summary="Warehouse List By Product",

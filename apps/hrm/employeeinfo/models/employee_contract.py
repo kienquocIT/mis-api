@@ -22,7 +22,7 @@ class EmployeeContract(MasterDataAbstractModel):
     )
     contract_type = models.SmallIntegerField(
         choices=CONTRACT_TYPE,
-        default=0,
+        null=True
     )
     limit_time = models.BooleanField(
         verbose_name='limited time of contract',
@@ -79,6 +79,11 @@ class EmployeeContract(MasterDataAbstractModel):
             }
         )
     )
+    employee_salary_level = models.IntegerField(default=0)
+    employee_salary = models.FloatField(default=0)
+    employee_salary_insurance = models.FloatField(default=0)
+    employee_salary_rate = models.FloatField(default=0)
+    employee_salary_coefficient = models.FloatField(default=1)
 
     def code_generator(self):
         emp_contract = EmployeeContract.objects.filter_current(

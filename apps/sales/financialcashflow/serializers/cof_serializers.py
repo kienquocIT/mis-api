@@ -5,8 +5,10 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, AccountBanks
 from apps.sales.apinvoice.models import APInvoice
 from apps.sales.financialcashflow.models import CashOutflow, CashOutflowItem, CashOutflowItemDetail
+from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderExpense
 from apps.sales.purchasing.models import PurchaseOrderPaymentStage
 from apps.sales.reconciliation.models import ReconciliationItem
+from apps.sales.saleorder.models import SaleOrderExpense, SaleOrder
 from apps.shared import (
     AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel, CashOutflowMsg
 )
@@ -17,8 +19,8 @@ __all__ = [
     'CashOutflowCreateSerializer',
     'CashOutflowDetailSerializer',
     'CashOutflowUpdateSerializer',
-    'AdvanceForSupplierForCashOutflowSerializer',
-    'APInvoiceListForCashOutflowSerializer',
+    'POPaymentStageForCashOutflowSerializer',
+    'APInvoicePOPaymentStageListForCOFSerializer',
 ]
 
 # main serializers
@@ -543,7 +545,7 @@ class CashOutflowCommonFunction:
         return True
 
 # related serializers
-class AdvanceForSupplierForCashOutflowSerializer(serializers.ModelSerializer):
+class POPaymentStageForCashOutflowSerializer(serializers.ModelSerializer):
     purchase_order = serializers.SerializerMethodField()
     value_balance = serializers.SerializerMethodField()
 
@@ -590,7 +592,7 @@ class AdvanceForSupplierForCashOutflowSerializer(serializers.ModelSerializer):
         return obj.value_total - cash_out_value
 
 
-class APInvoiceListForCashOutflowSerializer(serializers.ModelSerializer):
+class APInvoicePOPaymentStageListForCOFSerializer(serializers.ModelSerializer):
     supplier_mapped = serializers.SerializerMethodField()
     document_type = serializers.SerializerMethodField()
     recon_total = serializers.SerializerMethodField()
@@ -664,3 +666,56 @@ class APInvoiceListForCashOutflowSerializer(serializers.ModelSerializer):
                 'order': item.order
             } for item in obj.purchase_order_mapped.purchase_order_payment_stage_po.all()]
         return []
+
+
+class SaleOrderListForCOFSerializer(AbstractListSerializerModel):
+
+    class Meta:
+        model = SaleOrder
+        fields = (
+            'id',
+            'title',
+            'code'
+        )
+
+
+class SaleOrderExpenseListForCOFSerializer(serializers.ModelSerializer):
+    total_value = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrderExpense
+        fields = (
+            'id',
+            'expense_item_data',
+            'total_value',
+        )
+
+    @classmethod
+    def get_total_value(cls, obj):
+        return obj.expense_subtotal_price_after_tax
+
+
+class LeaseOrderListForCOFSerializer(AbstractListSerializerModel):
+    class Meta:
+        model = LeaseOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+        )
+
+
+class LeaseOrderExpenseListForCOFSerializer(serializers.ModelSerializer):
+    total_value = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeaseOrderExpense
+        fields = (
+            'id',
+            'expense_item_data',
+            'total_value',
+        )
+
+    @classmethod
+    def get_total_value(cls, obj):
+        return obj.expense_subtotal_price_after_tax

@@ -11,6 +11,7 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel
 # - ReportInventoryCostByWarehouse: lưu kho vật lí của sản phẩm (cho TH tính cost theo dự án)
 # - ReportInventoryCostLatestLog: lưu giao dịch gần nhất của sản phẩm
 
+
 class BalanceInitialization(DataAbstractModel):
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE)
     warehouse = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE)
@@ -44,6 +45,7 @@ class BalanceInitializationLot(DataAbstractModel):
 class BalanceInitializationSerial(DataAbstractModel):
     balance_init = models.ForeignKey(BalanceInitialization, on_delete=models.CASCADE)
     serial_mapped = models.ForeignKey('saledata.ProductWareHouseSerial', on_delete=models.CASCADE)
+    specific_value = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Balance Initialization Serial'
@@ -55,50 +57,31 @@ class BalanceInitializationSerial(DataAbstractModel):
 
 class ReportStock(DataAbstractModel):
     product = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_product',
-        null=True
+        'saledata.Product', on_delete=models.SET_NULL, related_name='report_stock_product', null=True
     )
     lot_mapped = models.ForeignKey(
-        'saledata.ProductWareHouseLot',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_lot_mapped',
-        null=True
+        'saledata.ProductWareHouseLot', on_delete=models.SET_NULL, related_name='report_stock_lot_mapped', null=True
     )
     serial_number = models.CharField(max_length=100, blank=True, null=True)
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder',
-        on_delete=models.SET_NULL,
-        related_name="report_stock_sale_order",
-        null=True
+        'saleorder.SaleOrder', on_delete=models.SET_NULL, related_name="report_stock_sale_order", null=True
     )
     lease_order = models.ForeignKey(
-        'leaseorder.LeaseOrder',
-        on_delete=models.SET_NULL,
-        related_name="report_stock_lease_order",
-        null=True
+        'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="report_stock_lease_order", null=True
     )
-
     period_mapped = models.ForeignKey(
-        'saledata.Periods',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_period_mapped',
-        null=True,
+        'saledata.Periods', on_delete=models.SET_NULL, related_name='report_stock_period_mapped', null=True
     )
-
     sub_period_order = models.IntegerField()
     sub_period = models.ForeignKey(
-        'saledata.SubPeriods',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_sub_period',
-        null=True,
+        'saledata.SubPeriods', on_delete=models.SET_NULL, related_name='report_stock_sub_period', null=True
     )
 
     @classmethod
-    def get_or_create_report_stock(cls, doc_obj, period_obj, sub_period_order, product_obj, **kwargs):
+    def get_or_create_report_stock(cls, doc_obj, period_obj, sub_period_order, doc_item, **kwargs):
+        product_obj = doc_item['product']
         if 'warehouse_id' in kwargs:
-            del kwargs['warehouse_id']
+            kwargs.pop('warehouse_id')
         sub_period_obj = period_obj.sub_periods_period_mapped.filter(order=sub_period_order).first()
         if sub_period_obj:
             rp_stock = cls.objects.filter(
@@ -134,16 +117,9 @@ class ReportStock(DataAbstractModel):
 
 
 class ReportStockLog(DataAbstractModel):
-    report_stock = models.ForeignKey(
-        ReportStock,
-        on_delete=models.CASCADE,
-        related_name='report_stock_log',
-    )
+    report_stock = models.ForeignKey(ReportStock, on_delete=models.CASCADE, related_name='report_stock_log',)
     product = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_log_product',
-        null=True
+        'saledata.Product', on_delete=models.SET_NULL, related_name='report_stock_log_product', null=True
     )
     lot_mapped = models.ForeignKey(
         'saledata.ProductWareHouseLot',
@@ -153,10 +129,7 @@ class ReportStockLog(DataAbstractModel):
     )
     serial_number = models.CharField(max_length=100, blank=True, null=True)
     warehouse = models.ForeignKey(
-        'saledata.WareHouse',
-        on_delete=models.SET_NULL,
-        related_name='report_stock_log_warehouse',
-        null=True
+        'saledata.WareHouse', on_delete=models.SET_NULL, related_name='report_stock_log_warehouse', null=True
     )
     physical_warehouse = models.ForeignKey(
         'saledata.WareHouse',
@@ -165,16 +138,10 @@ class ReportStockLog(DataAbstractModel):
         null=True
     ) # Kho vật lí (để hiển thị lên báo cáo trong trường hợp không quản lí tồn kho theo từng kho riêng biệt)
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder',
-        on_delete=models.SET_NULL,
-        related_name="report_stock_log_sale_order",
-        null=True
+        'saleorder.SaleOrder', on_delete=models.SET_NULL, related_name="report_stock_log_sale_order", null=True
     )
     lease_order = models.ForeignKey(
-        'leaseorder.LeaseOrder',
-        on_delete=models.SET_NULL,
-        related_name="report_stock_log_lease_order",
-        null=True
+        'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="report_stock_log_lease_order", null=True
     )
 
     system_date = models.DateTimeField(null=True)
@@ -226,7 +193,7 @@ class ReportStockLog(DataAbstractModel):
         for item in doc_data:
             kw_parameter = ReportStockLog.parse_param(item, cost_cfg)
             rp_stock = ReportStock.get_or_create_report_stock(
-                doc_obj, period_obj, sub_period_order, item['product'], **kw_parameter
+                doc_obj, period_obj, sub_period_order, item, **kw_parameter
             )
             latest_cost = {}
             if item['product'].valuation_method == 0:
@@ -243,7 +210,7 @@ class ReportStockLog(DataAbstractModel):
                         item['product'], item['warehouse'], **kw_parameter
                     )
                     item['cost'] = latest_cost['cost']
-            if item['product'].valuation_method == 2 or item['product'].product_si_serial_number.exists():
+            if item['product'].valuation_method == 2:
                 if item['stock_type'] == -1:
                     # thực tế đích danh sẽ lấy giá xuất theo từng serial
                     item['cost'] = ProductSpecificIdentificationSerialNumber.get_specific_value(
@@ -325,7 +292,7 @@ class ReportStockLog(DataAbstractModel):
                     'perpetual_current_cost',
                     'perpetual_current_value'
                 ])
-            if log.product.valuation_method == 2 or log.product.product_si_serial_number.exists():
+            if log.product.valuation_method == 2:
                 new_cost_dict = ReportInventoryValuationMethod.specific_identification_in_perpetual(log)
                 log.perpetual_current_quantity = new_cost_dict['quantity'] if new_cost_dict['quantity'] > 0 else 0
                 log.perpetual_current_cost = new_cost_dict['cost'] if new_cost_dict['quantity'] > 0 else 0
@@ -350,12 +317,12 @@ class ReportStockLog(DataAbstractModel):
                     'periodic_current_cost',
                     'periodic_current_value'
                 ])
-            if log.product.valuation_method == 2 or log.product.product_si_serial_number.exists():
+            if log.product.valuation_method == 2:
                 pass
         return log
 
     @classmethod
-    def update_log_cost(cls, log, period_obj, sub_period_order, cost_cfg):
+    def update_log_cost(cls, log, period_obj, sub_period_order, cost_cfg, for_balance_init):
         """ Step 2: Hàm để cập nhập giá trị tồn kho khi log được ghi vào """
         kw_parameter = {}
         if 1 in cost_cfg:
@@ -372,12 +339,14 @@ class ReportStockLog(DataAbstractModel):
         )
         updated_log = cls.update_log_cost_dict(div, log, latest_cost)
         cls.create_or_update_this_sub_period_cost(
-            updated_log, period_obj, sub_period_order, latest_cost, div, **kw_parameter
+            updated_log, period_obj, sub_period_order, latest_cost, div, for_balance_init, **kw_parameter
         )
         return True
 
     @classmethod
-    def for_perpetual(cls, this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, **kwargs):
+    def for_perpetual(
+            cls, this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, for_balance_init, **kwargs
+    ):
         ending_balance_quantity = new_cost_dict['quantity'] + (log.quantity * log.stock_type)
         if not this_sub_period_cost:  # không có thì tạo, gán sub_latest_log
             this_sub_period_cost = ReportInventoryCost.objects.create(
@@ -396,6 +365,7 @@ class ReportStockLog(DataAbstractModel):
                 ending_balance_cost=log.perpetual_current_cost,
                 ending_balance_value=ending_balance_quantity * log.perpetual_current_cost,
                 sub_latest_log=log,
+                for_balance_init=for_balance_init,
                 **kwargs
             )
         else:  # nếu có thì update giá cost, gán sub_latest_log
@@ -425,7 +395,9 @@ class ReportStockLog(DataAbstractModel):
         return this_sub_period_cost
 
     @classmethod
-    def for_periodic(cls, this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, **kwargs):
+    def for_periodic(
+            cls, this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, for_balance_init, **kwargs
+    ):
         ending_balance_quantity = new_cost_dict['quantity'] + (log.quantity * log.stock_type)
         if not this_sub_period_cost:
             this_sub_period_cost = ReportInventoryCost.objects.create(
@@ -444,6 +416,7 @@ class ReportStockLog(DataAbstractModel):
                 periodic_ending_balance_cost=log.perpetual_current_cost,
                 periodic_ending_balance_value=ending_balance_quantity * log.perpetual_current_cost,
                 sub_latest_log=log,
+                for_balance_init=for_balance_init,
                 **kwargs
             )
         else:  # có thì update giá cost, gán sub
@@ -479,7 +452,9 @@ class ReportStockLog(DataAbstractModel):
         return this_sub_period_cost
 
     @classmethod
-    def create_or_update_this_sub_period_cost(cls, log, period_obj, sub_period_order, latest_cost, div, **kwargs):
+    def create_or_update_this_sub_period_cost(
+            cls, log, period_obj, sub_period_order, latest_cost, div, for_balance_init, **kwargs
+    ):
         """
         Step 3: Hàm kiểm tra record cost của sp này trong kì nay đã có hay chưa ?
                 Chưa thì tạo mới - Có thì Update lại quantity-cost-value
@@ -489,11 +464,6 @@ class ReportStockLog(DataAbstractModel):
             sum_ending_quantity = 0
             for record in ReportInventoryCostLatestLog.objects.filter(product_id=log.product_id, **kwargs):
                 sum_ending_quantity += record.latest_log.perpetual_current_quantity
-            new_cost_dict = {
-                'quantity': sum_ending_quantity,
-                'cost': latest_cost['cost'],
-                'value': sum_ending_quantity * latest_cost['cost']
-            }
             this_sub_period_cost = ReportInventoryCost.objects.filter(
                 tenant_id=log.tenant_id,
                 company_id=log.company_id,
@@ -504,9 +474,19 @@ class ReportStockLog(DataAbstractModel):
                 **kwargs
             ).first()
             this_sub_period_cost = cls.for_perpetual(
-                this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, **kwargs
+                this_sub_period_cost, log, period_obj, sub_period_order,
+                {
+                    'quantity': sum_ending_quantity,
+                    'cost': latest_cost['cost'],
+                    'value': sum_ending_quantity * latest_cost['cost']
+                }, for_balance_init, **kwargs
             ) if div == 0 else cls.for_periodic(
-                this_sub_period_cost, log, period_obj, sub_period_order, new_cost_dict, **kwargs
+                this_sub_period_cost, log, period_obj, sub_period_order,
+                {
+                    'quantity': sum_ending_quantity,
+                    'cost': latest_cost['cost'],
+                    'value': sum_ending_quantity * latest_cost['cost']
+                }, for_balance_init, **kwargs
             )
 
             if this_sub_period_cost:
@@ -544,7 +524,7 @@ class ReportStockLog(DataAbstractModel):
                         ReportInventoryCostLatestLog.objects.create(
                             product=log.product, latest_log=log, **kwargs
                         )
-                    if log.product.valuation_method == 2 or log.product.product_si_serial_number.exists():
+                    if log.product.valuation_method == 2:
                         ReportInventoryCostLatestLog.objects.create(
                             product=log.product, latest_log=log, **kwargs
                         )
@@ -561,30 +541,17 @@ class ReportStockLog(DataAbstractModel):
 
 class ReportInventoryCost(DataAbstractModel):
     product = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.SET_NULL,
-        related_name='report_inventory_cost_product',
-        null=True
+        'saledata.Product', on_delete=models.SET_NULL, related_name='report_inventory_cost_product', null=True
     )
     warehouse = models.ForeignKey(
-        'saledata.WareHouse',
-        on_delete=models.SET_NULL,
-        related_name='report_inventory_cost_warehouse',
-        null=True
+        'saledata.WareHouse', on_delete=models.SET_NULL, related_name='report_inventory_cost_warehouse', null=True
     )
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder',
-        on_delete=models.SET_NULL,
-        related_name="report_inventory_cost_sale_order",
-        null=True
+        'saleorder.SaleOrder', on_delete=models.SET_NULL, related_name="report_inventory_cost_sale_order", null=True
     )
     lease_order = models.ForeignKey(
-        'leaseorder.LeaseOrder',
-        on_delete=models.SET_NULL,
-        related_name="report_inventory_cost_lease_order",
-        null=True
+        'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="report_inventory_cost_lease_order", null=True
     )
-
     lot_mapped = models.ForeignKey(
         'saledata.ProductWareHouseLot',
         on_delete=models.SET_NULL,
@@ -592,19 +559,12 @@ class ReportInventoryCost(DataAbstractModel):
         null=True
     )
     serial_number = models.CharField(max_length=100, blank=True, null=True)
-
     period_mapped = models.ForeignKey(
-        'saledata.Periods',
-        on_delete=models.SET_NULL,
-        related_name='report_inventory_cost_period_mapped',
-        null=True,
+        'saledata.Periods', on_delete=models.SET_NULL, related_name='report_inventory_cost_period_mapped', null=True
     )
     sub_period_order = models.IntegerField()
     sub_period = models.ForeignKey(
-        'saledata.SubPeriods',
-        on_delete=models.SET_NULL,
-        related_name='report_inventory_cost_sub_period',
-        null=True,
+        'saledata.SubPeriods', on_delete=models.SET_NULL, related_name='report_inventory_cost_sub_period', null=True
     )
 
     opening_balance_quantity = models.FloatField(default=0)
@@ -643,15 +603,10 @@ class ReportInventoryCost(DataAbstractModel):
 
 class ReportInventoryCostByWarehouse(SimpleAbstractModel):
     report_inventory_cost = models.ForeignKey(
-        ReportInventoryCost,
-        on_delete=models.CASCADE,
-        related_name='report_inventory_cost_wh'
+        ReportInventoryCost, on_delete=models.CASCADE, related_name='report_inventory_cost_wh'
     )
     warehouse = models.ForeignKey(
-        'saledata.WareHouse',
-        on_delete=models.SET_NULL,
-        related_name='report_inventory_cost_wh_warehouse',
-        null=True
+        'saledata.WareHouse', on_delete=models.SET_NULL, related_name='report_inventory_cost_wh_warehouse', null=True
     )
     opening_quantity = models.FloatField(default=0)
     ending_quantity = models.FloatField(default=0)
@@ -677,16 +632,10 @@ class ReportInventoryCostByWarehouse(SimpleAbstractModel):
 
 class ReportInventoryCostLatestLog(SimpleAbstractModel):
     product = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.SET_NULL,
-        related_name='rp_inv_cost_product',
-        null=True
+        'saledata.Product', on_delete=models.SET_NULL, related_name='rp_inv_cost_product', null=True
     )
     warehouse = models.ForeignKey(
-        'saledata.WareHouse',
-        on_delete=models.SET_NULL,
-        related_name='rp_inv_cost_warehouse',
-        null=True
+        'saledata.WareHouse', on_delete=models.SET_NULL, related_name='rp_inv_cost_warehouse', null=True
     )
     lot_mapped = models.ForeignKey(
         'saledata.ProductWareHouseLot',
@@ -696,29 +645,17 @@ class ReportInventoryCostLatestLog(SimpleAbstractModel):
     )
     serial_number = models.CharField(max_length=100, blank=True, null=True)
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder',
-        on_delete=models.SET_NULL,
-        related_name="rp_inv_cost_sale_order",
-        null=True
+        'saleorder.SaleOrder', on_delete=models.SET_NULL, related_name="rp_inv_cost_sale_order", null=True
     )
     lease_order = models.ForeignKey(
-        'leaseorder.LeaseOrder',
-        on_delete=models.SET_NULL,
-        related_name="rp_inv_cost_lease_order",
-        null=True
+        'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="rp_inv_cost_lease_order", null=True
     )
     latest_log = models.ForeignKey(
-        ReportStockLog,
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='rp_inv_cost_latest_log'
+        ReportStockLog, on_delete=models.CASCADE, related_name='rp_inv_cost_latest_log', null=True
     ) # lấy giá cost hiện tại dựa vào latest_log này
 
     fifo_flag_log = models.ForeignKey(
-        ReportStockLog,
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='rp_inv_cost_fifo_flag_log'
+        ReportStockLog, on_delete=models.CASCADE, related_name='rp_inv_cost_fifo_flag_log', null=True
     ) # để biết được bắt đầu lấy cost từ đâu (cho SP FIFO)
 
     class Meta:
@@ -746,12 +683,12 @@ class ReportInventorySubFunction:
         return latest_month_log.sub_latest_log if latest_month_log else None
 
     @classmethod
-    def get_latest_log_cost_dict(cls, div, product, physical_warehouse, **kwargs):
+    def get_latest_log_cost_dict(cls, div, product_obj, physical_warehouse, **kwargs):
         """ lấy cost dict của log gần nhất """
         record = ReportInventoryCostLatestLog.objects.filter(
-            product=product, warehouse=physical_warehouse, **kwargs
+            product=product_obj, warehouse=physical_warehouse, **kwargs
         ).first() if 'warehouse_id' not in kwargs else ReportInventoryCostLatestLog.objects.filter(
-            product=product, **kwargs
+            product=product_obj, **kwargs
         ).first()
         latest_log = record.latest_log if record else None
         if latest_log:
@@ -764,7 +701,7 @@ class ReportInventorySubFunction:
                 'cost': 0,
                 'value': 0
             }
-        return cls.get_opening_cost_dict(product.id, 3, **kwargs)
+        return cls.get_opening_cost_dict(product_obj.id, 3, **kwargs)
 
     @classmethod
     def get_export_cost_for_fifo(cls, div, product, physical_warehouse, quantity, **kwargs):

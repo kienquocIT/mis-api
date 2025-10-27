@@ -64,7 +64,7 @@ class HasPurchaseRequestHandler:
 
     @classmethod
     def combine_data_serial(cls, prd_wh, gr_item, sale_order, instance, doc_data):
-        if gr_item.product.valuation_method == 2 or gr_item.product.product_si_serial_number.exists():
+        if gr_item.product.valuation_method == 2:
             for item in prd_wh.goods_receipt_serial_gr_warehouse.all():
                 serial_obj = ProductWareHouseSerial.objects.filter(
                     product_warehouse__product=gr_item.product,
@@ -221,7 +221,7 @@ class NoPurchaseRequestHandler:
 
     @classmethod
     def combine_data_serial(cls, goods_receipt_warehouses, gr_item, instance, doc_data):
-        if gr_item.product.valuation_method == 2 or gr_item.product.product_si_serial_number.exists():
+        if gr_item.product.valuation_method == 2:
             for gr_prd_wh in goods_receipt_warehouses.filter(goods_receipt_product__product=gr_item.product):
                 for item in gr_prd_wh.goods_receipt_serial_gr_warehouse.all():
                     serial_obj = ProductWareHouseSerial.objects.filter(
