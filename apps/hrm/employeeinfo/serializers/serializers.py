@@ -259,14 +259,14 @@ class EmployeeInfoDetailSerializers(serializers.ModelSerializer):
     def get_place_of_birth(cls, obj):
         return {
             'id': str(obj.place_of_birth.id),
-            'title': obj.place_of_birth.title
+            'title': obj.place_of_birth.fullname
         } if obj.place_of_birth else {}
 
     @classmethod
     def get_place_of_origin(cls, obj):
         return {
             'id': str(obj.place_of_origin.id),
-            'title': obj.place_of_origin.title
+            'title': obj.place_of_origin.fullname
         } if obj.place_of_origin else {}
 
     class Meta:

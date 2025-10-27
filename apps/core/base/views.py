@@ -69,7 +69,6 @@ APP_MODEL_CODE = [
     # thêm model_code của app đã cấu hình sinh code theo công thức vào đây
 ]
 
-
 MASTER_DATA_MODEL_CODE = [
     'account',
     'product',
@@ -192,7 +191,7 @@ class ApplicationPropertyList(BaseListMixin):
     @swagger_auto_schema(operation_summary="Application Property list", operation_description="")
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs   )
+        return self.list(request, *args, **kwargs)
 
 
 class ApplicationPropertyForPrintList(BaseListMixin):
@@ -568,6 +567,7 @@ class AppEmpConfigList(BaseListMixin, BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
+
 
 # New address
 class NProvinceList(BaseListMixin):
