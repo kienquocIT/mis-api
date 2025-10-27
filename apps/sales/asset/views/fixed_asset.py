@@ -12,6 +12,7 @@ __all__ =[
     'FixedAssetDetail',
     'AssetForLeaseList',
     'AssetStatusLeaseList',
+    'AssetListNoPerm'
 ]
 
 class FixedAssetList(BaseListMixin, BaseCreateMixin):
@@ -152,6 +153,32 @@ class AssetStatusLeaseList(BaseListMixin, BaseCreateMixin):
     @mask_view(
         login_require=True, auth_require=False,
         label_code='asset', model_code='fixedasset', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class AssetListNoPerm(BaseListMixin):
+    queryset = FixedAsset.objects
+    search_fields = ['title', 'code']
+    serializer_list = FixedAssetListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        query_set = (super().get_queryset().select_related('product', 'manage_department', 'use_customer')
+                     .prefetch_related('use_departments'))
+        # get fixed assets that haven't been written off
+        return query_set.filter(
+            Q(fixed_asset_write_off__isnull=True) |
+            Q(fixed_asset_write_off__isnull=False, fixed_asset_write_off__system_status=0))
+
+    @swagger_auto_schema(
+        operation_summary="Fixed Asset List No Perm",
+        operation_description="Get Fixed Asset List No Perm",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='asset', model_code='fixedasset', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
