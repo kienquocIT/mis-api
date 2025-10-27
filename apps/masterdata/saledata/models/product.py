@@ -12,7 +12,7 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstra
 __all__ = [
     'ProductType', 'ProductCategory', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
     'ExpensePrice', 'ExpenseRole', 'ProductMeasurements', 'ProductProductType',
-    'ProductVariantAttribute', 'ProductVariant', 'Manufacturer', 'ProductComponent',
+    'ProductVariantAttribute', 'ProductVariant', 'Manufacturer', 'ProductComponent', 'ProductAttribute',
     'ProductSpecificIdentificationSerialNumber'
 ]
 
