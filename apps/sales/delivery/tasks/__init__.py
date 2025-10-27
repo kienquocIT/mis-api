@@ -196,6 +196,7 @@ class OrderActiveDeliverySerializer:
             return self.__prepare_order_delivery_product()
         if self.order_obj.__class__.get_model_code() == "serviceorder.serviceorder":
             return self.__prepare_order_delivery_product_service_order()
+        return None, 0, []
 
     def __prepare_order_delivery_product(self):
         sub_id = uuid4()
@@ -499,18 +500,21 @@ class OrderActiveDeliverySerializer:
         )
         return sub_obj
 
-    def active(self, app_code) -> (bool, str):
+    def check_condition(self, app_code):
         condition = False
         if app_code == "saleorder.saleorder":
             condition = (
-                        not OrderPicking.objects.filter(sale_order=self.order_obj).exists()
-                        and not OrderDelivery.objects.filter(sale_order=self.order_obj).exists()
-                )
+                    not OrderPicking.objects.filter(sale_order=self.order_obj).exists()
+                    and not OrderDelivery.objects.filter(sale_order=self.order_obj).exists()
+            )
         if app_code == "leaseorder.leaseorder":
             condition = (not OrderDelivery.objects.filter(lease_order=self.order_obj).exists())
         if app_code == "serviceorder.serviceorder":
-            # condition = (not OrderDelivery.objects.filter(service_order=self.order_obj).exists())
             condition = True
+        return condition
+
+    def active(self, app_code) -> (bool, str):
+        condition = self.check_condition(app_code=app_code)
         try:
             with transaction.atomic():
                 if condition:
