@@ -17,10 +17,11 @@ from apps.masterdata.saledata.models.product import (
     ProductSpecificIdentificationSerialNumber,
 )
 from apps.masterdata.saledata.serializers.product import (
-    ProductListSerializer, ProductCreateSerializer, ProductQuickCreateSerializer,
+    ProductListSerializer, ProductCreateSerializer,
     ProductDetailSerializer, ProductUpdateSerializer
 )
 from apps.masterdata.saledata.serializers.product_sub import (
+    ProductQuickCreateSerializer,
     UnitOfMeasureOfGroupLaborListSerializer, ProductSpecificIdentificationSerialNumberListSerializer,
 )
 from apps.masterdata.saledata.serializers.product_masterdata import (

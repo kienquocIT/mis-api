@@ -6,6 +6,7 @@ from rest_framework import serializers
 from apps.masterdata.saledata.models.product import Product
 from apps.shared import AttMsg, FORMATTING
 
+
 PRODUCT_OPTION = [(0, _('Sale')), (1, _('Inventory')), (2, _('Purchase'))]
 
 
