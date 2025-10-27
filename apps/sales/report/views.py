@@ -18,8 +18,7 @@ from apps.sales.report.models import (
 from apps.sales.report.serializers import (
     ReportStockListSerializer, ReportInventoryCostListSerializer, WarehouseAvailableProductListSerializer,
     BalanceInitializationListSerializer, BalanceInitializationDetailSerializer,
-    BalanceInitializationCreateSerializer, BalanceInitializationCreateSerializerImportDB,
-    WarehouseAvailableProductDetailSerializer
+    BalanceInitializationCreateSerializer, WarehouseAvailableProductDetailSerializer
 )
 from apps.sales.report.serializers.advance_filter import AdvanceFilterListSerializer, AdvanceFilterCreateSerializer, \
     AdvanceFilterDetailSerializer, AdvanceFilterUpdateSerializer
@@ -293,7 +292,7 @@ class ReportInventoryCostList(BaseListMixin):
                 filter_fields['sale_order_id'] = self.request.query_params['sale_order']
 
             for order in range(1, int(sub_period_order) + 1):
-                run_state = ReportInvCommonFunc.check_and_push_to_this_sub(
+                run_state = ReportInvCommonFunc.check_and_push_to_next_sub(
                     self.request.user.tenant_current,
                     self.request.user.company_current,
                     self.request.user.employee_current,
@@ -479,28 +478,6 @@ class BalanceInitializationList(BaseListMixin, BaseCreateMixin):
         operation_summary="Create Balance Initialization",
         operation_description="Create new Balance Initialization",
         request_body=BalanceInitializationCreateSerializer,
-    )
-    @mask_view(
-        login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
-    )
-    def post(self, request, *args, **kwargs):
-        self.ser_context['employee_current'] = self.request.user.employee_current
-        self.ser_context['company_current'] = self.request.user.company_current
-        self.ser_context['tenant_current'] = self.request.user.tenant_current
-        return self.create(request, *args, **kwargs)
-
-
-class BalanceInitializationListImportDB(BaseCreateMixin):
-    queryset = ReportInventoryCost.objects
-    serializer_create = BalanceInitializationCreateSerializerImportDB
-    serializer_detail = BalanceInitializationDetailSerializer
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
-
-    @swagger_auto_schema(
-        operation_summary="Create Balance Initialization Import BD",
-        operation_description="Create new Balance Initialization Import BD",
-        request_body=BalanceInitializationCreateSerializerImportDB,
     )
     @mask_view(
         login_require=True, auth_require=True,

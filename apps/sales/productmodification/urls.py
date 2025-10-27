@@ -6,8 +6,10 @@ from apps.sales.productmodification.views import (
 )
 
 urlpatterns = [
+    # main
     path('list', ProductModificationList.as_view(), name='ProductModificationList'),
     path('detail/<str:pk>', ProductModificationDetail.as_view(), name='ProductModificationDetail'),
+    # related
     path('product-modified-list', ProductModifiedList.as_view(), name='ProductModifiedList'),
     path('product-modified-before-list', ProductModifiedBeforeList.as_view(), name='ProductModifiedBeforeList'),
     path('product-component-list', ProductComponentList.as_view(), name='ProductComponentList'),

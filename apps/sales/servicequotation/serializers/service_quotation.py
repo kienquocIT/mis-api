@@ -34,6 +34,7 @@ __all__ = [
 
 class ServiceQuotationListSerializer(AbstractListSerializerModel):
     employee_created = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
 
     class Meta:
         model = ServiceQuotation
@@ -44,12 +45,23 @@ class ServiceQuotationListSerializer(AbstractListSerializerModel):
             'customer_data',
             'employee_created',
             'date_created',
-            'system_status'
+            'system_status',
+            'opportunity'
         )
 
     @classmethod
     def get_employee_created(cls, obj):
         return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        return {
+            'id': obj.opportunity_id,
+            'title': obj.opportunity.title,
+            'code': obj.opportunity.code,
+            'customer': obj.customer_data,
+            'is_deal_close': obj.opportunity.is_deal_close,
+        } if obj.opportunity else {}
 
 
 class ServiceQuotationCreateSerializer(AbstractCreateSerializerModel):
@@ -262,6 +274,13 @@ class ServiceQuotationDetailSerializer(AbstractDetailSerializerModel):
             'total_contribution_percent': service_detail.total_contribution_percent,
             'total_payment_percent': service_detail.total_payment_percent,
             'total_payment_value': service_detail.total_payment_value,
+            'selected_attributes': service_detail.selected_attributes,
+            'attributes_total_cost': service_detail.attributes_total_cost,
+            'duration_id': service_detail.duration_id if service_detail.duration else None,
+            'duration_unit_data': service_detail.duration_unit_data,
+            'duration': service_detail.duration_value if hasattr(service_detail,
+                                                                 'duration_value') and service_detail.duration else 1,
+            'has_attributes': bool(service_detail.selected_attributes and service_detail.selected_attributes != {}),
         } for service_detail in obj.service_details.all()]
 
     @classmethod
@@ -662,12 +681,30 @@ class ServiceQuotationCommonFunc:
         service_detail_id_map = {}
 
         for service_detail in service_detail_data:
+            duration_obj = service_detail.get('duration')
+            product_obj = service_detail.get('product')
+
+            # Prepare duration_unit_data based on duration object
+            duration_unit_data = {}
+            if duration_obj:
+                duration_unit_data = {
+                    "id": str(duration_obj.id),
+                    "code": duration_obj.code,
+                    "title": duration_obj.title,
+                }
+
             bulk_data.append(
                 ServiceQuotationServiceDetail(
                     service_quotation_id=service_quotation_id,
                     title=service_detail.get('title'),
                     code=service_detail.get('code'),
-                    product_id=service_detail.get('product').id if service_detail.get('product') else None,
+                    product=product_obj,
+                    product_data={
+                        "id": str(product_obj.id),
+                        "code": product_obj.code,
+                        "title": product_obj.title,
+                        "description": product_obj.description,
+                    } if product_obj else {},
                     order=service_detail.get('order'),
                     description=service_detail.get('description'),
                     service_percent=service_detail.get('service_percent'),
@@ -683,6 +720,11 @@ class ServiceQuotationCommonFunc:
                     total_contribution_percent=service_detail.get('total_contribution_percent'),
                     total_payment_percent=service_detail.get('total_payment_percent'),
                     total_payment_value=service_detail.get('total_payment_value'),
+                    selected_attributes=service_detail.get('selected_attributes', {}),
+                    attributes_total_cost=service_detail.get('attributes_total_cost', 0),
+                    duration=duration_obj,
+                    duration_value=service_detail.get('duration_value', 0),
+                    duration_unit_data=duration_unit_data or service_detail.get('duration_unit_data', {}),
                 )
             )
 

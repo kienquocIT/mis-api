@@ -120,7 +120,8 @@ class SaleOrderListForPR(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().filter(
-            delivery_status__in=[0, 1, 2], system_status=3,
+            delivery_status__in=[0, 1, 2],
+            system_status=3,
             is_done_purchase_request=False
         ).select_related(
             'employee_inherit',
@@ -128,8 +129,8 @@ class SaleOrderListForPR(BaseListMixin):
         ).prefetch_related('sale_order_product_sale_order')
 
     @swagger_auto_schema(
-        operation_summary="Sale Order List  For PR",
-        operation_description="Get Sale Order List  For PR"
+        operation_summary="Sale Order List For PR",
+        operation_description="Get Sale Order List For PR"
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):

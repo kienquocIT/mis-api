@@ -94,6 +94,8 @@ class GoodsTransferProductSerializer(serializers.ModelSerializer):
 
 
 class GoodsTransferListSerializer(AbstractListSerializerModel):
+    employee_created = serializers.SerializerMethodField()
+
     class Meta:
         model = GoodsTransfer
         fields = (
@@ -101,9 +103,14 @@ class GoodsTransferListSerializer(AbstractListSerializerModel):
             'code',
             'title',
             'date_transfer',
-            'system_status',
+            'employee_created',
+            'date_created',
             'system_auto_create'
         )
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
 
 class GoodsTransferCreateSerializer(AbstractCreateSerializerModel):

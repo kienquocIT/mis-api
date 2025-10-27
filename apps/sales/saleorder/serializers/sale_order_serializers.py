@@ -12,7 +12,8 @@ from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreat
     SaleOrderIndicatorSerializer, SaleOrderPaymentStageSerializer, SaleOrderRuleValidate, SaleOrderInvoiceSerializer
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder, SaleOrderAttachment
 from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
-    AbstractListSerializerModel, SerializerCommonValidate, SerializerCommonHandle
+    AbstractListSerializerModel, SerializerCommonValidate, SerializerCommonHandle, \
+    AbstractCurrencyCreateSerializerModel, AbstractCurrencyDetailSerializerModel
 
 
 # SALE ORDER BEGIN
@@ -110,7 +111,7 @@ class SaleOrderMinimalListSerializer(serializers.ModelSerializer):
         )
 
 
-class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
+class SaleOrderDetailSerializer(AbstractDetailSerializerModel, AbstractCurrencyDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -222,7 +223,7 @@ class SaleOrderDetailSerializer(AbstractDetailSerializerModel):
 
 
 # PRINT SERIALIZER
-class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel):
+class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurrencyDetailSerializerModel):
     opportunity = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -312,6 +313,9 @@ class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel):
             product_obj = Product.objects.filter(id=data.get('product_id', None)).first()
             if product_obj:
                 product_description = data.get('product_description', "")
+                price = data.get('product_unit_price', 0)
+                subtotal = data.get('product_subtotal_price', 0)
+                subtotal_at = data.get('product_subtotal_price_after_tax', 0)
                 data.update({
                     'product_data': {
                         'id': str(product_obj.id),
@@ -321,32 +325,35 @@ class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel):
                     }
                 })
                 data.update({
-                    'product_description': product_description if product_description else product_obj.description
+                    'product_description': product_description if product_description else product_obj.description,
+                    'product_unit_price': CompanyHandler.parse_currency(obj=obj, value=price),
+                    'product_subtotal_price': CompanyHandler.parse_currency(obj=obj, value=subtotal),
+                    'product_subtotal_price_after_tax': CompanyHandler.parse_currency(obj=obj, value=subtotal_at),
                 })
         return obj.sale_order_products_data
 
     @classmethod
     def get_total_product_pretax_amount(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_pretax_amount)
+        return CompanyHandler.parse_currency(obj=obj, value=obj.total_product_pretax_amount)
 
     @classmethod
     def get_total_product_discount(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_discount)
+        return CompanyHandler.parse_currency(obj=obj, value=obj.total_product_discount)
 
     @classmethod
     def get_total_product_tax(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_tax)
+        return CompanyHandler.parse_currency(obj=obj, value=obj.total_product_tax)
 
     @classmethod
     def get_total_product(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product)
+        return CompanyHandler.parse_currency(obj=obj, value=obj.total_product)
 
     @classmethod
     def get_total_product_revenue_before_tax(cls, obj):
-        return CompanyHandler.round_by_company_config(company=obj.company, value=obj.total_product_revenue_before_tax)
+        return CompanyHandler.parse_currency(obj=obj, value=obj.total_product_revenue_before_tax)
 
 
-class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
+class SaleOrderCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyCreateSerializerModel):
     title = serializers.CharField(max_length=100)
     opportunity_id = serializers.UUIDField(
         required=False,
@@ -560,7 +567,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel):
         return sale_order
 
 
-class SaleOrderUpdateSerializer(AbstractCreateSerializerModel):
+class SaleOrderUpdateSerializer(AbstractCreateSerializerModel, AbstractCurrencyCreateSerializerModel):
     opportunity_id = serializers.UUIDField(
         required=False,
         allow_null=True,

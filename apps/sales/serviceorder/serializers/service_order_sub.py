@@ -235,7 +235,7 @@ class ServiceOrderExpenseSerializer(serializers.ModelSerializer):
             "quantity",
             "expense_price",
             "tax",
-            "subtotal_price",
+            "expense_subtotal_price",
         )
 
 
@@ -473,7 +473,7 @@ class ServiceOrderCommonFunc:
                     "title": tax_obj.title,
                     "rate": tax_obj.rate,
                 } if tax_obj else {},
-                subtotal_price=expense_data_item.get("quantity", 0) * expense_data_item.get("expense_price", 0),
+                expense_subtotal_price=expense_data_item.get("quantity", 0) * expense_data_item.get("expense_price", 0),
                 company=service_order_obj.company,
                 tenant=service_order_obj.tenant,
             )
@@ -760,19 +760,19 @@ class ServiceOrderCommonFunc:
 
     @staticmethod
     def calculate_total_expense(service_order_obj, expense_data: []):
-        service_order_obj['expense_pretax_value'] = 0
-        service_order_obj['expense_tax_value'] = 0
-        service_order_obj['expense_total_value'] = 0
+        service_order_obj['total_expense_pretax_amount'] = 0
+        service_order_obj['total_expense_tax'] = 0
+        service_order_obj['total_expense'] = 0
         if len(expense_data) > 0:
             for expense_item in expense_data:
                 pretax_value = expense_item.get('quantity', 0) * expense_item.get('expense_price', 0)
-                service_order_obj['expense_pretax_value'] += pretax_value
+                service_order_obj['total_expense_pretax_amount'] += pretax_value
                 tax_id = expense_item.get("tax")
                 tax_obj = Tax.objects.filter(id=tax_id).first() if tax_id else None
                 tax_rate = tax_obj.rate if tax_obj else 0
-                service_order_obj['expense_tax_value'] += pretax_value * tax_rate / 100
-            service_order_obj['expense_total_value'] = service_order_obj['expense_pretax_value'] + service_order_obj[
-                'expense_tax_value']
+                service_order_obj['total_expense_tax'] += pretax_value * tax_rate / 100
+            service_order_obj['total_expense'] = \
+                service_order_obj['total_expense_pretax_amount'] + service_order_obj['total_expense_tax']
         return service_order_obj
 
     @classmethod
@@ -800,7 +800,7 @@ class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_list(cls, obj):
         product_list = []
-        for item in obj.work_order_contributions.all():
+        for item in obj.work_order_contributions.filter(delivery_call=False):
             service_detail_obj = item.service_detail
             if service_detail_obj:
                 product_list.append(
@@ -812,7 +812,8 @@ class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
                         'delivered_quantity': item.delivered_quantity,
                         'product_data': service_detail_obj.product_data,
                         'tax': service_detail_obj.product.sale_tax_data,
-                        'uom': service_detail_obj.product.sale_default_uom_data
+                        'uom': service_detail_obj.product.sale_default_uom_data,
+                        'contribution_data': {'id': str(item.id), 'unit_cost': item.unit_cost},
                     }
                 )
         return product_list

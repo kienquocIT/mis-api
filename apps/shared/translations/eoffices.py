@@ -29,6 +29,12 @@ class BusinessMsg:
     EMPTY_DEPARTURE = _('Departure is empty')
     EMPTY_DESTINATION = _('Destination is empty')
     EMPTY_EMPTY_DAY = _('Day request is empty')
+    EMPTY_EXPENSE_TITLE = _('Expense title is empty')
+    EMPTY_EXPENSE_UOM = _('Expense UOM is empty')
+    EMPTY_EXPENSE_QUANTITY = _('Expense quantity is empty')
+    EMPTY_EXPENSE_PRICE = _('Expense price is empty')
+    EMPTY_EXPENSE_SUBTOTAL = _('Expense subtotal is empty')
+    EMPTY_EXPENSE_ORDER = _('Expense order is empty')
 
 
 class MeetingScheduleMsg:

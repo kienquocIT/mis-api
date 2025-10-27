@@ -12,7 +12,7 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstra
 __all__ = [
     'ProductType', 'ProductCategory', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
     'ExpensePrice', 'ExpenseRole', 'ProductMeasurements', 'ProductProductType',
-    'ProductVariantAttribute', 'ProductVariant', 'Manufacturer', 'ProductComponent',
+    'ProductVariantAttribute', 'ProductVariant', 'Manufacturer', 'ProductComponent', 'ProductAttribute',
     'ProductSpecificIdentificationSerialNumber'
 ]
 
@@ -231,6 +231,14 @@ class Product(DataAbstractModel):
     length = models.FloatField(null=True)
     volume = models.JSONField(default=dict)
     weight = models.JSONField(default=dict)
+
+    representative_product = models.ForeignKey(
+        'self',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='product_representative_product'
+    )
+    is_representative_product = models.BooleanField(default=False)
 
     # Sale
     sale_default_uom = models.ForeignKey(
@@ -900,11 +908,11 @@ class ProductSpecificIdentificationSerialNumber(MasterDataAbstractModel):
                 tenant=product.tenant,
                 company=product.company,
             )
-            print(f"Created serial number {serial_obj.serial_number} - specific_value = {specific_value}")
+            print(f"Created specific {serial_obj.serial_number} ({product.code}): value = {specific_value}")
         else:
             si_serial_obj.specific_value = specific_value
             si_serial_obj.save(update_fields=['specific_value'])
-            print(f"Updated serial number {serial_obj.serial_number} - specific_value = {specific_value}")
+            print(f"Updated specific {serial_obj.serial_number} ({product.code}): value = {specific_value}")
         return True
 
     @staticmethod

@@ -11,7 +11,7 @@ class ReportInvLog:
     @classmethod
     def log(cls, doc_obj, doc_date, doc_data, for_balance_init=False):
         if not doc_obj or not doc_date or len(doc_data) == 0:
-            print(f'>>>>>>>>>>>>>>>>>>>> Not log (doc detail: {doc_obj.code}, {doc_date.date()}, {len(doc_data)})')
+            print(f'>>>>>>>>>>>>>>>>>>>> Not log (doc detail: {doc_obj.code}, {doc_date}, {len(doc_data)})\n')
             return None
         try:
             tenant = doc_obj.tenant
@@ -29,7 +29,7 @@ class ReportInvLog:
 
                     # kiểm tra và chạy tổng kết (các) tháng trước đó, sau đó đẩy số dư qua đầu kì tháng tiếp theo
                     for order in range(1, sub_period_order + 1):
-                        run_state = ReportInvCommonFunc.check_and_push_to_this_sub(
+                        run_state = ReportInvCommonFunc.check_and_push_to_next_sub(
                             tenant,
                             company,
                             doc_obj.employee_created if doc_obj.employee_created else doc_obj.employee_inherit,
@@ -44,7 +44,7 @@ class ReportInvLog:
 
                     # cập nhập giá cost cho từng log
                     for log in new_logs:
-                        ReportStockLog.update_log_cost(log, period_obj, sub_period_order, cost_cfg)
+                        ReportStockLog.update_log_cost(log, period_obj, sub_period_order, cost_cfg, for_balance_init)
                     print('# Add log for balance init successfully!\n'
                           if for_balance_init else f'# Write {doc_obj.code} to Inventory Report successfully!\n')
                     return new_logs
@@ -95,6 +95,7 @@ class ReportInvCommonFunc:
             employee_created=emp_current,
             employee_inherit=emp_current,
             product_id=last_sub_item.product_id,
+            serial_number=last_sub_item.serial_number,
             lot_mapped_id=last_sub_item.lot_mapped_id,
             warehouse_id=last_sub_item.warehouse_id,
             sale_order_id=last_sub_item.sale_order_id,
@@ -128,6 +129,7 @@ class ReportInvCommonFunc:
             employee_created=emp_current,
             employee_inherit=emp_current,
             product_id=last_sub_item.product_id,
+            serial_number=last_sub_item.serial_number,
             lot_mapped_id=last_sub_item.lot_mapped_id,
             warehouse_id=last_sub_item.warehouse_id,
             period_mapped=this_period,
@@ -153,7 +155,7 @@ class ReportInvCommonFunc:
         return bulk_info, bulk_info_wh
 
     @classmethod
-    def push_to_this_sub(cls, tenant, company, emp_current, this_sub, last_sub):
+    def push_to_next_sub(cls, tenant, company, emp_current, this_sub, last_sub):
         bulk_info = []
         bulk_info_wh = []
         for item in ReportInventoryCost.objects.filter(
@@ -166,6 +168,7 @@ class ReportInvCommonFunc:
                     sub_period=this_sub,
                     product_id=item.product_id,
                     warehouse_id=item.warehouse_id,
+                    serial_number=item.serial_number,
                     lot_mapped_id=item.lot_mapped_id,
                     sale_order_id=item.sale_order_id,
             ).exists():
@@ -180,7 +183,7 @@ class ReportInvCommonFunc:
         return True
 
     @classmethod
-    def check_and_push_to_this_sub(cls, tenant, company, emp_current, this_period, this_sub_order):
+    def check_and_push_to_next_sub(cls, tenant, company, emp_current, this_period, this_sub_order):
         """
         1. Lấy kỳ hiện tại + kỳ con hiện tại
         2. Nếu kỳ hiện tại chưa chạy report thì:
@@ -198,7 +201,7 @@ class ReportInvCommonFunc:
                 last_sub = SubPeriods.objects.filter(period_mapped=last_period, order=last_sub_order).first()
                 if last_period and last_sub:
                     if last_sub.run_report_inventory:
-                        cls.push_to_this_sub(tenant, company, emp_current, this_sub, last_sub)
+                        cls.push_to_next_sub(tenant, company, emp_current, this_sub, last_sub)
                 this_sub.run_report_inventory = True
                 this_sub.save(update_fields=['run_report_inventory'])
                 print(f"Started {this_sub.start_date.month}/{this_period.fiscal_year}.")

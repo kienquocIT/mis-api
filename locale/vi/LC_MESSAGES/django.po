@@ -227,8 +227,8 @@ msgid "Purchase Request"
 msgstr "Yêu cầu mua hàng"
 
 # b9650500-aba7-44e3-b6e0-2542622702a3
-msgid "Quotation"
-msgstr "Báo giá"
+msgid "Sale quotation"
+msgstr "Báo giá bán"
 
 # 69e84b95-b347-4f49-abdf-0ec80d6eb5bd
 msgid "Cashflow Report"
@@ -268,7 +268,7 @@ msgstr "Vai Trò"
 
 # a870e392-9ad2-4fe2-9baa-298a38691cf2
 msgid "Sale Order"
-msgstr "Đơn bán hàng"
+msgstr "Đơn hàng bán"
 
 # e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a
 msgid "Shipping"
@@ -365,6 +365,10 @@ msgstr "Cho mượn hàng"
 # f5954e02-6ad1-4ebf-a4f2-0b598820f5f0
 msgid "Equipment Return"
 msgstr "Thu hồi hàng cho mượn"
+
+# c9e131ec-760c-45af-8ae6-5349f2bb542e
+msgid "Service Quotation"
+msgstr "Báo giá dịch vụ"
 
 # 36f25733-a6e7-43ea-b710-38e2052f0f6d
 msgid "Service Order"
@@ -772,7 +776,7 @@ msgstr "Đã có báo giá được tạo với cơ hội kinh doanh này"
 
 #
 msgid "Opportunity is already used for sale order"
-msgstr "Đã có đơn bán hàng được tạo với cơ hội kinh doanh này"
+msgstr "Đã có Đơn hàng bán được tạo với cơ hội kinh doanh này"
 
 #
 msgid "Opportunity is closed"
@@ -1048,7 +1052,7 @@ msgstr "Danh sách chi phí đang trống"
 
 #
 msgid "Opportunity already has sale order"
-msgstr "Cơ hội kinh doanh đã có đơn bán hàng"
+msgstr "Cơ hội kinh doanh đã có Đơn hàng bán"
 
 #
 msgid "Opportunity already has quotation"

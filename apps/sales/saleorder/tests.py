@@ -203,7 +203,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
         url_account_group = reverse("AccountGroupList")
         data_account_group = {  # noqa
             "code": "AG01ORDER",
-            "title": "Nhóm khách hàng test đơn bán hàng",
+            "title": "Nhóm khách hàng test Đơn hàng bán",
             "description": ""
         }
         response_account_group = self.client.post(url_account_group, data_account_group, format='json')
@@ -236,7 +236,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
         employee = self.get_employee().data['result'][0]['id']
         payment_term = self.test_create_config_payment_term().data['result']['id']
         data = {
-            "title": "Đơn bán hàng test",
+            "title": "Đơn hàng bán test",
             "opportunity_id": opportunity,
             "customer_id": customer,
             "contact_id": contact,
@@ -312,6 +312,12 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'process_stage_app',
 
                 'attachment',
+                'is_currency_exchange',
+                'currency_company_id',
+                'currency_company_data',
+                'currency_exchange_id',
+                'currency_exchange_data',
+                'currency_exchange_rate',
             ],
             check_sum_second=True,
         )
@@ -457,6 +463,12 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'process_stage_app',
 
                 'attachment',
+                'is_currency_exchange',
+                'currency_company_id',
+                'currency_company_data',
+                'currency_exchange_id',
+                'currency_exchange_data',
+                'currency_exchange_rate',
             ],
             check_sum_second=True,
         )
