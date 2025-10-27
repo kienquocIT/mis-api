@@ -6,8 +6,8 @@ from apps.masterdata.saledata.models.product import (
     ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
+from apps.masterdata.saledata.serializers.product_common import ProductCommonFunction
 from apps.shared import ProductMsg, PriceMsg, BaseMsg
-from .product_sub import ProductCommonFunction
 from ..models import ProductWareHouse
 
 
@@ -208,7 +208,12 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     def validate_representative_product(cls, value):
         if value:
             try:
-                return Product.objects.get(id=value)
+                representative_product = Product.objects.get(id=value)
+                if representative_product.general_traceability_method != 2:
+                    raise serializers.ValidationError(
+                        {'representative_product': ProductMsg.REPRESENTATIVE_PRODUCT_MUST_BE_SERIAL}
+                    )
+                return representative_product
             except Product.DoesNotExist:
                 raise serializers.ValidationError({'representative_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
         return None
@@ -317,6 +322,17 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 {'valuation_method': _('The specific identification is only available for serial products.')}
             )
 
+        representative_product_obj = validate_data.get('representative_product')
+        if representative_product_obj:
+            if representative_product_obj.is_representative_product:
+                raise serializers.ValidationError(
+                    {'representative_product': _('This representative product is belong to another product.')}
+                )
+            if validate_data.get('general_traceability_method') != 2:
+                raise serializers.ValidationError(
+                    {'representative_product': _('Can not assign representative product for non-serial products.')}
+                )
+
         # validate dimension
         validate_data['width'] = ProductCommonFunction.validate_dimension(
             validate_data.get('width'), 'width', ProductMsg.W_IS_WRONG
@@ -389,7 +405,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 3)
         CompanyFunctionNumber.auto_code_update_latest_number(app_code='product')
 
-        representative_product_obj = product_obj.representative_product_modified
+        representative_product_obj = product_obj.representative_product
         if representative_product_obj:
             representative_product_obj.is_representative_product = True
             representative_product_obj.save(update_fields=['is_representative_product'])
@@ -727,7 +743,12 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     def validate_representative_product(cls, value):
         if value:
             try:
-                return Product.objects.get(id=value)
+                representative_product = Product.objects.get(id=value)
+                if representative_product.general_traceability_method != 2:
+                    raise serializers.ValidationError(
+                        {'representative_product': ProductMsg.REPRESENTATIVE_PRODUCT_MUST_BE_SERIAL}
+                    )
+                return representative_product
             except Product.DoesNotExist:
                 raise serializers.ValidationError({'representative_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
         return None
@@ -778,6 +799,23 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 {'valuation_method': _('The specific identification is only available for serial products.')}
             )
 
+        representative_product_obj = validate_data.get('representative_product')
+        if representative_product_obj:
+            if self.instance.id == representative_product_obj.id:
+                raise serializers.ValidationError(
+                    {'representative_product': _('Can not assign itself as a representative product.')}
+                )
+            if representative_product_obj.is_representative_product:
+                # check trùng sp đại diện (trừ chính nó)
+                if self.instance.representative_product_id != representative_product_obj.id:
+                    raise serializers.ValidationError(
+                        {'representative_product': _('This representative product is belong to another product.')}
+                    )
+            if validate_data.get('general_traceability_method') != 2:
+                raise serializers.ValidationError(
+                    {'representative_product': _('Can not assign representative product for non-serial products.')}
+                )
+
         # validate dimension
         validate_data['width'] = ProductCommonFunction.validate_dimension(
             validate_data.get('width'), 'width', ProductMsg.W_IS_WRONG
@@ -824,6 +862,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 
         if 1 in validate_data.get('product_choice', []):
             validate_data['duration_unit'] = None
+
+        representative_product_obj = instance.representative_product
+        if representative_product_obj:
+            representative_product_obj.is_representative_product = True
+            representative_product_obj.save(update_fields=['is_representative_product'])
 
         return validate_data
 
@@ -889,71 +932,3 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             representative_product_obj.is_representative_product = True
             representative_product_obj.save(update_fields=['is_representative_product'])
         return instance
-
-
-class ProductQuickCreateSerializer(serializers.ModelSerializer):
-    product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))
-    general_product_category = serializers.UUIDField()
-    general_uom_group = serializers.UUIDField()
-    sale_default_uom = serializers.UUIDField(required=False)
-    sale_tax = serializers.UUIDField(required=False)
-
-    class Meta:
-        model = Product
-        fields = (
-            'code', 'title', 'product_choice',
-            'general_product_category', 'general_uom_group', 'general_traceability_method',
-            'sale_default_uom', 'sale_tax', 'description',
-        )
-
-    @classmethod
-    def validate_code(cls, value):
-        return ProductCreateSerializer.validate_code(value)
-
-    @classmethod
-    def validate_general_product_category(cls, value):
-        return ProductCreateSerializer.validate_general_product_category(value)
-
-    @classmethod
-    def validate_general_uom_group(cls, value):
-        return ProductCreateSerializer.validate_general_uom_group(value)
-
-    @classmethod
-    def validate_sale_default_uom(cls, value):
-        return ProductCreateSerializer.validate_sale_default_uom(value)
-
-    @classmethod
-    def validate_sale_tax(cls, value):
-        return ProductCreateSerializer.validate_sale_tax(value)
-
-    def validate(self, validate_data):
-        if 0 not in validate_data.get('product_choice', []):
-            raise serializers.ValidationError({'sale': 'Sale is required'})
-        if 1 in validate_data.get('product_choice', []):
-            validate_data['inventory_uom'] = validate_data.get('sale_default_uom')
-        if 2 in validate_data.get('product_choice', []):
-            validate_data['purchase_default_uom'] = validate_data.get('sale_default_uom')
-            validate_data['purchase_tax'] = validate_data.get('sale_tax')
-
-        default_pr = Price.objects.filter_on_company(is_default=True).first()
-        if not default_pr:
-            raise serializers.ValidationError({'default_price_list': ProductMsg.PRICE_LIST_NOT_EXIST})
-        validate_data['default_price_list'] = default_pr
-
-        primary_crc = Currency.objects.filter_on_company(is_primary=True).first()
-        if not primary_crc:
-            raise serializers.ValidationError({'sale_currency_using': ProductMsg.CURRENCY_NOT_EXIST})
-        validate_data['sale_currency_using'] = primary_crc
-        return validate_data
-
-    def create(self, validated_data):
-        default_pr = validated_data.pop('default_price_list')
-
-        product = Product.objects.create(**validated_data)
-        ProductCommonFunction.create_product_types_mapped(
-            product, self.initial_data.get('product_types_mapped_list', [])
-        )
-        price_list_product_data = ProductCommonFunction.create_price_list_product(product, default_pr)
-        product.sale_product_price_list = price_list_product_data
-        product.save(update_fields=['sale_product_price_list'])
-        return product

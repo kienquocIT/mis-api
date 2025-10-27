@@ -27,7 +27,10 @@ class ProductModification(DataAbstractModel):
     created_goods_issue_for_root = models.BooleanField(default=False)
 
     representative_product_modified = models.ForeignKey(
-        'saledata.Product', on_delete=models.CASCADE, related_name='representative_product_modified', null=True
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        related_name='product_representative_product_modified',
+        null=True
     )
 
     @classmethod
@@ -363,19 +366,29 @@ class ProductModification(DataAbstractModel):
         return True
 
     @classmethod
-    def update_current_product_component(cls, pm_obj):
+    def update_current_product_component(
+            cls, pm_obj, re_prd_prd_wh_obj, re_prd_prd_wh_lot_obj, re_prd_prd_wh_serial_obj
+    ):
         """
         Hàm này để cập nhập các component hiện tại cho SP đã đem đi Ráp - Rã.
         """
+        if pm_obj.representative_product_modified:
+            prd_wh = re_prd_prd_wh_obj
+            prd_wh_lot = re_prd_prd_wh_lot_obj
+            prd_wh_serial = re_prd_prd_wh_serial_obj
+        else:
+            prd_wh = pm_obj.prd_wh
+            prd_wh_lot = pm_obj.prd_wh_lot
+            prd_wh_serial = pm_obj.prd_wh_serial
         PWModified.objects.filter_on_company(
-            product_warehouse=pm_obj.prd_wh,
-            product_warehouse_lot=pm_obj.prd_wh_lot,
-            product_warehouse_serial=pm_obj.prd_wh_serial,
+            product_warehouse=prd_wh,
+            product_warehouse_lot=prd_wh_lot,
+            product_warehouse_serial=prd_wh_serial,
         ).delete()
         pw_modified_obj = PWModified.objects.create(
-            product_warehouse=pm_obj.prd_wh,
-            product_warehouse_lot=pm_obj.prd_wh_lot,
-            product_warehouse_serial=pm_obj.prd_wh_serial,
+            product_warehouse=prd_wh,
+            product_warehouse_lot=prd_wh_lot,
+            product_warehouse_serial=prd_wh_serial,
             modified_number=pm_obj.code,
             new_description=pm_obj.new_description,
             employee_created=pm_obj.employee_created,
@@ -592,23 +605,14 @@ class ProductModification(DataAbstractModel):
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
                     CompanyFunctionNumber.auto_gen_code_based_on_config('productmodification', True, self, kwargs)
-                    self.create_remove_component_product_mapped(self)
-                    self.update_current_product_component(self)
                     try:
                         with transaction.atomic():
+                            self.create_remove_component_product_mapped(self)
                             # B1: clone serial/lot cho sp đại diện
                             [
                                 re_prd_prd_wh_obj, re_prd_prd_wh_lot_obj, re_prd_prd_wh_serial_obj
                             ] = self.auto_clone_for_representative_product(self)
                             # B2: cập nhập hoặc tạo giá đich danh khi nhập
-                            if self.prd_wh_serial:
-                                ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
-                                    product=self.product_modified,
-                                    serial_obj=self.prd_wh_serial,
-                                    specific_value=0,
-                                    from_pm=True,
-                                    product_modification=self
-                                )
                             if re_prd_prd_wh_serial_obj:
                                 ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
                                     product=self.representative_product_modified,
@@ -617,6 +621,15 @@ class ProductModification(DataAbstractModel):
                                     from_pm=True,
                                     product_modification=self
                                 )
+                            else:
+                                if self.prd_wh_serial:
+                                    ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
+                                        product=self.product_modified,
+                                        serial_obj=self.prd_wh_serial,
+                                        specific_value=0,
+                                        from_pm=True,
+                                        product_modification=self
+                                    )
                             # B3: nhập hàng vô sp đại diện
                             self.auto_import_representative_product(
                                 self, re_prd_prd_wh_obj, re_prd_prd_wh_lot_obj, re_prd_prd_wh_serial_obj
@@ -637,6 +650,10 @@ class ProductModification(DataAbstractModel):
                             if re_prd_prd_wh_serial_obj:
                                 re_prd_prd_wh_serial_obj.use_for_modification = True
                                 re_prd_prd_wh_serial_obj.save(update_fields=['use_for_modification'])
+
+                            self.update_current_product_component(
+                                self, re_prd_prd_wh_obj, re_prd_prd_wh_lot_obj, re_prd_prd_wh_serial_obj
+                            )
                     except Exception as err:
                         print(err)
 
