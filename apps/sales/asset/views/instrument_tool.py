@@ -13,6 +13,7 @@ __all__ =[
     'InstrumentToolDetail',
     'ToolForLeaseList',
     'ToolStatusLeaseList',
+    'InstrumentToolNoPermList'
 ]
 
 
@@ -151,6 +152,30 @@ class ToolStatusLeaseList(BaseListMixin, BaseCreateMixin):
     @mask_view(
         login_require=True, auth_require=False,
         label_code='asset', model_code='instrumenttool', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class InstrumentToolNoPermList(BaseListMixin):
+    queryset = InstrumentTool.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {}
+    serializer_list = InstrumentToolListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        queryset = (super().get_queryset().select_related('product', 'manage_department', 'use_customer')
+                                          .prefetch_related('write_off_quantities', 'use_departments'))
+        return queryset
+
+    @swagger_auto_schema(
+        operation_summary="Instrument Tool List",
+        operation_description="Get InstrumentTool List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='asset', model_code='instrumenttool', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
