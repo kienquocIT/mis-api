@@ -64,7 +64,8 @@ APP_MODEL_CODE = [
     'fixedasset',
     'fixedassetwriteoff',
     'instrumenttool',
-    'instrumenttoolwriteoff'
+    'instrumenttoolwriteoff',
+    'opportunitytask',
     # thêm model_code của app đã cấu hình sinh code theo công thức vào đây
 ]
 

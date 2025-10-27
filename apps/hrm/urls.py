@@ -6,4 +6,5 @@ urlpatterns = [
     path('absenceexplanation/', include('apps.hrm.absenceexplanation.urls')),
     path('overtime/', include('apps.hrm.overtimerequest.urls')),
     path('payroll/', include('apps.hrm.payroll.urls')),
+    path('payroll/template/', include('apps.hrm.payrolltemplate.urls')),
 ]

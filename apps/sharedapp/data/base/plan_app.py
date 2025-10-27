@@ -95,6 +95,10 @@ _PlanApplication_hrm_data = {
     "4a996500-fcc4-484f-be62-b3c73a2db927": {
         "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",  # HRM
         "application_id": "4a996500-fcc4-484f-be62-b3c73a2db927",  # Overtime request
+    },
+    "fc16cfb2-da09-4735-aba5-c476489b4d0e": {
+        "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",  # HRM
+        "application_id": "fc16cfb2-da09-4735-aba5-c476489b4d0e",  # Payroll template
     }
 }
 
