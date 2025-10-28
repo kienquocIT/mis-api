@@ -1,4 +1,6 @@
 from django.db import models, transaction
+from django.utils import timezone
+
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Product, ProductProductType, ProductSpecificIdentificationSerialNumber, \
     ProductWareHouse, ProductWareHouseSerial
@@ -281,8 +283,8 @@ class ProductModification(DataAbstractModel):
             'company': pm_obj.company,
             'employee_created': pm_obj.employee_created,
             'employee_inherit': pm_obj.employee_inherit,
-            'date_created': pm_obj.date_created,
-            'date_approved': pm_obj.date_approved,
+            'date_created': timezone.now(),
+            'date_approved': timezone.now(),
         }
         gis_obj = GoodsIssue.objects.create(**gis_data)
         bulk_info = []
