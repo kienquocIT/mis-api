@@ -785,7 +785,6 @@ class ProductModificationProductGRListSerializer(serializers.ModelSerializer):
     product_modification_product_id = serializers.SerializerMethodField()
     product_data = serializers.SerializerMethodField()
     uom_data = serializers.SerializerMethodField()
-    # tax_data = serializers.SerializerMethodField()
     product_unit_price = serializers.SerializerMethodField()
     product_quantity_order_actual = serializers.SerializerMethodField()
 
@@ -796,7 +795,6 @@ class ProductModificationProductGRListSerializer(serializers.ModelSerializer):
             'product_modification_product_id',
             'product_data',
             'uom_data',
-            # 'tax_data',
             'product_unit_price',
             'product_quantity_order_actual',
             'gr_remain_quantity',
@@ -819,7 +817,7 @@ class ProductModificationProductGRListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_uom_data(cls, obj):
-        uom_obj = obj.component_product.inventory_uom
+        uom_obj = obj.component_product.inventory_uom if obj.component_product else None
         return {
             'id': uom_obj.id,
             'title': uom_obj.title,
@@ -840,15 +838,6 @@ class ProductModificationProductGRListSerializer(serializers.ModelSerializer):
             'rounding': uom_obj.rounding,
             'is_referenced_unit': uom_obj.is_referenced_unit,
         } if uom_obj else {}
-
-    # @classmethod
-    # def get_tax_data(cls, obj):
-    #     return {
-    #         'id': obj.tax_id,
-    #         'title': obj.tax.title,
-    #         'code': obj.tax.code,
-    #         'rate': obj.tax.rate,
-    #     } if obj.tax else {}
 
     @classmethod
     def get_product_unit_price(cls, obj):
