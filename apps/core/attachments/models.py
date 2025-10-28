@@ -308,9 +308,11 @@ def processing_folder(doc_id, doc_app):
         folder_obj = folder_obj_lst.first()
     else:
         folder_system_obj, _ = Folder.objects.get_or_create(
-            id=MODULE_MAPPING['system']['id'],
+            module_id=MODULE_MAPPING['system']['module_id'],
+            company_id=doc_obj.company_id,
+            tenant_id=doc_obj.tenant_id,
             defaults={
-                'id': MODULE_MAPPING['system']['id'],
+                'module_id': MODULE_MAPPING['system']['module_id'],
                 'title': MODULE_MAPPING['system']['name'],
                 'company': doc_obj.company,
                 'tenant': doc_obj.tenant,
@@ -371,11 +373,11 @@ def processing_folder(doc_id, doc_app):
                     break
                 if path in MODULE_MAPPING:
                     current_folder_path, _ = Folder.objects.get_or_create(
-                        id=MODULE_MAPPING[path]['id'],
+                        module_id=MODULE_MAPPING[path]['module_id'],
                         company_id=doc_obj.company_id,
                         tenant_id=doc_obj.tenant_id,
                         defaults={
-                            'id': MODULE_MAPPING[path]['id'],
+                            'module_id': MODULE_MAPPING[path]['module_id'],
                             'title': MODULE_MAPPING[path]['name'],
                             'company_id': doc_obj.company_id,
                             'tenant_id': doc_obj.tenant_id,
@@ -858,6 +860,7 @@ class Folder(MasterDataAbstractModel):
     is_system = models.BooleanField(default=False, help_text="flag to know this folder auto created by system")
     is_owner = models.BooleanField(default=False, help_text="flag to know this folder created by owner")
     is_admin = models.BooleanField(default=False, help_text="flag to know this folder created by admin")
+    module_id = models.UUIDField(verbose_name='module_id in MODULE_MAPPING, unique in tenant-company', null=True)
 
     class Meta:
         verbose_name = 'Folder'

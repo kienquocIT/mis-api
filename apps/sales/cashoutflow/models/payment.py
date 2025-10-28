@@ -153,6 +153,15 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
                 ap_item.save(update_fields=['sum_converted_value'])
         return True
 
+    @classmethod
+    def set_true_file_is_approved(cls, instance):
+        for m2m_attachment in instance.payment_attachments.all():
+            attachment = m2m_attachment.attachment
+            if attachment:
+                attachment.is_approved = True
+                attachment.save(update_fields=['is_approved'])
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
@@ -160,6 +169,7 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
                     CompanyFunctionNumber.auto_gen_code_based_on_config('payment', True, self, kwargs)
                     self.push_final_acceptance_payment(self)
                     self.convert_ap_cost(self)
+                    self.set_true_file_is_approved(self)
 
         # opportunity log
         PaymentHandler.push_opportunity_log(instance=self)
