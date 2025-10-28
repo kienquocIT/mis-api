@@ -3,19 +3,28 @@ __ALL__ = ['MODULE_MAPPING', 'HIERARCHY_RULES', 'APP_FIELD', 'APP_NAME']
 from django.utils.translation import gettext_lazy as _
 
 MODULE_MAPPING = {
-    'system': {'name': 'System', 'module_id': '9ac02039-a9a4-42e9-825e-169f740b5b5b'},
+    'system': {
+        'name': 'System',
+        'module_id': '9ac02039-a9a4-42e9-825e-169f740b5b5b'
+    },
     'sale': {  # SAlE
         'name': 'Sales', 'module_id': '76ab081b-eee4-4923-97b9-1cbb09deef78',
         'plan': '4e082324-45e2-4c27-a5aa-e16a758d5627'
     },
     'kms': {  # KMS
-        'name': 'KMS', 'module_id': 'c7a702aa-10e7-487a-ab6c-3fd219930504', 'plan': '02793f68-3548-45c1-98f5-89899a963091'
+        'name': 'KMS',
+        'module_id': 'c7a702aa-10e7-487a-ab6c-3fd219930504',
+        'plan': '02793f68-3548-45c1-98f5-89899a963091'
     },
     'hrm': {  # HRM
-        'name': 'HRM', 'module_id': '3802739f-12c8-4f90-ac67-3f81e21ccffe', 'plan': '395eb68e-266f-45b9-b667-bd2086325522'
+        'name': 'HRM',
+        'module_id': '3802739f-12c8-4f90-ac67-3f81e21ccffe',
+        'plan': '395eb68e-266f-45b9-b667-bd2086325522'
     },
     'e-office': {  # E-Office
-        'name': 'E-Office', 'module_id': '57bc22f9-08a8-4a4b-b207-51c0f6428c56', 'plan': 'a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8'
+        'name': 'E-Office',
+        'module_id': '57bc22f9-08a8-4a4b-b207-51c0f6428c56',
+        'plan': 'a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8'
     }
 
 }
