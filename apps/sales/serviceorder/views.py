@@ -1,13 +1,18 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.response import Response
+from rest_framework import status
 from apps.sales.serviceorder.models import (
     ServiceOrder, ServiceOrderServiceDetail, ServiceOrderWorkOrder, ServiceOrderWorkOrderTask
 )
-from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
+from apps.core.log.models import DocumentLog
+from apps.sales.serviceorder.utils.logical_finish import ServiceOrderFinishHandler
+from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin, \
+    ResponseController
 from apps.sales.serviceorder.serializers import (
     ServiceOrderListSerializer, ServiceOrderDetailSerializer,
     ServiceOrderCreateSerializer, ServiceOrderUpdateSerializer, ServiceOrderDetailDashboardSerializer,
-    SVODeliveryWorkOrderDetailSerializer,
+    SVODeliveryWorkOrderDetailSerializer, ServiceOrderDiffSerializer,
 )
 
 
@@ -15,7 +20,8 @@ __all__ = [
     'ServiceOrderList',
     'ServiceOrderDetail',
     'ServiceOrderDetailDashboard',
-    'SVODeliveryWorkOrderDetail'
+    'SVODeliveryWorkOrderDetail',
+    'ServiceOrderDiff',
 ]
 
 
@@ -153,3 +159,76 @@ class SVODeliveryWorkOrderDetail(BaseListMixin):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class ServiceOrderDiff(BaseRetrieveMixin):
+    queryset = ServiceOrder.objects
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    serializer_class = ServiceOrderDiffSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related().select_related()
+
+    def _get_service_order_snapshot(self, service_order_instance):
+        """
+        Get the snapshot of a ServiceOrder instance.
+        """
+        return ServiceOrderFinishHandler.get_service_order_detail_json(service_order_instance)
+
+    def _get_service_order_by_id(self, pk: str):
+        """
+        Get a ServiceOrder instance by ID with proper permission checking.
+        """
+        field_hidden = self.cls_check.attr.setup_hidden(from_view='retrieve')
+
+        try:
+            obj = self.get_queryset().get(
+                pk=pk,
+                **field_hidden
+            )
+            # Check object-level permissions
+            self.check_object_permissions(self.request, obj)
+            return obj
+        except ServiceOrder.DoesNotExist:
+            return None
+
+    @swagger_auto_schema(
+        operation_summary='Service Order Diff - Compare versions',
+        operation_description='Get detailed diff between current state and previous version of a ServiceOrder using DeepDiff',
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='serviceorder', model_code='serviceorder', perm_code='view',
+    )
+    def get(self, request, current_id, comparing_id, *args, **kwargs):
+        current_order = self._get_service_order_by_id(current_id)
+        if not current_order:
+            return ResponseController.notfound_404(f'ServiceOrder with id {current_id} not found.')
+
+        previous_order = self._get_service_order_by_id(comparing_id)
+        if not previous_order:
+            return ResponseController.notfound_404(f'ServiceOrder with id {comparing_id} not found.')
+
+        # Check permissions for both orders
+        if not self.check_perm_by_obj_or_body_data(obj=current_order, auto_check=True):
+            return ResponseController.forbidden_403('No permission to access the first ServiceOrder.')
+
+        if not self.check_perm_by_obj_or_body_data(obj=previous_order, auto_check=True):
+            return ResponseController.forbidden_403('No permission to access the second ServiceOrder.')
+
+        # Get snapshots for both orders
+        current_snapshot = self._get_service_order_snapshot(current_order)
+        previous_snapshot = self._get_service_order_snapshot(previous_order)
+
+        # Prepare data for serializer
+        diff_data = {
+            'current_snapshot': current_snapshot,
+            'previous_snapshot': previous_snapshot,
+        }
+
+        # Serialize and return
+        serializer = self.serializer_class(diff_data)
+        return ResponseController.success_200(
+            data=serializer.data,
+            key_data='result'
+        )
