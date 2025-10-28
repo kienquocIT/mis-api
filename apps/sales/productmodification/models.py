@@ -1,11 +1,12 @@
 from django.db import models, transaction
 from django.utils import timezone
-
 from apps.core.company.models import CompanyFunctionNumber
-from apps.masterdata.saledata.models import Product, ProductProductType, ProductSpecificIdentificationSerialNumber, \
-    ProductWareHouse, ProductWareHouseSerial
-from apps.masterdata.saledata.models.product_warehouse import PWModified, PWModifiedComponent, \
-    PWModifiedComponentDetail, ProductWareHouseLot
+from apps.masterdata.saledata.models import (
+    Product, ProductProductType, ProductSpecificIdentificationSerialNumber, ProductWareHouse, ProductWareHouseSerial
+)
+from apps.masterdata.saledata.models.product_warehouse import (
+    PWModified, PWModifiedComponent, PWModifiedComponentDetail, ProductWareHouseLot
+)
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct
 from apps.sales.inventory.utils import GRFromPMHandler
 from apps.sales.report.utils import IRForGoodsIssueHandler
