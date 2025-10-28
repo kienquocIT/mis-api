@@ -806,7 +806,17 @@ class ServiceOrderCommonFunc:
 
 
 class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
+    service_order = serializers.SerializerMethodField()
     product_list = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_service_order(cls, obj):
+        return {
+            'id': str(obj.service_order_id),
+            'title': obj.service_order.title,
+            'code': obj.service_order.code,
+            'document_root_id': obj.service_order.document_root_id,
+        } if obj.service_order else {}
 
     @classmethod
     def get_product_list(cls, obj):
@@ -835,6 +845,7 @@ class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
+            'service_order',
             'start_date',
             'end_date',
             'product_list',

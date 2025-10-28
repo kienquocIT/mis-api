@@ -146,6 +146,10 @@ class SVODeliveryWorkOrderDetail(BaseListMixin):
             return super().get_queryset().filter(
                 service_order_id=self.request.query_params.get('service_order_id'),
                 is_delivery_point=True
+            ).select_related(
+                'service_order',
+            ).prefetch_related(
+                'work_order_contributions',
             )
         return super().get_queryset().none()
 
