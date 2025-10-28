@@ -62,24 +62,24 @@ class GRFromPMHandler:
             gr_products_data1 = GRFromPMHandler.setup_product(
                 pm_obj, issue_data, re_prd_prd_wh_obj, re_prd_prd_wh_lot_obj, re_prd_prd_wh_serial_obj
             )
+            # Tao GR cho SP goc (auto approved)
             if gr_products_data1:
-                goods_receipt_obj = GRFromPMHandler.run_create(
+                GRFromPMHandler.run_create(
                     pm_obj=pm_obj,
                     gr_products_data=gr_products_data1,
                     model_cls=model_cls,
                     system_status=3,
                 )
-                return goods_receipt_obj
+            # Tao GR cho SP rap-ra (draft)
             gr_products_data2 = GRFromPMHandler.setup_component(pm_obj=pm_obj)
             if gr_products_data2:
-                goods_receipt_obj = GRFromPMHandler.run_create(
+                GRFromPMHandler.run_create(
                     pm_obj=pm_obj,
                     gr_products_data=gr_products_data2,
                     model_cls=model_cls,
                     system_status=0,
                 )
-                return goods_receipt_obj
-        return None
+        return True
 
     @classmethod
     def setup_product_sub_for_representative_product_modified(
@@ -318,7 +318,7 @@ class GRFromPMHandler:
                 goods_receipt.save(update_fields=[
                     'total_pretax', 'total', 'total_revenue_before_tax', 'system_status', 'date_approved'
                 ])
-        return goods_receipt
+        return True
 
     @classmethod
     def run_create_sub_product(cls, goods_receipt):
