@@ -1,5 +1,4 @@
 from django.utils import timezone
-
 from apps.core.diagram.models import DiagramSuffix
 from apps.shared import DisperseModel
 
