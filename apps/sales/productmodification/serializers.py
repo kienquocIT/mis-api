@@ -591,6 +591,7 @@ class ProductModifiedBeforeListSerializer(serializers.ModelSerializer):
         model = PWModified
         fields = (
             'product_data',
+            'date_modified'
         )
 
     @classmethod
