@@ -1,9 +1,12 @@
 from django.db import models, transaction
+from django.utils import timezone
 from apps.core.company.models import CompanyFunctionNumber
-from apps.masterdata.saledata.models import Product, ProductProductType, ProductSpecificIdentificationSerialNumber, \
-    ProductWareHouse, ProductWareHouseSerial
-from apps.masterdata.saledata.models.product_warehouse import PWModified, PWModifiedComponent, \
-    PWModifiedComponentDetail, ProductWareHouseLot
+from apps.masterdata.saledata.models import (
+    Product, ProductProductType, ProductSpecificIdentificationSerialNumber, ProductWareHouse, ProductWareHouseSerial
+)
+from apps.masterdata.saledata.models.product_warehouse import (
+    PWModified, PWModifiedComponent, PWModifiedComponentDetail, ProductWareHouseLot
+)
 from apps.sales.inventory.models import GoodsIssue, GoodsIssueProduct
 from apps.sales.inventory.utils import GRFromPMHandler
 from apps.sales.report.utils import IRForGoodsIssueHandler
@@ -98,7 +101,7 @@ class ProductModification(DataAbstractModel):
         return product_modified_data
 
     @classmethod
-    def get_representative_product_data(cls, pm_obj, re_prd_wh_obj, re_prd_wh_serial_obj, re_prd_wh_lot_obj):
+    def get_representative_product_modified_data(cls, pm_obj, re_prd_wh_obj, re_prd_wh_serial_obj, re_prd_wh_lot_obj):
         representative_product_modified_data = []
         if pm_obj.representative_product_modified:
             try:
@@ -281,14 +284,14 @@ class ProductModification(DataAbstractModel):
             'company': pm_obj.company,
             'employee_created': pm_obj.employee_created,
             'employee_inherit': pm_obj.employee_inherit,
-            'date_created': pm_obj.date_created,
-            'date_approved': pm_obj.date_approved,
+            'date_created': timezone.now(),
+            'date_approved': timezone.now(),
         }
         gis_obj = GoodsIssue.objects.create(**gis_data)
         bulk_info = []
         detail_data = (
             cls.get_product_modified_data(pm_obj) +
-            cls.get_representative_product_data(
+            cls.get_representative_product_modified_data(
                 pm_obj, re_prd_prd_wh_obj, re_prd_prd_wh_lot_obj, re_prd_prd_wh_serial_obj,
             ) +
             cls.get_component_data(pm_obj)
@@ -613,7 +616,7 @@ class ProductModification(DataAbstractModel):
                             [
                                 re_prd_prd_wh_obj, re_prd_prd_wh_lot_obj, re_prd_prd_wh_serial_obj
                             ] = self.auto_clone_for_representative_product(self)
-                            # B2: cập nhập hoặc tạo giá đich danh khi nhập
+                            # B2: nhập hàng vô sp đại diện
                             if re_prd_prd_wh_serial_obj:
                                 ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
                                     product=self.representative_product_modified,
@@ -622,24 +625,22 @@ class ProductModification(DataAbstractModel):
                                     from_pm=True,
                                     product_modification=self
                                 )
-                            else:
-                                if self.prd_wh_serial:
-                                    ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
-                                        product=self.product_modified,
-                                        serial_obj=self.prd_wh_serial,
-                                        specific_value=0,
-                                        from_pm=True,
-                                        product_modification=self
-                                    )
-                            # B3: nhập hàng vô sp đại diện
                             self.auto_import_representative_product(
                                 self, re_prd_prd_wh_obj, re_prd_prd_wh_lot_obj, re_prd_prd_wh_serial_obj
                             )
-                            # B4: xuất hàng như thường (xuất cả sp gốc và sp đại diện)
+                            # B3: xuất hàng như thường (xuất cả sp gốc và sp đại diện)
                             issue_data = self.auto_create_goods_issue(
                                 self, re_prd_prd_wh_obj, re_prd_prd_wh_lot_obj, re_prd_prd_wh_serial_obj
                             )
-                            # B5: tạo phiếu nhập tự động (nếu có SP đại diện thì không cần nhập lại sp gốc)
+                            # B4: tạo phiếu nhập tự động (nếu có SP đại diện thì không cần nhập lại sp gốc)
+                            if self.prd_wh_serial:
+                                ProductSpecificIdentificationSerialNumber.create_or_update_si_product_serial(
+                                    product=self.product_modified,
+                                    serial_obj=self.prd_wh_serial,
+                                    specific_value=0,
+                                    from_pm=True,
+                                    product_modification=self
+                                )
                             GRFromPMHandler.create_new(
                                 self, issue_data, re_prd_prd_wh_obj, re_prd_prd_wh_lot_obj, re_prd_prd_wh_serial_obj
                             )

@@ -910,8 +910,13 @@ class ProductSpecificIdentificationSerialNumber(MasterDataAbstractModel):
             )
             print(f"Created specific {serial_obj.serial_number} ({product.code}): value = {specific_value}")
         else:
+            # chỉ bật nếu RR = False -> True; không thể True -> False
             si_serial_obj.specific_value = specific_value
-            si_serial_obj.save(update_fields=['specific_value'])
+            if from_pm:
+                si_serial_obj.from_pm = True
+                si_serial_obj.save(update_fields=['specific_value', 'from_pm'])
+            else:
+                si_serial_obj.save(update_fields=['specific_value'])
             print(f"Updated specific {serial_obj.serial_number} ({product.code}): value = {specific_value}")
         return True
 
