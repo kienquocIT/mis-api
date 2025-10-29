@@ -29,6 +29,7 @@ from . import MediaForceAPI, DisperseModel
 from .extends.signals import ConfigDefaultData
 from .permissions.util import PermissionController
 from ..core.account.models import User
+from ..core.attachments.folder_utils import MODULE_MAPPING
 from ..core.attachments.models import Folder
 from ..core.hr.models import (
     Employee, Role, EmployeePermission, RolePermission,
@@ -6714,3 +6715,17 @@ def make_system_payroll_component():
     AttributeComponent.objects.all().delete()
     AttributeComponent.objects.bulk_create(create_bulk_lst)
     print('Completed create system payroll attribute')
+
+
+def set_module_id_folder():
+    module_ids = []
+    for key, value in MODULE_MAPPING.items():
+        if 'module_id' in value:
+            module_ids.append(value['module_id'])
+    folder_objs = Folder.objects.filter(id__in=module_ids)
+    if folder_objs:
+        for folder_obj in folder_objs:
+            folder_obj.module_id = folder_obj.id
+            folder_obj.save(update_fields=['module_id'])
+    print('set_module_id_folder done.')
+    return True
