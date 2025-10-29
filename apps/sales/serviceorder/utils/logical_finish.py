@@ -1,5 +1,7 @@
 import json
 
+from django.utils import timezone
+
 from apps.core.attachments.models import processing_folder
 from apps.core.log.models import DocumentLog
 from apps.shared import DisperseModel, CustomizeEncoder
@@ -36,17 +38,27 @@ class ServiceOrderFinishHandler:
     @classmethod
     def save_log_snapshot(cls, instance):
         service_order_detail_json = cls.get_service_order_detail_json(instance)
-        doc_log = DocumentLog.objects.create(
-            tenant=instance.tenant,
-            company=instance.company,
-            date_created=instance.date_created,
-            snapshot=json.loads(json.dumps(
-                        service_order_detail_json,
-                        cls=CustomizeEncoder
-                    )),
+        doc_log, _created = DocumentLog.objects.get_or_create(
             app_model_code='serviceorder',
-            app_id=str(instance.id).replace('-', '')
+            app_id=str(instance.id).replace('-', ''),
+            defaults={
+                'tenant': instance.tenant,
+                'company': instance.company,
+                'date_created': timezone.now(),
+                'snapshot': json.loads(json.dumps(
+                    service_order_detail_json,
+                    cls=CustomizeEncoder
+                )),
+                'app_model_code': 'serviceorder',
+                'app_id': str(instance.id).replace('-', '')
+            }
         )
+        if not _created:
+            doc_log.snapshot = json.loads(json.dumps(
+                    service_order_detail_json,
+                    cls=CustomizeEncoder
+                ))
+            doc_log.save(update_fields=['snapshot'])
         return doc_log
 
     @classmethod
@@ -306,7 +318,7 @@ class ServiceOrderFinishHandler:
             employee_inherit_data = instance.employee_inherit.get_detail_minimal()
 
         # Build and return the complete JSON structure
-        return {
+        return_detail_data = {
             'opportunity': opportunity_data,
             'employee_inherit': employee_inherit_data,
             'id': str(instance.id),
@@ -340,3 +352,4 @@ class ServiceOrderFinishHandler:
             'indicator_gross_profit': instance.indicator_gross_profit,
             'indicator_net_income': instance.indicator_net_income,
         }
+        return return_detail_data

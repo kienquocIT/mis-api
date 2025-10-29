@@ -1,3 +1,5 @@
+from json import dumps, loads
+
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
@@ -42,7 +44,12 @@ class ServiceOrderList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related("employee_created__group")
+        qs = super().get_queryset().select_related("employee_created__group")
+        exclude_id = self.request.query_params.get("exclude_id")
+        if exclude_id:
+            qs = qs.exclude(id=exclude_id)
+
+        return qs
 
     @swagger_auto_schema(
         operation_summary="ServiceOrder list",
@@ -173,7 +180,10 @@ class ServiceOrderDiff(BaseRetrieveMixin):
         """
         Get the snapshot of a ServiceOrder instance.
         """
-        return ServiceOrderFinishHandler.get_service_order_detail_json(service_order_instance)
+        service_order_id_str = str(service_order_instance.id).replace('-', '')
+        service_order_doc_log = DocumentLog.objects.filter(app_model_code='serviceorder', app_id=service_order_id_str).first()
+        if service_order_doc_log:
+            return service_order_doc_log.snapshot
 
     def _get_service_order_by_id(self, pk: str):
         """
@@ -217,8 +227,8 @@ class ServiceOrderDiff(BaseRetrieveMixin):
             return ResponseController.forbidden_403('No permission to access the second ServiceOrder.')
 
         # Get snapshots for both orders
-        current_snapshot = self._get_service_order_snapshot(current_order)
-        previous_snapshot = self._get_service_order_snapshot(previous_order)
+        current_snapshot = loads(dumps(self._get_service_order_snapshot(current_order)))
+        previous_snapshot = loads(dumps(self._get_service_order_snapshot(previous_order)))
 
         # Prepare data for serializer
         diff_data = {

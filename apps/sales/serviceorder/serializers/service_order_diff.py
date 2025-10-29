@@ -1,3 +1,4 @@
+from deepdiff.helper import NotPresent
 from rest_framework import serializers
 from deepdiff import DeepDiff
 
@@ -5,6 +6,17 @@ from deepdiff import DeepDiff
 __all__ = [
     'ServiceOrderDiffSerializer',
 ]
+
+
+def safe_value(value):
+    """Convert DeepDiff special values to safe JSON types."""
+    if isinstance(value, NotPresent):
+        return None
+    elif isinstance(value, (list, tuple)):
+        return [safe_value(v) for v in value]
+    elif isinstance(value, dict):
+        return {k: safe_value(v) for k, v in value.items()}
+    return value
 
 
 class ServiceOrderDiffSerializer(serializers.Serializer):
@@ -47,13 +59,21 @@ class ServiceOrderDiffSerializer(serializers.Serializer):
                 result[key] = [
                     {
                         'path': str(item.path()),
-                        'old_value': item.t1 if hasattr(item, 't1') else None,
-                        'new_value': item.t2 if hasattr(item, 't2') else None,
+                        'old_value': safe_value(getattr(item, 't1', None)),
+                        'new_value': safe_value(getattr(item, 't2', None)),
                     }
                     for item in value
                 ]
         else:
             result['message'] = 'No differences found between snapshots'
+        # import logging
+        # logger = logging.getLogger(__name__)
+        #
+        # for key, value in diff.items():
+        #     for item in value:
+        #         if isinstance(getattr(item, 't1', None), NotPresent) or isinstance(getattr(item, 't2', None),
+        #                                                                            NotPresent):
+        #             logger.warning(f"NotPresent found at path {item.path()} in {key}")
 
         return result
 
@@ -90,11 +110,3 @@ class ServiceOrderDiffSerializer(serializers.Serializer):
         }
 
         return summary
-
-    def to_representation(self, instance):
-        """
-        Override to ensure proper serialization of diff results.
-        """
-        # Convert diff results to JSON-serializable format
-        representation = super().to_representation(instance)
-        return representation

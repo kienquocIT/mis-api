@@ -11,6 +11,7 @@ __all__ = [
     'BookMark',
     'DocPined',
     'MailLog',
+    'DocumentLog'
 ]
 
 BOOKMARKS_KIND = (
