@@ -287,7 +287,7 @@ class GRFromPMHandler:
     @classmethod
     def run_create(cls, pm_obj, gr_products_data, model_cls, system_status):
         data = {
-            'title': pm_obj.code,
+            'title': f'Goods receipt for {pm_obj.code}',
             'goods_receipt_type': 3,
             'date_received': timezone.now(),
             'product_modification_id': pm_obj.id,
