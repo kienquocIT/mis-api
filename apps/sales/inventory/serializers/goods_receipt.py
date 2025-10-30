@@ -336,7 +336,8 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
         # check unique in db
         if ProductWareHouseSerial.objects.filter(
                 product_warehouse__product_id=product_id,
-                serial_number__in=serial_number_list
+                serial_number__in=serial_number_list,
+                serial_status=0,
         ).exists():
             raise serializers.ValidationError({'serial_number': SaleMsg.SERIAL_EXIST})
         return True
