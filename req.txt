@@ -22,6 +22,7 @@ django-phonenumber-field==7.0.0
 django-phonenumbers==1.0.1
 django-otp==1.5.1
 django-storages[s3]==1.14.2
+django-ratelimit==4.1.0
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
 drf-yasg==1.21.7
