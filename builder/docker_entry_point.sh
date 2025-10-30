@@ -28,5 +28,5 @@ celery -A misapi worker --loglevel=info &
 echo "📅 Starting Celery Beat scheduler..."
 celery -A misapi beat --loglevel=info -S django &
 
-echo "🔥 Starting Gunicorn server..."
-exec gunicorn misapi.wsgi:application --bind 0.0.0.0:8000
+echo "🔥 Starting Granian server..."
+exec granian --interface wsgi --host 0.0.0.0 --port 8000 --workers 2 --access-log misui.wsgi:application
