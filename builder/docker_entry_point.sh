@@ -57,9 +57,9 @@ echo "---------------------------------------"
 # ==========================================
 # 🚀 Start Granian server
 # ==========================================
-exec granian --interface wsgi \
+exec granian --interface asgi \
   --host 0.0.0.0 \
   --port 8000 \
   --workers $WORKERS \
-  --threads $THREADS \
-  misapi.wsgi:application
+  --blocking-threads $THREADS \
+  misapi.asgi:application
