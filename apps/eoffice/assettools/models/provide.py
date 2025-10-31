@@ -153,6 +153,13 @@ class AssetToolsProvideProduct(DataAbstractModel):
     )
     subtotal = models.FloatField(default=0, verbose_name='Subtotal price')
     delivered = models.FloatField(default=0, verbose_name='Product is delivered')
+    # chưa biết được is_returned này còn có tác dụng hay không,
+    # logic khi tạo phiếu thu hồi:
+    # + lấy tất cả sản phẩm đã cấp phát được duyệt show ra
+    # + nếu product của phiếu đó là công cụ dụng cụ thì cộng lại sản phẩm trong công cụ dụng cụ
+    # + nếu product của phiếu đó là tài sản cố định thì update lại cho fixed
+    # + nếu sản phẩm là mua mới ????
+    # + nếu phiếu thu hồi được duyệt thì update lại số lượng đã thu hồi ở is_returned cho phiếu sau
     is_returned = models.FloatField(default=0, verbose_name='Product is returned')
 
     def create_backup_data(self):

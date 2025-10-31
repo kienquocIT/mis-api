@@ -55,13 +55,6 @@ def handle_attach_file(instance, attachment_result):
 class AssetToolsReturnCreateSerializer(AbstractCreateSerializerModel):
     products = AssetToolsProductsMapReturnSerializer(many=True)
     attachments = serializers.ListSerializer(allow_null=True, required=False, child=serializers.UUIDField())
-    employee_inherit_id = serializers.UUIDField()
-
-    @classmethod
-    def validate_employee_inherit_id(cls, value):
-        if not value:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return str(value)
 
     def validate_attachments(self, attrs):
         user = self.context.get('user', None)
@@ -94,7 +87,7 @@ class AssetToolsReturnCreateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'remark',
-            'employee_inherit_id',
+            'employee_inherit',
             'attachments',
             'products',
             'date_return',

@@ -252,6 +252,7 @@ class AssetToolsProvideUpdateSerializer(AbstractCreateSerializerModel):
 class AssetToolsProductListByProvideIDSerializer(serializers.ModelSerializer):
     product_available = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
+    product_provide_type = serializers.SerializerMethodField()
 
     @classmethod
     def get_product_available(cls, obj):
@@ -267,10 +268,20 @@ class AssetToolsProductListByProvideIDSerializer(serializers.ModelSerializer):
             return obj.product_data
         return {}
 
+    @classmethod
+    def get_product_provide_type(cls, obj):
+        prod_type = 'new'
+        if obj.prod_in_tools:
+            prod_type = 'tool'
+        elif obj.prod_in_fixed:
+            prod_type = 'fixed'
+        return prod_type
+
     class Meta:
         model = AssetToolsProvideProduct
         fields = (
             'product',
+            'product_provide_type',
             'uom',
             'product_remark',
             'product_available',
