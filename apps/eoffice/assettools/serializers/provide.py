@@ -15,6 +15,7 @@ from ..models import AssetToolsProvide, AssetToolsProvideProduct, AssetToolsProv
 class AssetToolsProvideMapProductSerializer(serializers.Serializer):  # noqa
     order = serializers.IntegerField()
     product = serializers.UUIDField(allow_null=True, required=False)
+    product_fixed = serializers.UUIDField(allow_null=True, required=False)
     product_remark = serializers.CharField(allow_null=True, required=False, allow_blank=True)
     uom = serializers.CharField()
     tax = serializers.UUIDField(allow_null=True, required=False)
@@ -32,17 +33,21 @@ def create_products(instance, prod_list):
             employee_inherit=instance.employee_inherit,
             asset_tools_provide=instance,
             order=item['order'],
-            prod_in_tools_id=item['product'] if 'product' in item else None,
+            prod_in_tools_id=item.get('product'),
+            prod_in_fixed_id=item.get('product_fixed'),
             product_remark=item['product_remark'],
             uom=item['uom'],
             quantity=item['quantity'],
-            tax_id=item['tax'] if 'tax' in item else None,
-            price=item['price'] if 'price' in item else 0,
-            subtotal=item['subtotal'] if 'subtotal' in item else 0,
+            tax_id=item.get('tax'),
+            price=item.get('price', 0),
+            subtotal=item.get('subtotal', 0),
         )
         temp.before_save()
         create_lst.append(temp)
-    AssetToolsProvideProduct.objects.bulk_create(create_lst)
+    AssetToolsProvideProduct.objects.filter(asset_tools_provide=instance).delete()
+    if create_lst:
+        AssetToolsProvideProduct.objects.bulk_create(create_lst)
+    return True
 
 
 def handle_attach_file(instance, attachment_result):
@@ -176,24 +181,24 @@ class AssetToolsProvideDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_products(cls, obj):
-        if obj.prod_in_tools:
-            products_list = []
-            for item in list(obj.asset_provide_map_product.all()):
-                products_list.append(
-                    {
-                        'id': item.id,
-                        'product': item.product_data if hasattr(item, 'product_data') else {},
-                        'order': item.order,
-                        'product_remark': item.product_remark,
-                        'uom': item.uom,
-                        'tax': item.tax_data if hasattr(item, 'tax_data') else {},
-                        'quantity': item.quantity,
-                        'price': item.price,
-                        'subtotal': item.subtotal
-                    }
-                )
-            return products_list
-        return []
+        products_list = []
+        for item in list(obj.asset_provide_map_product.all()):
+            temp = {
+                    'id': item.id,
+                    'order': item.order,
+                    'product_remark': item.product_remark,
+                    'uom': item.uom,
+                    'tax': item.tax_data if hasattr(item, 'tax_data') else {},
+                    'quantity': item.quantity,
+                    'price': item.price,
+                    'subtotal': item.subtotal
+                }
+            if item.prod_in_tools:
+                temp['product'] = item.product_data if hasattr(item, 'product_data') else {}
+            elif item.prod_in_fixed:
+                temp['product_fixed'] = item.product_data if hasattr(item, 'product_data') else {}
+            products_list.append(temp)
+        return products_list
 
     @classmethod
     def get_attachments(cls, obj):
@@ -202,12 +207,11 @@ class AssetToolsProvideDetailSerializer(AbstractDetailSerializerModel):
 
 
 class AssetToolsProvideUpdateSerializer(AbstractCreateSerializerModel):
-    employee_inherit_id = serializers.UUIDField()
     products = AssetToolsProvideMapProductSerializer(many=True, required=False)
 
     class Meta:
         model = AssetToolsProvide
-        fields = ('title', 'code', 'employee_inherit_id',
+        fields = ('title', 'code', 'employee_inherit',
                   'remark',
                   'attachments',
                   'products',
@@ -216,12 +220,6 @@ class AssetToolsProvideUpdateSerializer(AbstractCreateSerializerModel):
                   'taxes',
                   'total_amount',
                   'system_status')
-
-    @classmethod
-    def validate_employee_inherit_id(cls, value):
-        if not value:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return value
 
     def validate_attachments(self, attrs):
         user = self.context.get('user', None)
@@ -235,6 +233,7 @@ class AssetToolsProvideUpdateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
         raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         attachments = validated_data.pop('attachments', None)
         products = validated_data.pop('products', None)

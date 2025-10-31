@@ -72,6 +72,9 @@ class FixedAssetListSerializer(AbstractListSerializerModel):
             'id': obj.product.id,
             'code': obj.product.code,
             'title': obj.product.title,
+            'unit_price': obj.unit_price,
+            'quantity': obj.quantity,
+            'measure_unit': obj.measure_unit,
         } if obj.product else {}
 
     @classmethod

@@ -181,22 +181,22 @@ HRM_PAYROLL_TEMPLATE = {
     "app_depend_on": [],
     "permit_mapping": {
         "view": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "create": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "edit": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "delete": {
-            "range": ["1", "2", "3", "4"],
+            "range": ["4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
