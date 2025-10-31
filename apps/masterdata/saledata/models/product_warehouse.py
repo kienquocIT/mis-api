@@ -486,15 +486,15 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
 
         for serial_old in cls.objects.filter(
                 serial_number__in=[serial.get('serial_number', '') for serial in serial_data],
-                product_warehouse_id=product_warehouse_id,
                 product_warehouse__product_id=product_id,
                 serial_status=1,
         ):
             for serial in serial_data:
                 if serial_old.serial_number == serial.get('serial_number', ''):
+                    serial_old.product_warehouse_id = product_warehouse_id
                     serial_old.serial_status = 0
                     serial_old.goods_receipt_id = serial.get('goods_receipt_id', None)
-                    serial_old.save(update_fields=['serial_status', 'goods_receipt'])
+                    serial_old.save(update_fields=['product_warehouse_id', 'serial_status', 'goods_receipt'])
                     # update specific value
                     ProductSpecificIdentificationSerialNumber.update_specific_value(pw_serial=serial_old)
                     break

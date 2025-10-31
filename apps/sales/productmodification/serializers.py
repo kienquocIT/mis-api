@@ -585,80 +585,53 @@ class ProductModifiedListSerializer(serializers.ModelSerializer):
 
 
 class ProductModifiedBeforeListSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()
-    code = serializers.SerializerMethodField()
-    title = serializers.SerializerMethodField()
-    description = serializers.SerializerMethodField()
-    general_traceability_method = serializers.SerializerMethodField()
-    serial_number = serializers.SerializerMethodField()
-    lot_number = serializers.SerializerMethodField()
-    warehouse_data = serializers.SerializerMethodField()
+    product_data = serializers.SerializerMethodField()
 
     class Meta:
         model = PWModified
         fields = (
-            'id',
-            'code',
-            'title',
-            'description',
-            'general_traceability_method',
-            'product_warehouse_id',
-            'product_warehouse_lot_id',
-            'product_warehouse_serial_id',
-            'modified_number',
-            'new_description',
-            'serial_number',
-            'lot_number',
-            'warehouse_data'
+            'product_data',
+            'date_modified'
         )
 
     @classmethod
-    def get_id(cls, obj):
-        return obj.product_warehouse.product_id if obj.product_warehouse else None
-
-    @classmethod
-    def get_code(cls, obj):
-        return obj.product_warehouse.product.code if obj.product_warehouse else None
-
-    @classmethod
-    def get_title(cls, obj):
-        title = ''
+    def get_product_data(cls, obj):
+        product_id = obj.product_warehouse.product_id if obj.product_warehouse else ''
+        product_code = obj.product_warehouse.product.code if obj.product_warehouse else ''
+        product_title = ''
+        product_description = ''
+        product_general_traceability_method = 0
         if obj.product_warehouse:
-            if obj.product_warehouse.product:
-                title = obj.product_warehouse.product.title
-        return title
-
-    @classmethod
-    def get_description(cls, obj):
-        description = ''
-        if obj.product_warehouse:
-            if obj.product_warehouse.product:
-                description = obj.product_warehouse.product.description
-        return description
-
-    @classmethod
-    def get_general_traceability_method(cls, obj):
-        general_traceability_method = None
-        if obj.product_warehouse:
-            if obj.product_warehouse.product:
-                general_traceability_method = obj.product_warehouse.product.general_traceability_method
-        return general_traceability_method
-
-    @classmethod
-    def get_serial_number(cls, obj):
-        if obj.product_warehouse_serial:
-            return obj.product_warehouse_serial.serial_number
-        return ''
-
-    @classmethod
-    def get_lot_number(cls, obj):
-        if obj.product_warehouse_lot:
-            return obj.product_warehouse_lot.lot_number
-        return ''
-
-    @classmethod
-    def get_warehouse_data(cls, obj):
-        return obj.product_warehouse.warehouse_data if obj.product_warehouse else {}
+            prd_wh_prd = obj.product_warehouse.product
+            product_title = prd_wh_prd.title if prd_wh_prd else ''
+            product_description = prd_wh_prd.description if prd_wh_prd else ''
+            product_general_traceability_method = prd_wh_prd.general_traceability_method if prd_wh_prd else 0
+        product_serial_number = obj.product_warehouse_serial.serial_number if obj.product_warehouse_serial else ''
+        product_lot_number = obj.product_warehouse_lot.lot_number if obj.product_warehouse_lot else ''
+        warehouse_data = obj.product_warehouse.warehouse_data if obj.product_warehouse else {}
+        root_product = obj.product_warehouse.product.product_representative_product.first()
+        return {
+            'id': product_id,
+            'code': product_code,
+            'title': product_title,
+            'description': product_description,
+            'general_traceability_method': product_general_traceability_method,
+            'product_warehouse_id': obj.product_warehouse_id,
+            'product_warehouse_lot_id': obj.product_warehouse_lot_id,
+            'product_warehouse_serial_id': obj.product_warehouse_serial_id,
+            'modified_number': obj.modified_number,
+            'new_description': obj.new_description,
+            'serial_number': product_serial_number,
+            'lot_number': product_lot_number,
+            'warehouse_data': warehouse_data,
+            'root_product': {
+                'id': root_product.id,
+                'code': root_product.code,
+                'title': root_product.title,
+                'description': root_product.description,
+                'general_traceability_method': root_product.general_traceability_method,
+            } if root_product else {}
+        }
 
 
 class ProductComponentListSerializer(serializers.ModelSerializer):
