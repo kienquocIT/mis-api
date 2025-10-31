@@ -21,6 +21,18 @@ class DeliHandler:
         return True
 
     @classmethod
+    def create_delivery_product_offset(cls, instance):
+        model = DisperseModel(app_model='delivery.OrderDeliveryProductOffset').get_model()
+        if model and hasattr(model, 'objects'):
+            instance.delivery_po_delivery_product.all().delete()
+            model.objects.bulk_create([model(
+                tenant_id=instance.tenant_id, company_id=instance.company_id,
+                delivery_sub_id=instance.delivery_sub_id, delivery_product_id=instance.id,
+                **offset_data,
+            ) for offset_data in instance.offset_data])
+        return True
+
+    @classmethod
     def create_delivery_product_asset(cls, instance):
         model = DisperseModel(app_model='delivery.OrderDeliveryProductAsset').get_model()
         if model and hasattr(model, 'objects'):
@@ -47,6 +59,12 @@ class DeliHandler:
     @classmethod
     def create_delivery_product_warehouse(cls, instance):
         model = DisperseModel(app_model='delivery.OrderDeliveryProductWarehouse').get_model()
+        delivery_data = []
+        if instance.delivery_data:
+            delivery_data = instance.delivery_data
+        if instance.asset_type == 1 and instance.offset_data:
+            for offset_data in instance.offset_data:
+                delivery_data += offset_data.get('delivery_data', [])
         if model and hasattr(model, 'create'):
             pw_data = [
                 {
@@ -61,7 +79,7 @@ class DeliHandler:
                     'lot_data': deli_data.get('lot_data', {}),
                     'serial_data': deli_data.get('serial_data', {}),
                     'quantity_delivery': deli_data.get('picked_quantity', 0),
-                } for deli_data in instance.delivery_data
+                } for deli_data in delivery_data
             ]
             instance.delivery_pw_delivery_product.all().delete()
             model.create(

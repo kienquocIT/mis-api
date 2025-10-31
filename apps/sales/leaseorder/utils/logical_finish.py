@@ -18,16 +18,13 @@ class LOFinishHandler:
     # PRODUCT INFO
     @classmethod
     def push_product_info(cls, instance):
-        for product_order in instance.lease_order_product_lease_order.filter(
+        for product_order in instance.lease_order_product_offset_lease_order.filter(
                 product__isnull=False, offset__isnull=False
         ):
             if product_order.offset:
-                final_ratio = cls.get_final_uom_ratio(
-                    product_obj=product_order.offset, uom_transaction=product_order.unit_of_measure
-                )
                 product_order.offset.save(**{
                     'update_stock_info': {
-                        'quantity_order': product_order.product_quantity * final_ratio,
+                        'quantity_order': product_order.product_quantity,
                         'system_status': instance.system_status,
                     },
                     'update_fields': ['wait_delivery_amount', 'available_amount']

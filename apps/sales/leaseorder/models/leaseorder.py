@@ -325,14 +325,14 @@ class LeaseOrderProduct(MasterDataAbstractModel):
     )
     product_data = models.JSONField(default=dict, help_text='data json of product')
     asset_type = models.SmallIntegerField(null=True, help_text='choices= ' + str(ASSET_TYPE))
-    offset = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.CASCADE,
-        verbose_name="offset",
-        related_name="lease_order_product_offset",
-        null=True
-    )
-    offset_data = models.JSONField(default=dict, help_text='data json of offset')
+    # offset = models.ForeignKey(
+    #     'saledata.Product',
+    #     on_delete=models.CASCADE,
+    #     verbose_name="offset",
+    #     related_name="lease_order_product_offset",
+    #     null=True
+    # )
+    offset_data = models.JSONField(default=list, help_text='data json of offset')
     tool_data = models.JSONField(default=list, help_text='data json of tool')
     asset_data = models.JSONField(default=list, help_text='data json of asset')
     offset_show = models.TextField(verbose_name="offset show", blank=True)
@@ -416,6 +416,46 @@ class LeaseOrderProduct(MasterDataAbstractModel):
         verbose_name = 'Lease Order Product'
         verbose_name_plural = 'Lease Order Products'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class LeaseOrderProductOffset(MasterDataAbstractModel):
+    lease_order = models.ForeignKey(
+        LeaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="lease order",
+        related_name="lease_order_product_offset_lease_order",
+        null=True
+    )
+    lease_order_product = models.ForeignKey(
+        LeaseOrderProduct,
+        on_delete=models.CASCADE,
+        verbose_name="lease order product",
+        related_name="lease_order_product_offset_lo_product",
+    )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="lease_order_product_offset_product",
+        null=True
+    )
+    product_data = models.JSONField(default=dict, help_text='data json of product')
+    offset = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="offset",
+        related_name="lease_order_product_offset_offset",
+        null=True
+    )
+    offset_data = models.JSONField(default=dict, help_text='data json of offset')
+    product_quantity = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Lease Order Product Offset'
+        verbose_name_plural = 'Lease Order Products Offsets'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
