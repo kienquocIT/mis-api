@@ -103,9 +103,20 @@ class OrderActiveDeliverySerializer:
                 'product_depreciation_end_date': str(cost_product.product_depreciation_end_date),
                 'product_lease_start_date': str(cost_product.product_lease_start_date),
                 'product_lease_end_date': str(cost_product.product_lease_end_date),
-
                 'depreciation_data': cost_product.depreciation_data,
             })
+            if cost_product.asset_type == 1:
+                data_json.update({
+                    'product_cost': cost_product.product_cost_price,
+                    'product_subtotal_cost': cost_product.product_subtotal_price,
+                    'product_convert_into': cost_product.product_convert_into,
+                    'asset_type_data': cost_product.asset_type_data,
+                    'asset_group_manage_data': cost_product.asset_group_manage_data,
+                    'asset_group_using_data': cost_product.asset_group_using_data,
+                    'tool_type_data': cost_product.tool_type_data,
+                    'tool_group_manage_data': cost_product.tool_group_manage_data,
+                    'tool_group_using_data': cost_product.tool_group_using_data,
+                })
         return data_json
 
     def setup_lease_offset_kwargs(self, m2m_obj, result):
@@ -125,25 +136,6 @@ class OrderActiveDeliverySerializer:
                                 cost_product=cost_product
                             ))
                             break
-        #
-        #
-        # if m2m_obj.product and m2m_obj.offset:
-        #     cost_product = m2m_obj.offset.lease_order_cost_offset.filter(
-        #         lease_order=self.order_obj, product=m2m_obj.product
-        #     ).first()
-        #     if cost_product:
-        #         result.update({
-        #             'product_cost': cost_product.product_cost_price,
-        #             'product_subtotal_cost': cost_product.product_subtotal_price,
-        #             'product_convert_into': cost_product.product_convert_into,
-        #             'asset_type_data': cost_product.asset_type_data,
-        #             'asset_group_manage_data': cost_product.asset_group_manage_data,
-        #             'asset_group_using_data': cost_product.asset_group_using_data,
-        #             'tool_type_data': cost_product.tool_type_data,
-        #             'tool_group_manage_data': cost_product.tool_group_manage_data,
-        #             'tool_group_using_data': cost_product.tool_group_using_data,
-        #         })
-        #         result.update(OrderActiveDeliverySerializer.append_depreciation_data(cost_product=cost_product))
         return result
 
     def setup_lease_tool_kwargs(self, m2m_obj, result):

@@ -63,8 +63,11 @@ class DeliHandler:
         if instance.delivery_data:
             delivery_data = instance.delivery_data
         if instance.asset_type == 1 and instance.offset_data:
-            for offset_data in instance.offset_data:
-                delivery_data += offset_data.get('delivery_data', [])
+            for delivery_offset in instance.delivery_po_delivery_product.all():
+                tmp_datas = delivery_offset.delivery_data
+                for tmp_data in tmp_datas:
+                    tmp_data['delivery_offset_id'] = delivery_offset.id
+                delivery_data += tmp_datas
         if model and hasattr(model, 'create'):
             pw_data = [
                 {
@@ -72,6 +75,7 @@ class DeliHandler:
                     'sale_order_data': deli_data.get('sale_order_data', {}),
                     'lease_order_id': deli_data.get('lease_order_id', None),
                     'lease_order_data': deli_data.get('lease_order_data', {}),
+                    'delivery_offset_id': deli_data.get('delivery_offset_id', None),
                     'warehouse_id': deli_data.get('warehouse_id', None),
                     'warehouse_data': deli_data.get('warehouse_data', {}),
                     'uom_id': deli_data.get('uom_id', None),
@@ -102,6 +106,22 @@ class DeliHandler:
             }
             instance.delivery_lot_delivery_product.all().delete()
             instance.delivery_serial_delivery_product.all().delete()
+            if instance.offset_data:
+                for delivery_offset in instance.delivery_po_delivery_product.all():
+                    for delivery in delivery_offset.delivery_data:
+                        model1.create(
+                            **common,
+                            tenant_id=instance.tenant_id,
+                            company_id=instance.company_id,
+                            lot_data=delivery.get('lot_data', [])
+                        )
+                        model2.create(
+                            **common,
+                            tenant_id=instance.tenant_id,
+                            company_id=instance.company_id,
+                            serial_data=delivery.get('serial_data', [])
+                        )
+                return True
             for delivery in instance.delivery_data:
                 model1.create(
                     **common,

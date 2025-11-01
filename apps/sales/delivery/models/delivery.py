@@ -368,6 +368,7 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
                     DeliHandler.push_diagram(instance=self)  # diagram
                     IRForDeliveryHandler.push_to_inventory_report(self)
+                    IRForDeliveryHandler.push_to_inventory_report_lease(self)
                     JEForDeliveryHandler.push_to_journal_entry(self)
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
@@ -527,7 +528,7 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
         # Check and store asset not delivered to field offset_data
         new_obj.offset_data = [
             offset_data for offset_data in new_obj.offset_data
-            if offset_data.get('picked_quantity', 0) <= 0
+            if (offset_data.get('remaining_quantity', 0) - offset_data.get('picked_quantity', 0)) > 0
         ]
         # Check and store asset not delivered to field asset_data
         new_obj.asset_data = [
@@ -539,7 +540,13 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
             tool_data for tool_data in new_obj.tool_data
             if (tool_data.get('remaining_quantity', 0) - tool_data.get('picked_quantity', 0)) > 0
         ]
-        # Update remaining quantity and reset picked quantity
+        # Update remaining quantity for lease
+        for offset_data in new_obj.offset_data:
+            offset_data.update({
+                'remaining_quantity': offset_data.get('remaining_quantity', 0) - offset_data.get('picked_quantity', 0),
+                'picked_quantity': 0,
+                'delivery_data': [],
+            })
         for tool_data in new_obj.tool_data:
             tool_data.update({
                 'remaining_quantity': tool_data.get('remaining_quantity', 0) - tool_data.get('picked_quantity', 0),
@@ -616,6 +623,8 @@ class OrderDeliveryProductOffset(MasterDataAbstractModel):
     product_quantity_time = models.FloatField(default=0)
     remaining_quantity = models.FloatField(default=0, verbose_name='Quantity remain delivery')
     picked_quantity = models.FloatField(default=0, verbose_name='Quantity was delivered')
+    product_cost = models.FloatField(default=0)
+    product_subtotal_cost = models.FloatField(default=0)
     product_depreciation_subtotal = models.FloatField(default=0)
     product_depreciation_price = models.FloatField(default=0)
     product_depreciation_method = models.SmallIntegerField(default=0)  # (0: 'Line', 1: 'Adjustment')
@@ -626,6 +635,14 @@ class OrderDeliveryProductOffset(MasterDataAbstractModel):
     product_lease_start_date = models.DateField(null=True)
     product_lease_end_date = models.DateField(null=True)
     depreciation_data = models.JSONField(default=list, help_text='data json of depreciation')
+    product_convert_into = models.SmallIntegerField(choices=PRODUCT_CONVERT_INTO, null=True)
+    asset_type_data = models.JSONField(default=dict, help_text="data json of asset_type")
+    asset_group_manage_data = models.JSONField(default=dict, help_text="data json of asset_group_manage")
+    asset_group_using_data = models.JSONField(default=list, help_text="data json of asset_group_using")
+    tool_type_data = models.JSONField(default=dict, help_text="data json of tool_type")
+    tool_group_manage_data = models.JSONField(default=dict, help_text="data json of tool_group_manage")
+    tool_group_using_data = models.JSONField(default=list, help_text="data json of tool_group_using")
+
     quantity_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
 
     class Meta:
@@ -766,6 +783,13 @@ class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="delivery product",
         related_name="delivery_pw_delivery_product",
+    )
+    delivery_offset = models.ForeignKey(
+        'delivery.OrderDeliveryProductOffset',
+        on_delete=models.CASCADE,
+        verbose_name="delivery offset",
+        related_name="delivery_pw_delivery_offset",
+        null=True,
     )
     sale_order = models.ForeignKey(
         'saleorder.SaleOrder',
