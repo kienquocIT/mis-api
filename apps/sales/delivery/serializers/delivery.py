@@ -687,7 +687,6 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                 'product_id': deli_product.product_id,
                 'product_data': deli_product.product_data,
                 'asset_type': deli_product.asset_type,
-                'offset_id': deli_product.offset_id,
                 'offset_data': deli_product.offset_data,
                 'tool_data': [{
                     "product_id": delivery_tool.product_id,

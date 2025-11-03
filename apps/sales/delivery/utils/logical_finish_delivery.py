@@ -403,6 +403,7 @@ class DeliFinishAssetToolHandler:
             asset_obj = model_asset.objects.create(
                 tenant_id=delivery_offset.tenant_id,
                 company_id=delivery_offset.company_id,
+                employee_inherit_id=delivery_offset.employee_created_id,
                 classification_id=delivery_offset.asset_type_data.get('id', None),
                 manage_department_id=delivery_offset.asset_group_manage_data.get('id', None),
                 product_id=delivery_offset.offset_id,
@@ -526,6 +527,7 @@ class DeliFinishAssetToolHandler:
         tool_obj = model_tool.objects.create(
             tenant_id=delivery_offset.tenant_id,
             company_id=delivery_offset.company_id,
+            employee_inherit_id=delivery_offset.employee_created_id,
             classification_id=delivery_offset.tool_type_data.get('id', None),
             manage_department_id=delivery_offset.tool_group_manage_data.get('id', None),
             product_id=delivery_offset.offset_id,
@@ -591,7 +593,7 @@ class DeliFinishAssetToolHandler:
 
                 "depreciation_data": delivery_offset.depreciation_data,
 
-                "quantity_remain_recovery": delivery_offset.quantity_remain_recovery,
+                "quantity_remain_recovery": delivery_offset.picked_quantity,
             }
             return [tool_json]
         return []

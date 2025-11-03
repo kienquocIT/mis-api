@@ -27,6 +27,7 @@ class DeliHandler:
             instance.delivery_po_delivery_product.all().delete()
             model.objects.bulk_create([model(
                 tenant_id=instance.tenant_id, company_id=instance.company_id,
+                employee_created_id=instance.delivery_sub.employee_inherit_id if instance.delivery_sub else None,
                 delivery_sub_id=instance.delivery_sub_id, delivery_product_id=instance.id,
                 **offset_data,
             ) for offset_data in instance.offset_data])
