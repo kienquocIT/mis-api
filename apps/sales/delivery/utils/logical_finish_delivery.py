@@ -99,7 +99,7 @@ class DeliFinishHandler:
     def update_pw(cls, instance, deli_product, config):
         if deli_product.product:
             if deli_product.offset_data:
-                for deli_offset in deli_product.delivery_po_delivery_product.all():
+                for deli_offset in deli_product.delivery_po_delivery_product.filter(offset__isnull=False):
                     for data_deli in deli_offset.delivery_data:
                         if all(key in data_deli for key in ('warehouse_id', 'uom_id', 'picked_quantity')):
                             product_warehouse = deli_offset.offset.product_warehouse_product.filter(
@@ -203,15 +203,14 @@ class DeliFinishHandler:
         for deli_product in instance.delivery_product_delivery_sub.all():
             if deli_product.product and deli_product.uom:
                 if deli_product.offset_data:
-                    for deli_offset in deli_product.delivery_po_delivery_product.all():
-                        if deli_offset.offset:
-                            deli_offset.offset.save(**{
-                                'update_stock_info': {
-                                    'quantity_delivery': deli_product.picked_quantity,
-                                    'system_status': 3,
-                                },
-                                'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
-                            })
+                    for deli_offset in deli_product.delivery_po_delivery_product.filter(offset__isnull=False):
+                        deli_offset.offset.save(**{
+                            'update_stock_info': {
+                                'quantity_delivery': deli_product.picked_quantity,
+                                'system_status': 3,
+                            },
+                            'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
+                        })
                     return True
                 final_ratio = DeliFinishSubHandler.get_final_uom_ratio(
                     product_obj=deli_product.product, uom_transaction=deli_product.uom
@@ -295,19 +294,8 @@ class DeliFinishHandler:
     def get_delivery_cost(cls, deli_product, sale_order=None, lease_order=None):
         actual_value = 0
         target_obj = deli_product.product
-        if lease_order:
-            if deli_product.offset_data:
-                for deli_offset in deli_product.delivery_po_delivery_product.all():
-                    if deli_offset.offset:
-                        for data_deli in deli_offset.delivery_data:
-                            if all(key in data_deli for key in ('warehouse_id', 'picked_quantity')):
-                                cost = DeliFinishHandler.get_cost_by_warehouse(
-                                    product_obj=deli_offset.offset,
-                                    warehouse_id=data_deli.get('warehouse_id', None),
-                                    sale_order_id=data_deli.get('sale_order_id', None),
-                                )
-                                actual_value += cost * data_deli['picked_quantity']
-                return actual_value
+        if lease_order and deli_product.offset_data:
+            return DeliFinishHandler.get_delivery_cost_lease(deli_product=deli_product)
         if target_obj:
             spec_id = deli_product.product_data.get('specific_data', {}).get('id', None)
             if spec_id:
@@ -330,6 +318,20 @@ class DeliFinishHandler:
         lo_cost = deli_product.product.lease_order_cost_product.filter(lease_order=lease_order).first()
         if lo_cost:
             actual_value = lo_cost.product_subtotal_price * deli_product.picked_quantity
+        return actual_value
+
+    @classmethod
+    def get_delivery_cost_lease(cls, deli_product):
+        actual_value = 0
+        for deli_offset in deli_product.delivery_po_delivery_product.filter(offset__isnull=False):
+            for data_deli in deli_offset.delivery_data:
+                if all(key in data_deli for key in ('warehouse_id', 'picked_quantity')):
+                    cost = DeliFinishHandler.get_cost_by_warehouse(
+                        product_obj=deli_offset.offset,
+                        warehouse_id=data_deli.get('warehouse_id', None),
+                        sale_order_id=data_deli.get('sale_order_id', None),
+                    )
+                    actual_value += cost * data_deli['picked_quantity']
         return actual_value
 
     @classmethod
@@ -372,8 +374,8 @@ class DeliFinishAssetToolHandler:
         if all(hasattr(model, 'objects') for model in [model_asset, model_asset_m2m]):
             for delivery_product in instance.delivery_product_delivery_sub.all():
                 asset_data = []
-                for delivery_offset in delivery_product.delivery_po_delivery_product.all():
-                    if delivery_offset.product_convert_into == 2 and delivery_offset.offset:
+                for delivery_offset in delivery_product.delivery_po_delivery_product.filter(offset__isnull=False):
+                    if delivery_offset.product_convert_into == 2:
                         for delivery_warehouse in delivery_offset.delivery_pw_delivery_offset.all():
                             asset_data += DeliFinishAssetToolHandler.create_obj_and_set_asset_data(
                                 model_asset=model_asset,
@@ -491,28 +493,38 @@ class DeliFinishAssetToolHandler:
         model_tool_m2m = DisperseModel(app_model='asset.instrumenttoolusedepartment').get_model()
         if all(hasattr(model, 'objects') for model in [model_tool, model_tool_m2m]):
             for delivery_product in instance.delivery_product_delivery_sub.all():
-                for delivery_offset in delivery_product.delivery_po_delivery_product.all():
-                    if delivery_offset.product_convert_into == 1 and delivery_offset.offset:
-                        price_list = []
-                        quantity = 0
-                        for delivery_warehouse in delivery_offset.delivery_pw_delivery_offset.all():
-                            cost = DeliFinishHandler.get_cost_by_warehouse(
-                                product_obj=delivery_offset.offset,
-                                warehouse_id=delivery_warehouse.warehouse_id,
-                                sale_order_id=None,
-                            )
-                            if cost not in price_list:
-                                price_list.append(cost)
-                            quantity += delivery_warehouse.quantity_delivery
-                        tool_data = DeliFinishAssetToolHandler.create_obj_and_set_tool_data(
-                            model_tool=model_tool,
-                            model_tool_m2m=model_tool_m2m,
-                            delivery_offset=delivery_offset,
-                            cost=(sum(price_list) / len(price_list)),
-                            quantity=quantity
-                        )
-                        delivery_product.tool_data = tool_data
-                        delivery_product.save(update_fields=['tool_data'])
+                for delivery_offset in delivery_product.delivery_po_delivery_product.filter(offset__isnull=False):
+                    DeliFinishAssetToolHandler.create_new_tool(
+                        model_tool=model_tool,
+                        model_tool_m2m=model_tool_m2m,
+                        delivery_product=delivery_product,
+                        delivery_offset=delivery_offset,
+                    )
+        return True
+
+    @classmethod
+    def create_new_tool(cls, model_tool, model_tool_m2m, delivery_product, delivery_offset):
+        if delivery_offset.product_convert_into == 1:
+            price_list = []
+            quantity = 0
+            for delivery_warehouse in delivery_offset.delivery_pw_delivery_offset.all():
+                cost = DeliFinishHandler.get_cost_by_warehouse(
+                    product_obj=delivery_offset.offset,
+                    warehouse_id=delivery_warehouse.warehouse_id,
+                    sale_order_id=None,
+                )
+                if cost not in price_list:
+                    price_list.append(cost)
+                quantity += delivery_warehouse.quantity_delivery
+            tool_data = DeliFinishAssetToolHandler.create_obj_and_set_tool_data(
+                model_tool=model_tool,
+                model_tool_m2m=model_tool_m2m,
+                delivery_offset=delivery_offset,
+                cost=(sum(price_list) / len(price_list)),
+                quantity=quantity
+            )
+            delivery_product.tool_data = tool_data
+            delivery_product.save(update_fields=['tool_data'])
         return True
 
     @classmethod
