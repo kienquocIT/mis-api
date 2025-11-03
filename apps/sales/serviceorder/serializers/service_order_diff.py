@@ -12,12 +12,11 @@ def safe_value(value):
     """Convert DeepDiff special values to safe JSON types."""
     if isinstance(value, NotPresent):
         return None
-    elif isinstance(value, (list, tuple)):
+    if isinstance(value, (list, tuple)):
         return [safe_value(v) for v in value]
-    elif isinstance(value, dict):
+    if isinstance(value, dict):
         return {k: safe_value(v) for k, v in value.items()}
-    else:
-        return value
+    return value
 
 
 class ServiceOrderDiffSerializer(serializers.Serializer):
