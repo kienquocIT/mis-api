@@ -213,6 +213,7 @@ class ReportStockLog(DataAbstractModel):
             if item['product'].valuation_method == 2:
                 if item['stock_type'] == -1:
                     # thực tế đích danh sẽ lấy giá xuất theo từng serial
+                    print(item['product'].id, (item.get('serial_data') or {}).get('serial_number'))
                     item['cost'] = ProductSpecificIdentificationSerialNumber.get_specific_value(
                         product=item['product'],
                         serial_number=(item.get('serial_data') or {}).get('serial_number')

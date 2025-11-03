@@ -3653,3 +3653,62 @@ ApplicationProperty_data = {
     # saledata
     **AppProp_SaleData_ServiceOrder_data
 }
+
+AppProp_HRM_PayrollTemplate_data = {
+    '552cc05e-12df-4d63-8fb8-646fae8547ab': {
+        'application_id': 'fc16cfb2-da09-4735-aba5-c476489b4d0e',
+        'title': 'Name',
+        'code': 'title',
+        'type': 1,
+        'is_print': True,
+    },
+    "a2a5d463-5a58-4fc7-9b21-a0d2478bdf22": {
+        'application_id': 'fc16cfb2-da09-4735-aba5-c476489b4d0e',
+        'title': 'Employee Group',
+        'code': 'department_applied',
+        'type': 1,
+        'is_print': False,
+    },
+    "d634c59a-ca1c-43f8-90a9-965f402a9e56": {
+        'application_id': 'fc16cfb2-da09-4735-aba5-c476489b4d0e',
+        'title': 'Remarks',
+        'code': 'remarks',
+        'type': 1,
+        'is_print': True,
+    },
+    "edc6e201-9bfe-41b4-b250-fa95775494b3": {
+        'application_id': 'fc16cfb2-da09-4735-aba5-c476489b4d0e',
+        'title': 'Employee Group - name',
+        'code': 'department_applied_data___name',
+        'type': 1,
+        'is_print': True,
+    },
+    'e113fba3-4658-4701-92e9-505d0c6f6607': {
+        'application_id': 'fc16cfb2-da09-4735-aba5-c476489b4d0e',
+        'title': 'Remarks',
+        'code': 'remarks',
+        'type': 1,
+        'is_print': True,
+    },
+    '97c93e65-129a-462a-9840-f4486c56c463': {
+        'application_id': 'fc16cfb2-da09-4735-aba5-c476489b4d0e',
+        'title': 'Template Attribute',
+        'code': 'attribute_list',
+        'type': 1,
+        'is_print': False,
+    },
+    '7e848834-09b3-4720-ad4e-4a70e4b1dda9': {
+        'application_id': 'fc16cfb2-da09-4735-aba5-c476489b4d0e',
+        'title': 'Template Attribute name',
+        'code': 'attribute_list___name',
+        'type': 1,
+        'is_print': True,
+    },
+    'c5588f23-9d69-42b2-8cd8-cad2f607ad7f': {
+        'application_id': 'fc16cfb2-da09-4735-aba5-c476489b4d0e',
+        'title': 'Template Attribute code',
+        'code': 'attribute_list___code',
+        'type': 1,
+        'is_print': True,
+    },
+}

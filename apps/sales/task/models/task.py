@@ -231,13 +231,12 @@ class OpportunityTask(DataAbstractModel):
                 "title": str(self.opportunity.title),
                 "code": str(self.opportunity.code),
             }
-
-        self.project_data = {
-            "id": str(self.project_id),
-            "title": str(self.project.title),
-            "code": str(self.project.code),
-        } if self.project else {}
-        # if self.task_status.is_finish or self.percent_completed == 100:
+        if self.project:
+            self.project_data = {
+                "id": str(self.project_id),
+                "title": str(self.project.title),
+                "code": str(self.project.code),
+            }
         update_files_is_approved(
             TaskAttachmentFile.objects.filter(
                 task=self, attachment__is_approved=False

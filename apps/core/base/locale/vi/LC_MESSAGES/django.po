@@ -128,3 +128,7 @@ msgstr "Công văn phê duyệt"
 #
 msgid "APP_Overtime request"
 msgstr "Đăng ký làm ngoài giờ"
+
+#
+msgid "APP_Payroll template"
+msgstr "Biểu mẫu bảng lương"

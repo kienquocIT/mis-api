@@ -1777,3 +1777,7 @@ msgstr "Không thể tìm thấy bất kì phiếu Giao hàng nào đang diễn 
 #
 msgid "You are not allowed to select stage manually."
 msgstr "Bạn không được phép chọn trạng thái thủ công."
+
+#
+msgid "Payroll template"
+msgstr "Biểu mẫu bảng lương"
