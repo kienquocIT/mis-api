@@ -1,6 +1,6 @@
+from deepdiff import DeepDiff
 from deepdiff.helper import NotPresent
 from rest_framework import serializers
-from deepdiff import DeepDiff
 
 
 __all__ = [
@@ -16,7 +16,8 @@ def safe_value(value):
         return [safe_value(v) for v in value]
     elif isinstance(value, dict):
         return {k: safe_value(v) for k, v in value.items()}
-    return value
+    else:
+        return value
 
 
 class ServiceOrderDiffSerializer(serializers.Serializer):

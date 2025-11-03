@@ -2,13 +2,10 @@ from json import dumps, loads
 
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.response import Response
-from rest_framework import status
 from apps.sales.serviceorder.models import (
     ServiceOrder, ServiceOrderServiceDetail, ServiceOrderWorkOrder, ServiceOrderWorkOrderTask
 )
 from apps.core.log.models import DocumentLog
-from apps.sales.serviceorder.utils.logical_finish import ServiceOrderFinishHandler
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin, \
     ResponseController
 from apps.sales.serviceorder.serializers import (
@@ -16,7 +13,6 @@ from apps.sales.serviceorder.serializers import (
     ServiceOrderCreateSerializer, ServiceOrderUpdateSerializer, ServiceOrderDetailDashboardSerializer,
     SVODeliveryWorkOrderDetailSerializer, ServiceOrderDiffSerializer,
 )
-
 
 __all__ = [
     'ServiceOrderList',
@@ -181,11 +177,13 @@ class ServiceOrderDiff(BaseRetrieveMixin):
         Get the snapshot of a ServiceOrder instance.
         """
         service_order_id_str = str(service_order_instance.id).replace('-', '')
-        service_order_doc_log = DocumentLog.objects.filter(app_model_code='serviceorder', app_id=service_order_id_str).first()
+        service_order_doc_log = DocumentLog.objects.filter(app_model_code='serviceorder',
+                                                           app_id=service_order_id_str).first()
         if service_order_doc_log:
             return service_order_doc_log.snapshot
+        return None
 
-    def _get_service_order_by_id(self, pk: str):
+    def _get_service_order_by_id(self, so_pk: str):
         """
         Get a ServiceOrder instance by ID with proper permission checking.
         """
@@ -193,7 +191,7 @@ class ServiceOrderDiff(BaseRetrieveMixin):
 
         try:
             obj = self.get_queryset().get(
-                pk=pk,
+                pk=so_pk,
                 **field_hidden
             )
             # Check object-level permissions
@@ -204,7 +202,8 @@ class ServiceOrderDiff(BaseRetrieveMixin):
 
     @swagger_auto_schema(
         operation_summary='Service Order Diff - Compare versions',
-        operation_description='Get detailed diff between current state and previous version of a ServiceOrder using DeepDiff',
+        operation_description='Get detailed diff between current state and'
+                              ' previous version of a ServiceOrder using DeepDiff',
     )
     @mask_view(
         login_require=True, auth_require=True,
