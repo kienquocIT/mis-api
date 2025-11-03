@@ -101,8 +101,8 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
                     ServiceOrderFinishHandler.re_processing_folder_task_files(instance=self)
         # hit DB
         AdvanceHandler.push_opportunity_log(self)
-        ServiceOrderFinishHandler.save_log_snapshot(instance=self)
         super().save(*args, **kwargs)
+        ServiceOrderFinishHandler.save_log_snapshot(instance=self)
 
     class Meta:
         verbose_name = 'Service Order'
@@ -336,6 +336,7 @@ class ServiceOrderPayment(MasterDataAbstractModel):
 
 
 class ServiceOrderPaymentDetail(SimpleAbstractModel):
+    order = models.IntegerField(default=0)
     service_order_payment = models.ForeignKey(
         'ServiceOrderPayment',
         on_delete=models.CASCADE,
@@ -363,12 +364,13 @@ class ServiceOrderPaymentDetail(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Service order payment detail'
         verbose_name_plural = 'Service order detail'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
 
 class ServiceOrderPaymentReconcile(SimpleAbstractModel):
+    order = models.IntegerField(default=0)
     advance_payment_detail = models.ForeignKey(
         'ServiceOrderPaymentDetail',
         on_delete=models.CASCADE,
@@ -392,7 +394,7 @@ class ServiceOrderPaymentReconcile(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Service order payment reconcile'
         verbose_name_plural = 'Service order payment reconciles'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
