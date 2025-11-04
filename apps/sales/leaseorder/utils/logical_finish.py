@@ -1,4 +1,3 @@
-from apps.core.company.utils import CompanyHandler
 from apps.masterdata.saledata.models import AccountActivity
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.sales.delivery.models import OrderPickingSub, OrderPickingProduct
