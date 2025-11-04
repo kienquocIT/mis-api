@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from apps.masterdata.saledata.models import UnitOfMeasure, ProductWareHouse, ProductWareHouseLot
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.shared import DisperseModel
@@ -429,7 +431,8 @@ class DeliFinishAssetToolHandler:
             )
             if asset_obj:
                 asset_obj.system_status = 3
-                asset_obj.save(update_fields=['system_status'])
+                asset_obj.date_approved = timezone.now()
+                asset_obj.save(update_fields=['system_status', 'date_approved'])
                 # m2m
                 model_asset_m2m.objects.bulk_create([
                     model_asset_m2m(fixed_asset=asset_obj, use_department_id=group.get('id', None))
@@ -562,7 +565,8 @@ class DeliFinishAssetToolHandler:
         )
         if tool_obj:
             tool_obj.system_status = 3
-            tool_obj.save(update_fields=['system_status'])
+            tool_obj.date_approved = timezone.now()
+            tool_obj.save(update_fields=['system_status', 'date_approved'])
             # m2m
             model_tool_m2m.objects.bulk_create([
                 model_tool_m2m(instrument_tool=tool_obj, use_department_id=group.get('id', None))
