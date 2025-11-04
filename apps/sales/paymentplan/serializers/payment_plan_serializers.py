@@ -10,6 +10,7 @@ class PaymentPlanListSerializer(AbstractListSerializerModel):
         fields = (
             'id',
             'sale_order_data',
+            'lease_order_data',
             'purchase_order_data',
             'customer_data',
             'supplier_data',

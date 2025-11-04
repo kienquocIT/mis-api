@@ -296,6 +296,7 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
                     LOFinishHandler.push_to_report_lease(instance=self)
 
                     LOFinishHandler.push_final_acceptance_lo(instance=self)  # final acceptance
+                    LOFinishHandler.push_to_payment_plan(instance=self)  # payment plan
                     LOFinishHandler.set_true_file_is_approved(instance=self)  # file
                     LOFinishHandler.update_recurrence_task(instance=self)  # recurrence
 
