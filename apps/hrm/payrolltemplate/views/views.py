@@ -5,7 +5,10 @@ from apps.shared.extends.response import cus_response
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, \
     BaseDestroyMixin, HttpMsg
 from ..models import AttributeComponent
-from ..serializers import PayrollComponentListSerializers, PayrollComponentCreateSerializers
+from ..serializers import (
+    PayrollComponentListSerializers, PayrollComponentCreateSerializers,
+    PayrollComponentDetailSerializer, PayrollComponentUpdateSerializer,
+)
 
 
 def check_has_perm():
@@ -48,8 +51,8 @@ class PayrollComponentList(BaseListMixin, BaseCreateMixin):
 
 class PayrollComponentDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = AttributeComponent.objects
-    serializer_detail = PayrollComponentListSerializers
-    serializer_update = PayrollComponentListSerializers
+    serializer_detail = PayrollComponentDetailSerializer
+    serializer_update = PayrollComponentUpdateSerializer
     retrieve_hidden_field = ['company_id']
 
     @swagger_auto_schema(
@@ -66,7 +69,7 @@ class PayrollComponentDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixi
     @swagger_auto_schema(
         operation_summary="Payroll component update",
         operation_description="Payroll component update by ID",
-        request_body=PayrollComponentCreateSerializers,
+        request_body=PayrollComponentUpdateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=True,
