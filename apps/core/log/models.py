@@ -523,4 +523,4 @@ class DocumentLog(models.Model):
     #document data
     snapshot = models.JSONField(help_text='The data of document')
     app_model_code = models.CharField(max_length=100, null=True)
-    app_id = models.TextField(blank=True)
+    app_id = models.UUIDField(blank=True, default=uuid4, null=True)

@@ -176,9 +176,8 @@ class ServiceOrderDiff(BaseRetrieveMixin):
         """
         Get the snapshot of a ServiceOrder instance.
         """
-        service_order_id_str = str(service_order_instance.id).replace('-', '')
         service_order_doc_log = DocumentLog.objects.filter(app_model_code='serviceorder',
-                                                           app_id=service_order_id_str).first()
+                                                           app_id=service_order_instance.id).first()
         if service_order_doc_log:
             return service_order_doc_log.snapshot
         return None

@@ -40,7 +40,7 @@ class ServiceOrderFinishHandler:
         service_order_detail_json = cls.get_service_order_detail_json(instance)
         doc_log, _created = DocumentLog.objects.get_or_create(
             app_model_code='serviceorder',
-            app_id=str(instance.id).replace('-', ''),
+            app_id=instance.id,
             defaults={
                 'tenant': instance.tenant,
                 'company': instance.company,
@@ -50,7 +50,7 @@ class ServiceOrderFinishHandler:
                     cls=CustomizeEncoder
                 )),
                 'app_model_code': 'serviceorder',
-                'app_id': str(instance.id).replace('-', '')
+                'app_id': instance.id
             }
         )
         if not _created:
