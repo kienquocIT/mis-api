@@ -812,7 +812,7 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
 
 class BaseListMixin(BaseMixin):
     LIST_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id']  # DataAbstract
-    LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id']  # MasterData
+    LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id', 'is_delete']  # MasterData
 
     @classmethod
     def list_empty(cls) -> Response:
