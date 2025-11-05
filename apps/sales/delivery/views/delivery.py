@@ -142,6 +142,7 @@ class OrderDeliverySubRecoveryList(BaseListMixin):
     filterset_fields = {
         'order_delivery__sale_order_id': ['exact'],
         'order_delivery__lease_order_id': ['exact'],
+        'system_status': ['exact', 'in'],
     }
     serializer_list = OrderDeliverySubRecoveryListSerializer
     list_hidden_field = ['tenant_id', 'company_id']

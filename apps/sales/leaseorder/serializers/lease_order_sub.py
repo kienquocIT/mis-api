@@ -11,7 +11,8 @@ from apps.sales.asset.models import FixedAsset, InstrumentTool
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation, QuotationAppConfig
 from apps.sales.leaseorder.models import LeaseOrderProduct, LeaseOrderCost, LeaseOrderExpense, LeaseOrderIndicator, \
-    LeaseOrderPaymentStage, LeaseOrderLogistic, LeaseOrderProductAsset, LeaseOrderInvoice, LeaseOrderProductTool
+    LeaseOrderPaymentStage, LeaseOrderLogistic, LeaseOrderProductAsset, LeaseOrderInvoice, LeaseOrderProductTool, \
+    LeaseOrderProductOffset
 from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.shared import PriceMsg, SaleMsg, DisperseModel, BaseMsg
 
@@ -28,6 +29,13 @@ class LeaseOrderCommonCreate:
             ) for sale_order_product in validated_data['lease_products_data']]
         )
         for created in created_list:
+            LeaseOrderProductOffset.objects.bulk_create(
+                [LeaseOrderProductOffset(
+                    lease_order=created.lease_order, lease_order_product=created,
+                    tenant_id=instance.tenant_id, company_id=instance.company_id,
+                    **offset_data,
+                ) for offset_data in created.offset_data]
+            )
             LeaseOrderProductTool.objects.bulk_create(
                 [LeaseOrderProductTool(
                     lease_order=created.lease_order, lease_order_product=created,
@@ -387,6 +395,29 @@ class LeaseOrderRuleValidate:
 
 
 # SUB SERIALIZERS
+class LeaseOrderProductOffsetSerializer(serializers.ModelSerializer):
+    product_id = serializers.UUIDField(required=True, allow_null=False)
+    offset_id = serializers.UUIDField(required=True, allow_null=False)
+
+    class Meta:
+        model = LeaseOrderProductOffset
+        fields = (
+            'product_id',
+            'product_data',
+            'offset_id',
+            'offset_data',
+            'product_quantity',
+        )
+
+    @classmethod
+    def validate_product_id(cls, value):
+        return LeaseOrderCommonValidate().validate_product_id(value=value)
+
+    @classmethod
+    def validate_offset_id(cls, value):
+        return LeaseOrderCommonValidate().validate_product_id(value=value)
+
+
 class LeaseOrderProductToolSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=True, allow_null=False)
     tool_id = serializers.UUIDField(required=True, allow_null=False)
@@ -436,7 +467,7 @@ class LeaseOrderProductAssetSerializer(serializers.ModelSerializer):
 class LeaseOrderProductSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=True, allow_null=False)
     asset_type = serializers.IntegerField(required=True)
-    offset_id = serializers.UUIDField(required=False, allow_null=True)
+    # offset_id = serializers.UUIDField(required=False, allow_null=True)
     unit_of_measure_id = serializers.UUIDField(error_messages={
         'required': SaleMsg.PRODUCT_UOM_REQUIRED,
     })
@@ -446,6 +477,10 @@ class LeaseOrderProductSerializer(serializers.ModelSerializer):
     tax_id = serializers.UUIDField(required=False, allow_null=True)
     promotion_id = serializers.UUIDField(required=False, allow_null=True)
     shipping_id = serializers.UUIDField(required=False, allow_null=True)
+    offset_data = LeaseOrderProductOffsetSerializer(
+        many=True,
+        required=False
+    )
     tool_data = LeaseOrderProductToolSerializer(
         many=True,
         required=False
@@ -461,7 +496,7 @@ class LeaseOrderProductSerializer(serializers.ModelSerializer):
             'product_id',
             'product_data',
             'asset_type',
-            'offset_id',
+            # 'offset_id',
             'offset_data',
             'tool_data',
             'asset_data',

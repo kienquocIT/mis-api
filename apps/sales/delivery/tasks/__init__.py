@@ -12,6 +12,7 @@ from apps.sales.delivery.models import (
     OrderDelivery, OrderDeliveryProduct, OrderDeliverySub,
     OrderDeliveryProductAsset, OrderDeliveryProductTool
 )
+from apps.sales.delivery.models.delivery import OrderDeliveryProductOffset
 from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
 
@@ -102,18 +103,10 @@ class OrderActiveDeliverySerializer:
                 'product_depreciation_end_date': str(cost_product.product_depreciation_end_date),
                 'product_lease_start_date': str(cost_product.product_lease_start_date),
                 'product_lease_end_date': str(cost_product.product_lease_end_date),
-
                 'depreciation_data': cost_product.depreciation_data,
             })
-        return data_json
-
-    def setup_lease_offset_kwargs(self, m2m_obj, result):
-        if m2m_obj.product and m2m_obj.offset:
-            cost_product = m2m_obj.offset.lease_order_cost_offset.filter(
-                lease_order=self.order_obj, product=m2m_obj.product
-            ).first()
-            if cost_product:
-                result.update({
+            if cost_product.asset_type == 1:
+                data_json.update({
                     'product_cost': cost_product.product_cost_price,
                     'product_subtotal_cost': cost_product.product_subtotal_price,
                     'product_convert_into': cost_product.product_convert_into,
@@ -124,7 +117,25 @@ class OrderActiveDeliverySerializer:
                     'tool_group_manage_data': cost_product.tool_group_manage_data,
                     'tool_group_using_data': cost_product.tool_group_using_data,
                 })
-                result.update(OrderActiveDeliverySerializer.append_depreciation_data(cost_product=cost_product))
+        return data_json
+
+    def setup_lease_offset_kwargs(self, m2m_obj, result):
+        if m2m_obj.product and m2m_obj.offset_data:
+            for m2m_obj_offset in m2m_obj.lease_order_product_offset_lo_product.all():
+                cost_product = m2m_obj_offset.offset.lease_order_cost_offset.filter(
+                    lease_order=self.order_obj, product=m2m_obj_offset.product
+                ).first()
+                if cost_product:
+                    for offset_data in result.get('offset_data', []):
+                        offset_data.update({'uom_time_id': str(m2m_obj.uom_time_id)})
+                        offset_data.update({'uom_time_data': m2m_obj.uom_time_data})
+                        offset_data.update({'product_quantity_time': m2m_obj.product_quantity_time})
+                        offset_data.update({'remaining_quantity': offset_data.get("product_quantity", 0)})
+                        if offset_data.get('offset_id', None) == str(m2m_obj_offset.offset_id):
+                            offset_data.update(OrderActiveDeliverySerializer.append_depreciation_data(
+                                cost_product=cost_product
+                            ))
+                            break
         return result
 
     def setup_lease_tool_kwargs(self, m2m_obj, result):
@@ -175,7 +186,6 @@ class OrderActiveDeliverySerializer:
         if m2m_obj._meta.label_lower == "leaseorder.leaseorderproduct":
             result.update({
                 'asset_type': m2m_obj.asset_type,
-                'offset': m2m_obj.offset,
                 'offset_data': m2m_obj.offset_data,
                 'tool_data': m2m_obj.tool_data,
                 'asset_data': m2m_obj.asset_data,
@@ -215,12 +225,14 @@ class OrderActiveDeliverySerializer:
                 stock_ready = m2m_obj.product_quantity
 
             kwargs = self.setup_product_kwargs(m2m_obj=m2m_obj)
-
+            product_specific = None
+            if self.order_obj.__class__.get_model_code() == "saleorder.saleorder":
+                product_specific = m2m_obj.product_specific if m2m_obj.product_specific else None
             obj_tmp = OrderDeliveryProduct(
                 delivery_sub_id=sub_id,
                 product=m2m_obj.product,
                 product_data=m2m_obj.product_data,
-                product_specific=m2m_obj.product_specific if m2m_obj.product_specific else None,
+                product_specific=product_specific,
                 uom=m2m_obj.unit_of_measure,
                 uom_data=m2m_obj.uom_data,
                 tax=m2m_obj.tax,
@@ -513,12 +525,35 @@ class OrderActiveDeliverySerializer:
             condition = True
         return condition
 
+    def create_lease_subs(self, obj_delivery, sub_id, delivery_quantity, m2m_objs):
+        sub_obj = self._create_order_delivery_sub(
+            obj_delivery=obj_delivery,
+            sub_id=sub_id,
+            delivery_quantity=delivery_quantity
+        )
+        obj_delivery.sub = sub_obj
+        obj_delivery.save(update_fields=['sub'])
+        delivery_product_list = OrderDeliveryProduct.objects.bulk_create(m2m_objs)
+        for delivery_product in delivery_product_list:
+            OrderDeliveryProductOffset.objects.bulk_create([OrderDeliveryProductOffset(
+                tenant_id=delivery_product.tenant_id, company_id=delivery_product.company_id,
+                delivery_product=delivery_product, **offset_data,
+            ) for offset_data in delivery_product.offset_data])
+            OrderDeliveryProductTool.objects.bulk_create([OrderDeliveryProductTool(
+                tenant_id=delivery_product.tenant_id, company_id=delivery_product.company_id,
+                delivery_product=delivery_product, **tool_data,
+            ) for tool_data in delivery_product.tool_data])
+            OrderDeliveryProductAsset.objects.bulk_create([OrderDeliveryProductAsset(
+                tenant_id=delivery_product.tenant_id, company_id=delivery_product.company_id,
+                delivery_product=delivery_product, **asset_data,
+            ) for asset_data in delivery_product.asset_data])
+        return sub_obj
+
     def active(self, app_code) -> (bool, str):
         condition = self.check_condition(app_code=app_code)
         try:
             with transaction.atomic():
                 if condition:
-                    # sub_id, delivery_quantity, _y = self.__prepare_order_delivery_product()
                     sub_id, delivery_quantity, _y = self.__prepare_products()
                     if self.config_obj.is_picking is True and app_code == "saleorder.saleorder":
                         if self.check_has_prod_services != len(self.order_products):
@@ -527,24 +562,9 @@ class OrderActiveDeliverySerializer:
                             self._create_order_picking()
                     obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
                     # setup SUB
-                    sub_obj = self._create_order_delivery_sub(
-                        obj_delivery=obj_delivery,
-                        sub_id=sub_id,
-                        delivery_quantity=delivery_quantity
+                    sub_obj = self.create_lease_subs(
+                        obj_delivery=obj_delivery, sub_id=sub_id, delivery_quantity=delivery_quantity, m2m_objs=_y
                     )
-                    obj_delivery.sub = sub_obj
-                    obj_delivery.save(update_fields=['sub'])
-                    delivery_product_list = OrderDeliveryProduct.objects.bulk_create(_y)
-                    for delivery_product in delivery_product_list:
-                        OrderDeliveryProductTool.objects.bulk_create([OrderDeliveryProductTool(
-                            tenant_id=delivery_product.tenant_id, company_id=delivery_product.company_id,
-                            delivery_product=delivery_product, **tool_data,
-                        ) for tool_data in delivery_product.tool_data])
-                        OrderDeliveryProductAsset.objects.bulk_create([OrderDeliveryProductAsset(
-                            tenant_id=delivery_product.tenant_id, company_id=delivery_product.company_id,
-                            delivery_product=delivery_product, **asset_data,
-                        ) for asset_data in delivery_product.asset_data])
-
                     # update sale order delivery_status
                     if app_code in ["saleorder.saleorder", "leaseorder.leaseorder"]:
                         self.order_obj.delivery_status = 1
@@ -636,7 +656,4 @@ def task_active_delivery_from_service_order(service_order_id, work_products, pro
             delivery_config_obj=config_obj,
             process_id=process_id,
         ).active(app_code="serviceorder.serviceorder")
-        # if state is True:
-        #     service_order_obj.delivery_call = True
-        #     service_order_obj.save(update_fields=['delivery_call'])
     return state, msg_returned
