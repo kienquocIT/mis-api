@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class JEForCIFHandler:
     @classmethod
-    def get_je_item_data(cls, cif_obj):
+    def parse_je_line_data(cls, cif_obj):
         debit_rows_data = []
         credit_rows_data = []
         if cif_obj.cash_value > 0:
@@ -74,7 +74,7 @@ class JEForCIFHandler:
         """ Chuẩn bị data để tự động tạo Bút Toán """
         try:
             with transaction.atomic():
-                debit_rows_data, credit_rows_data = cls.get_je_item_data(cif_obj)
+                debit_rows_data, credit_rows_data = cls.parse_je_line_data(cif_obj)
                 kwargs = {
                     'je_transaction_app_code': cif_obj.get_model_code(),
                     'je_transaction_id': str(cif_obj.id),
@@ -85,18 +85,12 @@ class JEForCIFHandler:
                         'date_created': str(cif_obj.date_created),
                         'date_approved': str(cif_obj.date_approved),
                     },
-                    'tenant_id': str(cif_obj.tenant_id),
-                    'company_id': str(cif_obj.company_id),
-                    'employee_created_id': str(cif_obj.employee_created_id),
-                    'employee_inherit_id': str(cif_obj.employee_inherit_id),
-                    'date_created': str(cif_obj.date_created),
-                    'date_approved': str(cif_obj.date_approved),
-                    'je_item_data': {
+                    'je_line_data': {
                         'debit_rows': debit_rows_data,
                         'credit_rows': credit_rows_data
                     }
                 }
-                JournalEntry.auto_create_journal_entry(**kwargs)
+                JournalEntry.auto_create_journal_entry(cif_obj, **kwargs)
                 return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')

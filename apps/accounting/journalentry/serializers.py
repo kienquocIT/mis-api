@@ -1,11 +1,12 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-from apps.accounting.journalentry.models import JournalEntry
+from apps.accounting.journalentry.models import JournalEntry, JE_ALLOWED_APP
 
 
 class JournalEntryListSerializer(serializers.ModelSerializer):
     employee_created = serializers.SerializerMethodField()
-    original_transaction = serializers.SerializerMethodField()
+    original_transaction_parsed = serializers.SerializerMethodField()
+    je_state_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = JournalEntry
@@ -13,7 +14,11 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'je_transaction_data',
-            'original_transaction',
+            'original_transaction_parsed',
+            'total_debit',
+            'total_credit',
+            'je_state',
+            'je_state_parsed',
             'date_created',
             'employee_created',
             'system_status',
@@ -25,15 +30,12 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
         return obj.employee_created.get_detail_with_group() if obj.employee_created else {}
 
     @classmethod
-    def get_original_transaction(cls, obj):
-        return {
-            'delivery.orderdeliverysub': _('Delivery'),
-            'arinvoice.arinvoice': _('AR Invoice'),
-            'financialcashflow.cashinflow': _('Cash Inflow'),
-            'inventory.goodsreceipt': _('Goods Receipt'),
-            'apinvoice.apinvoice': _('AP Invoice'),
-            'financialcashflow.cashoutflow': _('Cash Outflow'),
-        }.get(obj.je_transaction_app_code, '')
+    def get_original_transaction_parsed(cls, obj):
+        return JE_ALLOWED_APP.get(obj.je_transaction_app_code, '')
+
+    @classmethod
+    def get_je_state_parsed(cls, obj):
+        return [_('Draft'), _('Posted'), _('Reversed')][obj.je_state]
 
 
 class JournalEntryCreateSerializer(serializers.ModelSerializer):
@@ -43,8 +45,8 @@ class JournalEntryCreateSerializer(serializers.ModelSerializer):
 
 
 class JournalEntryDetailSerializer(serializers.ModelSerializer):
-    original_transaction = serializers.SerializerMethodField()
-    je_items = serializers.SerializerMethodField()
+    original_transaction_parsed = serializers.SerializerMethodField()
+    je_lines = serializers.SerializerMethodField()
 
     class Meta:
         model = JournalEntry
@@ -55,28 +57,24 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
             'system_auto_create',
             'je_posting_date',
             'je_document_date',
-            'original_transaction',
-            'je_items',
+            'original_transaction_parsed',
+            'je_state',
+            'total_debit',
+            'total_credit',
+            'je_lines',
             'system_status',
             'system_auto_create'
         )
 
     @classmethod
-    def get_original_transaction(cls, obj):
-        return {
-            'delivery.orderdeliverysub': 0,
-            'arinvoice.arinvoice': 1,
-            'financialcashflow.cashinflow': 2,
-            'inventory.goodsreceipt': 3,
-            'apinvoice.apinvoice': 4,
-            'financialcashflow.cashoutflow': 5,
-        }.get(obj.je_transaction_app_code, None)
+    def get_original_transaction_parsed(cls, obj):
+        return JE_ALLOWED_APP.get(obj.je_transaction_app_code, '')
 
     @classmethod
-    def get_je_items(cls, obj):
-        je_items = []
-        for item in obj.je_items.all():
-            je_items.append({
+    def get_je_lines(cls, obj):
+        je_lines = []
+        for item in obj.je_lines.all():
+            je_lines.append({
                 'id': item.id,
                 'order': item.order,
                 'account_data': item.account_data,
@@ -84,10 +82,11 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
                 'debit': item.debit,
                 'credit': item.credit,
                 'is_fc': item.is_fc,
-                'je_item_type': item.je_item_type,
+                'je_line_type': item.je_line_type,
                 'taxable_value': item.taxable_value,
+                'dimensions': [item.business_partner_data]
             })
-        return je_items
+        return je_lines
 
 
 class JournalEntryUpdateSerializer(serializers.ModelSerializer):

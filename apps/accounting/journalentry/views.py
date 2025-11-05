@@ -1,6 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.response import Response
 
-from apps.accounting.journalentry.models import JournalEntry
+from apps.accounting.journalentry.models import JournalEntry, JE_ALLOWED_APP
 from apps.accounting.journalentry.serializers import (
     JournalEntryListSerializer, JournalEntryCreateSerializer, JournalEntryDetailSerializer, JournalEntryUpdateSerializer
 )
@@ -48,7 +49,7 @@ class JournalEntryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'je_items'
+            'je_lines'
         ).select_related()
 
     @swagger_auto_schema(operation_summary='Detail Journal Entry')
@@ -64,3 +65,28 @@ class JournalEntryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+# related
+class JournalEntrySummarize(BaseListMixin):
+    @swagger_auto_schema(
+        operation_summary="Journal Entry Summarize",
+        operation_description="Journal Entry Summarize",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        all_je = JournalEntry.objects.filter_on_company()
+        summarize_total_je = all_je.count()
+        summarize_total_debit = sum(all_je.values_list('total_debit', flat=True))
+        summarize_total_credit = sum(all_je.values_list('total_credit', flat=True))
+        summarize_total_source_type = len(JE_ALLOWED_APP)
+        return Response({
+            'result': {
+                'summarize_total_je': summarize_total_je,
+                'summarize_total_debit': summarize_total_debit,
+                'summarize_total_credit': summarize_total_credit,
+                'summarize_total_source_type': summarize_total_source_type,
+            }
+        })

@@ -1,6 +1,6 @@
 import logging
 from django.db import transaction
-from apps.accounting.journalentry.models import JournalEntryItem
+from apps.accounting.journalentry.models import JournalEntryLine
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.reconciliation.models import Reconciliation, ReconciliationItem
 
@@ -42,7 +42,7 @@ class ReconForCIFHandler:
                     # tạo các dòng cấn trừ
                     bulk_info = []
                     # tìm bút toán của phiếu thu
-                    for cif_je_item in JournalEntryItem.objects.filter(
+                    for cif_je_line in JournalEntryLine.objects.filter(
                         journal_entry__je_transaction_app_code=cif_obj.get_model_code(),
                         journal_entry__je_transaction_id=str(cif_obj.id),
                         use_for_recon=True,
@@ -67,22 +67,22 @@ class ReconForCIFHandler:
                                     'posting_date': str(cif_obj.posting_date),
                                     'app_code': cif_obj.get_model_code()
                                 } if cif_obj else {},
-                                credit_account=cif_je_item.account,
+                                credit_account=cif_je_line.account,
                                 credit_account_data={
-                                    'id': str(cif_je_item.account_id),
-                                    'acc_code': cif_je_item.account.acc_code,
-                                    'acc_name': cif_je_item.account.acc_name,
-                                    'foreign_acc_name': cif_je_item.account.foreign_acc_name
-                                } if cif_je_item.account else {},
-                                recon_total=cif_je_item.credit,
-                                recon_balance=cif_je_item.credit,
-                                recon_amount=cif_je_item.credit
+                                    'id': str(cif_je_line.account_id),
+                                    'acc_code': cif_je_line.account.acc_code,
+                                    'acc_name': cif_je_line.account.acc_name,
+                                    'foreign_acc_name': cif_je_line.account.foreign_acc_name
+                                } if cif_je_line.account else {},
+                                recon_total=cif_je_line.credit,
+                                recon_balance=cif_je_line.credit,
+                                recon_amount=cif_je_line.credit
                             )
                         )
                         # đối với từng bút toán của phiếu thu, tìm các bút toán của hóa đơn gắn với phiếu thu đó
                         for item in cif_obj.cash_inflow_item_cash_inflow.all():
                             ar_invoice_obj = item.ar_invoice
-                            for ar_je_item in JournalEntryItem.objects.filter(
+                            for ar_je_line in JournalEntryLine.objects.filter(
                                 journal_entry__je_transaction_app_code=ar_invoice_obj.get_model_code(),
                                 journal_entry__je_transaction_id=str(ar_invoice_obj.id),
                                 use_for_recon=True,
@@ -107,16 +107,16 @@ class ReconForCIFHandler:
                                             'posting_date': str(ar_invoice_obj.date_approved),
                                             'app_code': ar_invoice_obj.get_model_code()
                                         } if ar_invoice_obj else {},
-                                        debit_account=ar_je_item.account,
+                                        debit_account=ar_je_line.account,
                                         debit_account_data={
-                                            'id': str(ar_je_item.account_id),
-                                            'acc_code': ar_je_item.account.acc_code,
-                                            'acc_name': ar_je_item.account.acc_name,
-                                            'foreign_acc_name': ar_je_item.account.foreign_acc_name
-                                        } if ar_je_item.account else {},
-                                        recon_total=cif_je_item.credit,
-                                        recon_balance=cif_je_item.credit,
-                                        recon_amount=cif_je_item.credit,
+                                            'id': str(ar_je_line.account_id),
+                                            'acc_code': ar_je_line.account.acc_code,
+                                            'acc_name': ar_je_line.account.acc_name,
+                                            'foreign_acc_name': ar_je_line.account.foreign_acc_name
+                                        } if ar_je_line.account else {},
+                                        recon_total=cif_je_line.credit,
+                                        recon_balance=cif_je_line.credit,
+                                        recon_amount=cif_je_line.credit,
                                     )
                                 )
                     ReconciliationItem.objects.bulk_create(bulk_info)

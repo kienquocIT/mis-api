@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class JEForDeliveryHandler:
     @classmethod
-    def get_je_item_data(cls, dlvr_obj):
+    def parse_je_line_data(cls, dlvr_obj):
         debit_rows_data = []
         credit_rows_data = []
         sum_cost = 0
@@ -67,7 +67,7 @@ class JEForDeliveryHandler:
         """ Chuẩn bị data để tự động tạo Bút Toán """
         try:
             with transaction.atomic():
-                debit_rows_data, credit_rows_data = cls.get_je_item_data(dlvr_obj)
+                debit_rows_data, credit_rows_data = cls.parse_je_line_data(dlvr_obj)
                 kwargs = {
                     'je_transaction_app_code': dlvr_obj.get_model_code(),
                     'je_transaction_id': str(dlvr_obj.id),
@@ -78,18 +78,12 @@ class JEForDeliveryHandler:
                         'date_created': str(dlvr_obj.date_created),
                         'date_approved': str(dlvr_obj.date_approved),
                     },
-                    'tenant_id': str(dlvr_obj.tenant_id),
-                    'company_id': str(dlvr_obj.company_id),
-                    'employee_created_id': str(dlvr_obj.employee_created_id),
-                    'employee_inherit_id': str(dlvr_obj.employee_inherit_id),
-                    'date_created': str(dlvr_obj.date_created),
-                    'date_approved': str(dlvr_obj.date_approved),
-                    'je_item_data': {
+                    'je_line_data': {
                         'debit_rows': debit_rows_data,
                         'credit_rows': credit_rows_data
                     }
                 }
-                JournalEntry.auto_create_journal_entry(**kwargs)
+                JournalEntry.auto_create_journal_entry(dlvr_obj, **kwargs)
                 return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')
