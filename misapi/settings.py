@@ -703,7 +703,7 @@ if ENABLE_PROD is True:
                 'OPTIONS': {
                     'charset': 'utf8mb4',
                 },
-                'CONN_MAX_AGE': 60,  # 6 * 10
+                'CONN_MAX_AGE': 600,  # 60 * 10
             }
         }
     )
