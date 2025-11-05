@@ -371,6 +371,7 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
         return SerializerCommonValidate.validate_attachment(user=user, model_cls=LeaseOrderAttachment, value=value)
 
     def validate(self, validate_data):
+        user = self.context.get('user', None)
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
         opportunity_id = validate_data.get('opportunity_id', None)  # UUID or None
@@ -381,7 +382,7 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
         LeaseOrderRuleValidate.validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
         LeaseOrderRuleValidate.validate_then_set_indicators_value(validate_data=validate_data)
-        LeaseOrderRuleValidate.validate_payment_stage(validate_data=validate_data)
+        LeaseOrderRuleValidate.validate_payment_stage(validate_data=validate_data, company_obj=user.company_current)
         return validate_data
 
     @decorator_run_workflow
@@ -575,10 +576,11 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
         )
 
     def validate(self, validate_data):
+        user = self.context.get('user', None)
         LeaseOrderRuleValidate.validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
         LeaseOrderRuleValidate.validate_then_set_indicators_value(validate_data=validate_data)
-        LeaseOrderRuleValidate.validate_payment_stage(validate_data=validate_data)
+        LeaseOrderRuleValidate.validate_payment_stage(validate_data=validate_data, company_obj=user.company_current)
         return validate_data
 
     @decorator_run_workflow
