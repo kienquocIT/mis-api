@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Periods, Currency
-from apps.shared import DataAbstractModel, SimpleAbstractModel, AutoDocumentAbstractModel, MasterDataAbstractModel
+from apps.shared import DataAbstractModel, AutoDocumentAbstractModel, MasterDataAbstractModel
 
 
 logger = logging.getLogger(__name__)
