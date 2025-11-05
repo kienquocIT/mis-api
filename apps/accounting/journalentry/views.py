@@ -1,6 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
-
 from apps.accounting.journalentry.models import JournalEntry, JE_ALLOWED_APP
 from apps.accounting.journalentry.serializers import (
     JournalEntryListSerializer, JournalEntryCreateSerializer, JournalEntryDetailSerializer, JournalEntryUpdateSerializer
