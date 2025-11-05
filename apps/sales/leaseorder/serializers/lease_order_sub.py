@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.company.utils import CompanyHandler
 from apps.core.hr.models import Employee
 from apps.masterdata.promotion.models import Promotion
 from apps.masterdata.saledata.models import Shipping, ExpenseItem, WareHouse
@@ -356,7 +357,7 @@ class LeaseOrderRuleValidate:
         return True
 
     @classmethod
-    def validate_payment_stage(cls, validate_data):
+    def validate_payment_stage(cls, validate_data, company_obj):
         if 'lease_payment_stage' in validate_data and 'total_product' in validate_data:
             if len(validate_data['lease_payment_stage']) > 0:
                 total_payment = 0
@@ -369,7 +370,11 @@ class LeaseOrderRuleValidate:
                         raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DATE_REQUIRED})
                     if not due_date:
                         raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
-                if total_payment != validate_data.get('total_product', 0):
+                if CompanyHandler.round_by_company_config(
+                        company=company_obj, value=total_payment
+                ) != CompanyHandler.round_by_company_config(
+                    company=company_obj, value=validate_data.get('total_product', 0)
+                ):
                     raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
             else:
                 # check required by config
