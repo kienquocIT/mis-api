@@ -69,6 +69,9 @@ class ReportStock(DataAbstractModel):
     lease_order = models.ForeignKey(
         'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="report_stock_lease_order", null=True
     )
+    service_order = models.ForeignKey(
+        'serviceorder.ServiceOrder', on_delete=models.SET_NULL, related_name="report_stock_service_order", null=True
+    )
     period_mapped = models.ForeignKey(
         'saledata.Periods', on_delete=models.SET_NULL, related_name='report_stock_period_mapped', null=True
     )
@@ -143,6 +146,9 @@ class ReportStockLog(DataAbstractModel):
     lease_order = models.ForeignKey(
         'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="report_stock_log_lease_order", null=True
     )
+    service_order = models.ForeignKey(
+        'serviceorder.ServiceOrder', on_delete=models.SET_NULL, related_name="report_stock_log_service_order", null=True
+    )
 
     system_date = models.DateTimeField(null=True)
     posting_date = models.DateTimeField(null=True)
@@ -182,6 +188,9 @@ class ReportStockLog(DataAbstractModel):
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = doc_item.get('sale_order').id if doc_item.get('sale_order') else None
             kw_parameter['lease_order_id'] = doc_item.get('lease_order').id if doc_item.get('lease_order') else None
+            kw_parameter['service_order_id'] = doc_item.get(
+                'service_order'
+            ).id if doc_item.get('service_order') else None
         kw_parameter['serial_number'] = (doc_item.get('serial_data') or {}).get('serial_number')
         return kw_parameter
 
@@ -248,6 +257,8 @@ class ReportStockLog(DataAbstractModel):
                     product=item['product'],
                     physical_warehouse=item['warehouse'],
                     sale_order=item.get('sale_order'),
+                    lease_order=item.get('lease_order'),
+                    service_order=item.get('service_order'),
                     system_date=item['system_date'],
                     posting_date=item['posting_date'],
                     document_date=item['document_date'],
@@ -333,6 +344,7 @@ class ReportStockLog(DataAbstractModel):
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = log.sale_order_id
             kw_parameter['lease_order_id'] = log.lease_order_id
+            kw_parameter['service_order_id'] = log.service_order_id
         kw_parameter['serial_number'] = log.serial_number
         div = log.company.company_config.definition_inventory_valuation
         latest_cost = ReportInventorySubFunction.get_latest_log_cost_dict(
@@ -553,6 +565,9 @@ class ReportInventoryCost(DataAbstractModel):
     lease_order = models.ForeignKey(
         'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="report_inventory_cost_lease_order", null=True
     )
+    service_order = models.ForeignKey(
+        'serviceorder.ServiceOrder', on_delete=models.SET_NULL, related_name="report_inventory_cost_service_order", null=True
+    )
     lot_mapped = models.ForeignKey(
         'saledata.ProductWareHouseLot',
         on_delete=models.SET_NULL,
@@ -650,6 +665,9 @@ class ReportInventoryCostLatestLog(SimpleAbstractModel):
     )
     lease_order = models.ForeignKey(
         'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="rp_inv_cost_lease_order", null=True
+    )
+    service_order = models.ForeignKey(
+        'serviceorder.ServiceOrder', on_delete=models.SET_NULL, related_name="rp_inv_cost_service_order", null=True
     )
     latest_log = models.ForeignKey(
         ReportStockLog, on_delete=models.CASCADE, related_name='rp_inv_cost_latest_log', null=True
