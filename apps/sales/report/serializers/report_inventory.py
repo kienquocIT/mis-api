@@ -26,15 +26,14 @@ class ReportStockListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product(cls, obj):
+        order = obj.sale_order or obj.lease_order or obj.service_order
         return {
             'id': obj.product_id,
             'title': obj.product.title,
             'lot_number': obj.lot_mapped.lot_number if obj.lot_mapped else '',
             'serial_number': obj.serial_number or '',
-            'order_id': str(obj.sale_order_id) if obj.sale_order else str(
-                obj.lease_order_id) if obj.lease_order else str(
-                obj.service_order_id) if obj.service_order else '',
-            'order_code': obj.sale_order.code if obj.sale_order else obj.lease_order.code if obj.lease_order else obj.service_order.code if obj.service_order else '',
+            'order_id': str(order.id) if order else '',
+            'order_code': order.code if order else '',
             'code': obj.product.code,
             'description': obj.product.description,
             'uom': {
@@ -169,13 +168,14 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product(cls, obj):
+        order = obj.sale_order or obj.lease_order or obj.service_order
         return {
             'id': obj.product_id,
             'title': obj.product.title,
             'valuation_method': obj.product.valuation_method,
             'lot_number': obj.lot_mapped.lot_number if obj.lot_mapped else '',
             'serial_number': obj.serial_number or '',
-            'order_code': obj.sale_order.code if obj.sale_order else obj.lease_order.code if obj.lease_order else obj.service_order.code if obj.service_order else '',
+            'order_code': order.code if order else '',
             'code': obj.product.code,
             'description': obj.product.description,
             'uom': {
