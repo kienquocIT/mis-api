@@ -13,13 +13,14 @@ from apps.shared.translations.base import AttachmentMsg
 
 class AssetToolsProductsMapReturnSerializer(serializers.Serializer):  # noqa
     product = serializers.UUIDField(required=False, allow_null=True)
+    product_fixed = serializers.JSONField(required=False, allow_null=True)
     order = serializers.IntegerField()
     return_number = serializers.FloatField()
-    product_remark = serializers.CharField(required=False, allow_null=True)
+    product_remark = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
 def create_products(instance, prod_list):
-    old_data = AssetToolsReturnMapProduct.objects.filter(asset_return=instance)
+    old_data = AssetToolsReturnMapProduct.objects.filter_on_company(asset_return=instance)
     if old_data.exists():
         old_data.delete()
     create_lst = []
@@ -30,6 +31,7 @@ def create_products(instance, prod_list):
             asset_return=instance,
             order=item['order'],
             prod_in_tools_id=item['product'] if 'product' in item else None,
+            prod_in_fixed=item['product_fixed'] if 'product_fixed' in item else None,
             product_remark=item['product_remark'] if 'product_remark' in item else None,
             employee_inherit=instance.employee_inherit,
             return_number=item['return_number'],
@@ -101,26 +103,28 @@ class AssetToolsReturnDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_products(cls, obj):
-        if obj.prod_in_tools:
-            products_list = []
-            for item in obj.asset_return_map_product.all():
-                if item.prod_in_tools:
-                    current_stock = item.prod_in_tools.quantity - item.prod_in_tools.allocated_quantity
-                else:
-                    current_stock = 0
-                products_list.append(
-                    {
-                        'order': item.order,
-                        'product': {
-                            **item.product_data,
-                            'available': current_stock,
-                        } if hasattr(item, 'product_data') else {},
-                        'product_remark': item.product_remark,
-                        'return_number': item.return_number,
-                    }
-                )
-            return products_list
-        return []
+        products_list = []
+        for item in obj.asset_return_map_product.all().order_by('order'):
+            temp = {
+                'order': item.order,
+                'product_remark': item.product_remark,
+                'return_number': item.return_number,
+                'product_provide_type': 'new'
+            }
+            if item.prod_in_tools and hasattr(item, 'product_data'):
+                temp['product'] = {
+                    **item.product_data,
+                    'available': item.prod_in_tools.quantity - item.prod_in_tools.allocated_quantity,
+                }
+                temp['product_provide_type'] = 'tool'
+            elif item.prod_in_fixed:
+                temp['product_fixed'] = {
+                    **item.prod_in_fixed,
+                    'available': 0,
+                }
+                temp['product_provide_type'] = 'fixed'
+            products_list.append(temp)
+        return products_list
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -171,7 +175,6 @@ class AssetToolsReturnListSerializer(serializers.ModelSerializer):
 
 
 class AssetToolsReturnUpdateSerializer(AbstractCreateSerializerModel):
-    employee_inherit_id = serializers.UUIDField()
     products = AssetToolsProductsMapReturnSerializer(many=True, required=False)
 
     class Meta:
@@ -179,18 +182,12 @@ class AssetToolsReturnUpdateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'remark',
-            'employee_inherit_id',
+            'employee_inherit',
             'attachments',
             'products',
             'date_return',
             'system_status',
         )
-
-    @classmethod
-    def validate_employee_inherit_id(cls, value):
-        if not value:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return value
 
     def validate_attachments(self, attrs):
         user = self.context.get('user', None)
@@ -203,6 +200,7 @@ class AssetToolsReturnUpdateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
         raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         attachments = validated_data.pop('attachments', None)
         products = validated_data.pop('products', None)

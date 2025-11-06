@@ -18,7 +18,12 @@ __all__ =[
 class FixedAssetList(BaseListMixin, BaseCreateMixin):
     queryset = FixedAsset.objects
     search_fields = ['title', 'code']
-    filterset_fields = {}
+    filterset_fields = {
+        'product': ['exact', 'in'],
+        'status': ['exact'],
+        'manage_department': ['exact', 'in'],
+        'source_type': ['exact', 'in'],
+    }
     serializer_list = FixedAssetListSerializer
     serializer_create = FixedAssetCreateSerializer
     serializer_detail = FixedAssetDetailSerializer
@@ -163,6 +168,12 @@ class AssetListNoPerm(BaseListMixin):
     search_fields = ['title', 'code']
     serializer_list = FixedAssetListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    filterset_fields = {
+        'product': ['exact', 'in'],
+        'status': ['exact'],
+        'manage_department': ['exact', 'in'],
+        'source_type': ['exact', 'in'],
+    }
 
     def get_queryset(self):
         query_set = (super().get_queryset().select_related('product', 'manage_department', 'use_customer')

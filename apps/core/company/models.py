@@ -575,6 +575,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             'serviceorder': 'SVO[n4]',
             'opportunitytask': 'TASK[n4]',
             'payrolltemplate': 'PRT[n4]',
+            'assettoolsreturn': 'ATR[n4]',
         }
 
         parsed_code = ''

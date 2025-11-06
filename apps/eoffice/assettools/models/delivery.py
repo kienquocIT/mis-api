@@ -114,26 +114,27 @@ class AssetToolsDelivery(DataAbstractModel):
             with transaction.atomic():
                 if self.system_status == 3:
                     # lấy danh sách prod_map_deliver
-                    prod_map_deliver_lst = ProductDeliveredMapProvide.objects.filter(
+                    prod_map_deliver_lst = ProductDeliveredMapProvide.objects.filter_on_company(
                         delivery_id=str(self.id),
-                    )
+                    ).select_related('prod_in_tools', 'prod_in_fixed')
                     for item in prod_map_deliver_lst:
                         delivered = item.done
-                        item_has_prod = item.prod_in_tools
+                        product_is_tool = item.prod_in_tools
+                        product_is_fixed = item.prod_in_fixed
 
-                        if item_has_prod:
-                            prod_available = item_has_prod.quantity - item_has_prod.allocated_quantity
+                        if product_is_tool:
+                            prod_available = product_is_tool.quantity - product_is_tool.allocated_quantity
 
                             if prod_available < delivered:
                                 raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
 
                             item.delivered_number += delivered
-                            item_has_prod.allocated_quantity += delivered
-                            item_has_prod.save(update_fields=["allocated_quantity"])
+                            product_is_tool.allocated_quantity += delivered
+                            product_is_tool.save(update_fields=["allocated_quantity"])
 
                             prod_map_provide = provide_prod_map.objects.filter(
                                 asset_tools_provide=self.provide,
-                                prod_in_tools=item_has_prod
+                                prod_in_tools=product_is_tool
                             )
                         else:
                             item.delivered_number += delivered
@@ -219,6 +220,13 @@ class ProductDeliveredMapProvide(DataAbstractModel):
         related_name='product_map_asset_tools_delivery',
         null=True
     )
+    prod_in_fixed = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.CASCADE,
+        verbose_name='Product fixed map with request delivery',
+        related_name='product_asset_map_delivery',
+        null=True
+    )
     product_data = models.JSONField(
         default=dict,
         verbose_name='Product data backup',
@@ -266,7 +274,13 @@ class ProductDeliveredMapProvide(DataAbstractModel):
                 "id": str(self.prod_in_tools_id),
                 "title": self.prod_in_tools.title,
                 "code": self.prod_in_tools.code,
-                "uom": self.prod_in_tools.measure_unit,
+                "uom": self.prod_in_tools.measure_unit if hasattr(self.prod_in_tools, 'measure_unit') else '',
+            }
+        if self.prod_in_fixed:
+            self.product_data = {
+                "id": str(self.prod_in_fixed_id),
+                "title": self.prod_in_fixed.title,
+                "code": self.prod_in_fixed.code,
             }
         if self.employee_inherit:
             self.employee_inherit_data = {
