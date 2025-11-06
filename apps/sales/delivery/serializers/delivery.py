@@ -500,7 +500,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         product_data = validate_data.get('products', [])
         for product in product_data:
             deli_product = OrderDeliveryProduct.objects.filter_current(
-                delivery_sub=self.instance, product_id=product.get('product_id', None)
+                delivery_sub=self.instance, product_id=product.get('product_id', None), order=product.get('order', 0)
             ).first()
             if deli_product:
                 deli_quantity = product.get('done', 0)
