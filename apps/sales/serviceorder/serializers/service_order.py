@@ -314,7 +314,17 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
                 'expense_item_id': cost.expense_item.id if cost.expense_item else None,
                 'unit_cost': cost.unit_cost,
                 'currency_id': cost.currency_id,
+                'currency_data': {
+                    'id': cost.currency.id,
+                    'title': cost.currency.title,
+                    'code': cost.currency.code,
+                } if cost.currency else {},
                 'tax_id': cost.tax_id,
+                'tax_data': {
+                    'id': cost.tax.id,
+                    'title': cost.tax.title,
+                    'code': cost.tax.code,
+                } if cost.tax else {},
                 'total_value': cost.total_value,
                 'exchanged_total_value': cost.exchanged_total_value,
             } for cost in work_order.work_order_costs.all()],
@@ -367,6 +377,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
 
             # nested details
             'payment_detail_data': [{
+                'order': detail.order,
                 'id': detail.id,
                 'service_id': detail.service_detail_id,
                 'title': detail.title,
@@ -384,6 +395,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
 
                 # nested reconciles
                 'reconcile_data': [{
+                    'order': reconcile.order,
                     'id': reconcile.id,
                     'advance_payment_detail_id': reconcile.advance_payment_detail_id,
                     'advance_payment_id': reconcile.advance_payment_detail.service_order_payment.id
