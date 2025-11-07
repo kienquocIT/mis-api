@@ -7,6 +7,7 @@ colorama==0.4.6
 coreapi==2.3.3
 coreschema==0.0.4
 cryptography==41.0.7
+deepdiff==8.6.1
 Django==4.2.8
 django-appconf==1.0.5
 django-background-tasks==1.2.5
@@ -53,6 +54,7 @@ opentelemetry-instrumentation-requests==0.29b0
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
+granian==2.5.6
 packaging==21.3
 phonenumbers==8.13.1
 pip-cache==0.0.6

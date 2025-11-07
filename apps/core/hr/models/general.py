@@ -153,6 +153,22 @@ class Group(TenantAbstractModel):
         BudgetPlanCompanyExpense.objects.bulk_create(bulk_info)
         return True
 
+    def get_all_children(self):
+        """
+        Trả về danh sách tất cả các nhóm con (cháu, chắt...) của group_id
+        """
+        children = []
+        try:
+            group = Group.objects.get(id=self.id)
+        except Group.DoesNotExist:
+            return children  # Nếu group không tồn tại, trả về rỗng
+        def _get_children_recursive(parent):
+            for child in parent.group_parent_n.all():
+                children.append(str(child.id))
+                _get_children_recursive(child)
+        _get_children_recursive(group)
+        return children
+
     def save(self, *args, **kwargs):
         if self.is_delete:
             this_period = Periods.get_current_period(self.tenant_id, self.company_id)

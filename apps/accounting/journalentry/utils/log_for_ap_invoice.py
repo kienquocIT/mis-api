@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class JEForAPInvoiceHandler:
     @classmethod
-    def get_je_item_data(cls, ap_invoice_obj):
+    def parse_je_line_data(cls, ap_invoice_obj):
         debit_rows_data = []
         credit_rows_data = []
         sum_cost = 0
@@ -88,7 +88,7 @@ class JEForAPInvoiceHandler:
         """ Chuẩn bị data để tự động tạo Bút Toán """
         try:
             with transaction.atomic():
-                debit_rows_data, credit_rows_data = cls.get_je_item_data(ap_invoice_obj)
+                debit_rows_data, credit_rows_data = cls.parse_je_line_data(ap_invoice_obj)
                 kwargs = {
                     'je_transaction_app_code': ap_invoice_obj.get_model_code(),
                     'je_transaction_id': str(ap_invoice_obj.id),
@@ -99,18 +99,12 @@ class JEForAPInvoiceHandler:
                         'date_created': str(ap_invoice_obj.date_created),
                         'date_approved': str(ap_invoice_obj.date_approved),
                     },
-                    'tenant_id': str(ap_invoice_obj.tenant_id),
-                    'company_id': str(ap_invoice_obj.company_id),
-                    'employee_created_id': str(ap_invoice_obj.employee_created_id),
-                    'employee_inherit_id': str(ap_invoice_obj.employee_inherit_id),
-                    'date_created': str(ap_invoice_obj.date_created),
-                    'date_approved': str(ap_invoice_obj.date_approved),
-                    'je_item_data': {
+                    'je_line_data': {
                         'debit_rows': debit_rows_data,
                         'credit_rows': credit_rows_data
                     }
                 }
-                JournalEntry.auto_create_journal_entry(**kwargs)
+                JournalEntry.auto_create_journal_entry(ap_invoice_obj, **kwargs)
                 return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')

@@ -11,6 +11,7 @@ class ConfigPaymentTermList(BaseListMixin, BaseCreateMixin):
     search_fields = ['title', 'code']
     filterset_fields = {
         'id': ['exact', 'in'],
+        'is_delete': ['exact', 'in'],
     }
     serializer_list = PaymentTermListSerializer
     serializer_create = PaymentTermCreateSerializer

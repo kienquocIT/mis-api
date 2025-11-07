@@ -25,6 +25,7 @@ class EmployeeListFilter(BastionFieldAbstractListFilter):
         fields = {
             'id': ['exact', 'in'],
             'group_id': ['exact', 'in'],
+            'is_active': ['exact']
         }
 
     def filter_group__first_manager(self, queryset, name, value):

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.company.utils import CompanyHandler
 from apps.core.hr.models import Employee
 from apps.masterdata.promotion.models import Promotion
 from apps.masterdata.saledata.models import Shipping, ExpenseItem, WareHouse
@@ -11,7 +12,8 @@ from apps.sales.asset.models import FixedAsset, InstrumentTool
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation, QuotationAppConfig
 from apps.sales.leaseorder.models import LeaseOrderProduct, LeaseOrderCost, LeaseOrderExpense, LeaseOrderIndicator, \
-    LeaseOrderPaymentStage, LeaseOrderLogistic, LeaseOrderProductAsset, LeaseOrderInvoice, LeaseOrderProductTool
+    LeaseOrderPaymentStage, LeaseOrderLogistic, LeaseOrderProductAsset, LeaseOrderInvoice, LeaseOrderProductTool, \
+    LeaseOrderProductOffset
 from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.shared import PriceMsg, SaleMsg, DisperseModel, BaseMsg
 
@@ -28,6 +30,13 @@ class LeaseOrderCommonCreate:
             ) for sale_order_product in validated_data['lease_products_data']]
         )
         for created in created_list:
+            LeaseOrderProductOffset.objects.bulk_create(
+                [LeaseOrderProductOffset(
+                    lease_order=created.lease_order, lease_order_product=created,
+                    tenant_id=instance.tenant_id, company_id=instance.company_id,
+                    **offset_data,
+                ) for offset_data in created.offset_data]
+            )
             LeaseOrderProductTool.objects.bulk_create(
                 [LeaseOrderProductTool(
                     lease_order=created.lease_order, lease_order_product=created,
@@ -348,7 +357,7 @@ class LeaseOrderRuleValidate:
         return True
 
     @classmethod
-    def validate_payment_stage(cls, validate_data):
+    def validate_payment_stage(cls, validate_data, company_obj):
         if 'lease_payment_stage' in validate_data and 'total_product' in validate_data:
             if len(validate_data['lease_payment_stage']) > 0:
                 total_payment = 0
@@ -361,7 +370,11 @@ class LeaseOrderRuleValidate:
                         raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DATE_REQUIRED})
                     if not due_date:
                         raise serializers.ValidationError({'detail': SaleMsg.PAYMENT_DUE_DATE_REQUIRED})
-                if total_payment != validate_data.get('total_product', 0):
+                if CompanyHandler.round_by_company_config(
+                        company=company_obj, value=total_payment
+                ) != CompanyHandler.round_by_company_config(
+                    company=company_obj, value=validate_data.get('total_product', 0)
+                ):
                     raise serializers.ValidationError({'detail': SaleMsg.TOTAL_PAYMENT})
             else:
                 # check required by config
@@ -387,6 +400,29 @@ class LeaseOrderRuleValidate:
 
 
 # SUB SERIALIZERS
+class LeaseOrderProductOffsetSerializer(serializers.ModelSerializer):
+    product_id = serializers.UUIDField(required=True, allow_null=False)
+    offset_id = serializers.UUIDField(required=True, allow_null=False)
+
+    class Meta:
+        model = LeaseOrderProductOffset
+        fields = (
+            'product_id',
+            'product_data',
+            'offset_id',
+            'offset_data',
+            'product_quantity',
+        )
+
+    @classmethod
+    def validate_product_id(cls, value):
+        return LeaseOrderCommonValidate().validate_product_id(value=value)
+
+    @classmethod
+    def validate_offset_id(cls, value):
+        return LeaseOrderCommonValidate().validate_product_id(value=value)
+
+
 class LeaseOrderProductToolSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=True, allow_null=False)
     tool_id = serializers.UUIDField(required=True, allow_null=False)
@@ -436,7 +472,7 @@ class LeaseOrderProductAssetSerializer(serializers.ModelSerializer):
 class LeaseOrderProductSerializer(serializers.ModelSerializer):
     product_id = serializers.UUIDField(required=True, allow_null=False)
     asset_type = serializers.IntegerField(required=True)
-    offset_id = serializers.UUIDField(required=False, allow_null=True)
+    # offset_id = serializers.UUIDField(required=False, allow_null=True)
     unit_of_measure_id = serializers.UUIDField(error_messages={
         'required': SaleMsg.PRODUCT_UOM_REQUIRED,
     })
@@ -446,6 +482,10 @@ class LeaseOrderProductSerializer(serializers.ModelSerializer):
     tax_id = serializers.UUIDField(required=False, allow_null=True)
     promotion_id = serializers.UUIDField(required=False, allow_null=True)
     shipping_id = serializers.UUIDField(required=False, allow_null=True)
+    offset_data = LeaseOrderProductOffsetSerializer(
+        many=True,
+        required=False
+    )
     tool_data = LeaseOrderProductToolSerializer(
         many=True,
         required=False
@@ -461,7 +501,7 @@ class LeaseOrderProductSerializer(serializers.ModelSerializer):
             'product_id',
             'product_data',
             'asset_type',
-            'offset_id',
+            # 'offset_id',
             'offset_data',
             'tool_data',
             'asset_data',

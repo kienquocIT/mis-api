@@ -29,6 +29,7 @@ from . import MediaForceAPI, DisperseModel
 from .extends.signals import ConfigDefaultData
 from .permissions.util import PermissionController
 from ..core.account.models import User
+from ..core.attachments.folder_utils import MODULE_MAPPING
 from ..core.attachments.models import Folder
 from ..core.hr.models import (
     Employee, Role, EmployeePermission, RolePermission,
@@ -38,6 +39,7 @@ from ..core.provisioning.utils import TenantController
 from ..eoffice.leave.leave_util import leave_available_map_employee
 from ..eoffice.leave.models import LeaveAvailable, WorkingYearConfig, WorkingHolidayConfig, LeaveRequest
 from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
+from ..hrm.payrolltemplate.models import AttributeComponent
 from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
 from ..sales.arinvoice.models import ARInvoice, ARInvoiceItems, ARInvoiceDelivery
@@ -6585,3 +6587,155 @@ def make_sure_payroll_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).payroll_config()
     print('Make sure payroll config is done!')
+
+
+def make_system_payroll_component():
+    data_list = [
+        {
+            'title': 'Tên NV',
+            'name': 'Employee name',
+            'code': 'employee_name',
+            'type': 1,
+        },
+        {
+            'title': 'Mã NV',
+            'name': 'Employee code',
+            'code': 'employee_code',
+            'type': 1,
+        },
+        {
+            'title': 'Phòng ban',
+            'name': 'Department',
+            'code': 'employee_group',
+            'type': 1,
+        },
+        {
+            'title': 'Lương',
+            'name': 'Salary',
+            'code': 'employee_salary',
+            'type': 0,
+        },
+        {
+            'title': 'Thuế TNCN',
+            'name': 'Income Tax',
+            'code': 'income_tax',
+            'type': 0,
+        },
+        {
+            'title': 'BHXH',
+            'name': 'Social insurance',
+            'code': 'employee_social_insurance',
+            'type': 0,
+        },
+        {
+            'title': 'BHYT',
+            'name': 'Health insurance',
+            'code': 'employee_health_insurance',
+            'type': 0,
+        },
+        {
+            'title': 'BHTN',
+            'name': 'Unemployment insurance',
+            'code': 'employee_health_insurance',
+            'type': 0,
+        },
+        {
+            'title': 'BHCD',
+            'name': 'Union insurance',
+            'code': 'employee_union_insurance',
+            'type': 0,
+        },
+        {
+            'title': 'Giảm trừ bản thân',
+            'name': 'Personal deduction',
+            'code': 'employee_personal_deduction',
+            'type': 0,
+        },
+        {
+            'title': 'Giảm trừ phụ thuộc',
+            'name': 'Dependant deduction',
+            'code': 'employee_dependant_deduction',
+            'type': 0,
+        },
+        {
+            'title': 'Phần trăm hưởng lương',
+            'name': 'Salary ratio',
+            'code': 'employee_salary_ratio',
+            'type': 0,
+        },
+        {
+            'title': 'Hệ số',
+            'name': 'salary coefficient',
+            'code': 'employee_salary_coefficient',
+            'type': 0,
+        },
+        {
+            'title': 'Số giờ tăng ca',
+            'name': 'Overtime hours',
+            'code': 'employee_overtime_hours',
+            'type': 0,
+        },
+        {
+            'title': 'Số giờ tăng ca trong tuần',
+            'name': 'Overtime weekly hours',
+            'code': 'employee_overtime_weekly_hours',
+            'type': 0,
+        },
+        {
+            'title': 'Số giờ tăng ca ngày lễ',
+            'name': 'Overtime holiday hours',
+            'code': 'employee_overtime_holiday_hours',
+            'type': 0,
+        },
+        {
+            'title': 'Số ngày công chuẩn',
+            'name': 'Shift standard work',
+            'code': 'shift_standard_work',
+            'type': 0,
+        },
+        {
+            'title': 'Số ngày công thực tế',
+            'name': 'Actual work',
+            'code': 'actual_work',
+            'type': 0,
+        },
+    ]
+    create_bulk_lst = []
+    company_obj_list = Company.objects.all()
+    for company_obj in company_obj_list:
+        for item in data_list:
+            create_bulk_lst.append(AttributeComponent(
+                component_title=item['title'],
+                component_name=item['name'],
+                component_code=item['code'],
+                component_type=item['type'],
+                component_mandatory=True,
+                company=company_obj
+            ))
+    AttributeComponent.objects.all().delete()
+    AttributeComponent.objects.bulk_create(create_bulk_lst)
+    print('Completed create system payroll attribute')
+
+
+def set_module_id_folder():
+    module_ids = []
+    for key, value in MODULE_MAPPING.items():
+        if 'module_id' in value:
+            module_ids.append(value['module_id'])
+    folder_objs = Folder.objects.filter(id__in=module_ids)
+    if folder_objs:
+        for folder_obj in folder_objs:
+            folder_obj.module_id = folder_obj.id
+            folder_obj.save(update_fields=['module_id'])
+    print('set_module_id_folder done.')
+    return True
+
+
+def recycle_is_delete(app_model, id_list):
+    model_app = DisperseModel(app_model=app_model).get_model()
+    if model_app and hasattr(model_app, 'objects'):
+        for obj in model_app.objects.filter(id__in=id_list, is_delete=True):
+            obj.is_delete = False
+            obj.save(update_fields=['is_delete'])
+    print('recycle_is_delete done.')
+    return True

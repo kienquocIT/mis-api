@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from apps.masterdata.saledata.models import UnitOfMeasure, ProductWareHouse, ProductWareHouseLot
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.shared import DisperseModel
@@ -48,6 +50,8 @@ class DeliFinishHandler:
                 sale_order_data=instance.sale_order_data,
                 lease_order_id=instance.lease_order_id,
                 lease_order_data=instance.lease_order_data,
+                service_order_id=instance.service_order_id,
+                service_order_data=instance.service_order_data,
                 estimated_delivery_date=instance.estimated_delivery_date,
                 actual_delivery_date=instance.actual_delivery_date,
                 customer_data=instance.customer_data,
@@ -95,13 +99,21 @@ class DeliFinishHandler:
 
     @classmethod
     def update_pw(cls, instance, deli_product, config):
-        target = deli_product.product
-        if deli_product.offset:
-            target = deli_product.offset
-        if target and deli_product.delivery_data:
+        if deli_product.product:
+            if deli_product.offset_data:
+                for deli_offset in deli_product.delivery_po_delivery_product.filter(offset__isnull=False):
+                    for data_deli in deli_offset.delivery_data:
+                        if all(key in data_deli for key in ('warehouse_id', 'uom_id', 'picked_quantity')):
+                            product_warehouse = deli_offset.offset.product_warehouse_product.filter(
+                                tenant_id=instance.tenant_id, company_id=instance.company_id,
+                                warehouse_id=data_deli['warehouse_id'],
+                            )
+                            source = {"uom_id": data_deli['uom_id'], "quantity": data_deli['picked_quantity']}
+                            DeliFinishHandler.minus_tock(source, product_warehouse, config)
+                return True
             for data_deli in deli_product.delivery_data:
                 if all(key in data_deli for key in ('warehouse_id', 'uom_id', 'picked_quantity')):
-                    product_warehouse = target.product_warehouse_product.filter(
+                    product_warehouse = deli_product.product.product_warehouse_product.filter(
                         tenant_id=instance.tenant_id, company_id=instance.company_id,
                         warehouse_id=data_deli['warehouse_id'],
                     )
@@ -192,13 +204,20 @@ class DeliFinishHandler:
     def push_product_info(cls, instance):
         for deli_product in instance.delivery_product_delivery_sub.all():
             if deli_product.product and deli_product.uom:
-                target = deli_product.product
-                if deli_product.offset:
-                    target = deli_product.offset
+                if deli_product.offset_data:
+                    for deli_offset in deli_product.delivery_po_delivery_product.filter(offset__isnull=False):
+                        deli_offset.offset.save(**{
+                            'update_stock_info': {
+                                'quantity_delivery': deli_product.picked_quantity,
+                                'system_status': 3,
+                            },
+                            'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
+                        })
+                    return True
                 final_ratio = DeliFinishSubHandler.get_final_uom_ratio(
-                    product_obj=target, uom_transaction=deli_product.uom
+                    product_obj=deli_product.product, uom_transaction=deli_product.uom
                 )
-                target.save(**{
+                deli_product.product.save(**{
                     'update_stock_info': {
                         'quantity_delivery': deli_product.picked_quantity * final_ratio,
                         'system_status': 3,
@@ -277,8 +296,8 @@ class DeliFinishHandler:
     def get_delivery_cost(cls, deli_product, sale_order=None, lease_order=None):
         actual_value = 0
         target_obj = deli_product.product
-        if lease_order:
-            target_obj = deli_product.offset
+        if lease_order and deli_product.offset_data:
+            return DeliFinishHandler.get_delivery_cost_lease(deli_product=deli_product)
         if target_obj:
             spec_id = deli_product.product_data.get('specific_data', {}).get('id', None)
             if spec_id:
@@ -301,6 +320,20 @@ class DeliFinishHandler:
         lo_cost = deli_product.product.lease_order_cost_product.filter(lease_order=lease_order).first()
         if lo_cost:
             actual_value = lo_cost.product_subtotal_price * deli_product.picked_quantity
+        return actual_value
+
+    @classmethod
+    def get_delivery_cost_lease(cls, deli_product):
+        actual_value = 0
+        for deli_offset in deli_product.delivery_po_delivery_product.filter(offset__isnull=False):
+            for data_deli in deli_offset.delivery_data:
+                if all(key in data_deli for key in ('warehouse_id', 'picked_quantity')):
+                    cost = DeliFinishHandler.get_cost_by_warehouse(
+                        product_obj=deli_offset.offset,
+                        warehouse_id=data_deli.get('warehouse_id', None),
+                        sale_order_id=data_deli.get('sale_order_id', None),
+                    )
+                    actual_value += cost * data_deli['picked_quantity']
         return actual_value
 
     @classmethod
@@ -342,20 +375,18 @@ class DeliFinishAssetToolHandler:
         model_asset_m2m = DisperseModel(app_model='asset.fixedassetusedepartment').get_model()
         if all(hasattr(model, 'objects') for model in [model_asset, model_asset_m2m]):
             for delivery_product in instance.delivery_product_delivery_sub.all():
-                asset_type = delivery_product.asset_type
-                product_convert_into = delivery_product.product_convert_into
-                if asset_type == 1 and product_convert_into == 2 and delivery_product.offset:
-                    asset_data = []
-                    for delivery_warehouse in delivery_product.delivery_pw_delivery_product.all():
-                        asset_data += DeliFinishAssetToolHandler.create_obj_and_set_asset_data(
-                            model_asset=model_asset,
-                            model_asset_m2m=model_asset_m2m,
-                            instance=instance,
-                            delivery_product=delivery_product,
-                            delivery_warehouse=delivery_warehouse
-                        )
-                    delivery_product.asset_data = asset_data
-                    delivery_product.save(update_fields=['asset_data'])
+                asset_data = []
+                for delivery_offset in delivery_product.delivery_po_delivery_product.filter(offset__isnull=False):
+                    if delivery_offset.product_convert_into == 2:
+                        for delivery_warehouse in delivery_offset.delivery_pw_delivery_offset.all():
+                            asset_data += DeliFinishAssetToolHandler.create_obj_and_set_asset_data(
+                                model_asset=model_asset,
+                                model_asset_m2m=model_asset_m2m,
+                                delivery_offset=delivery_offset,
+                                delivery_warehouse=delivery_warehouse
+                            )
+                        delivery_product.asset_data = asset_data
+                        delivery_product.save(update_fields=['asset_data'])
         return True
 
     @classmethod
@@ -363,48 +394,49 @@ class DeliFinishAssetToolHandler:
             cls,
             model_asset,
             model_asset_m2m,
-            instance,
-            delivery_product,
+            delivery_offset,
             delivery_warehouse
     ):
         asset_data = []
         cost = DeliFinishHandler.get_cost_by_warehouse(
-            product_obj=delivery_product.offset,
+            product_obj=delivery_offset.offset,
             warehouse_id=delivery_warehouse.warehouse_id,
             sale_order_id=None,
         )
         for _ in range(int(delivery_warehouse.quantity_delivery)):
             asset_obj = model_asset.objects.create(
-                tenant_id=instance.tenant_id,
-                company_id=instance.company_id,
-                classification_id=delivery_product.asset_type_data.get('id', None),
-                manage_department_id=delivery_product.asset_group_manage_data.get('id', None),
-                product_id=delivery_product.offset_id,
-                title=delivery_product.offset.title,
-                asset_code=delivery_product.offset.code,
+                tenant_id=delivery_offset.tenant_id,
+                company_id=delivery_offset.company_id,
+                employee_inherit_id=delivery_offset.employee_created_id,
+                classification_id=delivery_offset.asset_type_data.get('id', None),
+                manage_department_id=delivery_offset.asset_group_manage_data.get('id', None),
+                product_id=delivery_offset.offset_id,
+                title=delivery_offset.offset.title,
+                asset_code=delivery_offset.offset.code,
                 source_type=1,
                 original_cost=cost,
                 net_book_value=cost,
-                depreciation_method=delivery_product.product_depreciation_method,
-                depreciation_time=delivery_product.product_depreciation_time,
-                adjustment_factor=delivery_product.product_depreciation_adjustment,
-                depreciation_start_date=delivery_product.product_depreciation_start_date,
-                depreciation_end_date=delivery_product.product_depreciation_end_date,
-                depreciation_value=delivery_product.product_cost,
+                depreciation_method=delivery_offset.product_depreciation_method,
+                depreciation_time=delivery_offset.product_depreciation_time,
+                adjustment_factor=delivery_offset.product_depreciation_adjustment,
+                depreciation_start_date=delivery_offset.product_depreciation_start_date,
+                depreciation_end_date=delivery_offset.product_depreciation_end_date,
+                depreciation_value=delivery_offset.product_cost,
                 depreciation_data=DeliFinishAssetToolHandler.update_depreciation_data(
-                    depreciation_data=delivery_product.depreciation_data,
-                    old_cost=delivery_product.product_cost,
+                    depreciation_data=delivery_offset.depreciation_data,
+                    old_cost=delivery_offset.product_cost,
                     new_cost=cost,
                 ),
                 status=2,
             )
             if asset_obj:
                 asset_obj.system_status = 3
-                asset_obj.save(update_fields=['system_status'])
+                asset_obj.date_approved = timezone.now()
+                asset_obj.save(update_fields=['system_status', 'date_approved'])
                 # m2m
                 model_asset_m2m.objects.bulk_create([
                     model_asset_m2m(fixed_asset=asset_obj, use_department_id=group.get('id', None))
-                    for group in delivery_product.asset_group_using_data
+                    for group in delivery_offset.asset_group_using_data
                 ])
                 asset_json = {
                     'asset_id': str(asset_obj.id),
@@ -420,28 +452,27 @@ class DeliFinishAssetToolHandler:
                         "depreciation_end_date": str(asset_obj.depreciation_end_date),
                         "depreciation_data": asset_obj.depreciation_data,
                     },
-                    "product_id": str(delivery_product.product_id),
-                    "product_data": delivery_product.product_data,
-                    "uom_time_id": str(delivery_product.uom_time_id),
-                    "uom_time_data": delivery_product.uom_time_data,
-                    "product_quantity_time": delivery_product.product_quantity_time,
-                    "product_depreciation_time": delivery_product.product_depreciation_time,
-                    "product_depreciation_price": delivery_product.product_depreciation_price,
-                    "product_depreciation_method": delivery_product.product_depreciation_method,
-                    "product_depreciation_subtotal": delivery_product.product_depreciation_subtotal,
-                    "product_depreciation_adjustment": delivery_product.product_depreciation_adjustment,
+                    "product_id": str(delivery_offset.product_id),
+                    "product_data": delivery_offset.product_data,
+                    "uom_time_id": str(delivery_offset.uom_time_id),
+                    "uom_time_data": delivery_offset.uom_time_data,
+                    "product_quantity_time": delivery_offset.product_quantity_time,
+                    "product_depreciation_time": delivery_offset.product_depreciation_time,
+                    "product_depreciation_price": delivery_offset.product_depreciation_price,
+                    "product_depreciation_method": delivery_offset.product_depreciation_method,
+                    "product_depreciation_subtotal": delivery_offset.product_depreciation_subtotal,
+                    "product_depreciation_adjustment": delivery_offset.product_depreciation_adjustment,
                     "product_depreciation_start_date": str(
-                        delivery_product.product_depreciation_start_date
+                        delivery_offset.product_depreciation_start_date
                     ),
                     "product_depreciation_end_date": str(
-                        delivery_product.product_depreciation_end_date
+                        delivery_offset.product_depreciation_end_date
                     ),
 
-                    "product_lease_end_date": str(delivery_product.product_lease_end_date),
-                    "product_lease_start_date": str(instance.actual_delivery_date.date())
-                    if instance.actual_delivery_date else None,
+                    "product_lease_end_date": str(delivery_offset.product_lease_end_date),
+                    "product_lease_start_date": str(delivery_offset.product_lease_start_date),
 
-                    "depreciation_data": delivery_product.depreciation_data,
+                    "depreciation_data": delivery_offset.depreciation_data,
 
                     "quantity_remain_recovery": 1,
                 }
@@ -465,30 +496,38 @@ class DeliFinishAssetToolHandler:
         model_tool_m2m = DisperseModel(app_model='asset.instrumenttoolusedepartment').get_model()
         if all(hasattr(model, 'objects') for model in [model_tool, model_tool_m2m]):
             for delivery_product in instance.delivery_product_delivery_sub.all():
-                asset_type = delivery_product.asset_type
-                product_convert_into = delivery_product.product_convert_into
-                if asset_type == 1 and product_convert_into == 1 and delivery_product.offset:
-                    price_list = []
-                    quantity = 0
-                    for delivery_warehouse in delivery_product.delivery_pw_delivery_product.all():
-                        cost = DeliFinishHandler.get_cost_by_warehouse(
-                            product_obj=delivery_product.offset,
-                            warehouse_id=delivery_warehouse.warehouse_id,
-                            sale_order_id=None,
-                        )
-                        if cost not in price_list:
-                            price_list.append(cost)
-                        quantity += delivery_warehouse.quantity_delivery
-                    tool_data = DeliFinishAssetToolHandler.create_obj_and_set_tool_data(
+                for delivery_offset in delivery_product.delivery_po_delivery_product.filter(offset__isnull=False):
+                    DeliFinishAssetToolHandler.create_new_tool(
                         model_tool=model_tool,
                         model_tool_m2m=model_tool_m2m,
-                        instance=instance,
                         delivery_product=delivery_product,
-                        cost=(sum(price_list) / len(price_list)),
-                        quantity=quantity
+                        delivery_offset=delivery_offset,
                     )
-                    delivery_product.tool_data = tool_data
-                    delivery_product.save(update_fields=['tool_data'])
+        return True
+
+    @classmethod
+    def create_new_tool(cls, model_tool, model_tool_m2m, delivery_product, delivery_offset):
+        if delivery_offset.product_convert_into == 1:
+            price_list = []
+            quantity = 0
+            for delivery_warehouse in delivery_offset.delivery_pw_delivery_offset.all():
+                cost = DeliFinishHandler.get_cost_by_warehouse(
+                    product_obj=delivery_offset.offset,
+                    warehouse_id=delivery_warehouse.warehouse_id,
+                    sale_order_id=None,
+                )
+                if cost not in price_list:
+                    price_list.append(cost)
+                quantity += delivery_warehouse.quantity_delivery
+            tool_data = DeliFinishAssetToolHandler.create_obj_and_set_tool_data(
+                model_tool=model_tool,
+                model_tool_m2m=model_tool_m2m,
+                delivery_offset=delivery_offset,
+                cost=(sum(price_list) / len(price_list)),
+                quantity=quantity
+            )
+            delivery_product.tool_data = tool_data
+            delivery_product.save(update_fields=['tool_data'])
         return True
 
     @classmethod
@@ -496,29 +535,29 @@ class DeliFinishAssetToolHandler:
             cls,
             model_tool,
             model_tool_m2m,
-            instance,
-            delivery_product,
+            delivery_offset,
             cost,
             quantity,
     ):
         tool_obj = model_tool.objects.create(
-            tenant_id=instance.tenant_id,
-            company_id=instance.company_id,
-            classification_id=delivery_product.tool_type_data.get('id', None),
-            manage_department_id=delivery_product.tool_group_manage_data.get('id', None),
-            product_id=delivery_product.offset_id,
-            title=delivery_product.offset.title,
-            asset_code=delivery_product.offset.code,
+            tenant_id=delivery_offset.tenant_id,
+            company_id=delivery_offset.company_id,
+            employee_inherit_id=delivery_offset.employee_created_id,
+            classification_id=delivery_offset.tool_type_data.get('id', None),
+            manage_department_id=delivery_offset.tool_group_manage_data.get('id', None),
+            product_id=delivery_offset.offset_id,
+            title=delivery_offset.offset.title,
+            asset_code=delivery_offset.offset.code,
             source_type=1,
             unit_price=cost,
             quantity=quantity,
             total_value=cost * quantity,
-            depreciation_time=delivery_product.product_depreciation_time,
-            depreciation_start_date=delivery_product.product_depreciation_start_date,
-            depreciation_end_date=delivery_product.product_depreciation_end_date,
+            depreciation_time=delivery_offset.product_depreciation_time,
+            depreciation_start_date=delivery_offset.product_depreciation_start_date,
+            depreciation_end_date=delivery_offset.product_depreciation_end_date,
             depreciation_data=DeliFinishAssetToolHandler.update_depreciation_data(
-                depreciation_data=delivery_product.depreciation_data,
-                old_cost=delivery_product.product_cost,
+                depreciation_data=delivery_offset.depreciation_data,
+                old_cost=delivery_offset.product_cost,
                 new_cost=cost,
             ),
             status=2,
@@ -526,11 +565,12 @@ class DeliFinishAssetToolHandler:
         )
         if tool_obj:
             tool_obj.system_status = 3
-            tool_obj.save(update_fields=['system_status'])
+            tool_obj.date_approved = timezone.now()
+            tool_obj.save(update_fields=['system_status', 'date_approved'])
             # m2m
             model_tool_m2m.objects.bulk_create([
                 model_tool_m2m(instrument_tool=tool_obj, use_department_id=group.get('id', None))
-                for group in delivery_product.tool_group_using_data
+                for group in delivery_offset.tool_group_using_data
             ])
             tool_json = {
                 'tool_id': str(tool_obj.id),
@@ -547,29 +587,29 @@ class DeliFinishAssetToolHandler:
                     "depreciation_end_date": str(tool_obj.depreciation_end_date),
                     "depreciation_data": tool_obj.depreciation_data,
                 },
-                "product_id": str(delivery_product.product_id),
-                "product_data": delivery_product.product_data,
-                "uom_time_id": str(delivery_product.uom_time_id),
-                "uom_time_data": delivery_product.uom_time_data,
-                "product_quantity_time": delivery_product.product_quantity_time,
-                "product_depreciation_time": delivery_product.product_depreciation_time,
-                "product_depreciation_price": delivery_product.product_depreciation_price,
-                "product_depreciation_method": delivery_product.product_depreciation_method,
-                "product_depreciation_subtotal": delivery_product.product_depreciation_subtotal,
-                "product_depreciation_adjustment": delivery_product.product_depreciation_adjustment,
+                "product_id": str(delivery_offset.product_id),
+                "product_data": delivery_offset.product_data,
+                "uom_time_id": str(delivery_offset.uom_time_id),
+                "uom_time_data": delivery_offset.uom_time_data,
+                "product_quantity_time": delivery_offset.product_quantity_time,
+                "product_depreciation_time": delivery_offset.product_depreciation_time,
+                "product_depreciation_price": delivery_offset.product_depreciation_price,
+                "product_depreciation_method": delivery_offset.product_depreciation_method,
+                "product_depreciation_subtotal": delivery_offset.product_depreciation_subtotal,
+                "product_depreciation_adjustment": delivery_offset.product_depreciation_adjustment,
                 "product_depreciation_start_date": str(
-                    delivery_product.product_depreciation_start_date
+                    delivery_offset.product_depreciation_start_date
                 ),
                 "product_depreciation_end_date": str(
-                    delivery_product.product_depreciation_end_date
+                    delivery_offset.product_depreciation_end_date
                 ),
 
-                "product_lease_end_date": str(delivery_product.product_lease_end_date),
-                "product_lease_start_date": str(delivery_product.product_lease_start_date),
+                "product_lease_end_date": str(delivery_offset.product_lease_end_date),
+                "product_lease_start_date": str(delivery_offset.product_lease_start_date),
 
-                "depreciation_data": delivery_product.depreciation_data,
+                "depreciation_data": delivery_offset.depreciation_data,
 
-                "quantity_remain_recovery": delivery_product.quantity_remain_recovery,
+                "quantity_remain_recovery": delivery_offset.picked_quantity,
             }
             return [tool_json]
         return []

@@ -313,9 +313,6 @@ class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
             product_obj = Product.objects.filter(id=data.get('product_id', None)).first()
             if product_obj:
                 product_description = data.get('product_description', "")
-                price = data.get('product_unit_price', 0)
-                subtotal = data.get('product_subtotal_price', 0)
-                subtotal_at = data.get('product_subtotal_price_after_tax', 0)
                 data.update({
                     'product_data': {
                         'id': str(product_obj.id),
@@ -326,9 +323,21 @@ class SaleOrderDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
                 })
                 data.update({
                     'product_description': product_description if product_description else product_obj.description,
-                    'product_unit_price': CompanyHandler.parse_currency(obj=obj, value=price),
-                    'product_subtotal_price': CompanyHandler.parse_currency(obj=obj, value=subtotal),
-                    'product_subtotal_price_after_tax': CompanyHandler.parse_currency(obj=obj, value=subtotal_at),
+                    'product_unit_price': CompanyHandler.parse_currency(
+                        obj=obj, value=data.get('product_unit_price', 0)
+                    ),
+                    'product_discount_value': CompanyHandler.round_by_company_config(
+                        company=obj.company, value=data.get('product_discount_value', 0)
+                    ),
+                    'product_discount_amount': CompanyHandler.parse_currency(
+                        obj=obj, value=data.get('product_discount_amount', 0)
+                    ),
+                    'product_subtotal_price': CompanyHandler.parse_currency(
+                        obj=obj, value=data.get('product_subtotal_price', 0)
+                    ),
+                    'product_subtotal_price_after_tax': CompanyHandler.parse_currency(
+                        obj=obj, value=data.get('product_subtotal_price_after_tax', 0)
+                    ),
                 })
         return obj.sale_order_products_data
 
@@ -523,6 +532,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
         return SerializerCommonValidate.validate_attachment(user=user, model_cls=SaleOrderAttachment, value=value)
 
     def validate(self, validate_data):
+        user = self.context.get('user', None)
         process_obj = validate_data.get('process', None)
         process_stage_app_obj = validate_data.get('process_stage_app', None)
         opportunity_id = validate_data.get('opportunity_id', None)  # UUID or None
@@ -533,7 +543,7 @@ class SaleOrderCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
         SaleOrderRuleValidate.validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
         SaleOrderRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
-        SaleOrderRuleValidate.validate_payment_stage(validate_data=validate_data)
+        SaleOrderRuleValidate.validate_payment_stage(validate_data=validate_data, company_obj=user.company_current)
         return validate_data
 
     @decorator_run_workflow
@@ -733,10 +743,11 @@ class SaleOrderUpdateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
         )
 
     def validate(self, validate_data):
+        user = self.context.get('user', None)
         SaleOrderRuleValidate.validate_config_role(validate_data=validate_data)
         self.validate_opportunity_rules(validate_data=validate_data)
         SaleOrderRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
-        SaleOrderRuleValidate.validate_payment_stage(validate_data=validate_data)
+        SaleOrderRuleValidate.validate_payment_stage(validate_data=validate_data, company_obj=user.company_current)
         return validate_data
 
     @decorator_run_workflow

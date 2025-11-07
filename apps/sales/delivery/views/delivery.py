@@ -14,6 +14,7 @@ __all__ = [
     'OrderDeliverySubRecoveryList',
     'DeliveryProductLeaseList',
     'OrderDeliverySubDetailPrint',
+    'DeliveryWorkLogList',
 ]
 
 
@@ -141,6 +142,7 @@ class OrderDeliverySubRecoveryList(BaseListMixin):
     filterset_fields = {
         'order_delivery__sale_order_id': ['exact'],
         'order_delivery__lease_order_id': ['exact'],
+        'system_status': ['exact', 'in'],
     }
     serializer_list = OrderDeliverySubRecoveryListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
@@ -177,6 +179,25 @@ class DeliveryProductLeaseList(BaseListMixin):
     @swagger_auto_schema(
         operation_summary="Delivery Product Lease List",
         operation_description="Get Delivery Product Lease List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class DeliveryWorkLogList(BaseListMixin):
+    queryset = OrderDeliverySub.objects
+    filterset_fields = {
+        'service_order__document_root_id': ['exact', 'in'],
+    }
+    serializer_list = OrderDeliverySubDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Delivery Work Log List",
+        operation_description="Get Delivery Work Log List",
     )
     @mask_view(
         login_require=True, auth_require=False,

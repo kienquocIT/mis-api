@@ -725,6 +725,7 @@ class ServiceOrderCommonFunc:
                     tax_value=payment_detail.get("tax_value", 0),
                     reconcile_value=payment_detail.get("reconcile_value", 0),
                     receivable_value=payment_detail.get("receivable_value", 0),
+                    order=payment_detail.get('order', 0),
                 )
             )
 
@@ -763,7 +764,8 @@ class ServiceOrderCommonFunc:
                     service_detail_id=service_uuid,
                     installment=reconcile.get('installment', 0),
                     total_value=reconcile.get('total_value', 0),
-                    reconcile_value=reconcile.get('reconcile_value', 0)
+                    reconcile_value=reconcile.get('reconcile_value', 0),
+                    order=reconcile.get('order', 0),
                 )
             )
         ServiceOrderPaymentReconcile.objects.bulk_create(bulk_data)
@@ -806,12 +808,22 @@ class ServiceOrderCommonFunc:
 
 
 class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
+    service_order = serializers.SerializerMethodField()
     product_list = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_service_order(cls, obj):
+        return {
+            'id': str(obj.service_order_id),
+            'title': obj.service_order.title,
+            'code': obj.service_order.code,
+            'document_root_id': obj.service_order.document_root_id,
+        } if obj.service_order else {}
 
     @classmethod
     def get_product_list(cls, obj):
         product_list = []
-        for item in obj.work_order_contributions.all():
+        for item in obj.work_order_contributions.filter(delivery_call=False):
             service_detail_obj = item.service_detail
             if service_detail_obj:
                 product_list.append(
@@ -823,7 +835,8 @@ class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
                         'delivered_quantity': item.delivered_quantity,
                         'product_data': service_detail_obj.product_data,
                         'tax': service_detail_obj.product.sale_tax_data,
-                        'uom': service_detail_obj.product.sale_default_uom_data
+                        'uom': service_detail_obj.product.sale_default_uom_data,
+                        'contribution_data': {'id': str(item.id), 'unit_cost': item.unit_cost},
                     }
                 )
         return product_list
@@ -834,9 +847,11 @@ class SVODeliveryWorkOrderDetailSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
+            'service_order',
             'start_date',
             'end_date',
-            'product_list'
+            'product_list',
+            'order',
         )
 
 

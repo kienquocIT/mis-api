@@ -12,6 +12,13 @@ class PaymentPlan(DataAbstractModel):
         null=True,
     )
     sale_order_data = models.JSONField(default=dict, help_text='data json of sale_order')
+    lease_order = models.ForeignKey(
+        'leaseorder.LeaseOrder',
+        on_delete=models.CASCADE,
+        related_name='payment_plan_lease_order',
+        null=True,
+    )
+    lease_order_data = models.JSONField(default=dict, help_text='data json of lease_order')
     purchase_order = models.ForeignKey(
         'purchasing.PurchaseOrder',
         on_delete=models.CASCADE,
@@ -43,6 +50,14 @@ class PaymentPlan(DataAbstractModel):
         null=True
     )
     so_payment_stage_data = models.JSONField(default=dict, help_text='data json of so_payment_stage')
+    lo_payment_stage = models.ForeignKey(
+        'leaseorder.LeaseOrderPaymentStage',
+        on_delete=models.SET_NULL,
+        verbose_name="payment stage",
+        related_name="payment_plan_lo_payment_stage",
+        null=True
+    )
+    lo_payment_stage_data = models.JSONField(default=dict, help_text='data json of lo_payment_stage')
     ar_invoice = models.ForeignKey(
         'arinvoice.ARInvoice',
         on_delete=models.CASCADE,

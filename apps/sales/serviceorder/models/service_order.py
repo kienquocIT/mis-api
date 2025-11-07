@@ -29,6 +29,14 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
         related_name="service_order_customer"
     )
     customer_data = models.JSONField(default=dict)
+    contact = models.ForeignKey(
+        'saledata.Contact',
+        on_delete=models.CASCADE,
+        verbose_name="contact",
+        related_name="service_order_contact",
+        null=True
+    )
+    contact_data = models.JSONField(default=dict, help_text='data json of contact')
     start_date = models.DateField()
     end_date = models.DateField()
     attachment_m2m = models.ManyToManyField(
@@ -87,12 +95,14 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
             )
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
+
                 if 'date_approved' in kwargs['update_fields']:
                     # CompanyFunctionNumber.auto_gen_code_based_on_config('serviceorder', True, self, kwargs)
                     ServiceOrderFinishHandler.re_processing_folder_task_files(instance=self)
         # hit DB
         AdvanceHandler.push_opportunity_log(self)
         super().save(*args, **kwargs)
+        ServiceOrderFinishHandler.save_log_snapshot(instance=self)
 
     class Meta:
         verbose_name = 'Service Order'
@@ -265,6 +275,11 @@ class ServiceOrderWorkOrderContribution(SimpleAbstractModel):
     # package feature
     has_package = models.BooleanField(default=False)
     package_data = models.JSONField(default=list, null=True)
+    delivery_call = models.BooleanField(
+        default=False,
+        verbose_name='Called delivery',
+        help_text='State call delivery of this',
+    )
 
     class Meta:
         verbose_name = 'Service order work order contribution'
@@ -321,6 +336,7 @@ class ServiceOrderPayment(MasterDataAbstractModel):
 
 
 class ServiceOrderPaymentDetail(SimpleAbstractModel):
+    order = models.IntegerField(default=0)
     service_order_payment = models.ForeignKey(
         'ServiceOrderPayment',
         on_delete=models.CASCADE,
@@ -348,12 +364,13 @@ class ServiceOrderPaymentDetail(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Service order payment detail'
         verbose_name_plural = 'Service order detail'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
 
 class ServiceOrderPaymentReconcile(SimpleAbstractModel):
+    order = models.IntegerField(default=0)
     advance_payment_detail = models.ForeignKey(
         'ServiceOrderPaymentDetail',
         on_delete=models.CASCADE,
@@ -377,7 +394,7 @@ class ServiceOrderPaymentReconcile(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Service order payment reconcile'
         verbose_name_plural = 'Service order payment reconciles'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 

@@ -104,6 +104,13 @@ class AssetToolsProvideProduct(DataAbstractModel):
         related_name='product_map_asset_provide',
         null=True
     )
+    prod_in_fixed = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.CASCADE,
+        verbose_name='Product need provide',
+        related_name='product_fixed_map_asset_provide',
+        null=True
+    )
     order = models.IntegerField(
         default=1
     )
@@ -149,18 +156,24 @@ class AssetToolsProvideProduct(DataAbstractModel):
     is_returned = models.FloatField(default=0, verbose_name='Product is returned')
 
     def create_backup_data(self):
-        if self.tax and not self.tax_data:
+        if self.tax:
             self.tax_data = {
                 "id": str(self.tax_id),
                 "title": str(self.tax.title),
                 "code": str(self.tax.code),
                 "rate": str(self.tax.rate),
             }
-        if self.prod_in_tools and not self.product_data:
+        if self.prod_in_tools:
             self.product_data = {
                 "id": str(self.prod_in_tools_id),
                 "title": str(self.prod_in_tools.title),
                 "code": self.prod_in_tools.code,
+            }
+        if self.prod_in_fixed:
+            self.product_data = {
+                "id": str(self.prod_in_fixed_id),
+                "title": str(self.prod_in_fixed.title),
+                "code": self.prod_in_fixed.code,
             }
 
     def before_save(self):

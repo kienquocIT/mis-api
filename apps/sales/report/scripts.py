@@ -42,10 +42,10 @@ class InventoryReportRun:
         print('...get all delivery this period', end='')
         all_delivery = OrderDeliverySub.objects.filter(
             company_id=company_id,
-            state=2,
-            date_done__date__lte=this_period.end_date,
-            date_done__date__gte=this_period.start_date
-        ).order_by('date_done')
+            system_status=3,
+            date_approved__date__lte=this_period.end_date,
+            date_approved__date__gte=this_period.start_date
+        ).order_by('date_approved')
         print(f'...found {all_delivery.count()} record(s) total')
         return all_delivery
 
@@ -105,7 +105,7 @@ class InventoryReportRun:
             all_docs.append({
                 'id': str(delivery.id),
                 'code': str(delivery.code),
-                'date_approved': delivery.date_done,
+                'date_approved': delivery.date_approved,
                 'type': 'delivery'
             })
         for goods_issue in InventoryReportRun.get_all_goods_issue_this_period(company_id, this_period):

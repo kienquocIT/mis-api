@@ -15,10 +15,7 @@ class AssetToolsProvideRequestList(BaseListMixin, BaseCreateMixin):
     serializer_detail = AssetToolsProvideListSerializer
     serializer_create = AssetToolsProvideCreateSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = [
-        'tenant_id', 'company_id',
-        'employee_created_id',
-    ]
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
     search_fields = ('code', 'title')
     filterset_fields = {
         "complete_delivered": ['exact'],
