@@ -48,33 +48,32 @@ class ChartOfAccounts(MasterDataAbstractModel):
         permissions = ()
 
     @classmethod
-    def add_account(cls, parent_acc_type, parent_acc_code, new_acc_code, new_acc_name, new_foreign_acc_name):
-        for company in Company.objects.all():
-            # get parent account
-            parent_account_obj = ChartOfAccounts.objects.filter(
-                acc_type=parent_acc_type, acc_code=parent_acc_code, company=company
-            ).first()
-            existed_account = ChartOfAccounts.objects.filter(
-                acc_type=parent_acc_type, acc_code=new_acc_code, company=company
-            ).exists()
-            if parent_account_obj and not existed_account:
-                ChartOfAccounts.objects.filter(
-                    order__gt=parent_account_obj.order, company=company
-                ).update(order=F('order') + 1)
-                ChartOfAccounts.objects.create(
-                    order=parent_account_obj.order + 1,
-                    parent_account=parent_account_obj,
-                    acc_code=new_acc_code,
-                    acc_name=new_acc_name,
-                    foreign_acc_name=new_foreign_acc_name,
-                    acc_type=parent_account_obj.acc_type,
-                    company=company,
-                    tenant=company.tenant,
-                    level=parent_account_obj.level + 1,
-                    is_default=False,
-                    is_added=True
-                )
-                print(f'Added {new_acc_code} for {company.title}')
-            else:
-                print('Can not found parent account || existed account')
+    def add_account(cls, company, parent_acc_type, parent_acc_code, new_acc_code, new_acc_name, new_foreign_acc_name):
+        # get parent account
+        parent_account_obj = ChartOfAccounts.objects.filter(
+            acc_type=parent_acc_type, acc_code=parent_acc_code, company=company
+        ).first()
+        existed_account = ChartOfAccounts.objects.filter(
+            acc_type=parent_acc_type, acc_code=new_acc_code, company=company
+        ).exists()
+        if parent_account_obj and not existed_account:
+            ChartOfAccounts.objects.filter(
+                order__gt=parent_account_obj.order, company=company
+            ).update(order=F('order') + 1)
+            ChartOfAccounts.objects.create(
+                order=parent_account_obj.order + 1,
+                parent_account=parent_account_obj,
+                acc_code=new_acc_code,
+                acc_name=new_acc_name,
+                foreign_acc_name=new_foreign_acc_name,
+                acc_type=parent_account_obj.acc_type,
+                company=company,
+                tenant=company.tenant,
+                level=parent_account_obj.level + 1,
+                is_default=False,
+                is_added=True
+            )
+            print(f'Added account {new_acc_code}')
+        else:
+            print('Can not found parent account || existed account')
         return True
