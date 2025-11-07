@@ -17,7 +17,7 @@ class JEForAPInvoiceHandler:
         for item in ap_invoice_obj.ap_invoice_goods_receipts.all():
             goods_receipt_obj = item.goods_receipt_mapped
             for gr_prd_obj in goods_receipt_obj.goods_receipt_product_goods_receipt.all():
-                # lấy cost lúc giao của sp
+                # lấy cost lúc nhập của sp
                 stock_log_item = ReportStockLog.objects.filter(
                     product=gr_prd_obj.product,
                     trans_code=goods_receipt_obj.code,
