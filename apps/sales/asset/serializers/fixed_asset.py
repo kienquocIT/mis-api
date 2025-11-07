@@ -244,8 +244,7 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
 
                     if total_increased_value > ap_invoice_item.product_subtotal:
                         raise serializers.ValidationError({
-                            'FA Increase': f'Total increased FA value '
-                                                f'exceeds AP invoice item subtotal'
+                            'FA Increase': 'Total increased FA value exceeds AP invoice item subtotal'
                         })
 
                 except APInvoiceItems.DoesNotExist:

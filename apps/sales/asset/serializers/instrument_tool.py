@@ -191,7 +191,7 @@ class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
         raise serializers.ValidationError({"asset_code": BaseMsg.REQUIRED})
 
     @classmethod
-    def validate_increase_fa_list(self, value):
+    def validate_increase_fa_list(cls, value):
         """
         Validate that the increased FA value doesn't exceed AP invoice item subtotal
         Expected format: {
@@ -236,8 +236,7 @@ class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
 
                     if total_increased_value > ap_invoice_item.product_subtotal:
                         raise serializers.ValidationError({
-                            'increase_fa_list': f'Total increased FA value '
-                                                f'exceeds AP invoice item subtotal'
+                            'increase_fa_list': 'Total increased FA value exceeds AP invoice item subtotal'
                         })
 
                 except APInvoiceItems.DoesNotExist:
