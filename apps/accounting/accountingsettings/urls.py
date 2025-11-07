@@ -2,6 +2,8 @@ from django.urls import path
 from apps.accounting.accountingsettings.views.account_masterdata_views import (
     ChartOfAccountsList, DefaultAccountDeterminationList, DefaultAccountDeterminationDetail
 )
+from apps.accounting.accountingsettings.views.dimension import DimensionDefinitionList, DimensionDefinitionDetail, \
+    DimensionDefinitionWithValueList, DimensionValueList, DimensionValueDetail
 from apps.accounting.accountingsettings.views.prd_account_deter_views import ProductAccountDeterminationList, \
     ProductAccountDeterminationDetail
 from apps.accounting.accountingsettings.views.prd_type_account_deter_views import ProductTypeAccountDeterminationList, \
@@ -51,4 +53,21 @@ urlpatterns = [
         ProductAccountDeterminationDetail.as_view(),
         name='ProductAccountDeterminationDetail'
     ),
+]
+
+# Dimension
+urlpatterns += [
+    path('dimension-definition/list', DimensionDefinitionList.as_view(), name='DimensionDefinitionList'),
+    path(
+        'dimension-definition/detail/<str:pk>',
+         DimensionDefinitionDetail.as_view(),
+         name='DimensionDefinitionDetail'
+    ),
+    path(
+        'dimension-definition-values/<str:pk>',
+         DimensionDefinitionWithValueList.as_view(),
+         name='DimensionDefinitionWithValueList'
+    ),
+    path('dimension-value/list', DimensionValueList.as_view(), name='DimensionValueList'),
+    path('dimension-value/detail/<str:pk>', DimensionValueDetail.as_view(), name='DimensionValueDetail'),
 ]
