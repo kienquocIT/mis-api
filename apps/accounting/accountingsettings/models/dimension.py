@@ -1,10 +1,5 @@
 from django.db import models
-from django.db.models import F
-from django.utils.translation import gettext_lazy as _
-from prompt_toolkit.layout import Dimension
-
-from apps.core.company.models import Company
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
+from apps.shared import MasterDataAbstractModel
 
 __all__ = [
     'DimensionDefinition',

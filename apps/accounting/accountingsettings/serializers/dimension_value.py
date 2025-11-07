@@ -128,7 +128,7 @@ class DimensionValueCreateSerializer(serializers.ModelSerializer):
                 return dimension.id
             except DimensionDefinition.DoesNotExist:
                 raise serializers.ValidationError(_("Dimension definition does not exist"))
-
+        return value
 
 class DimensionValueUpdateSerializer(serializers.ModelSerializer):
     dimension_id = serializers.UUIDField(error_messages={
@@ -166,6 +166,7 @@ class DimensionValueUpdateSerializer(serializers.ModelSerializer):
                 return dimension.id
             except DimensionDefinition.DoesNotExist:
                 raise serializers.ValidationError(_("Dimension definition does not exist"))
+        return value
 
     def validate(self, attrs):
         new_parent_id = attrs.get("parent_id", None)

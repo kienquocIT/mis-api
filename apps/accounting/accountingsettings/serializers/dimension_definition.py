@@ -1,5 +1,3 @@
-from django.db import transaction
-from django.db.models import F
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
@@ -101,24 +99,24 @@ class DimensionDefinitionWithValuesSerializer(serializers.ModelSerializer):
         values = DimensionValue.objects.filter(dimension=obj).select_related('parent')
 
         result = []
-        for v in values:
+        for item in values:
             level = 0
-            parent = v.parent
+            parent = item.parent
             while parent:
                 level += 1
                 parent = parent.parent
 
             result.append({
-                "id": v.id,
-                "code": v.code,
-                "title": v.title,
-                "allow_posting": v.allow_posting,
-                "parent_id": v.parent.id if v.parent else None,
-                "has_children": v.child_values.exists(),
-                "children_ids": list(v.child_values.values_list("id", flat=True)),
+                "id": item.id,
+                "code": item.code,
+                "title": item.title,
+                "allow_posting": item.allow_posting,
+                "parent_id": item.parent.id if item.parent else None,
+                "has_children": item.child_values.exists(),
+                "children_ids": list(item.child_values.values_list("id", flat=True)),
                 "level": level,
-                "related_app_id": v.related_app_id,
-                "related_app_code": v.related_app_code,
+                "related_app_id": item.related_app_id,
+                "related_app_code": item.related_app_code,
             })
 
         return result
