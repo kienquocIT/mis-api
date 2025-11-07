@@ -1,25 +1,32 @@
 from django.urls import path
-from apps.accounting.accountingsettings.views.account_masterdata_views import (
-    ChartOfAccountsList, DefaultAccountDeterminationList, DefaultAccountDeterminationDetail
+from apps.accounting.accountingsettings.views.chart_of_account import (
+    ChartOfAccountsList
 )
-from apps.accounting.accountingsettings.views.prd_account_deter_views import ProductAccountDeterminationList, \
-    ProductAccountDeterminationDetail
-from apps.accounting.accountingsettings.views.prd_type_account_deter_views import ProductTypeAccountDeterminationList, \
-    ProductTypeAccountDeterminationDetail
-from apps.accounting.accountingsettings.views.wh_account_deter_views import WarehouseAccountDeterminationList, \
-    WarehouseAccountDeterminationDetail
+from apps.accounting.accountingsettings.views.account_determination import (
+    AccountDeterminationList, AccountDeterminationDetail
+)
+from apps.accounting.accountingsettings.views.product_account_determination import (
+    ProductAccountDeterminationList, ProductAccountDeterminationDetail
+)
+from apps.accounting.accountingsettings.views.product_type_account_determination import (
+    ProductTypeAccountDeterminationList, ProductTypeAccountDeterminationDetail
+)
+from apps.accounting.accountingsettings.views.warehouse_account_determination import (
+    WarehouseAccountDeterminationList, WarehouseAccountDeterminationDetail
+)
+
 
 urlpatterns = [
     path('chart-of-accounts/list', ChartOfAccountsList.as_view(), name='ChartOfAccountsList'),
     path(
-        'default-account-determination/list',
-        DefaultAccountDeterminationList.as_view(),
-        name='DefaultAccountDeterminationList'
+        'account-determination/list',
+        AccountDeterminationList.as_view(),
+        name='AccountDeterminationList'
     ),
     path(
-        'default-account-determination/detail/<str:pk>',
-        DefaultAccountDeterminationDetail.as_view(),
-        name='DefaultAccountDeterminationDetail'
+        'account-determination/detail/<str:pk>',
+        AccountDeterminationDetail.as_view(),
+        name='AccountDeterminationDetail'
     ),
     path(
         'warehouse-account-determination/list',

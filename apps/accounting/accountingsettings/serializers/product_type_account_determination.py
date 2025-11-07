@@ -1,11 +1,14 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from apps.accounting.accountingsettings.models.account_masterdata_models import (
-    DEFAULT_ACCOUNT_DETERMINATION_TYPE,
+from apps.accounting.accountingsettings.models.chart_of_account import (
     ChartOfAccounts
 )
-from apps.accounting.accountingsettings.models.prd_type_account_deter import ProductTypeAccountDetermination, \
-    ProductTypeAccountDeterminationSub
+from apps.accounting.accountingsettings.models.account_determination import (
+    ACCOUNT_DETERMINATION_TYPE,
+)
+from apps.accounting.accountingsettings.models.product_type_account_determination import (
+    ProductTypeAccountDetermination, ProductTypeAccountDeterminationSub
+)
 
 
 class ProductTypeAccountDeterminationListSerializer(serializers.ModelSerializer):
@@ -30,7 +33,7 @@ class ProductTypeAccountDeterminationListSerializer(serializers.ModelSerializer)
 
     @classmethod
     def get_account_determination_type_convert(cls, obj):
-        return DEFAULT_ACCOUNT_DETERMINATION_TYPE[obj.account_determination_type][1]
+        return ACCOUNT_DETERMINATION_TYPE[obj.account_determination_type][1]
 
 
 class ProductTypeAccountDeterminationDetailSerializer(serializers.ModelSerializer):

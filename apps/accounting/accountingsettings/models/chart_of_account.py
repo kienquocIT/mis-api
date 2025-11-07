@@ -1,15 +1,14 @@
 from django.db import models
 from django.db.models import F
 from django.utils.translation import gettext_lazy as _
-
 from apps.core.company.models import Company
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
+from apps.shared import MasterDataAbstractModel
+
 
 __all__ = [
-    'ChartOfAccounts',
-    'DefaultAccountDetermination',
-    'DefaultAccountDeterminationSub'
+    'ChartOfAccounts'
 ]
+
 
 CHART_OF_ACCOUNT_TYPE = [
     (0, _("Off-table accounts")),
@@ -21,13 +20,6 @@ CHART_OF_ACCOUNT_TYPE = [
     (6, _("Other incomes")),
     (7, _("Other expenses")),
     (8, _("Income summary")),
-]
-
-DEFAULT_ACCOUNT_DETERMINATION_TYPE = [
-    (0, _('Sale')),
-    (1, _('Purchasing')),
-    (2, _('Inventory')),
-    (3, _('Fixed, Assets')),
 ]
 
 
@@ -66,7 +58,9 @@ class ChartOfAccounts(MasterDataAbstractModel):
                 acc_type=parent_acc_type, acc_code=new_acc_code, company=company
             ).exists()
             if parent_account_obj and not existed_account:
-                ChartOfAccounts.objects.filter(order__gt=parent_account_obj.order).update(order=F('order') + 1)
+                ChartOfAccounts.objects.filter(
+                    order__gt=parent_account_obj.order, company=company
+                ).update(order=F('order') + 1)
                 ChartOfAccounts.objects.create(
                     order=parent_account_obj.order + 1,
                     parent_account=parent_account_obj,
@@ -83,51 +77,4 @@ class ChartOfAccounts(MasterDataAbstractModel):
                 print(f'Added {new_acc_code} for {company.title}')
             else:
                 print('Can not found parent account || existed account')
-
-
-class DefaultAccountDetermination(MasterDataAbstractModel):
-    order = models.IntegerField(default=0)
-    foreign_title = models.CharField(max_length=100, blank=True)
-    default_account_determination_type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DETERMINATION_TYPE, default=0)
-    can_change_account = models.BooleanField(default=False)
-    is_changed = models.BooleanField(default=False, help_text='True if user has change default account determination')
-
-    @classmethod
-    def get_default_account_deter_sub_data(cls, tenant_id, company_id, foreign_title):
-        account_deter = DefaultAccountDetermination.objects.filter(
-            tenant_id=tenant_id,
-            company_id=company_id,
-            foreign_title=foreign_title
-        ).first()
-        if account_deter:
-            return [item.account_mapped for item in account_deter.default_acc_deter_sub.all()]
-        return []
-
-    class Meta:
-        verbose_name = 'Default Account Determination'
-        verbose_name_plural = 'Default Account Determination'
-        ordering = ('order',)
-        default_permissions = ()
-        permissions = ()
-
-
-class DefaultAccountDeterminationSub(SimpleAbstractModel):
-    default_acc_deter = models.ForeignKey(
-        DefaultAccountDetermination,
-        on_delete=models.CASCADE,
-        related_name='default_acc_deter_sub'
-    )
-    account_mapped = models.ForeignKey(
-        ChartOfAccounts,
-        on_delete=models.CASCADE,
-        related_name='default_acc_deter_account_mapped'
-    )
-    account_mapped_data = models.JSONField(default=dict)
-    # {'id', 'acc_code', 'acc_name', 'foreign_acc_name'}
-
-    class Meta:
-        verbose_name = 'Default Account Determination Sub'
-        verbose_name_plural = 'Default Account Determination Sub'
-        ordering = ()
-        default_permissions = ()
-        permissions = ()
+        return True

@@ -663,7 +663,7 @@ class AccountingMasterData:
         return True
 
     @staticmethod
-    def generate_default_account_determination_200():
+    def generate_account_determination_200():
         """ Xác định các tài khoản kế toán mặc định (TT200) """
         for company in Company.objects.all():
             account_mapped_data_sale = [
@@ -837,20 +837,20 @@ class AccountingMasterData:
             bulk_info = []
             bulk_info_sub = []
             for order, item in enumerate(account_mapped_data_sale):
-                main_obj = DefaultAccountDetermination(
+                main_obj = AccountDetermination(
                     company=company,
                     tenant=company.tenant,
                     order=order,
                     title=item.get('title', ''),
                     foreign_title=item.get('foreign_title', ''),
-                    default_account_determination_type=0,
+                    account_determination_type=0,
                     can_change_account=True
                 )
                 bulk_info.append(main_obj)
                 for account in item.get('account', []):
                     bulk_info_sub.append(
-                        DefaultAccountDeterminationSub(
-                            default_acc_deter=main_obj,
+                        AccountDeterminationSub(
+                            account_determination=main_obj,
                             account_mapped=account,
                             account_mapped_data={
                                 'id': str(account.id),
@@ -861,20 +861,20 @@ class AccountingMasterData:
                         )
                     )
             for order, item in enumerate(account_mapped_data_purchasing):
-                main_obj = DefaultAccountDetermination(
+                main_obj = AccountDetermination(
                     company=company,
                     tenant=company.tenant,
                     order=order,
                     title=item.get('title', ''),
                     foreign_title=item.get('foreign_title', ''),
-                    default_account_determination_type=1,
+                    account_determination_type=1,
                     can_change_account=True
                 )
                 bulk_info.append(main_obj)
                 for account in item.get('account', []):
                     bulk_info_sub.append(
-                        DefaultAccountDeterminationSub(
-                            default_acc_deter=main_obj,
+                        AccountDeterminationSub(
+                            account_determination=main_obj,
                             account_mapped=account,
                             account_mapped_data={
                                 'id': str(account.id),
@@ -885,20 +885,20 @@ class AccountingMasterData:
                         )
                     )
             for order, item in enumerate(account_mapped_data_inventory):
-                main_obj = DefaultAccountDetermination(
+                main_obj = AccountDetermination(
                     company=company,
                     tenant=company.tenant,
                     order=order,
                     title=item.get('title', ''),
                     foreign_title=item.get('foreign_title', ''),
-                    default_account_determination_type=2,
+                    account_determination_type=2,
                     can_change_account=True
                 )
                 bulk_info.append(main_obj)
                 for account in item.get('account', []):
                     bulk_info_sub.append(
-                        DefaultAccountDeterminationSub(
-                            default_acc_deter=main_obj,
+                        AccountDeterminationSub(
+                            account_determination=main_obj,
                             account_mapped=account,
                             account_mapped_data={
                                 'id': str(account.id),
@@ -908,16 +908,16 @@ class AccountingMasterData:
                             }
                         )
                     )
-            DefaultAccountDetermination.objects.filter(company=company, tenant=company.tenant).delete()
-            DefaultAccountDetermination.objects.bulk_create(bulk_info)
-            DefaultAccountDeterminationSub.objects.bulk_create(bulk_info_sub)
+            AccountDetermination.objects.filter(company=company, tenant=company.tenant).delete()
+            AccountDetermination.objects.bulk_create(bulk_info)
+            AccountDeterminationSub.objects.bulk_create(bulk_info_sub)
             print(f'Done for {company.title}')
         return True
 
 
 class AccountingScripts:
     @staticmethod
-    def push_default_account_determination_200():
+    def push_account_determination_200():
         """ Đẩy các tài khoản kế toán xác định mặc định (TT200) vào KHO - PRODUCT TYPE - PRODUCT """
         for warehouse_obj in WareHouse.objects.all():
             AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 0)
