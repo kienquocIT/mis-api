@@ -1,32 +1,31 @@
-from apps.accounting.accountingsettings.models.account_masterdata_models import DefaultAccountDetermination
-from apps.accounting.accountingsettings.models.wh_account_deter import (
-    WarehouseAccountDetermination,
-    WarehouseAccountDeterminationSub
+from apps.accounting.accountingsettings.models.account_determination import AccountDetermination
+from apps.accounting.accountingsettings.models.warehouse_account_determination import (
+    WarehouseAccountDetermination, WarehouseAccountDeterminationSub
 )
 
 
 class AccountDeterminationForWarehouseHandler:
     @classmethod
-    def create_account_determination_for_warehouse(cls, warehouse_obj, default_account_determination_type):
+    def create_account_determination_for_warehouse(cls, warehouse_obj, account_determination_type):
         """ Gắn TK mặc định cho kho vừa tạo """
         company = warehouse_obj.company
         tenant = warehouse_obj.tenant
         bulk_info_wh = []
         bulk_info_wh_sub = []
-        for default_account in DefaultAccountDetermination.objects.filter(
-            company=company, tenant=tenant, default_account_determination_type=default_account_determination_type
+        for account_deter in AccountDetermination.objects.filter(
+            company=company, tenant=tenant, account_determination_type=account_determination_type
         ):
             wh_account_deter_obj = WarehouseAccountDetermination(
                 company=company,
                 tenant=tenant,
                 warehouse_mapped=warehouse_obj,
-                title=default_account.title,
-                foreign_title=default_account.foreign_title,
-                account_determination_type=default_account_determination_type,
+                title=account_deter.title,
+                foreign_title=account_deter.foreign_title,
+                account_determination_type=account_determination_type,
                 can_change_account=True
             )
             bulk_info_wh.append(wh_account_deter_obj)
-            for item in default_account.default_acc_deter_sub.all():
+            for item in account_deter.account_determination_sub.all():
                 bulk_info_wh_sub.append(
                     WarehouseAccountDeterminationSub(
                         wh_account_deter=wh_account_deter_obj,
@@ -36,7 +35,7 @@ class AccountDeterminationForWarehouseHandler:
                 )
         WarehouseAccountDetermination.objects.filter(
             warehouse_mapped=warehouse_obj,
-            account_determination_type=default_account_determination_type,
+            account_determination_type=account_determination_type,
         ).delete()
         WarehouseAccountDetermination.objects.bulk_create(bulk_info_wh)
         WarehouseAccountDeterminationSub.objects.bulk_create(bulk_info_wh_sub)

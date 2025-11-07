@@ -1,6 +1,6 @@
 import logging
 from django.db import transaction
-from apps.accounting.accountingsettings.models import DefaultAccountDetermination
+from apps.accounting.accountingsettings.models import AccountDetermination
 from apps.accounting.journalentry.models import JournalEntry
 from apps.sales.report.models import ReportStockLog
 
@@ -41,7 +41,7 @@ class JEForDeliveryHandler:
                             'taxable_value': 0,
                         })
 
-        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+        account_list = AccountDetermination.get_account_determination_sub_data(
             tenant_id=dlvr_obj.tenant_id,
             company_id=dlvr_obj.company_id,
             foreign_title='Customer underpayment'

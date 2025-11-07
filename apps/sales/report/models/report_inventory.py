@@ -64,13 +64,16 @@ class ReportStock(DataAbstractModel):
     )
     serial_number = models.CharField(max_length=100, blank=True, null=True)
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder', on_delete=models.SET_NULL, related_name="report_stock_sale_order", null=True
+        'saleorder.SaleOrder', on_delete=models.SET_NULL,
+        related_name="report_stock_sale_order", null=True
     )
     lease_order = models.ForeignKey(
-        'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="report_stock_lease_order", null=True
+        'leaseorder.LeaseOrder', on_delete=models.SET_NULL,
+        related_name="report_stock_lease_order", null=True
     )
     service_order = models.ForeignKey(
-        'serviceorder.ServiceOrder', on_delete=models.SET_NULL, related_name="report_stock_service_order", null=True
+        'serviceorder.ServiceOrder', on_delete=models.SET_NULL,
+        related_name="report_stock_service_order", null=True
     )
     period_mapped = models.ForeignKey(
         'saledata.Periods', on_delete=models.SET_NULL, related_name='report_stock_period_mapped', null=True
@@ -141,13 +144,16 @@ class ReportStockLog(DataAbstractModel):
         null=True
     ) # Kho vật lí (để hiển thị lên báo cáo trong trường hợp không quản lí tồn kho theo từng kho riêng biệt)
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder', on_delete=models.SET_NULL, related_name="report_stock_log_sale_order", null=True
+        'saleorder.SaleOrder', on_delete=models.SET_NULL,
+        related_name="report_stock_log_sale_order", null=True
     )
     lease_order = models.ForeignKey(
-        'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="report_stock_log_lease_order", null=True
+        'leaseorder.LeaseOrder', on_delete=models.SET_NULL,
+        related_name="report_stock_log_lease_order", null=True
     )
     service_order = models.ForeignKey(
-        'serviceorder.ServiceOrder', on_delete=models.SET_NULL, related_name="report_stock_log_service_order", null=True
+        'serviceorder.ServiceOrder', on_delete=models.SET_NULL,
+        related_name="report_stock_log_service_order", null=True
     )
 
     system_date = models.DateTimeField(null=True)
@@ -560,13 +566,16 @@ class ReportInventoryCost(DataAbstractModel):
         'saledata.WareHouse', on_delete=models.SET_NULL, related_name='report_inventory_cost_warehouse', null=True
     )
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder', on_delete=models.SET_NULL, related_name="report_inventory_cost_sale_order", null=True
+        'saleorder.SaleOrder', on_delete=models.SET_NULL,
+        related_name="report_inventory_cost_sale_order", null=True
     )
     lease_order = models.ForeignKey(
-        'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="report_inventory_cost_lease_order", null=True
+        'leaseorder.LeaseOrder', on_delete=models.SET_NULL,
+        related_name="report_inventory_cost_lease_order", null=True
     )
     service_order = models.ForeignKey(
-        'serviceorder.ServiceOrder', on_delete=models.SET_NULL, related_name="report_inventory_cost_service_order", null=True
+        'serviceorder.ServiceOrder', on_delete=models.SET_NULL,
+        related_name="report_inventory_cost_service_order", null=True
     )
     lot_mapped = models.ForeignKey(
         'saledata.ProductWareHouseLot',
@@ -661,13 +670,16 @@ class ReportInventoryCostLatestLog(SimpleAbstractModel):
     )
     serial_number = models.CharField(max_length=100, blank=True, null=True)
     sale_order = models.ForeignKey(
-        'saleorder.SaleOrder', on_delete=models.SET_NULL, related_name="rp_inv_cost_sale_order", null=True
+        'saleorder.SaleOrder', on_delete=models.SET_NULL,
+        related_name="rp_inv_cost_sale_order", null=True
     )
     lease_order = models.ForeignKey(
-        'leaseorder.LeaseOrder', on_delete=models.SET_NULL, related_name="rp_inv_cost_lease_order", null=True
+        'leaseorder.LeaseOrder', on_delete=models.SET_NULL,
+        related_name="rp_inv_cost_lease_order", null=True
     )
     service_order = models.ForeignKey(
-        'serviceorder.ServiceOrder', on_delete=models.SET_NULL, related_name="rp_inv_cost_service_order", null=True
+        'serviceorder.ServiceOrder', on_delete=models.SET_NULL,
+        related_name="rp_inv_cost_service_order", null=True
     )
     latest_log = models.ForeignKey(
         ReportStockLog, on_delete=models.CASCADE, related_name='rp_inv_cost_latest_log', null=True
