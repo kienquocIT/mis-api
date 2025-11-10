@@ -6,4 +6,4 @@ class TasksConfig(AppConfig):
     name = 'apps.sales.task'
 
     def ready(self):
-        from .signals import opp_task_pre_save, opp_task_changes, post_save_opp_task_summary
+        from .signals import track_employee_before_save, opp_task_changes, post_save_opp_task_summary
