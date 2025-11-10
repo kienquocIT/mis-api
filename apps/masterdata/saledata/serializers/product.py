@@ -406,7 +406,10 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         CompanyFunctionNumber.auto_code_update_latest_number(app_code='product')
 
         representative_product_obj = product_obj.representative_product
-        representative_product_obj.is_representative_product = representative_product_obj
+        if representative_product_obj:
+            representative_product_obj.is_representative_product = True
+        else:
+            representative_product_obj.is_representative_product = False
         representative_product_obj.save(update_fields=['is_representative_product'])
 
         return product_obj
@@ -866,7 +869,10 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         old_representative_product_obj = instance.representative_product
-        old_representative_product_obj.is_representative_product = old_representative_product_obj
+        if old_representative_product_obj:
+            old_representative_product_obj.is_representative_product = True
+        else:
+            old_representative_product_obj.is_representative_product = False
         old_representative_product_obj.save(update_fields=['is_representative_product'])
 
         validated_data.update(
@@ -921,7 +927,9 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 3)
 
         representative_product_obj = instance.representative_product
-        representative_product_obj.is_representative_product = representative_product_obj
+        if representative_product_obj:
+            representative_product_obj.is_representative_product = True
+        else:
+            representative_product_obj.is_representative_product = False
         representative_product_obj.save(update_fields=['is_representative_product'])
-
         return instance
