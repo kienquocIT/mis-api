@@ -406,9 +406,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         CompanyFunctionNumber.auto_code_update_latest_number(app_code='product')
 
         representative_product_obj = product_obj.representative_product
-        if representative_product_obj:
-            representative_product_obj.is_representative_product = True
-            representative_product_obj.save(update_fields=['is_representative_product'])
+        representative_product_obj.is_representative_product = True if representative_product_obj else False
+        representative_product_obj.save(update_fields=['is_representative_product'])
 
         return product_obj
 
@@ -863,18 +862,12 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         if 1 in validate_data.get('product_choice', []):
             validate_data['duration_unit'] = None
 
-        representative_product_obj = instance.representative_product
-        if representative_product_obj:
-            representative_product_obj.is_representative_product = True
-            representative_product_obj.save(update_fields=['is_representative_product'])
-
         return validate_data
 
     def update(self, instance, validated_data):
         old_representative_product_obj = instance.representative_product
-        if old_representative_product_obj:
-            old_representative_product_obj.is_representative_product = True
-            old_representative_product_obj.save(update_fields=['is_representative_product'])
+        old_representative_product_obj.is_representative_product = True if old_representative_product_obj else False
+        old_representative_product_obj.save(update_fields=['is_representative_product'])
 
         validated_data.update(
             {'volume': ProductCommonFunction.sub_validate_volume_obj(self.initial_data, validated_data)}
@@ -928,7 +921,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 3)
 
         representative_product_obj = instance.representative_product
-        if representative_product_obj:
-            representative_product_obj.is_representative_product = True
-            representative_product_obj.save(update_fields=['is_representative_product'])
+        representative_product_obj.is_representative_product = True if representative_product_obj else False
+        representative_product_obj.save(update_fields=['is_representative_product'])
+
         return instance
