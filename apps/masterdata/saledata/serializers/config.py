@@ -38,6 +38,7 @@ class PaymentTermListSerializer(serializers.ModelSerializer):
             'code',
             'apply_for',
             'term',
+            'is_delete',
         )
 
     @classmethod

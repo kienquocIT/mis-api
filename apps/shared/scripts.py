@@ -6739,3 +6739,15 @@ def recycle_is_delete(app_model, id_list):
             obj.save(update_fields=['is_delete'])
     print('recycle_is_delete done.')
     return True
+
+
+def update_delivery_product_offset_data_default():
+    for delivery_product in OrderDeliveryProduct.objects.all():
+        if delivery_product.offset_data == {}:
+            delivery_product.offset_data = []
+            delivery_product.save(**{
+                    'for_goods_recovery': True,
+                    'update_fields': ['offset_data']
+                })
+    print('update_delivery_product_offset_data_default done.')
+    return True

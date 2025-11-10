@@ -17,7 +17,8 @@ __all__ = [
     'ServiceOrderPaymentSerializer',
     'ServiceOrderDetailDashboardSerializer',
     'ServiceOrderCommonFunc',
-    'SVODeliveryWorkOrderDetailSerializer'
+    'SVODeliveryWorkOrderDetailSerializer',
+    'ServiceOrderIndicatorSerializer',
 ]
 
 

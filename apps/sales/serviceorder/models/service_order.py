@@ -54,6 +54,11 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
     total_product = models.FloatField(default=0, help_text="total of tab product")
     total_product_revenue_before_tax = models.FloatField(default=0, help_text="total before tax of tab product")
 
+    # total cost
+    total_cost_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab cost")
+    total_cost_tax = models.FloatField(default=0, help_text="total tax of tab cost")
+    total_cost = models.FloatField(default=0, help_text="total amount of tab cost")
+
     # expense value
     total_expense_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab expense")
     total_expense_tax = models.FloatField(default=0, help_text="total tax of tab expense")
