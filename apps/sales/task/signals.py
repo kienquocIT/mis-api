@@ -2,7 +2,7 @@ from uuid import UUID
 import datetime
 
 from django.utils import timezone
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 
 from apps.core.mailer.tasks import prepare_send_mail_new_task
@@ -80,70 +80,49 @@ class OppTaskSummaryHandler:
         return obj.get_detail()
 
 
-@receiver(post_save, sender=OpportunityTask)
-def opp_task_pre_save(sender, instance, *args, **kwargs):
+@receiver(pre_save, sender=OpportunityTask)
+def track_employee_before_save(sender, instance, **kwargs):
+    """Track old employee_inherit_id trước khi save"""
     try:
-        employee_inherit_id = None
-        if instance.id:
-            employee_inherit_id = OpportunityTask.objects.get(pk=instance.id).employee_inherit_id
-        instance.__employee_inherit_id = employee_inherit_id
-    except OpportunityTask.DoesNotExist:
-        pass
+        old_values = instance.get_old_value(['employee_inherit_id'])
+        instance._old_employee_inherit_id = old_values.get('employee_inherit_id')
+    except Exception as e:
+        print('error get old value', e)
+        instance._old_employee_inherit_id = None
 
 
 @receiver(post_save, sender=OpportunityTask)
 def opp_task_changes(sender, instance, created, **kwargs):
     if instance.employee_inherit_id and instance.task_status:
-        prev_employee_inherit_id = getattr(instance, '__employee_inherit_id', 'unknown')  # get from pre_save
-
-        if (prev_employee_inherit_id is None and instance.employee_inherit_id) \
-                or (
-                isinstance(prev_employee_inherit_id, UUID)
-                and prev_employee_inherit_id != instance.employee_inherit_id
-        ) \
-                or created is True:
-            call_task_background(
-                my_task=log_task_status,
-                **{
-                    'task_id': str(instance.id),
-                    'tenant_id': str(instance.tenant_id),
-                    'company_id': str(instance.company_id),
-                    'employee_inherit_id': str(instance.employee_inherit_id),
-                    'status': "ASSIGN_TASK",
-                    'status_translate': "",
-                    'date_changes': instance.date_modified,
-                    'task_color': '',
-                }
-            )
-
-        if instance.percent_completed in ['100', 100]:
-            call_task_background(
-                my_task=log_task_status,
-                **{
-                    'task_id': str(instance.id),
-                    'tenant_id': str(instance.tenant_id),
-                    'company_id': str(instance.company_id),
-                    'employee_inherit_id': str(instance.employee_inherit_id),
-                    'status': "FINISH_TASK",
-                    'status_translate': "",
-                    'date_changes': instance.date_modified,
-                    'task_color': '',
-                }
-            )
+        # Detect assignee change
+        old_employee_id = getattr(instance, '_old_employee_inherit_id', None)
+        is_assignee_changed = (
+                not created and
+                old_employee_id is not None and
+                old_employee_id != instance.employee_inherit_id
+        )
+        # Determine status
+        if created:
+            status = 'ASSIGN_TASK'
+        elif is_assignee_changed:
+            status = 'ASSIGN_TASK'  # ✅ Detect assignee change
+        elif instance.percent_completed in ['100', 100]:
+            status = "FINISH_TASK"
         else:
-            call_task_background(
-                my_task=log_task_status,
-                **{
-                    'task_id': str(instance.id),
-                    'tenant_id': str(instance.tenant_id),
-                    'company_id': str(instance.company_id),
-                    'employee_inherit_id': str(instance.employee_inherit_id),
-                    'status': instance.task_status.title,
-                    'status_translate': instance.task_status.translate_name,
-                    'date_changes': instance.date_modified,
-                    'task_color': instance.task_status.task_color,
-                }
-            )
+            status = instance.task_status.title
+        call_task_background(
+            my_task=log_task_status,
+            **{
+                'task_id': str(instance.id),
+                'tenant_id': str(instance.tenant_id),
+                'company_id': str(instance.company_id),
+                'employee_inherit_id': str(instance.employee_inherit_id),
+                'status': status,
+                'status_translate': instance.task_status.translate_name,
+                'date_changes': instance.date_modified,
+                'task_color': instance.task_status.task_color,
+            }
+        )
 
         call_task_background(
             my_task=opp_task_summary,
@@ -151,13 +130,13 @@ def opp_task_changes(sender, instance, created, **kwargs):
                 'employee_id': instance.employee_inherit_id,
             }
         )
-        if isinstance(prev_employee_inherit_id, UUID) and prev_employee_inherit_id != instance.employee_inherit_id:
+        # ✅ KHÁC: Update old assignee nếu có change
+        if is_assignee_changed and old_employee_id:
             call_task_background(
                 my_task=opp_task_summary,
-                **{
-                    'employee_id': prev_employee_inherit_id,
-                }
+                **{'employee_id': old_employee_id}
             )
+
     if created:
         # resolve task data
         if instance.task_status.task_kind in [0, 1] \
