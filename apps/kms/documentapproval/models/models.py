@@ -46,7 +46,9 @@ class KMSDocumentApproval(DataAbstractModel):
             )
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    CompanyFunctionNumber.auto_gen_code_based_on_config('kmsdocumentapproval', True, self, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                    )
         super().save(*args, **kwargs)
 
     class Meta:

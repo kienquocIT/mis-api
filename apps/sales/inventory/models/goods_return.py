@@ -33,7 +33,9 @@ class GoodsReturn(DataAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    CompanyFunctionNumber.auto_gen_code_based_on_config('goodsreturn', True, self, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                    )
                     if hasattr(self.company, 'sales_delivery_config_detail'):
                         config = self.company.sales_delivery_config_detail
                         if not config:

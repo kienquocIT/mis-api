@@ -103,9 +103,11 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
         if not instance.code:
             model_cls = DisperseModel(app_model=instance.get_model_code()).get_model()
             if model_cls and hasattr(model_cls, 'objects'):
+                # Nếu chạy quy trình thì lọc phiếu Đã duyệt (3) và Đã hủy (4)
+                # Nếu không chạy quy trình thì lọc phiếu Nháp (0 - baseline) và Đã tạo (1 - thông thường)
                 number = model_cls.objects.filter_on_company(
                     is_delete=False,
-                    system_status__in=[3, 4] if in_workflow else [1],
+                    system_status__in=[3, 4] if in_workflow else [0, 1],
                 ).count()
                 code_rule_number_format = re.search(r'\[(.*?)\]', code_rule)
                 if code_rule_number_format:

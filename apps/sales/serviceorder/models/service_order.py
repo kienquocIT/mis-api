@@ -97,7 +97,9 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
             if isinstance(kwargs['update_fields'], list):
 
                 if 'date_approved' in kwargs['update_fields']:
-                    # CompanyFunctionNumber.auto_gen_code_based_on_config('serviceorder', True, self, kwargs)
+                    # CompanyFunctionNumber.auto_gen_code_based_on_config(
+                    #     app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                    # )
                     ServiceOrderFinishHandler.re_processing_folder_task_files(instance=self)
         # hit DB
         AdvanceHandler.push_opportunity_log(self)
