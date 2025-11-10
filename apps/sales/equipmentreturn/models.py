@@ -205,7 +205,9 @@ class EquipmentReturn(DataAbstractModel):
         GoodsTransferProduct.objects.bulk_create(bulk_info)
 
         # duyệt tự động
-        CompanyFunctionNumber.auto_gen_code_based_on_config('goodstransfer', True, gtf_obj)
+        CompanyFunctionNumber.auto_gen_code_based_on_config(
+            app_code=None, instance=gtf_obj, in_workflow=True, kwargs=None
+        )
         gtf_obj.system_status = 3
         gtf_obj.save(update_fields=['code', 'system_status'])
         # action sau khi duyệt
@@ -247,7 +249,9 @@ class EquipmentReturn(DataAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    CompanyFunctionNumber.auto_gen_code_based_on_config('equipmentreturn', True, self, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                    )
                     self.auto_create_goods_transfer_doc(self)
                     self.update_state_of_equipment_loan(self)
         # hit DB

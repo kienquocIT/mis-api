@@ -152,7 +152,9 @@ class GoodsIssue(DataAbstractModel, AutoDocumentAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    CompanyFunctionNumber.auto_gen_code_based_on_config('goodsissue', True, self, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                    )
                     self.update_related_app_after_issue(self)
                     IRForGoodsIssueHandler.push_to_inventory_report(self)
         super().save(*args, **kwargs)

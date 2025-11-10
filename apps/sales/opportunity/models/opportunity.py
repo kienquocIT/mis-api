@@ -482,7 +482,9 @@ class Opportunity(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        CompanyFunctionNumber.auto_gen_code_based_on_config('opportunity', False, self, kwargs)
+        CompanyFunctionNumber.auto_gen_code_based_on_config(
+            app_code=None, instance=self, in_workflow=False, kwargs=kwargs
+        )
         # hit DB
         super().save(*args, **kwargs)
 

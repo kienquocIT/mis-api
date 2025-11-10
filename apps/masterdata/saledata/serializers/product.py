@@ -213,6 +213,11 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError(
                         {'representative_product': ProductMsg.REPRESENTATIVE_PRODUCT_MUST_BE_SERIAL}
                     )
+                if representative_product.is_representative_product:
+                    # Khi tạo phải check thêm SP đại diện có gắn với SP nào chưa
+                    raise serializers.ValidationError(
+                        {'representative_product': ProductMsg.REPRESENTATIVE_PRODUCT_IS_USED}
+                    )
                 return representative_product
             except Product.DoesNotExist:
                 raise serializers.ValidationError({'representative_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
@@ -863,17 +868,12 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         if 1 in validate_data.get('product_choice', []):
             validate_data['duration_unit'] = None
 
-        representative_product_obj = instance.representative_product
-        if representative_product_obj:
-            representative_product_obj.is_representative_product = True
-            representative_product_obj.save(update_fields=['is_representative_product'])
-
         return validate_data
 
     def update(self, instance, validated_data):
         old_representative_product_obj = instance.representative_product
         if old_representative_product_obj:
-            old_representative_product_obj.is_representative_product = True
+            old_representative_product_obj.is_representative_product = False
             old_representative_product_obj.save(update_fields=['is_representative_product'])
 
         validated_data.update(
@@ -931,4 +931,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         if representative_product_obj:
             representative_product_obj.is_representative_product = True
             representative_product_obj.save(update_fields=['is_representative_product'])
+            instance.is_representative_product = False
+            instance.save(update_fields=['is_representative_product'])
         return instance

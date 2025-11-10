@@ -47,7 +47,9 @@ class PayrollTemplate(DataAbstractModel):
                 if isinstance(kwargs['update_fields'], list):
                     kwargs['update_fields'].append('code')
                     if 'date_approved' in kwargs['update_fields']:
-                        CompanyFunctionNumber.auto_gen_code_based_on_config('payrolltemplate', True, self, kwargs)
+                        CompanyFunctionNumber.auto_gen_code_based_on_config(
+                            app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                        )
             else:
                 kwargs.update({'update_fields': ['code']})
         super().save(*args, **kwargs)
