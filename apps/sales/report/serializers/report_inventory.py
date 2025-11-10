@@ -26,14 +26,14 @@ class ReportStockListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product(cls, obj):
+        order = obj.sale_order or obj.lease_order or obj.service_order
         return {
             'id': obj.product_id,
             'title': obj.product.title,
             'lot_number': obj.lot_mapped.lot_number if obj.lot_mapped else '',
             'serial_number': obj.serial_number or '',
-            'order_id': str(obj.sale_order_id) if obj.sale_order else str(
-                obj.lease_order_id) if obj.lease_order else '',
-            'order_code': obj.sale_order.code if obj.sale_order else obj.lease_order.code if obj.lease_order else '',
+            'order_id': str(order.id) if order else '',
+            'order_code': order.code if order else '',
             'code': obj.product.code,
             'description': obj.product.description,
             'uom': {
@@ -94,6 +94,7 @@ class ReportStockListSerializer(serializers.ModelSerializer):
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = obj.sale_order_id
             kw_parameter['lease_order_id'] = obj.lease_order_id
+            kw_parameter['service_order_id'] = obj.service_order_id
 
         if obj.product.valuation_method == 2:
             kw_parameter['serial_number'] = obj.serial_number
@@ -167,13 +168,14 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product(cls, obj):
+        order = obj.sale_order or obj.lease_order or obj.service_order
         return {
             'id': obj.product_id,
             'title': obj.product.title,
             'valuation_method': obj.product.valuation_method,
             'lot_number': obj.lot_mapped.lot_number if obj.lot_mapped else '',
             'serial_number': obj.serial_number or '',
-            'order_code': obj.sale_order.code if obj.sale_order else obj.lease_order.code if obj.lease_order else '',
+            'order_code': order.code if order else '',
             'code': obj.product.code,
             'description': obj.product.description,
             'uom': {
@@ -294,6 +296,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                 'physical_warehouse_id': wh_sub.warehouse_id,
                 'sale_order_id': obj.sale_order_id,
                 'lease_order_id': obj.lease_order_id,
+                'service_order_id': obj.service_order_id,
                 'serial_number': obj.serial_number
             }
 
@@ -317,11 +320,11 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                     ]:
                         data_stock_activity = cls.get_data_stock_activity_for_in(log, data_stock_activity, obj.product)
                     elif log.trans_title in [
-                        'Delivery (sale)', 'Delivery (lease)',
+                        'Delivery (sale)', 'Delivery (lease)', 'Delivery (service)',
                         'Goods issue', 'Goods transfer (out)'
                     ]:
                         data_stock_activity = cls.get_data_stock_activity_for_out(log, data_stock_activity, obj.product)
-            data_stock_activity = sorted( data_stock_activity, key=lambda key: (key['system_date'], key['log_order']))
+            data_stock_activity = sorted(data_stock_activity, key=lambda key: (key['system_date'], key['log_order']))
 
             # lấy inventory_cost_data của kì hiện tại
             this_sub_value = ReportInventorySubFunction.get_this_sub_period_cost_dict(obj)
@@ -379,6 +382,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
         if 3 in cost_cfg:
             kw_parameter['sale_order_id'] = obj.sale_order_id
             kw_parameter['lease_order_id'] = obj.lease_order_id
+            kw_parameter['service_order_id'] = obj.service_order_id
 
         for log in obj.product.report_stock_log_product.filter(
                 report_stock__period_mapped_id=obj.period_mapped_id,
@@ -400,7 +404,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                 ]:
                     data_stock_activity = cls.get_data_stock_activity_for_in(log, data_stock_activity, obj.product)
                 elif log.trans_title in [
-                    'Delivery (sale)', 'Delivery (lease)',
+                    'Delivery (sale)', 'Delivery (lease)', 'Delivery (service)',
                     'Goods issue', 'Goods transfer (out)'
                 ]:
                     data_stock_activity = cls.get_data_stock_activity_for_out(log, data_stock_activity, obj.product)

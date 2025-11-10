@@ -5,7 +5,8 @@ from apps.sales.report.utils.inventory_log import ReportInvCommonFunc, ReportInv
 class IRForDeliveryHandler:
     @classmethod
     def for_lot(
-            cls, instance, lot_data, doc_data, product_obj, warehouse_obj, uom_obj, sale_order_obj, lease_order_obj
+            cls, instance, lot_data, doc_data, product_obj, warehouse_obj, uom_obj,
+            sale_order_obj=None, lease_order_obj=None, service_order_obj=None
     ):
         for lot in lot_data:
             lot_obj = ProductWareHouseLot.objects.filter(id=lot.get('product_warehouse_lot_id')).first()
@@ -14,6 +15,7 @@ class IRForDeliveryHandler:
                 doc_data.append({
                     'sale_order': sale_order_obj,
                     'lease_order': lease_order_obj,
+                    'service_order': service_order_obj,
                     'product': product_obj,
                     'warehouse': warehouse_obj,
                     'system_date': instance.date_approved,
@@ -22,7 +24,8 @@ class IRForDeliveryHandler:
                     'stock_type': -1,
                     'trans_id': str(instance.id),
                     'trans_code': instance.code,
-                    'trans_title': 'Delivery (sale)' if sale_order_obj else 'Delivery (lease)',
+                    'trans_title': 'Delivery (sale)'
+                    if sale_order_obj else 'Delivery (service)' if service_order_obj else 'Delivery (lease)',
                     'quantity': casted_quantity,
                     'cost': 0,  # theo gia cost
                     'value': 0,  # theo gia cost
@@ -36,7 +39,8 @@ class IRForDeliveryHandler:
 
     @classmethod
     def for_sn(
-            cls, instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj, sale_order_obj, lease_order_obj
+            cls, instance, sn_data, doc_data, product_obj, warehouse_obj, uom_obj,
+            sale_order_obj=None, lease_order_obj=None, service_order_obj=None
     ):
         if product_obj.valuation_method == 2:
             for serial in sn_data:
@@ -45,6 +49,7 @@ class IRForDeliveryHandler:
                     doc_data.append({
                         'sale_order': sale_order_obj,
                         'lease_order': lease_order_obj,
+                        'service_order': service_order_obj,
                         'product': product_obj,
                         'warehouse': warehouse_obj,
                         'system_date': instance.date_approved,
@@ -53,7 +58,8 @@ class IRForDeliveryHandler:
                         'stock_type': -1,
                         'trans_id': str(instance.id),
                         'trans_code': instance.code,
-                        'trans_title': 'Delivery (sale)' if sale_order_obj else 'Delivery (lease)',
+                        'trans_title': 'Delivery (sale)'
+                        if sale_order_obj else 'Delivery (service)' if service_order_obj else 'Delivery (lease)',
                         'quantity': 1,
                         'cost': 0,  # theo gia cost
                         'value': 0,  # theo gia cost
@@ -81,6 +87,7 @@ class IRForDeliveryHandler:
             doc_data.append({
                 'sale_order': sale_order_obj,
                 'lease_order': lease_order_obj,
+                'service_order': service_order_obj,
                 'product': product_obj,
                 'warehouse': warehouse_obj,
                 'system_date': instance.date_approved,
@@ -89,7 +96,8 @@ class IRForDeliveryHandler:
                 'stock_type': -1,
                 'trans_id': str(instance.id),
                 'trans_code': instance.code,
-                'trans_title': 'Delivery (sale)' if sale_order_obj else 'Delivery (lease)',
+                'trans_title': 'Delivery (sale)'
+                if sale_order_obj else 'Delivery (service)' if service_order_obj else 'Delivery (lease)',
                 'quantity': casted_quantity,
                 'cost': 0,  # theo gia cost
                 'value': 0,  # theo gia cost
@@ -102,8 +110,9 @@ class IRForDeliveryHandler:
         """ Chuẩn bị data để ghi vào báo cáo tồn kho và tính giá Cost """
         doc_data = []
         sale_order_obj = instance.order_delivery.sale_order if instance.order_delivery else None
+        service_order_obj = instance.order_delivery.service_order if instance.order_delivery else None
         for deli_product in instance.delivery_product_delivery_sub.all():
-            if deli_product.product and sale_order_obj:
+            if deli_product.product and (sale_order_obj or service_order_obj):
                 product_obj = deli_product.product
                 for pw_data in deli_product.delivery_pw_delivery_product.filter(quantity_delivery__gt=0):
                     warehouse_obj = pw_data.warehouse
@@ -115,7 +124,7 @@ class IRForDeliveryHandler:
                         casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(uom_obj, quantity)
                         doc_data.append({
                             'sale_order': sale_order_obj,
-                            'lease_order': None,
+                            'service_order': service_order_obj,
                             'product': product_obj,
                             'warehouse': warehouse_obj,
                             'system_date': instance.date_approved,
@@ -132,26 +141,26 @@ class IRForDeliveryHandler:
                         })
                     if product_obj.general_traceability_method == 1 and len(lot_data) > 0:  # Lot
                         cls.for_lot(
-                            instance,
-                            lot_data,
-                            doc_data,
-                            product_obj,
-                            warehouse_obj,
-                            uom_obj,
-                            sale_order_obj,
-                            None
+                            instance=instance, lot_data=lot_data,
+                            doc_data=doc_data, product_obj=product_obj,
+                            warehouse_obj=warehouse_obj, uom_obj=uom_obj,
+                            sale_order_obj=sale_order_obj, service_order_obj=service_order_obj
                         )
                     if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
-                        cls.for_sn(
-                            instance,
-                            sn_data,
-                            doc_data,
-                            product_obj,
-                            warehouse_obj,
-                            uom_obj,
-                            sale_order_obj,
-                            None
-                        )
+                        if instance.code == "GH058":
+                            cls.for_sn(
+                                instance=instance, sn_data=sn_data,
+                                doc_data=doc_data, product_obj=product_obj,
+                                warehouse_obj=warehouse_obj, uom_obj=uom_obj,
+                                sale_order_obj=sale_order_obj, service_order_obj=service_order_obj
+                            )
+                        else:
+                            cls.for_sn(
+                                instance=instance, sn_data=sn_data,
+                                doc_data=doc_data, product_obj=product_obj,
+                                warehouse_obj=warehouse_obj, uom_obj=uom_obj,
+                                sale_order_obj=sale_order_obj, service_order_obj=service_order_obj
+                            )
         ReportInvLog.log(instance, instance.date_approved, doc_data)
         return True
 
@@ -173,7 +182,6 @@ class IRForDeliveryHandler:
                         if product_obj.general_traceability_method == 0:  # None
                             casted_quantity = ReportInvCommonFunc.cast_quantity_to_unit(uom_obj, quantity)
                             doc_data.append({
-                                'sale_order': None,
                                 'lease_order': lease_order_obj,
                                 'product': product_obj,
                                 'warehouse': warehouse_obj,
@@ -191,25 +199,17 @@ class IRForDeliveryHandler:
                             })
                         if product_obj.general_traceability_method == 1 and len(lot_data) > 0:  # Lot
                             cls.for_lot(
-                                instance,
-                                lot_data,
-                                doc_data,
-                                product_obj,
-                                warehouse_obj,
-                                uom_obj,
-                                None,
-                                lease_order_obj
+                                instance=instance, lot_data=lot_data,
+                                doc_data=doc_data, product_obj=product_obj,
+                                warehouse_obj=warehouse_obj, uom_obj=uom_obj,
+                                lease_order_obj=lease_order_obj
                             )
                         if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
                             cls.for_sn(
-                                instance,
-                                sn_data,
-                                doc_data,
-                                product_obj,
-                                warehouse_obj,
-                                uom_obj,
-                                None,
-                                lease_order_obj
+                                instance=instance, sn_data=sn_data,
+                                doc_data=doc_data, product_obj=product_obj,
+                                warehouse_obj=warehouse_obj, uom_obj=uom_obj,
+                                lease_order_obj=lease_order_obj
                             )
         ReportInvLog.log(instance, instance.date_approved, doc_data)
         return True

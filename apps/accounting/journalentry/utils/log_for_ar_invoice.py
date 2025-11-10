@@ -1,6 +1,6 @@
 import logging
 from django.db import transaction
-from apps.accounting.accountingsettings.models import DefaultAccountDetermination
+from apps.accounting.accountingsettings.models import AccountDetermination
 from apps.accounting.journalentry.models import JournalEntry
 from apps.sales.report.models import ReportStockLog
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class JEForARInvoiceHandler:
     @classmethod
-    def get_je_item_data(cls, ar_invoice_obj):
+    def parse_je_line_data(cls, ar_invoice_obj):
         debit_rows_data = []
         credit_rows_data = []
         sum_cost = 0
@@ -42,7 +42,7 @@ class JEForARInvoiceHandler:
                                 'taxable_value': 0,
                             })
 
-        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+        account_list = AccountDetermination.get_account_determination_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
             company_id=ar_invoice_obj.company_id,
             foreign_title='Customer underpayment'
@@ -61,7 +61,7 @@ class JEForARInvoiceHandler:
                 'use_for_recon_type': 'ar-deli'
             })
 
-        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+        account_list = AccountDetermination.get_account_determination_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
             company_id=ar_invoice_obj.company_id,
             foreign_title='Receivables from customers'
@@ -80,7 +80,7 @@ class JEForARInvoiceHandler:
                 'use_for_recon_type': 'ar-cif'
             })
 
-        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+        account_list = AccountDetermination.get_account_determination_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
             company_id=ar_invoice_obj.company_id,
             foreign_title='Sales revenue'
@@ -97,7 +97,7 @@ class JEForARInvoiceHandler:
                 'taxable_value': 0,
             })
 
-        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+        account_list = AccountDetermination.get_account_determination_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
             company_id=ar_invoice_obj.company_id,
             foreign_title='Sales tax'
@@ -121,7 +121,7 @@ class JEForARInvoiceHandler:
         """ Chuẩn bị data để tự động tạo Bút Toán """
         try:
             with transaction.atomic():
-                debit_rows_data, credit_rows_data = cls.get_je_item_data(ar_invoice_obj)
+                debit_rows_data, credit_rows_data = cls.parse_je_line_data(ar_invoice_obj)
                 kwargs = {
                     'je_transaction_app_code': ar_invoice_obj.get_model_code(),
                     'je_transaction_id': str(ar_invoice_obj.id),
@@ -132,18 +132,12 @@ class JEForARInvoiceHandler:
                         'date_created': str(ar_invoice_obj.date_created),
                         'date_approved': str(ar_invoice_obj.date_approved),
                     },
-                    'tenant_id': str(ar_invoice_obj.tenant_id),
-                    'company_id': str(ar_invoice_obj.company_id),
-                    'employee_created_id': str(ar_invoice_obj.employee_created_id),
-                    'employee_inherit_id': str(ar_invoice_obj.employee_inherit_id),
-                    'date_created': str(ar_invoice_obj.date_created),
-                    'date_approved': str(ar_invoice_obj.date_approved),
-                    'je_item_data': {
+                    'je_line_data': {
                         'debit_rows': debit_rows_data,
                         'credit_rows': credit_rows_data
                     }
                 }
-                JournalEntry.auto_create_journal_entry(**kwargs)
+                JournalEntry.auto_create_journal_entry(ar_invoice_obj, **kwargs)
                 return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')

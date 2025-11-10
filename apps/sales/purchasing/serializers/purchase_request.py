@@ -633,7 +633,7 @@ class ServiceOrderListForPRSerializer(AbstractListSerializerModel):
 
     @classmethod
     def get_employee_inherit(cls, obj):
-        return obj.employee_inherit.get_detail_with_group() if obj.employee_created else {}
+        return obj.employee_inherit.get_detail_with_group() if obj.employee_inherit else {}
 
 
 class ServiceOrderProductListForPRSerializer(AbstractListSerializerModel):

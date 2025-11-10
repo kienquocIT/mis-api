@@ -1,6 +1,6 @@
 import logging
 from django.db import transaction
-from apps.accounting.accountingsettings.models import DefaultAccountDetermination
+from apps.accounting.accountingsettings.models import AccountDetermination
 from apps.accounting.journalentry.models import JournalEntry
 
 
@@ -9,11 +9,11 @@ logger = logging.getLogger(__name__)
 
 class JEForCOFHandler:
     @classmethod
-    def get_je_item_data(cls, cof_obj):
+    def parse_je_line_data(cls, cof_obj):
         debit_rows_data = []
         credit_rows_data = []
         if cof_obj.cash_value > 0:
-            account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+            account_list = AccountDetermination.get_account_determination_sub_data(
                 tenant_id=cof_obj.tenant_id,
                 company_id=cof_obj.company_id,
                 foreign_title='Cash in hand received from customers'
@@ -31,7 +31,7 @@ class JEForCOFHandler:
                 })
 
         if cof_obj.bank_value > 0:
-            account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+            account_list = AccountDetermination.get_account_determination_sub_data(
                 tenant_id=cof_obj.tenant_id,
                 company_id=cof_obj.company_id,
                 foreign_title='Cash in bank received from customers'
@@ -48,7 +48,7 @@ class JEForCOFHandler:
                     'taxable_value': 0,
                 })
 
-        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+        account_list = AccountDetermination.get_account_determination_sub_data(
             tenant_id=cof_obj.tenant_id,
             company_id=cof_obj.company_id,
             foreign_title='Payable to suppliers'
@@ -74,7 +74,7 @@ class JEForCOFHandler:
         """ Chuẩn bị data để tự động tạo Bút Toán """
         try:
             with transaction.atomic():
-                debit_rows_data, credit_rows_data = cls.get_je_item_data(cof_obj)
+                debit_rows_data, credit_rows_data = cls.parse_je_line_data(cof_obj)
                 kwargs = {
                     'je_transaction_app_code': cof_obj.get_model_code(),
                     'je_transaction_id': str(cof_obj.id),
@@ -85,18 +85,12 @@ class JEForCOFHandler:
                         'date_created': str(cof_obj.date_created),
                         'date_approved': str(cof_obj.date_approved),
                     },
-                    'tenant_id': str(cof_obj.tenant_id),
-                    'company_id': str(cof_obj.company_id),
-                    'employee_created_id': str(cof_obj.employee_created_id),
-                    'employee_inherit_id': str(cof_obj.employee_inherit_id),
-                    'date_created': str(cof_obj.date_created),
-                    'date_approved': str(cof_obj.date_approved),
-                    'je_item_data': {
+                    'je_line_data': {
                         'debit_rows': debit_rows_data,
                         'credit_rows': credit_rows_data
                     }
                 }
-                JournalEntry.auto_create_journal_entry(**kwargs)
+                JournalEntry.auto_create_journal_entry(cof_obj, **kwargs)
                 return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')

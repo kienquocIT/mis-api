@@ -11,43 +11,50 @@ class ReportInvLog:
     @classmethod
     def log(cls, doc_obj, doc_date, doc_data, for_balance_init=False):
         if not doc_obj or not doc_date or len(doc_data) == 0:
-            print(f'>>>>>>>>>>>>>>>>>>>> Not log (doc detail: {doc_obj.code}, {doc_date}, {len(doc_data)})\n')
+            print(f'*** NOT LOG (doc detail: {doc_obj.code}, {doc_date}, {len(doc_data)})\n ***')
             return None
         try:
-            tenant = doc_obj.tenant
-            company = doc_obj.company
             with transaction.atomic():
                 # lấy pp tính giá cost (0_FIFO, 1_WA, 2_SI)
-                cost_cfg = ReportInvCommonFunc.get_cost_config(company)
-                period_obj = Periods.get_period_by_doc_date(tenant.id, company.id, doc_date)
+                cost_cfg = ReportInvCommonFunc.get_cost_config(doc_obj.company)
+                period_obj = Periods.get_period_by_doc_date(doc_obj.tenant_id, doc_obj.company_id, doc_date)
                 if period_obj:
-                    sub_period_order = Periods.get_sub_period_by_doc_date(period_obj, doc_date).order
+                    sub_period_obj = Periods.get_sub_period_by_doc_date(period_obj, doc_date)
+                    if sub_period_obj:
+                        sub_period_order = sub_period_obj.order
 
-                    # cho kiểm kê định kì
-                    if company.company_config.definition_inventory_valuation == 1:
-                        ReportInvCommonFunc.auto_calculate_for_periodic(tenant, company, period_obj, sub_period_order)
+                        # cho kiểm kê định kì
+                        if doc_obj.company.company_config.definition_inventory_valuation == 1:
+                            ReportInvCommonFunc.auto_calculate_for_periodic(
+                                doc_obj.tenant, doc_obj.company, period_obj, sub_period_order
+                            )
 
-                    # kiểm tra và chạy tổng kết (các) tháng trước đó, sau đó đẩy số dư qua đầu kì tháng tiếp theo
-                    for order in range(1, sub_period_order + 1):
-                        run_state = ReportInvCommonFunc.check_and_push_to_next_sub(
-                            tenant,
-                            company,
-                            doc_obj.employee_created if doc_obj.employee_created else doc_obj.employee_inherit,
-                            period_obj,
-                            order
+                        # kiểm tra và chạy tổng kết (các) tháng trước đó, sau đó đẩy số dư qua đầu kì tháng tiếp theo
+                        for order in range(1, sub_period_order + 1):
+                            run_state = ReportInvCommonFunc.check_and_push_to_next_sub(
+                                doc_obj.tenant,
+                                doc_obj.company,
+                                doc_obj.employee_created if doc_obj.employee_created else doc_obj.employee_inherit,
+                                period_obj,
+                                order
+                            )
+                            if run_state is False:
+                                break
+
+                        # tạo các log
+                        new_logs = ReportStockLog.create_new_logs(
+                            doc_obj, doc_data, period_obj, sub_period_order, cost_cfg
                         )
-                        if run_state is False:
-                            break
 
-                    # tạo các log
-                    new_logs = ReportStockLog.create_new_logs(doc_obj, doc_data, period_obj, sub_period_order, cost_cfg)
-
-                    # cập nhập giá cost cho từng log
-                    for log in new_logs:
-                        ReportStockLog.update_log_cost(log, period_obj, sub_period_order, cost_cfg, for_balance_init)
-                    print('# Add log for balance init successfully!\n'
-                          if for_balance_init else f'# Write {doc_obj.code} to Inventory Report successfully!\n')
-                    return new_logs
+                        # cập nhập giá cost cho từng log
+                        for log in new_logs:
+                            ReportStockLog.update_log_cost(
+                                log, period_obj, sub_period_order, cost_cfg, for_balance_init
+                            )
+                        print('# Add log for balance init successfully!\n'
+                              if for_balance_init else f'# Write {doc_obj.code} to Inventory Report successfully!\n')
+                        return new_logs
+                    raise serializers.ValidationError({'sub_period_obj': 'Sub period order obj does not exist.'})
                 raise serializers.ValidationError({'period_obj': f'Fiscal year {doc_date.year} does not exist.'})
         except Exception as err:
             print(err)

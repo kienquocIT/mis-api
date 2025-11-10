@@ -726,6 +726,7 @@ class ServiceOrderCommonFunc:
                     tax_value=payment_detail.get("tax_value", 0),
                     reconcile_value=payment_detail.get("reconcile_value", 0),
                     receivable_value=payment_detail.get("receivable_value", 0),
+                    order=payment_detail.get('order', 0),
                 )
             )
 
@@ -764,7 +765,8 @@ class ServiceOrderCommonFunc:
                     service_detail_id=service_uuid,
                     installment=reconcile.get('installment', 0),
                     total_value=reconcile.get('total_value', 0),
-                    reconcile_value=reconcile.get('reconcile_value', 0)
+                    reconcile_value=reconcile.get('reconcile_value', 0),
+                    order=reconcile.get('order', 0),
                 )
             )
         ServiceOrderPaymentReconcile.objects.bulk_create(bulk_data)
