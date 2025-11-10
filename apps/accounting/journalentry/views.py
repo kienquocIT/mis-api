@@ -73,9 +73,6 @@ class JournalEntryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     operation_description="Journal Entry Summarize",
 )
 @api_view(['GET'])
-@mask_view(
-    login_require=True, auth_require=False,
-)
 def get_je_summarize(request, *args, **kwargs):
     all_je = JournalEntry.objects.filter_on_company()
 
