@@ -5,8 +5,10 @@ from apps.accounting.accountingsettings.views.chart_of_account import (
 from apps.accounting.accountingsettings.views.account_determination import (
     AccountDeterminationList, AccountDeterminationDetail
 )
-from apps.accounting.accountingsettings.views.dimension import DimensionDefinitionList, DimensionDefinitionDetail, \
+from apps.accounting.accountingsettings.views.dimension import (
+    DimensionDefinitionList, DimensionDefinitionDetail,
     DimensionDefinitionWithValueList, DimensionValueList, DimensionValueDetail
+)
 from apps.accounting.accountingsettings.views.product_account_determination import (
     ProductAccountDeterminationList, ProductAccountDeterminationDetail
 )
