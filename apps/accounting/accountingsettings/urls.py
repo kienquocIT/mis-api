@@ -3,7 +3,8 @@ from apps.accounting.accountingsettings.views.account_masterdata_views import (
     ChartOfAccountsList, DefaultAccountDeterminationList, DefaultAccountDeterminationDetail
 )
 from apps.accounting.accountingsettings.views.dimension import DimensionDefinitionList, DimensionDefinitionDetail, \
-    DimensionDefinitionWithValueList, DimensionValueList, DimensionValueDetail, DimensionSyncConfigApplicationList
+    DimensionDefinitionWithValueList, DimensionValueList, DimensionValueDetail, DimensionSyncConfigApplicationList, \
+    DimensionSyncConfigList
 from apps.accounting.accountingsettings.views.prd_account_deter_views import ProductAccountDeterminationList, \
     ProductAccountDeterminationDetail
 from apps.accounting.accountingsettings.views.prd_type_account_deter_views import ProductTypeAccountDeterminationList, \
@@ -72,4 +73,6 @@ urlpatterns += [
     path('dimension-value/detail/<str:pk>', DimensionValueDetail.as_view(), name='DimensionValueDetail'),
     path('dimension-sync-config/application-list', DimensionSyncConfigApplicationList.as_view(),
          name='DimensionSyncConfigApplicationList'),
+    path('dimension-sync-config/list', DimensionSyncConfigList.as_view(),
+         name='DimensionSyncConfigList'),
 ]

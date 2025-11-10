@@ -1,10 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.accounting.accountingsettings.models import Dimension, DimensionValue
+from apps.accounting.accountingsettings.models import Dimension, DimensionValue, DimensionSyncConfig
 from apps.accounting.accountingsettings.serializers import DimensionDefinitionListSerializer, \
     DimensionDefinitionCreateSerializer, DimensionDefinitionDetailSerializer, DimensionDefinitionUpdateSerializer, \
     DimensionDefinitionWithValuesSerializer, DimensionValueListSerializer, DimensionValueCreateSerializer, \
-    DimensionValueDetailSerializer, DimensionValueUpdateSerializer, DimensionSyncConfigApplicationListSerializer
+    DimensionValueDetailSerializer, DimensionValueUpdateSerializer, DimensionSyncConfigApplicationListSerializer, \
+    DimensionSyncConfigListSerializer, DimensionSyncConfigCreateSerializer, DimensionSyncConfigDetailSerializer
 from apps.core.base.models import Application
 from apps.shared import BaseListMixin, BaseCreateMixin, BaseUpdateMixin, mask_view, BaseRetrieveMixin
 
@@ -86,7 +87,6 @@ class DimensionValueList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = ['tenant_id', 'company_id']
 
-
     @swagger_auto_schema(
         operation_summary="Dimension Value List",
         operation_description="Get Dimension Value List",
@@ -153,3 +153,34 @@ class DimensionSyncConfigApplicationList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class DimensionSyncConfigList(BaseListMixin, BaseCreateMixin):
+    queryset = DimensionSyncConfig.objects
+    serializer_list = DimensionSyncConfigListSerializer
+    serializer_create = DimensionSyncConfigCreateSerializer
+    serializer_detail = DimensionSyncConfigDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Dimension Config List",
+        operation_description="Get Dimension Config List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Dimension Config Create",
+        operation_description="Create new dimension Config",
+        request_body=DimensionSyncConfigCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)

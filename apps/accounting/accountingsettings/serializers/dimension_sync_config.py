@@ -6,6 +6,9 @@ from apps.accounting.accountingsettings.models import Dimension, DimensionValue,
 
 __all__ = [
     'DimensionSyncConfigListSerializer',
+    'DimensionSyncConfigCreateSerializer',
+    'DimensionSyncConfigUpdateSerializer',
+    'DimensionSyncConfigDetailSerializer',
     'DimensionSyncConfigApplicationListSerializer'
 ]
 
@@ -88,6 +91,7 @@ class DimensionSyncConfigCreateSerializer(serializers.ModelSerializer):
             except Application.DoesNotExist:
                 raise serializers.ValidationError({'related_app': _('Application does not exist')})
         return value
+
 
 class DimensionSyncConfigUpdateSerializer(serializers.ModelSerializer):
     ...
