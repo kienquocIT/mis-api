@@ -5,6 +5,8 @@ from apps.accounting.accountingsettings.views.chart_of_account import (
 from apps.accounting.accountingsettings.views.account_determination import (
     AccountDeterminationList, AccountDeterminationDetail
 )
+from apps.accounting.accountingsettings.views.dimension import DimensionDefinitionList, DimensionDefinitionDetail, \
+    DimensionDefinitionWithValueList, DimensionValueList, DimensionValueDetail
 from apps.accounting.accountingsettings.views.product_account_determination import (
     ProductAccountDeterminationList, ProductAccountDeterminationDetail
 )
@@ -18,11 +20,7 @@ from apps.accounting.accountingsettings.views.warehouse_account_determination im
 
 urlpatterns = [
     path('chart-of-accounts/list', ChartOfAccountsList.as_view(), name='ChartOfAccountsList'),
-    path(
-        'account-determination/list',
-        AccountDeterminationList.as_view(),
-        name='AccountDeterminationList'
-    ),
+    path('account-determination/list', AccountDeterminationList.as_view(), name='AccountDeterminationList'),
     path(
         'account-determination/detail/<str:pk>',
         AccountDeterminationDetail.as_view(),
@@ -58,4 +56,19 @@ urlpatterns = [
         ProductAccountDeterminationDetail.as_view(),
         name='ProductAccountDeterminationDetail'
     ),
+] + [
+    # Dimension
+    path('dimension-definition/list', DimensionDefinitionList.as_view(), name='DimensionDefinitionList'),
+    path(
+        'dimension-definition/detail/<str:pk>',
+         DimensionDefinitionDetail.as_view(),
+         name='DimensionDefinitionDetail'
+    ),
+    path(
+        'dimension-definition-values/<str:pk>',
+         DimensionDefinitionWithValueList.as_view(),
+         name='DimensionDefinitionWithValueList'
+    ),
+    path('dimension-value/list', DimensionValueList.as_view(), name='DimensionValueList'),
+    path('dimension-value/detail/<str:pk>', DimensionValueDetail.as_view(), name='DimensionValueDetail'),
 ]
