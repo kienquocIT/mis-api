@@ -4,3 +4,5 @@ from .prd_type_account_deter_serializers import *
 from .prd_account_deter_serializers import *
 from .dimension_definition import *
 from .dimension_value import *
+from .dimension_account_map import *
+from .dimension_sync_config import *

@@ -1,7 +1,8 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+from rest_framework.fields import SerializerMethodField
 
-from apps.accounting.accountingsettings.models import DimensionDefinition, DimensionValue
+from apps.accounting.accountingsettings.models import Dimension, DimensionValue
 
 __all__ = [
     'DimensionDefinitionListSerializer',
@@ -11,16 +12,25 @@ __all__ = [
     'DimensionDefinitionWithValuesSerializer'
 ]
 
+
 class DimensionDefinitionListSerializer(serializers.ModelSerializer):
+    related_app = SerializerMethodField()
 
     class Meta:
-        model = DimensionDefinition
+        model = Dimension
         fields = (
             'id',
             'title',
             'code',
+            'related_app'
         )
 
+    @classmethod
+    def get_related_app(cls, obj):
+        return {
+            'title': obj.related_app.get('title', ''),
+            'code': obj.related_app.get('code', ''),
+        } if obj.related_app else None
 
 class DimensionDefinitionCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(error_messages={
@@ -29,7 +39,7 @@ class DimensionDefinitionCreateSerializer(serializers.ModelSerializer):
     code = serializers.CharField()
 
     class Meta:
-        model = DimensionDefinition
+        model = Dimension
         fields = (
             'title',
             'code',
@@ -40,16 +50,15 @@ class DimensionDefinitionCreateSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError({"code": _("Code is required")})
 
-        if DimensionDefinition.objects.filter_on_company(code=value).exists():
+        if Dimension.objects.filter_on_company(code=value).exists():
             raise serializers.ValidationError({"code": _("Code already exists")})
 
         return value
 
-
 class DimensionDefinitionDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = DimensionDefinition
+        model = Dimension
         fields = (
             'id',
             'title',
@@ -64,29 +73,33 @@ class DimensionDefinitionUpdateSerializer(serializers.ModelSerializer):
     code = serializers.CharField()
 
     class Meta:
-        model = DimensionDefinition
+        model = Dimension
         fields = (
             'title',
             'code',
         )
 
-
     def validate_code(self, value):
         if not value:
             raise serializers.ValidationError({"code": _("Code is required")})
 
-        if DimensionDefinition.objects.filter_on_company(code=value).exclude(id=self.instance.id).exists():
+        if Dimension.objects.filter_on_company(code=value).exclude(id=self.instance.id).exists():
             raise serializers.ValidationError({"code": _("Code already exists")})
 
         return value
 
-
+    def validate(self, validated_data):
+        related_app = self.instance.related_app
+        if related_app:
+            title = related_app.title
+            raise serializers.ValidationError({"dimension": _(f"Dimension is sync with {title}")})
+        return validated_data
 
 class DimensionDefinitionWithValuesSerializer(serializers.ModelSerializer):
     values = serializers.SerializerMethodField()
 
     class Meta:
-        model = DimensionDefinition
+        model = Dimension
         fields = (
             'id',
             'title',

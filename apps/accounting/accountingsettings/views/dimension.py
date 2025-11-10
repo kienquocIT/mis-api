@@ -1,16 +1,17 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.accounting.accountingsettings.models import DimensionDefinition, DimensionValue
+from apps.accounting.accountingsettings.models import Dimension, DimensionValue
 from apps.accounting.accountingsettings.serializers import DimensionDefinitionListSerializer, \
     DimensionDefinitionCreateSerializer, DimensionDefinitionDetailSerializer, DimensionDefinitionUpdateSerializer, \
     DimensionDefinitionWithValuesSerializer, DimensionValueListSerializer, DimensionValueCreateSerializer, \
-    DimensionValueDetailSerializer, DimensionValueUpdateSerializer
+    DimensionValueDetailSerializer, DimensionValueUpdateSerializer, DimensionSyncConfigApplicationListSerializer
+from apps.core.base.models import Application
 from apps.shared import BaseListMixin, BaseCreateMixin, BaseUpdateMixin, mask_view, BaseRetrieveMixin
 
 
 # Create your views here.
 class DimensionDefinitionList(BaseListMixin, BaseCreateMixin):
-    queryset = DimensionDefinition.objects
+    queryset = Dimension.objects
     serializer_list = DimensionDefinitionListSerializer
     serializer_create = DimensionDefinitionCreateSerializer
     serializer_detail = DimensionDefinitionDetailSerializer
@@ -41,7 +42,7 @@ class DimensionDefinitionList(BaseListMixin, BaseCreateMixin):
 
 
 class DimensionDefinitionDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = DimensionDefinition.objects
+    queryset = Dimension.objects
     serializer_update = DimensionDefinitionUpdateSerializer
     serializer_detail = DimensionDefinitionDetailSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
@@ -64,7 +65,7 @@ class DimensionDefinitionDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class DimensionDefinitionWithValueList(BaseRetrieveMixin):
-    queryset = DimensionDefinition.objects
+    queryset = Dimension.objects
     serializer_detail = DimensionDefinitionWithValuesSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
 
@@ -108,6 +109,7 @@ class DimensionValueList(BaseListMixin, BaseCreateMixin):
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
+
 class DimensionValueDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = DimensionValue.objects
     serializer_update = DimensionValueUpdateSerializer
@@ -129,3 +131,25 @@ class DimensionValueDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+
+class DimensionSyncConfigApplicationList(BaseListMixin):
+    queryset = Application.objects
+    serializer_list = DimensionSyncConfigApplicationListSerializer
+
+    # uuid of application
+    list_app_id = [
+        '4e48c863-861b-475a-aa5e-97a4ed26f294'
+    ]
+    def get_queryset(self):
+        return Application.objects.filter(id__in=self.list_app_id)
+
+    @swagger_auto_schema(
+        operation_summary="Application List for Dimension",
+        operation_description="Get Application List for Dimension",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

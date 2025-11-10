@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from apps.accounting.accountingsettings.models import DimensionValue, DimensionDefinition
+from apps.accounting.accountingsettings.models import DimensionValue, Dimension
 
 __all__ = [
     'DimensionValueListSerializer',
@@ -122,10 +122,10 @@ class DimensionValueCreateSerializer(serializers.ModelSerializer):
     def validate_dimension_id(cls, value):
         if value:
             try:
-                dimension = DimensionDefinition.objects.get_on_company(id=value)
+                dimension = Dimension.objects.get_on_company(id=value)
                 return dimension.id
-            except DimensionDefinition.DoesNotExist:
-                raise serializers.ValidationError(_("Dimension definition does not exist"))
+            except Dimension.DoesNotExist:
+                raise serializers.ValidationError(_("Dimension does not exist"))
         return value
 
 class DimensionValueUpdateSerializer(serializers.ModelSerializer):
@@ -160,10 +160,10 @@ class DimensionValueUpdateSerializer(serializers.ModelSerializer):
     def validate_dimension_id(cls, value):
         if value:
             try:
-                dimension = DimensionDefinition.objects.get_on_company(id=value)
+                dimension = Dimension.objects.get_on_company(id=value)
                 return dimension.id
-            except DimensionDefinition.DoesNotExist:
-                raise serializers.ValidationError(_("Dimension definition does not exist"))
+            except Dimension.DoesNotExist:
+                raise serializers.ValidationError(_("Dimension does not exist"))
         return value
 
     def validate(self, attrs):
