@@ -62,3 +62,4 @@ class ProductMsg:
     INVALID_STANDARD_PRICE = _("Standard price is invalid")
     INVALID_SUPPLY_BY = _("Supply by value is invalid")
     REPRESENTATIVE_PRODUCT_MUST_BE_SERIAL = _("Representative product must be serial")
+    REPRESENTATIVE_PRODUCT_IS_USED = _("This representative product is used")

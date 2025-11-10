@@ -213,6 +213,11 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError(
                         {'representative_product': ProductMsg.REPRESENTATIVE_PRODUCT_MUST_BE_SERIAL}
                     )
+                if representative_product.is_representative_product:
+                    # Khi tạo phải check thêm SP đại diện có gắn với SP nào chưa
+                    raise serializers.ValidationError(
+                        {'representative_product': ProductMsg.REPRESENTATIVE_PRODUCT_IS_USED}
+                    )
                 return representative_product
             except Product.DoesNotExist:
                 raise serializers.ValidationError({'representative_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
@@ -408,9 +413,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         representative_product_obj = product_obj.representative_product
         if representative_product_obj:
             representative_product_obj.is_representative_product = True
-        else:
-            representative_product_obj.is_representative_product = False
-        representative_product_obj.save(update_fields=['is_representative_product'])
+            representative_product_obj.save(update_fields=['is_representative_product'])
 
         return product_obj
 
@@ -870,10 +873,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         old_representative_product_obj = instance.representative_product
         if old_representative_product_obj:
-            old_representative_product_obj.is_representative_product = True
-        else:
             old_representative_product_obj.is_representative_product = False
-        old_representative_product_obj.save(update_fields=['is_representative_product'])
+            old_representative_product_obj.save(update_fields=['is_representative_product'])
 
         validated_data.update(
             {'volume': ProductCommonFunction.sub_validate_volume_obj(self.initial_data, validated_data)}
@@ -929,7 +930,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         representative_product_obj = instance.representative_product
         if representative_product_obj:
             representative_product_obj.is_representative_product = True
-        else:
-            representative_product_obj.is_representative_product = False
-        representative_product_obj.save(update_fields=['is_representative_product'])
+            representative_product_obj.save(update_fields=['is_representative_product'])
+            instance.is_representative_product = False
+            instance.save(update_fields=['is_representative_product'])
         return instance
