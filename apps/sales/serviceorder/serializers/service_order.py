@@ -170,6 +170,10 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             'total_product',
             'total_product_revenue_before_tax',
 
+            'total_cost_pretax_amount',
+            'total_cost_tax',
+            'total_cost',
+
             'total_expense_pretax_amount',
             'total_expense_tax',
             'total_expense',
@@ -446,6 +450,10 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'total_product',
             'total_product_revenue_before_tax',
 
+            'total_cost_pretax_amount',
+            'total_cost_tax',
+            'total_cost',
+
             'total_expense_pretax_amount',
             'total_expense_tax',
             'total_expense',
@@ -558,6 +566,10 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
             'total_product_tax',
             'total_product',
             'total_product_revenue_before_tax',
+
+            'total_cost_pretax_amount',
+            'total_cost_tax',
+            'total_cost',
 
             'total_expense_pretax_amount',
             'total_expense_tax',
