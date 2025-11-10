@@ -12,6 +12,7 @@ from datetime import datetime, date
 from typing import Union, Type
 from uuid import UUID
 
+from deepdiff.helper import NotPresent
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 
@@ -131,6 +132,8 @@ class CustomizeEncoder(DjangoJSONEncoder):
     def default(self, obj):
         if isinstance(obj, (UUID, datetime)):
             return str(obj)
+        if isinstance(obj, NotPresent):
+            return None
         return super().default(obj)
 
 

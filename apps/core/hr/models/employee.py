@@ -262,6 +262,9 @@ class Employee(TenantAbstractModel):
         }
 
     def get_detail(self, *args):
+        """
+        return employee detail data with group_id if exist else {}
+        """
         return {
             'id': self.id,
             'first_name': self.first_name,
@@ -274,9 +277,12 @@ class Employee(TenantAbstractModel):
             'group': self.group_id,
             'is_admin_company': self.is_admin_company,
             'role': [role.id for role in self.role.all()],
-        }
+        } if self else {}
 
     def get_detail_with_group(self):
+        """
+        return employee detail data with their group_data if exist else {}
+        """
         return {
             'id': self.id,
             'code': self.code,
@@ -290,7 +296,7 @@ class Employee(TenantAbstractModel):
                 'title': self.group.title,
                 'code': self.group.code
             } if self.group else {}
-        }
+        } if self else {}
 
     def get_full_name(self, order_arrange=2):
         """

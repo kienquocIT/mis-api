@@ -11,6 +11,7 @@ __all__ = [
     'BookMark',
     'DocPined',
     'MailLog',
+    'DocumentLog'
 ]
 
 BOOKMARKS_KIND = (
@@ -499,3 +500,27 @@ class MailLog(models.Model):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+class DocumentLog(models.Model):
+    #basic data
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    tenant = models.ForeignKey(
+        'tenant.Tenant', null=True, on_delete=models.CASCADE,
+        help_text='The tenant claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_tenant',
+    )
+    company = models.ForeignKey(
+        'company.Company', null=True, on_delete=models.CASCADE,
+        help_text='The company claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_company',
+    )
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
+
+    #document data
+    snapshot = models.JSONField(help_text='The data of document')
+    app_model_code = models.CharField(max_length=100, null=True)
+    app_id = models.UUIDField(blank=True, default=uuid4, null=True)

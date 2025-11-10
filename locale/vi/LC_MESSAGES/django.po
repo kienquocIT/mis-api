@@ -246,6 +246,10 @@ msgstr "Báo cáo pipeline"
 msgid "Product Report"
 msgstr "Báo cáo sản phẩm"
 
+# b9650500-aba7-44e3-b6e0-2542622702a3
+msgid "Quotation"
+msgstr "Báo giá bán"
+
 # c3260940-21ff-4929-94fe-43bc4199d38b
 msgid "Revenue Report"
 msgstr "Báo cáo doanh thu"

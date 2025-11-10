@@ -147,6 +147,7 @@ class GroupListSerializer(serializers.ModelSerializer):
     first_manager = serializers.SerializerMethodField()
     parent_n = serializers.SerializerMethodField()
     level = serializers.SerializerMethodField()
+    all_children_group_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
@@ -163,6 +164,7 @@ class GroupListSerializer(serializers.ModelSerializer):
             'second_manager',
             'second_manager_title',
             'level',
+            'all_children_group_list'
         )
 
     @classmethod
@@ -193,6 +195,10 @@ class GroupListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_level(cls, obj):
         return obj.group_level.level if obj.group_level else None
+
+    @classmethod
+    def get_all_children_group_list(cls, obj):
+        return obj.get_all_children()
 
 
 class GroupMinimalListSerializer(serializers.ModelSerializer):

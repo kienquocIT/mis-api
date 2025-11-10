@@ -1,6 +1,6 @@
 import logging
 from rest_framework import serializers
-from apps.accounting.accountingsettings.models import DefaultAccountDetermination
+from apps.accounting.accountingsettings.models import AccountDetermination
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account
 from apps.sales.apinvoice.models import APInvoice
@@ -214,7 +214,7 @@ class ReconCommonFunction:
                         'app_code': cif_obj.get_model_code()
                     }
             # get debit & credit account obj
-            account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+            account_list = AccountDetermination.get_account_determination_sub_data(
                 tenant_id=tenant_id,
                 company_id=company_id,
                 foreign_title='Receivables from customers'
@@ -266,7 +266,7 @@ class ReconCommonFunction:
                         'app_code': cof_obj.get_model_code()
                     }
             # get debit & credit account obj
-            account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+            account_list = AccountDetermination.get_account_determination_sub_data(
                 tenant_id=tenant_id,
                 company_id=company_id,
                 foreign_title='Payable to suppliers'
