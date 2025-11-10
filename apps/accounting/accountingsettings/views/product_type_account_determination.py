@@ -1,12 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.accounting.accountingsettings.models.prd_type_account_deter import ProductTypeAccountDetermination
-from apps.accounting.accountingsettings.serializers.prd_type_account_deter_serializers import (
+from apps.accounting.accountingsettings.models.product_type_account_determination import ProductTypeAccountDetermination
+from apps.accounting.accountingsettings.serializers.product_type_account_determination import (
     ProductTypeAccountDeterminationListSerializer, ProductTypeAccountDeterminationUpdateSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseUpdateMixin
 
 
-# Create your views here.
 class ProductTypeAccountDeterminationList(BaseListMixin):
     queryset = ProductTypeAccountDetermination.objects
     search_fields = ['title',]

@@ -590,39 +590,51 @@ class RuntimeStageHandler:
                 # check if stage is approved then auto added
                 if next_stage.code == 'approved':
                     # call added doc obj
-                    DocHandler.force_added_with_runtime(self.runtime_obj)
+                    # DocHandler.force_added_with_runtime(self.runtime_obj)
                     # set next_association_id to doc (node completed)
                     if next_stage.node:
-                        if next_stage.node.transition_node_input.count() == 0:
-                            raise ValueError('Workflow does not define completed node.')
-                        for associate in next_stage.node.transition_node_input.all():
-                            DocHandler.force_update_next_node_collab(
-                                runtime_obj=self.runtime_obj,
-                                next_association_id=associate.id,
-                                next_node_collab_id=None,
-                            )
-                            break
+                        DocHandler.force_update_next_node_collab(
+                            runtime_obj=self.runtime_obj,
+                            next_association_id=None,
+                            next_node_collab_id=None,
+                        )
+
+                        # if next_stage.node.transition_node_input.count() == 0:
+                        #     raise ValueError('Workflow does not define completed node.')
+                        # for associate in next_stage.node.transition_node_input.all():
+                        #     DocHandler.force_update_next_node_collab(
+                        #         runtime_obj=self.runtime_obj,
+                        #         next_association_id=associate.id,
+                        #         next_node_collab_id=None,
+                        #     )
+                        #     break
             if is_next_stage:
-                if next_stage.code == 'completed':
-                    DocHandler.force_update_next_node_collab(
-                        runtime_obj=self.runtime_obj,
-                        next_association_id=None,
-                        next_node_collab_id=None,
-                    )
+                # if next_stage.code == 'completed':
+                #     DocHandler.force_update_next_node_collab(
+                #         runtime_obj=self.runtime_obj,
+                #         next_association_id=None,
+                #         next_node_collab_id=None,
+                #     )
                 return self.run_next(workflow=workflow, stage_obj_currently=next_stage)
             self.set_state_task_bg('SUCCESS')
             # check next stage have node type is in_workflow and same employee => auto approved
             # RuntimeStageHandler.check_auto_approved_next_stage(cur_stage=stage_obj_currently, next_stage=next_stage)
             return next_stage
         # update some field when go to completed
-        if stage_obj_currently.code == 'completed':
+        # if stage_obj_currently.code == 'completed':
+        #     self.runtime_obj.status = 1
+        #     self.runtime_obj.state = 2
+        #     self.runtime_obj.save(update_fields=['status', 'state'])
+        #     DocHandler.force_finish_with_runtime(self.runtime_obj)
+        # elif stage_obj_currently.code == 'approved':
+        #     # call added doc obj
+        #     DocHandler.force_added_with_runtime(self.runtime_obj)
+        if stage_obj_currently.code == 'approved':
+            DocHandler.force_added_with_runtime(self.runtime_obj)
             self.runtime_obj.status = 1
             self.runtime_obj.state = 2
             self.runtime_obj.save(update_fields=['status', 'state'])
             DocHandler.force_finish_with_runtime(self.runtime_obj)
-        elif stage_obj_currently.code == 'approved':
-            # call added doc obj
-            DocHandler.force_added_with_runtime(self.runtime_obj)
         return None
 
     @classmethod
@@ -670,16 +682,17 @@ class RuntimeStageHandler:
                 ).log_create_doc(is_return=is_return)
             case 'approved':
                 RuntimeLogHandler(
-                    stage_obj=stage_obj,
-                    actor_obj=self.runtime_obj.doc_employee_created,
-                    is_system=True,
+                    stage_obj=stage_obj, actor_obj=self.runtime_obj.doc_employee_created, is_system=True,
                 ).log_approval_station()
-            case 'completed':
                 RuntimeLogHandler(
-                    stage_obj=stage_obj,
-                    actor_obj=self.runtime_obj.doc_employee_created,
-                    is_system=True,
+                    stage_obj=stage_obj, actor_obj=self.runtime_obj.doc_employee_created, is_system=True,
                 ).log_finish_station_doc(final_state_num=1)
+            # case 'completed':
+            #     RuntimeLogHandler(
+            #         stage_obj=stage_obj,
+            #         actor_obj=self.runtime_obj.doc_employee_created,
+            #         is_system=True,
+            #     ).log_finish_station_doc(final_state_num=1)
         # update current_stage for document
         if stage_obj:
             DocHandler.force_update_current_stage(runtime_obj=self.runtime_obj, stage_obj=stage_obj)

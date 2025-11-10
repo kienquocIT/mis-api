@@ -445,6 +445,7 @@ class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
     product_id = serializers.UUIDField()
     done = serializers.IntegerField(min_value=1)
     delivery_data = serializers.JSONField(default=list)
+    offset_data = serializers.JSONField(default=list)
     tool_data = serializers.JSONField(default=list)
     asset_data = serializers.JSONField(default=list)
     product_depreciation_start_date = serializers.CharField(required=False, allow_null=True)
@@ -499,7 +500,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         product_data = validate_data.get('products', [])
         for product in product_data:
             deli_product = OrderDeliveryProduct.objects.filter_current(
-                delivery_sub=self.instance, product_id=product.get('product_id', None)
+                delivery_sub=self.instance, product_id=product.get('product_id', None), order=product.get('order', 0)
             ).first()
             if deli_product:
                 deli_quantity = product.get('done', 0)
@@ -534,6 +535,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                     # Kiểm tra product id và order trùng với product update ko
                     obj.picked_quantity = target.get('picked_num', 0)
                     obj.delivery_data = target.get('delivery_data', [])
+                    obj.offset_data = target.get('offset_data', [])
                     obj.tool_data = target.get('tool_data', [])
                     obj.asset_data = target.get('asset_data', [])
                     obj.product_depreciation_start_date = target.get('product_depreciation_start_date', None)
@@ -554,7 +556,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                 # Sau khi update sẽ chạy các func trong save()
                 obj.save(update_fields=[
                     'picked_quantity', 'delivery_data',
-                    'tool_data', 'asset_data',
+                    'offset_data', 'tool_data', 'asset_data',
                     'product_depreciation_start_date', 'product_lease_start_date',
                     'depreciation_data', 'quantity_remain_recovery',
                 ])
@@ -629,6 +631,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             product_done[prod_key] = {}
             product_done[prod_key]['picked_num'] = item.get('done', 0)
             product_done[prod_key]['delivery_data'] = item.get('delivery_data', [])
+            product_done[prod_key]['offset_data'] = item.get('offset_data', [])
             product_done[prod_key]['tool_data'] = item.get('tool_data', [])
             product_done[prod_key]['asset_data'] = item.get('asset_data', [])
             product_done[prod_key]['product_depreciation_start_date'] = item.get(
@@ -684,7 +687,6 @@ class OrderDeliverySubRecoveryListSerializer(serializers.ModelSerializer):
                 'product_id': deli_product.product_id,
                 'product_data': deli_product.product_data,
                 'asset_type': deli_product.asset_type,
-                'offset_id': deli_product.offset_id,
                 'offset_data': deli_product.offset_data,
                 'tool_data': [{
                     "product_id": delivery_tool.product_id,

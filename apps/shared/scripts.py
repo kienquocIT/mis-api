@@ -6729,3 +6729,25 @@ def set_module_id_folder():
             folder_obj.save(update_fields=['module_id'])
     print('set_module_id_folder done.')
     return True
+
+
+def recycle_is_delete(app_model, id_list):
+    model_app = DisperseModel(app_model=app_model).get_model()
+    if model_app and hasattr(model_app, 'objects'):
+        for obj in model_app.objects.filter(id__in=id_list, is_delete=True):
+            obj.is_delete = False
+            obj.save(update_fields=['is_delete'])
+    print('recycle_is_delete done.')
+    return True
+
+
+def update_delivery_product_offset_data_default():
+    for delivery_product in OrderDeliveryProduct.objects.all():
+        if delivery_product.offset_data == {}:
+            delivery_product.offset_data = []
+            delivery_product.save(**{
+                    'for_goods_recovery': True,
+                    'update_fields': ['offset_data']
+                })
+    print('update_delivery_product_offset_data_default done.')
+    return True

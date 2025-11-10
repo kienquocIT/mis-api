@@ -1,6 +1,6 @@
 import logging
 from django.db import transaction
-from apps.accounting.journalentry.models import JournalEntryItem
+from apps.accounting.journalentry.models import JournalEntryLine
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.reconciliation.models import Reconciliation, ReconciliationItem
 
@@ -41,7 +41,7 @@ class ReconForARInvoiceHandler:
                 # tạo các dòng cấn trừ
                 bulk_info = []
                 # tìm bút toán của hóa đơn
-                for ar_je_item in JournalEntryItem.objects.filter(
+                for ar_je_line in JournalEntryLine.objects.filter(
                     journal_entry__je_transaction_app_code=ar_invoice_obj.get_model_code(),
                     journal_entry__je_transaction_id=str(ar_invoice_obj.id),
                     use_for_recon=True,
@@ -66,22 +66,22 @@ class ReconForARInvoiceHandler:
                                 'posting_date': str(ar_invoice_obj.posting_date),
                                 'app_code': ar_invoice_obj.get_model_code()
                             } if ar_invoice_obj else {},
-                            credit_account=ar_je_item.account,
+                            credit_account=ar_je_line.account,
                             credit_account_data={
-                                'id': str(ar_je_item.account_id),
-                                'acc_code': ar_je_item.account.acc_code,
-                                'acc_name': ar_je_item.account.acc_name,
-                                'foreign_acc_name': ar_je_item.account.foreign_acc_name
-                            } if ar_je_item.account else {},
-                            recon_total=ar_je_item.credit,
-                            recon_balance=ar_je_item.credit,
-                            recon_amount=ar_je_item.credit
+                                'id': str(ar_je_line.account_id),
+                                'acc_code': ar_je_line.account.acc_code,
+                                'acc_name': ar_je_line.account.acc_name,
+                                'foreign_acc_name': ar_je_line.account.foreign_acc_name
+                            } if ar_je_line.account else {},
+                            recon_total=ar_je_line.credit,
+                            recon_balance=ar_je_line.credit,
+                            recon_amount=ar_je_line.credit
                         )
                     )
                     # đối với từng bút toán của hóa đơn, tìm các bút toán của phiếu giao hàng gắn với hóa đơn đó
                     for item in ar_invoice_obj.ar_invoice_deliveries.all():
                         delivery_obj = item.delivery_mapped
-                        for deli_je_item in JournalEntryItem.objects.filter(
+                        for deli_je_line in JournalEntryLine.objects.filter(
                             journal_entry__je_transaction_app_code=delivery_obj.get_model_code(),
                             journal_entry__je_transaction_id=str(delivery_obj.id),
                             use_for_recon=True,
@@ -106,16 +106,16 @@ class ReconForARInvoiceHandler:
                                         'posting_date': str(delivery_obj.date_approved),
                                         'app_code': delivery_obj.get_model_code()
                                     } if delivery_obj else {},
-                                    debit_account=deli_je_item.account,
+                                    debit_account=deli_je_line.account,
                                     debit_account_data={
-                                        'id': str(deli_je_item.account_id),
-                                        'acc_code': deli_je_item.account.acc_code,
-                                        'acc_name': deli_je_item.account.acc_name,
-                                        'foreign_acc_name': deli_je_item.account.foreign_acc_name
-                                    } if deli_je_item.account else {},
-                                    recon_total=ar_je_item.credit,
-                                    recon_balance=ar_je_item.credit,
-                                    recon_amount=ar_je_item.credit,
+                                        'id': str(deli_je_line.account_id),
+                                        'acc_code': deli_je_line.account.acc_code,
+                                        'acc_name': deli_je_line.account.acc_name,
+                                        'foreign_acc_name': deli_je_line.account.foreign_acc_name
+                                    } if deli_je_line.account else {},
+                                    recon_total=ar_je_line.credit,
+                                    recon_balance=ar_je_line.credit,
+                                    recon_amount=ar_je_line.credit,
                                 )
                             )
                 ReconciliationItem.objects.bulk_create(bulk_info)

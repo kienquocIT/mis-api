@@ -1,30 +1,31 @@
-from apps.accounting.accountingsettings.models.account_masterdata_models import DefaultAccountDetermination
-from apps.accounting.accountingsettings.models.prd_type_account_deter import ProductTypeAccountDetermination, \
-    ProductTypeAccountDeterminationSub
+from apps.accounting.accountingsettings.models.account_determination import AccountDetermination
+from apps.accounting.accountingsettings.models.product_type_account_determination import (
+    ProductTypeAccountDetermination, ProductTypeAccountDeterminationSub
+)
 
 
 class AccountDeterminationForProductTypeHandler:
     @classmethod
-    def create_account_determination_for_product_type(cls, product_type_obj, default_account_determination_type):
+    def create_account_determination_for_product_type(cls, product_type_obj, account_determination_type):
         """ Gắn TK mặc định cho kho vừa tạo """
         company = product_type_obj.company
         tenant = product_type_obj.tenant
         bulk_info_prd_type = []
         bulk_info_wh_sub = []
-        for default_account in DefaultAccountDetermination.objects.filter(
-            company=company, tenant=tenant, default_account_determination_type=default_account_determination_type
+        for account_deter in AccountDetermination.objects.filter(
+            company=company, tenant=tenant, account_determination_type=account_determination_type
         ):
             prd_type_account_deter_obj = ProductTypeAccountDetermination(
                 company=company,
                 tenant=tenant,
                 product_type_mapped=product_type_obj,
-                title=default_account.title,
-                foreign_title=default_account.foreign_title,
-                account_determination_type=default_account_determination_type,
+                title=account_deter.title,
+                foreign_title=account_deter.foreign_title,
+                account_determination_type=account_determination_type,
                 can_change_account=True
             )
             bulk_info_prd_type.append(prd_type_account_deter_obj)
-            for item in default_account.default_acc_deter_sub.all():
+            for item in account_deter.account_determination_sub.all():
                 bulk_info_wh_sub.append(
                     ProductTypeAccountDeterminationSub(
                         prd_type_account_deter=prd_type_account_deter_obj,
@@ -34,7 +35,7 @@ class AccountDeterminationForProductTypeHandler:
                 )
         ProductTypeAccountDetermination.objects.filter(
             product_type_mapped=product_type_obj,
-            account_determination_type=default_account_determination_type,
+            account_determination_type=account_determination_type,
         ).delete()
         ProductTypeAccountDetermination.objects.bulk_create(bulk_info_prd_type)
         ProductTypeAccountDeterminationSub.objects.bulk_create(bulk_info_wh_sub)

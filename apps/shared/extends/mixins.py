@@ -611,7 +611,7 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         return ctx
 
     @staticmethod
-    def parse_header(request) -> tuple[bool, bool]:
+    def parse_header(request) -> dict[str, any]:
         """
         Parse flag data in request header.
         Args:
@@ -627,8 +627,12 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         minimal = request.query_params.dict().get('is_minimal', False)
         if minimal in ['True', 'true', '1', True]:
             minimal = True
+        deleted = request.query_params.dict().get('is_delete', False)
+        if deleted in ['True', 'true', '1', True]:
+            deleted = True
 
-        return minimal, skip_auth
+        # return minimal, skip_auth
+        return {'minimal': minimal, 'skip_auth': skip_auth, 'deleted': deleted}
 
     # Flag is enable cache queryset of view
     use_cache_queryset: bool = False
@@ -812,7 +816,7 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
 
 class BaseListMixin(BaseMixin):
     LIST_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id']  # DataAbstract
-    LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id']  # MasterData
+    LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id', 'is_delete']  # MasterData
 
     @classmethod
     def list_empty(cls) -> Response:
@@ -925,13 +929,16 @@ class BaseListMixin(BaseMixin):
         Returns:
 
         """
-        is_minimal, _is_skip_auth = self.parse_header(request)
+        header = self.parse_header(request)
+        is_minimal, _is_skip_auth, is_delete = header['minimal'], header['skip_auth'], header['deleted']
 
         filter_kwargs_q = self.filter_kwargs_q
         if isinstance(filter_kwargs_q, Response):
             return filter_kwargs_q
 
         filter_kwargs = self.filter_kwargs
+        if 'is_delete' in filter_kwargs and is_delete is True:
+            filter_kwargs['is_delete'] = True
         if settings.DEBUG_PERMIT:
             print('# MIXINS.LIST              :', request.path)
             print('#  - filter_kwargs_q       :', filter_kwargs_q)
