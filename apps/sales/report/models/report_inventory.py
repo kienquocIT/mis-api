@@ -1,8 +1,9 @@
 from django.db import models
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import ProductSpecificIdentificationSerialNumber
-from apps.sales.inventory.models import GReItemProductWarehouseLot
-from apps.sales.inventory.models.goods_registration import GoodsRegistration, GReItemProductWarehouseSerial
+from apps.sales.inventory.models.goods_registration import (
+    GoodsRegistration, GReItemProductWarehouseSerial, GReItemProductWarehouseLot
+)
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
