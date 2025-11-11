@@ -1,7 +1,8 @@
 from django.db import models
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import ProductSpecificIdentificationSerialNumber
-from apps.sales.inventory.models.goods_registration import GoodsRegistration
+from apps.sales.inventory.models import GReItemProductWarehouseLot
+from apps.sales.inventory.models.goods_registration import GoodsRegistration, GReItemProductWarehouseSerial
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
@@ -185,20 +186,34 @@ class ReportStockLog(DataAbstractModel):
     fifo_cost_detail = models.JSONField(default=list)
 
     @staticmethod
-    def parse_param(doc_item, cost_cfg):
-        kw_parameter = {}
+    def parse_params_report_inventory_create(doc_item, cost_cfg):
+        kwargs = {}
         if 1 in cost_cfg:
-            kw_parameter['warehouse_id'] = doc_item.get('warehouse').id if doc_item.get('warehouse') else None
+            kwargs['warehouse_id'] = doc_item.get('warehouse').id if doc_item.get('warehouse') else None
         if 2 in cost_cfg:
-            kw_parameter['lot_mapped_id'] = (doc_item.get('lot_data') or {}).get('lot_id')
+            kwargs['lot_mapped_id'] = (doc_item.get('lot_data') or {}).get('lot_id')
         if 3 in cost_cfg:
-            kw_parameter['sale_order_id'] = doc_item.get('sale_order').id if doc_item.get('sale_order') else None
-            kw_parameter['lease_order_id'] = doc_item.get('lease_order').id if doc_item.get('lease_order') else None
-            kw_parameter['service_order_id'] = doc_item.get(
+            kwargs['sale_order_id'] = doc_item.get('sale_order').id if doc_item.get('sale_order') else None
+            kwargs['lease_order_id'] = doc_item.get('lease_order').id if doc_item.get('lease_order') else None
+            kwargs['service_order_id'] = doc_item.get(
                 'service_order'
             ).id if doc_item.get('service_order') else None
-        kw_parameter['serial_number'] = (doc_item.get('serial_data') or {}).get('serial_number')
-        return kw_parameter
+        kwargs['serial_number'] = (doc_item.get('serial_data') or {}).get('serial_number')
+
+        # Nếu Serial/Lot này là hàng của dự án mới lấy Order, không thì bỏ Order ra
+        # (mới chỉ hô trợ check Serial (chính xác) và Lot (không check số lượng))
+        if not GReItemProductWarehouseSerial.objects.filter(
+                gre_item_prd_wh__gre_item__product=doc_item.get('product'),
+                sn_registered__serial_number=kwargs.get('serial_number', '')
+        ).exists() or not GReItemProductWarehouseLot.objects.filter(
+                gre_item_prd_wh__gre_item__product=doc_item.get('product'),
+                lot_registeredd_id=kwargs.get('lot_mapped_id')
+        ).exists():
+            kwargs['sale_order_id'] = None
+            kwargs['lease_order_id'] = None
+            kwargs['service_order_id'] = None
+
+        return kwargs
 
     @classmethod
     def create_new_logs(cls, doc_obj, doc_data, period_obj, sub_period_order, cost_cfg):
@@ -206,29 +221,28 @@ class ReportStockLog(DataAbstractModel):
         bulk_info = []
         log_order_number = 0
         for item in doc_data:
-            kw_parameter = ReportStockLog.parse_param(item, cost_cfg)
+            kwargs = ReportStockLog.parse_params_report_inventory_create(item, cost_cfg)
             rp_stock = ReportStock.get_or_create_report_stock(
-                doc_obj, period_obj, sub_period_order, item, **kw_parameter
+                doc_obj, period_obj, sub_period_order, item, **kwargs
             )
             latest_cost = {}
             if item['product'].valuation_method == 0:
                 if item['stock_type'] == -1:
                     latest_cost = ReportInventorySubFunction.get_export_cost_for_fifo(
                         doc_obj.company.company_config.definition_inventory_valuation,
-                        item['product'], item['warehouse'], item['quantity'], **kw_parameter
+                        item['product'], item['warehouse'], item['quantity'], **kwargs
                     )
                     item['cost'] = latest_cost['cost']
             if item['product'].valuation_method == 1:
                 if item['stock_type'] == -1:
                     latest_cost = ReportInventorySubFunction.get_latest_log_cost_dict(
                         doc_obj.company.company_config.definition_inventory_valuation,
-                        item['product'], item['warehouse'], **kw_parameter
+                        item['product'], item['warehouse'], **kwargs
                     )
                     item['cost'] = latest_cost['cost']
             if item['product'].valuation_method == 2:
                 if item['stock_type'] == -1:
                     # thực tế đích danh sẽ lấy giá xuất theo từng serial
-                    print(item['product'].id, (item.get('serial_data') or {}).get('serial_number'))
                     item['cost'] = ProductSpecificIdentificationSerialNumber.get_specific_value(
                         product=item['product'],
                         serial_number=(item.get('serial_data') or {}).get('serial_number')
@@ -278,10 +292,11 @@ class ReportStockLog(DataAbstractModel):
                     lot_data=item.get('lot_data', {}),
                     log_order=log_order_number,
                     fifo_cost_detail=latest_cost.get('fifo_cost_detail', []),
-                    **kw_parameter
+                    **kwargs
                 )
                 bulk_info.append(new_log)
-                if 'sale_order_id' in kw_parameter:  # Project
+                # Project
+                if 'sale_order_id' in kwargs or 'lease_order_id' in kwargs or 'service_order_id' in kwargs:
                     GoodsRegistration.update_registration_inventory(item, doc_obj)
         new_logs = cls.objects.bulk_create(bulk_info)
         return new_logs
@@ -342,23 +357,23 @@ class ReportStockLog(DataAbstractModel):
     @classmethod
     def update_log_cost(cls, log, period_obj, sub_period_order, cost_cfg, for_balance_init):
         """ Step 2: Hàm để cập nhập giá trị tồn kho khi log được ghi vào """
-        kw_parameter = {}
+        kwargs = {}
         if 1 in cost_cfg:
-            kw_parameter['warehouse_id'] = log.warehouse_id
+            kwargs['warehouse_id'] = log.warehouse_id
         if 2 in cost_cfg:
-            kw_parameter['lot_mapped_id'] = log.lot_mapped_id
+            kwargs['lot_mapped_id'] = log.lot_mapped_id
         if 3 in cost_cfg:
-            kw_parameter['sale_order_id'] = log.sale_order_id
-            kw_parameter['lease_order_id'] = log.lease_order_id
-            kw_parameter['service_order_id'] = log.service_order_id
-        kw_parameter['serial_number'] = log.serial_number
+            kwargs['sale_order_id'] = log.sale_order_id
+            kwargs['lease_order_id'] = log.lease_order_id
+            kwargs['service_order_id'] = log.service_order_id
+        kwargs['serial_number'] = log.serial_number
         div = log.company.company_config.definition_inventory_valuation
         latest_cost = ReportInventorySubFunction.get_latest_log_cost_dict(
-            div, log.product, log.physical_warehouse, **kw_parameter
+            div, log.product, log.physical_warehouse, **kwargs
         )
         updated_log = cls.update_log_cost_dict(div, log, latest_cost)
         cls.create_or_update_this_sub_period_cost(
-            updated_log, period_obj, sub_period_order, latest_cost, div, for_balance_init, **kw_parameter
+            updated_log, period_obj, sub_period_order, latest_cost, div, for_balance_init, **kwargs
         )
         return True
 
@@ -509,7 +524,8 @@ class ReportStockLog(DataAbstractModel):
             )
 
             if this_sub_period_cost:
-                if 'sale_order_id' in kwargs:  # Project
+                # Project
+                if 'sale_order_id' in kwargs or 'lease_order_id' in kwargs or 'service_order_id' in kwargs:
                     this_sub_period_cost_wh = this_sub_period_cost.report_inventory_cost_wh.filter(
                         warehouse=log.physical_warehouse
                     ).first()
