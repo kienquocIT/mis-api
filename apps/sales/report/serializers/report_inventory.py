@@ -54,7 +54,7 @@ class ReportStockListSerializer(serializers.ModelSerializer):
     def get_stock_activities_detail(cls, obj, all_logs_by_month, div, physical_warehouse_id, **kwargs):
         data_stock_activity = []
         # lấy các hoạt động nhập-xuất
-        if 'sale_order_id' in kwargs:
+        if 'sale_order_id' in kwargs or 'lease_order_id' in kwargs or 'service_order_id' in kwargs:
             kwargs['physical_warehouse_id'] = physical_warehouse_id
         for log in all_logs_by_month.filter(product_id=obj.product_id, **kwargs):
             casted_quantity = cast_unit_to_inv_quantity(obj.product.inventory_uom, log.quantity)
@@ -88,30 +88,33 @@ class ReportStockListSerializer(serializers.ModelSerializer):
 
     def get_stock_activities(self, obj):
         cost_cfg = self.context.get('cost_cfg')
-        kw_parameter = {}
+        kwargs = {}
         if 2 in cost_cfg:
-            kw_parameter['lot_mapped_id'] = obj.lot_mapped_id
+            kwargs['lot_mapped_id'] = obj.lot_mapped_id
         if 3 in cost_cfg:
-            kw_parameter['sale_order_id'] = obj.sale_order_id
-            kw_parameter['lease_order_id'] = obj.lease_order_id
-            kw_parameter['service_order_id'] = obj.service_order_id
+            kwargs['sale_order_id'] = obj.sale_order_id
+            kwargs['lease_order_id'] = obj.lease_order_id
+            kwargs['service_order_id'] = obj.service_order_id
 
         if obj.product.valuation_method == 2:
-            kw_parameter['serial_number'] = obj.serial_number
+            kwargs['serial_number'] = obj.serial_number
 
         result = []
         for warehouse_item in self.context.get('wh_list', []):
             # warehouse_item: [id, code, title]
             if 1 in cost_cfg:
-                kw_parameter['warehouse_id'] = warehouse_item[0] if len(warehouse_item) > 0 else None
+                kwargs['warehouse_id'] = warehouse_item[0] if len(warehouse_item) > 0 else None
             this_sub_period_cost = obj.product.report_inventory_cost_product.filter(
                 period_mapped_id=obj.period_mapped_id,
                 sub_period_order=obj.sub_period_order,
-                **kw_parameter
+                **kwargs
             ).first()
             if this_sub_period_cost:
+                warehouse_id = None
+                if 'sale_order_id' in kwargs or 'lease_order_id' in kwargs or 'service_order_id' in kwargs:
+                    warehouse_id = warehouse_item[0]
                 this_balance = ReportInventorySubFunction.get_this_sub_period_cost_dict(
-                    this_sub_period_cost, warehouse_item[0] if 'sale_order_id' in kw_parameter else None
+                    this_sub_period_cost, warehouse_id
                 )
                 casted_obq = cast_unit_to_inv_quantity(
                     obj.product.inventory_uom, this_balance['opening_balance_quantity']
@@ -139,7 +142,7 @@ class ReportStockListSerializer(serializers.ModelSerializer):
                         self.context.get('all_logs_by_month', []),
                         self.context.get('definition_inventory_valuation'),
                         warehouse_item[0],
-                        **kw_parameter
+                        **kwargs
                     ),
                     'periodic_closed': this_sub_period_cost.periodic_closed
                 })
@@ -292,7 +295,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
             sum_out_quantity = 0
             sum_in_value = 0
             sum_out_value = 0
-            kw_parameter = {
+            kwargs = {
                 'physical_warehouse_id': wh_sub.warehouse_id,
                 'sale_order_id': obj.sale_order_id,
                 'lease_order_id': obj.lease_order_id,
@@ -303,7 +306,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
             for log in obj.product.report_stock_log_product.filter(
                     report_stock__period_mapped_id=obj.period_mapped_id,
                     report_stock__sub_period_order=obj.sub_period_order,
-                    **kw_parameter
+                    **kwargs
             ):
                 if log.system_date.day in list(range(date_range[0], date_range[1] + 1)):
                     if log.stock_type == 1:
@@ -371,23 +374,23 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
         sum_out_quantity = 0
         sum_in_value = 0
         sum_out_value = 0
-        kw_parameter = {
+        kwargs = {
             'physical_warehouse_id': obj.warehouse_id,
             'serial_number': obj.serial_number
         }
         if 1 in cost_cfg:
-            kw_parameter['warehouse_id'] = obj.warehouse_id
+            kwargs['warehouse_id'] = obj.warehouse_id
         if 2 in cost_cfg:
-            kw_parameter['lot_mapped_id'] = obj.lot_mapped_id
+            kwargs['lot_mapped_id'] = obj.lot_mapped_id
         if 3 in cost_cfg:
-            kw_parameter['sale_order_id'] = obj.sale_order_id
-            kw_parameter['lease_order_id'] = obj.lease_order_id
-            kw_parameter['service_order_id'] = obj.service_order_id
+            kwargs['sale_order_id'] = obj.sale_order_id
+            kwargs['lease_order_id'] = obj.lease_order_id
+            kwargs['service_order_id'] = obj.service_order_id
 
         for log in obj.product.report_stock_log_product.filter(
                 report_stock__period_mapped_id=obj.period_mapped_id,
                 report_stock__sub_period_order=obj.sub_period_order,
-                **kw_parameter
+                **kwargs
         ):
             if log.system_date.day in list(range(date_range[0], date_range[1] + 1)):
                 if log.stock_type == 1:
