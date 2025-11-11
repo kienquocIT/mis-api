@@ -1,23 +1,27 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from apps.accounting.accountingsettings.models.account_masterdata_models import (
-    DEFAULT_ACCOUNT_DETERMINATION_TYPE, ChartOfAccounts
+from apps.accounting.accountingsettings.models.chart_of_account import (
+    ChartOfAccounts
 )
-from apps.accounting.accountingsettings.models.wh_account_deter import WarehouseAccountDetermination, \
-    WarehouseAccountDeterminationSub
+from apps.accounting.accountingsettings.models.account_determination import (
+    ACCOUNT_DETERMINATION_TYPE,
+)
+from apps.accounting.accountingsettings.models.product_account_determination import (
+    ProductAccountDetermination, ProductAccountDeterminationSub
+)
 
 
-class WarehouseAccountDeterminationListSerializer(serializers.ModelSerializer):
+class ProductAccountDeterminationListSerializer(serializers.ModelSerializer):
     account_mapped = serializers.SerializerMethodField()
     account_determination_type_convert = serializers.SerializerMethodField()
 
     class Meta:
-        model = WarehouseAccountDetermination
+        model = ProductAccountDetermination
         fields = (
             'id',
             'title',
             'foreign_title',
-            'warehouse_mapped_id',
+            'product_mapped_id',
             'account_mapped',
             'account_determination_type_convert',
             'can_change_account'
@@ -25,24 +29,24 @@ class WarehouseAccountDeterminationListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_account_mapped(cls, obj):
-        return [item.account_mapped_data for item in obj.wh_account_deter_sub.all()]
+        return [item.account_mapped_data for item in obj.prd_account_deter_sub.all()]
 
     @classmethod
     def get_account_determination_type_convert(cls, obj):
-        return DEFAULT_ACCOUNT_DETERMINATION_TYPE[obj.account_determination_type][1]
+        return ACCOUNT_DETERMINATION_TYPE[obj.account_determination_type][1]
 
 
-class WarehouseAccountDeterminationDetailSerializer(serializers.ModelSerializer):
+class ProductAccountDeterminationDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = WarehouseAccountDetermination
+        model = ProductAccountDetermination
         fields = "__all__"
 
 
-class WarehouseAccountDeterminationUpdateSerializer(serializers.ModelSerializer):
+class ProductAccountDeterminationUpdateSerializer(serializers.ModelSerializer):
     replace_account = serializers.JSONField(default=list)
 
     class Meta:
-        model = WarehouseAccountDetermination
+        model = ProductAccountDetermination
         fields = (
             'replace_account',
         )
@@ -73,10 +77,10 @@ class WarehouseAccountDeterminationUpdateSerializer(serializers.ModelSerializer)
         bulk_info = []
         for item in replace_account:
             bulk_info.append(
-                WarehouseAccountDeterminationSub(wh_account_deter=instance, **item)
+                ProductAccountDeterminationSub(prd_account_deter=instance, **item)
             )
-        instance.wh_account_deter_sub.all().delete()
-        WarehouseAccountDeterminationSub.objects.bulk_create(bulk_info)
+        instance.prd_account_deter_sub.all().delete()
+        ProductAccountDeterminationSub.objects.bulk_create(bulk_info)
         instance.is_changed = True
         instance.save(update_fields=['is_changed'])
         return instance

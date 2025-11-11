@@ -44,7 +44,9 @@ class GoodsRecovery(DataAbstractModel):
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    CompanyFunctionNumber.auto_gen_code_based_on_config('goodsrecovery', True, self, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                    )
                     RecoveryFinishHandler.run_logics(instance=self)
 
         # hit DB

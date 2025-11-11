@@ -288,7 +288,9 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    CompanyFunctionNumber.auto_gen_code_based_on_config('leaseorder', True, self, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                    )
                     LOFinishHandler.push_product_info(instance=self)  # product info
                     LOFinishHandler.update_asset_status(instance=self)  # asset status => leased
                     LOFinishHandler.push_to_report_revenue(instance=self)  # reports

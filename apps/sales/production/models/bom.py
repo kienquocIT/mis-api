@@ -57,7 +57,9 @@ class BOM(DataAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    CompanyFunctionNumber.auto_gen_code_based_on_config('bom', False, self, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code=None, instance=self, in_workflow=False, kwargs=kwargs
+                    )
 
                     if self.product.has_bom:
                         raise ValueError("This product is mapped with BOM")

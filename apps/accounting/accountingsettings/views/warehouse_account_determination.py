@@ -1,12 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.accounting.accountingsettings.models.wh_account_deter import WarehouseAccountDetermination
-from apps.accounting.accountingsettings.serializers.wh_account_deter_serializers import (
+from apps.accounting.accountingsettings.models.warehouse_account_determination import WarehouseAccountDetermination
+from apps.accounting.accountingsettings.serializers.warehouse_account_determination import (
     WarehouseAccountDeterminationListSerializer, WarehouseAccountDeterminationUpdateSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseUpdateMixin
 
 
-# Create your views here.
 class WarehouseAccountDeterminationList(BaseListMixin):
     queryset = WarehouseAccountDetermination.objects
     search_fields = ['title',]

@@ -1,6 +1,6 @@
 import logging
 from django.db import transaction
-from apps.accounting.accountingsettings.models import DefaultAccountDetermination
+from apps.accounting.accountingsettings.models import AccountDetermination
 from apps.accounting.journalentry.models import JournalEntry
 
 
@@ -13,7 +13,7 @@ class JEForCOFHandler:
         debit_rows_data = []
         credit_rows_data = []
         if cof_obj.cash_value > 0:
-            account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+            account_list = AccountDetermination.get_account_determination_sub_data(
                 tenant_id=cof_obj.tenant_id,
                 company_id=cof_obj.company_id,
                 foreign_title='Cash in hand received from customers'
@@ -31,7 +31,7 @@ class JEForCOFHandler:
                 })
 
         if cof_obj.bank_value > 0:
-            account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+            account_list = AccountDetermination.get_account_determination_sub_data(
                 tenant_id=cof_obj.tenant_id,
                 company_id=cof_obj.company_id,
                 foreign_title='Cash in bank received from customers'
@@ -48,7 +48,7 @@ class JEForCOFHandler:
                     'taxable_value': 0,
                 })
 
-        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+        account_list = AccountDetermination.get_account_determination_sub_data(
             tenant_id=cof_obj.tenant_id,
             company_id=cof_obj.company_id,
             foreign_title='Payable to suppliers'

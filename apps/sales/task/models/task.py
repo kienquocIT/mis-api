@@ -202,7 +202,10 @@ class OpportunityTask(DataAbstractModel):
     def create_code_task(self):
         # auto create code (temporary)
         if not self.code:
-            code_generated = CompanyFunctionNumber.auto_gen_code_based_on_config(app_code='opportunitytask')
+            # code_generated = CompanyFunctionNumber.auto_gen_code_based_on_config(app_code='opportunitytask')
+            code_generated = CompanyFunctionNumber.auto_gen_code_based_on_config(
+                app_code='opportunitytask', in_workflow=False, instance=self
+            )
             if code_generated:
                 self.code = code_generated
             else:
@@ -332,6 +335,8 @@ class OpportunityTaskSummaryDaily(SimpleAbstractModel):  # pylint: disable=R0902
     overdue = models.PositiveSmallIntegerField(default=0)
     upcoming_today = models.PositiveSmallIntegerField(default=0)
     upcoming_soon = models.PositiveSmallIntegerField(default=0)
+
+    # today_created, start_today not using at this time (07-11-2025)
     today_created = models.PositiveSmallIntegerField(default=0)
     start_today = models.PositiveSmallIntegerField(default=0)
 
@@ -343,9 +348,9 @@ class OpportunityTaskSummaryDaily(SimpleAbstractModel):  # pylint: disable=R0902
             'overdue': self.overdue,
             'upcoming_today': self.upcoming_today,
             'upcoming_soon': self.upcoming_soon,
-            'today_created': self.today_created,
-            'start_today': self.start_today,
-            'by_status': self.by_status,
+            # 'today_created': self.today_created,
+            # 'start_today': self.start_today,
+            # 'by_status': self.by_status,
         }
 
     def update_all(self):
@@ -353,11 +358,11 @@ class OpportunityTaskSummaryDaily(SimpleAbstractModel):  # pylint: disable=R0902
         self.update_overdue(update=True, commit=False)
         self.update_upcoming_today(update=True, commit=False)
         self.update_upcoming_soon(update=True, commit=False)
-        self.update_today_created(update=True, commit=False)
-        self.update_start_today(update=True, commit=False)
-        self.update_by_status(update=True, commit=False)
         self.updated_at = timezone.now()
         self.state = 1
+        # self.update_today_created(update=True, commit=False)
+        # self.update_start_today(update=True, commit=False)
+        # self.update_by_status(update=True, commit=False)
         return True
 
     def update_actives(self, update=False, commit=False):
