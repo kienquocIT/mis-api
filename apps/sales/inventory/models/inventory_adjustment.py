@@ -36,7 +36,9 @@ class InventoryAdjustment(DataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        CompanyFunctionNumber.auto_gen_code_based_on_config('inventoryadjustment', False, self, kwargs)
+        CompanyFunctionNumber.auto_gen_code_based_on_config(
+            app_code=None, instance=self, in_workflow=False, kwargs=kwargs
+        )
         super().save(*args, **kwargs)
 
 

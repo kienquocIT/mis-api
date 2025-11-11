@@ -297,7 +297,9 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel, CurrencyAbstractMo
             # check if date_approved then call related functions
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    CompanyFunctionNumber.auto_gen_code_based_on_config('quotation', True, self, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                    )
                     QuotationFinishHandler.update_opportunity(instance=self)  # opportunity
                     QuotationFinishHandler.push_to_customer_activity(instance=self)  # customer
                     QuotationFinishHandler.set_true_file_is_approved(instance=self)  # file

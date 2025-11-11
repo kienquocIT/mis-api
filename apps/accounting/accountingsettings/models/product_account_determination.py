@@ -1,6 +1,7 @@
 from django.db import models
-from apps.accounting.accountingsettings.models.account_masterdata_models import DEFAULT_ACCOUNT_DETERMINATION_TYPE
+from apps.accounting.accountingsettings.models.account_determination import ACCOUNT_DETERMINATION_TYPE
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
+
 
 __all__ = [
     'ProductAccountDetermination',
@@ -15,7 +16,7 @@ class ProductAccountDetermination(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='prd_account_deter_product_mapped'
     )
-    account_determination_type = models.SmallIntegerField(choices=DEFAULT_ACCOUNT_DETERMINATION_TYPE, default=0)
+    account_determination_type = models.SmallIntegerField(choices=ACCOUNT_DETERMINATION_TYPE, default=0)
     can_change_account = models.BooleanField(default=False)
     is_changed = models.BooleanField(default=False, help_text='True if user has change default account determination')
 

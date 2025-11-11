@@ -1,6 +1,6 @@
 import logging
 from django.db import transaction
-from apps.accounting.accountingsettings.models import DefaultAccountDetermination
+from apps.accounting.accountingsettings.models import AccountDetermination
 from apps.accounting.journalentry.models import JournalEntry
 from apps.sales.report.models import ReportStockLog
 
@@ -42,7 +42,7 @@ class JEForARInvoiceHandler:
                                 'taxable_value': 0,
                             })
 
-        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+        account_list = AccountDetermination.get_account_determination_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
             company_id=ar_invoice_obj.company_id,
             foreign_title='Customer underpayment'
@@ -61,7 +61,7 @@ class JEForARInvoiceHandler:
                 'use_for_recon_type': 'ar-deli'
             })
 
-        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+        account_list = AccountDetermination.get_account_determination_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
             company_id=ar_invoice_obj.company_id,
             foreign_title='Receivables from customers'
@@ -80,7 +80,7 @@ class JEForARInvoiceHandler:
                 'use_for_recon_type': 'ar-cif'
             })
 
-        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+        account_list = AccountDetermination.get_account_determination_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
             company_id=ar_invoice_obj.company_id,
             foreign_title='Sales revenue'
@@ -97,7 +97,7 @@ class JEForARInvoiceHandler:
                 'taxable_value': 0,
             })
 
-        account_list = DefaultAccountDetermination.get_default_account_deter_sub_data(
+        account_list = AccountDetermination.get_account_determination_sub_data(
             tenant_id=ar_invoice_obj.tenant_id,
             company_id=ar_invoice_obj.company_id,
             foreign_title='Sales tax'

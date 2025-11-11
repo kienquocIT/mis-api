@@ -1,6 +1,5 @@
 import logging
 from django.db import models, transaction
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.company.models import CompanyFunctionNumber
@@ -94,11 +93,11 @@ class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
                 if period_obj:
                     sub_period_obj = Periods.get_sub_period_by_doc_date(period_obj, doc_date)
                     if sub_period_obj:
-                        sub_period_order = Periods.get_sub_period_by_doc_date(period_obj, doc_date).order
+                        sub_period_order = sub_period_obj.order
                         je_obj = cls.objects.create(
                             **kwargs,
-                            je_posting_date=timezone.now(),
-                            je_document_date=timezone.now(),
+                            je_posting_date=str(doc_obj.date_approved),
+                            je_document_date=str(doc_obj.date_approved),
                             je_state=1, # Posted
                             total_debit=0, # Updated below
                             total_credit=0, # Updated below
@@ -113,11 +112,13 @@ class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
                             company=company,
                             employee_created_id=doc_obj.employee_created_id,
                             employee_inherit_id=doc_obj.employee_inherit_id,
-                            date_created=str(doc_obj.date_created),
+                            date_created=str(doc_obj.date_approved),
                             date_approved=str(doc_obj.date_approved)
                         )
                         # duyệt tự động
-                        CompanyFunctionNumber.auto_gen_code_based_on_config('journalentry', True, je_obj)
+                        CompanyFunctionNumber.auto_gen_code_based_on_config(
+                            app_code=None, instance=je_obj, in_workflow=True, kwargs=None
+                        )
                         je_obj.system_status = 3
                         je_obj.save(update_fields=['code', 'system_status'])
                         total_debit, total_credit = JournalEntryLine.create_je_line_mapped(je_obj, je_line_data)

@@ -166,7 +166,9 @@ class Payment(DataAbstractModel, BastionFieldAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    CompanyFunctionNumber.auto_gen_code_based_on_config('payment', True, self, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                    )
                     self.push_final_acceptance_payment(self)
                     self.convert_ap_cost(self)
                     self.set_true_file_is_approved(self)

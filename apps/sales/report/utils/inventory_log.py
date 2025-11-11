@@ -21,7 +21,7 @@ class ReportInvLog:
                 if period_obj:
                     sub_period_obj = Periods.get_sub_period_by_doc_date(period_obj, doc_date)
                     if sub_period_obj:
-                        sub_period_order = Periods.get_sub_period_by_doc_date(period_obj, doc_date).order
+                        sub_period_order = sub_period_obj.order
 
                         # cho kiểm kê định kì
                         if doc_obj.company.company_config.definition_inventory_valuation == 1:

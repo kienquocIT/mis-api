@@ -1,7 +1,4 @@
-from datetime import timedelta
-
 from django.contrib import admin
-from django.utils import timezone
 from django.utils.safestring import mark_safe
 
 from apps.core.hr.models import Employee

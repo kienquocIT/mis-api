@@ -1,6 +1,5 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
 from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import SimpleAbstractModel, DataAbstractModel, AutoDocumentAbstractModel
 
@@ -47,7 +46,9 @@ class Reconciliation(DataAbstractModel, AutoDocumentAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    CompanyFunctionNumber.auto_gen_code_based_on_config('reconciliation', True, self, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                    )
         # hit DB
         super().save(*args, **kwargs)
 

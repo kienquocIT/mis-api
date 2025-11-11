@@ -34,7 +34,9 @@ class ReconForAPInvoiceHandler:
                     tenant=ap_invoice_obj.tenant,
                     system_auto_create=True
                 )
-                CompanyFunctionNumber.auto_gen_code_based_on_config('reconciliation', True, recon_obj)
+                CompanyFunctionNumber.auto_gen_code_based_on_config(
+                    app_code=None, instance=recon_obj, in_workflow=True, kwargs=None
+                )
                 recon_obj.system_status = 3
                 recon_obj.save(update_fields=['code', 'system_status'])
 
