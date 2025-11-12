@@ -8,7 +8,7 @@ from apps.accounting.accountingsettings.views.account_determination import (
 from apps.accounting.accountingsettings.views.dimension import (
     DimensionDefinitionList, DimensionDefinitionDetail,
     DimensionDefinitionWithValueList, DimensionValueList, DimensionValueDetail, DimensionSyncConfigApplicationList,
-    DimensionSyncConfigList
+    DimensionSyncConfigList, DimensionSyncConfigDetail
 )
 from apps.accounting.accountingsettings.views.product_account_determination import (
     ProductAccountDeterminationList, ProductAccountDeterminationDetail
@@ -78,4 +78,6 @@ urlpatterns = [
          name='DimensionSyncConfigApplicationList'),
     path('dimension-sync-config/list', DimensionSyncConfigList.as_view(),
          name='DimensionSyncConfigList'),
+    path('dimension-sync-config/detail/<str:pk>', DimensionSyncConfigDetail.as_view(),
+         name='DimensionSyncConfigDetail'),
 ]

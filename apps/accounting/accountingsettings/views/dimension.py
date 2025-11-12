@@ -5,7 +5,8 @@ from apps.accounting.accountingsettings.serializers import DimensionDefinitionLi
     DimensionDefinitionCreateSerializer, DimensionDefinitionDetailSerializer, DimensionDefinitionUpdateSerializer, \
     DimensionDefinitionWithValuesSerializer, DimensionValueListSerializer, DimensionValueCreateSerializer, \
     DimensionValueDetailSerializer, DimensionValueUpdateSerializer, DimensionSyncConfigApplicationListSerializer, \
-    DimensionSyncConfigListSerializer, DimensionSyncConfigCreateSerializer, DimensionSyncConfigDetailSerializer
+    DimensionSyncConfigListSerializer, DimensionSyncConfigCreateSerializer, DimensionSyncConfigDetailSerializer, \
+    DimensionSyncConfigUpdateSerializer
 from apps.core.base.models import Application
 from apps.shared import BaseListMixin, BaseCreateMixin, BaseUpdateMixin, mask_view, BaseRetrieveMixin
 
@@ -139,7 +140,8 @@ class DimensionSyncConfigApplicationList(BaseListMixin):
 
     # uuid of application
     list_app_id = [
-        '4e48c863-861b-475a-aa5e-97a4ed26f294'
+        '4e48c863-861b-475a-aa5e-97a4ed26f294', #Account
+        '3407d35d-27ce-407e-8260-264574a216e3' #payment term
     ]
     def get_queryset(self):
         return Application.objects.filter(id__in=self.list_app_id)
@@ -184,3 +186,33 @@ class DimensionSyncConfigList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+
+class DimensionSyncConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = DimensionSyncConfig.objects
+    serializer_update = DimensionSyncConfigUpdateSerializer
+    serializer_detail = DimensionSyncConfigDetailSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Dimension Config Detail",
+        operation_description="Get Dimension Config Detail",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Dimension Config Update",
+        operation_description="Update Dimension Config",
+        request_body=DimensionSyncConfigUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)

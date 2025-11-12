@@ -9,7 +9,8 @@ __all__ = [
     'DimensionDefinitionCreateSerializer',
     'DimensionDefinitionDetailSerializer',
     'DimensionDefinitionUpdateSerializer',
-    'DimensionDefinitionWithValuesSerializer'
+    'DimensionDefinitionWithValuesSerializer',
+    'DimensionWithSyncConfigListSerializer'
 ]
 
 
@@ -22,15 +23,16 @@ class DimensionDefinitionListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
-            'related_app'
+            'related_app',
         )
 
     @classmethod
     def get_related_app(cls, obj):
         return {
-            'title': obj.related_app.get('title', ''),
-            'code': obj.related_app.get('code', ''),
+            'title': obj.related_app.title,
+            'code': obj.related_app.code,
         } if obj.related_app else None
+
 
 class DimensionDefinitionCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(error_messages={
@@ -54,6 +56,7 @@ class DimensionDefinitionCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"code": _("Code already exists")})
 
         return value
+
 
 class DimensionDefinitionDetailSerializer(serializers.ModelSerializer):
 
@@ -95,8 +98,10 @@ class DimensionDefinitionUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"dimension": _(f"Dimension is sync with {title}")})
         return validated_data
 
+
 class DimensionDefinitionWithValuesSerializer(serializers.ModelSerializer):
     values = serializers.SerializerMethodField()
+    is_system_dimension = SerializerMethodField()
 
     class Meta:
         model = Dimension
@@ -105,6 +110,7 @@ class DimensionDefinitionWithValuesSerializer(serializers.ModelSerializer):
             'title',
             'code',
             'values',
+            'is_system_dimension'
         )
 
     def get_values(self, obj):
@@ -129,7 +135,44 @@ class DimensionDefinitionWithValuesSerializer(serializers.ModelSerializer):
                 "children_ids": list(item.child_values.values_list("id", flat=True)),
                 "level": level,
                 "related_app_id": item.related_app_id,
-                "related_app_code": item.related_app_code,
+                'is_system_created': True if item.related_app else False,
             })
 
         return result
+
+    def get_is_system_dimension(self, obj):
+        return True if obj.related_app else False
+
+class DimensionWithSyncConfigListSerializer(serializers.ModelSerializer):
+    related_app = SerializerMethodField()
+    sync_status = SerializerMethodField()
+    record_number = SerializerMethodField()
+
+    class Meta:
+        model = Dimension
+        fields = (
+            'id',
+            'title',
+            'code',
+            'related_app',
+            'sync_status',
+            'record_number'
+        )
+
+    @classmethod
+    def get_related_app(cls, obj):
+        return {
+            'title': obj.related_app.get('title', ''),
+            'code': obj.related_app.get('code', ''),
+        } if obj.related_app else None
+
+    @classmethod
+    def get_sync_status(cls, obj):
+        if obj.configs:
+            return ''
+        return True
+
+    @classmethod
+    def get_record_number(cls, obj):
+        return obj.dimension_values.count()
+

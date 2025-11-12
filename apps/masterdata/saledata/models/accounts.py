@@ -2,6 +2,8 @@ import datetime
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+from apps.accounting.accountingsettings.utils.dimension_utils import DimensionUtils
 from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.price import Price, Currency
 from apps.masterdata.saledata.models.config import PaymentTerm
@@ -275,6 +277,12 @@ class Account(DataAbstractModel):
             'revenue_average': round(revenue_ytd / order_number) if order_number > 0 else 0,
         }
 
+    @classmethod
+    def get_field_mapping(cls):
+        return {
+            'title': 'name',
+            'ab': 'code'
+        }
 
 class AccountContacts(SimpleAbstractModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='account_contacts_account')

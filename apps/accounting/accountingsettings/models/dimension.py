@@ -17,16 +17,17 @@ __all__ = [
 class DimensionSyncConfig(MasterDataAbstractModel):
     related_app = models.ForeignKey(
         'base.Application',
-        on_delete=models.CASCADE,
+        null=True,
+        on_delete=models.SET_NULL,
         help_text='For example: set auto sync dimension for Account masterdata'
     )
     sync_on_create = models.BooleanField(default=False)
     sync_on_update = models.BooleanField(default=False)
     sync_on_delete = models.BooleanField(default=False)
-    dimension = models.ForeignKey(
+    dimension = models.OneToOneField(
         'Dimension',
-        null=True,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
+        related_name='sync_config'
     )
 
     class Meta:
@@ -35,6 +36,15 @@ class DimensionSyncConfig(MasterDataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    def save(self, *args, **kwargs):
+
+        super().save(*args, **kwargs)
+
+        #auto update dimension related app when save config
+        if self.dimension:
+            self.dimension.related_app = self.related_app
+            self.dimension.save(update_fields=['related_app'])
 
 
 class Dimension(MasterDataAbstractModel):

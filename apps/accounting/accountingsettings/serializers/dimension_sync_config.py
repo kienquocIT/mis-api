@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
@@ -11,6 +12,8 @@ __all__ = [
     'DimensionSyncConfigDetailSerializer',
     'DimensionSyncConfigApplicationListSerializer'
 ]
+
+from apps.accounting.accountingsettings.utils.dimension_utils import DimensionUtils
 
 from apps.core.base.models import Application
 
@@ -26,7 +29,10 @@ class DimensionSyncConfigListSerializer(serializers.ModelSerializer):
             'id',
             'dimension',
             'related_app',
-            'record_number'
+            'record_number',
+            'sync_on_create',
+            'sync_on_update',
+            'sync_on_delete'
         )
 
     @classmethod
@@ -59,6 +65,59 @@ class DimensionSyncConfigCreateSerializer(serializers.ModelSerializer):
     dimension_id = serializers.UUIDField(error_messages={
         'required': _('Dimension mapping is required')
     })
+    allow_init_sync = serializers.BooleanField()
+
+    class Meta:
+        model = DimensionSyncConfig
+        fields = (
+            'related_app_id',
+            'dimension_id',
+            'sync_on_create',
+            'sync_on_update',
+            'sync_on_delete',
+            'allow_init_sync'
+        )
+
+    @classmethod
+    def validate_dimension_id(cls, value):
+        if value:
+            try:
+                if DimensionSyncConfig.objects.filter_on_company(dimension_id=value).exists():
+                    raise serializers.ValidationError({'dimension': _('Dimension is already used for mapping')})
+                return Dimension.objects.get(id=value).id
+            except Dimension.DoesNotExist:
+                raise serializers.ValidationError({'dimension': _('Dimension does not exist')})
+        return value
+
+    @classmethod
+    def validate_related_app_id(cls, value):
+        if value:
+            try:
+                if DimensionSyncConfig.objects.filter_on_company(related_app_id=value).exists():
+                    raise serializers.ValidationError({'related_app': _('Application is already mapped')})
+                return Application.objects.get(id=value).id
+            except Application.DoesNotExist:
+                raise serializers.ValidationError({'related_app': _('Application does not exist')})
+        return value
+
+    @transaction.atomic
+    def create(self, validated_data):
+        allow_init_sync = validated_data.pop('allow_init_sync', False)
+        dimension_config = DimensionSyncConfig.objects.create(**validated_data)
+        if allow_init_sync:
+            sync_success = DimensionUtils.sync_old_data(dimension_config)
+            if not sync_success:
+                raise serializers.ValidationError({'dimension_sync_config': _('Sync old data failed')})
+        return dimension_config
+
+
+class DimensionSyncConfigUpdateSerializer(serializers.ModelSerializer):
+    related_app_id = serializers.UUIDField(error_messages={
+        'required': _('Application mapping is required')
+    })
+    dimension_id = serializers.UUIDField(error_messages={
+        'required': _('Dimension mapping is required')
+    })
 
     class Meta:
         model = DimensionSyncConfig
@@ -70,31 +129,26 @@ class DimensionSyncConfigCreateSerializer(serializers.ModelSerializer):
             'sync_on_delete'
         )
 
-    @classmethod
-    def get_dimension_id(cls, value):
+    def validate_dimension_id(self, value):
         if value:
             try:
-                if DimensionSyncConfig.objects.filter_on_company(dimension_id=value).exists():
+                if DimensionSyncConfig.objects.filter_on_company(dimension_id=value).exclude(dimension_id=self.instance.dimension_id).exists():
                     raise serializers.ValidationError({'dimension': _('Dimension is already used for mapping')})
                 return Dimension.objects.get(id=value).id
             except Dimension.DoesNotExist:
                 raise serializers.ValidationError({'dimension': _('Dimension does not exist')})
         return value
 
-    @classmethod
-    def get_related_app_id(cls, value):
+
+    def validate_related_app_id(self, value):
         if value:
             try:
-                if DimensionSyncConfig.objects.filter_on_company(related_app_id=value).exists():
+                if DimensionSyncConfig.objects.filter_on_company(related_app_id=value).exclude(related_app_id=self.instance.related_app_id).exists():
                     raise serializers.ValidationError({'related_app': _('Application is already mapped')})
                 return Application.objects.get(id=value).id
             except Application.DoesNotExist:
                 raise serializers.ValidationError({'related_app': _('Application does not exist')})
         return value
-
-
-class DimensionSyncConfigUpdateSerializer(serializers.ModelSerializer):
-    ...
 
 
 class DimensionSyncConfigDetailSerializer(serializers.ModelSerializer):

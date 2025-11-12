@@ -29,7 +29,6 @@ class DimensionValueDetailSerializer(serializers.ModelSerializer):
             "children_ids",
             "level",
             "related_app_id",
-            "related_app_code",
         )
 
     @classmethod
@@ -69,7 +68,6 @@ class DimensionValueListSerializer(serializers.ModelSerializer):
             "children_ids",
             "level",
             "related_app_id",
-            "related_app_code",
         )
 
     @classmethod
@@ -105,7 +103,6 @@ class DimensionValueCreateSerializer(serializers.ModelSerializer):
             "dimension_id",
             "parent_id",
             "related_app_id",
-            "related_app_code",
         )
 
     @classmethod
@@ -143,7 +140,6 @@ class DimensionValueUpdateSerializer(serializers.ModelSerializer):
             "dimension_id",
             "parent_id",
             "related_app_id",
-            "related_app_code",
         )
 
     @classmethod
