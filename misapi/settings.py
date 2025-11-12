@@ -156,7 +156,8 @@ INSTALLED_APPS = \
         'apps.sales.paymentplan',
     ] + [
         'apps.accounting.accountingsettings',
-        'apps.accounting.journalentry'
+        'apps.accounting.journalentry',
+        'apps.accounting.budget',
     ] + [  # KMS
         'apps.kms.documentapproval',
         'apps.kms.incomingdocument',
