@@ -258,7 +258,9 @@ class GoodsTransfer(DataAbstractModel, AutoDocumentAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    CompanyFunctionNumber.auto_gen_code_based_on_config('goodstransfer', True, self, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                    )
                     self.update_data_warehouse(self)
                     for item in self.goods_transfer.filter(sale_order__isnull=False):
                         self.check_and_create_gre_item_sub_if_transfer_in_project(self, item)

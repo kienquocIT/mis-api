@@ -226,6 +226,11 @@ class OpportunityTaskSwitchSTT(BaseUpdateMixin):
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
+    def get_queryset(self):
+        return self.queryset.select_related(
+            'task_status', 'opportunity', 'project', 'employee_inherit'
+        )
+
     @swagger_auto_schema(
         operation_summary="Opportunity Task Update status",
         operation_description="Opportunity task update status",

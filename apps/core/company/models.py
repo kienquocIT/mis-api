@@ -10,7 +10,7 @@ from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from apps.core.attachments.storages.aws.storages_backend import PublicMediaStorage
-from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY
+from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY, DisperseModel
 from apps.core.models import CoreAbstractModel
 
 DEFINITION_INVENTORY_VALUATION_CHOICES = [
@@ -528,7 +528,36 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         return parsed_code
 
     @classmethod
-    def auto_gen_code_based_on_config(cls, app_code=None, in_workflow=True, instance=None, kwargs=None):
+    def check_baseline_doc_code(cls, instance, app_model):
+        """ cho phiếu baseline (SVO0123 có các phiếu sub: SVO0123.v1 > SVO0123.v2 > SVO0123.v3 , ...) """
+        baseline_code = ''
+        if instance.document_root_id and instance.is_change is False:
+            model_cls = DisperseModel(app_model=app_model).get_model()
+            if model_cls and hasattr(model_cls, 'objects'):
+                root_obj = model_cls.objects.filter(id=instance.document_root_id).first()
+                count = model_cls.objects.filter_on_company(document_root_id=instance.document_root_id).count()
+                if root_obj and root_obj.code:
+                    baseline_code = f"{root_obj.code}.v{str(count + 1)}"
+        return baseline_code
+
+    @classmethod
+    def auto_gen_code_based_on_config(cls, app_code=None, instance=None, in_workflow=True, kwargs=None):
+        """
+            Hàm auto sinh mã code theo cấu hình
+            app_code: bắt buộc cho TH sinh code cho masterdata
+            instance: bắt buộc cho TH sinh code cho phiếu
+        """
+        if kwargs is None:
+            kwargs = {}
+        if instance:
+            app_model = str(instance.__class__.get_model_code())
+            app_code = app_model.split('.')[1]
+
+            baseline_code = cls.check_baseline_doc_code(instance, app_model)
+            if baseline_code:
+                kwargs['update_fields'] = ['code']
+                return baseline_code
+
         code_rules = {
             'advancepayment': 'AP[n4]',
             'arinvoice': 'AR[n4]',
@@ -538,8 +567,8 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             'cashinflow': 'CIF[n4]',
             'cashoutflow': 'COF[n4]',
             'distributionplan': 'DP[n4]',
-            'equipmentloan': 'EL-[n4]',
-            'equipmentreturn': 'ER-[n4]',
+            'equipmentloan': 'EL[n4]',
+            'equipmentreturn': 'ER[n4]',
             'fixedasset': 'FA[n4]',
             'fixedassetwriteoff': 'FAW[n4]',
             'goodsissue': 'GI[n4]',
@@ -581,21 +610,17 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         }
 
         parsed_code = ''
-
         # tạo auto trước
-        if instance and app_code in code_rules:
+        if app_code in code_rules:
             parsed_code = instance.auto_generate_code(instance, code_rules[app_code], in_workflow)
-
         # kiểm tra nếu có cấu hình người dùng thì gen mới
         obj = cls.objects.filter_on_company(app_code=app_code).first()
         if obj and obj.schema is not None:
             parsed_code = cls.parse_code_from_schema(obj, obj.schema)
-
         if instance and not instance.code:
             instance.code = parsed_code
-            if in_workflow and kwargs:
+            if in_workflow and 'update_fields' in kwargs:
                 kwargs['update_fields'].append('code')
-
         return parsed_code
 
     @classmethod

@@ -302,7 +302,9 @@ class ProductModification(DataAbstractModel):
         GoodsIssueProduct.objects.bulk_create(bulk_info)
 
         # duyệt tự động
-        CompanyFunctionNumber.auto_gen_code_based_on_config('goodsissue', True, gis_obj)
+        CompanyFunctionNumber.auto_gen_code_based_on_config(
+            app_code=None, instance=gis_obj, in_workflow=True, kwargs=None
+        )
         gis_obj.system_status = 3
         gis_obj.save(update_fields=['code', 'system_status'])
         # action sau khi duyệt
@@ -608,7 +610,9 @@ class ProductModification(DataAbstractModel):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
                 if 'date_approved' in kwargs['update_fields']:
-                    CompanyFunctionNumber.auto_gen_code_based_on_config('productmodification', True, self, kwargs)
+                    CompanyFunctionNumber.auto_gen_code_based_on_config(
+                        app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                    )
                     try:
                         with transaction.atomic():
                             self.create_remove_component_product_mapped(self)

@@ -19,7 +19,9 @@ class ChartOfAccountsList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related().select_related('currency_mapped')
+        return super().get_queryset().filter(
+            acc_status=True, is_account=True
+        ).prefetch_related().select_related('currency_mapped')
 
     @swagger_auto_schema(
         operation_summary="Chart Of Accounts list",

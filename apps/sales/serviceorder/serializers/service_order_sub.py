@@ -276,7 +276,6 @@ class ServiceOrderPaymentSerializer(serializers.ModelSerializer):
 # DASHBOARD
 class ServiceOrderDetailDashboardSerializer(AbstractDetailSerializerModel):
     contract_value = serializers.SerializerMethodField()
-    contract_value_delivered = serializers.SerializerMethodField()
     service_order_detail_list = serializers.SerializerMethodField()
 
     class Meta:
@@ -289,17 +288,12 @@ class ServiceOrderDetailDashboardSerializer(AbstractDetailSerializerModel):
             'start_date',
             'end_date',
             'contract_value',
-            'contract_value_delivered',
             'service_order_detail_list'
         )
 
     @classmethod
     def get_contract_value(cls, obj):
         return sum(list(obj.service_details.all().values_list('total_value', flat=True)))
-
-    @classmethod
-    def get_contract_value_delivered(cls, obj):
-        return sum(list(obj.service_details.all().values_list('delivery_balance_value', flat=True)))
 
     @classmethod
     def get_service_order_detail_list(cls, obj):
