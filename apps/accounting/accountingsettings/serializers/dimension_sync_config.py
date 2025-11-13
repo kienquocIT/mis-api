@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
 
-from apps.accounting.accountingsettings.models import Dimension, DimensionValue, DimensionSyncConfig
+from apps.accounting.accountingsettings.models import Dimension, DimensionSyncConfig
 
 __all__ = [
     'DimensionSyncConfigListSerializer',
