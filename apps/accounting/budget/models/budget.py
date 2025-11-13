@@ -51,6 +51,8 @@ class Budget(MasterDataAbstractModel):
             )
             # create new record
             if _created is True:
+                if 'budget_line_data' in kwargs:
+                    cls._push_subs(obj)
                 return True
             # update old record
             update_fields = []
@@ -58,23 +60,27 @@ class Budget(MasterDataAbstractModel):
                 setattr(obj, key, value)
                 update_fields.append(key)
             obj.save(update_fields=update_fields)
-            # push BudgetLine
             if 'budget_line_data' in update_fields:
-                obj.budget_line_budget.all().delete()
-                budget_line_objs = BudgetLine.objects.bulk_create([
-                    BudgetLine(
-                        tenant_id=tenant_id, company_id=company_id,
-                        **budget_line
-                    ) for budget_line in obj.budget_line_data
+                cls._push_subs(obj)
+        return True
+
+    @classmethod
+    def _push_subs(cls, obj):
+        obj.budget_line_budget.all().delete()
+        budget_line_objs = BudgetLine.objects.bulk_create([
+            BudgetLine(
+                tenant_id=obj.tenant_id, company_id=obj.company_id,
+                budget=obj, **budget_line
+            ) for budget_line in obj.budget_line_data
+        ])
+        if budget_line_objs:
+            for budget_line in budget_line_objs:
+                BudgetLineDimension.objects.bulk_create([
+                    BudgetLineDimension(
+                        tenant_id=obj.tenant_id, company_id=obj.company_id,
+                        budget_line=budget_line, **dimension
+                    ) for dimension in budget_line.dimension_data
                 ])
-                if budget_line_objs:
-                    for budget_line in budget_line_objs:
-                        BudgetLineDimension.objects.bulk_create([
-                            BudgetLineDimension(
-                                tenant_id=tenant_id, company_id=company_id,
-                                **dimension
-                            ) for dimension in budget_line.dimension_data
-                        ])
         return True
 
     @classmethod
@@ -98,8 +104,19 @@ class Budget(MasterDataAbstractModel):
 class BudgetLine(MasterDataAbstractModel):
     budget = models.ForeignKey('budget.Budget', on_delete=models.CASCADE, related_name='budget_line_budget')
     remark = models.TextField(blank=True)
-    value_planned = models.FloatField(default=0, help_text="Base value pushed from document")
-    value_consumed = models.FloatField(default=0, help_text="Consumed value on value_planned")
+    price_planned = models.FloatField(default=0, help_text="Base price pushed from document")
+    quantity_planned = models.FloatField(default=0, help_text="Base quantity pushed from document")
+    quantity_consumed = models.FloatField(default=0, help_text="Consumed quantity on value_planned")
+    value_planned = models.FloatField(default=0, help_text="Base total value pushed from document")
+    value_consumed = models.FloatField(default=0, help_text="Consumed total value on value_planned")
+    dimension_data = models.JSONField(default=list, help_text="json data of dimensions")
+    dimensions = models.ManyToManyField(
+        'purchasing.PurchaseRequest',
+        through="BudgetLineDimension",
+        symmetrical=False,
+        blank=True,
+        related_name='budget_line_m2m_dimension'
+    )
     order = models.IntegerField(default=1)
 
     class Meta:
@@ -118,18 +135,24 @@ class BudgetLineDimension(MasterDataAbstractModel):
     md_app_code = models.CharField(
         max_length=100,
         verbose_name='Code of application',
-        help_text='{app_label}.{model}'
+        help_text='{app_label}.{model}',
+        blank=True
     )
-    md_id = models.UUIDField(verbose_name='Master data ID')
-    dimension = models.ForeignKey(
-        'budget.BudgetLine', on_delete=models.CASCADE, related_name='budget_line_dimension_dimension'
-    )
-    dimension_value = models.ForeignKey(
-        'budget.BudgetLine', on_delete=models.CASCADE, related_name='budget_line_dimension_dimension_value'
-    )
+    md_id = models.UUIDField(verbose_name='Master data ID', null=True)
+    # dimension = models.ForeignKey(
+    #     'budget.BudgetLine', on_delete=models.CASCADE, related_name='budget_line_dimension_dimension'
+    # )
+    # dimension_value = models.ForeignKey(
+    #     'budget.BudgetLine', on_delete=models.CASCADE, related_name='budget_line_dimension_dimension_value'
+    # )
 
     class Meta:
         verbose_name = 'Budget line Dimension'
         verbose_name_plural = 'Budget line Dimensions'
         default_permissions = ()
         permissions = ()
+
+    def save(self, *args, **kwargs):
+        if not self.dimension and self.md_app_code and self.md_id:
+            ...
+        super().save(*args, **kwargs)
