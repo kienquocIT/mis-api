@@ -21,10 +21,9 @@ class DimensionSyncConfig(MasterDataAbstractModel):
         on_delete=models.SET_NULL,
         help_text='For example: set auto sync dimension for Account masterdata'
     )
-    sync_on_create = models.BooleanField(default=False)
-    sync_on_update = models.BooleanField(default=False)
+    sync_on_save = models.BooleanField(default=False)
     sync_on_delete = models.BooleanField(default=False)
-    dimension = models.OneToOneField(
+    dimension = models.ForeignKey(
         'Dimension',
         on_delete=models.CASCADE,
         related_name='sync_config'
@@ -76,11 +75,17 @@ class DimensionValue(MasterDataAbstractModel):
         null=True,
     )
     allow_posting = models.BooleanField()
-    relate_doc_id = models.UUIDField(null=True, help_text='uuid of the related model record')
+    related_doc_id = models.UUIDField(null=True, help_text='uuid of the related model record')
     related_app = models.ForeignKey(
         'base.Application',
         null=True,
         on_delete=models.SET_NULL,
+    )
+    period_mapped = models.ForeignKey(
+        'saledata.Periods',
+        on_delete=models.SET_NULL,
+        related_name='period_dimension_values',
+        null=True,
     )
 
     class Meta:

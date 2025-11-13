@@ -143,6 +143,7 @@ class DimensionDefinitionWithValuesSerializer(serializers.ModelSerializer):
     def get_is_system_dimension(self, obj):
         return True if obj.related_app else False
 
+
 class DimensionWithSyncConfigListSerializer(serializers.ModelSerializer):
     related_app = SerializerMethodField()
     sync_status = SerializerMethodField()

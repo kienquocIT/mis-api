@@ -2,6 +2,8 @@ import logging
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+from apps.accounting.accountingsettings.utils.dimension_utils import DimensionUtils
 from apps.core.attachments.storages.aws.storages_backend import PublicMediaStorage
 from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.inventory import WareHouse
@@ -139,6 +141,30 @@ class UnitOfMeasure(MasterDataAbstractModel):
         ordering = ('-group',)
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return '7bc78f47-66f1-4104-a6fa-5ca07f3f2275'
+
+    def save(self, *args, **kwargs):
+        is_create = self._state.adding  # Check if is creating new record?
+
+        super().save(*args, **kwargs)
+
+        DimensionUtils.sync_dimension_value(
+            instance=self,
+            app_id=self.__class__.get_app_id(),
+            title=self.title,
+            code=self.code,
+            is_create=is_create
+        )
+
+    @classmethod
+    def get_field_mapping(cls):
+        return {
+            'title': 'title',
+            'code': 'code',
+        }
 
 
 class Manufacturer(MasterDataAbstractModel):

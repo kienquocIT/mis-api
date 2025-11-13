@@ -4,19 +4,30 @@ from django.apps import apps
 from django.db import transaction
 from django.utils import timezone
 
-from apps.accounting.accountingsettings.models import Dimension, DimensionValue
+from apps.accounting.accountingsettings.models import Dimension, DimensionValue, DimensionSyncConfig
 from apps.core.base.models import Application
 
 logger = logging.getLogger(__name__)
 
 class DimensionUtils:
     @staticmethod
-    def auto_create_dimension_value(instance, app_id, title, code):
+    def sync_dimension_value(instance, app_id, title, code, is_create=False):
         application = Application.objects.get(id=app_id)
-
         mapped_dimension = Dimension.objects.get(related_app=application)
+        sync_config = DimensionSyncConfig.objects.get(dimension=mapped_dimension)
 
-        if mapped_dimension and mapped_dimension.sync_on_create:
+        if not mapped_dimension or not sync_config.sync_on_save:
+            return
+
+        # find existing mapping
+        existing_value = DimensionValue.objects.filter(
+            related_app=application,
+            related_doc_id=instance.id,
+            dimension=mapped_dimension
+        ).first()
+
+        if is_create or not existing_value:
+            #  Create new
             DimensionValue.objects.create(
                 title=title,
                 code=code,
@@ -24,8 +35,13 @@ class DimensionUtils:
                 parent=None,
                 allow_posting=True,
                 related_app=application,
-                relate_doc_id=instance.id,
+                related_doc_id=instance.id,
             )
+        else:
+            #  Update existing mapping
+            existing_value.title = title
+            existing_value.code = code
+            existing_value.save()
 
     @staticmethod
     def sync_old_data(dimension_config):
@@ -62,7 +78,7 @@ class DimensionUtils:
 
                 dimension=dimension,
                 related_app=application,
-                relate_doc_id=record.id,
+                related_doc_id=record.id,
                 allow_posting=True,
                 parent=None
             )
@@ -77,5 +93,5 @@ class DimensionUtils:
         return True
 
     @staticmethod
-    def auto_delete_dimension_value(instance, app_id, title, code):
+    def auto_delete_dimension_value(instance, app_id):
         ...

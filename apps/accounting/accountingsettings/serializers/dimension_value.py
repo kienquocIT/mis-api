@@ -10,6 +10,9 @@ __all__ = [
     'DimensionValueUpdateSerializer'
 ]
 
+from apps.masterdata.saledata.models import Periods
+
+
 class DimensionValueDetailSerializer(serializers.ModelSerializer):
     parent_id = serializers.IntegerField(source="parent.id", read_only=True)
     has_children = serializers.SerializerMethodField()
@@ -91,6 +94,7 @@ class DimensionValueListSerializer(serializers.ModelSerializer):
 class DimensionValueCreateSerializer(serializers.ModelSerializer):
     dimension_id = serializers.UUIDField(error_messages={
         'required': _("Dimension is required."),
+        'null': _("Dimension must not be null."),
     })
     parent_id = serializers.UUIDField(allow_null=True)
 
@@ -124,6 +128,13 @@ class DimensionValueCreateSerializer(serializers.ModelSerializer):
             except Dimension.DoesNotExist:
                 raise serializers.ValidationError(_("Dimension does not exist"))
         return value
+
+    def validate(self, validate_data):
+        tenant_current_id = self.context.get('tenant_current_id', None)
+        company_current_id = self.context.get('company_current_id', None)
+        period_mapped = Periods.get_current_period(tenant_current_id, company_current_id)
+        validate_data['period_mapped'] = period_mapped if period_mapped else None
+        return validate_data
 
 class DimensionValueUpdateSerializer(serializers.ModelSerializer):
     dimension_id = serializers.UUIDField(error_messages={

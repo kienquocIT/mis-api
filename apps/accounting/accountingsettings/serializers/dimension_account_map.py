@@ -1,98 +1,112 @@
-from django.db import transaction
-from django.db.transaction import atomic
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.accounting.accountingsettings.models import AccountDimensionMap, ChartOfAccounts, Dimension
 
 __all__ = [
-    'AccountDimensionMapListSerializer',
+    'DimensionListForAccountingAccountSerializer',
+    'AccountDimensionMapCreateSerializer',
+    'AccountDimensionMapDetailSerializer',
+    'AccountDimensionMapUpdateSerializer'
 ]
 
-class AccountDimensionMapListSerializer(serializers.ModelSerializer):
+class DimensionListForAccountingAccountSerializer(serializers.ModelSerializer):
+    dimension_map_data = serializers.SerializerMethodField()
 
     class Meta:
-        model = AccountDimensionMap
+        model = ChartOfAccounts
         fields = (
             'id',
-            'account_id',
-            'dimension_id'
+            'acc_code',
+            'acc_name',
+            'dimension_map_data'
         )
 
+    @classmethod
+    def get_dimension_map_data(cls, obj):
+        current_dimension_list = Dimension.objects.filter_on_company()
+        data = []
+        for item in current_dimension_list:
+            account_dimension_map = item.map_finance_accounts.filter(account=obj).first()
+            data.append({
+                'id': item.id,
+                'code': item.code,
+                'title': item.title,
+                'account_dimension_map': {
+                    'id': account_dimension_map.id,
+                    'status': account_dimension_map.status,
+                    'status_text': account_dimension_map.get_status_display(),
+                } if account_dimension_map else None,
+            })
+        return data
 
-class DimensionListSerializer(serializers.ModelSerializer):
+
+class AccountDimensionMapCreateSerializer(serializers.ModelSerializer):
+    account_id = serializers.UUIDField(error_messages={
+        'required': _('Account is required.'),
+    })
     dimension_id = serializers.UUIDField(error_messages={
-        'required': _('Dimension ID is required'),
+        'required': _('Dimension is required.'),
     })
 
     class Meta:
         model = AccountDimensionMap
         fields = (
+            'account_id',
             'dimension_id',
             'status'
         )
 
     @classmethod
-    def validate_dimension_id(cls, value):
-        ...
-        # try:
-            # return DimensionDefinition.objects.get_on(id=value)
+    def validate_account_id(cls, value):
+        try:
+            return ChartOfAccounts.objects.get(id=value).id
+        except ChartOfAccounts.DoesNotExist:
+            raise serializers.ValidationError({"Account": _("Account does not exist.")})
 
-class DimensionListForAccountCreateSerializer(serializers.ModelSerializer):
-    dimension_data = DimensionListSerializer(many=True)
+    @classmethod
+    def validate_dimension_id(cls, value):
+        try:
+            return Dimension.objects.get(id=value).id
+        except Dimension.DoesNotExist:
+            raise serializers.ValidationError({"Dimension": _("Dimension does not exist.")})
+
+
+class AccountDimensionMapUpdateSerializer(serializers.ModelSerializer):
+    account_id = serializers.UUIDField(error_messages={
+        'required': _('Account is required.'),
+    })
+    dimension_id = serializers.UUIDField(error_messages={
+        'required': _('Dimension is required.'),
+    })
 
     class Meta:
-        model = ChartOfAccounts
+        model = AccountDimensionMap
         fields = (
-            'dimension_data'
+            'account_id',
+            'dimension_id',
+            'status'
         )
 
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        dimension_data = validated_data.pop('dimension_data', None)
-        update_dimension_list(instance, dimension_data)
-        return instance
+    @classmethod
+    def validate_account_id(cls, value):
+        try:
+            return ChartOfAccounts.objects.get(id=value).id
+        except ChartOfAccounts.DoesNotExist:
+            raise serializers.ValidationError({"Account": _("Account does not exist.")})
 
-def update_dimension_list(chart_of_account, dimension_data):
-    if not dimension_data:
-        return
+    @classmethod
+    def validate_dimension_id(cls, value):
+        try:
+            return Dimension.objects.get(id=value).id
+        except Dimension.DoesNotExist:
+            raise serializers.ValidationError({"Dimension": _("Dimension does not exist.")})
 
-    # Step 1: Collect all current mappings for this account
-    existing_mappings = {}
-    for item in AccountDimensionMap.objects.filter_on_company(account=chart_of_account):
-        existing_mappings[item.dimension_id] = item
 
-    bulk_create_data = []
-    dimensions_to_keep = []
-    for dim in dimension_data:
-        dim_id = dim.get("id", None)
-        status = dim.get("status", 0)
-
-        if not dim_id:
-            continue
-
-        dimensions_to_keep.append(dim_id)
-
-        # Update existing mapping
-        if dim_id in existing_mappings:
-            mapping = existing_mappings[dim_id]
-            if mapping.status != status:
-                mapping.status = status
-                mapping.save(update_fields=["status", "date_modified"])
-        else:
-            # New mapping to create
-            bulk_create_data.append(
-                AccountDimensionMap(
-                    account=chart_of_account,
-                    dimension_id=dim_id,
-                    status=status,
-                )
-            )
-
-    # Step 3: Bulk create new mappings
-    if bulk_create_data:
-        AccountDimensionMap.objects.bulk_create(bulk_create_data)
-
-    # Step 4: Delete mappings that are no longer in the request
-    AccountDimensionMap.objects.filter(
-        account=chart_of_account
-    ).exclude(dimension_id__in=dimensions_to_keep).delete()
+class AccountDimensionMapDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AccountDimensionMap
+        fields = (
+            'account_id',
+            'dimension_id',
+            'status'
+        )

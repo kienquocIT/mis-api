@@ -1,12 +1,16 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.accounting.accountingsettings.models import Dimension, DimensionValue, DimensionSyncConfig
+from apps.accounting.accountingsettings.models import Dimension, DimensionValue, DimensionSyncConfig, \
+    AccountDimensionMap, ChartOfAccounts
 from apps.accounting.accountingsettings.serializers import DimensionDefinitionListSerializer, \
     DimensionDefinitionCreateSerializer, DimensionDefinitionDetailSerializer, DimensionDefinitionUpdateSerializer, \
     DimensionDefinitionWithValuesSerializer, DimensionValueListSerializer, DimensionValueCreateSerializer, \
     DimensionValueDetailSerializer, DimensionValueUpdateSerializer, DimensionSyncConfigApplicationListSerializer, \
     DimensionSyncConfigListSerializer, DimensionSyncConfigCreateSerializer, DimensionSyncConfigDetailSerializer, \
     DimensionSyncConfigUpdateSerializer
+from apps.accounting.accountingsettings.serializers.dimension_account_map import AccountDimensionMapCreateSerializer, \
+    AccountDimensionMapDetailSerializer, DimensionListForAccountingAccountSerializer, \
+    AccountDimensionMapUpdateSerializer
 from apps.core.base.models import Application
 from apps.shared import BaseListMixin, BaseCreateMixin, BaseUpdateMixin, mask_view, BaseRetrieveMixin
 
@@ -108,6 +112,10 @@ class DimensionValueList(BaseListMixin, BaseCreateMixin):
         allow_admin_tenant=True, allow_admin_company=True,
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'tenant_current_id': request.user.tenant_current_id,
+            'company_current_id': request.user.company_current_id,
+        }
         return self.create(request, *args, **kwargs)
 
 
@@ -141,7 +149,8 @@ class DimensionSyncConfigApplicationList(BaseListMixin):
     # uuid of application
     list_app_id = [
         '4e48c863-861b-475a-aa5e-97a4ed26f294', #Account
-        '3407d35d-27ce-407e-8260-264574a216e3' #payment term
+        '3407d35d-27ce-407e-8260-264574a216e3', #payment term
+        '7bc78f47-66f1-4104-a6fa-5ca07f3f2275', #unitofmeasure
     ]
     def get_queryset(self):
         return Application.objects.filter(id__in=self.list_app_id)
@@ -216,3 +225,57 @@ class DimensionSyncConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class DimensionAccountMapList(BaseCreateMixin):
+    queryset = AccountDimensionMap.objects
+    serializer_create = AccountDimensionMapCreateSerializer
+    serializer_detail = AccountDimensionMapDetailSerializer
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Dimension Account Create",
+        operation_description="Create new Dimension Account",
+        request_body=AccountDimensionMapCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class DimensionAccountMapDetail(BaseUpdateMixin):
+    queryset = AccountDimensionMap.objects
+    serializer_update = AccountDimensionMapUpdateSerializer
+    serializer_detail = AccountDimensionMapDetailSerializer
+    update_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Dimension Account Update",
+        operation_description="Update Dimension Account",
+        request_body=AccountDimensionMapUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+
+class DimensionListForAccountingAccount(BaseRetrieveMixin):
+    queryset = ChartOfAccounts.objects
+    serializer_detail = DimensionListForAccountingAccountSerializer
+    retrieve_hidden_field =  BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="DimensionListForAccountingAccount",
+        operation_description="Get DimensionListForAccountingAccount",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)

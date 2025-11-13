@@ -30,8 +30,7 @@ class DimensionSyncConfigListSerializer(serializers.ModelSerializer):
             'dimension',
             'related_app',
             'record_number',
-            'sync_on_create',
-            'sync_on_update',
+            'sync_on_save',
             'sync_on_delete'
         )
 
@@ -72,8 +71,7 @@ class DimensionSyncConfigCreateSerializer(serializers.ModelSerializer):
         fields = (
             'related_app_id',
             'dimension_id',
-            'sync_on_create',
-            'sync_on_update',
+            'sync_on_save',
             'sync_on_delete',
             'allow_init_sync'
         )
@@ -124,8 +122,7 @@ class DimensionSyncConfigUpdateSerializer(serializers.ModelSerializer):
         fields = (
             'related_app_id',
             'dimension_id',
-            'sync_on_create',
-            'sync_on_update',
+            'sync_on_save',
             'sync_on_delete'
         )
 
@@ -134,7 +131,12 @@ class DimensionSyncConfigUpdateSerializer(serializers.ModelSerializer):
             try:
                 if DimensionSyncConfig.objects.filter_on_company(dimension_id=value).exclude(dimension_id=self.instance.dimension_id).exists():
                     raise serializers.ValidationError({'dimension': _('Dimension is already used for mapping')})
-                return Dimension.objects.get(id=value).id
+
+                dimension = Dimension.objects.get(id=value)
+                have_value = dimension.dimension_values.count()
+                if have_value:
+                    raise serializers.ValidationError({'dimension': _('Dimension has value, can not map')})
+                return dimension.id
             except Dimension.DoesNotExist:
                 raise serializers.ValidationError({'dimension': _('Dimension does not exist')})
         return value
@@ -150,6 +152,18 @@ class DimensionSyncConfigUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'related_app': _('Application does not exist')})
         return value
 
+    def update(self, instance, validated_data):
+        # remove related app from dimension before update new one
+        current_dimension = instance.dimension
+        if current_dimension:
+            current_dimension.related_app_id = None
+            current_dimension.save(update_fields=['related_app_id'])
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        return instance
 
 class DimensionSyncConfigDetailSerializer(serializers.ModelSerializer):
     related_app = SerializerMethodField()
@@ -160,8 +174,7 @@ class DimensionSyncConfigDetailSerializer(serializers.ModelSerializer):
         fields = (
             'related_app',
             'dimension',
-            'sync_on_create',
-            'sync_on_update',
+            'sync_on_save',
             'sync_on_delete'
         )
 
