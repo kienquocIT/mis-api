@@ -10,7 +10,7 @@ class Budget(MasterDataAbstractModel):
         verbose_name='Code of application',
         help_text='{app_label}.{model}'
     )
-    doc_id = models.UUIDField(verbose_name='Feature document ID')
+    doc_id = models.UUIDField(verbose_name='Main document ID')
     total = models.FloatField(default=0)
     budget_line_data = models.JSONField(default=list, help_text="json data of budget lines")
     employee_inherit = models.ForeignKey(
@@ -104,19 +104,20 @@ class Budget(MasterDataAbstractModel):
 class BudgetLine(MasterDataAbstractModel):
     budget = models.ForeignKey('budget.Budget', on_delete=models.CASCADE, related_name='budget_line_budget')
     remark = models.TextField(blank=True)
-    price_planned = models.FloatField(default=0, help_text="Base price pushed from document")
+    unit_price = models.FloatField(default=0, help_text="Base price pushed from document")
     quantity_planned = models.FloatField(default=0, help_text="Base quantity pushed from document")
     quantity_consumed = models.FloatField(default=0, help_text="Consumed quantity on value_planned")
+    tax_data = models.JSONField(default=dict, help_text='data json of tax')
     value_planned = models.FloatField(default=0, help_text="Base total value pushed from document")
     value_consumed = models.FloatField(default=0, help_text="Consumed total value on value_planned")
     dimension_data = models.JSONField(default=list, help_text="json data of dimensions")
-    dimensions = models.ManyToManyField(
-        'purchasing.PurchaseRequest',
-        through="BudgetLineDimension",
-        symmetrical=False,
-        blank=True,
-        related_name='budget_line_m2m_dimension'
-    )
+    # dimensions = models.ManyToManyField(
+    #     'purchasing.PurchaseRequest',
+    #     through="BudgetLineDimension",
+    #     symmetrical=False,
+    #     blank=True,
+    #     related_name='budget_line_m2m_dimension'
+    # )
     order = models.IntegerField(default=1)
 
     class Meta:
@@ -153,6 +154,32 @@ class BudgetLineDimension(MasterDataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        if not self.dimension and self.md_app_code and self.md_id:
-            ...
+        # if not self.dimension and self.md_app_code and self.md_id:
+        #     ...
         super().save(*args, **kwargs)
+
+
+# BUDGET LINE
+class BudgetLineTransaction(MasterDataAbstractModel):
+    budget_line = models.ForeignKey(
+        'budget.BudgetLine', on_delete=models.CASCADE, related_name='budget_line_transaction_budget_line'
+    )
+    app_code = models.CharField(
+        max_length=100,
+        verbose_name='Code of application',
+        help_text='{app_label}.{model}'
+    )
+    doc_id = models.UUIDField(verbose_name='Transaction document ID')
+    value_use = models.FloatField(default=0, help_text="Transaction value on budget line")
+    dimension_first_data = models.JSONField(default=dict, help_text="json data of dimension_first")
+    dimension_value_first_data = models.JSONField(default=dict, help_text="json data of dimension_value_first")
+    dimension_second_data = models.JSONField(default=dict, help_text="json data of dimension_second")
+    dimension_value_second_data = models.JSONField(default=dict, help_text="json data of dimension_value_second")
+    order = models.IntegerField(default=1)
+
+    class Meta:
+        verbose_name = 'Budget line transaction'
+        verbose_name_plural = 'Budget line transactions'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()

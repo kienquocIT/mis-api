@@ -248,17 +248,19 @@ class SOFinishHandler:
                 'qs': instance.sale_order_cost_sale_order.filter(product__isnull=False),
                 'related_field': 'product',
                 'remark': 'product_description',
-                'price': 'product_cost_price',
-                'quantity': 'product_quantity',
-                'value': 'product_subtotal_price_after_tax',
+                'unit_price': 'product_cost_price',
+                'quantity_planned': 'product_quantity',
+                'tax_data': 'tax_data',
+                'value_planned': 'product_subtotal_price_after_tax',
             },
             {
                 'qs': instance.sale_order_expense_sale_order.filter(expense_item__isnull=False),
                 'related_field': 'expense_item',
                 'remark': 'expense_title',
-                'price': 'expense_price',
-                'quantity': 'expense_quantity',
-                'value': 'expense_subtotal_price_after_tax',
+                'unit_price': 'expense_price',
+                'quantity_planned': 'expense_quantity',
+                'tax_data': 'tax_data',
+                'value_planned': 'expense_subtotal_price_after_tax',
             },
         ]
         for mapping in mappings:
@@ -288,9 +290,10 @@ class SOFinishHandler:
         ]
         return {
             'remark': getattr(item, mapping['remark']),
-            'price_planned': getattr(item, mapping['price']),
-            'quantity_planned': getattr(item, mapping['quantity']),
-            'value_planned': getattr(item, mapping['value']),
+            'unit_price': getattr(item, mapping['unit_price']),
+            'quantity_planned': getattr(item, mapping['quantity_planned']),
+            'tax_data': getattr(item, mapping['tax_data']),
+            'value_planned': getattr(item, mapping['value_planned']),
             'order': item.order,
             'dimension_data': dimension_data,
         }
