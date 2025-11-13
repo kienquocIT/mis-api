@@ -54,6 +54,11 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
     total_product = models.FloatField(default=0, help_text="total of tab product")
     total_product_revenue_before_tax = models.FloatField(default=0, help_text="total before tax of tab product")
 
+    # total cost
+    total_cost_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab cost")
+    total_cost_tax = models.FloatField(default=0, help_text="total tax of tab cost")
+    total_cost = models.FloatField(default=0, help_text="total amount of tab cost")
+
     # expense value
     total_expense_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab expense")
     total_expense_tax = models.FloatField(default=0, help_text="total tax of tab expense")
@@ -97,7 +102,9 @@ class ServiceOrder(DataAbstractModel, BastionFieldAbstractModel):
             if isinstance(kwargs['update_fields'], list):
 
                 if 'date_approved' in kwargs['update_fields']:
-                    # CompanyFunctionNumber.auto_gen_code_based_on_config('serviceorder', True, self, kwargs)
+                    # CompanyFunctionNumber.auto_gen_code_based_on_config(
+                    #     app_code=None, instance=self, in_workflow=True, kwargs=kwargs
+                    # )
                     ServiceOrderFinishHandler.re_processing_folder_task_files(instance=self)
         # hit DB
         AdvanceHandler.push_opportunity_log(self)

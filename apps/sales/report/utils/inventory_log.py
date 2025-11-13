@@ -96,26 +96,29 @@ class ReportInvCommonFunc:
 
     @classmethod
     def by_perpetual(cls, tenant, company, emp_current, last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh):
-        rp_inv_cost = ReportInventoryCost(
-            tenant=tenant,
-            company=company,
-            employee_created=emp_current,
-            employee_inherit=emp_current,
-            product_id=last_sub_item.product_id,
-            serial_number=last_sub_item.serial_number,
-            lot_mapped_id=last_sub_item.lot_mapped_id,
-            warehouse_id=last_sub_item.warehouse_id,
-            sale_order_id=last_sub_item.sale_order_id,
-            period_mapped=this_period,
-            sub_period_order=this_sub.order,
-            sub_period=this_sub,
-            opening_balance_quantity=last_sub_item.ending_balance_quantity,
-            opening_balance_cost=last_sub_item.ending_balance_cost,
-            opening_balance_value=last_sub_item.ending_balance_value,
-            ending_balance_quantity=last_sub_item.ending_balance_quantity,
-            ending_balance_cost=last_sub_item.ending_balance_cost,
-            ending_balance_value=last_sub_item.ending_balance_value
-        )
+        item_parsed = {
+            'tenant': tenant,
+            'company': company,
+            'employee_created': emp_current,
+            'employee_inherit': emp_current,
+            'product_id': last_sub_item.product_id,
+            'serial_number': last_sub_item.serial_number,
+            'lot_mapped_id': last_sub_item.lot_mapped_id,
+            'warehouse_id': last_sub_item.warehouse_id,
+            'sale_order_id': last_sub_item.sale_order_id,
+            'lease_order_id': last_sub_item.lease_order_id,
+            'service_order_id': last_sub_item.service_order_id,
+            'period_mapped': this_period,
+            'sub_period_order': this_sub.order,
+            'sub_period': this_sub,
+            'opening_balance_quantity': last_sub_item.periodic_ending_balance_quantity,
+            'opening_balance_cost': last_sub_item.periodic_ending_balance_cost,
+            'opening_balance_value': last_sub_item.periodic_ending_balance_value,
+            'periodic_ending_balance_quantity': last_sub_item.periodic_ending_balance_quantity,
+            'periodic_ending_balance_cost': last_sub_item.periodic_ending_balance_cost,
+            'periodic_ending_balance_value': last_sub_item.periodic_ending_balance_value
+        }
+        rp_inv_cost = ReportInventoryCost(**item_parsed)
         bulk_info.append(rp_inv_cost)
         for report_inventory_cost in last_sub_item.report_inventory_cost_wh.all():
             bulk_info_wh.append(
@@ -130,25 +133,29 @@ class ReportInvCommonFunc:
 
     @classmethod
     def by_periodic(cls, tenant, company, emp_current, last_sub_item, this_period, this_sub, bulk_info, bulk_info_wh):
-        rp_inv_cost = ReportInventoryCost(
-            tenant=tenant,
-            company=company,
-            employee_created=emp_current,
-            employee_inherit=emp_current,
-            product_id=last_sub_item.product_id,
-            serial_number=last_sub_item.serial_number,
-            lot_mapped_id=last_sub_item.lot_mapped_id,
-            warehouse_id=last_sub_item.warehouse_id,
-            period_mapped=this_period,
-            sub_period_order=this_sub.order,
-            sub_period=this_sub,
-            opening_balance_quantity=last_sub_item.periodic_ending_balance_quantity,
-            opening_balance_cost=last_sub_item.periodic_ending_balance_cost,
-            opening_balance_value=last_sub_item.periodic_ending_balance_value,
-            periodic_ending_balance_quantity=last_sub_item.periodic_ending_balance_quantity,
-            periodic_ending_balance_cost=last_sub_item.periodic_ending_balance_cost,
-            periodic_ending_balance_value=last_sub_item.periodic_ending_balance_value
-        )
+        item_parsed = {
+            'tenant': tenant,
+            'company': company,
+            'employee_created': emp_current,
+            'employee_inherit': emp_current,
+            'product_id': last_sub_item.product_id,
+            'serial_number': last_sub_item.serial_number,
+            'lot_mapped_id': last_sub_item.lot_mapped_id,
+            'warehouse_id': last_sub_item.warehouse_id,
+            'sale_order_id': last_sub_item.sale_order_id,
+            'lease_order_id': last_sub_item.lease_order_id,
+            'service_order_id': last_sub_item.service_order_id,
+            'period_mapped': this_period,
+            'sub_period_order': this_sub.order,
+            'sub_period': this_sub,
+            'opening_balance_quantity': last_sub_item.periodic_ending_balance_quantity,
+            'opening_balance_cost': last_sub_item.periodic_ending_balance_cost,
+            'opening_balance_value': last_sub_item.periodic_ending_balance_value,
+            'periodic_ending_balance_quantity': last_sub_item.periodic_ending_balance_quantity,
+            'periodic_ending_balance_cost': last_sub_item.periodic_ending_balance_cost,
+            'periodic_ending_balance_value': last_sub_item.periodic_ending_balance_value
+        }
+        rp_inv_cost = ReportInventoryCost(**item_parsed)
         bulk_info.append(rp_inv_cost)
         for report_inventory_cost in last_sub_item.report_inventory_cost_wh.all():
             bulk_info_wh.append(
@@ -178,6 +185,8 @@ class ReportInvCommonFunc:
                     serial_number=item.serial_number,
                     lot_mapped_id=item.lot_mapped_id,
                     sale_order_id=item.sale_order_id,
+                    lease_order_id=item.lease_order_id,
+                    service_order_id=item.service_order_id,
             ).exists():
                 bulk_info, bulk_info_wh = cls.by_perpetual(
                     tenant, company, emp_current, item, this_sub.period_mapped, this_sub, bulk_info, bulk_info_wh
@@ -213,5 +222,5 @@ class ReportInvCommonFunc:
                 this_sub.save(update_fields=['run_report_inventory'])
                 print(f"Started {this_sub.start_date.month}/{this_period.fiscal_year}.")
             return True
-        print('Error: Some objects are not exist.')
+        print('Error: Some objects are not exist (tenant, company, emp_current, this_period, this_sub).')
         return False

@@ -147,20 +147,12 @@ class IRForDeliveryHandler:
                             sale_order_obj=sale_order_obj, service_order_obj=service_order_obj
                         )
                     if product_obj.general_traceability_method == 2 and len(sn_data) > 0:  # Sn
-                        if instance.code == "GH058":
-                            cls.for_sn(
-                                instance=instance, sn_data=sn_data,
-                                doc_data=doc_data, product_obj=product_obj,
-                                warehouse_obj=warehouse_obj, uom_obj=uom_obj,
-                                sale_order_obj=sale_order_obj, service_order_obj=service_order_obj
-                            )
-                        else:
-                            cls.for_sn(
-                                instance=instance, sn_data=sn_data,
-                                doc_data=doc_data, product_obj=product_obj,
-                                warehouse_obj=warehouse_obj, uom_obj=uom_obj,
-                                sale_order_obj=sale_order_obj, service_order_obj=service_order_obj
-                            )
+                        cls.for_sn(
+                            instance=instance, sn_data=sn_data,
+                            doc_data=doc_data, product_obj=product_obj,
+                            warehouse_obj=warehouse_obj, uom_obj=uom_obj,
+                            sale_order_obj=sale_order_obj, service_order_obj=service_order_obj
+                        )
         ReportInvLog.log(instance, instance.date_approved, doc_data)
         return True
 

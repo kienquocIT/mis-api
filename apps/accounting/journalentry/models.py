@@ -116,7 +116,9 @@ class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
                             date_approved=str(doc_obj.date_approved)
                         )
                         # duyệt tự động
-                        CompanyFunctionNumber.auto_gen_code_based_on_config('journalentry', True, je_obj)
+                        CompanyFunctionNumber.auto_gen_code_based_on_config(
+                            app_code=None, instance=je_obj, in_workflow=True, kwargs=None
+                        )
                         je_obj.system_status = 3
                         je_obj.save(update_fields=['code', 'system_status'])
                         total_debit, total_credit = JournalEntryLine.create_je_line_mapped(je_obj, je_line_data)
