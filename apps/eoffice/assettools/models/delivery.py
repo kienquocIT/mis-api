@@ -6,6 +6,7 @@ from django.db import models, transaction
 from django.utils import timezone
 
 from apps.core.attachments.models import M2MFilesAbstractModel, update_files_is_approved
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import DataAbstractModel, AssetToolsMsg, DisperseModel
 
 
@@ -59,28 +60,13 @@ class AssetToolsDelivery(DataAbstractModel):
         related_name='file_of_asset_delivery',
     )
 
-    def code_generator(self):
-        if not self.code:
-            ast_p = AssetToolsDelivery.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                is_delete=False,
-                system_status__gte=2
-            ).count()
-            char = "ATD"
-            num_quotient, num_remainder = divmod(ast_p, 1000)
-            code = f"{char}{num_remainder + 1:03d}"
-            if num_quotient > 0:
-                code += f".{num_quotient}"
-            self.code = code
-
     def update_product_used(self):
-        provide_prod_map = DisperseModel(app_model='assettools.AssetToolsProvideProduct').get_model()
+        provide_prod_models = DisperseModel(app_model='assettools.AssetToolsProvideProduct').get_model()
 
         def handle_provide_completed(provide):
             # loop trong danh sách prod_map_provide nếu tất cả product đều cấp hết check complete_delivered
             # cho provide đó
-            model_provide_lst = provide_prod_map.objects.filter(asset_tools_provide=provide)
+            model_provide_lst = provide_prod_models.objects.filter(asset_tools_provide=provide)
             is_completed = True
             for prov_item in model_provide_lst:
                 if prov_item.quantity != prov_item.delivered:
@@ -92,23 +78,13 @@ class AssetToolsDelivery(DataAbstractModel):
 
         def update_provide(prod_map_queryset, number_delivered):
             if prod_map_queryset.exists():
-                delivered_copy = number_delivered
-                items_to_update = []
-
                 for prod_item in prod_map_queryset:
+                    # nếu số đã giao còn nhỏ hơn số lượng cần giao
                     if prod_item.delivered < prod_item.quantity:
-                        remaining = prod_item.quantity - prod_item.delivered
-                        increment = min(remaining, delivered_copy)
-                        prod_item.delivered += increment
-                        delivered_copy -= increment
-                        items_to_update.append(prod_item)
-                        if delivered_copy == 0:
-                            break
-
-                if len(items_to_update) > 1:
-                    provide_prod_map.objects.bulk_update(items_to_update, fields=['delivered'])
-                elif items_to_update:
-                    items_to_update[0].save(update_fields=['delivered'])
+                        remaining = prod_item.delivered + number_delivered
+                        if remaining <= prod_item.quantity:
+                            prod_item.delivered += number_delivered
+                    prod_item.save(update_fields=['delivered'])
 
         try:
             with transaction.atomic():
@@ -124,28 +100,35 @@ class AssetToolsDelivery(DataAbstractModel):
 
                         if product_is_tool:
                             prod_available = product_is_tool.quantity - product_is_tool.allocated_quantity
-
                             if prod_available < delivered:
                                 raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
 
                             item.delivered_number += delivered
                             product_is_tool.allocated_quantity += delivered
-                            product_is_tool.save(update_fields=["allocated_quantity"])
+                            if product_is_tool.allocated_quantity == product_is_tool.quantity:
+                                product_is_tool.status = 2
+                            product_is_tool.save(update_fields=["allocated_quantity", "status"])
 
-                            prod_map_provide = provide_prod_map.objects.filter(
-                                asset_tools_provide=self.provide,
-                                prod_in_tools=product_is_tool
+                            prod_map_provide = self.provide.asset_provide_map_product.all().filter(
+                                prod_in_tools_id=product_is_tool.id
+                            )
+                        elif product_is_fixed:
+                            if delivered > 1:
+                                raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
+                            item.delivered_number += delivered
+                            product_is_fixed.status = 2
+                            product_is_fixed.save(update_fields=["status"])
+                            prod_map_provide = self.provide.asset_provide_map_product.all().filter(
+                                prod_in_fixed_id=product_is_fixed.id
                             )
                         else:
                             item.delivered_number += delivered
-                            prod_map_provide = provide_prod_map.objects.filter(
-                                asset_tools_provide=self.provide,
+                            prod_map_provide = self.provide.asset_provide_map_product.all().filter(
                                 product_remark=item.prod_buy_new
                             )
 
                         update_provide(prod_map_provide, delivered)
                         item.save(update_fields=["delivered_number"])
-
                     handle_provide_completed(self.provide)
         except ValueError:
             raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
@@ -178,7 +161,6 @@ class AssetToolsDelivery(DataAbstractModel):
         self.before_save()
         if self.system_status >= 2:
             self.update_product_used()
-            self.code_generator()
             update_files_is_approved(
                 AssetToolsDeliveryAttachmentFile.objects.filter(
                     asset_tools_delivery=self, attachment__is_approved=False
@@ -190,6 +172,8 @@ class AssetToolsDelivery(DataAbstractModel):
                     kwargs['update_fields'].append('code')
             else:
                 kwargs.update({'update_fields': ['code']})
+            if 'date_approved' in kwargs['update_fields']:
+                CompanyFunctionNumber.auto_gen_code_based_on_config('assettoolsdelivery', True, self, kwargs)
         super().save(*args, **kwargs)
 
     class Meta:
@@ -271,14 +255,14 @@ class ProductDeliveredMapProvide(DataAbstractModel):
     def create_backup_data(self):
         if self.prod_in_tools:
             self.product_data = {
-                "id": str(self.prod_in_tools_id),
+                "id": str(self.prod_in_tools.id),
                 "title": self.prod_in_tools.title,
                 "code": self.prod_in_tools.code,
                 "uom": self.prod_in_tools.measure_unit if hasattr(self.prod_in_tools, 'measure_unit') else '',
             }
         if self.prod_in_fixed:
             self.product_data = {
-                "id": str(self.prod_in_fixed_id),
+                "id": str(self.prod_in_fixed.id),
                 "title": self.prod_in_fixed.title,
                 "code": self.prod_in_fixed.code,
             }
@@ -288,7 +272,7 @@ class ProductDeliveredMapProvide(DataAbstractModel):
                 "full_name": self.employee_inherit.get_full_name(),
                 "code": self.employee_inherit.code,
                 "group": {
-                    "id": str(self.employee_inherit.group_id),
+                    "id": str(self.employee_inherit.group.id),
                     "title": self.employee_inherit.group.title,
                     "code": self.employee_inherit.group.code
                 } if hasattr(self.employee_inherit.group, 'id') else {}

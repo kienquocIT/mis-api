@@ -57,6 +57,100 @@ class AssetToolsReturn(DataAbstractModel):
         help_text='Date Return asset, tools',
     )
 
+    def _prod_type_new(self, prod, employee_asset_list, return_number, provide_update_list, return_info_list):
+        item = employee_asset_list.filter(
+            prod_in_tools__isnull=True,
+            prod_in_fixed__isnull=True,
+            product_remark=prod.product_remark
+        ).first()
+
+        if item and item.quantity - item.is_returned > 0 and item.is_returned + return_number <= item.quantity:
+            item.is_returned += return_number
+            return_info_list.append(
+                {
+                    'product': {},
+                    'product_remark': item.product_remark,
+                    'return_number': return_number,
+                    'reason': self.remark
+                }
+            )
+            provide_update_list.append(item)
+
+    def _prod_type_fixed(
+            self,
+            prod,
+            models_fixed,
+            employee_asset_list,
+            return_number,
+            provide_update_list,
+            return_info_list,
+            product_fixed_list
+    ):
+        prod_fixed = prod.prod_in_fixed
+        prod_fixed_obj = models_fixed.objects.filter_on_company(id=prod_fixed['id'])
+        if return_number != 1 or not prod_fixed_obj.exists():
+            raise ValueError(AssetToolsMsg.RETURN_PRODUCT_ERROR01)
+
+        prod_fixed_obj.status = 0
+        item = employee_asset_list.filter(
+            prod_in_tools__isnull=True,
+            prod_in_fixed_id=prod_fixed['id'],
+        ).first()
+        if item and item.quantity - item.is_returned > 0 \
+                and item.is_returned + return_number <= item.quantity:
+            item.is_returned += return_number
+            provide_update_list.append(item)
+            # nếu số lượng trả về khới thì mới add vào danh sách update provide_update_list
+            product_fixed_list.append(prod_fixed_obj)
+            return_info_list.append(
+                {
+                    'product': prod_fixed,
+                    'product_remark': prod.product_remark,
+                    'return_number': return_number,
+                    'reason': self.remark
+                }
+            )
+
+    def _prod_type_tool(
+            self,
+            prod,
+            employee_asset_list,
+            return_number,
+            provide_update_list,
+            return_info_list,
+            product_instrument_list
+    ):
+        tool_obj = prod.prod_in_tools
+        item = employee_asset_list.filter(
+            prod_in_tools_id=tool_obj.id,
+            prod_in_fixed__isnull=True
+        ).first()
+        # số trả cộng số đã trả phải nhỏ hơn or = tổng số cấp
+        # số ccdc đã cấp phải lớn hơn or = số return
+        if item and item.is_returned + return_number <= item.quantity \
+                and tool_obj.allocated_quantity >= return_number:
+            item.is_returned += return_number
+            provide_update_list.append(item)
+
+            tool_obj.allocated_quantity -= return_number
+            if tool_obj.allocated_quantity == 0:
+                tool_obj.status = 0
+            product_instrument_list.append(tool_obj)
+            return_info_list.append(
+                {
+                    'product': {
+                        'id': str(tool_obj.id),
+                        'title': tool_obj.title,
+                        'code': tool_obj.code
+                    },
+                    'product_remark': prod.product_remark,
+                    'return_number': return_number,
+                    'reason': self.remark
+                }
+            )
+        else:
+            raise ValueError(AssetToolsMsg.RETURN_PRODUCT_ERROR01)
+
     def update_prod_provide(self, prod_list, return_info_list):
         product_instrument_list = []
         product_fixed_list = []
@@ -66,79 +160,23 @@ class AssetToolsReturn(DataAbstractModel):
         models_instrument = DisperseModel(app_model='asset.InstrumentTool').get_model()
         models_fixed = DisperseModel(app_model='asset.FixedAsset').get_model()
 
-        # update lại is_returned cho tất cả record trong bảng AssetToolsProvideProduct
-        # trừ đi allocated_quantity trong bảng InstrumentTool nếu item là product
-        # update trường status cho bảng FixedAsset và InstrumentTool là 0 (Using)
-
         for prod in prod_list:
             return_number = prod.return_number
             prod_type = 'tool' if prod.prod_in_tools else 'fixed' if prod.prod_in_fixed else 'new'
 
             if prod_type == 'new':
-                item = employee_asset_list.filter(
-                    prod_in_tools__isnull=True,
-                    prod_in_fixed__isnull=True,
-                    product_remark=prod.product_remark
-                ).first()
+                self._prod_type_new(prod, employee_asset_list, return_number, provide_update_list, return_info_list)
 
-                if item and item.quantity - item.is_returned > 0 and item.is_returned + return_number <= item.quantity:
-                    item.is_returned += return_number
-                    return_info_list.append(
-                        {
-                            'product': {},
-                            'product_remark': item.product_remark,
-                            'return_number': return_number,
-                            'reason': self.remark
-                        }
-                    )
-                    provide_update_list.append(item)
             elif prod_type == 'fixed':
-                prod_fixed = prod.prod_in_fixed
-                try:
-                    prod_fixed_obj = models_fixed.objects.get_on_company(id=prod_fixed.id)
-                    prod_fixed_obj.status = 0
-                    item = employee_asset_list.filter(
-                        prod_in_tools__isnull=True,
-                        prod_in_fixed_id=prod_fixed.id,
-                    ).first()
-                    if item and item.quantity - item.is_returned > 0 and item.is_returned + return_number <= item.quantity:
-                        item.is_returned += return_number
-                        provide_update_list.append(item)
-                        # nếu số lượng trả về khới thì mới add vào danh sách update provide_update_list
-                        product_fixed_list.append(prod_fixed_obj)
-                        return_info_list.append(
-                            {
-                                'product': prod_fixed,
-                                'product_remark': prod.product_remark,
-                                'return_number': return_number,
-                                'reason': self.remark
-                            }
-                        )
-                except Exception as err:
-                    raise ValueError(err)
+                self._prod_type_fixed(
+                    prod, models_fixed, employee_asset_list, return_number, provide_update_list,
+                    return_info_list, product_fixed_list
+                )
             else:
-                tool_obj = prod.prod_in_tools
-                tool_obj.status = 0
-                item = employee_asset_list.filter_on_company(
-                    prod_in_tools_id=tool_obj.id,
-                    prod_in_fixed__isnull=True
-                ).first()
-                if item and item.quantity - item.is_returned > 0 and item.is_returned + return_number <= item.quantity\
-                        and tool_obj.allocated_quantity > return_number:
-                    item.is_returned += return_number
-                    provide_update_list.append(item)
-                    tool_obj.allocated_quantity -= return_number
-                    product_instrument_list.append(tool_obj)
-                    return_info_list.append(
-                        {
-                            'product': tool_obj,
-                            'product_remark': prod.product_remark,
-                            'return_number': return_number,
-                            'reason': self.remark
-                        }
-                    )
-                else:
-                    raise ValueError(AssetToolsMsg.RETURN_PRODUCT_ERROR01)
+                self._prod_type_tool(
+                    prod, employee_asset_list, return_number, provide_update_list,
+                    return_info_list, product_instrument_list
+                )
 
         if product_instrument_list:
             models_instrument.objects.bulk_update(product_instrument_list, fields=['allocated_quantity', 'status'])
