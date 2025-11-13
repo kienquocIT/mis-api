@@ -129,7 +129,8 @@ class DimensionSyncConfigUpdateSerializer(serializers.ModelSerializer):
     def validate_dimension_id(self, value):
         if value:
             try:
-                if DimensionSyncConfig.objects.filter_on_company(dimension_id=value).exclude(dimension_id=self.instance.dimension_id).exists():
+                if DimensionSyncConfig.objects.filter_on_company(dimension_id=value).exclude(
+                        dimension_id=self.instance.dimension_id).exists():
                     raise serializers.ValidationError({'dimension': _('Dimension is already used for mapping')})
 
                 dimension = Dimension.objects.get(id=value)
@@ -145,7 +146,8 @@ class DimensionSyncConfigUpdateSerializer(serializers.ModelSerializer):
     def validate_related_app_id(self, value):
         if value:
             try:
-                if DimensionSyncConfig.objects.filter_on_company(related_app_id=value).exclude(related_app_id=self.instance.related_app_id).exists():
+                if DimensionSyncConfig.objects.filter_on_company(related_app_id=value).exclude(
+                        related_app_id=self.instance.related_app_id).exists():
                     raise serializers.ValidationError({'related_app': _('Application is already mapped')})
                 return Application.objects.get(id=value).id
             except Application.DoesNotExist:
@@ -203,4 +205,3 @@ class DimensionSyncConfigApplicationListSerializer(serializers.ModelSerializer):
             'title',
             'code'
         )
-

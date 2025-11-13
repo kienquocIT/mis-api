@@ -135,13 +135,13 @@ class DimensionDefinitionWithValuesSerializer(serializers.ModelSerializer):
                 "children_ids": list(item.child_values.values_list("id", flat=True)),
                 "level": level,
                 "related_app_id": item.related_app_id,
-                'is_system_created': True if item.related_app else False,
+                'is_system_created': bool(item.related_app),
             })
 
         return result
 
     def get_is_system_dimension(self, obj):
-        return True if obj.related_app else False
+        return bool(obj.related_app)
 
 
 class DimensionWithSyncConfigListSerializer(serializers.ModelSerializer):
@@ -176,4 +176,3 @@ class DimensionWithSyncConfigListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_record_number(cls, obj):
         return obj.dimension_values.count()
-

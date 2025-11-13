@@ -3,7 +3,6 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from apps.accounting.accountingsettings.utils.dimension_utils import DimensionUtils
 from apps.masterdata.saledata.models.periods import Periods
 from apps.masterdata.saledata.models.price import Price, Currency
 from apps.masterdata.saledata.models.config import PaymentTerm

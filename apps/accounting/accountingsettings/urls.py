@@ -84,5 +84,6 @@ urlpatterns = [
     path('dimension-for-account/detail/<str:pk>', DimensionListForAccountingAccount.as_view(),
          name='DimensionListForAccountingAccount'),
     path('dimension-account-map/list', DimensionAccountMapList.as_view(), name='DimensionAccountMapList'),
-    path('dimension-account-map/detail/<str:pk>', DimensionAccountMapDetail.as_view(), name='DimensionAccountMapDetail'),
+    path('dimension-account-map/detail/<str:pk>', DimensionAccountMapDetail.as_view(),
+         name='DimensionAccountMapDetail'),
 ]

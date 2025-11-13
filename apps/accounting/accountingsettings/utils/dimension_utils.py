@@ -62,7 +62,7 @@ class DimensionUtils:
         title_field = field_mapping.get('title')
 
         if not code_field or not title_field:
-            logger.error(f"{model_class.__name__}.get_field_mapping() missing 'code' or 'title'")
+            logger.error("%s.get_field_mapping() missing 'code' or 'title'", model_class.__name__)
             return False
 
         for record in existing_records:
@@ -92,6 +92,6 @@ class DimensionUtils:
 
         return True
 
-    @staticmethod
-    def auto_delete_dimension_value(instance, app_id):
-        ...
+    # @staticmethod
+    # def auto_delete_dimension_value(instance, app_id):
+    #     ...
