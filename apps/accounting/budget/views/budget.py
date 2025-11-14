@@ -8,11 +8,22 @@ from apps.shared import BaseListMixin, mask_view
 class BudgetLineList(BaseListMixin):
     queryset = BudgetLine.objects
     search_fields = ["remark"]
-    filterset_fields = {
-        'dimension_values__id': ['exact', 'in'],
-    }
+    # filterset_fields = {
+    #     'dimension_values__id': ['exact', 'in'],
+    # }
     serializer_list = BudgetLineListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        request_qs = self.request.query_params.dict()
+        if 'dimension_values' in request_qs:
+            dimension_values = request_qs.pop('dimension_values')
+            qs_m2m_dv = super().get_queryset()
+            for dimension_value in dimension_values.split(','):
+                qs_m2m_dv = qs_m2m_dv.filter(dimension_values__id=dimension_value)
+            return qs_m2m_dv
+
+        return super().get_queryset()
 
     @swagger_auto_schema(
         operation_summary="Budget Line List",

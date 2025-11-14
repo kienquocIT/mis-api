@@ -86,6 +86,7 @@ class DimensionDefinitionWithValueList(BaseRetrieveMixin):
 
 class DimensionValueList(BaseListMixin, BaseCreateMixin):
     queryset = DimensionValue.objects
+    search_fields = ["title"]
     filterset_fields = {
         'dimension_id': ['exact', 'in'],
     }

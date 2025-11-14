@@ -173,37 +173,24 @@ class BudgetLineDimensionValue(MasterDataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    # def save(self, *args, **kwargs):
-    #     if not self.dimension_value and self.md_app_code and self.md_id:
-    #         arr = self.md_app_code.split('.')
-    #         if len(arr) == 2:
-    #             model_dimension_value = DisperseModel(app_model="accountingsettings.DimensionValue").get_model()
-    #             if model_dimension_value and hasattr(model_dimension_value, 'objects'):
-    #                 dim_value_obj = model_dimension_value.objects.filter_on_company(
-    #                     related_app__app_label=arr[0], related_app__model_code=arr[1],
-    #                     related_doc_id=self.md_id
-    #                 ).first()
-    #                 if dim_value_obj:
-    #                     self.dimension_value = dim_value_obj
-    #     super().save(*args, **kwargs)
-
 
 # BUDGET LINE
 class BudgetLineTransaction(MasterDataAbstractModel):
     budget_line = models.ForeignKey(
         'budget.BudgetLine', on_delete=models.CASCADE, related_name='budget_line_transaction_budget_line'
     )
+    budget_line_data = models.JSONField(default=dict, help_text="json data of budget line")
     app_code = models.CharField(
         max_length=100,
         verbose_name='Code of application',
         help_text='{app_label}.{model}'
     )
     doc_id = models.UUIDField(verbose_name='Transaction document ID')
-    value_use = models.FloatField(default=0, help_text="Transaction value on budget line")
     dimension_first_data = models.JSONField(default=dict, help_text="json data of dimension_first")
     dimension_value_first_data = models.JSONField(default=dict, help_text="json data of dimension_value_first")
     dimension_second_data = models.JSONField(default=dict, help_text="json data of dimension_second")
     dimension_value_second_data = models.JSONField(default=dict, help_text="json data of dimension_value_second")
+    value_use = models.FloatField(default=0, help_text="Transaction value on budget line")
     order = models.IntegerField(default=1)
 
     class Meta:
