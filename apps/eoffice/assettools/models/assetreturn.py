@@ -6,6 +6,7 @@ from django.db import models, transaction
 from django.utils import timezone
 
 from apps.core.attachments.models import M2MFilesAbstractModel, update_files_is_approved
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import DataAbstractModel, AssetToolsMsg, DisperseModel
 
 
@@ -56,93 +57,147 @@ class AssetToolsReturn(DataAbstractModel):
         help_text='Date Return asset, tools',
     )
 
-    def code_generator(self):
-        if not self.code:
-            asset_return = AssetToolsReturn.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                is_delete=False,
-                system_status__gte=2
-            ).count()
-            char = "ATR"
-            num_quotient, num_remainder = divmod(asset_return, 1000)
-            code = f"{char}{num_remainder + 1:03d}"
-            if num_quotient > 0:
-                code += f".{num_quotient}"
-            self.code = code
+    def _prod_type_new(self, prod, employee_asset_list, return_number, provide_update_list, return_info_list):
+        item = employee_asset_list.filter(
+            prod_in_tools__isnull=True,
+            prod_in_fixed__isnull=True,
+            product_remark=prod.product_remark
+        ).first()
 
-    def update_prod_provide(self, prod_list, return_info_list, product_instrument_list):
-        models_provide_map = DisperseModel(app_model='assettools.AssetToolsProvideProduct').get_model()
-        for item in prod_list:
-            count = item.return_number
-            item_prod = item.prod_in_tools
-
-            # Khởi tạo thông tin log trả sản phẩm
+        if item and item.quantity - item.is_returned > 0 and item.is_returned + return_number <= item.quantity:
+            item.is_returned += return_number
             return_info_list.append(
                 {
-                    'product': item.product_data if item.product_data else {},
+                    'product': {},
                     'product_remark': item.product_remark,
-                    'return_number': count,
+                    'return_number': return_number,
+                    'reason': self.remark
+                }
+            )
+            provide_update_list.append(item)
+
+    def _prod_type_fixed(
+            self,
+            prod,
+            models_fixed,
+            employee_asset_list,
+            return_number,
+            provide_update_list,
+            return_info_list,
+            product_fixed_list
+    ):
+        prod_fixed = prod.prod_in_fixed
+        prod_fixed_obj = models_fixed.objects.filter_on_company(id=prod_fixed['id'])
+        if return_number != 1 or not prod_fixed_obj.exists():
+            raise ValueError(AssetToolsMsg.RETURN_PRODUCT_ERROR01)
+
+        prod_fixed_obj.status = 0
+        item = employee_asset_list.filter(
+            prod_in_tools__isnull=True,
+            prod_in_fixed_id=prod_fixed['id'],
+        ).first()
+        if item and item.quantity - item.is_returned > 0 \
+                and item.is_returned + return_number <= item.quantity:
+            item.is_returned += return_number
+            provide_update_list.append(item)
+            # nếu số lượng trả về khới thì mới add vào danh sách update provide_update_list
+            product_fixed_list.append(prod_fixed_obj)
+            return_info_list.append(
+                {
+                    'product': prod_fixed,
+                    'product_remark': prod.product_remark,
+                    'return_number': return_number,
                     'reason': self.remark
                 }
             )
 
-            # Nếu sản phẩm đã được cấp phát
-            if item_prod:
-                if item_prod.allocated_quantity < count:
-                    raise ValueError(AssetToolsMsg.RETURN_PRODUCT_ERROR01)
+    def _prod_type_tool(
+            self,
+            prod,
+            employee_asset_list,
+            return_number,
+            provide_update_list,
+            return_info_list,
+            product_instrument_list
+    ):
+        tool_obj = prod.prod_in_tools
+        item = employee_asset_list.filter(
+            prod_in_tools_id=tool_obj.id,
+            prod_in_fixed__isnull=True
+        ).first()
+        # số trả cộng số đã trả phải nhỏ hơn or = tổng số cấp
+        # số ccdc đã cấp phải lớn hơn or = số return
+        if item and item.is_returned + return_number <= item.quantity \
+                and tool_obj.allocated_quantity >= return_number:
+            item.is_returned += return_number
+            provide_update_list.append(item)
 
-                item_prod.allocated_quantity -= count
-                product_instrument_list.append(item_prod)
+            tool_obj.allocated_quantity -= return_number
+            if tool_obj.allocated_quantity == 0:
+                tool_obj.status = 0
+            product_instrument_list.append(tool_obj)
+            return_info_list.append(
+                {
+                    'product': {
+                        'id': str(tool_obj.id),
+                        'title': tool_obj.title,
+                        'code': tool_obj.code
+                    },
+                    'product_remark': prod.product_remark,
+                    'return_number': return_number,
+                    'reason': self.remark
+                }
+            )
+        else:
+            raise ValueError(AssetToolsMsg.RETURN_PRODUCT_ERROR01)
 
-                prod_provide_lst = item_prod.product_map_asset_provide.filter(
-                    asset_tools_provide__employee_inherit=self.employee_inherit
+    def update_prod_provide(self, prod_list, return_info_list):
+        product_instrument_list = []
+        product_fixed_list = []
+        provide_update_list = []
+        models_provide_map = DisperseModel(app_model='assettools.AssetToolsProvideProduct').get_model()
+        employee_asset_list = models_provide_map.objects.filter_on_company(employee_inherit_id=self.employee_inherit_id)
+        models_instrument = DisperseModel(app_model='asset.InstrumentTool').get_model()
+        models_fixed = DisperseModel(app_model='asset.FixedAsset').get_model()
+
+        for prod in prod_list:
+            return_number = prod.return_number
+            prod_type = 'tool' if prod.prod_in_tools else 'fixed' if prod.prod_in_fixed else 'new'
+
+            if prod_type == 'new':
+                self._prod_type_new(prod, employee_asset_list, return_number, provide_update_list, return_info_list)
+
+            elif prod_type == 'fixed':
+                self._prod_type_fixed(
+                    prod, models_fixed, employee_asset_list, return_number, provide_update_list,
+                    return_info_list, product_fixed_list
                 )
             else:
-                # Sản phẩm chưa có trong công cụ cấp phát (dạng ghi chú)
-                prod_provide_lst = models_provide_map.objects.filter(
-                    asset_tools_provide__employee_inherit=self.employee_inherit,
-                    product_remark=item.product_remark,
-                    prod_in_tools__isnull=True
+                self._prod_type_tool(
+                    prod, employee_asset_list, return_number, provide_update_list,
+                    return_info_list, product_instrument_list
                 )
 
-            # Cập nhật số lượng trả cho từng mục cung cấp
-            for provide_item in prod_provide_lst:
-                available_return = provide_item.delivered - provide_item.is_returned
-                if available_return <= 0:
-                    continue
-
-                returned_now = min(available_return, count)
-                provide_item.is_returned += returned_now
-                count -= returned_now
-
-                if count == 0:
-                    break
-
-            models_provide_map.objects.bulk_update(prod_provide_lst, fields=['is_returned'])
+        if product_instrument_list:
+            models_instrument.objects.bulk_update(product_instrument_list, fields=['allocated_quantity', 'status'])
+        if product_fixed_list:
+            models_fixed.objects.bulk_update(product_fixed_list, fields=['status'])
+        models_provide_map.objects.bulk_update(provide_update_list, fields=['is_returned'])
 
     def return_product_used(self):
         return_info_list = []
-        product_instrument_list = []
-        models_instrument = DisperseModel(app_model='asset.InstrumentTool').get_model()
-
         try:
             with transaction.atomic():
                 if self.system_status != 3:
                     return True, return_info_list
 
-                prod_list = AssetToolsReturnMapProduct.objects.filter(
-                    asset_return_id=str(self.id),
-                ).select_related('prod_in_tools')
+                all_prod_list = self.asset_return_map_product.all().select_related('prod_in_tools')
 
-                self.update_prod_provide(prod_list, return_info_list, product_instrument_list)
+                self.update_prod_provide(all_prod_list, return_info_list)
 
                 # Ghi nhận danh sách trả và cập nhật lại số lượng công cụ
                 if return_info_list:
                     self.return_info_list = return_info_list
-
-                if product_instrument_list:
-                    models_instrument.objects.bulk_update(product_instrument_list, fields=['allocated_quantity'])
 
         except ValueError:
             raise ValueError(AssetToolsMsg.ERROR_CREATE_ASSET_RETURN)
@@ -164,8 +219,7 @@ class AssetToolsReturn(DataAbstractModel):
     def save(self, *args, **kwargs):
         self.before_save()
         if self.system_status >= 2:
-            done_update, err_list = self.return_product_used()
-            self.code_generator()
+            done_update, log_list = self.return_product_used()
             update_files_is_approved(
                 AssetToolsReturnAttachmentFile.objects.filter(
                     asset_tools_return=self, attachment__is_approved=False
@@ -175,7 +229,9 @@ class AssetToolsReturn(DataAbstractModel):
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
                     kwargs['update_fields'].append('code')
-                if done_update and err_list:
+                    if 'date_approved' in kwargs['update_fields']:
+                        CompanyFunctionNumber.auto_gen_code_based_on_config('assettoolsreturn', True, self, kwargs)
+                if done_update and log_list:
                     kwargs['update_fields'].append('return_info_list')
             else:
                 kwargs.update({'update_fields': ['code']})
@@ -202,6 +258,16 @@ class AssetToolsReturnMapProduct(DataAbstractModel):
         verbose_name='Product map asset return',
         related_name='product_map_asset_return',
         null=True,
+    )
+    prod_in_fixed = models.JSONField(
+        default=dict,
+        verbose_name='Fixed asset map with return request',
+        null=True,
+        help_text=json.dumps(
+            [
+                {'id': '', 'title': '', 'code': ''}
+            ]
+        )
     )
     product_remark = models.CharField(verbose_name='Product title buy new', null=True, blank=True, max_length=500)
     product_data = models.JSONField(

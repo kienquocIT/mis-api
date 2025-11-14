@@ -13,13 +13,15 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.eoffice.assettools.models import AssetToolsDeliveryAttachmentFile, AssetToolsDelivery, \
     ProductDeliveredMapProvide
-from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel, AbstractCreateSerializerModel
+from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel, AbstractCreateSerializerModel, \
+    AbstractListSerializerModel
 from apps.shared.translations import AssetToolsMsg
 from apps.shared.translations.base import AttachmentMsg
 
 
 class AssetToolsProductsMapDeliverySerializer(serializers.Serializer):  # noqa
     product = serializers.UUIDField(required=False, allow_null=True)
+    product_fixed = serializers.UUIDField(required=False, allow_null=True)
     order = serializers.IntegerField()
     request_number = serializers.FloatField()
     delivered_number = serializers.FloatField()
@@ -35,9 +37,7 @@ class AssetToolsProductsMapDeliverySerializer(serializers.Serializer):  # noqa
 
 
 def create_products(instance, prod_list):
-    old_data = ProductDeliveredMapProvide.objects.filter(delivery=instance)
-    if old_data.exists():
-        old_data.delete()
+    ProductDeliveredMapProvide.objects.filter(delivery=instance).delete()
     create_lst = []
     for item in prod_list:
         date_delivered = timezone.now()
@@ -52,6 +52,7 @@ def create_products(instance, prod_list):
             order=item['order'],
             prod_buy_new=item['product_remark'] if 'product_remark' in item else None,
             prod_in_tools_id=item['product'] if 'product' in item else None,
+            prod_in_fixed_id=item['product_fixed'] if 'product_fixed' in item else None,
             employee_inherit=instance.employee_inherit,
             request_number=item['request_number'],
             delivered_number=item['delivered_number'],
@@ -80,13 +81,6 @@ def handle_attach_file(instance, attachment_result):
 class AssetToolsDeliveryCreateSerializer(AbstractCreateSerializerModel):
     products = AssetToolsProductsMapDeliverySerializer(many=True)
     attachments = serializers.ListSerializer(allow_null=True, required=False, child=serializers.UUIDField())
-    employee_inherit_id = serializers.UUIDField()
-
-    @classmethod
-    def validate_employee_inherit_id(cls, value):
-        if not value:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
-        return str(value)
 
     def validate_attachments(self, attrs):
         user = self.context.get('user', None)
@@ -129,7 +123,7 @@ class AssetToolsDeliveryCreateSerializer(AbstractCreateSerializerModel):
         fields = (
             'title',
             'remark',
-            'employee_inherit_id',
+            'employee_inherit',
             'attachments',
             'provide',
             'products',
@@ -147,24 +141,30 @@ class AssetToolsDeliveryDetailSerializer(AbstractDetailSerializerModel):
     def get_products(cls, obj):
         if obj.prod_in_tools:
             products_list = []
-            for item in list(obj.provide_map_delivery.all()):
+            for item in list(obj.provide_map_delivery.all().order_by('order')):
                 prod_instrument_tool = item.prod_in_tools
+                prod_fixed = item.prod_in_fixed
                 product_available = 0
                 if prod_instrument_tool:
                     product_available = prod_instrument_tool.quantity - prod_instrument_tool.allocated_quantity
+                prod_temp = {
+                    'order': item.order,
+                    'product_remark': item.prod_buy_new,
+                    'product_available': product_available,
+                    'request_number': item.request_number,
+                    'delivered_number': item.delivered_number,
+                    'done': item.done,
+                    'date_delivered': item.date_delivered,
+                    'product_provide_type': 'new',
+                }
+                if prod_instrument_tool:
+                    prod_temp['product'] = item.product_data if hasattr(item, 'product_data') else {}
+                    prod_temp['product_provide_type'] = 'tool'
+                elif prod_fixed:
+                    prod_temp['product_fixed'] = item.product_data if hasattr(item, 'product_data') else {}
+                    prod_temp['product_provide_type'] = 'fixed'
 
-                products_list.append(
-                    {
-                        'order': item.order,
-                        'product_remark': item.prod_buy_new,
-                        'product_available': product_available,
-                        'product': {**item.product_data, } if hasattr(item, 'product_data') else {},
-                        'request_number': item.request_number,
-                        'delivered_number': item.delivered_number,
-                        'done': item.done,
-                        'date_delivered': item.date_delivered,
-                    }
-                )
+                products_list.append(prod_temp)
             return products_list
         return []
 
@@ -192,7 +192,7 @@ class AssetToolsDeliveryDetailSerializer(AbstractDetailSerializerModel):
         )
 
 
-class AssetToolsDeliveryListSerializer(serializers.ModelSerializer):
+class AssetToolsDeliveryListSerializer(AbstractListSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
     employee_created = serializers.SerializerMethodField()
 
@@ -266,6 +266,7 @@ class AssetToolsDeliveryUpdateSerializer(AbstractCreateSerializerModel):
             raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
         raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         attachments = validated_data.pop('attachments', None)
         products = validated_data.pop('products', None)
