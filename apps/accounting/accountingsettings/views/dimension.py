@@ -148,9 +148,11 @@ class DimensionSyncConfigApplicationList(BaseListMixin):
 
     # uuid of application
     list_app_id = [
-        '4e48c863-861b-475a-aa5e-97a4ed26f294', #Account
-        '3407d35d-27ce-407e-8260-264574a216e3', #payment term
-        '7bc78f47-66f1-4104-a6fa-5ca07f3f2275', #unitofmeasure
+        '4e48c863-861b-475a-aa5e-97a4ed26f294', # Account
+        '3407d35d-27ce-407e-8260-264574a216e3', # payment term
+        '7bc78f47-66f1-4104-a6fa-5ca07f3f2275', # unitofmeasure
+        'a8badb2e-54ff-4654-b3fd-0d2d3c777538', # saledata.product
+        '245e9f47-df59-4d4a-b355-7eff2859247f', # saledata.expenseitem
     ]
     def get_queryset(self):
         return Application.objects.filter(id__in=self.list_app_id)

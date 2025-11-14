@@ -616,13 +616,32 @@ class Product(DataAbstractModel):
                     return [item.account_mapped for item in account_deter.prd_account_deter_sub.all()]
         return []
 
+    @classmethod
+    def get_app_id(cls, raise_exception=True) -> str or None:
+        return 'a8badb2e-54ff-4654-b3fd-0d2d3c777538'
+
     def save(self, *args, **kwargs):
         if 'update_stock_info' in kwargs:
             result = ProductHandler.update_stock_info(self, **kwargs)
             kwargs = result
+        is_create = self._state.adding  # Check if is creating new record?
         # hit DB
         super().save(*args, **kwargs)
 
+        DimensionUtils.sync_dimension_value(
+            instance=self,
+            app_id=self.__class__.get_app_id(),
+            title=self.title,
+            code=self.code,
+            is_create=is_create
+        )
+
+    @classmethod
+    def get_field_mapping(cls):
+        return {
+            'title': 'title',
+            'code': 'code'
+        }
 
 class Expense(MasterDataAbstractModel):  # Internal Labor Item
     uom_group = models.ForeignKey(
