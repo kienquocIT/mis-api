@@ -12,9 +12,12 @@ logger = logging.getLogger(__name__)
 class DimensionUtils:
     @staticmethod
     def sync_dimension_value(instance, app_id, title, code, is_create=False):
-        application = Application.objects.get(id=app_id)
-        mapped_dimension = Dimension.objects.get(related_app=application)
-        sync_config = DimensionSyncConfig.objects.get(dimension=mapped_dimension)
+        application = Application.objects.filter(id=app_id).first()
+        mapped_dimension = Dimension.objects.filter(related_app=application).first()
+        sync_config = DimensionSyncConfig.objects.filter(dimension=mapped_dimension).first()
+
+        if not application or not mapped_dimension or not sync_config:
+            return
 
         if not mapped_dimension or not sync_config.sync_on_save:
             return
