@@ -1,3 +1,4 @@
+# pylint: disable=C0302
 import logging
 from django.db import models
 from django.utils import timezone
@@ -642,6 +643,7 @@ class Product(DataAbstractModel):
             'title': 'title',
             'code': 'code'
         }
+
 
 class Expense(MasterDataAbstractModel):  # Internal Labor Item
     uom_group = models.ForeignKey(
