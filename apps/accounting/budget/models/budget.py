@@ -67,6 +67,9 @@ class Budget(MasterDataAbstractModel):
     @classmethod
     def _push_subs(cls, obj):
         obj.budget_line_budget.all().delete()
+        for budget_line in obj.budget_line_data:
+            for dimension_value in budget_line.get('dimension_value_data', []):
+                cls._map_dimension_value(dimension_value=dimension_value)
         budget_line_objs = BudgetLine.objects.bulk_create([
             BudgetLine(
                 tenant_id=obj.tenant_id, company_id=obj.company_id,
@@ -74,13 +77,30 @@ class Budget(MasterDataAbstractModel):
             ) for budget_line in obj.budget_line_data
         ])
         if budget_line_objs:
+            # for budget_line in budget_line_objs:
+            #     for dimension_value in budget_line.dimension_value_data:
+            #         cls._map_dimension_value(dimension_value=dimension_value)
             for budget_line in budget_line_objs:
-                BudgetLineDimension.objects.bulk_create([
-                    BudgetLineDimension(
+                BudgetLineDimensionValue.objects.bulk_create([
+                    BudgetLineDimensionValue(
                         tenant_id=obj.tenant_id, company_id=obj.company_id,
-                        budget_line=budget_line, **dimension
-                    ) for dimension in budget_line.dimension_data
+                        budget_line=budget_line, **dimension_value
+                    ) for dimension_value in budget_line.dimension_value_data
                 ])
+        return True
+
+    @classmethod
+    def _map_dimension_value(cls, dimension_value):
+        arr = dimension_value.get('md_app_code', "").split('.')
+        if len(arr) == 2:
+            model_dimension_value = DisperseModel(app_model="accountingsettings.DimensionValue").get_model()
+            if model_dimension_value and hasattr(model_dimension_value, 'objects'):
+                dim_value_obj = model_dimension_value.objects.filter_on_company(
+                    related_app__app_label=arr[0], related_app__model_code=arr[1],
+                    related_doc_id=dimension_value.get('md_id', None)
+                ).first()
+                if dim_value_obj:
+                    dimension_value['dimension_value_id'] = str(dim_value_obj.id)
         return True
 
     @classmethod
@@ -110,14 +130,14 @@ class BudgetLine(MasterDataAbstractModel):
     tax_data = models.JSONField(default=dict, help_text='data json of tax')
     value_planned = models.FloatField(default=0, help_text="Base total value pushed from document")
     value_consumed = models.FloatField(default=0, help_text="Consumed total value on value_planned")
-    dimension_data = models.JSONField(default=list, help_text="json data of dimensions")
-    # dimensions = models.ManyToManyField(
-    #     'purchasing.PurchaseRequest',
-    #     through="BudgetLineDimension",
-    #     symmetrical=False,
-    #     blank=True,
-    #     related_name='budget_line_m2m_dimension'
-    # )
+    dimension_value_data = models.JSONField(default=list, help_text="json data of dimension_values")
+    dimension_values = models.ManyToManyField(
+        'accountingsettings.DimensionValue',
+        through="BudgetLineDimensionValue",
+        symmetrical=False,
+        blank=True,
+        related_name='budget_line_m2m_dimension_value'
+    )
     order = models.IntegerField(default=1)
 
     class Meta:
@@ -129,7 +149,7 @@ class BudgetLine(MasterDataAbstractModel):
 
 
 # BUDGET LINE DIMENSION
-class BudgetLineDimension(MasterDataAbstractModel):
+class BudgetLineDimensionValue(MasterDataAbstractModel):
     budget_line = models.ForeignKey(
         'budget.BudgetLine', on_delete=models.CASCADE, related_name='budget_line_dimension_budget_line'
     )
@@ -140,12 +160,12 @@ class BudgetLineDimension(MasterDataAbstractModel):
         blank=True
     )
     md_id = models.UUIDField(verbose_name='Master data ID', null=True)
-    # dimension = models.ForeignKey(
-    #     'budget.BudgetLine', on_delete=models.CASCADE, related_name='budget_line_dimension_dimension'
-    # )
-    # dimension_value = models.ForeignKey(
-    #     'budget.BudgetLine', on_delete=models.CASCADE, related_name='budget_line_dimension_dimension_value'
-    # )
+    dimension_value = models.ForeignKey(
+        'accountingsettings.DimensionValue',
+        on_delete=models.CASCADE,
+        related_name='budget_line_dimension_dimension_value',
+        null=True
+    )
 
     class Meta:
         verbose_name = 'Budget line Dimension'
@@ -153,10 +173,19 @@ class BudgetLineDimension(MasterDataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, *args, **kwargs):
-        # if not self.dimension and self.md_app_code and self.md_id:
-        #     ...
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     if not self.dimension_value and self.md_app_code and self.md_id:
+    #         arr = self.md_app_code.split('.')
+    #         if len(arr) == 2:
+    #             model_dimension_value = DisperseModel(app_model="accountingsettings.DimensionValue").get_model()
+    #             if model_dimension_value and hasattr(model_dimension_value, 'objects'):
+    #                 dim_value_obj = model_dimension_value.objects.filter_on_company(
+    #                     related_app__app_label=arr[0], related_app__model_code=arr[1],
+    #                     related_doc_id=self.md_id
+    #                 ).first()
+    #                 if dim_value_obj:
+    #                     self.dimension_value = dim_value_obj
+    #     super().save(*args, **kwargs)
 
 
 # BUDGET LINE

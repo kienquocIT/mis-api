@@ -281,7 +281,7 @@ class SOFinishHandler:
 
     @classmethod
     def setup_budget_line(cls, item, instance, mapping):
-        dimension_data = [
+        dimension_value_data = [
             {'md_app_code': instance.__class__.get_model_code(), 'md_id': str(instance.id)},
             {
                 'md_app_code': getattr(item, mapping['related_field']).__class__.get_model_code(),
@@ -295,7 +295,7 @@ class SOFinishHandler:
             'tax_data': getattr(item, mapping['tax_data']),
             'value_planned': getattr(item, mapping['value_planned']),
             'order': item.order,
-            'dimension_data': dimension_data,
+            'dimension_value_data': dimension_value_data,
         }
 
 

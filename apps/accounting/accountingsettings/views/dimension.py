@@ -86,6 +86,9 @@ class DimensionDefinitionWithValueList(BaseRetrieveMixin):
 
 class DimensionValueList(BaseListMixin, BaseCreateMixin):
     queryset = DimensionValue.objects
+    filterset_fields = {
+        'dimension_id': ['exact', 'in'],
+    }
     serializer_list = DimensionValueListSerializer
     serializer_create = DimensionValueCreateSerializer
     serializer_detail = DimensionValueDetailSerializer
@@ -153,6 +156,7 @@ class DimensionSyncConfigApplicationList(BaseListMixin):
         '7bc78f47-66f1-4104-a6fa-5ca07f3f2275', # unitofmeasure
         'a8badb2e-54ff-4654-b3fd-0d2d3c777538', # saledata.product
         '245e9f47-df59-4d4a-b355-7eff2859247f', # saledata.expenseitem
+        'a870e392-9ad2-4fe2-9baa-298a38691cf2', # saleorder.saleorder
     ]
     def get_queryset(self):
         return Application.objects.filter(id__in=self.list_app_id)

@@ -9,7 +9,7 @@ class BudgetLineList(BaseListMixin):
     queryset = BudgetLine.objects
     search_fields = ["remark"]
     filterset_fields = {
-        'dimensions__id': ['exact', 'in'],
+        'dimension_values__id': ['exact', 'in'],
     }
     serializer_list = BudgetLineListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

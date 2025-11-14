@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+from apps.accounting.accountingsettings.utils.dimension_utils import DimensionUtils
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.inventory.models import GoodsRegistration
@@ -95,6 +96,13 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
         return 'a870e392-9ad2-4fe2-9baa-298a38691cf2'
+
+    @classmethod
+    def get_field_mapping(cls):
+        return {
+            'title': 'title',
+            'code': 'code'
+        }
 
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
@@ -302,6 +310,15 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
         SOHandler.push_opportunity_log(instance=self)
         # diagram
         SOHandler.push_diagram(instance=self)
+        # dimension
+        is_create = self._state.adding  # Check if creating new record?
+        DimensionUtils.sync_dimension_value(
+            instance=self,
+            app_id=self.__class__.get_app_id(),
+            title=self.title,
+            code=self.code,
+            is_create=is_create
+        )
         # hit DB
         super().save(*args, **kwargs)
 
