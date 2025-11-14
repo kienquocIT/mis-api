@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from apps.accounting.accountingsettings.models import DimensionValue, DimensionDefinition
+from apps.accounting.accountingsettings.models import DimensionValue, Dimension
 
 __all__ = [
     'DimensionValueListSerializer',
@@ -9,6 +9,9 @@ __all__ = [
     'DimensionValueDetailSerializer',
     'DimensionValueUpdateSerializer'
 ]
+
+from apps.masterdata.saledata.models import Periods
+
 
 class DimensionValueDetailSerializer(serializers.ModelSerializer):
     parent_id = serializers.IntegerField(source="parent.id", read_only=True)
@@ -29,7 +32,6 @@ class DimensionValueDetailSerializer(serializers.ModelSerializer):
             "children_ids",
             "level",
             "related_app_id",
-            "related_app_code",
         )
 
     @classmethod
@@ -69,7 +71,6 @@ class DimensionValueListSerializer(serializers.ModelSerializer):
             "children_ids",
             "level",
             "related_app_id",
-            "related_app_code",
         )
 
     @classmethod
@@ -93,6 +94,7 @@ class DimensionValueListSerializer(serializers.ModelSerializer):
 class DimensionValueCreateSerializer(serializers.ModelSerializer):
     dimension_id = serializers.UUIDField(error_messages={
         'required': _("Dimension is required."),
+        'null': _("Dimension must not be null."),
     })
     parent_id = serializers.UUIDField(allow_null=True)
 
@@ -105,7 +107,6 @@ class DimensionValueCreateSerializer(serializers.ModelSerializer):
             "dimension_id",
             "parent_id",
             "related_app_id",
-            "related_app_code",
         )
 
     @classmethod
@@ -122,11 +123,18 @@ class DimensionValueCreateSerializer(serializers.ModelSerializer):
     def validate_dimension_id(cls, value):
         if value:
             try:
-                dimension = DimensionDefinition.objects.get_on_company(id=value)
+                dimension = Dimension.objects.get_on_company(id=value)
                 return dimension.id
-            except DimensionDefinition.DoesNotExist:
-                raise serializers.ValidationError(_("Dimension definition does not exist"))
+            except Dimension.DoesNotExist:
+                raise serializers.ValidationError(_("Dimension does not exist"))
         return value
+
+    def validate(self, validate_data):
+        tenant_current_id = self.context.get('tenant_current_id', None)
+        company_current_id = self.context.get('company_current_id', None)
+        period_mapped = Periods.get_current_period(tenant_current_id, company_current_id)
+        validate_data['period_mapped'] = period_mapped if period_mapped else None
+        return validate_data
 
 class DimensionValueUpdateSerializer(serializers.ModelSerializer):
     dimension_id = serializers.UUIDField(error_messages={
@@ -143,7 +151,6 @@ class DimensionValueUpdateSerializer(serializers.ModelSerializer):
             "dimension_id",
             "parent_id",
             "related_app_id",
-            "related_app_code",
         )
 
     @classmethod
@@ -160,10 +167,10 @@ class DimensionValueUpdateSerializer(serializers.ModelSerializer):
     def validate_dimension_id(cls, value):
         if value:
             try:
-                dimension = DimensionDefinition.objects.get_on_company(id=value)
+                dimension = Dimension.objects.get_on_company(id=value)
                 return dimension.id
-            except DimensionDefinition.DoesNotExist:
-                raise serializers.ValidationError(_("Dimension definition does not exist"))
+            except Dimension.DoesNotExist:
+                raise serializers.ValidationError(_("Dimension does not exist"))
         return value
 
     def validate(self, attrs):

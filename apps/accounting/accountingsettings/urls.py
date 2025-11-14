@@ -7,7 +7,9 @@ from apps.accounting.accountingsettings.views.account_determination import (
 )
 from apps.accounting.accountingsettings.views.dimension import (
     DimensionDefinitionList, DimensionDefinitionDetail,
-    DimensionDefinitionWithValueList, DimensionValueList, DimensionValueDetail
+    DimensionDefinitionWithValueList, DimensionValueList, DimensionValueDetail, DimensionSyncConfigApplicationList,
+    DimensionSyncConfigList, DimensionSyncConfigDetail, DimensionListForAccountingAccount, DimensionAccountMapList,
+    DimensionAccountMapDetail
 )
 from apps.accounting.accountingsettings.views.product_account_determination import (
     ProductAccountDeterminationList, ProductAccountDeterminationDetail
@@ -73,4 +75,15 @@ urlpatterns = [
     ),
     path('dimension-value/list', DimensionValueList.as_view(), name='DimensionValueList'),
     path('dimension-value/detail/<str:pk>', DimensionValueDetail.as_view(), name='DimensionValueDetail'),
+    path('dimension-sync-config/application-list', DimensionSyncConfigApplicationList.as_view(),
+         name='DimensionSyncConfigApplicationList'),
+    path('dimension-sync-config/list', DimensionSyncConfigList.as_view(),
+         name='DimensionSyncConfigList'),
+    path('dimension-sync-config/detail/<str:pk>', DimensionSyncConfigDetail.as_view(),
+         name='DimensionSyncConfigDetail'),
+    path('dimension-for-account/detail/<str:pk>', DimensionListForAccountingAccount.as_view(),
+         name='DimensionListForAccountingAccount'),
+    path('dimension-account-map/list', DimensionAccountMapList.as_view(), name='DimensionAccountMapList'),
+    path('dimension-account-map/detail/<str:pk>', DimensionAccountMapDetail.as_view(),
+         name='DimensionAccountMapDetail'),
 ]

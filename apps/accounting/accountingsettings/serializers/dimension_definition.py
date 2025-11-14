@@ -1,25 +1,37 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+from rest_framework.fields import SerializerMethodField
 
-from apps.accounting.accountingsettings.models import DimensionDefinition, DimensionValue
+from apps.accounting.accountingsettings.models import Dimension, DimensionValue
 
 __all__ = [
     'DimensionDefinitionListSerializer',
     'DimensionDefinitionCreateSerializer',
     'DimensionDefinitionDetailSerializer',
     'DimensionDefinitionUpdateSerializer',
-    'DimensionDefinitionWithValuesSerializer'
+    'DimensionDefinitionWithValuesSerializer',
+    'DimensionWithSyncConfigListSerializer'
 ]
 
+
 class DimensionDefinitionListSerializer(serializers.ModelSerializer):
+    related_app = SerializerMethodField()
 
     class Meta:
-        model = DimensionDefinition
+        model = Dimension
         fields = (
             'id',
             'title',
             'code',
+            'related_app',
         )
+
+    @classmethod
+    def get_related_app(cls, obj):
+        return {
+            'title': obj.related_app.title,
+            'code': obj.related_app.code,
+        } if obj.related_app else None
 
 
 class DimensionDefinitionCreateSerializer(serializers.ModelSerializer):
@@ -29,7 +41,7 @@ class DimensionDefinitionCreateSerializer(serializers.ModelSerializer):
     code = serializers.CharField()
 
     class Meta:
-        model = DimensionDefinition
+        model = Dimension
         fields = (
             'title',
             'code',
@@ -40,7 +52,7 @@ class DimensionDefinitionCreateSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError({"code": _("Code is required")})
 
-        if DimensionDefinition.objects.filter_on_company(code=value).exists():
+        if Dimension.objects.filter_on_company(code=value).exists():
             raise serializers.ValidationError({"code": _("Code already exists")})
 
         return value
@@ -49,7 +61,7 @@ class DimensionDefinitionCreateSerializer(serializers.ModelSerializer):
 class DimensionDefinitionDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = DimensionDefinition
+        model = Dimension
         fields = (
             'id',
             'title',
@@ -64,34 +76,41 @@ class DimensionDefinitionUpdateSerializer(serializers.ModelSerializer):
     code = serializers.CharField()
 
     class Meta:
-        model = DimensionDefinition
+        model = Dimension
         fields = (
             'title',
             'code',
         )
 
-
     def validate_code(self, value):
         if not value:
             raise serializers.ValidationError({"code": _("Code is required")})
 
-        if DimensionDefinition.objects.filter_on_company(code=value).exclude(id=self.instance.id).exists():
+        if Dimension.objects.filter_on_company(code=value).exclude(id=self.instance.id).exists():
             raise serializers.ValidationError({"code": _("Code already exists")})
 
         return value
 
+    def validate(self, validated_data):
+        related_app = self.instance.related_app
+        if related_app:
+            title = related_app.title
+            raise serializers.ValidationError({"dimension": _(f"Dimension is sync with {title}")})
+        return validated_data
 
 
 class DimensionDefinitionWithValuesSerializer(serializers.ModelSerializer):
     values = serializers.SerializerMethodField()
+    is_system_dimension = SerializerMethodField()
 
     class Meta:
-        model = DimensionDefinition
+        model = Dimension
         fields = (
             'id',
             'title',
             'code',
             'values',
+            'is_system_dimension'
         )
 
     def get_values(self, obj):
@@ -116,7 +135,44 @@ class DimensionDefinitionWithValuesSerializer(serializers.ModelSerializer):
                 "children_ids": list(item.child_values.values_list("id", flat=True)),
                 "level": level,
                 "related_app_id": item.related_app_id,
-                "related_app_code": item.related_app_code,
+                'is_system_created': bool(item.related_app),
             })
 
         return result
+
+    def get_is_system_dimension(self, obj):
+        return bool(obj.related_app)
+
+
+class DimensionWithSyncConfigListSerializer(serializers.ModelSerializer):
+    related_app = SerializerMethodField()
+    sync_status = SerializerMethodField()
+    record_number = SerializerMethodField()
+
+    class Meta:
+        model = Dimension
+        fields = (
+            'id',
+            'title',
+            'code',
+            'related_app',
+            'sync_status',
+            'record_number'
+        )
+
+    @classmethod
+    def get_related_app(cls, obj):
+        return {
+            'title': obj.related_app.get('title', ''),
+            'code': obj.related_app.get('code', ''),
+        } if obj.related_app else None
+
+    @classmethod
+    def get_sync_status(cls, obj):
+        if obj.configs:
+            return ''
+        return True
+
+    @classmethod
+    def get_record_number(cls, obj):
+        return obj.dimension_values.count()

@@ -26,6 +26,13 @@ class PaymentTerm(MasterDataAbstractModel):
             self.code = StringHandler.random_str(10, 2)
         super().save(*args, **kwargs)
 
+    @classmethod
+    def get_field_mapping(cls, *args, **kwargs):
+        return {
+            'title': 'title',
+            'code': 'code',
+        }
+
     class Meta:
         verbose_name = 'Payment Term'
         verbose_name_plural = 'Payment Term'
