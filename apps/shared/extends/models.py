@@ -120,6 +120,10 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
         raise ValueError(f'[{cls.__class__.__name__}][get_app_id] Not implement in extend model.')
 
     @classmethod
+    def get_field_mapping(cls):
+        raise ValueError(f"[{cls.__name__}][get_field_mapping] Not implemented in extended model.")
+
+    @classmethod
     def generate_key_cache(cls, **kwargs):
         dict_str = json.dumps(kwargs, sort_keys=True)
         md5_str = hashlib.md5(dict_str.encode()).hexdigest()

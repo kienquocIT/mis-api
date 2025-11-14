@@ -261,7 +261,13 @@ class RevenuePlanDetailSerializer(serializers.ModelSerializer):
                     'emp_year_profit_target': data.emp_year_profit_target,
                     'id': data.employee_mapped_id,
                     'code': data.employee_mapped.code,
-                    'full_name': data.employee_mapped.get_full_name(2)
+                    'full_name': data.employee_mapped.get_full_name(2),
+                    'current_group': {
+                        'id': data.employee_mapped.group_id,
+                        'code': data.employee_mapped.group.code,
+                        'title': data.employee_mapped.group.title,
+                    } if data.employee_mapped.group else {},
+                    'is_changed_group': str(item.group_mapped_id) != str(data.employee_mapped.group_id),
                 } if data.employee_mapped else {} for data in employee_data_filter_by_group]
             })
         return revenue_plan_data

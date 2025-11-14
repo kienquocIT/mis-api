@@ -1,0 +1,183 @@
+from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
+
+from apps.accounting.accountingsettings.models import DimensionValue, Dimension
+
+__all__ = [
+    'DimensionValueListSerializer',
+    'DimensionValueCreateSerializer',
+    'DimensionValueDetailSerializer',
+    'DimensionValueUpdateSerializer'
+]
+
+from apps.masterdata.saledata.models import Periods
+
+
+class DimensionValueDetailSerializer(serializers.ModelSerializer):
+    parent_id = serializers.IntegerField(source="parent.id", read_only=True)
+    has_children = serializers.SerializerMethodField()
+    children_ids = serializers.SerializerMethodField()
+    level = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DimensionValue
+        fields = (
+            "id",
+            "code",
+            "title",
+            "allow_posting",
+            "dimension",
+            "parent_id",
+            "has_children",
+            "children_ids",
+            "level",
+            "related_app_id",
+        )
+
+    @classmethod
+    def get_has_children(cls, obj):
+        return obj.child_values.exists()
+
+    @classmethod
+    def get_children_ids(cls, obj):
+        return list(obj.child_values.values_list("id", flat=True))
+
+    @classmethod
+    def get_level(cls, obj):
+        level = 0
+        current = obj.parent
+        while current:
+            level += 1
+            current = current.parent
+        return level
+
+
+class DimensionValueListSerializer(serializers.ModelSerializer):
+    parent_id = serializers.UUIDField(source="parent.id")
+    has_children = serializers.SerializerMethodField()
+    children_ids = serializers.SerializerMethodField()
+    level = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DimensionValue
+        fields = (
+            "id",
+            "code",
+            "title",
+            "allow_posting",
+            "dimension",
+            "parent_id",
+            "has_children",
+            "children_ids",
+            "level",
+            "related_app_id",
+        )
+
+    @classmethod
+    def get_has_children(cls, obj):
+        return obj.child_values.exists()
+
+    @classmethod
+    def get_children_ids(cls, obj):
+        return list(obj.child_values.values_list("id", flat=True))
+
+    @classmethod
+    def get_level(cls, obj):
+        level = 0
+        current = obj.parent
+        while current:
+            level += 1
+            current = current.parent
+        return level
+
+
+class DimensionValueCreateSerializer(serializers.ModelSerializer):
+    dimension_id = serializers.UUIDField(error_messages={
+        'required': _("Dimension is required."),
+        'null': _("Dimension must not be null."),
+    })
+    parent_id = serializers.UUIDField(allow_null=True)
+
+    class Meta:
+        model = DimensionValue
+        fields = (
+            "code",
+            "title",
+            "allow_posting",
+            "dimension_id",
+            "parent_id",
+            "related_app_id",
+        )
+
+    @classmethod
+    def validate_parent_id(cls, value):
+        if value:
+            try:
+                dimension_value = DimensionValue.objects.get_on_company(id=value)
+                return dimension_value.id
+            except DimensionValue.DoesNotExist:
+                raise serializers.ValidationError(_("Parent does not exist"))
+        return value
+
+    @classmethod
+    def validate_dimension_id(cls, value):
+        if value:
+            try:
+                dimension = Dimension.objects.get_on_company(id=value)
+                return dimension.id
+            except Dimension.DoesNotExist:
+                raise serializers.ValidationError(_("Dimension does not exist"))
+        return value
+
+    def validate(self, validate_data):
+        tenant_current_id = self.context.get('tenant_current_id', None)
+        company_current_id = self.context.get('company_current_id', None)
+        period_mapped = Periods.get_current_period(tenant_current_id, company_current_id)
+        validate_data['period_mapped'] = period_mapped if period_mapped else None
+        return validate_data
+
+class DimensionValueUpdateSerializer(serializers.ModelSerializer):
+    dimension_id = serializers.UUIDField(error_messages={
+        'required': _("Dimension is required."),
+    })
+    parent_id = serializers.UUIDField(allow_null=True)
+
+    class Meta:
+        model = DimensionValue
+        fields = (
+            "code",
+            "title",
+            "allow_posting",
+            "dimension_id",
+            "parent_id",
+            "related_app_id",
+        )
+
+    @classmethod
+    def validate_parent_id(cls, value):
+        if value:
+            try:
+                dimension_value = DimensionValue.objects.get_on_company(id=value)
+                return dimension_value.id
+            except DimensionValue.DoesNotExist:
+                raise serializers.ValidationError(_("Parent does not exist"))
+        return value
+
+    @classmethod
+    def validate_dimension_id(cls, value):
+        if value:
+            try:
+                dimension = Dimension.objects.get_on_company(id=value)
+                return dimension.id
+            except Dimension.DoesNotExist:
+                raise serializers.ValidationError(_("Dimension does not exist"))
+        return value
+
+    def validate(self, attrs):
+        new_parent_id = attrs.get("parent_id", None)
+        parent = DimensionValue.objects.filter_on_company(id=new_parent_id).first()
+        if parent and parent == self.instance:
+            raise serializers.ValidationError(
+                {"parent": _("A value cannot be its own parent.")}
+            )
+        return attrs

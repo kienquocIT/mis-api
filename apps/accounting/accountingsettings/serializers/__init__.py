@@ -3,3 +3,7 @@ from .account_determination import *
 from .warehouse_account_determination import *
 from .product_type_account_determination import *
 from .product_account_determination import *
+from .dimension_definition import *
+from .dimension_value import *
+from .dimension_account_map import *
+from .dimension_sync_config import *
