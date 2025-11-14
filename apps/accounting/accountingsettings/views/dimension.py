@@ -22,7 +22,7 @@ class DimensionDefinitionList(BaseListMixin, BaseCreateMixin):
     serializer_create = DimensionDefinitionCreateSerializer
     serializer_detail = DimensionDefinitionDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Dimension Definition List",
@@ -90,7 +90,7 @@ class DimensionValueList(BaseListMixin, BaseCreateMixin):
     serializer_create = DimensionValueCreateSerializer
     serializer_detail = DimensionValueDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Dimension Value List",
@@ -174,7 +174,7 @@ class DimensionSyncConfigList(BaseListMixin, BaseCreateMixin):
     serializer_create = DimensionSyncConfigCreateSerializer
     serializer_detail = DimensionSyncConfigDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Dimension Config List",
@@ -233,7 +233,7 @@ class DimensionAccountMapList(BaseCreateMixin):
     queryset = AccountDimensionMap.objects
     serializer_create = AccountDimensionMapCreateSerializer
     serializer_detail = AccountDimensionMapDetailSerializer
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Dimension Account Create",
@@ -252,7 +252,7 @@ class DimensionAccountMapDetail(BaseUpdateMixin):
     queryset = AccountDimensionMap.objects
     serializer_update = AccountDimensionMapUpdateSerializer
     serializer_detail = AccountDimensionMapDetailSerializer
-    update_hidden_field = ['tenant_id', 'company_id']
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Dimension Account Update",
