@@ -1,4 +1,6 @@
 from django.urls import path
+
+from apps.accounting.accountingsettings.views import InitialBalanceList, InitialBalanceDetail
 from apps.accounting.accountingsettings.views.chart_of_account import (
     ChartOfAccountsList
 )
@@ -89,4 +91,10 @@ urlpatterns = [
     path('dimension-split-template/list', DimensionSplitTemplateList.as_view(), name='DimensionSplitTemplateList'),
     path('dimension-split-template/detail/<str:pk>', DimensionSplitTemplateDetail.as_view(),
          name='DimensionSplitTemplateDetail'),
+]  + [
+    # Initial balance
+    path('initial-balance/list', InitialBalanceList.as_view(), name='InitialBalanceList'),
+    path(
+        'initial-balance/detail/<str:pk>', InitialBalanceDetail.as_view(), name='InitialBalanceDetail'
+    )
 ]
