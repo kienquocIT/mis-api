@@ -148,17 +148,13 @@ class UnitOfMeasure(MasterDataAbstractModel):
         return '7bc78f47-66f1-4104-a6fa-5ca07f3f2275'
 
     def save(self, *args, **kwargs):
-        is_create = self._state.adding  # Check if is creating new record?
-
-        super().save(*args, **kwargs)
-
         DimensionUtils.sync_dimension_value(
             instance=self,
             app_id=self.__class__.get_app_id(),
             title=self.title,
             code=self.code,
-            is_create=is_create
         )
+        super().save(*args, **kwargs)
 
     @classmethod
     def get_field_mapping(cls):
@@ -625,17 +621,14 @@ class Product(DataAbstractModel):
         if 'update_stock_info' in kwargs:
             result = ProductHandler.update_stock_info(self, **kwargs)
             kwargs = result
-        is_create = self._state.adding  # Check if is creating new record?
-        # hit DB
-        super().save(*args, **kwargs)
-
         DimensionUtils.sync_dimension_value(
             instance=self,
             app_id=self.__class__.get_app_id(),
             title=self.title,
             code=self.code,
-            is_create=is_create
         )
+        # hit DB
+        super().save(*args, **kwargs)
 
     @classmethod
     def get_field_mapping(cls):

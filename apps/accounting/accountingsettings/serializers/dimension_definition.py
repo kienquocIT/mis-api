@@ -31,6 +31,8 @@ class DimensionDefinitionListSerializer(serializers.ModelSerializer):
         return {
             'title': obj.related_app.title,
             'code': obj.related_app.code,
+            'app_code': obj.related_app.app_label + '.' + obj.related_app.model_code
+            if obj.related_app.app_label and obj.related_app.model_code else '',
         } if obj.related_app else None
 
 

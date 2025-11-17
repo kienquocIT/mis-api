@@ -18,11 +18,17 @@ from apps.shared import BaseListMixin, BaseCreateMixin, BaseUpdateMixin, mask_vi
 # Create your views here.
 class DimensionDefinitionList(BaseListMixin, BaseCreateMixin):
     queryset = Dimension.objects
+    filterset_fields = {
+        'related_app_id': ['exact', 'in'],
+    }
     serializer_list = DimensionDefinitionListSerializer
     serializer_create = DimensionDefinitionCreateSerializer
     serializer_detail = DimensionDefinitionDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("related_app",)
 
     @swagger_auto_schema(
         operation_summary="Dimension Definition List",

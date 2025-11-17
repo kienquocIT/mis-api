@@ -190,7 +190,7 @@ class BudgetLineTransaction(MasterDataAbstractModel):
     dimension_value_first_data = models.JSONField(default=dict, help_text="json data of dimension_value_first")
     dimension_second_data = models.JSONField(default=dict, help_text="json data of dimension_second")
     dimension_value_second_data = models.JSONField(default=dict, help_text="json data of dimension_value_second")
-    value_use = models.FloatField(default=0, help_text="Transaction value on budget line")
+    value_consume = models.FloatField(default=0, help_text="Transaction value on budget line")
     order = models.IntegerField(default=1)
 
     class Meta:

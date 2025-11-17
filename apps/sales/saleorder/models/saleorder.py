@@ -298,8 +298,14 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
                     SOFinishHandler.push_to_payment_plan(instance=self)  # payment plan
                     SOFinishHandler.set_true_file_is_approved(instance=self)  # file
                     SOFinishHandler.update_recurrence_task(instance=self)  # recurrence
-                    SOFinishHandler.push_budget(instance=self)  # budget
                     DocumentChangeHandler.change_handle(instance=self)  # change document handle
+                    DimensionUtils.sync_dimension_value(  # dimension
+                        instance=self,
+                        app_id=self.__class__.get_app_id(),
+                        title=self.title,
+                        code=self.code,
+                    )
+                    SOFinishHandler.push_budget(instance=self)  # budget
 
         if self.system_status in [4]:  # cancel
             # product
@@ -310,15 +316,6 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
         SOHandler.push_opportunity_log(instance=self)
         # diagram
         SOHandler.push_diagram(instance=self)
-        # dimension
-        is_create = self._state.adding  # Check if creating new record?
-        DimensionUtils.sync_dimension_value(
-            instance=self,
-            app_id=self.__class__.get_app_id(),
-            title=self.title,
-            code=self.code,
-            is_create=is_create
-        )
         # hit DB
         super().save(*args, **kwargs)
 
