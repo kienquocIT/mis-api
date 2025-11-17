@@ -1,4 +1,6 @@
 from django.urls import path
+
+from apps.accounting.accountingsettings.views import InitialBalanceList, InitialBalanceDetail
 from apps.accounting.accountingsettings.views.chart_of_account import (
     ChartOfAccountsList
 )
@@ -86,4 +88,10 @@ urlpatterns = [
     path('dimension-account-map/list', DimensionAccountMapList.as_view(), name='DimensionAccountMapList'),
     path('dimension-account-map/detail/<str:pk>', DimensionAccountMapDetail.as_view(),
          name='DimensionAccountMapDetail'),
+]  + [
+    # Initial balance
+    path('initial-balance/list', InitialBalanceList.as_view(), name='InitialBalanceList'),
+    path(
+        'initial-balance/detail/<str:pk>', InitialBalanceDetail.as_view(), name='InitialBalanceDetail'
+    )
 ]
