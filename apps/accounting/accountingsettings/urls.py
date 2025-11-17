@@ -9,7 +9,7 @@ from apps.accounting.accountingsettings.views.dimension import (
     DimensionDefinitionList, DimensionDefinitionDetail,
     DimensionDefinitionWithValueList, DimensionValueList, DimensionValueDetail, DimensionSyncConfigApplicationList,
     DimensionSyncConfigList, DimensionSyncConfigDetail, DimensionListForAccountingAccount, DimensionAccountMapList,
-    DimensionAccountMapDetail
+    DimensionAccountMapDetail, DimensionSplitTemplateList
 )
 from apps.accounting.accountingsettings.views.product_account_determination import (
     ProductAccountDeterminationList, ProductAccountDeterminationDetail
@@ -86,4 +86,7 @@ urlpatterns = [
     path('dimension-account-map/list', DimensionAccountMapList.as_view(), name='DimensionAccountMapList'),
     path('dimension-account-map/detail/<str:pk>', DimensionAccountMapDetail.as_view(),
          name='DimensionAccountMapDetail'),
+    path('dimension-split-template/list', DimensionSplitTemplateList.as_view(), name='DimensionSplitTemplateList'),
+    # path('dimension-split-template/detail/<str:pk>', DimensionAccountMapDetail.as_view(),
+    #      name='DimensionAccountMapDetail'),
 ]

@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.accounting.accountingsettings.models import Dimension, DimensionValue, DimensionSyncConfig, \
-    AccountDimensionMap, ChartOfAccounts
+    AccountDimensionMap, ChartOfAccounts, DimensionSplitTemplate
 from apps.accounting.accountingsettings.serializers import DimensionDefinitionListSerializer, \
     DimensionDefinitionCreateSerializer, DimensionDefinitionDetailSerializer, DimensionDefinitionUpdateSerializer, \
     DimensionDefinitionWithValuesSerializer, DimensionValueListSerializer, DimensionValueCreateSerializer, \
@@ -11,6 +11,8 @@ from apps.accounting.accountingsettings.serializers import DimensionDefinitionLi
 from apps.accounting.accountingsettings.serializers.dimension_account_map import AccountDimensionMapCreateSerializer, \
     AccountDimensionMapDetailSerializer, DimensionListForAccountingAccountSerializer, \
     AccountDimensionMapUpdateSerializer
+from apps.accounting.accountingsettings.serializers.dimension_split_template import \
+    DimensionSplitTemplateListSerializer, DimensionSplitTemplateCreateSerializer, DimensionSplitTemplateDetailSerializer
 from apps.core.base.models import Application
 from apps.shared import BaseListMixin, BaseCreateMixin, BaseUpdateMixin, mask_view, BaseRetrieveMixin
 
@@ -81,6 +83,11 @@ class DimensionDefinitionWithValueList(BaseRetrieveMixin):
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, pk, **kwargs):
+        only_leaf_param = request.query_params.get('only_leaf', 'false')
+        get_only_leaf = only_leaf_param.lower() == 'true'
+        self.ser_context = {
+            'only_leaf': get_only_leaf,
+        }
         return self.retrieve(request, *args, pk, **kwargs)
 
 
@@ -281,3 +288,34 @@ class DimensionListForAccountingAccount(BaseRetrieveMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+
+class DimensionSplitTemplateList(BaseListMixin, BaseCreateMixin):
+    queryset = DimensionSplitTemplate.objects
+    serializer_list = DimensionSplitTemplateListSerializer
+    serializer_create = DimensionSplitTemplateCreateSerializer
+    serializer_detail = DimensionSplitTemplateDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Dimension Split Template List",
+        operation_description="Get Dimension Split Template List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Dimension Split Template Create",
+        operation_description="Create new Dimension Split Template",
+        request_body=DimensionSplitTemplateCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
