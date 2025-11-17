@@ -535,6 +535,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'title',
                 'sale_code_type',
                 'supplier',
+                'supplier_data',
                 'method',
                 'employee_inherit',
                 'converted_value_list',

@@ -22,6 +22,7 @@ class PaymentListSerializer(AbstractListSerializerModel):
     quotation_mapped = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
+    supplier_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -31,6 +32,7 @@ class PaymentListSerializer(AbstractListSerializerModel):
             'title',
             'sale_code_type',
             'supplier',
+            'supplier_data',
             'method',
             'sale_code',
             'employee_created',
@@ -70,6 +72,17 @@ class PaymentListSerializer(AbstractListSerializerModel):
                 'opportunity_id': None,
                 'opportunity_code': None,
                 'is_close': is_close
+            }
+        return {}
+
+    @classmethod
+    def get_supplier_data(cls, obj):
+        if obj.supplier:
+            return {
+                'id': obj.supplier_id,
+                'code': obj.supplier.code,
+                'name': obj.supplier.name,
+                'tax_code': obj.supplier.tax_code,
             }
         return {}
 

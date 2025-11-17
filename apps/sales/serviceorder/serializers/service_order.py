@@ -107,7 +107,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
 
         start_date = validate_data.get('start_date', '')
         end_date = validate_data.get('end_date', '')
-        if start_date and end_date and start_date >= end_date:
+        if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError({'error': SVOMsg.DATE_COMPARE_ERROR})
 
         expense_data = validate_data.get('expenses_data', [])
@@ -517,7 +517,7 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
 
         start_date = validate_data.get('start_date', '')
         end_date = validate_data.get('end_date', '')
-        if start_date and end_date and start_date >= end_date:
+        if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError({'error': SVOMsg.DATE_COMPARE_ERROR})
 
         expense_data = validate_data.get('expenses_data', [])

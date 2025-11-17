@@ -4,6 +4,7 @@ import json
 from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel, update_files_is_approved
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import DataAbstractModel
 
 
@@ -47,28 +48,8 @@ class AssetToolsProvide(DataAbstractModel):
         help_text='request has complete delivered',
         default=False, null=True)
 
-    def code_generator(self):
-        ast_p = AssetToolsProvide.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False,
-            system_status__gte=2
-        ).count()
-        if not self.code:
-            char = "ATP"
-            num_quotient, num_remainder = divmod(ast_p, 1000)
-            code = f"{char}{num_remainder + 1:03d}"
-            if num_quotient > 0:
-                code += f".{num_quotient}"
-            self.code = code
-
-    def before_save(self):
-        if not self.code:
-            self.code_generator()
-
     def save(self, *args, **kwargs):
         if self.system_status >= 2:
-            self.before_save()
             update_files_is_approved(
                 AssetToolsProvideAttachmentFile.objects.filter(
                     asset_tools_provide=self, attachment__is_approved=False
@@ -80,6 +61,8 @@ class AssetToolsProvide(DataAbstractModel):
                     kwargs['update_fields'].append('code')
             else:
                 kwargs.update({'update_fields': ['code']})
+            if 'date_approved' in kwargs['update_fields']:
+                CompanyFunctionNumber.auto_gen_code_based_on_config('assettoolsprovide', True, self, kwargs)
         super().save(*args, **kwargs)
 
     class Meta:

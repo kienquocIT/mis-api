@@ -20,7 +20,12 @@ __all__ =[
 class InstrumentToolList(BaseListMixin, BaseCreateMixin):
     queryset = InstrumentTool.objects
     search_fields = ['title', 'code']
-    filterset_fields = {}
+    filterset_fields = {
+        'product': ['exact', 'in'],
+        'status': ['exact', 'in'],
+        'manage_department': ['exact', 'in'],
+        'source_type': ['exact', 'in'],
+    }
     serializer_list = InstrumentToolListSerializer
     serializer_create = InstrumentToolCreateSerializer
     serializer_detail =InstrumentToolDetailSerializer
@@ -160,9 +165,14 @@ class ToolStatusLeaseList(BaseListMixin, BaseCreateMixin):
 class InstrumentToolNoPermList(BaseListMixin):
     queryset = InstrumentTool.objects
     search_fields = ['title', 'code']
-    filterset_fields = {}
     serializer_list = InstrumentToolListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    filterset_fields = {
+        'product': ['exact', 'in'],
+        'status': ['exact'],
+        'manage_department': ['exact', 'in'],
+        'source_type': ['exact', 'in'],
+    }
 
     def get_queryset(self):
         queryset = (super().get_queryset().select_related('product', 'manage_department', 'use_customer')
