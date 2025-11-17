@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel, DataAbstractModel
+from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 
 __all__ = [
