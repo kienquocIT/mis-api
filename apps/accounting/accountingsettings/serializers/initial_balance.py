@@ -1,12 +1,12 @@
-from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+
+from apps.accounting.accountingsettings.models import ChartOfAccounts
 from apps.masterdata.saledata.models import (
-    ProductWareHouse, SubPeriods, Periods, Product, WareHouse,
-    ProductWareHouseSerial, ProductWareHouseLot, ProductSpecificIdentificationSerialNumber
+    Periods, Currency
 )
-from apps.sales.report.utils.inventory_log import ReportInvCommonFunc, ReportInvLog
 from apps.accounting.accountingsettings.models.initial_balance import (
-    InitialBalance, InitialBalanceLine, InitialBalanceGoodsLot, InitialBalanceGoodsSerial
+    InitialBalance, InitialBalanceLine
 )
 
 
@@ -16,6 +16,9 @@ class InitialBalanceListSerializer(serializers.ModelSerializer):
         model = InitialBalance
         fields = (
             'id',
+            'code',
+            'title',
+            'date_created',
             'period_mapped_data',
         )
 
@@ -58,7 +61,7 @@ class InitialBalanceCreateSerializer(serializers.ModelSerializer):
 
 class InitialBalanceDetailSerializer(serializers.ModelSerializer):
     all_initial_balance_lines = None
-
+    # tab data
     tab_money_data = serializers.SerializerMethodField()
     tab_goods_data = serializers.SerializerMethodField()
     tab_customer_receivable_data = serializers.SerializerMethodField()
@@ -169,3 +172,125 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
             # common fields
             **self.parse_common_fields(item)
         } for item in self.filter_lines_by_type(obj, 7)]
+
+
+class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100)
+    # tab data
+    tab_money_data = serializers.JSONField(default=list)
+    tab_goods_data = serializers.JSONField(default=list)
+    tab_customer_receivable_data = serializers.JSONField(default=list)
+    tab_supplier_payable_data = serializers.JSONField(default=list)
+    tab_employee_payable_data = serializers.JSONField(default=list)
+    tab_fixed_assets_data = serializers.JSONField(default=list)
+    tab_expenses_data = serializers.JSONField(default=list)
+    tab_owner_equity_data = serializers.JSONField(default=list)
+
+    class Meta:
+        model = InitialBalance
+        fields = (
+            'title',
+            # tab detail
+            'tab_money_data',
+            'tab_goods_data',
+            'tab_customer_receivable_data',
+            'tab_supplier_payable_data',
+            'tab_employee_payable_data',
+            'tab_fixed_assets_data',
+            'tab_expenses_data',
+            'tab_owner_equity_data',
+        )
+
+    @staticmethod
+    def validate_common_fields(tab_data):
+        for item in tab_data:
+            debit_value = item.get('debit_value', 0)
+            credit_value = item.get('credit_value', 0)
+            account_obj = ChartOfAccounts.objects.filter_on_company(id=item.get('account')).first()
+            currency_mapped_obj = Currency.objects.filter_on_company(id=item.get('currency_mapped')).first()
+            primary_currency_obj = Currency.objects.filter_on_company(is_primary=True).first()
+            if debit_value < 0 or credit_value < 0:
+                raise serializers.ValidationError({'primary_currency': _('Debit/Credit value can not smaller than 0.')})
+            if not account_obj:
+                raise serializers.ValidationError({'account': _('Account is required.')})
+            if not primary_currency_obj:
+                raise serializers.ValidationError({'primary_currency': _('Primary currency does not exist')})
+            if not currency_mapped_obj:
+                currency_mapped_obj = primary_currency_obj
+
+            tab_data['debit_value'] = debit_value
+            tab_data['credit_value'] = credit_value
+
+            tab_data['account'] = account_obj
+            tab_data['account_data'] = {
+                'id': str(account_obj.id),
+                'acc_code': account_obj.acc_code,
+                'acc_name': account_obj.acc_name,
+                'foreign_acc_name': account_obj.foreign_acc_name
+            }
+
+            tab_data['is_fc'] = str(primary_currency_obj.id) != str(currency_mapped_obj.id)
+            tab_data['currency_mapped'] = currency_mapped_obj
+            tab_data['currency_mapped_data'] = {
+                'id': str(currency_mapped_obj.id),
+                'abbreviation': currency_mapped_obj.abbreviation,
+                'title': currency_mapped_obj.title,
+                'rate': currency_mapped_obj.rate
+            }
+        return tab_data
+
+    @classmethod
+    def validate_tab_money_data(cls, tab_data):
+        tab_data = cls.validate_common_fields(tab_data)
+        # validate more
+        # ...
+        return tab_data
+
+    @classmethod
+    def validate_tab_goods_data(cls, tab_data):
+        tab_data = cls.validate_common_fields(tab_data)
+        # validate more
+        # ...
+        return tab_data
+
+    @classmethod
+    def validate_tab_customer_receivable_data(cls, tab_data):
+        tab_data = cls.validate_common_fields(tab_data)
+        # validate more
+        # ...
+        return tab_data
+
+    @classmethod
+    def validate_tab_supplier_payable_data(cls, tab_data):
+        tab_data = cls.validate_common_fields(tab_data)
+        # validate more
+        # ...
+        return tab_data
+
+    @classmethod
+    def validate_tab_employee_payable_data(cls, tab_data):
+        tab_data = cls.validate_common_fields(tab_data)
+        # validate more
+        # ...
+        return tab_data
+
+    @classmethod
+    def validate_tab_fixed_assets_data(cls, tab_data):
+        tab_data = cls.validate_common_fields(tab_data)
+        # validate more
+        # ...
+        return tab_data
+
+    @classmethod
+    def validate_tab_expenses_data(cls, tab_data):
+        tab_data = cls.validate_common_fields(tab_data)
+        # validate more
+        # ...
+        return tab_data
+
+    @classmethod
+    def validate_tab_owner_equity_data(cls, tab_data):
+        tab_data = cls.validate_common_fields(tab_data)
+        # validate more
+        # ...
+        return tab_data

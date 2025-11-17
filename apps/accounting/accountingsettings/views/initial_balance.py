@@ -1,9 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.accounting.accountingsettings.models import InitialBalance
 from apps.accounting.accountingsettings.serializers import (
-    InitialBalanceListSerializer, InitialBalanceDetailSerializer, InitialBalanceCreateSerializer
+    InitialBalanceListSerializer, InitialBalanceDetailSerializer, InitialBalanceCreateSerializer,
+    InitialBalanceUpdateSerializer
 )
-from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, mask_view
+from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, mask_view
 
 
 class InitialBalanceList(BaseListMixin, BaseCreateMixin):
@@ -38,10 +39,12 @@ class InitialBalanceList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class InitialBalanceDetail(BaseRetrieveMixin):
+class InitialBalanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = InitialBalance.objects
     serializer_detail = InitialBalanceDetailSerializer
+    serializer_update = InitialBalanceUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related('ib_line_initial_balance')
@@ -53,3 +56,14 @@ class InitialBalanceDetail(BaseRetrieveMixin):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update Initial Balance",
+        request_body=InitialBalanceUpdateSerializer
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
