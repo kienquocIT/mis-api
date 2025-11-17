@@ -117,13 +117,19 @@ class DimensionDefinitionWithValuesSerializer(serializers.ModelSerializer):
     def get_values(self, obj):
         """Return all DimensionValues under this definition."""
         only_leaf = self.context.get('only_leaf', False)
-        values = DimensionValue.objects.filter(dimension=obj).select_related('parent')
+        allow_posting = self.context.get('allow_posting', None)
+        if allow_posting is None:
+            values = DimensionValue.objects.filter(dimension=obj).select_related('parent')
+        else:
+            values = DimensionValue.objects.filter(
+                dimension=obj,
+                allow_posting=allow_posting
+            ).select_related('parent')
+
         if only_leaf:
             values = values.annotate(
                 children_count=Count('child_values')
-            ).filter(
-                children_count=0
-            )
+            ).filter(children_count=0)
 
         result = []
         for item in values:
