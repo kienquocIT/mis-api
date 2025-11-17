@@ -14,13 +14,16 @@ class ChartOfAccountsList(BaseListMixin, BaseCreateMixin):
     serializer_list = ChartOfAccountsListSerializer
     serializer_create = ChartOfAccountsCreateSerializer
     serializer_detail = ChartOfAccountsDetailSerializer
-    filterset_fields = {'acc_type': ['exact']}
+    filterset_fields = {
+        'acc_type': ['exact'],
+        'is_account': ['exact'],
+    }
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
         return super().get_queryset().filter(
-            acc_status=True, is_account=True
+            acc_status=True
         ).prefetch_related().select_related('currency_mapped')
 
     @swagger_auto_schema(
