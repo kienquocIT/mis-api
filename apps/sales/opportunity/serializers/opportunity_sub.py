@@ -654,6 +654,7 @@ class OpportunityCommonFunction:
             "3a369ba5-82a0-4c4d-a447-3794b67d1d02",  # Consulting Document
             "010404b3-bb91-4b24-9538-075f5f00ef14",  # Lease Order
             "c51857ef-513f-4dbf-babd-26d68950ad6e",  # COF
+            "36f25733-a6e7-43ea-b710-38e2052f0f6d",  # service order
         ]
         for obj in DistributionApplication.objects.select_related('app').filter(
                 employee=employee_obj, app_id__in=app_id_get
