@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.hrm.payrolltemplate.models import AttributeComponent
+from apps.shared.translations.hrm import HRMMsg
 
 
 class PayrollComponentListSerializers(serializers.ModelSerializer):
@@ -51,6 +52,13 @@ class PayrollComponentDetailSerializer(serializers.ModelSerializer):
 
 
 class PayrollComponentUpdateSerializer(serializers.ModelSerializer):
+    component_code = serializers.CharField()
+
+    def validated_component_code(self, attrs):
+        if AttributeComponent.objects.filter(component_code=attrs).exclude(pk=self.instance.component_code).exists():
+            raise serializers.ValidationError({'component_code': HRMMsg.PAYROLL_ATTR_ERROR_CODE})
+        return attrs
+
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
