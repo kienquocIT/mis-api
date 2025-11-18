@@ -4,6 +4,7 @@ from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Tax, UnitOfMeasure, Currency, Product
 from apps.sales.cashoutflow.utils import AdvanceHandler
+from apps.sales.serviceorder.utils.logical_finish import ServiceOrderFinishHandler
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel, BastionFieldAbstractModel
 
 # tab payment
@@ -442,7 +443,7 @@ class ServiceQuotationAttachMapAttachFile(M2MFilesAbstractModel):
     service_quotation = models.ForeignKey(
         ServiceQuotation,
         on_delete=models.CASCADE,
-        verbose_name='Attachment File of Service Order',
+        verbose_name='Attachment File of Service Quotation',
         related_name="service_quotation_attachment_service_quotation",
     )
 
