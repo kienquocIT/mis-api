@@ -209,6 +209,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def validate_common_fields(tab_data):
+        parsed_tab_data = []
         for item in tab_data:
             debit_value = item.get('debit_value', 0)
             credit_value = item.get('credit_value', 0)
@@ -224,26 +225,31 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
             if not currency_mapped_obj:
                 currency_mapped_obj = primary_currency_obj
 
-            tab_data['debit_value'] = debit_value
-            tab_data['credit_value'] = credit_value
-
-            tab_data['account'] = account_obj
-            tab_data['account_data'] = {
-                'id': str(account_obj.id),
-                'acc_code': account_obj.acc_code,
-                'acc_name': account_obj.acc_name,
-                'foreign_acc_name': account_obj.foreign_acc_name
-            }
-
-            tab_data['is_fc'] = str(primary_currency_obj.id) != str(currency_mapped_obj.id)
-            tab_data['currency_mapped'] = currency_mapped_obj
-            tab_data['currency_mapped_data'] = {
-                'id': str(currency_mapped_obj.id),
-                'abbreviation': currency_mapped_obj.abbreviation,
-                'title': currency_mapped_obj.title,
-                'rate': currency_mapped_obj.rate
-            }
-        return tab_data
+            parsed_tab_data.append({
+                # id cho row update
+                'id': item.get('id'),
+                # các fields common
+                'debit_value': debit_value,
+                'credit_value': credit_value,
+                'account_id': str(account_obj.id),
+                'account_data': {
+                    'id': str(account_obj.id),
+                    'acc_code': account_obj.acc_code,
+                    'acc_name': account_obj.acc_name,
+                    'foreign_acc_name': account_obj.foreign_acc_name
+                },
+                'is_fc': str(primary_currency_obj.id) != str(currency_mapped_obj.id),
+                'currency_mapped': str(currency_mapped_obj.id),
+                'currency_mapped_data': {
+                    'id': str(currency_mapped_obj.id),
+                    'abbreviation': currency_mapped_obj.abbreviation,
+                    'title': currency_mapped_obj.title,
+                    'rate': currency_mapped_obj.rate
+                },
+                # các fields theo tab sẽ đặt trong detail_data
+                'detail_data': item.pop('detail_data', {})
+            })
+        return parsed_tab_data
 
     def validate_tab_money_data(self, tab_data):
         tab_data = self.validate_common_fields(tab_data)
@@ -361,40 +367,40 @@ class InitialBalanceCommonFunction:
         for item in tab_data:
             detail_data = item.pop('detail_data', {})
 
-            sub_period_obj = period_mapped_obj.sub_periods_period_mapped.filter(order=1).first()
-            if not sub_period_obj:
-                raise serializers.ValidationError({"this_sub_period": 'This sub period is not found.'})
+            if 'goods_product' not in detail_data:
+                raise serializers.ValidationError({"goods_product": "Missing product information."})
+            if 'goods_warehouse' not in detail_data:
+                raise serializers.ValidationError({"goods_warehouse": "Missing warehouse information."})
 
-            prd_obj = InitialBalanceCommonFunction.get_product_from_detail_data(detail_data, tenant_obj, company_obj)
-            if not prd_obj:
-                raise serializers.ValidationError({'prd_obj': 'Product is not found.'})
+            goods_product = Product.objects.filter(id=detail_data.get('goods_product')).first()
+            if not goods_product:
+                raise serializers.ValidationError({'goods_product': 'Product is not found.'})
 
-            if not prd_obj.inventory_uom:
+            if not goods_product.inventory_uom:
                 raise serializers.ValidationError({'inventory_uom': 'Inventory UOM is not found.'})
 
-            wh_obj = InitialBalanceCommonFunction.get_warehouse_from_detail_data(detail_data, tenant_obj, company_obj)
-            if not wh_obj:
-                raise serializers.ValidationError({'wh_obj': 'Warehouse is not found.'})
+            goods_warehouse = WareHouse.objects.filter(id=detail_data.get('goods_warehouse')).first()
+            if not goods_warehouse:
+                raise serializers.ValidationError({'goods_warehouse': 'Warehouse is not found.'})
 
-            if InitialBalanceLine.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
+            if InitialBalanceLine.objects.filter(product=goods_product, warehouse=goods_warehouse).exists():
                 raise serializers.ValidationError(
-                    {"Existed": f"{prd_obj.title}'s initial balance has been created in {wh_obj.title}."}
+                    {"err": f"{goods_product.title}'s initial balance has been created in {goods_warehouse.title}."}
                 )
 
-            if prd_obj.is_used_in_inventory_activities(warehouse_obj=wh_obj):
+            if goods_product.is_used_in_inventory_activities(warehouse_obj=goods_warehouse):
                 raise serializers.ValidationError(
-                    {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
+                    {"err": f"{goods_product.title}'s transactions are existed in {goods_warehouse.title}."}
                 )
 
-            item['product'] = prd_obj
-            item['uom'] = prd_obj.inventory_uom
-            item['warehouse'] = wh_obj
-            item['period_obj'] = period_mapped_obj
-            item['sub_period_obj'] = sub_period_obj
-            item['quantity'] = float(item.get('quantity', 0))
-            item['value'] = float(item.get('value', 0))
-            item['data_lot'] = item.get('data_lot', [])
-            item['data_sn'] = item.get('data_sn', [])
+            # Đây là các field theo từng tab
+            item['goods_product'] = goods_product
+            item['goods_uom'] = goods_product.inventory_uom
+            item['goods_warehouse'] = goods_warehouse
+            item['goods_quantity'] = float(item.get('goods_quantity', 0))
+            item['goods_value'] = float(item.get('goods_value', 0))
+            item['goods_data_lot'] = item.get('goods_data_lot', [])
+            item['goods_data_sn'] = item.get('goods_data_sn', [])
 
         return tab_data
 
@@ -554,36 +560,3 @@ class InitialBalanceCommonFunction:
     def handle_owner_equity_tab(created_instances, updated_items):
         """Xử lý tab owner equity"""
         pass
-
-    # tab goods common function
-    @staticmethod
-    def get_product_from_detail_data(detail_data, tenant_current, company_current):
-        if 'product_id' not in detail_data and 'product_code' not in detail_data:
-            raise serializers.ValidationError({"error": "Balance data is missing product information."})
-
-        prd_obj = None
-        if 'product_id' in detail_data:
-            prd_obj = Product.objects.filter(
-                tenant=tenant_current, company=company_current, id=detail_data.get('product_id')
-            ).first()
-        if 'product_code' in detail_data:
-            prd_obj = Product.objects.filter(
-                tenant=tenant_current, company=company_current, code=detail_data.get('product_code')
-            ).first()
-        return prd_obj
-
-    @staticmethod
-    def get_warehouse_from_detail_data(detail_data, tenant_current, company_current):
-        if 'warehouse_id' not in detail_data and 'warehouse_code' not in detail_data:
-            raise serializers.ValidationError({"error": "Balance data is missing warehouse information."})
-
-        wh_obj = None
-        if 'warehouse_id' in detail_data:
-            wh_obj = WareHouse.objects.filter(
-                tenant=tenant_current, company=company_current, id=detail_data.get('warehouse_id')
-            ).first()
-        if 'warehouse_code' in detail_data:
-            wh_obj = WareHouse.objects.filter(
-                tenant=tenant_current, company=company_current, code=detail_data.get('warehouse_code')
-            ).first()
-        return wh_obj
