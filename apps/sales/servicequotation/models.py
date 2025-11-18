@@ -4,7 +4,6 @@ from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Tax, UnitOfMeasure, Currency, Product
 from apps.sales.cashoutflow.utils import AdvanceHandler
-from apps.sales.serviceorder.utils.logical_finish import ServiceOrderFinishHandler
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, DataAbstractModel, BastionFieldAbstractModel
 
 # tab payment
