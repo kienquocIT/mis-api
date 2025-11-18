@@ -12,6 +12,7 @@ class AttributeListSerializers(serializers.Serializer):  # noqa
     code = serializers.CharField()
     type = serializers.IntegerField()
     source = serializers.IntegerField()
+    formula_type = serializers.BooleanField(default=False)
     formula = serializers.JSONField(required=False, allow_null=True)
     data_source_component_data = serializers.JSONField(required=False, allow_null=True)
     mandatory = serializers.BooleanField()

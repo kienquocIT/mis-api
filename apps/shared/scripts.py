@@ -6592,7 +6592,7 @@ def make_sure_payroll_config():
 def make_system_payroll_component():
     data_list = [
         {
-            'title': 'Tên NV',
+            'title': 'Họ và Tên',
             'name': 'Employee name',
             'code': 'employee_name',
             'type': 1,
@@ -6610,15 +6610,51 @@ def make_system_payroll_component():
             'type': 1,
         },
         {
-            'title': 'Lương',
+            'title': 'Chức vụ',
+            'name': 'Employee role',
+            'code': 'employee_role',
+            'type': 1,
+        },
+        {
+            'title': 'Lương cơ bản',
             'name': 'Salary',
             'code': 'employee_salary',
+            'type': 0,
+        },
+        {
+            'title': 'Lương đóng bảo hiểm',
+            'name': 'Insurance salary',
+            'code': 'insurance_salary',
             'type': 0,
         },
         {
             'title': 'Thuế TNCN',
             'name': 'Income Tax',
             'code': 'income_tax',
+            'type': 0,
+        },
+        {
+            'title': 'BHXH doanh nghiệp',
+            'name': 'Company social insurance',
+            'code': 'company_social_insurance',
+            'type': 0,
+        },
+        {
+            'title': 'BHYT doanh nghiệp',
+            'name': 'Company health insurance',
+            'code': 'company_health_insurance',
+            'type': 0,
+        },
+        {
+            'title': 'BHTN doanh nghiệp',
+            'name': 'Company unemployment insurance',
+            'code': 'company_unemployment_insurance',
+            'type': 0,
+        },
+        {
+            'title': 'BHCĐ doanh nghiệp',
+            'name': 'Company union insurance',
+            'code': 'company_union_insurance',
             'type': 0,
         },
         {
@@ -6636,11 +6672,11 @@ def make_system_payroll_component():
         {
             'title': 'BHTN',
             'name': 'Unemployment insurance',
-            'code': 'employee_health_insurance',
+            'code': 'employee_unemployment_insurance',
             'type': 0,
         },
         {
-            'title': 'BHCD',
+            'title': 'BHCĐ',
             'name': 'Union insurance',
             'code': 'employee_union_insurance',
             'type': 0,
@@ -6667,6 +6703,12 @@ def make_system_payroll_component():
             'title': 'Hệ số',
             'name': 'salary coefficient',
             'code': 'employee_salary_coefficient',
+            'type': 0,
+        },
+        {
+            'title': 'Bậc lương',
+            'name': 'Salary level',
+            'code': 'salary_level',
             'type': 0,
         },
         {
@@ -6697,6 +6739,12 @@ def make_system_payroll_component():
             'title': 'Số ngày công thực tế',
             'name': 'Actual work',
             'code': 'actual_work',
+            'type': 0,
+        },
+        {
+            'title': 'Tạm ứng',
+            'name': 'Advance',
+            'code': 'advance_salary',
             'type': 0,
         },
     ]
