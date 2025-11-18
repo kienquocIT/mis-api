@@ -176,6 +176,9 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
 
 
 class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
+    """
+    Hoàn thiện các hàm sau validate_tab_<...>_data() ---> validate_more_tab_<...>_data() ---> handle_<...>_tab()
+    """
     title = serializers.CharField(max_length=100)
     # tab data
     tab_money_data = serializers.JSONField(default=list)
@@ -243,7 +246,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
     def validate_tab_money_data(self, tab_data):
         tab_data = self.validate_common_fields(tab_data)
         # validate more
-        tab_data = InitialBalanceCommonFunction.validate_more_tab_money(
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_money_data(
             tab_data, self.instance.period_mapped, self.context
         )
         return tab_data
@@ -251,7 +254,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
     def validate_tab_goods_data(self, tab_data):
         tab_data = self.validate_common_fields(tab_data)
         # validate more
-        tab_data = InitialBalanceCommonFunction.validate_more_tab_goods(
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_goods_data(
             tab_data, self.instance.period_mapped, self.context
         )
         return tab_data
@@ -259,7 +262,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
     def validate_tab_customer_receivable_data(self, tab_data):
         tab_data = self.validate_common_fields(tab_data)
         # validate more
-        tab_data = InitialBalanceCommonFunction.validate_more_tab_customer_receivable(
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_customer_receivable_data(
             tab_data, self.instance.period_mapped, self.context
         )
         return tab_data
@@ -267,7 +270,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
     def validate_tab_supplier_payable_data(self, tab_data):
         tab_data = self.validate_common_fields(tab_data)
         # validate more
-        tab_data = InitialBalanceCommonFunction.validate_more_tab_supplier_payable(
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_supplier_payable_data(
             tab_data, self.instance.period_mapped, self.context
         )
         return tab_data
@@ -275,7 +278,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
     def validate_tab_employee_payable_data(self, tab_data):
         tab_data = self.validate_common_fields(tab_data)
         # validate more
-        tab_data = InitialBalanceCommonFunction.validate_more_tab_employee_payable(
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_employee_payable_data(
             tab_data, self.instance.period_mapped, self.context
         )
         return tab_data
@@ -283,7 +286,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
     def validate_tab_fixed_assets_data(self, tab_data):
         tab_data = self.validate_common_fields(tab_data)
         # validate more
-        tab_data = InitialBalanceCommonFunction.validate_more_tab_fixed_assets(
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_fixed_assets_data(
             tab_data, self.instance.period_mapped, self.context
         )
         return tab_data
@@ -291,7 +294,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
     def validate_tab_expenses_data(self, tab_data):
         tab_data = self.validate_common_fields(tab_data)
         # validate more
-        tab_data = InitialBalanceCommonFunction.validate_more_tab_expenses(
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_expenses_data(
             tab_data, self.instance.period_mapped, self.context
         )
         return tab_data
@@ -299,7 +302,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
     def validate_tab_owner_equity_data(self, tab_data):
         tab_data = self.validate_common_fields(tab_data)
         # validate more
-        tab_data = InitialBalanceCommonFunction.validate_more_tab_owner_equity(
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_owner_equity_data(
             tab_data, self.instance.period_mapped, self.context
         )
         return tab_data
@@ -335,7 +338,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
 class InitialBalanceCommonFunction:
     # validate more
     @staticmethod
-    def validate_more_tab_money(tab_data, period_mapped_obj, context):
+    def validate_more_tab_money_data(tab_data, period_mapped_obj, context):
         tenant_obj = context.get('tenant_current')
         company_obj = context.get('company_current')
         if not tenant_obj or not company_obj or not period_mapped_obj:
@@ -347,7 +350,7 @@ class InitialBalanceCommonFunction:
         return tab_data
 
     @staticmethod
-    def validate_more_tab_goods(tab_data, period_mapped_obj, context):
+    def validate_more_tab_goods_data(tab_data, period_mapped_obj, context):
         tenant_obj = context.get('tenant_current')
         company_obj = context.get('company_current')
         if not tenant_obj or not company_obj or not period_mapped_obj:
@@ -394,7 +397,7 @@ class InitialBalanceCommonFunction:
         return tab_data
 
     @staticmethod
-    def validate_more_tab_customer_receivable(tab_data, period_mapped_obj, context):
+    def validate_more_tab_customer_receivable_data(tab_data, period_mapped_obj, context):
         tenant_obj = context.get('tenant_current')
         company_obj = context.get('company_current')
         if not tenant_obj or not company_obj or not period_mapped_obj:
@@ -406,7 +409,7 @@ class InitialBalanceCommonFunction:
         return tab_data
 
     @staticmethod
-    def validate_more_tab_supplier_payable(tab_data, period_mapped_obj, context):
+    def validate_more_tab_supplier_payable_data(tab_data, period_mapped_obj, context):
         tenant_obj = context.get('tenant_current')
         company_obj = context.get('company_current')
         if not tenant_obj or not company_obj or not period_mapped_obj:
@@ -418,7 +421,7 @@ class InitialBalanceCommonFunction:
         return tab_data
 
     @staticmethod
-    def validate_more_tab_employee_payable(tab_data, period_mapped_obj, context):
+    def validate_more_tab_employee_payable_data(tab_data, period_mapped_obj, context):
         tenant_obj = context.get('tenant_current')
         company_obj = context.get('company_current')
         if not tenant_obj or not company_obj or not period_mapped_obj:
@@ -430,7 +433,7 @@ class InitialBalanceCommonFunction:
         return tab_data
 
     @staticmethod
-    def validate_more_tab_fixed_assets(tab_data, period_mapped_obj, context):
+    def validate_more_tab_fixed_assets_data(tab_data, period_mapped_obj, context):
         tenant_obj = context.get('tenant_current')
         company_obj = context.get('company_current')
         if not tenant_obj or not company_obj or not period_mapped_obj:
@@ -442,7 +445,7 @@ class InitialBalanceCommonFunction:
         return tab_data
 
     @staticmethod
-    def validate_more_tab_expenses(tab_data, period_mapped_obj, context):
+    def validate_more_tab_expenses_data(tab_data, period_mapped_obj, context):
         tenant_obj = context.get('tenant_current')
         company_obj = context.get('company_current')
         if not tenant_obj or not company_obj or not period_mapped_obj:
@@ -454,7 +457,7 @@ class InitialBalanceCommonFunction:
         return tab_data
 
     @staticmethod
-    def validate_more_tab_owner_equity(tab_data, period_mapped_obj, context):
+    def validate_more_tab_owner_equity_data(tab_data, period_mapped_obj, context):
         tenant_obj = context.get('tenant_current')
         company_obj = context.get('company_current')
         if not tenant_obj or not company_obj or not period_mapped_obj:
