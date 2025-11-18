@@ -240,65 +240,68 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
             }
         return tab_data
 
-    @classmethod
-    def validate_tab_money_data(cls, tab_data):
-        tab_data = cls.validate_common_fields(tab_data)
+    def validate_tab_money_data(self, tab_data):
+        tab_data = self.validate_common_fields(tab_data)
         # validate more
-        # ...
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_money(
+            tab_data, self.instance.period_mapped, self.context
+        )
         return tab_data
 
     def validate_tab_goods_data(self, tab_data):
         tab_data = self.validate_common_fields(tab_data)
         # validate more
-        tenant_current = self.context.get('tenant_current')
-        company_current = self.context.get('company_current')
-        if not tenant_current or not company_current:
-            raise serializers.ValidationError({"error": "Tenant or Company is missing."})
-        tab_data = InitialBalanceCommonFunction.validate_tab_goods_detail_data(
-            tab_data, tenant_current, company_current, self.instance.period_mapped
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_goods(
+            tab_data, self.instance.period_mapped, self.context
         )
         return tab_data
 
-    @classmethod
-    def validate_tab_customer_receivable_data(cls, tab_data):
-        tab_data = cls.validate_common_fields(tab_data)
+    def validate_tab_customer_receivable_data(self, tab_data):
+        tab_data = self.validate_common_fields(tab_data)
         # validate more
-        # ...
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_customer_receivable(
+            tab_data, self.instance.period_mapped, self.context
+        )
         return tab_data
 
-    @classmethod
-    def validate_tab_supplier_payable_data(cls, tab_data):
-        tab_data = cls.validate_common_fields(tab_data)
+    def validate_tab_supplier_payable_data(self, tab_data):
+        tab_data = self.validate_common_fields(tab_data)
         # validate more
-        # ...
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_supplier_payable(
+            tab_data, self.instance.period_mapped, self.context
+        )
         return tab_data
 
-    @classmethod
-    def validate_tab_employee_payable_data(cls, tab_data):
-        tab_data = cls.validate_common_fields(tab_data)
+    def validate_tab_employee_payable_data(self, tab_data):
+        tab_data = self.validate_common_fields(tab_data)
         # validate more
-        # ...
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_employee_payable(
+            tab_data, self.instance.period_mapped, self.context
+        )
         return tab_data
 
-    @classmethod
-    def validate_tab_fixed_assets_data(cls, tab_data):
-        tab_data = cls.validate_common_fields(tab_data)
+    def validate_tab_fixed_assets_data(self, tab_data):
+        tab_data = self.validate_common_fields(tab_data)
         # validate more
-        # ...
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_fixed_assets(
+            tab_data, self.instance.period_mapped, self.context
+        )
         return tab_data
 
-    @classmethod
-    def validate_tab_expenses_data(cls, tab_data):
-        tab_data = cls.validate_common_fields(tab_data)
+    def validate_tab_expenses_data(self, tab_data):
+        tab_data = self.validate_common_fields(tab_data)
         # validate more
-        # ...
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_expenses(
+            tab_data, self.instance.period_mapped, self.context
+        )
         return tab_data
 
-    @classmethod
-    def validate_tab_owner_equity_data(cls, tab_data):
-        tab_data = cls.validate_common_fields(tab_data)
+    def validate_tab_owner_equity_data(self, tab_data):
+        tab_data = self.validate_common_fields(tab_data)
         # validate more
-        # ...
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_owner_equity(
+            tab_data, self.instance.period_mapped, self.context
+        )
         return tab_data
 
     def validate(self, validate_data):
@@ -330,6 +333,138 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
 
 
 class InitialBalanceCommonFunction:
+    # validate more
+    @staticmethod
+    def validate_more_tab_money(tab_data, period_mapped_obj, context):
+        tenant_obj = context.get('tenant_current')
+        company_obj = context.get('company_current')
+        if not tenant_obj or not company_obj or not period_mapped_obj:
+            raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
+
+        for item in tab_data:
+            detail_data = item.pop('detail_data', {})
+            # logic here
+        return tab_data
+
+    @staticmethod
+    def validate_more_tab_goods(tab_data, period_mapped_obj, context):
+        tenant_obj = context.get('tenant_current')
+        company_obj = context.get('company_current')
+        if not tenant_obj or not company_obj or not period_mapped_obj:
+            raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
+
+        for item in tab_data:
+            detail_data = item.pop('detail_data', {})
+
+            sub_period_obj = period_mapped_obj.sub_periods_period_mapped.filter(order=1).first()
+            if not sub_period_obj:
+                raise serializers.ValidationError({"this_sub_period": 'This sub period is not found.'})
+
+            prd_obj = InitialBalanceCommonFunction.get_product_from_detail_data(detail_data, tenant_obj, company_obj)
+            if not prd_obj:
+                raise serializers.ValidationError({'prd_obj': 'Product is not found.'})
+
+            if not prd_obj.inventory_uom:
+                raise serializers.ValidationError({'inventory_uom': 'Inventory UOM is not found.'})
+
+            wh_obj = InitialBalanceCommonFunction.get_warehouse_from_detail_data(detail_data, tenant_obj, company_obj)
+            if not wh_obj:
+                raise serializers.ValidationError({'wh_obj': 'Warehouse is not found.'})
+
+            if InitialBalanceLine.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
+                raise serializers.ValidationError(
+                    {"Existed": f"{prd_obj.title}'s initial balance has been created in {wh_obj.title}."}
+                )
+
+            if prd_obj.is_used_in_inventory_activities(warehouse_obj=wh_obj):
+                raise serializers.ValidationError(
+                    {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
+                )
+
+            item['product'] = prd_obj
+            item['uom'] = prd_obj.inventory_uom
+            item['warehouse'] = wh_obj
+            item['period_obj'] = period_mapped_obj
+            item['sub_period_obj'] = sub_period_obj
+            item['quantity'] = float(item.get('quantity', 0))
+            item['value'] = float(item.get('value', 0))
+            item['data_lot'] = item.get('data_lot', [])
+            item['data_sn'] = item.get('data_sn', [])
+
+        return tab_data
+
+    @staticmethod
+    def validate_more_tab_customer_receivable(tab_data, period_mapped_obj, context):
+        tenant_obj = context.get('tenant_current')
+        company_obj = context.get('company_current')
+        if not tenant_obj or not company_obj or not period_mapped_obj:
+            raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
+
+        for item in tab_data:
+            detail_data = item.pop('detail_data', {})
+            # logic here
+        return tab_data
+
+    @staticmethod
+    def validate_more_tab_supplier_payable(tab_data, period_mapped_obj, context):
+        tenant_obj = context.get('tenant_current')
+        company_obj = context.get('company_current')
+        if not tenant_obj or not company_obj or not period_mapped_obj:
+            raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
+
+        for item in tab_data:
+            detail_data = item.pop('detail_data', {})
+            # logic here
+        return tab_data
+
+    @staticmethod
+    def validate_more_tab_employee_payable(tab_data, period_mapped_obj, context):
+        tenant_obj = context.get('tenant_current')
+        company_obj = context.get('company_current')
+        if not tenant_obj or not company_obj or not period_mapped_obj:
+            raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
+
+        for item in tab_data:
+            detail_data = item.pop('detail_data', {})
+            # logic here
+        return tab_data
+
+    @staticmethod
+    def validate_more_tab_fixed_assets(tab_data, period_mapped_obj, context):
+        tenant_obj = context.get('tenant_current')
+        company_obj = context.get('company_current')
+        if not tenant_obj or not company_obj or not period_mapped_obj:
+            raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
+
+        for item in tab_data:
+            detail_data = item.pop('detail_data', {})
+            # logic here
+        return tab_data
+
+    @staticmethod
+    def validate_more_tab_expenses(tab_data, period_mapped_obj, context):
+        tenant_obj = context.get('tenant_current')
+        company_obj = context.get('company_current')
+        if not tenant_obj or not company_obj or not period_mapped_obj:
+            raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
+
+        for item in tab_data:
+            detail_data = item.pop('detail_data', {})
+            # logic here
+        return tab_data
+
+    @staticmethod
+    def validate_more_tab_owner_equity(tab_data, period_mapped_obj, context):
+        tenant_obj = context.get('tenant_current')
+        company_obj = context.get('company_current')
+        if not tenant_obj or not company_obj or not period_mapped_obj:
+            raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
+
+        for item in tab_data:
+            detail_data = item.pop('detail_data', {})
+            # logic here
+        return tab_data
+
     # for update
     @classmethod
     def common_update_tab(cls, tab_name, tab_data):
@@ -442,50 +577,8 @@ class InitialBalanceCommonFunction:
             wh_obj = WareHouse.objects.filter(
                 tenant=tenant_current, company=company_current, id=detail_data.get('warehouse_id')
             ).first()
-        if 'product_code' in detail_data:
+        if 'warehouse_code' in detail_data:
             wh_obj = WareHouse.objects.filter(
                 tenant=tenant_current, company=company_current, code=detail_data.get('warehouse_code')
             ).first()
         return wh_obj
-    
-    @staticmethod
-    def validate_tab_goods_detail_data(tab_data, tenant_obj, company_obj, period_mapped_obj):
-        for item in tab_data:
-            detail_data = item.pop('detail_data', {})
-
-            sub_period_obj = period_mapped_obj.sub_periods_period_mapped.filter(order=1).first()
-            if not sub_period_obj:
-                raise serializers.ValidationError({"this_sub_period": 'This sub period is not found.'})
-
-            prd_obj = InitialBalanceCommonFunction.get_product_from_detail_data(detail_data, tenant_obj, company_obj)
-            if not prd_obj:
-                raise serializers.ValidationError({'prd_obj': 'Product is not found.'})
-
-            if not prd_obj.inventory_uom:
-                raise serializers.ValidationError({'inventory_uom': 'Inventory UOM is not found.'})
-
-            wh_obj = InitialBalanceCommonFunction.get_warehouse_from_detail_data(detail_data, tenant_obj, company_obj)
-            if not wh_obj:
-                raise serializers.ValidationError({'wh_obj': 'Warehouse is not found.'})
-
-            if InitialBalanceLine.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
-                raise serializers.ValidationError(
-                    {"Existed": f"{prd_obj.title}'s initial balance has been created in {wh_obj.title}."}
-                )
-
-            if prd_obj.is_used_in_inventory_activities(warehouse_obj=wh_obj):
-                raise serializers.ValidationError(
-                    {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
-                )
-
-            item['product'] = prd_obj
-            item['uom'] = prd_obj.inventory_uom
-            item['warehouse'] = wh_obj
-            item['period_obj'] = period_mapped_obj
-            item['sub_period_obj'] = sub_period_obj
-            item['quantity'] = float(item.get('quantity', 0))
-            item['value'] = float(item.get('value', 0))
-            item['data_lot'] = item.get('data_lot', [])
-            item['data_sn'] = item.get('data_sn', [])
-
-        return tab_data

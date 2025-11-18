@@ -66,6 +66,8 @@ class InitialBalanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
         allow_admin_tenant=True, allow_admin_company=True,
     )
     def put(self, request, *args, pk, **kwargs):
+        # Phải truyền tenant và company từ Views vì để đảm bảo ai là người tạo từng line để tạo JE line,
+        # nếu lấy từ instance thì sẽ bị SAI
         self.ser_context['employee_current'] = self.request.user.employee_current
         self.ser_context['company_current'] = self.request.user.company_current
         self.ser_context['tenant_current'] = self.request.user.tenant_current
