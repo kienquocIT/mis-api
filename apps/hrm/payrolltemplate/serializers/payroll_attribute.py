@@ -55,7 +55,7 @@ class PayrollComponentUpdateSerializer(serializers.ModelSerializer):
     component_code = serializers.CharField()
 
     def validated_component_code(self, attrs):
-        if AttributeComponent.objects.filter(component_code=attrs).exclude(pk=self.instance.component_code).exists():
+        if AttributeComponent.objects.filter(component_code=attrs).exclude(pk=self.instance.id).exists():
             raise serializers.ValidationError({'component_code': HRMMsg.PAYROLL_ATTR_ERROR_CODE})
         return attrs
 
