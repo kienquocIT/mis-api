@@ -173,7 +173,8 @@ class AssetToolsDelivery(DataAbstractModel):
             else:
                 kwargs.update({'update_fields': ['code']})
             if 'date_approved' in kwargs['update_fields']:
-                CompanyFunctionNumber.auto_gen_code_based_on_config('assettoolsdelivery', True, self, kwargs)
+                CompanyFunctionNumber.auto_gen_code_based_on_config(
+                    'assettoolsdelivery', self, True, kwargs)
         super().save(*args, **kwargs)
 
     class Meta:
