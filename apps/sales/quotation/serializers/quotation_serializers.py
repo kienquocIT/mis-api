@@ -5,12 +5,11 @@ from apps.core.company.utils import CompanyHandler
 from apps.core.process.utils import ProcessRuntimeControl
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Product
-from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAttachment
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
     QuotationProductSerializer, QuotationLogisticSerializer, QuotationCostSerializer, \
     QuotationExpenseSerializer, QuotationIndicatorSerializer, QuotationRuleValidate
-from apps.shared import SaleMsg, BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
+from apps.shared import BaseMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel, SerializerCommonValidate, SerializerCommonHandle, \
     AbstractCurrencyCreateSerializerModel, AbstractCurrencyDetailSerializerModel
 
@@ -461,21 +460,21 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
     def validate_next_node_collab_id(cls, value):
         return QuotationCommonValidate().validate_next_node_collab_id(value=value)
 
-    @classmethod
-    def validate_opportunity_rules(cls, validate_data):
-        if 'opportunity_id' in validate_data:
-            if validate_data['opportunity_id'] is not None:
-                opportunity = Opportunity.objects.filter_on_company(id=validate_data['opportunity_id']).first()
-                if opportunity:
-                    if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-                    if opportunity.sale_order_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
-                    is_change = validate_data.get('is_change', False)
-                    if is_change is False:
-                        if opportunity.quotation_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
-                            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_QUOTATION_NOT_DONE})
-        return True
+    # @classmethod
+    # def validate_opportunity_rules(cls, validate_data):
+    #     if 'opportunity_id' in validate_data:
+    #         if validate_data['opportunity_id'] is not None:
+    #             opportunity = Opportunity.objects.filter_on_company(id=validate_data['opportunity_id']).first()
+    #             if opportunity:
+    #                 if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
+    #                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+    #                 if opportunity.sale_order_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
+    #                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
+    #                 is_change = validate_data.get('is_change', False)
+    #                 if is_change is False:
+    #                     if opportunity.quotation_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
+    #                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_QUOTATION_NOT_DONE})
+    #     return True
 
     def validate_attachment(self, value):
         user = self.context.get('user', None)
@@ -489,7 +488,8 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
             process_cls = ProcessRuntimeControl(process_obj=process_obj)
             process_cls.validate_process(process_stage_app_obj=process_stage_app_obj, opp_id=opportunity_id)
         QuotationRuleValidate().validate_config_role(validate_data=validate_data)
-        self.validate_opportunity_rules(validate_data=validate_data)
+        # self.validate_opportunity_rules(validate_data=validate_data)
+        QuotationRuleValidate().validate_opportunity_rules(validate_data=validate_data)
         QuotationRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
         return validate_data
 
@@ -642,18 +642,18 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
     def validate_customer_billing(cls, value):
         return QuotationCommonValidate().validate_customer_billing(value=value)
 
-    def validate_opportunity_rules(self, validate_data):
-        if 'opportunity_id' in validate_data:
-            if validate_data['opportunity_id'] is not None:
-                opportunity = Opportunity.objects.filter_on_company(id=validate_data['opportunity_id']).first()
-                if opportunity:
-                    if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-                    if opportunity.quotation_opportunity.filter(
-                            system_status__in=[0, 1, 2, 3]
-                    ).exclude(id=self.instance.id).exists():
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
-        return True
+    # def validate_opportunity_rules(self, validate_data):
+    #     if 'opportunity_id' in validate_data:
+    #         if validate_data['opportunity_id'] is not None:
+    #             opportunity = Opportunity.objects.filter_on_company(id=validate_data['opportunity_id']).first()
+    #             if opportunity:
+    #                 if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
+    #                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+    #                 if opportunity.quotation_opportunity.filter(
+    #                         system_status__in=[0, 1, 2, 3]
+    #                 ).exclude(id=self.instance.id).exists():
+    #                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
+    #     return True
 
     def validate_system_status(self, attrs):
         if attrs in [0, 1]:  # draft or created
@@ -671,7 +671,8 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
 
     def validate(self, validate_data):
         QuotationRuleValidate().validate_config_role(validate_data=validate_data)
-        self.validate_opportunity_rules(validate_data=validate_data)
+        # self.validate_opportunity_rules(validate_data=validate_data)
+        QuotationRuleValidate().validate_opportunity_rules(validate_data=validate_data)
         QuotationRuleValidate().validate_then_set_indicators_value(validate_data=validate_data)
         return validate_data
 
