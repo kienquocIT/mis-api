@@ -25,6 +25,7 @@ class InitialBalanceListSerializer(serializers.ModelSerializer):
 
 
 class InitialBalanceCreateSerializer(serializers.ModelSerializer):
+    period_mapped = serializers.UUIDField()
 
     class Meta:
         model = InitialBalance
