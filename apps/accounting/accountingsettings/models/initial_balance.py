@@ -24,6 +24,7 @@ INITIAL_BALANCE_TYPE = [
 
 
 class InitialBalance(DataAbstractModel):
+    description = models.TextField(blank=True, null=True)
     period_mapped = models.ForeignKey(
         'saledata.Periods', on_delete=models.CASCADE, related_name='ib_period_mapped'
     )

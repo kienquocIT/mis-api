@@ -78,6 +78,7 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
+            'description',
             'period_mapped_data',
             # tab detail
             'tab_money_data',
@@ -194,6 +195,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
         model = InitialBalance
         fields = (
             'title',
+            'description',
             # tab detail
             'tab_money_data',
             'tab_goods_data',
