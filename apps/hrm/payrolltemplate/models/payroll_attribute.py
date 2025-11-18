@@ -29,7 +29,6 @@ class PayrollAttribute(MasterDataAbstractModel):
     column_code = models.CharField(
         max_length=250,
         verbose_name="Column code",
-        unique=True
     )
     data_type = models.IntegerField(
         verbose_name="Data type",
@@ -87,7 +86,6 @@ class AttributeComponent(SimpleAbstractModel):
     component_code = models.CharField(
         max_length=250,
         verbose_name="Component code",
-        unique=True
     )
     component_type = models.IntegerField(
         verbose_name="Component type"
