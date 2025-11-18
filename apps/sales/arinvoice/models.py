@@ -132,7 +132,7 @@ class ARInvoiceItems(SimpleAbstractModel):
     product_data = models.JSONField(default=dict)
     product_uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.SET_NULL, null=True)
     product_uom_data = models.JSONField(default=dict)
-    product_quantity = models.FloatField(default=0)
+    product_quantity = models.FloatField(default=1)
     product_unit_price = models.FloatField(default=0)
 
     ar_product_des = models.TextField(null=True, blank=True)

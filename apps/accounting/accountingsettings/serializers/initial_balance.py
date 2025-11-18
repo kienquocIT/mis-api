@@ -450,41 +450,42 @@ class InitialBalanceCommonFunction:
     
     @staticmethod
     def validate_tab_goods_detail_data(tab_data, tenant_obj, company_obj, period_mapped_obj):
-        detail_data = tab_data.pop('detail_data', {})
+        for item in tab_data:
+            detail_data = item.pop('detail_data', {})
 
-        sub_period_obj = period_mapped_obj.sub_periods_period_mapped.filter(order=1).first()
-        if not sub_period_obj:
-            raise serializers.ValidationError({"this_sub_period": 'This sub period is not found.'})
+            sub_period_obj = period_mapped_obj.sub_periods_period_mapped.filter(order=1).first()
+            if not sub_period_obj:
+                raise serializers.ValidationError({"this_sub_period": 'This sub period is not found.'})
 
-        prd_obj = InitialBalanceCommonFunction.get_product_from_detail_data(detail_data, tenant_obj, company_obj)
-        if not prd_obj:
-            raise serializers.ValidationError({'prd_obj': 'Product is not found.'})
+            prd_obj = InitialBalanceCommonFunction.get_product_from_detail_data(detail_data, tenant_obj, company_obj)
+            if not prd_obj:
+                raise serializers.ValidationError({'prd_obj': 'Product is not found.'})
 
-        if not prd_obj.inventory_uom:
-            raise serializers.ValidationError({'inventory_uom': 'Inventory UOM is not found.'})
+            if not prd_obj.inventory_uom:
+                raise serializers.ValidationError({'inventory_uom': 'Inventory UOM is not found.'})
 
-        wh_obj = InitialBalanceCommonFunction.get_warehouse_from_detail_data(detail_data, tenant_obj, company_obj)
-        if not wh_obj:
-            raise serializers.ValidationError({'wh_obj': 'Warehouse is not found.'})
+            wh_obj = InitialBalanceCommonFunction.get_warehouse_from_detail_data(detail_data, tenant_obj, company_obj)
+            if not wh_obj:
+                raise serializers.ValidationError({'wh_obj': 'Warehouse is not found.'})
 
-        if InitialBalanceLine.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
-            raise serializers.ValidationError(
-                {"Existed": f"{prd_obj.title}'s initial balance has been created in {wh_obj.title}."}
-            )
+            if InitialBalanceLine.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
+                raise serializers.ValidationError(
+                    {"Existed": f"{prd_obj.title}'s initial balance has been created in {wh_obj.title}."}
+                )
 
-        if prd_obj.is_used_in_inventory_activities(warehouse_obj=wh_obj):
-            raise serializers.ValidationError(
-                {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
-            )
+            if prd_obj.is_used_in_inventory_activities(warehouse_obj=wh_obj):
+                raise serializers.ValidationError(
+                    {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
+                )
 
-        tab_data['product'] = prd_obj
-        tab_data['uom'] = prd_obj.inventory_uom
-        tab_data['warehouse'] = wh_obj
-        tab_data['period_obj'] = period_mapped_obj
-        tab_data['sub_period_obj'] = sub_period_obj
-        tab_data['quantity'] = float(detail_data.get('quantity', 0))
-        tab_data['value'] = float(detail_data.get('value', 0))
-        tab_data['data_lot'] = detail_data.get('data_lot', [])
-        tab_data['data_sn'] = detail_data.get('data_sn', [])
+            item['product'] = prd_obj
+            item['uom'] = prd_obj.inventory_uom
+            item['warehouse'] = wh_obj
+            item['period_obj'] = period_mapped_obj
+            item['sub_period_obj'] = sub_period_obj
+            item['quantity'] = float(item.get('quantity', 0))
+            item['value'] = float(item.get('value', 0))
+            item['data_lot'] = item.get('data_lot', [])
+            item['data_sn'] = item.get('data_sn', [])
 
         return tab_data
