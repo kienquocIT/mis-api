@@ -177,7 +177,7 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
 
 class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
     """
-    Hoàn thiện các hàm sau validate_tab_<...>_data() ---> validate_more_tab_<...>_data() ---> handle_<...>_tab()
+    Hoàn thiện các hàm sau validate_more_tab_<...>_data() ---> handle_<...>_tab()
     """
     title = serializers.CharField(max_length=100)
     # tab data
