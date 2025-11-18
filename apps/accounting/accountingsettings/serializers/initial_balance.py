@@ -1,9 +1,10 @@
+from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from apps.accounting.accountingsettings.models import ChartOfAccounts
 from apps.masterdata.saledata.models import (
-    Periods, Currency
+    Periods, Currency, Product, WareHouse
 )
 from apps.accounting.accountingsettings.models.initial_balance import (
     InitialBalance, InitialBalanceLine
@@ -246,11 +247,16 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
         # ...
         return tab_data
 
-    @classmethod
-    def validate_tab_goods_data(cls, tab_data):
-        tab_data = cls.validate_common_fields(tab_data)
+    def validate_tab_goods_data(self, tab_data):
+        tab_data = self.validate_common_fields(tab_data)
         # validate more
-        # ...
+        tenant_current = self.context.get('tenant_current')
+        company_current = self.context.get('company_current')
+        if not tenant_current or not company_current:
+            raise serializers.ValidationError({"error": "Tenant or Company is missing."})
+        tab_data = InitialBalanceCommonFunction.validate_tab_goods_detail_data(
+            tab_data, tenant_current, company_current, self.instance.period_mapped
+        )
         return tab_data
 
     @classmethod
@@ -293,4 +299,192 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
         tab_data = cls.validate_common_fields(tab_data)
         # validate more
         # ...
+        return tab_data
+
+    def validate(self, validate_data):
+        return validate_data
+
+    def update(self, instance, validated_data):
+        # pop tab_data ra
+        tabs_data = {
+            'tab_money_data': validated_data.pop('tab_money_data'),
+            'tab_goods_data': validated_data.pop('tab_goods_data'),
+            'tab_customer_receivable_data': validated_data.pop('tab_customer_receivable_data'),
+            'tab_supplier_payable_data': validated_data.pop('tab_supplier_payable_data'),
+            'tab_employee_payable_data': validated_data.pop('tab_employee_payable_data'),
+            'tab_fixed_assets_data': validated_data.pop('tab_fixed_assets_data'),
+            'tab_expenses_data': validated_data.pop('tab_expenses_data'),
+            'tab_owner_equity_data': validated_data.pop('tab_owner_equity_data'),
+        }
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        # update tab data
+        for tab_name, tab_data in tabs_data.items():
+            if len(tab_data) > 0:  # Chỉ update nếu có data
+                InitialBalanceCommonFunction.common_update_tab(tab_name, tab_data)
+
+        return instance
+
+
+class InitialBalanceCommonFunction:
+    # for update
+    @classmethod
+    def common_update_tab(cls, tab_name, tab_data):
+        to_create = []
+        to_update = []
+        for item in tab_data:
+            item_id = item.pop('id', None)
+            if item_id:
+                to_update.append((item_id, item))
+            else:
+                to_create.append(InitialBalanceLine(**item))
+
+        with transaction.atomic():
+            created_instances = []
+            if to_create:
+                created_instances = InitialBalanceLine.objects.bulk_create(to_create)
+            for item_id, data in to_update:
+                InitialBalanceLine.objects.filter(id=item_id).update(**data)
+        print(f"Updated tab '{tab_name}': created {len(created_instances)}, updated {len(to_update)}")
+
+        # Gọi hàm xử lý sau khi update tab
+        cls.common_after_update_tab(tab_name, created_instances, to_update)
+        return True
+
+    @classmethod
+    def common_after_update_tab(cls, tab_name, created_instances=None, updated_items=None):
+        """Xử lý sau khi update tab"""
+        handlers = {
+            'tab_money_data': cls.handle_money_tab,
+            'tab_goods_data': cls.handle_goods_tab,
+            'tab_customer_receivable_data': cls.handle_customer_receivable_tab,
+            'tab_supplier_payable_data': cls.handle_supplier_payable_tab,
+            'tab_employee_payable_data': cls.handle_employee_payable_tab,
+            'tab_fixed_assets_data': cls.handle_fixed_assets_tab,
+            'tab_expenses_data': cls.handle_expenses_tab,
+            'tab_owner_equity_data': cls.handle_owner_equity_tab,
+        }
+        handler = handlers.get(tab_name)
+        if handler:
+            handler(created_instances, updated_items)
+            return True
+        print(f'Invalid tab name: {tab_name}')
+        return False
+
+    # Handler methods
+    @staticmethod
+    def handle_money_tab(created_instances, updated_items):
+        """Xử lý tab money"""
+        pass
+
+    @staticmethod
+    def handle_goods_tab(created_instances, updated_items):
+        """Xử lý tab goods"""
+        pass
+
+    @staticmethod
+    def handle_customer_receivable_tab(created_instances, updated_items):
+        """Xử lý tab customer receivable"""
+        pass
+
+    @staticmethod
+    def handle_supplier_payable_tab(created_instances, updated_items):
+        """Xử lý tab supplier payable"""
+        pass
+
+    @staticmethod
+    def handle_employee_payable_tab(created_instances, updated_items):
+        """Xử lý tab employee payable"""
+        pass
+
+    @staticmethod
+    def handle_fixed_assets_tab(created_instances, updated_items):
+        """Xử lý tab fixed assets"""
+        pass
+
+    @staticmethod
+    def handle_expenses_tab(created_instances, updated_items):
+        """Xử lý tab expenses"""
+        pass
+
+    @staticmethod
+    def handle_owner_equity_tab(created_instances, updated_items):
+        """Xử lý tab owner equity"""
+        pass
+
+    # tab goods common function
+    @staticmethod
+    def get_product_from_detail_data(detail_data, tenant_current, company_current):
+        if 'product_id' not in detail_data and 'product_code' not in detail_data:
+            raise serializers.ValidationError({"error": "Balance data is missing product information."})
+
+        prd_obj = None
+        if 'product_id' in detail_data:
+            prd_obj = Product.objects.filter(
+                tenant=tenant_current, company=company_current, id=detail_data.get('product_id')
+            ).first()
+        if 'product_code' in detail_data:
+            prd_obj = Product.objects.filter(
+                tenant=tenant_current, company=company_current, code=detail_data.get('product_code')
+            ).first()
+        return prd_obj
+
+    @staticmethod
+    def get_warehouse_from_detail_data(detail_data, tenant_current, company_current):
+        if 'warehouse_id' not in detail_data and 'warehouse_code' not in detail_data:
+            raise serializers.ValidationError({"error": "Balance data is missing warehouse information."})
+
+        wh_obj = None
+        if 'warehouse_id' in detail_data:
+            wh_obj = WareHouse.objects.filter(
+                tenant=tenant_current, company=company_current, id=detail_data.get('warehouse_id')
+            ).first()
+        if 'product_code' in detail_data:
+            wh_obj = WareHouse.objects.filter(
+                tenant=tenant_current, company=company_current, code=detail_data.get('warehouse_code')
+            ).first()
+        return wh_obj
+    
+    @staticmethod
+    def validate_tab_goods_detail_data(tab_data, tenant_obj, company_obj, period_mapped_obj):
+        detail_data = tab_data.pop('detail_data', {})
+
+        sub_period_obj = period_mapped_obj.sub_periods_period_mapped.filter(order=1).first()
+        if not sub_period_obj:
+            raise serializers.ValidationError({"this_sub_period": 'This sub period is not found.'})
+
+        prd_obj = InitialBalanceCommonFunction.get_product_from_detail_data(detail_data, tenant_obj, company_obj)
+        if not prd_obj:
+            raise serializers.ValidationError({'prd_obj': 'Product is not found.'})
+
+        if not prd_obj.inventory_uom:
+            raise serializers.ValidationError({'inventory_uom': 'Inventory UOM is not found.'})
+
+        wh_obj = InitialBalanceCommonFunction.get_warehouse_from_detail_data(detail_data, tenant_obj, company_obj)
+        if not wh_obj:
+            raise serializers.ValidationError({'wh_obj': 'Warehouse is not found.'})
+
+        if InitialBalanceLine.objects.filter(product=prd_obj, warehouse=wh_obj).exists():
+            raise serializers.ValidationError(
+                {"Existed": f"{prd_obj.title}'s initial balance has been created in {wh_obj.title}."}
+            )
+
+        if prd_obj.is_used_in_inventory_activities(warehouse_obj=wh_obj):
+            raise serializers.ValidationError(
+                {"Has trans": f'{prd_obj.title} transactions are existed in {wh_obj.title}.'}
+            )
+
+        tab_data['product'] = prd_obj
+        tab_data['uom'] = prd_obj.inventory_uom
+        tab_data['warehouse'] = wh_obj
+        tab_data['period_obj'] = period_mapped_obj
+        tab_data['sub_period_obj'] = sub_period_obj
+        tab_data['quantity'] = float(detail_data.get('quantity', 0))
+        tab_data['value'] = float(detail_data.get('value', 0))
+        tab_data['data_lot'] = detail_data.get('data_lot', [])
+        tab_data['data_sn'] = detail_data.get('data_sn', [])
+
         return tab_data

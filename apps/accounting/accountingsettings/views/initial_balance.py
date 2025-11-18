@@ -66,4 +66,7 @@ class InitialBalanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
         allow_admin_tenant=True, allow_admin_company=True,
     )
     def put(self, request, *args, pk, **kwargs):
+        self.ser_context['employee_current'] = self.request.user.employee_current
+        self.ser_context['company_current'] = self.request.user.company_current
+        self.ser_context['tenant_current'] = self.request.user.tenant_current
         return self.update(request, *args, pk, **kwargs)
