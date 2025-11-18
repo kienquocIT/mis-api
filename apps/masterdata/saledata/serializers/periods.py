@@ -11,7 +11,6 @@ from apps.sales.report.models import (
 )
 
 
-# Product Type
 class PeriodsListSerializer(serializers.ModelSerializer):  # noqa
     software_start_using_time = serializers.SerializerMethodField()
     subs = serializers.SerializerMethodField()
