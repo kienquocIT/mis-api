@@ -1,7 +1,26 @@
 from rest_framework import serializers
 
-from apps.accounting.budget.models import BudgetLine, BudgetLineTransaction
+from apps.accounting.budget.models import BudgetLine, BudgetLineTransaction, Budget
 from apps.shared import BaseMsg
+
+
+class BudgetListSerializer(serializers.ModelSerializer):
+    budget_line_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Budget
+        fields = (
+            'id',
+            'budget_line_data',
+            'system_status',
+            'date_approved',
+        )
+
+    @classmethod
+    def get_budget_line_data(cls, obj):
+        return BudgetLineListSerializer(
+            BudgetLine.objects.filter_on_company(budget=obj), many=True
+        ).data
 
 
 class BudgetLineListSerializer(serializers.ModelSerializer):

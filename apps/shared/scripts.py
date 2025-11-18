@@ -6756,7 +6756,7 @@ def update_delivery_product_offset_data_default():
 
 
 def sync_dimension_value(app_id):
-    config = DimensionSyncConfig.objects.filter_on_company(related_app_id=app_id).first()
-    DimensionUtils.sync_old_data(config)
+    dimension_config = DimensionSyncConfig.objects.filter_on_company(related_app_id=app_id).first()
+    DimensionUtils.sync_old_data(dimension_config=dimension_config)
     print('sync_dimension_value done.')
     return True

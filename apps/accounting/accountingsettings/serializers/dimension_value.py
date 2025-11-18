@@ -71,6 +71,7 @@ class DimensionValueListSerializer(serializers.ModelSerializer):
             "children_ids",
             "level",
             "related_app_id",
+            "related_doc_id",
         )
 
     @classmethod

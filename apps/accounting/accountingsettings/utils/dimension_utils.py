@@ -1,8 +1,8 @@
 import logging
 
 from django.apps import apps
-from django.db import transaction
-from django.utils import timezone
+# from django.db import transaction
+# from django.utils import timezone
 
 from apps.accounting.accountingsettings.models import Dimension, DimensionValue, DimensionSyncConfig
 from apps.shared import DisperseModel
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class DimensionUtils:
 
     @staticmethod
-    def sync_dimension_value(instance, app_id, title, code, is_create=False):
+    def sync_dimension_value(instance, app_id, title, code):
         application = DimensionUtils._get_application(app_id=app_id)
         mapped_dimension = Dimension.objects.filter(related_app=application).first()
         sync_config = DimensionSyncConfig.objects.filter(dimension=mapped_dimension).first()
@@ -53,6 +53,7 @@ class DimensionUtils:
                 'title': title,
                 'code': code,
                 'allow_posting': True,
+                'date_created': instance.date_created,
             }
         )
         # create new record

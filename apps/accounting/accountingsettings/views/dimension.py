@@ -94,6 +94,7 @@ class DimensionValueList(BaseListMixin, BaseCreateMixin):
     queryset = DimensionValue.objects
     search_fields = ["title"]
     filterset_fields = {
+        'id': ['exact', 'in'],
         'dimension_id': ['exact', 'in'],
     }
     serializer_list = DimensionValueListSerializer
