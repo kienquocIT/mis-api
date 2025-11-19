@@ -528,10 +528,14 @@ class InitialBalanceCommonFunction:
         print(f"Updated tab '{tab_name}': created {len(created_instances)}, updated {len(to_update)}")
 
         # Update lại giá trị tổng vô phiếu chính
-        sum_tab = 0
-        for line in ib_obj.ib_line_initial_balance.filter(initial_balance_type=tab_type):
-            sum_tab += line.tab_amount
-        ib_obj.tab_account_balance_data = sum_tab
+        sum_tab = sum(
+            line.tab_amount
+            for line in ib_obj.ib_line_initial_balance.filter(initial_balance_type=tab_type)
+        )
+        for item in ib_obj.tab_account_balance_data:
+            if item.get('tab_type') == tab_type:
+                item['tab_value'] = sum_tab
+                break
         ib_obj.save(update_fields=['tab_account_balance_data'])
 
         # Gọi hàm xử lý sau khi update tab
