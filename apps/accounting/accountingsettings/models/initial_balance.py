@@ -18,9 +18,9 @@ INITIAL_BALANCE_TYPE = [
     (2, _('Customer receivable')),
     (3, _('Supplier payable')),
     (4, _('Employee payable')),
-    (5, _('Fixed assets')),
-    (6, _('Expenses')),
-    (7, _('Owner equity')),
+    (5, _('Tools')),
+    (6, _('Fixed assets')),
+    (7, _('Accounts')),
 ]
 
 

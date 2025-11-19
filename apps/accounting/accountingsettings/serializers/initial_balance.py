@@ -2,7 +2,6 @@ from django.db import transaction
 from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-
 from apps.accounting.accountingsettings.models import ChartOfAccounts
 from apps.masterdata.saledata.models import (
     Periods, Currency, Product, WareHouse
@@ -83,9 +82,9 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
     tab_customer_receivable_data = serializers.SerializerMethodField()
     tab_supplier_payable_data = serializers.SerializerMethodField()
     tab_employee_payable_data = serializers.SerializerMethodField()
+    tab_tools_data = serializers.SerializerMethodField()
     tab_fixed_assets_data = serializers.SerializerMethodField()
-    tab_expenses_data = serializers.SerializerMethodField()
-    tab_owner_equity_data = serializers.SerializerMethodField()
+    tab_accounts_data = serializers.SerializerMethodField()
 
     class Meta:
         model = InitialBalance
@@ -101,9 +100,9 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
             'tab_customer_receivable_data',
             'tab_supplier_payable_data',
             'tab_employee_payable_data',
+            'tab_tools_data',
             'tab_fixed_assets_data',
-            'tab_expenses_data',
-            'tab_owner_equity_data',
+            'tab_accounts_data',
         )
 
     def get_all_initial_balance_lines(self, obj):
@@ -166,7 +165,7 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
             **self.parse_common_fields(item)
         } for item in self.filter_lines_by_type(obj, 4)]
 
-    def get_tab_fixed_assets_data(self, obj):
+    def get_tab_tools_data(self, obj):
         return [{
             # added fields
             # ...
@@ -174,7 +173,7 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
             **self.parse_common_fields(item)
         } for item in self.filter_lines_by_type(obj, 5)]
 
-    def get_tab_expenses_data(self, obj):
+    def get_tab_fixed_assets_data(self, obj):
         return [{
             # added fields
             # ...
@@ -182,7 +181,7 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
             **self.parse_common_fields(item)
         } for item in self.filter_lines_by_type(obj, 6)]
 
-    def get_tab_owner_equity_data(self, obj):
+    def get_tab_accounts_data(self, obj):
         return [{
             # added fields
             # ...
@@ -202,9 +201,9 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
     tab_customer_receivable_data = serializers.JSONField(default=list)
     tab_supplier_payable_data = serializers.JSONField(default=list)
     tab_employee_payable_data = serializers.JSONField(default=list)
+    tab_tools_data = serializers.JSONField(default=list)
     tab_fixed_assets_data = serializers.JSONField(default=list)
-    tab_expenses_data = serializers.JSONField(default=list)
-    tab_owner_equity_data = serializers.JSONField(default=list)
+    tab_accounts_data = serializers.JSONField(default=list)
 
     class Meta:
         model = InitialBalance
@@ -217,9 +216,9 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
             'tab_customer_receivable_data',
             'tab_supplier_payable_data',
             'tab_employee_payable_data',
+            'tab_tools_data',
             'tab_fixed_assets_data',
-            'tab_expenses_data',
-            'tab_owner_equity_data',
+            'tab_accounts_data',
         )
 
     @staticmethod
@@ -309,6 +308,14 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
         )
         return tab_data
 
+    def validate_tab_tools_data(self, tab_data):
+        tab_data = self.validate_common_fields(tab_data)
+        # validate more
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_tools_data(
+            tab_data, self.instance.period_mapped, self.context
+        )
+        return tab_data
+
     def validate_tab_fixed_assets_data(self, tab_data):
         tab_data = self.validate_common_fields(tab_data)
         # validate more
@@ -317,18 +324,10 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
         )
         return tab_data
 
-    def validate_tab_expenses_data(self, tab_data):
+    def validate_tab_accounts_data(self, tab_data):
         tab_data = self.validate_common_fields(tab_data)
         # validate more
-        tab_data = InitialBalanceCommonFunction.validate_more_tab_expenses_data(
-            tab_data, self.instance.period_mapped, self.context
-        )
-        return tab_data
-
-    def validate_tab_owner_equity_data(self, tab_data):
-        tab_data = self.validate_common_fields(tab_data)
-        # validate more
-        tab_data = InitialBalanceCommonFunction.validate_more_tab_owner_equity_data(
+        tab_data = InitialBalanceCommonFunction.validate_more_tab_accounts_data(
             tab_data, self.instance.period_mapped, self.context
         )
         return tab_data
@@ -343,9 +342,9 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
             'tab_customer_receivable_data': validated_data.pop('tab_customer_receivable_data'),
             'tab_supplier_payable_data': validated_data.pop('tab_supplier_payable_data'),
             'tab_employee_payable_data': validated_data.pop('tab_employee_payable_data'),
+            'tab_tools_data': validated_data.pop('tab_tools_data'),
             'tab_fixed_assets_data': validated_data.pop('tab_fixed_assets_data'),
-            'tab_expenses_data': validated_data.pop('tab_expenses_data'),
-            'tab_owner_equity_data': validated_data.pop('tab_owner_equity_data'),
+            'tab_accounts_data': validated_data.pop('tab_accounts_data'),
         }
 
         for key, value in validated_data.items():
@@ -472,6 +471,18 @@ class InitialBalanceCommonFunction:
         return tab_data
 
     @staticmethod
+    def validate_more_tab_tools_data(tab_data, period_mapped_obj, context):
+        tenant_obj = context.get('tenant_current')
+        company_obj = context.get('company_current')
+        if not tenant_obj or not company_obj or not period_mapped_obj:
+            raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
+
+        for item in tab_data:
+            detail_data = item.pop('detail_data', {})
+            # logic here
+        return tab_data
+
+    @staticmethod
     def validate_more_tab_fixed_assets_data(tab_data, period_mapped_obj, context):
         tenant_obj = context.get('tenant_current')
         company_obj = context.get('company_current')
@@ -484,19 +495,7 @@ class InitialBalanceCommonFunction:
         return tab_data
 
     @staticmethod
-    def validate_more_tab_expenses_data(tab_data, period_mapped_obj, context):
-        tenant_obj = context.get('tenant_current')
-        company_obj = context.get('company_current')
-        if not tenant_obj or not company_obj or not period_mapped_obj:
-            raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
-
-        for item in tab_data:
-            detail_data = item.pop('detail_data', {})
-            # logic here
-        return tab_data
-
-    @staticmethod
-    def validate_more_tab_owner_equity_data(tab_data, period_mapped_obj, context):
+    def validate_more_tab_accounts_data(tab_data, period_mapped_obj, context):
         tenant_obj = context.get('tenant_current')
         company_obj = context.get('company_current')
         if not tenant_obj or not company_obj or not period_mapped_obj:
@@ -552,8 +551,8 @@ class InitialBalanceCommonFunction:
             'tab_supplier_payable_data': cls.handle_supplier_payable_tab,
             'tab_employee_payable_data': cls.handle_employee_payable_tab,
             'tab_fixed_assets_data': cls.handle_fixed_assets_tab,
-            'tab_expenses_data': cls.handle_expenses_tab,
-            'tab_owner_equity_data': cls.handle_owner_equity_tab,
+            'tab_tools_data': cls.handle_tools_tab,
+            'tab_accounts_data': cls.handle_accounts_tab,
         }
         handler = handlers.get(tab_name)
         if handler:
@@ -594,11 +593,11 @@ class InitialBalanceCommonFunction:
         pass
 
     @staticmethod
-    def handle_expenses_tab(created_instances, updated_items):
+    def handle_tools_tab(created_instances, updated_items):
         """Xử lý tab expenses"""
         pass
 
     @staticmethod
-    def handle_owner_equity_tab(created_instances, updated_items):
+    def handle_accounts_tab(created_instances, updated_items):
         """Xử lý tab owner equity"""
         pass
