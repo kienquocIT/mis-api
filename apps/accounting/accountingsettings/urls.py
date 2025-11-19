@@ -110,7 +110,5 @@ urlpatterns = [
     ] + [
       # Initial balance
       path('initial-balance/list', InitialBalanceList.as_view(), name='InitialBalanceList'),
-      path(
-          'initial-balance/detail/<str:pk>', InitialBalanceDetail.as_view(), name='InitialBalanceDetail'
-      )
+      path('initial-balance/detail/<str:pk>', InitialBalanceDetail.as_view(), name='InitialBalanceDetail')
 ]

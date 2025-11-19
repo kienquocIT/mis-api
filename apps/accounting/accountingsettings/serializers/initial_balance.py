@@ -257,7 +257,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
                     'foreign_acc_name': account_obj.foreign_acc_name
                 },
                 'is_fc': str(primary_currency_obj.id) != str(currency_mapped_obj.id),
-                'currency_mapped': str(currency_mapped_obj.id),
+                'currency_mapped_id': str(currency_mapped_obj.id),
                 'currency_mapped_data': {
                     'id': str(currency_mapped_obj.id),
                     'abbreviation': currency_mapped_obj.abbreviation,
@@ -337,9 +337,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def update(self, instance, validated_data):
-        # pop tab_data ra
         tabs_data = {
-            # phải theo thứ tự đúng như trong INITIAL_BALANCE_TYPE trong models.py
             'tab_money_data': validated_data.pop('tab_money_data'),
             'tab_goods_data': validated_data.pop('tab_goods_data'),
             'tab_customer_receivable_data': validated_data.pop('tab_customer_receivable_data'),
@@ -374,6 +372,20 @@ class InitialBalanceCommonFunction:
         for item in tab_data:
             detail_data = item.pop('detail_data', {})
             # logic here
+            # money type must be in [0, 1]
+            if int(detail_data.get('money_type')) not in [0, 1]:
+                raise serializers.ValidationError({'money_type': _('Money type is not valid.')})
+            # validate amount value must be larger than 0
+            if detail_data.get('money_value') < 0:
+                raise serializers.ValidationError({'money_value': _('Amount value cannot smaller than 0.')})
+            if detail_data.get('money_value_exchange') < 0:
+                raise serializers.ValidationError(
+                    {'money_value_exchange': _('VND exchange value cannot smaller than 0.')}
+                )
+            item['money_type'] = detail_data.get('money_type')
+            item['money_value'] = detail_data.get('money_value')
+            item['money_value_exchange'] = detail_data.get('money_value_exchange')
+            item['money_detail_data'] = detail_data.get('money_detail_data')
         return tab_data
 
     @staticmethod
@@ -505,7 +517,7 @@ class InitialBalanceCommonFunction:
             if item_id:
                 to_update.append((item_id, item))
             else:
-                to_create.append(InitialBalanceLine(**item))
+                to_create.append(InitialBalanceLine(initial_balance=ib_obj, initial_balance_type=tab_type, **item))
 
         with transaction.atomic():
             created_instances = []
