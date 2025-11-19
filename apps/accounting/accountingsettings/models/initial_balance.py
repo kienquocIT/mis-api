@@ -8,6 +8,7 @@ __all__ = [
     'InitialBalanceLine',
     'InitialBalanceGoodsLot',
     'InitialBalanceGoodsSerial',
+    'INITIAL_BALANCE_TYPE'
 ]
 
 
@@ -30,7 +31,7 @@ class InitialBalance(DataAbstractModel):
     )
     period_mapped_data = models.JSONField(default=dict)
     tab_account_balance_data = models.JSONField(default=list)
-    # tab_account_balance_data = [{'tab_name': '', 'tab_value': 0, 'currency_data': {}}, ...]
+    # tab_account_balance_data = [{'tab_type': '', 'tab_name': '', 'tab_value': 0, 'currency_data': {}}, ...]
 
     class Meta:
         verbose_name = 'Initial Balance'
@@ -47,6 +48,7 @@ class InitialBalanceLine(DataAbstractModel):
         related_name='ib_line_initial_balance'
     )
     initial_balance_type = models.SmallIntegerField(choices=INITIAL_BALANCE_TYPE)
+    tab_amount = models.FloatField(default=0)
     debit_value = models.FloatField(default=0)
     credit_value = models.FloatField(default=0)
     account = models.ForeignKey(
