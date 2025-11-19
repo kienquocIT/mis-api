@@ -13,3 +13,4 @@ class HRMMsg:
     CHECKOUT_TIME_ERROR = _('Checkout time must be later than break-out time.')
 
     PAYROLL_TEMPLATE = _('Payroll template')
+    PAYROLL_ATTR_ERROR_CODE = _('Payroll attribute code already exists')

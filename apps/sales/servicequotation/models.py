@@ -442,7 +442,7 @@ class ServiceQuotationAttachMapAttachFile(M2MFilesAbstractModel):
     service_quotation = models.ForeignKey(
         ServiceQuotation,
         on_delete=models.CASCADE,
-        verbose_name='Attachment File of Service Order',
+        verbose_name='Attachment File of Service Quotation',
         related_name="service_quotation_attachment_service_quotation",
     )
 
