@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
@@ -7,7 +8,7 @@ from apps.masterdata.saledata.models import (
     Periods, Currency, Product, WareHouse
 )
 from apps.accounting.accountingsettings.models.initial_balance import (
-    InitialBalance, InitialBalanceLine
+    InitialBalance, InitialBalanceLine, INITIAL_BALANCE_TYPE
 )
 
 
@@ -21,6 +22,7 @@ class InitialBalanceListSerializer(serializers.ModelSerializer):
             'title',
             'date_created',
             'period_mapped_data',
+            'tab_account_balance_data'
         )
 
 
@@ -54,6 +56,18 @@ class InitialBalanceCreateSerializer(serializers.ModelSerializer):
         }
         validate_data['code'] = f"IB-{period_obj.code}"
         validate_data['title'] = f"Initial balance for {period_obj.code} - {period_obj.fiscal_year}"
+        primary_currency_obj = Currency.objects.filter_on_company(is_primary=True).first()
+        validate_data['tab_account_balance_data'] = [{
+            'tab_type': item[0],
+            'tab_name': force_str(item[1]),
+            'tab_value': 0,
+            'currency_data': {
+                'id': str(primary_currency_obj.id),
+                'abbreviation': primary_currency_obj.abbreviation,
+                'title': primary_currency_obj.title,
+                'rate': primary_currency_obj.rate
+            } if primary_currency_obj else {}
+        } for item in INITIAL_BALANCE_TYPE]
         return validate_data
 
     def create(self, validated_data):
@@ -218,7 +232,9 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
             currency_mapped_obj = Currency.objects.filter_on_company(id=item.get('currency_mapped')).first()
             primary_currency_obj = Currency.objects.filter_on_company(is_primary=True).first()
             if debit_value < 0 or credit_value < 0:
-                raise serializers.ValidationError({'primary_currency': _('Debit/Credit value can not smaller than 0.')})
+                raise serializers.ValidationError({'value': _('Debit/Credit value cannot smaller than 0.')})
+            if debit_value != 0 and credit_value != 0:
+                raise serializers.ValidationError({'value': _('Debit/Credit value cannot both be greater than 0.')})
             if not account_obj:
                 raise serializers.ValidationError({'account': _('Account is required.')})
             if not primary_currency_obj:
@@ -232,6 +248,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
                 # các fields common
                 'debit_value': debit_value,
                 'credit_value': credit_value,
+                'tab_amount': debit_value + credit_value,
                 'account_id': str(account_obj.id),
                 'account_data': {
                     'id': str(account_obj.id),
@@ -322,6 +339,7 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # pop tab_data ra
         tabs_data = {
+            # phải theo thứ tự đúng như trong INITIAL_BALANCE_TYPE trong models.py
             'tab_money_data': validated_data.pop('tab_money_data'),
             'tab_goods_data': validated_data.pop('tab_goods_data'),
             'tab_customer_receivable_data': validated_data.pop('tab_customer_receivable_data'),
@@ -337,9 +355,9 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         # update tab data
-        for tab_name, tab_data in tabs_data.items():
+        for tab_type, (tab_name, tab_data) in enumerate(tabs_data.items()):
             if len(tab_data) > 0:  # Chỉ update nếu có data
-                InitialBalanceCommonFunction.common_update_tab(tab_name, tab_data)
+                InitialBalanceCommonFunction.common_update_tab(instance, tab_type, tab_name, tab_data)
 
         return instance
 
@@ -479,7 +497,7 @@ class InitialBalanceCommonFunction:
 
     # for update
     @classmethod
-    def common_update_tab(cls, tab_name, tab_data):
+    def common_update_tab(cls, ib_obj, tab_type, tab_name, tab_data):
         to_create = []
         to_update = []
         for item in tab_data:
@@ -496,6 +514,13 @@ class InitialBalanceCommonFunction:
             for item_id, data in to_update:
                 InitialBalanceLine.objects.filter(id=item_id).update(**data)
         print(f"Updated tab '{tab_name}': created {len(created_instances)}, updated {len(to_update)}")
+
+        # Update lại giá trị tổng vô phiếu chính
+        sum_tab = 0
+        for line in ib_obj.ib_line_initial_balance.filter(initial_balance_type=tab_type):
+            sum_tab += line.tab_amount
+        ib_obj.tab_account_balance_data = sum_tab
+        ib_obj.save(update_fields=['tab_account_balance_data'])
 
         # Gọi hàm xử lý sau khi update tab
         cls.common_after_update_tab(tab_name, created_instances, to_update)
