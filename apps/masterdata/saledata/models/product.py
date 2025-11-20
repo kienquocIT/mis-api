@@ -379,6 +379,14 @@ class Product(DataAbstractModel):
         storage=PublicMediaStorage, upload_to=generate_product_avatar_path, null=True,
     )
 
+    # asset category
+    asset_category = models.ForeignKey(
+        'accountingsettings.AssetCategory',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='asset_category_products'
+    )
+
     class Meta:
         verbose_name = 'Product'
         verbose_name_plural = 'Products'

@@ -1,4 +1,6 @@
 from django.urls import path
+
+from apps.accounting.accountingsettings.views.asset_category import AssetCategoryList, AssetCategoryDetail
 from apps.accounting.accountingsettings.views.chart_of_account import (
     ChartOfAccountsList
 )
@@ -86,4 +88,7 @@ urlpatterns = [
     path('dimension-account-map/list', DimensionAccountMapList.as_view(), name='DimensionAccountMapList'),
     path('dimension-account-map/detail/<str:pk>', DimensionAccountMapDetail.as_view(),
          name='DimensionAccountMapDetail'),
+] + [
+    path('asset-category/list', AssetCategoryList.as_view(), name='AssetCategoryList'),
+    path('asset-category/detail/<str:pk>', AssetCategoryDetail.as_view(), name='AssetCategoryDetail'),
 ]
