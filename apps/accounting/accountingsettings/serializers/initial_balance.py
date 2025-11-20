@@ -121,6 +121,7 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
             'id': str(item.id),
             'debit_value': item.debit_value,
             'credit_value': item.credit_value,
+            'tab_amount': item.tab_amount,
             'account_data': item.account_data,
             'is_fc': item.is_fc,
             'currency_mapped_data': item.currency_mapped_data,
