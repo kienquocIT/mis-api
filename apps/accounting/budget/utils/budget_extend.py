@@ -26,8 +26,14 @@ class BudgetExtendHandler:
 
     @classmethod
     def apply_to_budget_line(cls, instance):
+        value_consumed_app = ["financialcashflow.cashoutflow"]
+        quantity_consumed_app = ["purchasing.purchaserequest"]
         for bl_transaction in cls.get_budget_line_transaction(instance=instance):
             if bl_transaction.budget_line:
-                bl_transaction.budget_line.value_consumed += bl_transaction.value_consume
-                bl_transaction.budget_line.save(update_fields=['value_consumed'])
+                if instance.__class__.get_model_code() in value_consumed_app:
+                    bl_transaction.budget_line.value_consumed += bl_transaction.value_consume
+                    bl_transaction.budget_line.save(update_fields=['value_consumed'])
+                if instance.__class__.get_model_code() in quantity_consumed_app:
+                    bl_transaction.budget_line.quantity_consumed += bl_transaction.value_consume
+                    bl_transaction.budget_line.save(update_fields=['quantity_consumed'])
         return True

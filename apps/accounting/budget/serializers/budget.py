@@ -26,6 +26,7 @@ class BudgetListSerializer(serializers.ModelSerializer):
 class BudgetLineListSerializer(serializers.ModelSerializer):
     dimension_values_id = serializers.SerializerMethodField()
     value_available = serializers.SerializerMethodField()
+    quantity_available = serializers.SerializerMethodField()
 
     class Meta:
         model = BudgetLine
@@ -35,6 +36,8 @@ class BudgetLineListSerializer(serializers.ModelSerializer):
             'unit_price',
             'quantity_planned',
             'quantity_consumed',
+            'quantity_available',
+            'tax_data',
             'value_planned',
             'value_consumed',
             'value_available',
@@ -49,6 +52,10 @@ class BudgetLineListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_value_available(cls, obj):
         return obj.value_planned - obj.value_consumed
+
+    @classmethod
+    def get_quantity_available(cls, obj):
+        return obj.quantity_planned - obj.quantity_consumed
 
 
 class BudgetLineTransactionListSerializer(serializers.ModelSerializer):
