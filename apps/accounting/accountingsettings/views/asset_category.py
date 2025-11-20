@@ -15,9 +15,6 @@ class AssetCategoryList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        # qs = super().get_queryset()
-        # parent_id = self.request.query_params.get('parent_id', None)
-        # return qs.filter(parent_id=parent_id)
         return super().get_queryset()
 
     @swagger_auto_schema(
