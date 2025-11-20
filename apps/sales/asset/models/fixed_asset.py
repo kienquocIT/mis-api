@@ -105,6 +105,13 @@ class FixedAsset(DataAbstractModel):
 
     depreciation_data = models.JSONField(default=list, help_text='data for depreciation')
 
+    asset_category = models.ForeignKey(
+        'accountingsettings.AssetCategory',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="asset_category_fixed_assets",
+    )
+
     class Meta:
         verbose_name = 'Fixed Asset'
         verbose_name_plural = 'Fixed Assets'

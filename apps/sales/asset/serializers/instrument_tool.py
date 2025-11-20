@@ -2,7 +2,9 @@ import logging
 from django.db import transaction
 from django.db.models import Sum
 from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 
+from apps.accounting.accountingsettings.models import AssetCategory
 from apps.core.hr.models import Group
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Product, ToolClassification
@@ -119,8 +121,8 @@ class InstrumentToolListSerializer(AbstractListSerializerModel):
 
 
 class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
-    classification = serializers.UUIDField()
-    product = serializers.UUIDField()
+    classification = serializers.UUIDField(allow_null=True, required=False)
+    product = serializers.UUIDField(allow_null=True, required=False)
     manage_department = serializers.UUIDField()
     use_department = serializers.ListSerializer(
         child=serializers.UUIDField(required=False)
@@ -128,6 +130,11 @@ class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
     asset_sources = ToolAssetSourcesCreateSerializer(many=True)
     increase_fa_list = serializers.JSONField(required=False)
     asset_code = serializers.CharField(required=False)
+    asset_category_id = serializers.UUIDField(error_messages={
+        'required': _('Asset category is required'),
+        'null': _('Asset category must not be null'),
+        'blank': _('Asset category must not be blank'),
+    })
 
     class Meta:
         model = InstrumentTool
@@ -149,22 +156,27 @@ class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
             'depreciation_start_date',
             'depreciation_end_date',
             'increase_fa_list',
-            'depreciation_data'
+            'depreciation_data',
+            'asset_category_id'
         )
 
     @classmethod
     def validate_classification(cls, value):
-        try:
-            return ToolClassification.objects.get(id=value)
-        except ToolClassification.DoesNotExist:
-            raise serializers.ValidationError({'classification': BaseMsg.NOT_EXIST})
+        if value:
+            try:
+                return ToolClassification.objects.get(id=value)
+            except ToolClassification.DoesNotExist:
+                raise serializers.ValidationError({'classification': BaseMsg.NOT_EXIST})
+        return None
 
     @classmethod
     def validate_product(cls, value):
-        try:
-            return Product.objects.get(id=value)
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'product': BaseMsg.NOT_EXIST})
+        if value:
+            try:
+                return Product.objects.get(id=value)
+            except Product.DoesNotExist:
+                raise serializers.ValidationError({'product': BaseMsg.NOT_EXIST})
+        return None
 
     @classmethod
     def validate_manage_department(cls, value):
@@ -245,6 +257,13 @@ class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
                     })
 
         return value
+
+    @classmethod
+    def validate_asset_category_id(cls, value):
+        try:
+            return AssetCategory.objects.get(id=value).id
+        except AssetCategory.DoesNotExist:
+            raise serializers.ValidationError({'asset_category_id': _('Asset category does not exist')})
 
     def validate(self, validate_data):
         asset_sources = validate_data.get('asset_sources')
@@ -390,8 +409,8 @@ class InstrumentToolDetailSerializer(AbstractDetailSerializerModel):
 
 
 class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
-    classification = serializers.UUIDField()
-    product = serializers.UUIDField()
+    classification = serializers.UUIDField(allow_null=True, required=False)
+    product = serializers.UUIDField(allow_null=True, required=False)
     manage_department = serializers.UUIDField()
     use_department = serializers.ListSerializer(
         child=serializers.UUIDField(required=False)
@@ -399,6 +418,11 @@ class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
     asset_sources = ToolAssetSourcesCreateSerializer(many=True)
     increase_fa_list = serializers.JSONField(required=False)
     asset_code = serializers.CharField(required=False)
+    asset_category_id = serializers.UUIDField(error_messages={
+        'required': _('Asset category is required'),
+        'null': _('Asset category must not be null'),
+        'blank': _('Asset category must not be blank'),
+    })
 
     class Meta:
         model = InstrumentTool
@@ -420,22 +444,27 @@ class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
             'depreciation_start_date',
             'depreciation_end_date',
             'increase_fa_list',
-            'depreciation_data'
+            'depreciation_data',
+            'asset_category_id'
         )
 
     @classmethod
     def validate_classification(cls, value):
-        try:
-            return ToolClassification.objects.get(id=value)
-        except ToolClassification.DoesNotExist:
-            raise serializers.ValidationError({'classification': BaseMsg.NOT_EXIST})
+        if value:
+            try:
+                return ToolClassification.objects.get(id=value)
+            except ToolClassification.DoesNotExist:
+                raise serializers.ValidationError({'classification': BaseMsg.NOT_EXIST})
+        return None
 
     @classmethod
     def validate_product(cls, value):
-        try:
-            return Product.objects.get(id=value)
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'product': BaseMsg.NOT_EXIST})
+        if value:
+            try:
+                return Product.objects.get(id=value)
+            except Product.DoesNotExist:
+                raise serializers.ValidationError({'product': BaseMsg.NOT_EXIST})
+        return None
 
     @classmethod
     def validate_manage_department(cls, value):
@@ -452,6 +481,13 @@ class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
                 return department_list
             raise serializers.ValidationError({"use_department": BaseMsg.NOT_EXIST})
         raise serializers.ValidationError({"use_department": BaseMsg.FORMAT_NOT_MATCH})
+
+    @classmethod
+    def validate_asset_category_id(cls, value):
+        try:
+            return AssetCategory.objects.get(id=value).id
+        except AssetCategory.DoesNotExist:
+            raise serializers.ValidationError({'asset_category_id': _('Asset category does not exist')})
 
     def validate_asset_code(self, value):
         if value:
