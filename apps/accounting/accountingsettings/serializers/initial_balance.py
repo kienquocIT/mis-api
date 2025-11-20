@@ -93,6 +93,7 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'description',
+            'tab_account_balance_data',
             'period_mapped_data',
             # tab detail
             'tab_money_data',
