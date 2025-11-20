@@ -130,7 +130,10 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
     def get_tab_money_data(self, obj):
         return [{
             # added fields
-            # ...
+            "money_type": item.money_type,
+            "money_value": item.money_value,
+            "money_value_exchange": item.money_value_exchange,
+            "money_detail_data": item.money_detail_data,
             # common fields
             **self.parse_common_fields(item)
         } for item in self.filter_lines_by_type(obj, 0)]
