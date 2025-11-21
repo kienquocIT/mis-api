@@ -38,19 +38,19 @@ class AssetCategory(MasterDataAbstractModel):
         'accountingsettings.ChartOfAccounts',
         on_delete=models.SET_NULL,
         null=True,
-        related_name='+',
+        related_name='asset_account_categories',
     )
     accumulated_depreciation_account = models.ForeignKey(
         'accountingsettings.ChartOfAccounts',
         on_delete=models.SET_NULL,
         null=True,
-        related_name='+',
+        related_name='accumulated_depreciation_asset_categories',
     )
     depreciation_expense_account = models.ForeignKey(
         'accountingsettings.ChartOfAccounts',
         on_delete=models.SET_NULL,
         null=True,
-        related_name='+',
+        related_name='depreciation_expense_asset_categories',
     )
 
     class Meta:
