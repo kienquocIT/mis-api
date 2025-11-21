@@ -1,7 +1,7 @@
 import logging
+from rest_framework import serializers
 from django.db import transaction
 from django.db.models import Sum
-from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
 from apps.accounting.accountingsettings.models import AssetCategory
