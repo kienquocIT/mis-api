@@ -15,8 +15,14 @@ class DimensionUtils:
     @staticmethod
     def sync_dimension_value(instance, app_id, title, code):
         application = DimensionUtils._get_application(app_id=app_id)
-        mapped_dimension = Dimension.objects.filter(related_app=application).first()
-        sync_config = DimensionSyncConfig.objects.filter(dimension=mapped_dimension).first()
+        mapped_dimension = Dimension.objects.filter(
+            tenant_id=instance.tenant_id, company_id=instance.company_id,
+            related_app=application
+        ).first()
+        sync_config = DimensionSyncConfig.objects.filter(
+            tenant_id=instance.tenant_id, company_id=instance.company_id,
+            dimension=mapped_dimension
+        ).first()
         if not application or not mapped_dimension or not sync_config:
             return True
         if not mapped_dimension or not sync_config.sync_on_save:
@@ -69,7 +75,7 @@ class DimensionUtils:
     @staticmethod
     def sync_old_data(dimension_config):
         application = dimension_config.related_app
-        dimension = dimension_config.dimension
+        # dimension = dimension_config.dimension
 
         try:
             model_class = apps.get_model(application.app_label, application.model_code)
@@ -77,7 +83,9 @@ class DimensionUtils:
             logger.error(msg='Sync old data for dimension error: Cannot find model class')
             return False
 
-        existing_records = model_class.objects.filter_on_company()
+        existing_records = model_class.objects.filter(
+            tenant_id=dimension_config.tenant_id, company_id=dimension_config.company_id
+        )
         # dimension_values_to_create = []
 
         field_mapping = model_class.get_field_mapping()
