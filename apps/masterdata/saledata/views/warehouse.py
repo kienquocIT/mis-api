@@ -171,6 +171,8 @@ class ProductWareHouseListForGoodsTransfer(BaseListMixin):
     filterset_class = ProductWareHouseListFilter
 
     def get_queryset(self):
+        if 'warehouse_id' not in self.request.query_params:
+            return super().get_queryset()
         if 'interact' in self.request.query_params:
             if hasattr(self.request.user.employee_current, 'warehouse_employees_emp'):
                 interact = self.request.user.employee_current.warehouse_employees_emp
