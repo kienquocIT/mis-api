@@ -45,6 +45,7 @@ class AssetCategoryListSerializer(serializers.ModelSerializer):
     def get_has_children(cls, obj):
         return obj.child_categories.all().count() > 0
 
+
 class AssetCategoryCreateSerializer(serializers.ModelSerializer):
     parent_id = serializers.UUIDField(allow_null=True, required=False, error_messages={
         'blank': 'Asset category id must not be blank',
@@ -83,35 +84,37 @@ class AssetCategoryCreateSerializer(serializers.ModelSerializer):
             'linked_product_data'
         )
 
-
     def validate_parent_id(self, value):
         if value:
             try:
                 parent = AssetCategory.objects.get(id=value)
-                if int(self.initial_data.get('category_type')) != parent.category_type:
-                    raise serializers.ValidationError({'category_type': _('Not matching type with parent category')})
+                if 'category_type' in self.initial_data:
+                    category_type = int(self.initial_data.get('category_type'))
+                    if category_type != parent.category_type:
+                        raise serializers.ValidationError(
+                            {'category_type': _('Not matching type with parent category')})
                 return parent.id
             except AssetCategory.DoesNotExist:
                 raise serializers.ValidationError({'parent': _('Parent category does not exist.')})
         return value
 
     @classmethod
-    def _validate_account(cls, field_name, value):
+    def validate_account(cls, field_name, value):
         if not ChartOfAccounts.objects.filter(id=value).exists():
             raise serializers.ValidationError({field_name: _("Account does not exist.")})
         return ChartOfAccounts.objects.get(id=value).id
 
     @classmethod
     def validate_asset_account_id(cls, value):
-        return cls._validate_account(field_name='asset_account_id', value=value)
+        return cls.validate_account(field_name='asset_account_id', value=value)
 
     @classmethod
     def validate_accumulated_depreciation_account_id(cls, value):
-        return cls._validate_account(field_name='accumulated_depreciation_account_id', value=value)
+        return cls.validate_account(field_name='accumulated_depreciation_account_id', value=value)
 
     @classmethod
     def validate_depreciation_expense_account_id(cls, value):
-        return cls._validate_account(field_name='depreciation_expense_account_id', value=value)
+        return cls.validate_account(field_name='depreciation_expense_account_id', value=value)
 
     @classmethod
     def validate_linked_product_data(cls, linked_product_data):
@@ -138,6 +141,7 @@ class AssetCategoryCreateSerializer(serializers.ModelSerializer):
             product.save(update_fields=['asset_category'])
 
         return asset_category
+
 
 class AssetCategoryDetailSerializer(serializers.ModelSerializer):
     parent = serializers.SerializerMethodField()
@@ -215,6 +219,7 @@ class AssetCategoryDetailSerializer(serializers.ModelSerializer):
             'code': item.code,
         } for item in obj.asset_category_products.all()]
 
+
 class AssetCategoryUpdateSerializer(serializers.ModelSerializer):
     parent_id = serializers.UUIDField(allow_null=True, required=False, error_messages={
         'blank': 'Asset category id must not be blank',
@@ -222,6 +227,8 @@ class AssetCategoryUpdateSerializer(serializers.ModelSerializer):
     asset_account_id = serializers.UUIDField(allow_null=True, required=False, error_messages={})
     accumulated_depreciation_account_id = serializers.UUIDField(allow_null=True, required=False, error_messages={})
     depreciation_expense_account_id = serializers.UUIDField(allow_null=True, required=False, error_messages={})
+    linked_product_data = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
+    remark = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
         model = AssetCategory
@@ -234,5 +241,82 @@ class AssetCategoryUpdateSerializer(serializers.ModelSerializer):
             'depreciation_time',
             'asset_account_id',
             'accumulated_depreciation_account_id',
-            'depreciation_expense_account_id'
+            'depreciation_expense_account_id',
+            'linked_product_data'
         )
+
+    def validate_parent_id(self, value):
+        if value:
+            try:
+                parent = AssetCategory.objects.get(id=value)
+                # Check for circular reference
+                if self.instance:
+                    if parent.id == self.instance.id:
+                        raise serializers.ValidationError({'parent': _('Cannot set category as its own parent')})
+                    # Check if the parent is a descendant of this category
+                    current = parent
+                    while current.parent:
+                        if current.parent.id == self.instance.id:
+                            raise serializers.ValidationError({'parent': _('Cannot create circular reference.')})
+                        current = current.parent
+
+                    # Check if category types match
+                    if 'category_type' in self.initial_data:
+                        category_type = int(self.initial_data.get('category_type'))
+                        if category_type != parent.category_type:
+                            raise serializers.ValidationError(
+                                {'category_type': _('Not matching type with parent category')})
+                    elif self.instance.category_type != parent.category_type:
+                        raise serializers.ValidationError(
+                            {'category_type': _('Not matching type with parent category')})
+
+                return parent.id
+            except AssetCategory.DoesNotExist:
+                raise serializers.ValidationError({'parent': _('Parent category does not exist.')})
+        return value
+
+    @classmethod
+    def validate_asset_account_id(cls, value):
+        return AssetCategoryCreateSerializer.validate_account(field_name='asset_account_id', value=value)
+
+    @classmethod
+    def validate_accumulated_depreciation_account_id(cls, value):
+        return AssetCategoryCreateSerializer.validate_account(field_name='accumulated_depreciation_account_id',
+                                                              value=value)
+
+    @classmethod
+    def validate_depreciation_expense_account_id(cls, value):
+        return AssetCategoryCreateSerializer.validate_account(field_name='depreciation_expense_account_id', value=value)
+
+    def validate_linked_product_data(self, linked_product_data):
+        return_data = []
+        for item in linked_product_data:
+            product = Product.objects.filter(id=item).first()
+            if not product:
+                raise serializers.ValidationError({'linked_product_data': _('Linked products does not exist')})
+            # Check if product is already linked to another asset category (excluding current one)
+            if product.asset_category and product.asset_category.id != self.instance.id:
+                raise serializers.ValidationError(
+                    {'linked_product_data': _(f'Product {product.title} already linked with another asset category')})
+            return_data.append(item)
+        return return_data
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        linked_product_data = validated_data.pop('linked_product_data', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Update linked products
+        if linked_product_data is not None:
+            Product.objects.filter(asset_category=instance).update(asset_category=None)
+
+            for product_id in linked_product_data:
+                product = Product.objects.filter(id=product_id).first()
+                if product:
+                    product.asset_category = instance
+                    product.save(update_fields=['asset_category'])
+
+        return instance
