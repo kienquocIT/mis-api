@@ -1,9 +1,9 @@
 from django.utils.datetime_safe import datetime
 from rest_framework import serializers
 
-from apps.accounting.budget.serializers import BudgetLineTransactionCreateSerializer, \
-    BudgetLineTransactionListSerializer
-from apps.accounting.budget.utils.budget_extend import BudgetExtendHandler
+# from apps.accounting.budget.serializers import BudgetLineTransactionCreateSerializer, \
+#     BudgetLineTransactionListSerializer
+# from apps.accounting.budget.utils.budget_extend import BudgetExtendHandler
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, Contact, Product, UnitOfMeasure, Tax
@@ -187,13 +187,13 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
     service_order = serializers.UUIDField(required=False, allow_null=True)
     supplier = serializers.UUIDField(required=True)
     contact = serializers.UUIDField(required=True)
-    # purchase_request_product_datas = PurchaseRequestProductSerializer(many=True)
+    purchase_request_product_datas = PurchaseRequestProductSerializer(many=True)
     note = serializers.CharField(allow_blank=True, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
-    budget_line_data = BudgetLineTransactionCreateSerializer(
-        many=True,
-        required=False
-    )
+    # budget_line_data = BudgetLineTransactionCreateSerializer(
+    #     many=True,
+    #     required=False
+    # )
 
     class Meta:
         model = PurchaseRequest
@@ -213,7 +213,7 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
             'total_price',
             'attachment',
             # budget line data
-            'budget_line_data',
+            # 'budget_line_data',
         )
 
     @classmethod
@@ -324,14 +324,14 @@ class PurchaseRequestCreateSerializer(AbstractCreateSerializerModel):
         attachment_list = validated_data.pop('attachment', [])
         data_item_list = validated_data.pop('purchase_request_product_datas', [])
 
-        budget_line_data = validated_data.pop('budget_line_data', [])
+        # budget_line_data = validated_data.pop('budget_line_data', [])
 
         purchase_request_obj = PurchaseRequest.objects.create(**validated_data)
 
         PurchaseRequestCommonFunction.create_items_mapped(purchase_request_obj, data_item_list)
         PurchaseRequestCommonFunction.create_files_mapped(purchase_request_obj, attachment_list)
 
-        BudgetExtendHandler.push_budget_line_transaction(instance=purchase_request_obj, data_list=budget_line_data)
+        # BudgetExtendHandler.push_budget_line_transaction(instance=purchase_request_obj, data_list=budget_line_data)
 
         return purchase_request_obj
 
@@ -346,7 +346,7 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
     purchase_request_product_datas = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
-    budget_line_data = serializers.SerializerMethodField()
+    # budget_line_data = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseRequest
@@ -369,7 +369,7 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
             'total_price',
             'attachment',
             'employee_inherit',
-            'budget_line_data',
+            # 'budget_line_data',
         )
 
     @classmethod
@@ -419,11 +419,11 @@ class PurchaseRequestDetailSerializer(AbstractDetailSerializerModel):
     def get_employee_inherit(cls, obj):
         return obj.employee_inherit.get_detail_with_group() if obj.employee_inherit else {}
 
-    @classmethod
-    def get_budget_line_data(cls, obj):
-        return BudgetLineTransactionListSerializer(
-            BudgetExtendHandler.get_budget_line_transaction(instance=obj), many=True
-        ).data
+    # @classmethod
+    # def get_budget_line_data(cls, obj):
+    #     return BudgetLineTransactionListSerializer(
+    #         BudgetExtendHandler.get_budget_line_transaction(instance=obj), many=True
+    #     ).data
 
 
 class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
@@ -433,13 +433,13 @@ class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
     service_order = serializers.UUIDField(required=False, allow_null=True)
     supplier = serializers.UUIDField(required=True)
     contact = serializers.UUIDField(required=True)
-    # purchase_request_product_datas = PurchaseRequestProductSerializer(many=True)
+    purchase_request_product_datas = PurchaseRequestProductSerializer(many=True)
     note = serializers.CharField(allow_blank=True, allow_null=True)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
-    budget_line_data = BudgetLineTransactionCreateSerializer(
-        many=True,
-        required=False
-    )
+    # budget_line_data = BudgetLineTransactionCreateSerializer(
+    #     many=True,
+    #     required=False
+    # )
 
     class Meta:
         model = PurchaseRequest
@@ -459,7 +459,7 @@ class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
             'total_price',
             'attachment',
             # budget line data
-            'budget_line_data',
+            # 'budget_line_data',
         )
 
     @classmethod
@@ -496,7 +496,7 @@ class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
         attachment_list = validated_data.pop('attachment', [])
         data_item_list = validated_data.pop('purchase_request_product_datas', [])
 
-        budget_line_data = validated_data.pop('budget_line_data', [])
+        # budget_line_data = validated_data.pop('budget_line_data', [])
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -505,7 +505,7 @@ class PurchaseRequestUpdateSerializer(AbstractCreateSerializerModel):
         PurchaseRequestCommonFunction.create_items_mapped(instance, data_item_list)
         PurchaseRequestCommonFunction.create_files_mapped(instance, attachment_list)
 
-        BudgetExtendHandler.push_budget_line_transaction(instance=instance, data_list=budget_line_data)
+        # BudgetExtendHandler.push_budget_line_transaction(instance=instance, data_list=budget_line_data)
 
         return instance
 
