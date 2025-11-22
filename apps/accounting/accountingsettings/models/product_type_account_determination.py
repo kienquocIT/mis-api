@@ -17,8 +17,7 @@ class ProductTypeAccountDetermination(MasterDataAbstractModel):
         related_name='prd_type_account_deter_product_type_mapped'
     )
     account_determination_type = models.SmallIntegerField(choices=ACCOUNT_DETERMINATION_TYPE, default=0)
-    can_change_account = models.BooleanField(default=False)
-    is_changed = models.BooleanField(default=False, help_text='True if user has change default account determination')
+    can_change_account = models.BooleanField(default=False, help_text='True if user can change')
 
     class Meta:
         verbose_name = 'Product Type Account Determination'

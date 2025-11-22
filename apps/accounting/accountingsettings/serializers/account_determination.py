@@ -79,6 +79,6 @@ class AccountDeterminationUpdateSerializer(serializers.ModelSerializer):
             )
         instance.account_determination_sub.all().delete()
         AccountDeterminationSub.objects.bulk_create(bulk_info)
-        instance.is_changed = True
-        instance.save(update_fields=['is_changed'])
+        instance.can_change_account = True
+        instance.save(update_fields=['can_change_account'])
         return instance
