@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.accounting.accountingsettings.models import ChartOfAccounts
 from apps.masterdata.saledata.models import (
-    Periods, Currency, Product, WareHouse
+    Periods, Currency, Product, WareHouse, Account,
 )
 from apps.accounting.accountingsettings.models.initial_balance import (
     InitialBalance, InitialBalanceLine, INITIAL_BALANCE_TYPE
@@ -149,7 +149,10 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
     def get_tab_customer_receivable_data(self, obj):
         return [{
             # added fields
-            # ...
+            "customer_receivable_value": item.customer_receivable_value,
+            "customer_receivable_customer": item.customer_receivable_value,
+            "customer_receivable_customer_data": item.customer_receivable_customer_data,
+            "customer_receivable_detail_data": item.customer_receivable_detail_data,
             # common fields
             **self.parse_common_fields(item)
         } for item in self.filter_lines_by_type(obj, 2)]
@@ -447,8 +450,42 @@ class InitialBalanceCommonFunction:
             raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
 
         for item in tab_data:
-            detail_data = item.pop('detail_data', {})
             # logic here
+            detail = item.pop('detail_data', {})
+            detail_data = detail.get('customer_receivable_detail_data', {})
+            customer_obj = Account.objects.filter(id=detail.get('customer_receivable_customer')).first()
+            if not customer_obj:
+                raise serializers.ValidationError({'customer_receivable_customer': _('Required customer.')})
+            unpaid = detail_data.get('unpaid_amount', 0)
+            advance = detail_data.get('advanced_payment', 0)
+            if unpaid is not None and unpaid < 0:
+                raise serializers.ValidationError({'unpaid_amount': _('Unpaid amount cannot be smaller than 0.')})
+            if advance is not None and advance < 0:
+                raise serializers.ValidationError({'advanced_payment': _('Advanced payment cannot be smaller than 0.')})
+            is_prepay = detail_data.get('is_prepayment')
+            if is_prepay:
+                if not detail_data.get('note') or detail_data.get('advanced_payment') in (None, 0):
+                    raise serializers.ValidationError({
+                        'customer_receivable_detail': _('Required advance payment and explanation.')})
+            else:
+                required_fields = [('invoice_number', ''), ('unpaid_amount', 0), ('expected_payment_date', None),
+                                   ('invoice_date', None)]
+                for field, invalid_value in required_fields:
+                    if detail_data.get(field) in (None, invalid_value):
+                        raise serializers.ValidationError(
+                            {'customer_receivable_detail': _(
+                                'Required Invoice number, Unpaid amount, Expected payment date, and Invoice date.')}
+                        )
+            # fill data
+            item['customer_receivable_value'] = item.get('debit_value', 0) + item.get('credit_value', 0)
+            item['customer_receivable_customer'] = customer_obj
+            item['customer_receivable_customer_data'] = {
+                'id': str(customer_obj.id),
+                'code': customer_obj.code,
+                'name': customer_obj.name,
+                'tax_code': customer_obj.tax_code
+            } if customer_obj else {}
+            item['customer_receivable_detail_data'] = detail_data
         return tab_data
 
     @staticmethod
