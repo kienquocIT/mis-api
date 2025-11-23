@@ -565,7 +565,7 @@ TT200_DATA = {
 }
 
 
-class AccountingMasterData:
+class AccountScript:
     """
     Class khởi tạo dữ liệu gốc (Master Data).
     """
@@ -929,7 +929,7 @@ class AccountingMasterData:
 
         with transaction.atomic():
             # Xóa dữ liệu cũ
-            AccountDetermination.objects.filter(company=company_obj).delete()
+            AccountDetermination.objects.filter(company_id=company_id).delete()
 
             created_acc_deter_objs = {}
             bulk_subs = []
@@ -941,7 +941,7 @@ class AccountingMasterData:
             for (
                 deter_fg_title, trans_key, trans_key_sub, deter_type, deter_vn_title, acc_code, deter_des, deter_exp
             ) in CONFIG_DATA:
-                account = ChartOfAccounts.get_acc(company_obj, acc_code)
+                account = ChartOfAccounts.get_acc(company_id, acc_code)
                 if not account:
                     continue
 
@@ -982,52 +982,12 @@ class AccountingMasterData:
         print(f'> Generated Account Determination for {company_obj.title}')
         return True
 
-
-class AccountingRuleManager:
-    """ Quản lý rule ngoại lệ và Reset hệ thống """
-
-    @staticmethod
-    def create_specific_rule(company_id, transaction_key, account_code, context_dict, modifier=''):
-        try:
-            company = Company.objects.get(id=company_id)
-            acc_deter_obj = AccountDetermination.objects.get(company=company, transaction_key=transaction_key)
-            acc_obj = ChartOfAccounts.get_acc(company, account_code)
-
-            if not acc_obj: return False
-
-            AccountDeterminationSub.objects.create(
-                account_determination=acc_deter_obj,
-                transaction_key_sub=modifier,
-                description=f"Custom Rule for {context_dict}",
-                account_mapped=acc_obj,
-                account_mapped_data={
-                    'id': str(acc_obj.id),
-                    'acc_code': acc_obj.acc_code,
-                    'acc_name': acc_obj.acc_name,
-                    'foreign_acc_name': acc_obj.foreign_acc_name,
-                },
-                match_criteria=context_dict
-            )
-            return True
-        except Exception as e:
-            print(f"Error: {e}")
-            return False
-
-    @staticmethod
-    def delete_specific_rule(company_id, transaction_key, context_dict):
-        key = AccountDeterminationSub.generate_key_from_dict(context_dict)
-        AccountDeterminationSub.objects.filter(
-            account_determination__company_id=company_id,
-            account_determination__transaction_key=transaction_key,
-            search_rule=key
-        ).delete()
-        return True
-
     @staticmethod
     def accounting_reset_default_200(company_id):
+        """ Quản lý rule ngoại lệ và Reset hệ thống """
         print(f'--- START RESET ACCOUNTING FOR COMPANY ID {company_id} ---')
-        AccountingMasterData.generate_account_200(company_id)
-        AccountingMasterData.add_account_default_200(company_id)
-        AccountingMasterData.generate_account_determination_200(company_id)
+        AccountScript.generate_account_200(company_id)
+        AccountScript.add_account_default_200(company_id)
+        AccountScript.generate_account_determination_200(company_id)
         print('--- RESET DONE :)) ---')
         return True

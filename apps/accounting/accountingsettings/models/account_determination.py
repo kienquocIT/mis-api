@@ -1,6 +1,7 @@
 import itertools
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from apps.accounting.accountingsettings.models.chart_of_account import ChartOfAccounts
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = [
@@ -31,6 +32,42 @@ class AccountDetermination(MasterDataAbstractModel):
         ordering = ('order', 'transaction_key')
         unique_together = ('company', 'transaction_key')
 
+    @classmethod
+    def create_specific_rule(cls, company_id, transaction_key, account_code, context_dict, modifier=''):
+        try:
+            acc_deter_obj = AccountDetermination.objects.get(company_id=company_id, transaction_key=transaction_key)
+            acc_obj = ChartOfAccounts.get_acc(company_id, account_code)
+
+            if not acc_obj: return False
+
+            AccountDeterminationSub.objects.create(
+                account_determination=acc_deter_obj,
+                transaction_key_sub=modifier,
+                description=f"Custom Rule for {context_dict}",
+                account_mapped=acc_obj,
+                account_mapped_data={
+                    'id': str(acc_obj.id),
+                    'acc_code': acc_obj.acc_code,
+                    'acc_name': acc_obj.acc_name,
+                    'foreign_acc_name': acc_obj.foreign_acc_name,
+                },
+                match_criteria=context_dict
+            )
+            return True
+        except Exception as e:
+            print(f"Error: {e}")
+            return False
+
+    @classmethod
+    def delete_specific_rule(cls, company_id, transaction_key, context_dict):
+        key = AccountDeterminationSub.generate_key_from_dict(context_dict)
+        AccountDeterminationSub.objects.filter(
+            account_determination__company_id=company_id,
+            account_determination__transaction_key=transaction_key,
+            search_rule=key
+        ).delete()
+        return True
+
 
 class AccountDeterminationSub(SimpleAbstractModel):
     account_determination = models.ForeignKey(
@@ -51,6 +88,12 @@ class AccountDeterminationSub(SimpleAbstractModel):
     match_criteria = models.JSONField(default=dict, blank=True)
     search_rule = models.CharField(max_length=500, blank=True, null=True, default='default', db_index=True)
     priority = models.IntegerField(default=0, db_index=True)
+
+    class Meta:
+        verbose_name = 'Account Determination Sub'
+        verbose_name_plural = 'Account Determination Sub'
+        ordering = ('-priority', 'account_mapped__acc_code')
+        unique_together = ('account_determination', 'transaction_key_sub', 'search_rule')
 
     def save(self, *args, **kwargs):
         criteria = self.match_criteria
@@ -109,9 +152,3 @@ class AccountDeterminationSub(SimpleAbstractModel):
             'account_mapped'
         ).order_by('-priority').first()
         return best_rule.account_mapped if best_rule else None
-
-    class Meta:
-        verbose_name = 'Account Determination Sub'
-        verbose_name_plural = 'Account Determination Sub'
-        ordering = ('-priority', 'account_mapped__acc_code')
-        unique_together = ('account_determination', 'transaction_key_sub', 'search_rule')

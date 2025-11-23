@@ -49,8 +49,8 @@ class ChartOfAccounts(MasterDataAbstractModel):
         permissions = ()
 
     @classmethod
-    def get_acc(cls, company, code):
-        return ChartOfAccounts.objects.filter(company=company, acc_code=code).first()
+    def get_acc(cls, company_id, code):
+        return ChartOfAccounts.objects.filter(company_id=company_id, acc_code=code).first()
 
     @classmethod
     def add_account(cls, company, parent_acc_type, parent_acc_code, new_acc_code, new_acc_name, new_foreign_acc_name):
