@@ -150,7 +150,7 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
         return [{
             # added fields
             "customer_receivable_value": item.customer_receivable_value,
-            "customer_receivable_customer": item.customer_receivable_value,
+            # "customer_receivable_customer": item.customer_receivable_value,
             "customer_receivable_customer_data": item.customer_receivable_customer_data,
             "customer_receivable_detail_data": item.customer_receivable_detail_data,
             # common fields
@@ -160,7 +160,10 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
     def get_tab_supplier_payable_data(self, obj):
         return [{
             # added fields
-            # ...
+            "supplier_payable_value": item.supplier_payable_value,
+            # "supplier_payable_supplier": item.supplier_payable_supplier.id,
+            "supplier_payable_supplier_data": item.supplier_payable_supplier_data,
+            "supplier_payable_detail_data": item.supplier_payable_detail_data,
             # common fields
             **self.parse_common_fields(item)
         } for item in self.filter_lines_by_type(obj, 3)]
@@ -496,8 +499,42 @@ class InitialBalanceCommonFunction:
             raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
 
         for item in tab_data:
-            detail_data = item.pop('detail_data', {})
             # logic here
+            detail = item.pop('detail_data', {})
+            detail_data = detail.get('supplier_payable_detail_data', {})
+            supplier_obj = Account.objects.filter(id=detail.get('supplier_payable_supplier')).first()
+            if not supplier_obj:
+                raise serializers.ValidationError({'supplier_payable_supplier': _('Required supplier.')})
+            unpaid = detail_data.get('unpaid_amount', 0)
+            advance = detail_data.get('advanced_payment', 0)
+            if unpaid is not None and unpaid < 0:
+                raise serializers.ValidationError({'unpaid_amount': _('Unpaid amount cannot be smaller than 0.')})
+            if advance is not None and advance < 0:
+                raise serializers.ValidationError({'advanced_payment': _('Advanced payment cannot be smaller than 0.')})
+            is_prepay = detail_data.get('is_prepayment')
+            if is_prepay:
+                if not detail_data.get('note') or detail_data.get('advanced_payment') in (None, 0):
+                    raise serializers.ValidationError({
+                        'supplier_payable_detail': _('Required advance payment and explanation.')})
+            else:
+                required_fields = [('invoice_number', ''), ('unpaid_amount', 0), ('expected_payment_date', None),
+                                   ('invoice_date', None)]
+                for field, invalid_value in required_fields:
+                    if detail_data.get(field) in (None, invalid_value):
+                        raise serializers.ValidationError(
+                            {'supplier_payable_detail': _(
+                                'Required Invoice number, Unpaid amount, Expected payment date, and Invoice date.')}
+                        )
+            # fill data
+            item['supplier_payable_value'] = item.get('debit_value', 0) + item.get('credit_value', 0)
+            item['supplier_payable_supplier'] = supplier_obj
+            item['supplier_payable_supplier_data'] = {
+                'id': str(supplier_obj.id),
+                'code': supplier_obj.code,
+                'name': supplier_obj.name,
+                'tax_code': supplier_obj.tax_code
+            } if supplier_obj else {}
+            item['supplier_payable_detail_data'] = detail_data
         return tab_data
 
     @staticmethod
