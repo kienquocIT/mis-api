@@ -956,7 +956,6 @@ class AccountingMasterData:
                         example=deter_exp,
                         account_determination_type=deter_type,
                         order=deter_type * 10,  # Sort: Sale=0, Buy=10, Inv=20, Asset=30
-                        can_change_account=True
                     )
                     created_acc_deter_objs[trans_key] = acc_deter_obj
                 else:

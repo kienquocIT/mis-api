@@ -44,39 +44,49 @@ class AccountDeterminationDetailSerializer(serializers.ModelSerializer):
 
 
 class AccountDeterminationUpdateSerializer(serializers.ModelSerializer):
-    replace_account = serializers.JSONField(default=list)
+    replace_account_list = serializers.JSONField(default=list)
 
     class Meta:
         model = AccountDetermination
         fields = (
-            'replace_account',
+            'replace_account_list',
         )
 
     @classmethod
-    def validate_replace_account(cls, replace_account):
-        if len([replace_account]) == 1:
-            replace_account_list = []
-            for account_id in [replace_account]:
+    def validate_replace_account_list(cls, replace_account_list):
+        if len(replace_account_list) != 0:
+            valid_replace_account_list = []
+            for account_id in replace_account_list:
                 account_mapped_obj = ChartOfAccounts.objects.filter(id=account_id).first()
                 if account_mapped_obj:
-                    replace_account_list.append({
+                    valid_replace_account_list.append({
+                        'transaction_key_sub': '', # must fill
+                        'description': '',
                         'account_mapped': account_mapped_obj,
                         'account_mapped_data': {
                             'id': str(account_mapped_obj.id),
                             'acc_code': account_mapped_obj.acc_code,
                             'acc_name': account_mapped_obj.acc_name,
                             'foreign_acc_name': account_mapped_obj.foreign_acc_name,
-                        }
+                        },
+                        'match_criteria': {}, # must fill
+                        'search_rule': '', # must fill
+                        'priority': 0
                     })
                 else:
-                    raise serializers.ValidationError({'account_mapped': _('Replace account mapped not found')})
-            return replace_account_list
-        raise serializers.ValidationError({'replace_account': _('Replace account length is not valid')})
+                    raise serializers.ValidationError({'account_mapped': _('Account mapped not found')})
+            return valid_replace_account_list
+        raise serializers.ValidationError({'replace_account': _('Account list cannot empty')})
+
+    def validate(self, validate_data):
+        if not self.instance.can_change_account:
+            raise serializers.ValidationError({'err': _('Not allowed to change this account determination')})
+        return validate_data
 
     def update(self, instance, validated_data):
-        replace_account = validated_data.pop('replace_account')
+        replace_account_list = validated_data.pop('replace_account_list', [])
         bulk_info = []
-        for item in replace_account:
+        for item in replace_account_list:
             bulk_info.append(
                 AccountDeterminationSub(account_determination=instance, **item)
             )
