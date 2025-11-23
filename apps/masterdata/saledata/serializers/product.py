@@ -1,6 +1,5 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from apps.accounting.accountingsettings.utils import AccountDeterminationForProductHandler
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import (
     ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer
@@ -404,10 +403,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         ProductCommonFunction.create_product_variant_item(
             product_obj, self.initial_data.get('product_variant_item_list', [])
         )
-        AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 0)
-        AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 1)
-        AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 2)
-        AccountDeterminationForProductHandler.create_account_determination_for_product(product_obj, 3)
         CompanyFunctionNumber.auto_code_update_latest_number(app_code='product')
 
         representative_product_obj = product_obj.representative_product
@@ -922,10 +917,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         ProductCommonFunction.update_product_variant_item(
             instance, self.initial_data.get('product_variant_item_list', [])
         )
-        AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 0)
-        AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 1)
-        AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 2)
-        AccountDeterminationForProductHandler.create_account_determination_for_product(instance, 3)
 
         representative_product_obj = instance.representative_product
         if representative_product_obj:

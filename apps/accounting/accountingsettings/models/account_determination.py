@@ -105,6 +105,8 @@ class AccountDeterminationSub(SimpleAbstractModel):
             account_determination__transaction_key=transaction_key,
             transaction_key_sub=modifier,
             search_rule__in=candidate_keys
+        ).select_related(
+            'account_mapped'
         ).order_by('-priority').first()
         return best_rule.account_mapped if best_rule else None
 
