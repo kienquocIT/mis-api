@@ -2,7 +2,6 @@ from datetime import datetime
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, UnitOfMeasureGroup
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = [
@@ -12,7 +11,6 @@ __all__ = [
     'Price',
     'ProductPriceList',
     'Discount',
-    'UnitOfMeasureGroup',
     'PriceListCurrency'
 ]
 
@@ -113,7 +111,7 @@ class Price(DataAbstractModel):
         related_name='price_parent'
     )
     product = models.ManyToManyField(
-        Product,
+        'saledata.Product',
         through='ProductPriceList',
         symmetrical=False,
         blank=True,
@@ -176,7 +174,7 @@ class ProductPriceList(SimpleAbstractModel):
         related_name='product_price_price',
     )
     product = models.ForeignKey(
-        Product,
+        'saledata.Product',
         on_delete=models.CASCADE,
         related_name='product_price_product',
     )
@@ -188,12 +186,12 @@ class ProductPriceList(SimpleAbstractModel):
         related_name='product_price_currency',
     )
     uom_using = models.ForeignKey(
-        UnitOfMeasure,
+        'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name='product_price_uom',
     )
     uom_group_using = models.ForeignKey(
-        UnitOfMeasureGroup,
+        'saledata.UnitOfMeasureGroup',
         on_delete=models.CASCADE,
         related_name='product_price_uom_group'
     )

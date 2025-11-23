@@ -5,6 +5,7 @@ from apps.accounting.accountingsettings.models import (
     AccountDetermination,
     AccountDeterminationSub
 )
+from apps.masterdata.saledata.models.price import Currency
 
 TT200_DATA = {
     'account_chart_assets_table': {
@@ -564,7 +565,6 @@ TT200_DATA = {
 }
 
 
-
 class AccountingMasterData:
     """
     Class khởi tạo dữ liệu gốc (Master Data).
@@ -592,6 +592,7 @@ class AccountingMasterData:
 
         with transaction.atomic():
             ChartOfAccounts.objects.filter(company=company_obj).delete()
+            primary_currency_obj = Currency.objects.filter_on_company(is_primary=True).first()
 
             acc_map = {}
             current_order = 0
@@ -613,7 +614,7 @@ class AccountingMasterData:
                             potential_parent_code = code_str[:-k]
                             if len(potential_parent_code) < 3: break
                             if int(potential_parent_code) in acc_map:
-                                parent_obj = acc_map[potential_parent_code]
+                                parent_obj = acc_map[int(potential_parent_code)]
                                 if not parent_obj.has_child:
                                     parent_obj.has_child = True
                                     parent_obj.is_account = False
@@ -630,9 +631,16 @@ class AccountingMasterData:
                         company=company_obj,
                         tenant=company_obj.tenant,
                         level=level,
+                        is_account=True,
+                        currency_mapped=primary_currency_obj,
+                        currency_mapped_data={
+                            'id': str(primary_currency_obj.id),
+                            'abbreviation': primary_currency_obj.abbreviation,
+                            'title': primary_currency_obj.title,
+                            'rate': primary_currency_obj.rate
+                        } if primary_currency_obj else {},
                         is_default=True,
                         has_child=False,
-                        is_account=True,
                         parent_account=parent_obj
                     )
                     acc_map[code] = new_acc
@@ -655,8 +663,8 @@ class AccountingMasterData:
         # 33881: Nhập hàng chưa có hóa đơn (GR/IR)
         ChartOfAccounts.add_account(
             company=company_obj, parent_acc_type=2, parent_acc_code=3388,
-            new_acc_code=33881, new_acc_name='Nhập hàng chưa có HĐ (GR/IR)',
-            new_foreign_acc_name='GR/IR Clearing Account'
+            new_acc_code=33881, new_acc_name='Nhập hàng chưa có HĐ',
+            new_foreign_acc_name='Goods receipt not invoiced'
         )
         return True
 
@@ -682,11 +690,11 @@ class AccountingMasterData:
             # ====================================================
             # NHÓM 0: BÁN HÀNG (SALES)
             # ====================================================
-            ('Rev Merchandise', 'SALE_REVENUE', '', 0, 'Doanh thu bán hàng hóa (5111)', '5111'),
-            ('Rev Service', 'SALE_REVENUE', 'SERV', 0, 'Doanh thu dịch vụ (5113)', '5113'),
+            ('Rev Merchandise', 'SALE_REVENUE', '', 0, 'Doanh thu bán hàng hóa', '5111'),
+            ('Rev Service', 'SALE_REVENUE', 'SERV', 0, 'Doanh thu dịch vụ', '5113'),
             ('Sales Deduction', 'SALE_DEDUCTION', '', 0, 'Các khoản giảm trừ chung', '521'),
             ('Sales Discount', 'SALE_DISCOUNT', '', 0, 'Chiết khấu thương mại', '5211'),
-            ('Sales Return Rev', 'SALE_RETURN', '', 0, 'Hàng bán bị trả lại (Nợ 521)', '5212'),
+            ('Sales Return Rev', 'SALE_RETURN', '', 0, 'Hàng bán bị trả lại', '5212'),
             ('Output VAT', 'SALE_VAT_OUT', '', 0, 'Thuế GTGT đầu ra', '33311'),
             ('Receivables', 'SALE_RECEIVABLE', '', 0, 'Phải thu khách hàng', '131'),
             ('Payment Cash', 'PAYMENT_MEANS', 'CASH', 0, 'Thu Tiền mặt', '1111'),
@@ -702,51 +710,51 @@ class AccountingMasterData:
             ('Payables', 'PURCHASE_PAYABLE', '', 1, 'Phải trả người bán', '331'),
             ('Advance to Vendor', 'PURCHASE_ADVANCE', '', 1, 'Trả trước cho người bán', '331'),
             ('Input VAT', 'PURCHASE_VAT_IN', '', 1, 'Thuế GTGT được khấu trừ', '1331'),
-            ('GR/IR Clearing', 'PURCHASE_GR_IR', '', 1, 'Nhập hàng chưa về HĐ', '33881'),
+            ('Uninvoiced AP', 'PURCHASE_UNINVOICED', '', 1, 'Nhập hàng chưa về HĐ', '33881'),
             ('Purchase Cost', 'PURCHASE_EXPENSE', '', 1, 'Chi phí thu mua (Vào giá vốn)', '1562'),
             ('Purchase Discount', 'PURCHASE_DISCOUNT', '', 1, 'Chiết khấu thanh toán', '515'),
-            ('Purchase Service', 'PURCHASE_SERVICE', '', 1, 'Dịch vụ mua ngoài (642)', '6427'),
+            ('Purchase Service', 'PURCHASE_SERVICE', '', 1, 'Dịch vụ mua ngoài', '6427'),
             ('FX Gain Payment', 'FX_PAYMENT', 'GAIN', 1, 'Lãi tỷ giá thanh toán', '515'),
             ('FX Loss Payment', 'FX_PAYMENT', 'LOSS', 1, 'Lỗ tỷ giá thanh toán', '635'),
 
             # ====================================================
             # NHÓM 2: KHO (INVENTORY)
             # ====================================================
-            ('Inv Merchandise', 'INV_ASSET', '', 2, 'Hàng hóa (1561)', '1561'),
-            ('Inv Raw Material', 'INV_ASSET', 'RAW', 2, 'Nguyên vật liệu (152)', '152'),
-            ('Inv Finished Goods', 'INV_ASSET', 'FG', 2, 'Thành phẩm (1551)', '1551'),
-            ('Inv Tools', 'INV_ASSET', 'TOOL', 2, 'Công cụ dụng cụ (1531)', '1531'),
-            ('COGS', 'INV_COGS', '', 2, 'Giá vốn hàng bán (632)', '632'),
-            ('Return Stock', 'INV_RETURN', '', 2, 'Giá vốn hàng trả lại (Có 632)', '632'),
-            ('Scrap Issue', 'INV_SCRAP', '', 2, 'Xuất hủy/Phế liệu (811)', '811'),
-            ('Inv Gain', 'INV_ADJUST', 'GAIN', 2, 'Kiểm kê thừa (3381)', '3381'),
-            ('Inv Loss', 'INV_ADJUST', 'LOSS', 2, 'Kiểm kê thiếu (1381)', '1381'),
-            ('Transit', 'INV_TRANSIT', '', 2, 'Hàng mua đi đường (151)', '151'),
+            ('Inv Merchandise', 'INV_ASSET', '', 2, 'Hàng hóa', '1561'),
+            ('Inv Raw Material', 'INV_ASSET', 'RAW', 2, 'Nguyên vật liệu', '152'),
+            ('Inv Finished Goods', 'INV_ASSET', 'FG', 2, 'Thành phẩm', '1551'),
+            ('Inv Tools', 'INV_ASSET', 'TOOL', 2, 'Công cụ dụng cụ ', '1531'),
+            ('COGS', 'INV_COGS', '', 2, 'Giá vốn hàng bán', '632'),
+            ('Return Stock', 'INV_RETURN', '', 2, 'Giá vốn hàng trả lại', '632'),
+            ('Scrap Issue', 'INV_SCRAP', '', 2, 'Xuất hủy/Phế liệu', '811'),
+            ('Inv Gain', 'INV_ADJUST', 'GAIN', 2, 'Kiểm kê thừa', '3381'),
+            ('Inv Loss', 'INV_ADJUST', 'LOSS', 2, 'Kiểm kê thiếu', '1381'),
+            ('Transit', 'INV_TRANSIT', '', 2, 'Hàng mua đi đường', '151'),
 
             # ====================================================
             # NHÓM 3: TÀI SẢN CỐ ĐỊNH (FIXED ASSETS) - Type 3
             # ====================================================
             # 1. Nguyên giá (Asset Cost - APC)
-            ('Asset Tangible', 'ASSET_COST', 'TANGIBLE', 3, 'TSCĐ Hữu hình (211)', '2111'),
-            ('Asset Intangible', 'ASSET_COST', 'INTANGIBLE', 3, 'TSCĐ Vô hình (213)', '2131'),
-            ('Asset Lease', 'ASSET_COST', 'LEASE', 3, 'TSCĐ Thuê tài chính (212)', '2121'),
+            ('Asset Tangible', 'ASSET_COST', 'TANGIBLE', 3, 'TSCĐ Hữu hình', '2111'),
+            ('Asset Intangible', 'ASSET_COST', 'INTANGIBLE', 3, 'TSCĐ Vô hình', '2131'),
+            ('Asset Lease', 'ASSET_COST', 'LEASE', 3, 'TSCĐ Thuê tài chính', '2121'),
 
             # 2. Khấu hao lũy kế (Accumulated Depreciation)
-            ('Depr Tangible', 'ASSET_DEPR', 'TANGIBLE', 3, 'Hao mòn TSCĐ HH (2141)', '2141'),
-            ('Depr Intangible', 'ASSET_DEPR', 'INTANGIBLE', 3, 'Hao mòn TSCĐ VH (2143)', '2143'),
-            ('Depr Lease', 'ASSET_DEPR', 'LEASE', 3, 'Hao mòn TSCĐ Thuê TC (2142)', '2142'),
+            ('Depr Tangible', 'ASSET_DEPR', 'TANGIBLE', 3, 'Hao mòn TSCĐ HH', '2141'),
+            ('Depr Intangible', 'ASSET_DEPR', 'INTANGIBLE', 3, 'Hao mòn TSCĐ VH', '2143'),
+            ('Depr Lease', 'ASSET_DEPR', 'LEASE', 3, 'Hao mòn TSCĐ Thuê TC', '2142'),
 
             # 3. Chi phí khấu hao (Depreciation Expense) -> Tùy bộ phận sử dụng
-            ('Exp Depr Admin', 'ASSET_EXP', 'ADMIN', 3, 'CP Khấu hao QLDN (6424)', '6424'),
-            ('Exp Depr Sale', 'ASSET_EXP', 'SALE', 3, 'CP Khấu hao BH (6414)', '6414'),
-            ('Exp Depr Prod', 'ASSET_EXP', 'PROD', 3, 'CP Khấu hao SX (6274)', '6274'),
+            ('Exp Depr Admin', 'ASSET_EXP', 'ADMIN', 3, 'CP Khấu hao QLDN', '6424'),
+            ('Exp Depr Sale', 'ASSET_EXP', 'SALE', 3, 'CP Khấu hao BH', '6414'),
+            ('Exp Depr Prod', 'ASSET_EXP', 'PROD', 3, 'CP Khấu hao SX', '6274'),
 
             # 4. Thanh lý & Nhượng bán (Retirement)
-            ('Asset Sale Rev', 'ASSET_SALE_REV', '', 3, 'Thu nhập thanh lý (711)', '711'),
-            ('Asset Sale Loss', 'ASSET_SALE_LOSS', '', 3, 'Chi phí thanh lý/GTCL (811)', '811'),
+            ('Asset Sale Rev', 'ASSET_SALE_REV', '', 3, 'Thu nhập thanh lý', '711'),
+            ('Asset Sale Loss', 'ASSET_SALE_LOSS', '', 3, 'Chi phí thanh lý/GTCL', '811'),
 
             # 5. XDCB dở dang (Asset under construction)
-            ('Asset AUC', 'ASSET_AUC', '', 3, 'XDCB dở dang (241)', '2412'),
+            ('Asset AUC', 'ASSET_AUC', '', 3, 'XDCB dở dang', '2412'),
         ]
 
         with transaction.atomic():
@@ -788,7 +796,8 @@ class AccountingMasterData:
                     account_mapped_data={
                         'id': str(account.id),
                         'acc_code': account.acc_code,
-                        'acc_name': account.acc_name
+                        'acc_name': account.acc_name,
+                        'foreign_acc_name': account.foreign_acc_name,
                     },
                     match_criteria=default_criteria,
                     search_rule=default_search_rule,
@@ -797,7 +806,7 @@ class AccountingMasterData:
 
             AccountDeterminationSub.objects.bulk_create(bulk_subs)
 
-        print(f'> Generated Account Determination (Incl. Fixed Assets) for {company_obj.title}')
+        print(f'> Generated Account Determination for {company_obj.title}')
         return True
 
 
@@ -818,7 +827,12 @@ class AccountingRuleManager:
                 transaction_key_sub=modifier,
                 description=f"Custom Rule for {context_dict}",
                 account_mapped=acc_obj,
-                account_mapped_data={'id': str(acc_obj.id), 'acc_code': acc_obj.acc_code},
+                account_mapped_data={
+                    'id': str(acc_obj.id),
+                    'acc_code': acc_obj.acc_code,
+                    'acc_name': acc_obj.acc_name,
+                    'foreign_acc_name': acc_obj.foreign_acc_name,
+                },
                 match_criteria=context_dict
             )
             return True

@@ -18,7 +18,7 @@ ACCOUNT_DETERMINATION_TYPE = [
 
 class AccountDetermination(MasterDataAbstractModel):
     order = models.IntegerField(default=0)
-    transaction_key = models.CharField(max_length=10, db_index=True)
+    transaction_key = models.CharField(max_length=25, db_index=True)
     foreign_title = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True, null=True)
     account_determination_type = models.SmallIntegerField(choices=ACCOUNT_DETERMINATION_TYPE, default=0)
@@ -37,18 +37,18 @@ class AccountDeterminationSub(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='sub_items'
     )
-    transaction_key_sub = models.CharField(max_length=10, blank=True, default='')
+    transaction_key_sub = models.CharField(max_length=25, blank=True, default='')
     description = models.TextField(blank=True, null=True)
 
     account_mapped = models.ForeignKey(
         'accountingsettings.ChartOfAccounts',
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name='determination_mappings'
     )
     account_mapped_data = models.JSONField(default=dict, blank=True)
 
     match_criteria = models.JSONField(default=dict, blank=True)
-    search_rule = models.CharField(max_length=512, db_index=True)
+    search_rule = models.CharField(max_length=500, blank=True, null=True, default='default', db_index=True)
     priority = models.IntegerField(default=0, db_index=True)
 
     def save(self, *args, **kwargs):
@@ -110,5 +110,5 @@ class AccountDeterminationSub(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Account Determination Sub'
         verbose_name_plural = 'Account Determination Sub'
-        ordering = ('-priority',)
+        ordering = ('-priority', 'account_mapped__acc_code')
         unique_together = ('account_determination', 'transaction_key_sub', 'search_rule')

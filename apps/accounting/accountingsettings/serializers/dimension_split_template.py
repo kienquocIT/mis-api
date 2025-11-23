@@ -55,6 +55,7 @@ class DimensionSplitTemplateListSerializer(serializers.ModelSerializer):
                 'id': item.overwrite_account.id,
                 'acc_name': item.overwrite_account.acc_name,
                 'acc_code': item.overwrite_account.acc_code,
+                'foreign_acc_name': item.overwrite_account.foreign_acc_name,
             } if item.overwrite_account else {},
             'percent': item.percent,
         } for item in obj.split_template_lines.all()]

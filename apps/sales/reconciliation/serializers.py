@@ -214,7 +214,7 @@ class ReconCommonFunction:
                         'app_code': cif_obj.get_model_code()
                     }
             # get debit & credit account obj
-            account_list = AccountDetermination.get_account_determination_sub_data(
+            account_list = AccountDetermination.get_sub_items_data(
                 tenant_id=tenant_id,
                 company_id=company_id,
                 foreign_title='Receivables from customers'
@@ -266,7 +266,7 @@ class ReconCommonFunction:
                         'app_code': cof_obj.get_model_code()
                     }
             # get debit & credit account obj
-            account_list = AccountDetermination.get_account_determination_sub_data(
+            account_list = AccountDetermination.get_sub_items_data(
                 tenant_id=tenant_id,
                 company_id=company_id,
                 foreign_title='Payable to suppliers'

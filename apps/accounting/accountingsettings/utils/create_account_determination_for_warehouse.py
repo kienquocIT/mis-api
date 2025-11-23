@@ -25,7 +25,7 @@ class AccountDeterminationForWarehouseHandler:
                 can_change_account=True
             )
             bulk_info_wh.append(wh_account_deter_obj)
-            for item in account_deter.account_determination_sub.all():
+            for item in account_deter.sub_items.all():
                 bulk_info_wh_sub.append(
                     WarehouseAccountDeterminationSub(
                         wh_account_deter=wh_account_deter_obj,

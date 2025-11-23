@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import F
 from django.utils.translation import gettext_lazy as _
+from apps.masterdata.saledata.models.price import Currency
 from apps.shared import MasterDataAbstractModel
 
 
@@ -36,6 +37,7 @@ class ChartOfAccounts(MasterDataAbstractModel):
     control_account = models.BooleanField(default=False)
     is_all_currency = models.BooleanField(default=True)
     currency_mapped = models.ForeignKey('saledata.Currency', on_delete=models.CASCADE, null=True)
+    currency_mapped_data = models.JSONField(default=dict)
     is_default = models.BooleanField(default=False)
     is_added = models.BooleanField(default=False)
 
@@ -60,6 +62,7 @@ class ChartOfAccounts(MasterDataAbstractModel):
             acc_type=parent_acc_type, acc_code=new_acc_code, company=company
         ).exists()
         if parent_account_obj and not existed_account:
+            primary_currency_obj = Currency.objects.filter_on_company(is_primary=True).first()
             ChartOfAccounts.objects.filter(
                 order__gt=parent_account_obj.order, company=company
             ).update(order=F('order') + 1)
@@ -73,6 +76,14 @@ class ChartOfAccounts(MasterDataAbstractModel):
                 company=company,
                 tenant=company.tenant,
                 level=parent_account_obj.level + 1,
+                is_account=True,
+                currency_mapped=primary_currency_obj,
+                currency_mapped_data={
+                    'id': str(primary_currency_obj.id),
+                    'abbreviation': primary_currency_obj.abbreviation,
+                    'title': primary_currency_obj.title,
+                    'rate': primary_currency_obj.rate
+                } if primary_currency_obj else {},
                 is_default=False,
                 is_added=True
             )

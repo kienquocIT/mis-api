@@ -26,7 +26,7 @@ class AccountDeterminationForProductHandler:
                     can_change_account=True
                 )
                 bulk_info_prd.append(prd_account_deter_obj)
-                for item in account_deter.account_determination_sub.all():
+                for item in account_deter.sub_items.all():
                     bulk_info_wh_sub.append(
                         ProductAccountDeterminationSub(
                             prd_account_deter=prd_account_deter_obj,

@@ -10,24 +10,26 @@ from apps.accounting.accountingsettings.models.account_determination import (
 
 
 class AccountDeterminationListSerializer(serializers.ModelSerializer):
-    account_mapped = serializers.SerializerMethodField()
+    account_determination_sub_list= serializers.SerializerMethodField()
     account_determination_type_convert = serializers.SerializerMethodField()
 
     class Meta:
         model = AccountDetermination
         fields = (
             'id',
+            'code',
             'title',
             'foreign_title',
-            'account_mapped',
+            'description',
+            'account_determination_sub_list',
             'account_determination_type',
             'account_determination_type_convert',
             'can_change_account'
         )
 
     @classmethod
-    def get_account_mapped(cls, obj):
-        return [item.account_mapped_data for item in obj.account_determination_sub.all()]
+    def get_account_determination_sub_list(cls, obj):
+        return [item.account_mapped_data for item in obj.sub_items.all()]
 
     @classmethod
     def get_account_determination_type_convert(cls, obj):
@@ -77,7 +79,7 @@ class AccountDeterminationUpdateSerializer(serializers.ModelSerializer):
             bulk_info.append(
                 AccountDeterminationSub(account_determination=instance, **item)
             )
-        instance.account_determination_sub.all().delete()
+        instance.sub_items.all().delete()
         AccountDeterminationSub.objects.bulk_create(bulk_info)
         instance.can_change_account = True
         instance.save(update_fields=['can_change_account'])
