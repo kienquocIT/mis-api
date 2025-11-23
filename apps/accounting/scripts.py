@@ -684,71 +684,234 @@ class AccountingMasterData:
             # ====================================================
             # NHÓM 0: BÁN HÀNG (SALES)
             # ====================================================
-            ('Rev Merchandise', 'SALE_REVENUE', '', 0, 'Doanh thu bán hàng hóa', '5111'),
-            ('Rev Service', 'SALE_REVENUE', 'SERV', 0, 'Doanh thu dịch vụ', '5113'),
-            ('Sales Deduction', 'SALE_DEDUCTION', '', 0, 'Các khoản giảm trừ chung', '521'),
-            ('Sales Discount', 'SALE_DISCOUNT', '', 0, 'Chiết khấu thương mại', '5211'),
-            ('Sales Return Rev', 'SALE_RETURN', '', 0, 'Hàng bán bị trả lại', '5212'),
-            ('Output VAT', 'SALE_VAT_OUT', '', 0, 'Thuế GTGT đầu ra', '33311'),
-            ('Receivables', 'SALE_RECEIVABLE', '', 0, 'Phải thu khách hàng', '131'),
-            ('Payment Cash', 'PAYMENT_MEANS', 'CASH', 0, 'Thu Tiền mặt', '1111'),
-            ('Payment Bank', 'PAYMENT_MEANS', 'BANK', 0, 'Thu Chuyển khoản', '1121'),
-            ('Uninvoiced AR', 'SALE_UNINVOICED', '', 0, 'Giao hàng chưa xuất HĐ', '13881'),
-            ('Customer Deposit', 'SALE_DEPOSIT', '', 0, 'Khách hàng đặt cọc', '3387'),
-            ('FX Gain Realized', 'FX_REALIZED', 'GAIN', 0, 'Lãi tỷ giá thực thu', '515'),
-            ('FX Loss Realized', 'FX_REALIZED', 'LOSS', 0, 'Lỗ tỷ giá thực thu', '635'),
+            ('Rev Merchandise', 'SALE_REVENUE', '', 0, 'Doanh thu bán hàng hóa', '5111',
+             'Ghi nhận doanh thu bán hàng hóa thông thường.',
+             'Xuất hóa đơn bán 100 cái ghế, ghi Có tài khoản 5111.'),
+
+            ('Rev Service', 'SALE_REVENUE', 'SERV', 0, 'Doanh thu dịch vụ', '5113',
+             'Ghi nhận doanh thu cung cấp dịch vụ.',
+             'Phí tư vấn thiết kế, phí vận chuyển tính cho khách hàng, ghi Có tài khoản 5113.'),
+
+            ('Rev Finished Goods', 'SALE_REVENUE', 'FG', 0, 'Doanh thu thành phẩm', '5112',
+             'Ghi nhận doanh thu bán thành phẩm do công ty tự sản xuất.',
+             'Bán lô thép thành phẩm đã qua chế biến, ghi Có tài khoản 5112.'),
+
+            ('Rev Scrap', 'SALE_REVENUE', 'SCRAP', 0, 'Doanh thu bán phế liệu', '711',
+             'Ghi nhận thu nhập từ bán phế liệu, rác thải.',
+             'Bán thùng carton vụn, sắt vụn từ kho, ghi Có tài khoản 711.'),
+
+            ('Sales Deduction', 'SALE_DEDUCTION', '', 0, 'Các khoản giảm trừ chung', '521',
+             'Tài khoản tổng hợp ghi nhận giảm giá, chiết khấu, hàng bán bị trả lại (Nếu không tách chi tiết).',
+             'Giảm giá chung trên đơn hàng mà không rõ lý do cụ thể.'),
+
+            ('Sales Discount', 'SALE_DISCOUNT', '', 0, 'Chiết khấu thương mại', '5211',
+             'Ghi nhận chiết khấu thương mại cho khách hàng hưởng (do mua số lượng lớn).',
+             'Khách hàng mua 1000 sản phẩm được giảm 5%, ghi Nợ tài khoản 5211.'),
+
+            ('Sales Return Rev', 'SALE_RETURN', '', 0, 'Hàng bán bị trả lại', '5212',
+             'Ghi nhận giảm doanh thu khi khách hàng trả lại hàng.',
+             'Khách hàng trả lại 2 cái ghế bị lỗi, ghi Nợ tài khoản 5212.'),
+
+            ('Output VAT', 'SALE_VAT_OUT', '', 0, 'Thuế giá trị gia tăng đầu ra', '33311',
+             'Thuế giá trị gia tăng phải nộp cho Nhà nước.',
+             'Hóa đơn 100 triệu đồng, thuế giá trị gia tăng 10%, ghi Có tài khoản 33311: 10 triệu đồng.'),
+
+            ('Export Duty', 'SALE_DUTY_EXP', '', 0, 'Thuế xuất khẩu', '3333',
+             'Thuế xuất khẩu phải nộp khi bán hàng ra nước ngoài.',
+             'Xuất khẩu lô hàng đi Mỹ, thuế xuất khẩu 5%, ghi Có tài khoản 3333.'),
+
+            ('Receivables', 'SALE_RECEIVABLE', '', 0, 'Phải thu khách hàng', '131',
+             'Công nợ phải thu khách hàng.',
+             'Bán chịu cho Công ty A, ghi Nợ tài khoản 131 (Đối tượng Công ty A).'),
+
+            ('Payment Cash', 'PAYMENT_MEANS', 'CASH', 0, 'Thu Tiền mặt', '1111',
+             'Thu tiền mặt tại quỹ.',
+             'Khách hàng trả tiền mặt tại quầy, ghi Nợ tài khoản 1111.'),
+
+            ('Payment Bank', 'PAYMENT_MEANS', 'BANK', 0, 'Thu Chuyển khoản', '1121',
+             'Thu tiền qua ngân hàng (Tiền gửi).',
+             'Khách hàng chuyển khoản vào Ngân hàng Vietcombank, ghi Nợ tài khoản 1121.'),
+
+            ('Uninvoiced AR', 'SALE_UNINVOICED', '', 0, 'Giao hàng chưa xuất hóa đơn', '13881',
+             'Đã giao hàng, ghi nhận doanh thu tạm nhưng chưa xuất hóa đơn giá trị gia tăng.',
+             'Xuất kho ngày 28, sang tháng sau mới xuất hóa đơn. Ghi Nợ 13881 / Có 511.'),
+
+            ('Customer Deposit', 'SALE_DEPOSIT', '', 0, 'Khách hàng đặt cọc', '3387',
+             'Nhận tiền đặt cọc trước của khách hàng.',
+             'Khách hàng đặt cọc 30% giá trị hợp đồng, ghi Có tài khoản 3387.'),
+
+            ('Underpayment', 'SALE_UNDERPAY', '', 0, 'Khách trả thiếu', '1388',
+             'Xử lý số tiền lẻ khách hàng trả thiếu (đưa vào phải thu khác).',
+             'Hóa đơn 100.500 đồng, khách trả 100.000 đồng. Treo 500 đồng vào Nợ tài khoản 1388.'),
+
+            ('Overpayment', 'SALE_OVERPAY', '', 0, 'Khách trả thừa', '3388',
+             'Xử lý số tiền thừa khách hàng trả dư (đưa vào phải trả khác).',
+             'Hóa đơn 1 triệu đồng, khách chuyển nhầm 1,1 triệu đồng. Treo 100.000 đồng vào Có tài khoản 3388.'),
+
+            ('FX Gain Realized', 'FX_REALIZED', 'GAIN', 0, 'Lãi tỷ giá thực thu', '515',
+             'Lãi chênh lệch tỷ giá khi thu tiền từ khách hàng.',
+             'Lúc bán tỷ giá 23.000, lúc thu tiền tỷ giá 24.000 -> Lãi, ghi Có tài khoản 515.'),
+
+            ('FX Loss Realized', 'FX_REALIZED', 'LOSS', 0, 'Lỗ tỷ giá thực thu', '635',
+             'Lỗ chênh lệch tỷ giá khi thu tiền từ khách hàng.',
+             'Lúc bán tỷ giá 24.000, lúc thu tiền tỷ giá 23.000 -> Lỗ, ghi Nợ tài khoản 635.'),
 
             # ====================================================
             # NHÓM 1: MUA HÀNG (PURCHASING)
             # ====================================================
-            ('Payables', 'PURCHASE_PAYABLE', '', 1, 'Phải trả người bán', '331'),
-            ('Advance to Vendor', 'PURCHASE_ADVANCE', '', 1, 'Trả trước cho người bán', '331'),
-            ('Input VAT', 'PURCHASE_VAT_IN', '', 1, 'Thuế GTGT được khấu trừ', '1331'),
-            ('Uninvoiced AP', 'PURCHASE_UNINVOICED', '', 1, 'Nhập hàng chưa về HĐ', '33881'),
-            ('Purchase Cost', 'PURCHASE_EXPENSE', '', 1, 'Chi phí thu mua (Vào giá vốn)', '1562'),
-            ('Purchase Discount', 'PURCHASE_DISCOUNT', '', 1, 'Chiết khấu thanh toán', '515'),
-            ('Purchase Service', 'PURCHASE_SERVICE', '', 1, 'Dịch vụ mua ngoài', '6427'),
-            ('FX Gain Payment', 'FX_PAYMENT', 'GAIN', 1, 'Lãi tỷ giá thanh toán', '515'),
-            ('FX Loss Payment', 'FX_PAYMENT', 'LOSS', 1, 'Lỗ tỷ giá thanh toán', '635'),
+            ('Payables', 'PURCHASE_PAYABLE', '', 1, 'Phải trả người bán', '331',
+             'Công nợ phải trả nhà cung cấp.',
+             'Mua hàng chịu của Nhà cung cấp B, ghi Có tài khoản 331.'),
+
+            ('Advance to Vendor', 'PURCHASE_ADVANCE', '', 1, 'Trả trước cho người bán', '331',
+             'Ứng trước tiền hàng cho nhà cung cấp.',
+             'Chuyển khoản đặt cọc trước 50%, ghi Nợ tài khoản 331.'),
+
+            ('Input VAT', 'PURCHASE_VAT_IN', '', 1, 'Thuế giá trị gia tăng được khấu trừ', '1331',
+             'Thuế giá trị gia tăng đầu vào trên hóa đơn mua hàng.',
+             'Hóa đơn mua máy tính 20 triệu đồng, thuế 2 triệu đồng, ghi Nợ tài khoản 1331: 2 triệu đồng.'),
+
+            ('GR/IR Clearing', 'PURCHASE_GR_IR', '', 1, 'Nhập hàng chưa về hóa đơn', '33881',
+             'Tài khoản trung gian GR/IR (Nhập hàng/Nhận hóa đơn).',
+             'Hàng về kho nhập trước (Nợ 156/Có 33881). Hóa đơn về sau (Nợ 33881/Có 331).'),
+
+            ('Purchase Cost', 'PURCHASE_EXPENSE', '', 1, 'Chi phí thu mua', '1562',
+             'Chi phí vận chuyển, bốc xếp liên quan đến mua hàng.',
+             'Trả tiền xe tải chở hàng về kho, ghi Nợ tài khoản 1562 (để phân bổ vào giá vốn hàng nhập).'),
+
+            ('Purchase Discount', 'PURCHASE_DISCOUNT', '', 1, 'Chiết khấu thanh toán', '515',
+             'Được hưởng chiết khấu thanh toán do trả tiền sớm cho nhà cung cấp.',
+             'Trả tiền sớm được giảm 1%, phần giảm ghi Có tài khoản 515.'),
+
+            ('Purchase Service', 'PURCHASE_SERVICE', '', 1, 'Dịch vụ mua ngoài', '6427',
+             'Mua dịch vụ dùng ngay (không nhập qua kho).',
+             'Tiền điện, nước, thuê văn phòng, ghi Nợ tài khoản 6427.'),
+
+            ('FX Gain Payment', 'FX_PAYMENT', 'GAIN', 1, 'Lãi tỷ giá thanh toán', '515',
+             'Lãi chênh lệch tỷ giá khi trả tiền nhà cung cấp.',
+             'Lúc mua tỷ giá 24.000, lúc trả tiền tỷ giá 23.000 -> Lãi, ghi Có tài khoản 515.'),
+
+            ('FX Loss Payment', 'FX_PAYMENT', 'LOSS', 1, 'Lỗ tỷ giá thanh toán', '635',
+             'Lỗ chênh lệch tỷ giá khi trả tiền nhà cung cấp.',
+             'Lúc mua tỷ giá 23.000, lúc trả tiền tỷ giá 24.000 -> Lỗ, ghi Nợ tài khoản 635.'),
 
             # ====================================================
             # NHÓM 2: KHO (INVENTORY)
             # ====================================================
-            ('Inv Merchandise', 'INV_ASSET', '', 2, 'Hàng hóa', '1561'),
-            ('Inv Raw Material', 'INV_ASSET', 'RAW', 2, 'Nguyên vật liệu', '152'),
-            ('Inv Finished Goods', 'INV_ASSET', 'FG', 2, 'Thành phẩm', '1551'),
-            ('Inv Tools', 'INV_ASSET', 'TOOL', 2, 'Công cụ dụng cụ ', '1531'),
-            ('COGS', 'INV_COGS', '', 2, 'Giá vốn hàng bán', '632'),
-            ('Return Stock', 'INV_RETURN', '', 2, 'Giá vốn hàng trả lại', '632'),
-            ('Scrap Issue', 'INV_SCRAP', '', 2, 'Xuất hủy/Phế liệu', '811'),
-            ('Inv Gain', 'INV_ADJUST', 'GAIN', 2, 'Kiểm kê thừa', '3381'),
-            ('Inv Loss', 'INV_ADJUST', 'LOSS', 2, 'Kiểm kê thiếu', '1381'),
-            ('Transit', 'INV_TRANSIT', '', 2, 'Hàng mua đi đường', '151'),
+            ('Inv Merchandise', 'INV_ASSET', '', 2, 'Hàng hóa', '1561',
+             'Giá trị hàng hóa thương mại nhập kho.',
+             'Nhập kho điện thoại iPhone để bán, ghi Nợ tài khoản 1561.'),
+
+            ('Inv Raw Material', 'INV_ASSET', 'RAW', 2, 'Nguyên vật liệu', '152',
+             'Giá trị nguyên liệu nhập kho để sản xuất.',
+             'Nhập kho thép tấm để sản xuất, ghi Nợ tài khoản 152.'),
+
+            ('Inv Finished Goods', 'INV_ASSET', 'FG', 2, 'Thành phẩm', '1551',
+             'Giá trị thành phẩm hoàn thành nhập kho.',
+             'Nhập kho bàn ghế đã đóng xong, ghi Nợ tài khoản 1551.'),
+
+            ('Inv Tools', 'INV_ASSET', 'TOOL', 2, 'Công cụ dụng cụ', '1531',
+             'Giá trị công cụ, dụng cụ nhập kho.',
+             'Nhập kho máy khoan cầm tay, ghi Nợ tài khoản 1531.'),
+
+            ('Inv Consignment', 'INV_ASSET', 'CONSIGN', 2, 'Hàng gửi đi bán', '157',
+             'Hàng xuất kho gửi đại lý bán hộ hoặc ký gửi.',
+             'Xuất kho gửi đại lý A, ghi Nợ 157 / Có 156.'),
+
+            ('COGS', 'INV_COGS', '', 2, 'Giá vốn hàng bán', '632',
+             'Ghi nhận giá vốn khi xuất kho bán hàng.',
+             'Xuất bán 1 cái ghế giá vốn 500.000 đồng, ghi Nợ 632 / Có 156.'),
+
+            ('Return Stock', 'INV_RETURN', '', 2, 'Giá vốn hàng trả lại', '632',
+             'Nhập lại kho hàng khách trả (Ghi giảm giá vốn).',
+             'Nhập lại cái ghế khách trả, ghi Nợ 156 / Có 632.'),
+
+            ('Scrap Issue', 'INV_SCRAP', '', 2, 'Xuất hủy/Phế liệu', '811',
+             'Xuất kho tiêu hủy hoặc mất mát không xác định.',
+             'Hàng bị cháy hỏng phải hủy, ghi Nợ 811 / Có 156.'),
+
+            ('Consume Production', 'INV_CONSUME', 'PROD', 2, 'Xuất nguyên vật liệu cho sản xuất', '621',
+             'Xuất nguyên vật liệu trực tiếp để sản xuất sản phẩm.',
+             'Xuất gỗ để đóng bàn, ghi Nợ 621 / Có 152.'),
+
+            ('Consume Dept', 'INV_CONSUME', 'DEPT', 2, 'Xuất dùng cho bộ phận', '6422',
+             'Xuất công cụ dụng cụ/Vật liệu cho văn phòng hoặc quản lý dùng.',
+             'Xuất giấy in cho phòng kế toán, ghi Nợ 642 / Có 153.'),
+
+            ('Consume Factory', 'INV_CONSUME', 'FACTORY', 2, 'Xuất dùng cho phân xưởng', '6272',
+             'Xuất công cụ dụng cụ/Vật liệu cho phân xưởng dùng chung.',
+             'Xuất dầu nhớt chạy máy, ghi Nợ 627 / Có 152.'),
+
+            ('Inv Gain', 'INV_ADJUST', 'GAIN', 2, 'Kiểm kê thừa', '3381',
+             'Tài sản thừa chờ xử lý khi kiểm kê kho.',
+             'Kiểm kho thấy thừa 1 cái, ghi Nợ 156 / Có 3381.'),
+
+            ('Inv Loss', 'INV_ADJUST', 'LOSS', 2, 'Kiểm kê thiếu', '1381',
+             'Tài sản thiếu chờ xử lý khi kiểm kê kho.',
+             'Kiểm kho thấy thiếu 1 cái, ghi Nợ 1381 / Có 156.'),
+
+            ('Revaluation Gain', 'INV_REVAL', 'GAIN', 2, 'Đánh giá lại kho', '412',
+             'Chênh lệch tăng do đánh giá lại tài sản.',
+             'Đánh giá lại tồn kho cuối kỳ tăng giá, ghi Nợ 156 / Có 412.'),
+
+            ('Transit', 'INV_TRANSIT', '', 2, 'Hàng mua đi đường', '151',
+             'Hàng đã mua (nhận quyền sở hữu) nhưng chưa về nhập kho.',
+             'Cuối tháng hàng đang trên tàu chưa về kho, ghi Nợ 151 / Có 331.'),
+
+            ('Prod Receipt Credit', 'PROD_OUTPUT', '', 2, 'Nhập kho thành phẩm', '154',
+             'Tài khoản đối ứng khi nhập kho thành phẩm từ sản xuất.',
+             'Nhập kho thành phẩm từ sản xuất, ghi Nợ 155 / Có 154.'),
 
             # ====================================================
-            # NHÓM 3: TÀI SẢN CỐ ĐỊNH (FIXED ASSETS) - Type 3
+            # NHÓM 3: TÀI SẢN CỐ ĐỊNH (FIXED ASSETS)
             # ====================================================
-            # 1. Nguyên giá (Asset Cost - APC)
-            ('Asset Tangible', 'ASSET_COST', 'TANGIBLE', 3, 'TSCĐ Hữu hình', '2111'),
-            ('Asset Intangible', 'ASSET_COST', 'INTANGIBLE', 3, 'TSCĐ Vô hình', '2131'),
-            ('Asset Lease', 'ASSET_COST', 'LEASE', 3, 'TSCĐ Thuê tài chính', '2121'),
+            ('Asset Tangible', 'ASSET_COST', 'TANGIBLE', 3, 'Tài sản cố định hữu hình', '2111',
+             'Nguyên giá Tài sản cố định hữu hình.',
+             'Mua xe tải, ghi Nợ tài khoản 2111.'),
 
-            # 2. Khấu hao lũy kế (Accumulated Depreciation)
-            ('Depr Tangible', 'ASSET_DEPR', 'TANGIBLE', 3, 'Hao mòn TSCĐ HH', '2141'),
-            ('Depr Intangible', 'ASSET_DEPR', 'INTANGIBLE', 3, 'Hao mòn TSCĐ VH', '2143'),
-            ('Depr Lease', 'ASSET_DEPR', 'LEASE', 3, 'Hao mòn TSCĐ Thuê TC', '2142'),
+            ('Asset Intangible', 'ASSET_COST', 'INTANGIBLE', 3, 'Tài sản cố định vô hình', '2131',
+             'Nguyên giá Tài sản cố định vô hình.',
+             'Mua phần mềm ERP bản quyền, ghi Nợ tài khoản 2131.'),
 
-            # 3. Chi phí khấu hao (Depreciation Expense) -> Tùy bộ phận sử dụng
-            ('Exp Depr Admin', 'ASSET_EXP', 'ADMIN', 3, 'CP Khấu hao QLDN', '6424'),
-            ('Exp Depr Sale', 'ASSET_EXP', 'SALE', 3, 'CP Khấu hao BH', '6414'),
-            ('Exp Depr Prod', 'ASSET_EXP', 'PROD', 3, 'CP Khấu hao SX', '6274'),
+            ('Asset Lease', 'ASSET_COST', 'LEASE', 3, 'Tài sản cố định thuê tài chính', '2121',
+             'Nguyên giá Tài sản cố định thuê tài chính.',
+             'Thuê tài chính dây chuyền sản xuất, ghi Nợ tài khoản 2121.'),
 
-            # 4. Thanh lý & Nhượng bán (Retirement)
-            ('Asset Sale Rev', 'ASSET_SALE_REV', '', 3, 'Thu nhập thanh lý', '711'),
-            ('Asset Sale Loss', 'ASSET_SALE_LOSS', '', 3, 'Chi phí thanh lý/GTCL', '811'),
+            ('Depr Tangible', 'ASSET_DEPR', 'TANGIBLE', 3, 'Hao mòn Tài sản cố định hữu hình', '2141',
+             'Hao mòn lũy kế của Tài sản cố định hữu hình.',
+             'Trích khấu hao xe tải, ghi Có tài khoản 2141.'),
 
-            # 5. XDCB dở dang (Asset under construction)
-            ('Asset AUC', 'ASSET_AUC', '', 3, 'XDCB dở dang', '2412'),
+            ('Depr Intangible', 'ASSET_DEPR', 'INTANGIBLE', 3, 'Hao mòn Tài sản cố định vô hình', '2143',
+             'Hao mòn lũy kế của Tài sản cố định vô hình.',
+             'Trích khấu hao phần mềm, ghi Có tài khoản 2143.'),
+
+            ('Depr Lease', 'ASSET_DEPR', 'LEASE', 3, 'Hao mòn Tài sản cố định thuê tài chính', '2142',
+             'Hao mòn lũy kế của Tài sản cố định thuê tài chính.',
+             'Trích khấu hao tài sản thuê, ghi Có tài khoản 2142.'),
+
+            ('Exp Depr Admin', 'ASSET_EXP', 'ADMIN', 3, 'Chi phí khấu hao Quản lý doanh nghiệp', '6424',
+             'Chi phí khấu hao tính vào bộ phận Quản lý doanh nghiệp.',
+             'Khấu hao xe ô tô giám đốc, ghi Nợ 6424 / Có 2141.'),
+
+            ('Exp Depr Sale', 'ASSET_EXP', 'SALE', 3, 'Chi phí khấu hao Bán hàng', '6414',
+             'Chi phí khấu hao tính vào bộ phận Bán hàng.',
+             'Khấu hao xe giao hàng, ghi Nợ 6414 / Có 2141.'),
+
+            ('Exp Depr Prod', 'ASSET_EXP', 'PROD', 3, 'Chi phí khấu hao Sản xuất', '6274',
+             'Chi phí khấu hao tính vào bộ phận Sản xuất chung.',
+             'Khấu hao máy móc nhà xưởng, ghi Nợ 6274 / Có 2141.'),
+
+            ('Asset Sale Rev', 'ASSET_SALE_REV', '', 3, 'Thu nhập thanh lý', '711',
+             'Thu nhập khác từ việc thanh lý, nhượng bán Tài sản cố định.',
+             'Bán xe cũ được 100 triệu đồng, ghi Có tài khoản 711.'),
+
+            ('Asset Sale Loss', 'ASSET_SALE_LOSS', '', 3, 'Chi phí thanh lý (Giá trị còn lại)', '811',
+             'Giá trị còn lại của tài sản khi thanh lý, nhượng bán.',
+             'Xe nguyên giá 1 tỷ, đã khấu hao 900 triệu. Xóa sổ ghi Nợ 811: 100 triệu đồng.'),
+
+            ('Asset AUC', 'ASSET_AUC', '', 3, 'Xây dựng cơ bản dở dang', '2412',
+             'Chi phí xây dựng, mua sắm tài sản chưa hoàn thành/chưa đưa vào sử dụng.',
+             'Đang xây dựng nhà xưởng chưa xong, chi phí ghi Nợ tài khoản 2412.'),
         ]
 
         with transaction.atomic():
@@ -762,7 +925,9 @@ class AccountingMasterData:
             default_search_rule = AccountDeterminationSub.generate_key_from_dict(default_criteria)
             default_priority = 0
 
-            for fg_title, trans_key, trans_key_sub, det_type, vn_title, acc_code in CONFIG_DATA:
+            for (
+                deter_fg_title, trans_key, trans_key_sub, deter_type, deter_vn_title, acc_code, deter_des, deter_exp
+            ) in CONFIG_DATA:
                 account = ChartOfAccounts.get_acc(company_obj, acc_code)
                 if not account:
                     continue
@@ -772,10 +937,12 @@ class AccountingMasterData:
                         company=company_obj,
                         tenant=company_obj.tenant,
                         transaction_key=trans_key,
-                        title=vn_title,
-                        foreign_title=fg_title,
-                        account_determination_type=det_type,
-                        order=det_type * 10,  # Sort: Sale=0, Buy=10, Inv=20, Asset=30
+                        title=deter_vn_title,
+                        foreign_title=deter_fg_title,
+                        description=deter_des,
+                        example=deter_exp,
+                        account_determination_type=deter_type,
+                        order=deter_type * 10,  # Sort: Sale=0, Buy=10, Inv=20, Asset=30
                         can_change_account=True
                     )
                     created_acc_deter_objs[trans_key] = acc_deter_obj
@@ -785,7 +952,7 @@ class AccountingMasterData:
                 bulk_subs.append(AccountDeterminationSub(
                     account_determination=acc_deter_obj,
                     transaction_key_sub=trans_key_sub,
-                    description=vn_title,
+                    description=deter_vn_title,
                     account_mapped=account,
                     account_mapped_data={
                         'id': str(account.id),

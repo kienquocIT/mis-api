@@ -21,6 +21,7 @@ class AccountDeterminationListSerializer(serializers.ModelSerializer):
             'title',
             'foreign_title',
             'description',
+            'example',
             'account_determination_sub_list',
             'account_determination_type',
             'account_determination_type_convert',

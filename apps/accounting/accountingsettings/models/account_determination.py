@@ -21,6 +21,7 @@ class AccountDetermination(MasterDataAbstractModel):
     transaction_key = models.CharField(max_length=25, db_index=True)
     foreign_title = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True, null=True)
+    example = models.TextField(blank=True, null=True)
     account_determination_type = models.SmallIntegerField(choices=ACCOUNT_DETERMINATION_TYPE, default=0)
     can_change_account = models.BooleanField(default=False, help_text='True if user can change')
 
