@@ -19,8 +19,8 @@ ACCOUNT_DETERMINATION_TYPE = [
 
 class AccountDetermination(MasterDataAbstractModel):
     order = models.IntegerField(default=0)
-    transaction_key = models.CharField(max_length=25, db_index=True)
     foreign_title = models.CharField(max_length=100, blank=True)
+    transaction_key = models.CharField(max_length=25, db_index=True)
     description = models.TextField(blank=True, null=True)
     example = models.TextField(blank=True, null=True)
     account_determination_type = models.SmallIntegerField(choices=ACCOUNT_DETERMINATION_TYPE, default=0)
@@ -37,10 +37,9 @@ class AccountDetermination(MasterDataAbstractModel):
         try:
             acc_deter_obj = AccountDetermination.objects.get(company_id=company_id, transaction_key=transaction_key)
             acc_obj = ChartOfAccounts.get_acc(company_id, account_code)
-
-            if not acc_obj: return False
-
-            AccountDeterminationSub.objects.create(
+            if not acc_obj:
+                return False
+            AccountDeterminationSub.objects.update_or_create(
                 account_determination=acc_deter_obj,
                 transaction_key_sub=modifier,
                 description=f"Custom Rule for {context_dict}",
@@ -88,6 +87,7 @@ class AccountDeterminationSub(SimpleAbstractModel):
     match_criteria = models.JSONField(default=dict, blank=True)
     search_rule = models.CharField(max_length=500, blank=True, null=True, default='default', db_index=True)
     priority = models.IntegerField(default=0, db_index=True)
+    is_custom = models.BooleanField(default=False, editable=False)
 
     class Meta:
         verbose_name = 'Account Determination Sub'
@@ -103,6 +103,7 @@ class AccountDeterminationSub(SimpleAbstractModel):
 
         self.priority = len(criteria)
         self.search_rule = self.generate_key_from_dict(criteria)
+        self.is_custom = bool(criteria)
         super().save(*args, **kwargs)
 
     @staticmethod
@@ -138,12 +139,12 @@ class AccountDeterminationSub(SimpleAbstractModel):
         return candidates
 
     @classmethod
-    def get_gl_account(cls, company_id, transaction_key, context_dict, modifier=''):
+    def get_best_rule(cls, company_id, transaction_key, context_dict, modifier=''):
         """
         Hàm tìm tài khoản tối ưu nhất
         """
         candidate_keys = cls.generate_candidate_keys(context_dict)
-        best_rule = cls.objects.filter(
+        best_rule_obj = cls.objects.filter(
             account_determination__company_id=company_id,
             account_determination__transaction_key=transaction_key,
             transaction_key_sub=modifier,
@@ -151,4 +152,4 @@ class AccountDeterminationSub(SimpleAbstractModel):
         ).select_related(
             'account_mapped'
         ).order_by('-priority').first()
-        return best_rule.account_mapped if best_rule else None
+        return best_rule_obj

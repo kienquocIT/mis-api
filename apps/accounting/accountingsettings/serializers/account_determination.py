@@ -20,6 +20,7 @@ class AccountDeterminationListSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'foreign_title',
+            'transaction_key',
             'description',
             'example',
             'account_determination_sub_list',
