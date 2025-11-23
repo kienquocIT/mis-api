@@ -679,13 +679,7 @@ class AccountingMasterData:
         except Company.DoesNotExist:
             return False
 
-        def get_acc(code):
-            try:
-                return ChartOfAccounts.objects.filter(company=company_obj, acc_code=int(code)).first()
-            except (ValueError, TypeError):
-                return None
-
-        # --- DANH SÁCH CẤU HÌNH FULL OPTION ---
+        # --- DANH SÁCH CẤU HÌNH ---
         CONFIG_DATA = [
             # ====================================================
             # NHÓM 0: BÁN HÀNG (SALES)
