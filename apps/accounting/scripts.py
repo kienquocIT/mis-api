@@ -935,7 +935,7 @@ class AccountScript:
             bulk_subs = []
 
             default_criteria = {}
-            default_search_rule = AccountDeterminationSub.generate_key_from_dict(default_criteria)
+            default_search_rule = AccountDeterminationSub.generate_search_rule(default_criteria)
             default_priority = 0
 
             for (
@@ -972,7 +972,7 @@ class AccountScript:
                         'acc_name': account.acc_name,
                         'foreign_acc_name': account.foreign_acc_name,
                     },
-                    match_criteria=default_criteria,
+                    match_context=default_criteria,
                     search_rule=default_search_rule,
                     priority=default_priority
                 ))

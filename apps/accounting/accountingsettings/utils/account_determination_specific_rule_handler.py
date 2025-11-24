@@ -7,7 +7,7 @@ from apps.accounting.accountingsettings.models import (
 
 class AccountDeterminationSpecificRule:
     @staticmethod
-    def get_specific_rules(company_id, context, account_determination_types=None):
+    def get_specific_rules(company_id, context_dict, account_determination_types=None):
         filter_kwargs = {'company_id': company_id}
         if account_determination_types is not None:
             if isinstance(account_determination_types, list):
@@ -22,7 +22,7 @@ class AccountDeterminationSpecificRule:
             best_rule_obj = AccountDeterminationSub.get_best_rule(
                 company_id=company_id,
                 transaction_key=header.transaction_key,
-                context_dict=context
+                context_dict=context_dict
             )
             if best_rule_obj:
                 result.append({
@@ -39,15 +39,15 @@ class AccountDeterminationSpecificRule:
         return result
 
     @staticmethod
-    def create_specific_rule(company_id, context, transaction_key, account_id):
+    def create_specific_rule(company_id, context_dict, transaction_key, account_id):
         account_obj = ChartOfAccounts.objects.filter(id=account_id).first()
         if account_obj:
-            AccountDetermination.create_specific_rule(
-                company_id, transaction_key, account_obj.acc_code, context
+            AccountDeterminationSub.create_specific_rule(
+                company_id, transaction_key, account_obj.acc_code, context_dict
             )
         return True
 
     @staticmethod
-    def delete_specific_rule(company_id, context, transaction_key):
-        AccountDetermination.delete_specific_rule(company_id, transaction_key, context)
+    def delete_specific_rule(company_id, context_dict, transaction_key):
+        AccountDeterminationSub.delete_specific_rule(company_id, transaction_key, context_dict)
         return True

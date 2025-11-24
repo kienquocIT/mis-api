@@ -70,7 +70,7 @@ class AccountDeterminationUpdateSerializer(serializers.ModelSerializer):
                             'acc_name': account_mapped_obj.acc_name,
                             'foreign_acc_name': account_mapped_obj.foreign_acc_name,
                         },
-                        'match_criteria': {}, # must fill
+                        'match_context': {}, # must fill
                         'search_rule': '', # must fill
                         'priority': 0
                     })
