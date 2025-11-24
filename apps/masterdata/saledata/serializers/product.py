@@ -155,8 +155,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'valuation_method',
             # Purchase
             'purchase_default_uom', 'purchase_tax', 'supplied_by',
-            # Accounting
-            'account_deter_referenced_by',
             # Attribute
             'duration_unit'
         )
@@ -442,7 +440,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'product_variant_attribute_list',
             'product_variant_item_list',
             'is_public_website',
-            'account_deter_referenced_by',
             # Transaction information
             'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount',
             'component_list_data',
