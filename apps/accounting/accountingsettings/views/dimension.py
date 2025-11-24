@@ -365,4 +365,3 @@ class DimensionSplitTemplateDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
-
