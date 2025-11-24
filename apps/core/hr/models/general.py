@@ -7,7 +7,7 @@ from typing import Union
 from uuid import UUID
 from django.db import models
 from apps.core.models import TenantAbstractModel
-from apps.masterdata.saledata.models import Periods
+from apps.masterdata.saledata.models.periods import Periods
 from apps.sales.budgetplan.models import BudgetPlanCompanyExpense, BudgetPlanGroupExpense
 
 

@@ -1,5 +1,6 @@
 from django.db import models
 
+# from apps.accounting.budget.utils.budget_extend import BudgetExtendHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.purchasing.utils import PRHandler
@@ -102,6 +103,7 @@ class PurchaseRequest(DataAbstractModel):
                         app_code=None, instance=self, in_workflow=True, kwargs=kwargs
                     )
                     self.update_remain_for_purchase_request_so(self)
+                    # BudgetExtendHandler.apply_to_budget_line(instance=self)  # budget line
         # diagram
         PRHandler.push_diagram(instance=self)
         # hit DB

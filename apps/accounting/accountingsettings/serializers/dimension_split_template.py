@@ -1,10 +1,9 @@
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from rest_framework.fields import SerializerMethodField
-
-from apps.accounting.accountingsettings.models import Dimension, DimensionValue, DimensionSplitTemplate, \
-    DimensionSplitTemplateLine, ChartOfAccounts
+from apps.accounting.accountingsettings.models import (
+    Dimension, DimensionValue, DimensionSplitTemplate, DimensionSplitTemplateLine, ChartOfAccounts
+)
 
 __all__ = [
     'DimensionSplitTemplateListSerializer',
@@ -55,6 +54,7 @@ class DimensionSplitTemplateListSerializer(serializers.ModelSerializer):
                 'id': item.overwrite_account.id,
                 'acc_name': item.overwrite_account.acc_name,
                 'acc_code': item.overwrite_account.acc_code,
+                'foreign_acc_name': item.overwrite_account.foreign_acc_name,
             } if item.overwrite_account else {},
             'percent': item.percent,
         } for item in obj.split_template_lines.all()]

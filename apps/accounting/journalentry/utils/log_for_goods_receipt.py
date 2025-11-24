@@ -40,7 +40,7 @@ class JEForGoodsReceiptHandler:
                         'taxable_value': 0,
                     })
 
-        account_list = AccountDetermination.get_account_determination_sub_data(
+        account_list = AccountDetermination.get_sub_items_data(
             tenant_id=gr_obj.tenant_id,
             company_id=gr_obj.company_id,
             foreign_title='Customer overpayment'

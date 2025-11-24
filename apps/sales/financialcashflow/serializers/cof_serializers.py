@@ -1,5 +1,9 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
+
+from apps.accounting.budget.serializers import BudgetLineTransactionCreateSerializer, \
+    BudgetLineTransactionListSerializer
+from apps.accounting.budget.utils.budget_extend import BudgetExtendHandler
 from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, AccountBanks
@@ -78,6 +82,10 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
     #     'bank_value': number,
     #     'company_bank_account_id': uuid,
     # }
+    budget_line_data = BudgetLineTransactionCreateSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = CashOutflow
@@ -98,7 +106,10 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
             'cash_out_ap_invoice_data',
             # payment method data
             'payment_method_data',
-            'banking_information'
+            'banking_information',
+            'total_value',
+            # budget line data
+            'budget_line_data',
         )
 
     def validate(self, validate_data):
@@ -110,8 +121,8 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
             validate_data['total_value'] = float(validate_data.get('advance_for_supplier_value', 0))
         if validate_data.get('cof_type') == 1:
             validate_data['total_value'] = float(validate_data.get('payment_to_customer_value', 0))
-        if validate_data.get('cof_type') == 2:
-            validate_data['total_value'] = float(validate_data.get('advance_for_employee_value', 0))
+        # if validate_data.get('cof_type') == 2:
+        #     validate_data['total_value'] = float(validate_data.get('advance_for_employee_value', 0))
         CashOutflowCommonFunction.validate_cash_out_advance_for_supplier_data(validate_data)
         CashOutflowCommonFunction.validate_cash_out_ap_invoice_data(validate_data)
         CashOutflowCommonFunction.validate_payment_method_data(validate_data)
@@ -122,11 +133,15 @@ class CashOutflowCreateSerializer(AbstractCreateSerializerModel):
         cash_out_advance_for_supplier_data = validated_data.pop('cash_out_advance_for_supplier_data', [])
         cash_out_ap_invoice_data = validated_data.pop('cash_out_ap_invoice_data', [])
 
+        budget_line_data = validated_data.pop('budget_line_data', [])
+
         cash_outflow_obj = CashOutflow.objects.create(**validated_data)
 
         CashOutflowCommonFunction.create_cof_item(
             cash_outflow_obj, cash_out_advance_for_supplier_data, cash_out_ap_invoice_data
         )
+
+        BudgetExtendHandler.push_budget_line_transaction(instance=cash_outflow_obj, data_list=budget_line_data)
 
         return cash_outflow_obj
 
@@ -136,6 +151,8 @@ class CashOutflowDetailSerializer(AbstractDetailSerializerModel):
     cash_out_ap_invoice_data = serializers.SerializerMethodField()
     supplier_data = serializers.SerializerMethodField()
     customer_data = serializers.SerializerMethodField()
+    budget_line_data = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = CashOutflow
@@ -159,7 +176,9 @@ class CashOutflowDetailSerializer(AbstractDetailSerializerModel):
             'cash_value',
             'bank_value',
             'account_bank_account_data',
-            'banking_information'
+            'banking_information',
+            'budget_line_data',
+            'employee_inherit',
         )
 
     @classmethod
@@ -229,6 +248,16 @@ class CashOutflowDetailSerializer(AbstractDetailSerializerModel):
             } for item in obj.customer.account_banks_mapped.all()]
         return customer_data
 
+    @classmethod
+    def get_budget_line_data(cls, obj):
+        return BudgetLineTransactionListSerializer(
+            BudgetExtendHandler.get_budget_line_transaction(instance=obj), many=True
+        ).data
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return obj.employee_inherit.get_detail_with_group() if obj.employee_inherit else {}
+
 
 class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)
@@ -241,6 +270,10 @@ class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
     cash_out_advance_for_supplier_data = serializers.JSONField(default=list)
     cash_out_ap_invoice_data = serializers.JSONField(default=list)
     payment_method_data = serializers.JSONField(default=dict)
+    budget_line_data = BudgetLineTransactionCreateSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = CashOutflow
@@ -261,7 +294,10 @@ class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
             'cash_out_ap_invoice_data',
             # payment method data
             'payment_method_data',
-            'banking_information'
+            'banking_information',
+            'total_value',
+            # budget line data
+            'budget_line_data',
         )
 
     def validate(self, validate_data):
@@ -272,6 +308,8 @@ class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
         cash_out_advance_for_supplier_data = validated_data.pop('cash_out_advance_for_supplier_data', [])
         cash_out_ap_invoice_data = validated_data.pop('cash_out_ap_invoice_data', [])
 
+        budget_line_data = validated_data.pop('budget_line_data', [])
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
@@ -279,6 +317,8 @@ class CashOutflowUpdateSerializer(AbstractCreateSerializerModel):
         CashOutflowCommonFunction.create_cof_item(
             instance, cash_out_advance_for_supplier_data, cash_out_ap_invoice_data
         )
+
+        BudgetExtendHandler.push_budget_line_transaction(instance=instance, data_list=budget_line_data)
         return instance
 
 

@@ -46,14 +46,11 @@ class ExpenseItem(MasterDataAbstractModel):
         return '245e9f47-df59-4d4a-b355-7eff2859247f'
 
     def save(self, *args, **kwargs):
-        is_create = self._state.adding  # Check if is creating new record?
-        # hit DB
-        super().save(*args, **kwargs)
-
         DimensionUtils.sync_dimension_value(
             instance=self,
             app_id=self.__class__.get_app_id(),
             title=self.title,
             code=self.code,
-            is_create=is_create
         )
+        # hit DB
+        super().save(*args, **kwargs)

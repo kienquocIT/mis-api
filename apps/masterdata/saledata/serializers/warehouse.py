@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from apps.accounting.accountingsettings.utils import AccountDeterminationForWarehouseHandler
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import (
     WareHouse, ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial,
@@ -85,10 +84,6 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
             )
         WarehouseShelf.objects.bulk_create(bulk_info)
 
-        AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 0)
-        AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 1)
-        AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 2)
-        AccountDeterminationForWarehouseHandler.create_account_determination_for_warehouse(warehouse_obj, 3)
         return warehouse_obj
 
 

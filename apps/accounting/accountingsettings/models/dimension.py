@@ -89,6 +89,7 @@ class DimensionValue(MasterDataAbstractModel):
         related_name='period_dimension_values',
         null=True,
     )
+    title = models.TextField(blank=True)
 
     class Meta:
         verbose_name = 'Dimension Value'

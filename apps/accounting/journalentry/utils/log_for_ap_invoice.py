@@ -26,7 +26,7 @@ class JEForAPInvoiceHandler:
                 cost = stock_log_item.value if stock_log_item else 0
                 sum_cost += cost
 
-        account_list = AccountDetermination.get_account_determination_sub_data(
+        account_list = AccountDetermination.get_sub_items_data(
             tenant_id=ap_invoice_obj.tenant_id,
             company_id=ap_invoice_obj.company_id,
             foreign_title='Customer overpayment'
@@ -45,7 +45,7 @@ class JEForAPInvoiceHandler:
                 'use_for_recon_type': 'ap-gr'
             })
 
-        account_list = AccountDetermination.get_account_determination_sub_data(
+        account_list = AccountDetermination.get_sub_items_data(
             tenant_id=ap_invoice_obj.tenant_id,
             company_id=ap_invoice_obj.company_id,
             foreign_title='Payable to suppliers'
@@ -64,7 +64,7 @@ class JEForAPInvoiceHandler:
                 'use_for_recon_type': 'ap-cof'
             })
 
-        account_list = AccountDetermination.get_account_determination_sub_data(
+        account_list = AccountDetermination.get_sub_items_data(
             tenant_id=ap_invoice_obj.tenant_id,
             company_id=ap_invoice_obj.company_id,
             foreign_title='Purchases tax'

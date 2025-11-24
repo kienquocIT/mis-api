@@ -53,7 +53,7 @@ class DimensionValueDetailSerializer(serializers.ModelSerializer):
 
 
 class DimensionValueListSerializer(serializers.ModelSerializer):
-    parent_id = serializers.UUIDField(source="parent.id")
+    parent_id = serializers.SerializerMethodField()
     has_children = serializers.SerializerMethodField()
     children_ids = serializers.SerializerMethodField()
     level = serializers.SerializerMethodField()
@@ -71,7 +71,12 @@ class DimensionValueListSerializer(serializers.ModelSerializer):
             "children_ids",
             "level",
             "related_app_id",
+            "related_doc_id",
         )
+
+    @classmethod
+    def get_parent_id(cls, obj):
+        return obj.parent_id if obj.parent else None
 
     @classmethod
     def get_has_children(cls, obj):

@@ -26,8 +26,10 @@ from apps.masterdata.saledata.models import (
 )
 from . import MediaForceAPI, DisperseModel
 
-from .extends.signals import ConfigDefaultData
+from .extends.signals import ConfigDefaultData, SaleDefaultData
 from .permissions.util import PermissionController
+from ..accounting.accountingsettings.models import DimensionSyncConfig
+from ..accounting.accountingsettings.utils.dimension_utils import DimensionUtils
 from ..core.account.models import User
 from ..core.attachments.folder_utils import MODULE_MAPPING
 from ..core.attachments.models import Folder
@@ -6799,3 +6801,16 @@ def update_delivery_product_offset_data_default():
                 })
     print('update_delivery_product_offset_data_default done.')
     return True
+
+
+def sync_dimension_value():
+    for dimension_config in DimensionSyncConfig.objects.all():
+        DimensionUtils.sync_old_data(dimension_config=dimension_config)
+    print('sync_dimension_value done.')
+    return True
+
+
+def make_sure_default_dimension():
+    for obj in Company.objects.all():
+        SaleDefaultData(obj).create_dimension()
+    print('make_sure_default_dimension done.')
