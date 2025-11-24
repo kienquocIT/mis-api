@@ -15,12 +15,6 @@ from apps.accounting.accountingsettings.views.dimension import (
     DimensionSyncConfigList, DimensionSyncConfigDetail, DimensionListForAccountingAccount, DimensionAccountMapList,
     DimensionAccountMapDetail, DimensionSplitTemplateList, DimensionSplitTemplateDetail,
 )
-from apps.accounting.accountingsettings.views.product_type_account_determination import (
-    ProductTypeAccountDeterminationList, ProductTypeAccountDeterminationDetail
-)
-from apps.accounting.accountingsettings.views.warehouse_account_determination import (
-    WarehouseAccountDeterminationList, WarehouseAccountDeterminationDetail
-)
 
 
 urlpatterns = [
@@ -30,36 +24,6 @@ urlpatterns = [
         'account-determination/detail/<str:pk>',
         AccountDeterminationDetail.as_view(),
         name='AccountDeterminationDetail'
-    ),
-    path(
-        'warehouse-account-determination/list',
-        WarehouseAccountDeterminationList.as_view(),
-        name='WarehouseAccountDeterminationList'
-    ),
-    path(
-        'warehouse-account-determination/detail/<str:pk>',
-        WarehouseAccountDeterminationDetail.as_view(),
-        name='WarehouseAccountDeterminationDetail'
-    ),
-    path(
-        'product-type-account-determination/list',
-        ProductTypeAccountDeterminationList.as_view(),
-        name='ProductTypeAccountDeterminationList'
-    ),
-    path(
-        'product-type-account-determination/detail/<str:pk>',
-        ProductTypeAccountDeterminationDetail.as_view(),
-        name='ProductTypeAccountDeterminationDetail'
-    ),
-    path(
-        'product-account-determination/list',
-        ProductAccountDeterminationList.as_view(),
-        name='ProductAccountDeterminationList'
-    ),
-    path(
-        'product-account-determination/detail/<str:pk>',
-        ProductAccountDeterminationDetail.as_view(),
-        name='ProductAccountDeterminationDetail'
     ),
 ] + [
     # Dimension
