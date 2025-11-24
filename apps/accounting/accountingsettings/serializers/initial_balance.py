@@ -196,12 +196,7 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
         } for item in self.filter_lines_by_type(obj, 6)]
 
     def get_tab_accounts_data(self, obj):
-        return [{
-            # added fields
-            # ...
-            # common fields
-            **self.parse_common_fields(item)
-        } for item in self.filter_lines_by_type(obj, 7)]
+        return [{**self.parse_common_fields(item)} for item in self.filter_lines_by_type(obj, 7)]
 
 
 class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
@@ -587,8 +582,8 @@ class InitialBalanceCommonFunction:
             raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
 
         for item in tab_data:
-            detail_data = item.pop('detail_data', {})
             # logic here
+            detail_data = item.pop('detail_data', {})
         return tab_data
 
     @staticmethod
@@ -597,10 +592,9 @@ class InitialBalanceCommonFunction:
         company_obj = context.get('company_current')
         if not tenant_obj or not company_obj or not period_mapped_obj:
             raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
-
         for item in tab_data:
             detail_data = item.pop('detail_data', {})
-            # logic here
+            item['account_value'] = item.get('debit_value', 0) + item.get('credit_value', 0)
         return tab_data
 
     # for update
