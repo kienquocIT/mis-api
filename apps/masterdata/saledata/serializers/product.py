@@ -9,7 +9,6 @@ from apps.masterdata.saledata.serializers.product_common import ProductCommonFun
 from apps.shared import ProductMsg, PriceMsg, BaseMsg
 from ..models import ProductWareHouse
 
-
 PRODUCT_OPTION = [(0, _('Sale')), (1, _('Inventory')), (2, _('Purchase'))]
 
 
