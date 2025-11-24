@@ -1,5 +1,4 @@
 from django.db import models
-
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.company.models import CompanyFunctionNumber
@@ -95,6 +94,13 @@ class InstrumentTool(DataAbstractModel):
     )
 
     quantity_leased = models.FloatField(default=0, help_text="quantity that currently leased")
+
+    asset_category = models.ForeignKey(
+        'accountingsettings.AssetCategory',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="asset_category_instrument_tools",
+    )
 
     class Meta:
         verbose_name = 'Instrument Tool'

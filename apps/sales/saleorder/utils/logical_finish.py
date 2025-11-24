@@ -1,3 +1,4 @@
+from apps.accounting.budget.models.budget import Budget
 from apps.core.company.utils import CompanyHandler
 from apps.masterdata.saledata.models import AccountActivity
 from apps.sales.acceptance.models import FinalAcceptance
@@ -15,6 +16,14 @@ class DocHandler:
             return model_cls
         return None
 
+    @classmethod
+    def get_final_uom_ratio(cls, product_obj, uom_transaction):
+        if product_obj.general_uom_group:
+            uom_base = product_obj.general_uom_group.uom_reference
+            if uom_base and uom_transaction:
+                return uom_transaction.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
+        return 1
+
 
 class SOFinishHandler:
     # PRODUCT INFO
@@ -22,7 +31,7 @@ class SOFinishHandler:
     def push_product_info(cls, instance):
         for product_order in instance.sale_order_product_sale_order.filter(product__isnull=False):
             if product_order.product:
-                final_ratio = cls.get_final_uom_ratio(
+                final_ratio = DocHandler.get_final_uom_ratio(
                     product_obj=product_order.product, uom_transaction=product_order.unit_of_measure
                 )
                 product_order.product.save(**{
@@ -214,14 +223,6 @@ class SOFinishHandler:
         return True
 
     @classmethod
-    def get_final_uom_ratio(cls, product_obj, uom_transaction):
-        if product_obj.general_uom_group:
-            uom_base = product_obj.general_uom_group.uom_reference
-            if uom_base and uom_transaction:
-                return uom_transaction.ratio / uom_base.ratio if uom_base.ratio > 0 else 1
-        return 1
-
-    @classmethod
     def update_recurrence_task(cls, instance):
         if instance.recurrence_task:
             instance.recurrence_task.recurrence_action = 1
@@ -237,6 +238,65 @@ class SOFinishHandler:
                 attachment.is_approved = True
                 attachment.save(update_fields=['is_approved'])
         return True
+
+    # BUDGET
+    @classmethod
+    def push_budget(cls, instance):
+        budget_line_data = []
+        mappings = [
+            {
+                'qs': instance.sale_order_cost_sale_order.filter(product__isnull=False),
+                'related_field': 'product',
+                'remark': 'product_description',
+                'unit_price': 'product_cost_price',
+                'quantity_planned': 'product_quantity',
+                'tax_data': 'tax_data',
+                'value_planned': 'product_subtotal_price_after_tax',
+            },
+            {
+                'qs': instance.sale_order_expense_sale_order.filter(expense_item__isnull=False),
+                'related_field': 'expense_item',
+                'remark': 'expense_title',
+                'unit_price': 'expense_price',
+                'quantity_planned': 'expense_quantity',
+                'tax_data': 'tax_data',
+                'value_planned': 'expense_subtotal_price_after_tax',
+            },
+        ]
+        for mapping in mappings:
+            for item in mapping['qs']:
+                budget_line_data.append(cls.setup_budget_line(item, instance, mapping))
+        Budget.push_budget(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            app_code=instance.__class__.get_model_code(),
+            doc_id=instance.id,
+            employee_inherit_id=instance.employee_inherit_id,
+            group_inherit_id=instance.employee_inherit.group_id if instance.employee_inherit else None,
+            system_status=instance.system_status,
+            date_approved=instance.date_approved,
+            budget_line_data=budget_line_data,
+        )
+        return True
+
+    @classmethod
+    def setup_budget_line(cls, item, instance, mapping):
+        dimension_value_data = [
+            {'md_app_code': instance.__class__.get_model_code(), 'md_id': str(instance.id)},
+            {
+                'md_app_code': getattr(item, mapping['related_field']).__class__.get_model_code(),
+                'md_id': str(getattr(item, mapping['related_field'] + '_id')),
+            },
+        ]
+        return {
+            'remark': getattr(item, mapping['remark']),
+            'unit_price': getattr(item, mapping['unit_price']),
+            'quantity_planned': getattr(item, mapping['quantity_planned']),
+            'tax_data': getattr(item, mapping['tax_data']),
+            'value_planned': getattr(item, mapping['value_planned']),
+            'order': item.order,
+            'dimension_value_data': dimension_value_data,
+        }
 
 
 class DocumentChangeHandler:

@@ -5,3 +5,4 @@ from .dimension_value import *
 from .dimension_account_map import *
 from .dimension_sync_config import *
 from .initial_balance import *
+from .asset_category import *

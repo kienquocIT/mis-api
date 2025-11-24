@@ -21,11 +21,17 @@ from apps.shared import BaseListMixin, BaseCreateMixin, BaseUpdateMixin, mask_vi
 # Create your views here.
 class DimensionDefinitionList(BaseListMixin, BaseCreateMixin):
     queryset = Dimension.objects
+    filterset_fields = {
+        'related_app_id': ['exact', 'in'],
+    }
     serializer_list = DimensionDefinitionListSerializer
     serializer_create = DimensionDefinitionCreateSerializer
     serializer_detail = DimensionDefinitionDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("related_app",)
 
     @swagger_auto_schema(
         operation_summary="Dimension Definition List",
@@ -104,6 +110,11 @@ class DimensionDefinitionWithValueList(BaseRetrieveMixin):
 
 class DimensionValueList(BaseListMixin, BaseCreateMixin):
     queryset = DimensionValue.objects
+    search_fields = ["title"]
+    filterset_fields = {
+        'id': ['exact', 'in'],
+        'dimension_id': ['exact', 'in'],
+    }
     serializer_list = DimensionValueListSerializer
     serializer_create = DimensionValueCreateSerializer
     serializer_detail = DimensionValueDetailSerializer
@@ -171,6 +182,7 @@ class DimensionSyncConfigApplicationList(BaseListMixin):
         '7bc78f47-66f1-4104-a6fa-5ca07f3f2275', # unitofmeasure
         'a8badb2e-54ff-4654-b3fd-0d2d3c777538', # saledata.product
         '245e9f47-df59-4d4a-b355-7eff2859247f', # saledata.expenseitem
+        'a870e392-9ad2-4fe2-9baa-298a38691cf2', # saleorder.saleorder
     ]
     def get_queryset(self):
         return Application.objects.filter(id__in=self.list_app_id)

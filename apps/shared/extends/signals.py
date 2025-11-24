@@ -54,6 +54,7 @@ from apps.sales.project.extend_func import calc_rate_project, re_calc_work_group
 from .models import DisperseModel
 from .. import ProjectMsg
 from apps.core.printer.models import PrintTemplates
+from ...accounting.accountingsettings.models import Dimension, DimensionSyncConfig
 from ...core.printer.template_content import TEMPLATE_CONTENT_MAP
 from ...hrm.payroll.models import PayrollConfig, PayrollInsuranceRule, PayrollDeductionRule, PayrollTaxBracket
 from ...sales.leaseorder.models import LeaseOrderAppConfig
@@ -160,6 +161,22 @@ class SaleDefaultData:
         {'code': 'FAC007', 'title': 'TSCD hữu hình thuê tài chính', 'is_default': 1},
         {'code': 'FAC008', 'title': 'TSCD vô hình thuê tài chính', 'is_default': 1},
     ]
+    Dimension_data = [
+        {'code': 'expenseitem', 'title': 'Expense item'},
+        {'code': 'product', 'title': 'Product'},
+        {'code': 'saleorder', 'title': 'Sale order'},
+    ]
+    Dimension_Sync_Config_data = {
+        'expenseitem': {
+            'related_app_id': '245e9f47-df59-4d4a-b355-7eff2859247f', 'sync_on_save': True, 'sync_on_delete': True
+        },
+        'product': {
+            'related_app_id': 'a8badb2e-54ff-4654-b3fd-0d2d3c777538', 'sync_on_save': True, 'sync_on_delete': True
+        },
+        'saleorder': {
+            'related_app_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2', 'sync_on_save': True, 'sync_on_delete': True
+        },
+    }
 
     def __init__(self, company_obj):
         self.company_obj = company_obj
@@ -179,6 +196,7 @@ class SaleDefaultData:
                 self.create_price_default()
                 self.create_document_types()
                 self.create_fixed_asset_masterdata()
+                self.create_dimension()
             return True
         except Exception as err:
             logger.error(
@@ -454,6 +472,25 @@ class SaleDefaultData:
                 group=group_instance,  # Assign the group
                 **data
             )
+        return True
+
+    def create_dimension(self):
+        dimensions = Dimension.objects.bulk_create([
+            Dimension(
+                tenant=self.company_obj.tenant, company=self.company_obj, **data
+            ) for data in self.Dimension_data
+        ])
+        bulk_config = []
+        for dimension in dimensions:
+            if dimension.code in self.Dimension_Sync_Config_data:
+                bulk_config.append(DimensionSyncConfig(
+                    tenant=self.company_obj.tenant, company=self.company_obj,
+                    dimension_id=dimension.id, **self.Dimension_Sync_Config_data[dimension.code]))
+        configs = DimensionSyncConfig.objects.bulk_create(bulk_config)
+        for config in configs:
+            if config.dimension:
+                config.dimension.related_app_id = config.related_app_id
+                config.dimension.save(update_fields=['related_app_id'])
         return True
 
 

@@ -1,8 +1,10 @@
 import logging
+from rest_framework import serializers
 from django.db import transaction
 from django.db.models import Sum
-from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
 
+from apps.accounting.accountingsettings.models import AssetCategory
 from apps.core.hr.models import Group
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import FixedAssetClassification, Product
@@ -104,8 +106,8 @@ class FixedAssetListSerializer(AbstractListSerializerModel):
 
 
 class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
-    classification = serializers.UUIDField()
-    product = serializers.UUIDField()
+    classification = serializers.UUIDField(allow_null=True, required=False)
+    product = serializers.UUIDField(allow_null=True, required=False)
     manage_department = serializers.UUIDField()
     use_department = serializers.ListSerializer(
         child=serializers.UUIDField(required=False)
@@ -116,6 +118,11 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
     original_cost = serializers.FloatField()
     net_book_value = serializers.FloatField()
     depreciation_value = serializers.FloatField()
+    asset_category_id = serializers.UUIDField(error_messages={
+        'required': _('Asset category is required'),
+        'null': _('Asset category must not be null'),
+        'blank': _('Asset category must not be blank'),
+    })
 
     class Meta:
         model = FixedAsset
@@ -139,22 +146,27 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
             'depreciation_end_date',
             'increase_fa_list',
             'depreciation_value',
-            'depreciation_data'
+            'depreciation_data',
+            'asset_category_id'
         )
 
     @classmethod
     def validate_classification(cls, value):
-        try:
-            return FixedAssetClassification.objects.get(id=value)
-        except FixedAssetClassification.DoesNotExist:
-            raise serializers.ValidationError({'classification': BaseMsg.NOT_EXIST})
+        if value:
+            try:
+                return FixedAssetClassification.objects.get(id=value)
+            except FixedAssetClassification.DoesNotExist:
+                raise serializers.ValidationError({'classification': BaseMsg.NOT_EXIST})
+        return None
 
     @classmethod
     def validate_product(cls, value):
-        try:
-            return Product.objects.get(id=value)
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'product': BaseMsg.NOT_EXIST})
+        if value:
+            try:
+                return Product.objects.get(id=value)
+            except Product.DoesNotExist:
+                raise serializers.ValidationError({'product': BaseMsg.NOT_EXIST})
+        return None
 
     @classmethod
     def validate_manage_department(cls, value):
@@ -253,6 +265,13 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
                     })
 
         return value
+
+    @classmethod
+    def validate_asset_category_id(cls, value):
+        try:
+            return AssetCategory.objects.get(id=value).id
+        except AssetCategory.DoesNotExist:
+            raise serializers.ValidationError({'asset_category_id': _('Asset category does not exist')})
 
     def validate(self, validate_data):
         depreciation_value = validate_data.get('depreciation_value')
@@ -392,8 +411,8 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
 
 
 class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
-    classification = serializers.UUIDField()
-    product = serializers.UUIDField()
+    classification = serializers.UUIDField(allow_null=True, required=False)
+    product = serializers.UUIDField(allow_null=True, required=False)
     manage_department = serializers.UUIDField()
     use_department = serializers.ListSerializer(
         child=serializers.UUIDField(required=False)
@@ -404,6 +423,11 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
     original_cost = serializers.FloatField()
     net_book_value = serializers.FloatField()
     depreciation_value = serializers.FloatField()
+    asset_category_id = serializers.UUIDField(error_messages={
+        'required': _('Asset category is required'),
+        'null': _('Asset category must not be null'),
+        'blank': _('Asset category must not be blank'),
+    })
 
     class Meta:
         model = FixedAsset
@@ -427,22 +451,27 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
             'depreciation_end_date',
             'increase_fa_list',
             'depreciation_value',
-            'depreciation_data'
+            'depreciation_data',
+            'asset_category_id'
         )
 
     @classmethod
     def validate_classification(cls, value):
-        try:
-            return FixedAssetClassification.objects.get(id=value)
-        except FixedAssetClassification.DoesNotExist:
-            raise serializers.ValidationError({'classification': BaseMsg.NOT_EXIST})
+        if value:
+            try:
+                return FixedAssetClassification.objects.get(id=value)
+            except FixedAssetClassification.DoesNotExist:
+                raise serializers.ValidationError({'classification': BaseMsg.NOT_EXIST})
+        return None
 
     @classmethod
     def validate_product(cls, value):
-        try:
-            return Product.objects.get(id=value)
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({'product': BaseMsg.NOT_EXIST})
+        if value:
+            try:
+                return Product.objects.get(id=value)
+            except Product.DoesNotExist:
+                raise serializers.ValidationError({'product': BaseMsg.NOT_EXIST})
+        return None
 
     @classmethod
     def validate_manage_department(cls, value):
@@ -485,6 +514,13 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
         if value < 0:
             raise serializers.ValidationError({"depreciation_value": FixedAssetMsg.VALUE_MUST_BE_POSITIVE})
         return value
+
+    @classmethod
+    def validate_asset_category_id(cls, value):
+        try:
+            return AssetCategory.objects.get(id=value).id
+        except AssetCategory.DoesNotExist:
+            raise serializers.ValidationError({'asset_category_id': _('Asset category does not exist')})
 
     def validate(self, validate_data):
         depreciation_value = validate_data.get('depreciation_value')

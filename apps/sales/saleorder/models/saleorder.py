@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+from apps.accounting.accountingsettings.utils.dimension_utils import DimensionUtils
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.inventory.models import GoodsRegistration
@@ -95,6 +96,13 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
     @classmethod
     def get_app_id(cls, raise_exception=True) -> str or None:
         return 'a870e392-9ad2-4fe2-9baa-298a38691cf2'
+
+    @classmethod
+    def get_field_mapping(cls):
+        return {
+            'title': 'title',
+            'code': 'code'
+        }
 
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
@@ -251,16 +259,6 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
         # check if SO was used for PR
         if instance.pr_sale_order.filter(system_status__in=[1, 2, 3]).exists():
             return False
-        # check delivery (if SO was used for OrderDelivery and all OrderDeliverySub is done => can't change)
-        # if hasattr(instance, 'delivery_of_sale_order'):
-        #     if not instance.delivery_of_sale_order.delivery_sub_order_delivery.filter(**{
-        #         'tenant_id': instance.tenant_id,
-        #         'company_id': instance.company_id,
-        #         'order_delivery__sale_order_id': instance.id,
-        #         'state__in': [0, 1]
-        #     }).exists():
-        #         return False
-
         # check delivery (if SO was used for OrderDelivery => can't reject)
         if hasattr(instance, 'delivery_of_sale_order'):
             return False
@@ -301,6 +299,13 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
                     SOFinishHandler.set_true_file_is_approved(instance=self)  # file
                     SOFinishHandler.update_recurrence_task(instance=self)  # recurrence
                     DocumentChangeHandler.change_handle(instance=self)  # change document handle
+                    DimensionUtils.sync_dimension_value(  # dimension
+                        instance=self,
+                        app_id=self.__class__.get_app_id(),
+                        title=self.title,
+                        code=self.code,
+                    )
+                    SOFinishHandler.push_budget(instance=self)  # budget
 
         if self.system_status in [4]:  # cancel
             # product

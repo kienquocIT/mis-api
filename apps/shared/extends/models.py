@@ -199,6 +199,12 @@ class MasterDataAbstractModel(SimpleAbstractModel):
 
     # object_data = MasterDataManager()
 
+    @classmethod
+    def get_model_code(cls):
+        app_label = cls._meta.app_label
+        model_name = cls._meta.model_name
+        return f"{app_label}.{model_name}".lower()
+
     class Meta:
         abstract = True
         default_permissions = ()
