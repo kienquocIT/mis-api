@@ -6,6 +6,7 @@ from apps.accounting.accountingsettings.models import ChartOfAccounts
 from apps.masterdata.saledata.models import (
     Periods, Currency, Product, WareHouse, Account,
 )
+from apps.core.hr.models import Employee
 from apps.accounting.accountingsettings.models.initial_balance import (
     InitialBalance, InitialBalanceLine, INITIAL_BALANCE_TYPE
 )
@@ -171,7 +172,9 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
     def get_tab_employee_payable_data(self, obj):
         return [{
             # added fields
-            # ...
+            "employee_payable_value": item.employee_payable_value,
+            "employee_payable_type": item.employee_payable_type,
+            "employee_payable_employee_data": item.employee_payable_employee_data,
             # common fields
             **self.parse_common_fields(item)
         } for item in self.filter_lines_by_type(obj, 4)]
@@ -545,8 +548,23 @@ class InitialBalanceCommonFunction:
             raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
 
         for item in tab_data:
-            detail_data = item.pop('detail_data', {})
             # logic here
+            detail_data = item.pop('detail_data', {})
+            employee_obj = Employee.objects.filter(id=detail_data.get('employee_payable_employee')).first()
+            if not employee_obj:
+                raise serializers.ValidationError({'employee_payable_employee': _('Required employee.')})
+            if int(detail_data.get('employee_payable_type')) not in range(0, 3):
+                raise serializers.ValidationError({'employee_payable_type': _('Employee payable type is not valid.')})
+            if detail_data.get('employee_payable_value') < 0:
+                raise serializers.ValidationError({'employee_payable_value': _('Amount value cannot smaller than 0.')})
+            item['employee_payable_type'] = detail_data.get('employee_payable_type')
+            item['employee_payable_value'] = detail_data.get('employee_payable_value')
+            item['employee_payable_employee'] = employee_obj
+            item['employee_payable_employee_data'] = {
+                'id': str(employee_obj.id),
+                'code': employee_obj.code,
+                'name': employee_obj.first_name + " " + employee_obj.last_name,
+            } if employee_obj else {}
         return tab_data
 
     @staticmethod
