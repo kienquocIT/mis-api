@@ -26,6 +26,13 @@ class AccountDetermination(MasterDataAbstractModel):
     account_determination_type = models.SmallIntegerField(choices=ACCOUNT_DETERMINATION_TYPE, default=0)
     can_change_account = models.BooleanField(default=False, help_text='True if user can change')
 
+    @classmethod
+    def get_sub_items_data(cls, tenant_id, company_id, foreign_title):
+        account_deter = AccountDetermination.objects.filter(
+            tenant_id=tenant_id, company_id=company_id, foreign_title=foreign_title
+        ).first()
+        return [item.account_mapped for item in account_deter.account_determination_sub.all()] if account_deter else []
+
     class Meta:
         verbose_name = 'Account Determination'
         verbose_name_plural = 'Account Determination'
@@ -103,8 +110,8 @@ class AccountDeterminationSub(SimpleAbstractModel):
                 }
             )
             return True
-        except Exception as e:
-            print(f"Error: {e}")
+        except Exception as err:
+            print(f"Error: {err}")
             return False
 
     @classmethod
@@ -156,8 +163,8 @@ class AccountDeterminationSub(SimpleAbstractModel):
         }
         keys = sorted(clean_context.keys())
         candidates = []
-        for r in range(len(keys), 0, -1):
-            for combination in itertools.combinations(keys, r):
+        for subset_size in range(len(keys), 0, -1):
+            for combination in itertools.combinations(keys, subset_size):
                 subset_dict = {k: clean_context[k] for k in combination}
                 key_string = cls.generate_search_rule(subset_dict)
                 candidates.append(key_string)

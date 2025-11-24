@@ -1,10 +1,9 @@
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from rest_framework.fields import SerializerMethodField
-
-from apps.accounting.accountingsettings.models import Dimension, DimensionValue, DimensionSplitTemplate, \
-    DimensionSplitTemplateLine, ChartOfAccounts
+from apps.accounting.accountingsettings.models import (
+    Dimension, DimensionValue, DimensionSplitTemplate, DimensionSplitTemplateLine, ChartOfAccounts
+)
 
 __all__ = [
     'DimensionSplitTemplateListSerializer',
