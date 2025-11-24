@@ -602,6 +602,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             'workorder': 'WO[n4]',
             'overtimerequest': 'OT[n4]',
             'serviceorder': 'SVO[n4]',
+            'servicequotation': 'SVQ[n4]',
             'opportunitytask': 'TASK[n4]',
             'payrolltemplate': 'PRT[n4]',
             'assettoolsreturn': 'ATR[n4]',

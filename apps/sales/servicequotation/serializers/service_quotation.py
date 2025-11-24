@@ -121,7 +121,7 @@ class ServiceQuotationCreateSerializer(AbstractCreateSerializerModel):
 
         start_date = validate_data.get('start_date', '')
         end_date = validate_data.get('end_date', '')
-        if start_date and end_date and start_date >= end_date:
+        if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError({'error': SVOMsg.DATE_COMPARE_ERROR})
 
         expense_data = validate_data.get('expenses_data', [])
@@ -381,7 +381,7 @@ class ServiceQuotationDetailSerializer(AbstractDetailSerializerModel):
         } for payment in obj.payments.all()]
 
     @classmethod
-    def get_expense(cls, obj):
+    def get_expenses_data(cls, obj):
         return [{
             'id': str(item.id),
             'title': item.title,
@@ -390,8 +390,9 @@ class ServiceQuotationDetailSerializer(AbstractDetailSerializerModel):
             'quantity': item.quantity,
             'expense_price': item.expense_price,
             'tax_data': item.tax_data,
-            'subtotal_price': item.subtotal_price
+            'expense_subtotal_price': item.expense_subtotal_price
         } for item in obj.service_quotation_expense_service_quotation.all()]
+
 
     @classmethod
     def get_opportunity(cls, obj):
@@ -468,7 +469,7 @@ class ServiceQuotationUpdateSerializer(AbstractCreateSerializerModel):
 
         start_date = validate_data.get('start_date', '')
         end_date = validate_data.get('end_date', '')
-        if start_date and end_date and start_date >= end_date:
+        if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError({'error': SVOMsg.DATE_COMPARE_ERROR})
 
         expense_data = validate_data.get('expenses_data', [])

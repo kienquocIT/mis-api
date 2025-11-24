@@ -230,7 +230,9 @@ class AssetToolsReturn(DataAbstractModel):
                 if isinstance(kwargs['update_fields'], list):
                     kwargs['update_fields'].append('code')
                     if 'date_approved' in kwargs['update_fields']:
-                        CompanyFunctionNumber.auto_gen_code_based_on_config('assettoolsreturn', True, self, kwargs)
+                        CompanyFunctionNumber.auto_gen_code_based_on_config(
+                            'assettoolsreturn', self, True, kwargs
+                        )
                 if done_update and log_list:
                     kwargs['update_fields'].append('return_info_list')
             else:
