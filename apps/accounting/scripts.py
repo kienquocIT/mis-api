@@ -939,7 +939,7 @@ class AccountScript:
             default_priority = 0
 
             for (
-                deter_fg_title, trans_key, trans_key_sub, deter_type, deter_vn_title, acc_code, deter_des, deter_exp
+                deter_fg_title, trans_key, trans_key_sub, deter_type, deter_vn_title, acc_code, deter_des, deter_sub_exp
             ) in CONFIG_DATA:
                 account = ChartOfAccounts.get_acc(company_id, acc_code)
                 if not account:
@@ -953,7 +953,6 @@ class AccountScript:
                         title=deter_vn_title,
                         foreign_title=deter_fg_title,
                         description=deter_des,
-                        example=deter_exp,
                         account_determination_type=deter_type,
                         order=deter_type * 10,  # Sort: Sale=0, Buy=10, Inv=20, Asset=30
                     )
@@ -972,6 +971,7 @@ class AccountScript:
                         'acc_name': account.acc_name,
                         'foreign_acc_name': account.foreign_acc_name,
                     },
+                    example=deter_sub_exp,
                     match_context=default_criteria,
                     search_rule=default_search_rule,
                     priority=default_priority

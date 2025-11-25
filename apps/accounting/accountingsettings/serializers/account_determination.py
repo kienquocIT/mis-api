@@ -16,7 +16,7 @@ class AccountDeterminationListSerializer(serializers.ModelSerializer):
         model = AccountDetermination
         fields = (
             'id', 'code', 'title', 'foreign_title', 'transaction_key',
-            'description', 'example', 'account_determination_sub_list',
+            'description', 'account_determination_sub_list',
             'account_determination_type', 'account_determination_type_convert',
             'can_change_account'
         )

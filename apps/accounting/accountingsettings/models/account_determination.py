@@ -22,7 +22,6 @@ class AccountDetermination(MasterDataAbstractModel):
     foreign_title = models.CharField(max_length=100, blank=True)
     transaction_key = models.CharField(max_length=25, db_index=True)
     description = models.TextField(blank=True, null=True)
-    example = models.TextField(blank=True, null=True)
     account_determination_type = models.SmallIntegerField(choices=ACCOUNT_DETERMINATION_TYPE, default=0)
     can_change_account = models.BooleanField(default=False, help_text='True if user can change')
 
@@ -58,6 +57,7 @@ class AccountDeterminationSub(SimpleAbstractModel):
         'accountingsettings.ChartOfAccounts', on_delete=models.CASCADE, related_name='determination_mappings'
     )
     account_mapped_data = models.JSONField(default=dict, blank=True)
+    example = models.TextField(blank=True, null=True)
 
     match_context = models.JSONField(default=dict, blank=True)
     search_rule = models.CharField(max_length=500, blank=True, null=True, default='default', db_index=True)

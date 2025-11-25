@@ -31,7 +31,6 @@ class AccountDeterminationSpecificRule:
                     'title': header.title or header.foreign_title,
                     'foreign_title': header.foreign_title,
                     'description': header.description,
-                    'example': header.example,
                     'can_change_account': header.can_change_account,
                     'is_custom': best_rule_obj.is_custom,
                     'best_rule_account_mapped_data': best_rule_obj.account_mapped_data
