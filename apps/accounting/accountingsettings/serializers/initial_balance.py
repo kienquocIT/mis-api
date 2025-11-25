@@ -6,6 +6,7 @@ from apps.accounting.accountingsettings.models import ChartOfAccounts
 from apps.masterdata.saledata.models import (
     Periods, Currency, Product, WareHouse, Account,
 )
+from apps.core.hr.models import Employee
 from apps.accounting.accountingsettings.models.initial_balance import (
     InitialBalance, InitialBalanceLine, INITIAL_BALANCE_TYPE
 )
@@ -150,7 +151,7 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
         return [{
             # added fields
             "customer_receivable_value": item.customer_receivable_value,
-            "customer_receivable_customer": item.customer_receivable_value,
+            # "customer_receivable_customer": item.customer_receivable_value,
             "customer_receivable_customer_data": item.customer_receivable_customer_data,
             "customer_receivable_detail_data": item.customer_receivable_detail_data,
             # common fields
@@ -160,7 +161,10 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
     def get_tab_supplier_payable_data(self, obj):
         return [{
             # added fields
-            # ...
+            "supplier_payable_value": item.supplier_payable_value,
+            # "supplier_payable_supplier": item.supplier_payable_supplier.id,
+            "supplier_payable_supplier_data": item.supplier_payable_supplier_data,
+            "supplier_payable_detail_data": item.supplier_payable_detail_data,
             # common fields
             **self.parse_common_fields(item)
         } for item in self.filter_lines_by_type(obj, 3)]
@@ -168,7 +172,9 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
     def get_tab_employee_payable_data(self, obj):
         return [{
             # added fields
-            # ...
+            "employee_payable_value": item.employee_payable_value,
+            "employee_payable_type": item.employee_payable_type,
+            "employee_payable_employee_data": item.employee_payable_employee_data,
             # common fields
             **self.parse_common_fields(item)
         } for item in self.filter_lines_by_type(obj, 4)]
@@ -190,12 +196,7 @@ class InitialBalanceDetailSerializer(serializers.ModelSerializer):
         } for item in self.filter_lines_by_type(obj, 6)]
 
     def get_tab_accounts_data(self, obj):
-        return [{
-            # added fields
-            # ...
-            # common fields
-            **self.parse_common_fields(item)
-        } for item in self.filter_lines_by_type(obj, 7)]
+        return [{**self.parse_common_fields(item)} for item in self.filter_lines_by_type(obj, 7)]
 
 
 class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
@@ -496,9 +497,42 @@ class InitialBalanceCommonFunction:
             raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
 
         for item in tab_data:
-            detail_data = item.pop('detail_data', {})
-            print(detail_data)
             # logic here
+            detail = item.pop('detail_data', {})
+            detail_data = detail.get('supplier_payable_detail_data', {})
+            supplier_obj = Account.objects.filter(id=detail.get('supplier_payable_supplier')).first()
+            if not supplier_obj:
+                raise serializers.ValidationError({'supplier_payable_supplier': _('Required supplier.')})
+            unpaid = detail_data.get('unpaid_amount', 0)
+            advance = detail_data.get('advanced_payment', 0)
+            if unpaid is not None and unpaid < 0:
+                raise serializers.ValidationError({'unpaid_amount': _('Unpaid amount cannot be smaller than 0.')})
+            if advance is not None and advance < 0:
+                raise serializers.ValidationError({'advanced_payment': _('Advanced payment cannot be smaller than 0.')})
+            is_prepay = detail_data.get('is_prepayment')
+            if is_prepay:
+                if not detail_data.get('note') or detail_data.get('advanced_payment') in (None, 0):
+                    raise serializers.ValidationError({
+                        'supplier_payable_detail': _('Required advance payment and explanation.')})
+            else:
+                required_fields = [('invoice_number', ''), ('unpaid_amount', 0), ('expected_payment_date', None),
+                                   ('invoice_date', None)]
+                for field, invalid_value in required_fields:
+                    if detail_data.get(field) in (None, invalid_value):
+                        raise serializers.ValidationError(
+                            {'supplier_payable_detail': _(
+                                'Required Invoice number, Unpaid amount, Expected payment date, and Invoice date.')}
+                        )
+            # fill data
+            item['supplier_payable_value'] = item.get('debit_value', 0) + item.get('credit_value', 0)
+            item['supplier_payable_supplier'] = supplier_obj
+            item['supplier_payable_supplier_data'] = {
+                'id': str(supplier_obj.id),
+                'code': supplier_obj.code,
+                'name': supplier_obj.name,
+                'tax_code': supplier_obj.tax_code
+            } if supplier_obj else {}
+            item['supplier_payable_detail_data'] = detail_data
         return tab_data
 
     @staticmethod
@@ -509,9 +543,23 @@ class InitialBalanceCommonFunction:
             raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
 
         for item in tab_data:
-            detail_data = item.pop('detail_data', {})
-            print(detail_data)
             # logic here
+            detail_data = item.pop('detail_data', {})
+            employee_obj = Employee.objects.filter(id=detail_data.get('employee_payable_employee')).first()
+            if not employee_obj:
+                raise serializers.ValidationError({'employee_payable_employee': _('Required employee.')})
+            if int(detail_data.get('employee_payable_type')) not in range(0, 3):
+                raise serializers.ValidationError({'employee_payable_type': _('Employee payable type is not valid.')})
+            if detail_data.get('employee_payable_value') < 0:
+                raise serializers.ValidationError({'employee_payable_value': _('Amount value cannot smaller than 0.')})
+            item['employee_payable_type'] = detail_data.get('employee_payable_type')
+            item['employee_payable_value'] = detail_data.get('employee_payable_value')
+            item['employee_payable_employee'] = employee_obj
+            item['employee_payable_employee_data'] = {
+                'id': str(employee_obj.id),
+                'code': employee_obj.code,
+                'name': employee_obj.first_name + " " + employee_obj.last_name,
+            } if employee_obj else {}
         return tab_data
 
     @staticmethod
@@ -523,7 +571,6 @@ class InitialBalanceCommonFunction:
 
         for item in tab_data:
             detail_data = item.pop('detail_data', {})
-            print(detail_data)
             # logic here
         return tab_data
 
@@ -535,9 +582,8 @@ class InitialBalanceCommonFunction:
             raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
 
         for item in tab_data:
-            detail_data = item.pop('detail_data', {})
-            print(detail_data)
             # logic here
+            detail_data = item.pop('detail_data', {})
         return tab_data
 
     @staticmethod
@@ -546,11 +592,9 @@ class InitialBalanceCommonFunction:
         company_obj = context.get('company_current')
         if not tenant_obj or not company_obj or not period_mapped_obj:
             raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
-
         for item in tab_data:
             detail_data = item.pop('detail_data', {})
-            print(detail_data)
-            # logic here
+            item['account_value'] = item.get('debit_value', 0) + item.get('credit_value', 0)
         return tab_data
 
     # for update
@@ -612,47 +656,39 @@ class InitialBalanceCommonFunction:
     @staticmethod
     def handle_money_tab(created_instances, updated_items):
         """Xử lý tab money"""
-        print(created_instances, updated_items)
-        return True
+        pass
 
     @staticmethod
     def handle_goods_tab(created_instances, updated_items):
         """Xử lý tab goods"""
-        print(created_instances, updated_items)
-        return True
+        pass
 
     @staticmethod
     def handle_customer_receivable_tab(created_instances, updated_items):
         """Xử lý tab customer receivable"""
-        print(created_instances, updated_items)
-        return True
+        pass
 
     @staticmethod
     def handle_supplier_payable_tab(created_instances, updated_items):
         """Xử lý tab supplier payable"""
-        print(created_instances, updated_items)
-        return True
+        pass
 
     @staticmethod
     def handle_employee_payable_tab(created_instances, updated_items):
         """Xử lý tab employee payable"""
-        print(created_instances, updated_items)
-        return True
+        pass
 
     @staticmethod
     def handle_fixed_assets_tab(created_instances, updated_items):
         """Xử lý tab fixed assets"""
-        print(created_instances, updated_items)
-        return True
+        pass
 
     @staticmethod
     def handle_tools_tab(created_instances, updated_items):
         """Xử lý tab expenses"""
-        print(created_instances, updated_items)
-        return True
+        pass
 
     @staticmethod
     def handle_accounts_tab(created_instances, updated_items):
         """Xử lý tab owner equity"""
-        print(created_instances, updated_items)
-        return True
+        pass
