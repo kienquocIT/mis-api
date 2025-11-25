@@ -33,12 +33,10 @@ class AccountDeterminationListSerializer(serializers.ModelSerializer):
                     wh = WareHouse.objects.filter(id=ctx['warehouse_id']).first()
                     if wh:
                         context_desc.append(f"Kho: {wh.code}")
-
                 if ctx.get('product_type_id'):
                     pt = ProductType.objects.filter(id=ctx['product_type_id']).first()
                     if pt:
                         context_desc.append(f"Loại SP: {pt.code}")
-
                 if ctx.get('product_id'):
                     prd = Product.objects.filter(id=ctx['product_id']).first()
                     if prd:
@@ -55,7 +53,8 @@ class AccountDeterminationListSerializer(serializers.ModelSerializer):
                     'acc_name': sub.account_mapped.acc_name,
                     'foreign_acc_name': sub.account_mapped.foreign_acc_name,
                 },
-                'description': sub.description
+                'description': sub.description,
+                'example': sub.example,
             })
         return data
 
