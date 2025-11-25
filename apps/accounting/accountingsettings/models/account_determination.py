@@ -50,7 +50,7 @@ class AccountDeterminationSub(SimpleAbstractModel):
     account_determination = models.ForeignKey(
         AccountDetermination, on_delete=models.CASCADE, related_name='sub_items'
     )
-    transaction_key_sub = models.CharField(max_length=25, blank=True, default='')
+    transaction_key_sub = models.CharField(max_length=25, db_index=True)
     description = models.TextField(blank=True, null=True)
 
     account_mapped = models.ForeignKey(

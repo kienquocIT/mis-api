@@ -679,253 +679,265 @@ class AccountScript:
         except Company.DoesNotExist:
             return False
 
-        # --- DANH SÁCH CẤU HÌNH FULL OPTION (TT200) ---
         CONFIG_DATA = [
             # ====================================================
             # NHÓM 0: BÁN HÀNG (SALES) - Type 0
             # ====================================================
-            # --- Doanh thu ---
-            ('Rev Merchandise', 'SALE_REVENUE', '', 0, 'Doanh thu bán hàng hóa', '5111',
+            # --- 1. DOANH THU (REVENUE) ---
+            ('Rev Merchandise', 'SALE_REVENUE', 'MERCH', 0, 'Doanh thu bán hàng hóa', '5111',
              'Ghi nhận doanh thu bán hàng hóa thương mại.',
-             'Khi xuất hóa đơn bán hàng hóa thông thường -> Ghi Có TK 5111.'),
+             'Xuất hóa đơn bán 10 chiếc điện thoại iPhone. Ghi Có 5111.'),
 
             ('Rev Service', 'SALE_REVENUE', 'SERV', 0, 'Doanh thu dịch vụ', '5113',
              'Ghi nhận doanh thu từ việc cung cấp dịch vụ.',
-             'Khi xuất hóa đơn thu phí dịch vụ (lắp đặt, vận chuyển...) -> Ghi Có TK 5113.'),
+             'Xuất hóa đơn phí dịch vụ tư vấn, lắp đặt. Ghi Có 5113.'),
 
             ('Rev Finished Goods', 'SALE_REVENUE', 'FG', 0, 'Doanh thu thành phẩm', '5112',
              'Ghi nhận doanh thu bán thành phẩm tự sản xuất.',
-             'Khi bán các sản phẩm do công ty tự sản xuất -> Ghi Có TK 5112.'),
+             'Bán lô bàn ghế gỗ do xưởng mộc sản xuất. Ghi Có 5112.'),
 
             ('Rev Scrap', 'SALE_REVENUE', 'SCRAP', 0, 'Doanh thu bán phế liệu', '711',
-             'Ghi nhận thu nhập từ bán phế liệu, rác thải.',
-             'Khi thanh lý phế liệu, bao bì thu hồi -> Ghi Có TK 711.'),
+             'Ghi nhận thu nhập khác từ bán phế liệu kho.',
+             'Bán thanh lý bìa carton, sắt vụn. Ghi Có 711.'),
 
-            # --- Giảm trừ ---
-            ('Sales Deduction', 'SALE_DEDUCTION', '', 0, 'Các khoản giảm trừ chung', '521',
+            # --- 2. GIẢM TRỪ (DEDUCTIONS) ---
+            ('Sales Deduction', 'SALE_DEDUCTION', 'STANDARD', 0, 'Các khoản giảm trừ chung', '521',
              'Tài khoản tổng hợp ghi nhận giảm doanh thu.',
-             'Khi phát sinh giảm giá chung chưa phân loại rõ -> Ghi Nợ TK 521.'),
+             'Giảm giá chung trên tổng giá trị đơn hàng. Ghi Nợ 521.'),
 
-            ('Sales Discount', 'SALE_DISCOUNT', '', 0, 'Chiết khấu thương mại', '5211',
+            ('Sales Discount', 'SALE_DISCOUNT', 'STANDARD', 0, 'Chiết khấu thương mại', '5211',
              'Chiết khấu cho khách hàng mua số lượng lớn.',
-             'Khi chiết khấu cho khách hàng trên hóa đơn (do mua nhiều) -> Ghi Nợ TK 5211.'),
+             'Khách mua đạt doanh số 1 tỷ, chiết khấu 2%. Ghi Nợ 5211.'),
 
-            ('Sales Return Rev', 'SALE_RETURN', '', 0, 'Hàng bán bị trả lại', '5212',
+            ('Sales Return Rev', 'SALE_RETURN', 'STANDARD', 0, 'Hàng bán bị trả lại', '5212',
              'Giảm doanh thu khi khách trả lại hàng.',
-             'Khi khách hàng trả lại hàng đã mua (ghi giảm doanh thu) -> Ghi Nợ TK 5212.'),
+             'Khách trả lại 1 chiếc tivi lỗi màn hình. Ghi Nợ 5212.'),
 
-            # --- Thuế ---
-            ('Output VAT', 'SALE_VAT_OUT', '', 0, 'Thuế GTGT đầu ra', '33311',
+            # --- 3. THUẾ ĐẦU RA (OUTPUT TAX) ---
+            ('Output VAT', 'SALE_VAT_OUT', 'VAT', 0, 'Thuế GTGT đầu ra', '33311',
              'Thuế GTGT phải nộp khi bán hàng.',
-             'Khi xuất hóa đơn bán ra, phần thuế GTGT -> Ghi Có TK 33311.'),
+             'Hóa đơn bán ra 100tr, VAT 10%. Ghi Có 33311.'),
 
-            ('Export Duty', 'SALE_DUTY_EXP', '', 0, 'Thuế xuất khẩu', '3333',
+            ('Export Duty', 'SALE_DUTY_EXP', 'EXPORT', 0, 'Thuế xuất khẩu', '3333',
              'Thuế xuất khẩu phải nộp.',
-             'Khi phát sinh thuế xuất khẩu phải nộp -> Ghi Có TK 3333.'),
+             'Xuất khẩu lô hàng đi Mỹ, thuế XK 5%. Ghi Có 3333.'),
 
-            # --- Công nợ ---
-            ('Receivables', 'SALE_RECEIVABLE', '', 0, 'Phải thu khách hàng', '131',
-             'Công nợ phải thu khi bán chịu.',
-             'Khi bán hàng chưa thu tiền (công nợ) -> Ghi Nợ TK 131 (Chi tiết đối tượng).'),
+            # --- 4. CÔNG NỢ PHẢI THU (AR) ---
+            ('Receivables', 'SALE_RECEIVABLE', 'TRADE', 0, 'Phải thu khách hàng', '131',
+             'Ghi nhận công nợ phải thu khách hàng (Thương mại).',
+             'Bán hàng chưa thu tiền cho Cty A. Ghi Nợ 131.'),
 
+            # --- 5. THANH TOÁN (PAYMENT) ---
             ('Payment Cash', 'PAYMENT_MEANS', 'CASH', 0, 'Thu Tiền mặt', '1111',
-             'Thu tiền mặt nhập quỹ.',
-             'Khi khách hàng thanh toán bằng tiền mặt -> Ghi Nợ TK 1111.'),
+             'Khách hàng thanh toán bằng tiền mặt.',
+             'Khách trả tiền mặt tại quầy 500k. Ghi Nợ 1111.'),
 
             ('Payment Bank', 'PAYMENT_MEANS', 'BANK', 0, 'Thu Chuyển khoản', '1121',
-             'Thu tiền qua ngân hàng.',
-             'Khi khách hàng chuyển khoản thanh toán -> Ghi Nợ TK 1121.'),
+             'Khách hàng thanh toán qua ngân hàng.',
+             'Khách chuyển khoản vào Vietcombank. Ghi Nợ 1121.'),
 
-            # --- Nghiệp vụ đặc biệt ---
-            ('Uninvoiced AR', 'SALE_UNINVOICED', '', 0, 'Giao hàng chưa xuất HĐ', '13881',
+            # --- 6. NGHIỆP VỤ KHÁC (OTHER) ---
+            ('Uninvoiced AR', 'SALE_UNINVOICED', 'STANDARD', 0, 'Giao hàng chưa xuất HĐ', '13881',
              'Doanh thu tạm ghi nhận khi giao hàng trước, hóa đơn sau.',
-             'Khi đã giao hàng nhưng chưa xuất hóa đơn -> Ghi Nợ TK 13881 (Đối ứng với Có 511).'),
+             'Ngày 28 giao hàng (Nợ 13881). Ngày 5 xuất HĐ (Nợ 131 / Có 13881).'),
 
-            ('Customer Deposit', 'SALE_DEPOSIT', '', 0, 'Khách hàng đặt cọc', '3387',
+            ('Customer Deposit', 'SALE_DEPOSIT', 'STANDARD', 0, 'Khách hàng đặt cọc', '3387',
              'Nhận tiền cọc trước khi giao hàng.',
-             'Khi nhận tiền đặt cọc của khách hàng -> Ghi Có TK 3387.'),
+             'Khách chuyển khoản cọc 30%. Ghi Có 3387.'),
 
-            ('Underpayment', 'SALE_UNDERPAY', '', 0, 'Khách trả thiếu', '1388',
-             'Xử lý tiền lẻ khách trả thiếu (giá trị nhỏ).',
-             'Phần tiền lẻ khách trả thiếu được hạch toán vào -> Nợ TK 1388.'),
+            ('Underpayment', 'SALE_UNDERPAY', 'DIFF', 0, 'Khách trả thiếu', '1388',
+             'Xử lý tiền lẻ khách trả thiếu.',
+             'Khách trả thiếu 500đ tiền lẻ. Ghi Nợ 1388.'),
 
-            ('Overpayment', 'SALE_OVERPAY', '', 0, 'Khách trả thừa', '3388',
+            ('Overpayment', 'SALE_OVERPAY', 'DIFF', 0, 'Khách trả thừa', '3388',
              'Xử lý tiền thừa khách trả dư.',
-             'Phần tiền thừa khách trả dư được hạch toán vào -> Có TK 3388.'),
+             'Khách trả dư 100k. Ghi Có 3388.'),
 
-            # --- Tỷ giá ---
+            # --- 7. TỶ GIÁ (FX) ---
             ('FX Gain Realized', 'FX_REALIZED', 'GAIN', 0, 'Lãi tỷ giá thực thu', '515',
              'Lãi tỷ giá khi thu tiền hàng.',
-             'Khi thu tiền, nếu có lãi tỷ giá -> Ghi Có TK 515.'),
+             'Tỷ giá lúc thu tiền cao hơn lúc bán -> Lãi. Ghi Có 515.'),
 
             ('FX Loss Realized', 'FX_REALIZED', 'LOSS', 0, 'Lỗ tỷ giá thực thu', '635',
              'Lỗ tỷ giá khi thu tiền hàng.',
-             'Khi thu tiền, nếu bị lỗ tỷ giá -> Ghi Nợ TK 635.'),
+             'Tỷ giá lúc thu tiền thấp hơn lúc bán -> Lỗ. Ghi Nợ 635.'),
 
             # ====================================================
             # NHÓM 1: MUA HÀNG (PURCHASING) - Type 1
             # ====================================================
-            ('Payables', 'PURCHASE_PAYABLE', '', 1, 'Phải trả người bán', '331',
+
+            # --- 1. CÔNG NỢ PHẢI TRẢ (AP) ---
+            ('Payables', 'PURCHASE_PAYABLE', 'TRADE', 1, 'Phải trả người bán', '331',
              'Công nợ phải trả nhà cung cấp.',
-             'Khi mua hàng chưa thanh toán -> Ghi Có TK 331 (Chi tiết đối tượng).'),
+             'Mua hàng chịu của NCC Samsung. Ghi Có 331.'),
 
-            ('Advance to Vendor', 'PURCHASE_ADVANCE', '', 1, 'Trả trước cho người bán', '331',
+            ('Advance to Vendor', 'PURCHASE_ADVANCE', 'TRADE', 1, 'Trả trước cho người bán', '331',
              'Ứng trước tiền cho NCC.',
-             'Khi chuyển khoản ứng trước tiền hàng -> Ghi Nợ TK 331.'),
+             'Chuyển khoản tạm ứng 50% tiền hàng. Ghi Nợ 331.'),
 
-            ('Input VAT', 'PURCHASE_VAT_IN', '', 1, 'Thuế GTGT được khấu trừ', '1331',
+            # --- 2. THUẾ ĐẦU VÀO (INPUT TAX) ---
+            ('Input VAT', 'PURCHASE_VAT_IN', 'VAT', 1, 'Thuế GTGT được khấu trừ', '1331',
              'Thuế GTGT đầu vào trên hóa đơn mua.',
-             'Phần thuế GTGT trên hóa đơn mua vào -> Ghi Nợ TK 1331.'),
+             'Hóa đơn mua máy tính 22tr (VAT 2tr). Ghi Nợ 1331.'),
 
-            ('GR/IR Clearing', 'PURCHASE_GR_IR', '', 1, 'Nhập hàng chưa về HĐ', '33881',
+            ('Import Duty', 'PURCHASE_DUTY_IMP', 'IMPORT', 1, 'Thuế Nhập khẩu', '3333',
+             'Thuế nhập khẩu phải nộp khi mua hàng nước ngoài.',
+             'Nhập khẩu lô hàng từ Mỹ, thuế NK. Ghi Có 3333.'),
+
+            # --- 3. TRUNG GIAN GR/IR ---
+            ('GR/IR Clearing', 'PURCHASE_GR_IR', 'STANDARD', 1, 'Nhập hàng chưa về HĐ', '33881',
              'Trung gian khi Hàng về trước - Hóa đơn về sau.',
-             'Khi nhập kho (chưa có HĐ) -> Ghi Có TK 33881 (Đối ứng với Nợ 15x).'),
+             'Nhập kho (Có 33881). Khi nhận HĐ (Nợ 33881 / Có 331).'),
 
-            ('Purchase Cost', 'PURCHASE_EXPENSE', '', 1, 'Chi phí thu mua', '1562',
+            # --- 4. CHI PHÍ MUA (PURCHASE EXPENSE) ---
+            ('Purchase Cost', 'PURCHASE_EXPENSE', 'STANDARD', 1, 'Chi phí thu mua', '1562',
              'Chi phí vận chuyển, bốc xếp mua hàng.',
-             'Chi phí vận chuyển hàng mua về kho -> Ghi Nợ TK 1562 (để phân bổ).'),
+             'Trả tiền xe tải chở hàng về kho. Ghi Nợ 1562.'),
 
-            ('Purchase Discount', 'PURCHASE_DISCOUNT', '', 1, 'Chiết khấu thanh toán', '515',
+            ('Purchase Discount', 'PURCHASE_DISCOUNT', 'STANDARD', 1, 'Chiết khấu thanh toán', '515',
              'Chiết khấu được hưởng do trả tiền sớm.',
-             'Phần chiết khấu được hưởng do thanh toán sớm -> Ghi Có TK 515.'),
+             'Thanh toán sớm được giảm 1%. Ghi Có 515.'),
 
-            ('Purchase Service', 'PURCHASE_SERVICE', '', 1, 'Dịch vụ mua ngoài', '6427',
+            ('Purchase Service', 'PURCHASE_SERVICE', 'STANDARD', 1, 'Dịch vụ mua ngoài', '6427',
              'Mua dịch vụ dùng ngay (Điện, nước, thuê ngoài).',
-             'Chi phí dịch vụ mua ngoài dùng cho quản lý -> Ghi Nợ TK 6427.'),
+             'Thanh toán tiền điện văn phòng. Ghi Nợ 6427.'),
 
+            # --- 5. TỶ GIÁ (FX PAYMENT) ---
             ('FX Gain Payment', 'FX_PAYMENT', 'GAIN', 1, 'Lãi tỷ giá thanh toán', '515',
              'Lãi tỷ giá khi trả tiền NCC.',
-             'Khi thanh toán tiền hàng, nếu có lãi tỷ giá -> Ghi Có TK 515.'),
+             'Tỷ giá lúc trả thấp hơn lúc mua -> Lãi. Ghi Có 515.'),
 
             ('FX Loss Payment', 'FX_PAYMENT', 'LOSS', 1, 'Lỗ tỷ giá thanh toán', '635',
              'Lỗ tỷ giá khi trả tiền NCC.',
-             'Khi thanh toán tiền hàng, nếu bị lỗ tỷ giá -> Ghi Nợ TK 635.'),
+             'Tỷ giá lúc trả cao hơn lúc mua -> Lỗ. Ghi Nợ 635.'),
 
             # ====================================================
             # NHÓM 2: KHO (INVENTORY) - Type 2
             # ====================================================
-            # --- Tài sản kho (Asset) ---
-            ('Inv Merchandise', 'INV_ASSET', '', 2, 'Hàng hóa', '1561',
+
+            # --- 1. TÀI SẢN KHO (INVENTORY ASSET) ---
+            ('Inv Merchandise', 'INV_ASSET', 'MERCH', 2, 'Hàng hóa', '1561',
              'Giá trị hàng hóa thương mại nhập kho.',
-             'Khi nhập kho hàng hóa mua về -> Ghi Nợ TK 1561.'),
+             'Nhập kho 50 Laptop Dell. Ghi Nợ 1561.'),
 
             ('Inv Raw Material', 'INV_ASSET', 'RAW', 2, 'Nguyên vật liệu', '152',
              'Giá trị nguyên liệu sản xuất nhập kho.',
-             'Khi nhập kho nguyên vật liệu -> Ghi Nợ TK 152.'),
+             'Nhập kho thép tấm. Ghi Nợ 152.'),
 
             ('Inv Finished Goods', 'INV_ASSET', 'FG', 2, 'Thành phẩm', '1551',
-             'Giá trị thành phẩm nhập kho từ sản xuất.',
-             'Khi nhập kho thành phẩm sản xuất xong -> Ghi Nợ TK 1551.'),
+             'Giá trị thành phẩm sản xuất nhập kho.',
+             'Xưởng bàn giao thành phẩm. Ghi Nợ 1551.'),
 
             ('Inv Tools', 'INV_ASSET', 'TOOL', 2, 'Công cụ dụng cụ', '1531',
              'Giá trị công cụ, dụng cụ nhập kho.',
-             'Khi nhập kho công cụ dụng cụ -> Ghi Nợ TK 1531.'),
+             'Nhập kho máy khoan. Ghi Nợ 1531.'),
 
             ('Inv Consignment', 'INV_ASSET', 'CONSIGN', 2, 'Hàng gửi đi bán', '157',
              'Giá trị hàng gửi đại lý bán hộ.',
-             'Khi xuất kho gửi hàng đi bán (chưa bán được) -> Ghi Nợ TK 157.'),
+             'Xuất kho gửi đại lý. Ghi Nợ 157.'),
 
-            # --- Giá vốn & Xuất kho (Contra) ---
-            ('COGS', 'INV_COGS', '', 2, 'Giá vốn hàng bán', '632',
-             'Giá vốn khi xuất bán hàng hóa.',
-             'Khi xuất kho bán hàng, giá vốn được ghi vào -> Nợ TK 632.'),
+            # --- 2. GIÁ VỐN (COGS) ---
+            ('COGS', 'INV_COGS', 'MERCH', 2, 'Giá vốn hàng bán (HH)', '632',
+             'Ghi nhận giá vốn khi xuất kho bán hàng.',
+             'Xuất bán Laptop. Ghi Nợ 632 / Có 1561.'),
 
-            ('Return Stock', 'INV_RETURN', '', 2, 'Giá vốn hàng trả lại', '632',
-             'Giảm giá vốn khi nhập lại hàng khách trả.',
-             'Khi nhập lại hàng bị trả lại (ghi giảm giá vốn) -> Ghi Có TK 632.'),
+            ('Return Stock', 'INV_RETURN', 'MERCH', 2, 'Giá vốn hàng trả lại (HH)', '632',
+             'Ghi giảm giá vốn khi nhập lại hàng khách trả.',
+             'Nhập lại kho hàng trả. Ghi Có 632.'),
 
-            ('Scrap Issue', 'INV_SCRAP', '', 2, 'Xuất hủy/Phế liệu', '811',
-             'Xuất kho tiêu hủy hàng hỏng/mất mát.',
-             'Khi xuất hủy hàng hỏng ra khỏi kho -> Ghi Nợ TK 811.'),
-
-            # --- Xuất dùng (Consumption) ---
+            # --- 3. XUẤT DÙNG (CONSUMPTION) ---
             ('Consume Production', 'INV_CONSUME', 'PROD', 2, 'Xuất NVL cho sản xuất', '621',
              'Xuất nguyên liệu trực tiếp cho sản xuất.',
-             'Khi xuất kho nguyên liệu để sản xuất -> Ghi Nợ TK 621.'),
+             'Xuất gỗ đóng bàn. Ghi Nợ 621.'),
 
             ('Consume Dept', 'INV_CONSUME', 'DEPT', 2, 'Xuất dùng cho bộ phận', '6422',
              'Xuất vật liệu/CCDC cho văn phòng quản lý.',
-             'Khi xuất vật liệu/dụng cụ cho văn phòng dùng -> Ghi Nợ TK 6422.'),
+             'Xuất giấy in cho kế toán. Ghi Nợ 6422.'),
 
             ('Consume Factory', 'INV_CONSUME', 'FACTORY', 2, 'Xuất dùng cho phân xưởng', '6272',
              'Xuất vật liệu/CCDC dùng chung cho xưởng.',
-             'Khi xuất vật liệu/dụng cụ cho xưởng dùng chung -> Ghi Nợ TK 6272.'),
+             'Xuất dầu nhớt bảo dưỡng. Ghi Nợ 6272.'),
 
-            # --- Kiểm kê & Khác ---
+            # --- 4. KIỂM KÊ (ADJUSTMENT) ---
             ('Inv Gain', 'INV_ADJUST', 'GAIN', 2, 'Kiểm kê thừa', '3381',
              'Tài sản thừa chờ xử lý khi kiểm kê.',
-             'Khi kiểm kê phát hiện thừa hàng -> Ghi Có TK 3381.'),
+             'Kiểm kho thừa. Ghi Có 3381.'),
 
             ('Inv Loss', 'INV_ADJUST', 'LOSS', 2, 'Kiểm kê thiếu', '1381',
              'Tài sản thiếu chờ xử lý khi kiểm kê.',
-             'Khi kiểm kê phát hiện thiếu hàng -> Ghi Nợ TK 1381.'),
+             'Kiểm kho thiếu. Ghi Nợ 1381.'),
+
+            # --- 5. NGHIỆP VỤ KHÁC ---
+            ('Scrap Issue', 'INV_SCRAP', 'STANDARD', 2, 'Xuất hủy/Phế liệu', '811',
+             'Xuất kho tiêu hủy hàng hỏng/mất mát.',
+             'Hàng hỏng xuất hủy. Ghi Nợ 811.'),
 
             ('Revaluation Gain', 'INV_REVAL', 'GAIN', 2, 'Đánh giá lại kho', '412',
              'Chênh lệch tăng do đánh giá lại tài sản.',
-             'Khi đánh giá lại tài sản tăng -> Ghi Có TK 412.'),
+             'Đánh giá lại tồn kho tăng. Ghi Có 412.'),
 
-            ('Transit', 'INV_TRANSIT', '', 2, 'Hàng mua đi đường', '151',
+            ('Transit', 'INV_TRANSIT', 'STANDARD', 2, 'Hàng mua đi đường', '151',
              'Hàng đã mua nhưng cuối tháng chưa về kho.',
-             'Khi hàng đang đi đường chưa về nhập kho -> Ghi Nợ TK 151.'),
+             'Hàng đang trên tàu. Ghi Nợ 151.'),
 
-            ('Prod Receipt Credit', 'PROD_OUTPUT', '', 2, 'Nhập kho thành phẩm', '154',
-             'Đối ứng bên Có khi nhập kho thành phẩm.',
-             'Khi nhập kho thành phẩm, tài khoản đối ứng là -> Có TK 154.'),
+            ('Prod Receipt Credit', 'PROD_OUTPUT', 'STANDARD', 2, 'Nhập kho thành phẩm (Có)', '154',
+             'Tài khoản đối ứng (bên Có) khi nhập kho thành phẩm.',
+             'Nhập kho thành phẩm. Ghi Có 154.'),
 
             # ====================================================
             # NHÓM 3: TÀI SẢN CỐ ĐỊNH (FIXED ASSETS) - Type 3
             # ====================================================
-            # --- Nguyên giá ---
+            # --- 1. NGUYÊN GIÁ (ASSET COST) ---
             ('Asset Tangible', 'ASSET_COST', 'TANGIBLE', 3, 'TSCĐ Hữu hình', '2111',
              'Nguyên giá TSCĐ hữu hình.',
-             'Khi mua sắm/ghi tăng TSCĐ hữu hình -> Ghi Nợ TK 2111.'),
+             'Mua xe tải. Ghi Nợ 2111.'),
 
             ('Asset Intangible', 'ASSET_COST', 'INTANGIBLE', 3, 'TSCĐ Vô hình', '2131',
              'Nguyên giá TSCĐ vô hình.',
-             'Khi mua sắm/ghi tăng TSCĐ vô hình (phần mềm, quyền SDĐ...) -> Ghi Nợ TK 2131.'),
+             'Mua phần mềm. Ghi Nợ 2131.'),
 
             ('Asset Lease', 'ASSET_COST', 'LEASE', 3, 'TSCĐ Thuê tài chính', '2121',
              'Nguyên giá TSCĐ thuê tài chính.',
-             'Khi ghi tăng TSCĐ thuê tài chính -> Ghi Nợ TK 2121.'),
+             'Thuê tài chính dây chuyền. Ghi Nợ 2121.'),
 
-            # --- Khấu hao ---
+            # --- 2. KHẤU HAO LŨY KẾ (ACCUMULATED DEPRECIATION) ---
             ('Depr Tangible', 'ASSET_DEPR', 'TANGIBLE', 3, 'Hao mòn TSCĐ HH', '2141',
-             'Hao mòn lũy kế TSCĐ hữu hình',
-             'Định kỳ trích khấu hao TSCĐ hữu hình -> Ghi Có TK 2141.'),
+             'Hao mòn lũy kế TSCĐ hữu hình.',
+             'Khấu hao xe tải. Ghi Có 2141.'),
 
             ('Depr Intangible', 'ASSET_DEPR', 'INTANGIBLE', 3, 'Hao mòn TSCĐ VH', '2143',
              'Hao mòn lũy kế TSCĐ vô hình.',
-             'Định kỳ trích khấu hao TSCĐ vô hình -> Ghi Có TK 2143.'),
+             'Khấu hao phần mềm. Ghi Có 2143.'),
 
             ('Depr Lease', 'ASSET_DEPR', 'LEASE', 3, 'Hao mòn TSCĐ Thuê TC', '2142',
-             'Hao mòn lũy kế của TSCĐ thuê tài chính.',
-             'Định kỳ trích khấu hao TSCĐ thuê tài chính -> Ghi Có TK 2142.'),
+             'Hao mòn lũy kế TSCĐ thuê tài chính.',
+             'Khấu hao tài sản thuê. Ghi Có 2142.'),
 
-            # --- Chi phí khấu hao ---
+            # --- 3. CHI PHÍ KHẤU HAO (DEPRECIATION EXPENSE) ---
             ('Exp Depr Admin', 'ASSET_EXP', 'ADMIN', 3, 'CP Khấu hao QLDN', '6424',
-             'Chi phí khấu hao tính vào bộ phận Quản lý doanh nghiệp.',
-             'Khấu hao dùng cho văn phòng/quản lý -> Ghi Nợ TK 6424.'),
+             'Chi phí khấu hao bộ phận quản lý.',
+             'Khấu hao xe giám đốc. Ghi Nợ 6424.'),
 
             ('Exp Depr Sale', 'ASSET_EXP', 'SALE', 3, 'CP Khấu hao BH', '6414',
-             'Chi phí khấu hao tính vào bộ phận Bán hàng.',
-             'Khấu hao dùng cho bộ phận bán hàng -> Ghi Nợ TK 6414.'),
+             'Chi phí khấu hao bộ phận bán hàng.',
+             'Khấu hao xe tải giao hàng. Ghi Nợ 6414.'),
 
             ('Exp Depr Prod', 'ASSET_EXP', 'PROD', 3, 'CP Khấu hao Sản xuất', '6274',
-             'Chi phí khấu hao tính vào bộ phận Sản xuất chung.',
-             'Khấu hao dùng cho phân xưởng sản xuất -> Ghi Nợ TK 6274.'),
+             'Chi phí khấu hao bộ phận sản xuất.',
+             'Khấu hao máy móc. Ghi Nợ 6274.'),
 
-            # --- Thanh lý ---
-            ('Asset Sale Rev', 'ASSET_SALE_REV', '', 3, 'Thu nhập thanh lý', '711',
+            # --- 4. THANH LÝ (DISPOSAL) ---
+            ('Asset Sale Rev', 'ASSET_SALE_REV', 'STANDARD', 3, 'Thu nhập thanh lý', '711',
              'Thu nhập khác từ thanh lý TSCĐ.',
-             'Khi thanh lý TSCĐ, khoản thu nhập (nếu có) -> Ghi Có TK 711.'),
+             'Bán xe cũ. Ghi Có 711.'),
 
-            ('Asset Sale Loss', 'ASSET_SALE_LOSS', '', 3, 'Chi phí thanh lý (GTCL)', '811',
-             'Giá trị còn lại khi thanh lý TSCĐ.',
-             'Khi thanh lý TSCĐ, giá trị còn lại (chưa khấu hao hết) -> Ghi Nợ TK 811.'),
+            ('Asset Sale Loss', 'ASSET_SALE_LOSS', 'STANDARD', 3, 'Chi phí thanh lý', '811',
+             'Giá trị còn lại khi thanh lý.',
+             'Xóa sổ giá trị còn lại. Ghi Nợ 811.'),
 
-            ('Asset AUC', 'ASSET_AUC', '', 3, 'XDCB dở dang', '2412',
-             'Chi phí xây dựng, mua sắm chưa hoàn thành.',
-             'Tập hợp chi phí xây dựng/mua sắm TSCĐ chưa hoàn thành -> Ghi Nợ TK 2412.'),
+            ('Asset AUC', 'ASSET_AUC', 'STANDARD', 3, 'XDCB dở dang', '2412',
+             'Chi phí xây dựng dở dang.',
+             'Đang xây dựng nhà xưởng. Ghi Nợ 2412.'),
         ]
 
         with transaction.atomic():

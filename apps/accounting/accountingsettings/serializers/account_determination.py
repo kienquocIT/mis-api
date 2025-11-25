@@ -42,7 +42,6 @@ class AccountDeterminationListSerializer(serializers.ModelSerializer):
                     if prd:
                         context_desc.append(f"Product: {prd.code}")
             data.append({
-                'transaction_key': obj.transaction_key,
                 'id': sub.id,
                 'transaction_key_sub': sub.transaction_key_sub,
                 'description': sub.description,
