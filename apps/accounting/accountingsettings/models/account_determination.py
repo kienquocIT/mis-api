@@ -85,7 +85,7 @@ class AccountDeterminationSub(SimpleAbstractModel):
         super().save(*args, **kwargs)
 
     @classmethod
-    def create_specific_rule(cls, company_id, transaction_key, account_code, context_dict, modifier=''):
+    def create_specific_rule(cls, company_id, transaction_key, account_code, context_dict, transaction_key_sub=''):
         try:
             acc_deter_obj = AccountDetermination.objects.get(company_id=company_id, transaction_key=transaction_key)
             acc_obj = ChartOfAccounts.get_acc(company_id, account_code)
@@ -94,11 +94,11 @@ class AccountDeterminationSub(SimpleAbstractModel):
             search_key = cls.generate_search_rule(context_dict)
             AccountDeterminationSub.objects.update_or_create(
                 account_determination=acc_deter_obj,
-                transaction_key_sub=modifier,
+                transaction_key_sub=transaction_key_sub,
                 search_rule=search_key,
                 defaults={
                     'description': f"Custom Rule for {context_dict}",
-                    'account_mapped': acc_obj,
+                    'account_mapped_id': str(acc_obj.id),
                     'account_mapped_data': {
                         'id': str(acc_obj.id),
                         'acc_code': acc_obj.acc_code,
@@ -172,13 +172,13 @@ class AccountDeterminationSub(SimpleAbstractModel):
         return candidates
 
     @classmethod
-    def get_best_rule(cls, company_id, transaction_key, context_dict, modifier=''):
+    def get_best_rule(cls, company_id, transaction_key, context_dict, transaction_key_sub=''):
         """ Hàm tìm tài khoản tối ưu nhất """
         search_rule_list = cls.generate_search_rule_list(context_dict)
         best_rule_obj = cls.objects.filter(
             account_determination__company_id=company_id,
             account_determination__transaction_key=transaction_key,
-            transaction_key_sub=modifier,
+            transaction_key_sub=transaction_key_sub,
             search_rule__in=search_rule_list
         ).select_related('account_mapped').order_by('-priority').first()
         return best_rule_obj
