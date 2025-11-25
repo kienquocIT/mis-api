@@ -85,7 +85,10 @@ class AccountDeterminationSub(SimpleAbstractModel):
         super().save(*args, **kwargs)
 
     @classmethod
-    def create_specific_rule(cls, company_id, transaction_key, account_code, context_dict, transaction_key_sub=''):
+    def create_specific_rule(
+            cls, company_id, transaction_key, account_code, context_dict,
+            transaction_key_sub='', description_sub='', example_sub=''
+    ):
         try:
             acc_deter_obj = AccountDetermination.objects.get(company_id=company_id, transaction_key=transaction_key)
             acc_obj = ChartOfAccounts.get_acc(company_id, account_code)
@@ -97,7 +100,8 @@ class AccountDeterminationSub(SimpleAbstractModel):
                 transaction_key_sub=transaction_key_sub,
                 search_rule=search_key,
                 defaults={
-                    'description': f"Custom Rule for {context_dict}",
+                    'description': description_sub,
+                    'example': example_sub,
                     'account_mapped_id': str(acc_obj.id),
                     'account_mapped_data': {
                         'id': str(acc_obj.id),
