@@ -25,11 +25,13 @@ class AllowedAppAutoJEUpdateSerializer(serializers.ModelSerializer):
         model = AllowedAppAutoJournalEntry
         fields = ('is_auto_je',)
 
+
 # JE
 class JournalEntryListSerializer(serializers.ModelSerializer):
     employee_created = serializers.SerializerMethodField()
     original_transaction_parsed = serializers.SerializerMethodField()
     je_state_parsed = serializers.SerializerMethodField()
+    je_lines = serializers.SerializerMethodField()
 
     class Meta:
         model = JournalEntry
@@ -45,7 +47,8 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
             'date_created',
             'employee_created',
             'system_status',
-            'system_auto_create'
+            'system_auto_create',
+            'je_lines'
         )
 
     @classmethod
@@ -59,6 +62,26 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_je_state_parsed(cls, obj):
         return [_('Draft'), _('Posted'), _('Reversed')][obj.je_state]
+
+    @classmethod
+    def get_je_lines(cls, obj):
+        je_lines = []
+        for item in obj.je_lines.all():
+            je_lines.append(
+                {
+                    'id': item.id,
+                    'order': item.order,
+                    'account_data': item.account_data,
+                    'business_partner_data': item.business_partner_data,
+                    'debit': item.debit,
+                    'credit': item.credit,
+                    'is_fc': item.is_fc,
+                    'je_line_type': item.je_line_type,
+                    'taxable_value': item.taxable_value,
+                    'dimensions': [item.business_partner_data]
+                }
+            )
+        return je_lines
 
 
 class JournalEntryCreateSerializer(serializers.ModelSerializer):
@@ -97,18 +120,20 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
     def get_je_lines(cls, obj):
         je_lines = []
         for item in obj.je_lines.all():
-            je_lines.append({
-                'id': item.id,
-                'order': item.order,
-                'account_data': item.account_data,
-                'business_partner_data': item.business_partner_data,
-                'debit': item.debit,
-                'credit': item.credit,
-                'is_fc': item.is_fc,
-                'je_line_type': item.je_line_type,
-                'taxable_value': item.taxable_value,
-                'dimensions': [item.business_partner_data]
-            })
+            je_lines.append(
+                {
+                    'id': item.id,
+                    'order': item.order,
+                    'account_data': item.account_data,
+                    'business_partner_data': item.business_partner_data,
+                    'debit': item.debit,
+                    'credit': item.credit,
+                    'is_fc': item.is_fc,
+                    'je_line_type': item.je_line_type,
+                    'taxable_value': item.taxable_value,
+                    'dimensions': [item.business_partner_data]
+                }
+            )
         return je_lines
 
 
