@@ -20,6 +20,7 @@ class JournalEntryInitData:
             AllowedAppAutoJournalEntry.update_or_create_app(tenant_id, company_id, key, False)
         return True
 
+
 class JournalEntryRun:
     @staticmethod
     def delete_journal_entry_data(company_id, this_period):
@@ -156,18 +157,18 @@ class JournalEntryRun:
             if doc['type'] == 'ap_invoice':
                 instance = APInvoice.objects.get(id=doc['id'])
                 JEForAPInvoiceHandler.push_to_journal_entry(instance)
-            if doc['type'] == 'ar_invoice':
-                instance = ARInvoice.objects.get(id=doc['id'])
-                JEForARInvoiceHandler.push_to_journal_entry(instance)
-            if doc['type'] == 'cif':
-                instance = CashInflow.objects.get(id=doc['id'])
-                JEForCIFHandler.push_to_journal_entry(instance)
-            if doc['type'] == 'cof':
-                instance = CashOutflow.objects.get(id=doc['id'])
-                JEForCOFHandler.push_to_journal_entry(instance)
-            if doc['type'] == 'delivery':
-                instance = OrderDelivery.objects.get(id=doc['id'])
-                JEForDeliveryHandler.push_to_journal_entry(instance)
+            # if doc['type'] == 'ar_invoice':
+            #     instance = ARInvoice.objects.get(id=doc['id'])
+            #     JEForARInvoiceHandler.push_to_journal_entry(instance)
+            # if doc['type'] == 'cif':
+            #     instance = CashInflow.objects.get(id=doc['id'])
+            #     JEForCIFHandler.push_to_journal_entry(instance)
+            # if doc['type'] == 'cof':
+            #     instance = CashOutflow.objects.get(id=doc['id'])
+            #     JEForCOFHandler.push_to_journal_entry(instance)
+            # if doc['type'] == 'delivery':
+            #     instance = OrderDelivery.objects.get(id=doc['id'])
+            #     JEForDeliveryHandler.push_to_journal_entry(instance)
             if doc['type'] == 'goods_receipt':
                 instance = GoodsReceipt.objects.get(id=doc['id'])
                 JEForGoodsReceiptHandler.push_to_journal_entry(instance)

@@ -2,6 +2,7 @@ import itertools
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.accounting.accountingsettings.models.chart_of_account import ChartOfAccounts
+from apps.sales.report.models import ReportStockLog
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = [
@@ -18,8 +19,8 @@ ACCOUNT_DETERMINATION_TYPE = [
 
 # 1. Bên Nợ/Có
 SIDE_CHOICES = [
-    (0, _('Debit')),
-    (1, _('Credit')),
+    ('DEBIT', _('Bên nợ')),
+    ('CREDIT', _('Bên có')),
 ]
 
 # 2. Nguồn tiền
@@ -56,7 +57,7 @@ class AccountDetermination(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Account Determination'
         verbose_name_plural = 'Account Determination'
-        ordering = ('order', 'transaction_key')
+        ordering = ('account_determination_type', 'transaction_key')
         unique_together = ('company', 'transaction_key')
 
 
@@ -67,19 +68,15 @@ class AccountDeterminationSub(SimpleAbstractModel):
         'product_id',
     }
 
-    account_determination = models.ForeignKey(
-        AccountDetermination, on_delete=models.CASCADE, related_name='sub_items'
-    )
-
+    account_determination = models.ForeignKey(AccountDetermination, on_delete=models.CASCADE, related_name='sub_items')
     # Thứ tự hiển thị (1, 2, 3...)
     order = models.IntegerField(default=0, db_index=True)
     # Bên Nợ hay Có
-    side = models.SmallIntegerField(choices=SIDE_CHOICES,)
+    side = models.CharField(max_length=10, choices=SIDE_CHOICES)
     # Lấy tiền từ đâu
     amount_source = models.CharField(max_length=20, choices=AMOUNT_SOURCE_CHOICES)
     # Chọn tài khoản từ đâu (cứng hay động)
     account_source_type = models.CharField(max_length=10, choices=ACCOUNT_SOURCE_TYPE_CHOICES)
-
     # CASE A: Cứng
     fixed_account = models.ForeignKey(
         'accountingsettings.ChartOfAccounts',
@@ -87,8 +84,7 @@ class AccountDeterminationSub(SimpleAbstractModel):
         related_name='determination_fixed_account',
     )
     # CASE B: Động
-    role_key = models.CharField(max_length=50, blank=True, null=True,)
-
+    role_key = models.CharField(max_length=50, blank=True, null=True)
     # --- LOGIC TÌM KIẾM & NGOẠI LỆ  ---
     match_context = models.JSONField(default=dict, blank=True)
     search_rule = models.CharField(max_length=500, blank=True, null=True, default='default', db_index=True)
@@ -114,4 +110,37 @@ class AccountDeterminationSub(SimpleAbstractModel):
             account_determination__company_id=company_id,
             account_determination__transaction_key=transaction_key
         ).select_related('fixed_account').order_by('order')
-        return list(posting_lines)
+        return posting_lines
+
+    @classmethod
+    def get_cost_from_stock_log(cls, transaction_obj, **kwargs):
+        """ Helper lấy giá vốn từ Stock Log """
+        sum_value = 0
+        for stock_log_item in ReportStockLog.objects.filter(
+            product=kwargs.get('product'),
+            trans_code=transaction_obj.code,
+            trans_id=str(transaction_obj.id)
+        ):
+            sum_value += stock_log_item.value
+        return sum_value
+
+    @classmethod
+    def get_amount_base_on_amount_source(cls, **kwargs):
+        """ Helper lấy amount dựa vào amount source """
+        amount = 0
+        if cls.amount_source == 'COST':
+            amount = kwargs.get('cost', 0)
+        return amount
+
+    @classmethod
+    def get_account_mapped(cls):
+        """
+        Tìm tài khoản dựa trên Rule (Fixed/Dynamic).
+        Đây là cầu nối giữa Config và Product thực tế.
+        """
+        # CASE 1: FIXED
+        if cls.account_source_type == 'FIXED':
+            return cls.fixed_account
+        # CASE 2: DYNAMIC
+        # ...
+        return None

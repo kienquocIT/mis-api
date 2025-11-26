@@ -23,40 +23,27 @@ class AccountDeterminationListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_account_determination_sub_list(cls, obj):
-        subs = obj.sub_items.select_related('account_mapped').order_by('priority', 'id')
+        subs = obj.sub_items.select_related('fixed_account').order_by('order')
         data = []
         for sub in subs:
-            context_desc = []
-            if sub.match_context:
-                ctx = sub.match_context
-                if ctx.get('warehouse_id'):
-                    wh = WareHouse.objects.filter(id=ctx['warehouse_id']).first()
-                    if wh:
-                        context_desc.append(f"Warehouse: {wh.code}")
-                if ctx.get('product_type_id'):
-                    pt = ProductType.objects.filter(id=ctx['product_type_id']).first()
-                    if pt:
-                        context_desc.append(f"Product type: {pt.code}")
-                if ctx.get('product_id'):
-                    prd = Product.objects.filter(id=ctx['product_id']).first()
-                    if prd:
-                        context_desc.append(f"Product: {prd.code}")
             data.append({
                 'id': sub.id,
-                'transaction_key_sub': sub.transaction_key_sub,
+                'side': sub.side,
+                'amount_source': sub.amount_source,
+                'account_source_type': sub.account_source_type,
+                'fixed_account_data': {
+                    'id': str(sub.fixed_account.id),
+                    'acc_code': sub.fixed_account.acc_code,
+                    'acc_name': sub.fixed_account.acc_name,
+                    'foreign_acc_name': sub.fixed_account.foreign_acc_name,
+                } if sub.fixed_account else {},
+                'role_key': sub.role_key,
                 'description': sub.description,
-                'account_mapped_data': {
-                    'id': str(sub.account_mapped.id),
-                    'acc_code': sub.account_mapped.acc_code,
-                    'acc_name': sub.account_mapped.acc_name,
-                    'foreign_acc_name': sub.account_mapped.foreign_acc_name,
-                },
                 'example': sub.example,
                 'match_context': sub.match_context,
                 'search_rule': sub.search_rule,
                 'priority': sub.priority,
                 'is_custom': sub.is_custom,
-                'context_description': ", ".join(context_desc) if context_desc else '',
             })
         return data
 

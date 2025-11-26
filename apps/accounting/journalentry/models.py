@@ -222,7 +222,7 @@ class JournalEntryLine(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Journal Entry Line'
         verbose_name_plural = 'Journal Entry Lines'
-        ordering = ('order',)
+        ordering = ('je_line_type', 'order')
         default_permissions = ()
         permissions = ()
 

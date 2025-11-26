@@ -1,6 +1,6 @@
 import logging
 from django.db import transaction
-from apps.accounting.accountingsettings.models import AccountDetermination
+from apps.accounting.accountingsettings.models import AccountDetermination, AccountDeterminationSub
 from apps.accounting.journalentry.models import JournalEntry
 from apps.sales.report.models import ReportStockLog
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class JEForGoodsReceiptHandler:
     @classmethod
-    def parse_je_line_data(cls, gr_obj):
+    def parse_je_line_data_old(cls, gr_obj):
         debit_rows_data = []
         credit_rows_data = []
         sum_cost = 0
@@ -61,11 +61,62 @@ class JEForGoodsReceiptHandler:
         return debit_rows_data, credit_rows_data
 
     @classmethod
+    def parse_je_line_data(cls, gr_obj, transaction_key):
+        """
+        Hàm parse dữ liệu dựa trên RULES CONFIG
+        """
+        rules_list = AccountDeterminationSub.get_posting_lines(gr_obj.company_id, transaction_key)
+        if not rules_list:
+            logger.error(f"[JE] No Accounting Rules found for GRN_PURCHASE")
+            return None
+
+        debit_rows_data = []
+        credit_rows_data = []
+
+        # 1. Duyệt qua từng dòng sản phẩm trong phiếu nhập
+        for gr_prd_obj in gr_obj.goods_receipt_product_goods_receipt.all():
+            for gr_wh_obj in gr_prd_obj.goods_receipt_warehouse_gr_product.all():
+
+                # 2. Trong GD này chỉ cần cost. Tính Cost cho dòng này
+                cost = AccountDeterminationSub.get_cost_from_stock_log(gr_obj, **{'product': gr_prd_obj.product})
+
+                # 3. Áp dụng danh sách Rule cho dòng sản phẩm này
+                for rule in rules_list:
+
+                    # A. Tìm tài khoản theo rule này
+                    account_mapped = rule.get_account_mapped()
+
+                    # B. Xác định số tiền (Dựa trên amount_source)
+                    amount = rule.get_amount_base_on_amount_source(**{'cost': cost})
+
+                    # C. Tạo dòng JE Line Data
+                    line_data = {
+                        'account': account_mapped,
+                        'product_mapped': gr_prd_obj.product if rule.role_key == 'ASSET' else None,
+                        # Chỉ map product cho dòng Kho
+                        'business_partner': None,
+                        'debit': amount if rule.side == 'DEBIT' else 0,  # 0: Debit
+                        'credit': amount if rule.side =='CREDIT' else 0,  # 1: Credit
+                        'is_fc': False,
+                        'taxable_value': 0,
+                        # Logic Reconciliation (cho dòng 33881)
+                        'use_for_recon': True if rule.role_key == 'GRNI' else False,
+                        'use_for_recon_type': 'gr-ap' if rule.role_key == 'GRNI' else ''
+                    }
+
+                    # D. Phân loại Nợ/Có
+                    if rule.side == 'DEBIT':
+                        debit_rows_data.append(line_data)
+                    else:
+                        credit_rows_data.append(line_data)
+        return debit_rows_data, credit_rows_data
+
+    @classmethod
     def push_to_journal_entry(cls, gr_obj):
         """ Chuẩn bị data để tự động tạo Bút Toán """
         try:
             with transaction.atomic():
-                debit_rows_data, credit_rows_data = cls.parse_je_line_data(gr_obj)
+                debit_rows_data, credit_rows_data = cls.parse_je_line_data(gr_obj, 'GRN_PURCHASE')
                 kwargs = {
                     'je_transaction_app_code': gr_obj.get_model_code(),
                     'je_transaction_id': str(gr_obj.id),

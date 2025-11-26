@@ -679,70 +679,114 @@ class AccountScript:
             return False
 
         CONFIG_DATA = [
+            # CHIỀU BÁN HÀNG
             {
                 'key': 'DO_SALE',
-                'title_en': 'Delivery Order for Sales',
-                'title_vn': 'Xuất kho bán hàng',
-                'desc': 'Ghi nhận Doanh thu (511) và Giá vốn (632)',
-                'type': 1,
+                'title_en': 'Delivery Order (Unbilled)',
+                'title_vn': 'Xuất kho bán hàng (Chưa hóa đơn)',
+                'desc': 'Ghi nhận Giá vốn (632/156) và Doanh thu tạm tính (13881/511)',
+                'type': 2,  # Inventory
                 'sub_list': [
-                    # --- Cặp 1: Giá vốn ---
+                    # --- Cặp 1: Giá vốn (Giữ nguyên) ---
                     {
-                        'order': 1, 'side': 0, 'role': 'COGS', 'amount_source': 'COST',
-                        'account_source_type': 'FIXED',
-                        'fixed_account_code': '632',
+                        'order': 1, 'side': 'DEBIT', 'role_key': 'COGS', 'amount_source': 'COST',
+                        'account_source_type': 'FIXED', 'fixed_account_code': '632',
                         'desc': 'Giá vốn hàng bán (632)'
                     },
                     {
-                        'order': 2, 'side': 1, 'role': 'ASSET', 'amount_source': 'COST',
-                        'account_source_type': 'FIXED',
-                        'fixed_account_code': '1561',
+                        'order': 2, 'side': 'CREDIT', 'role_key': 'ASSET', 'amount_source': 'COST',
+                        'account_source_type': 'FIXED', 'fixed_account_code': '1561',
                         'desc': 'Giảm kho hàng hóa (1561)'
                     },
-                    # --- Cặp 2: Doanh thu ---
+                    # --- Cặp 2: Doanh thu tạm (Thay đổi) ---
                     {
-                        'order': 3, 'side': 0, 'role': 'RECEIVABLE', 'amount_source': 'TOTAL',
-                        'account_source_type': 'FIXED',
-                        'fixed_account_code': '131',
+                        'order': 3, 'side': 'DEBIT', 'role_key': 'DONI',
+                        'amount_source': 'SALES',  # Chỉ ghi nhận tiền hàng (Net amount)
+                        'account_source_type': 'FIXED', 'fixed_account_code': '13881',
+                        'desc': 'Phải thu tạm tính/Chưa hóa đơn (13881)'
+                    },
+                    {
+                        'order': 4, 'side': 'CREDIT', 'role_key': 'REVENUE', 'amount_source': 'SALES',
+                        'account_source_type': 'FIXED', 'fixed_account_code': '5111',
+                        'desc': 'Doanh thu bán hàng (5111)'
+                    },
+                    # Lưu ý: Không có dòng Thuế 33311 ở đây
+                ]
+            },
+            {
+                'key': 'SALES_INVOICE',
+                'title_en': 'VAT AR Invoice',
+                'title_vn': 'Hóa đơn bán hàng GTGT',
+                'desc': 'Đối trừ TK 13881, ghi nhận Thuế (33311) và Công nợ khách hàng (131)',
+                'type': 0,  # Sale
+                'sub_list': [
+                    # Dòng 1: Ghi nhận Công nợ chính thức (Nợ 131)
+                    {
+                        'order': 1, 'side': 'DEBIT', 'role_key': 'RECEIVABLE',
+                        'amount_source': 'TOTAL',  # Tổng tiền (Hàng + Thuế)
+                        'account_source_type': 'FIXED', 'fixed_account_code': '131',
                         'desc': 'Phải thu khách hàng (131)'
                     },
+                    # Dòng 2: Clear TK trung gian (Có 13881)
                     {
-                        'order': 4, 'side': 1, 'role': 'REVENUE', 'amount_source': 'SALES',
-                        'account_source_type': 'FIXED',
-                        'fixed_account_code': '511',
-                        'desc': 'Doanh thu bán hàng (511)'
+                        'order': 2, 'side': 'CREDIT', 'role_key': 'DONI',
+                        'amount_source': 'SALES',  # Tiền hàng
+                        'account_source_type': 'FIXED', 'fixed_account_code': '13881',
+                        'desc': 'Đối trừ hàng đã xuất (13881)'
                     },
+                    # Dòng 3: Ghi nhận Thuế đầu ra (Có 33311)
                     {
-                        'order': 5, 'side': 1, 'role': 'TAX_OUT', 'amount_source': 'TAX',
-                        'account_source_type': 'FIXED',
-                        'fixed_account_code': '33311',
+                        'order': 3, 'side': 'CREDIT', 'role_key': 'TAX_OUT',
+                        'amount_source': 'TAX',  # Tiền thuế
+                        'account_source_type': 'FIXED', 'fixed_account_code': '33311',
                         'desc': 'Thuế GTGT đầu ra (33311)'
                     },
                 ]
             },
+            # CHIỀU MUA HÀNG
             {
                 'key': 'GRN_PURCHASE',
-                'title_en': 'Goods Receipt for Purchase',
-                'title_vn': 'Nhập kho mua hàng',
-                'desc': 'Ghi nhận Tăng kho (156) và Công nợ (331)',
-                'type': 2,
+                'title_en': 'Goods Receipt (Unbilled)',
+                'title_vn': 'Nhập kho mua hàng (Chưa hóa đơn)',
+                'desc': 'Ghi tăng kho (156) và ghi nhận vào TK trung gian (33881)',
+                'type': 2,  # Inventory
                 'sub_list': [
                     {
-                        'order': 1, 'side': 0, 'role': 'ASSET', 'amount_source': 'COST',
-                        'account_source_type': 'FIXED',
-                        'fixed_account_code': '1561',
+                        'order': 1, 'side': 'DEBIT', 'role_key': 'ASSET', 'amount_source': 'COST',
+                        'account_source_type': 'FIXED', 'fixed_account_code': '1561',
                         'desc': 'Nhập kho hàng hóa (1561)'
                     },
                     {
-                        'order': 2, 'side': 0, 'role': 'TAX_IN', 'amount_source': 'TAX',
-                        'account_source_type': 'FIXED',
-                        'fixed_account_code': '1331',
+                        'order': 2, 'side': 'CREDIT', 'role_key': 'GRNI',
+                        'amount_source': 'COST',
+                        'account_source_type': 'FIXED', 'fixed_account_code': '33881',
+                        'desc': 'Phải trả tạm tính (33881)'
+                    },
+                ]
+            },
+            {
+                'key': 'PURCHASE_INVOICE',
+                'title_en': 'VAT AP Invoice',
+                'title_vn': 'Hóa đơn mua hàng GTGT',
+                'desc': 'Đối trừ TK 33881, ghi nhận Thuế (1331) và Công nợ phải trả (331)',
+                'type': 1,  # Purchasing
+                'sub_list': [
+                    {
+                        'order': 1, 'side': 'DEBIT', 'role_key': 'GRNI',
+                        'amount_source': 'COST',
+                        'account_source_type': 'FIXED', 'fixed_account_code': '33881',
+                        'desc': 'Đối trừ hàng về chưa hóa đơn (33881)'
+                    },
+                    {
+                        'order': 2, 'side': 'DEBIT', 'role_key': 'TAX_IN',
+                        'amount_source': 'TAX',
+                        'account_source_type': 'FIXED', 'fixed_account_code': '1331',
                         'desc': 'Thuế GTGT đầu vào (1331)'
                     },
                     {
-                        'order': 3, 'side': 1, 'role': 'PAYABLE', 'amount_source': 'TOTAL',
-                        'account_source_type': 'FIXED',
-                        'fixed_account_code': '331',
+                        'order': 3, 'side': 'CREDIT', 'role_key': 'PAYABLE',
+                        'amount_source': 'TOTAL',
+                        'account_source_type': 'FIXED', 'fixed_account_code': '331',
                         'desc': 'Phải trả người bán (331)'
                     },
                 ]
@@ -772,7 +816,7 @@ class AccountScript:
                         amount_source=sub['amount_source'],  # COST, TOTAL...
                         account_source_type=sub['account_source_type'],  # FIXED/DYNAMIC
                         fixed_account=fixed_account_obj,
-                        role_key=sub['role'],  # ASSET, REVENUE...
+                        role_key=sub['role_key'],  # ASSET, REVENUE...
                         description=sub['desc']
                     ))
             if bulk_sub_create:
