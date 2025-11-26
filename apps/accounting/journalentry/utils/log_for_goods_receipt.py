@@ -61,11 +61,10 @@ class JEForGoodsReceiptHandler:
         return debit_rows_data, credit_rows_data
 
     @classmethod
-    def get_cost_from_stock_log(cls, transaction_obj, **kwargs):
-        """ Helper lấy giá vốn từ Stock Log """
+    def get_cost_from_stock_log(cls, transaction_obj, product):
         sum_value = 0
         for stock_log_item in ReportStockLog.objects.filter(
-            product=kwargs.get('product'),
+            product=product,
             trans_code=transaction_obj.code,
             trans_id=str(transaction_obj.id)
         ):
@@ -79,7 +78,7 @@ class JEForGoodsReceiptHandler:
         """
         rules_list = AccountDeterminationSub.get_posting_lines(gr_obj.company_id, transaction_key)
         if not rules_list:
-            logger.error(f"[JE] No Accounting Rules found for GRN_PURCHASE")
+            logger.error(f"[JE] No Accounting Rules found for {transaction_key}")
             return None
 
         debit_rows_data = []
@@ -90,17 +89,14 @@ class JEForGoodsReceiptHandler:
             for gr_wh_obj in gr_prd_obj.goods_receipt_warehouse_gr_product.all():
 
                 # 2. Trong GD này chỉ cần cost. Tính Cost cho dòng này
-                cost = cls.get_cost_from_stock_log(gr_obj, **{'product': gr_prd_obj.product})
+                cost = cls.get_cost_from_stock_log(gr_obj, gr_prd_obj.product)
 
                 # 3. Áp dụng danh sách Rule cho dòng sản phẩm này
                 for rule in rules_list:
-
                     # A. Tìm tài khoản theo rule này
                     account_mapped = rule.get_account_mapped(rule)
-
                     # B. Xác định số tiền (Dựa trên amount_source)
-                    amount = rule.get_amount_base_on_amount_source(rule, **{'cost': cost})
-
+                    amount = rule.get_amount_base_on_amount_source(rule, **{'COST': cost})
                     # C. Tạo dòng JE Line Data
                     line_data = {
                         'account': account_mapped,
@@ -115,7 +111,6 @@ class JEForGoodsReceiptHandler:
                         'use_for_recon': True if rule.role_key == 'GRNI' else False,
                         'use_for_recon_type': 'gr-ap' if rule.role_key == 'GRNI' else ''
                     }
-
                     # D. Phân loại Nợ/Có
                     if rule.side == 'DEBIT':
                         debit_rows_data.append(line_data)
