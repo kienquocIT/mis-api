@@ -90,7 +90,7 @@ class JEForGoodsReceiptHandler:
             for gr_wh_obj in gr_prd_obj.goods_receipt_warehouse_gr_product.all():
 
                 # 2. Trong GD này chỉ cần cost. Tính Cost cho dòng này
-                cost = AccountDeterminationSub.get_cost_from_stock_log(gr_obj, **{'product': gr_prd_obj.product})
+                cost = cls.get_cost_from_stock_log(gr_obj, **{'product': gr_prd_obj.product})
 
                 # 3. Áp dụng danh sách Rule cho dòng sản phẩm này
                 for rule in rules_list:
