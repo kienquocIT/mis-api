@@ -380,7 +380,9 @@ class OrderDeliverySubPrintSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_pretax_amount_word(cls, obj):
         return FORMATTING.number_to_vietnamese(
-            number=cls.cal_pretax(obj=obj)
+            number=CompanyHandler.round_by_company_config(
+                company=obj.company, value=cls.cal_pretax(obj=obj)
+            )
         ).capitalize()
 
     @classmethod
@@ -390,7 +392,9 @@ class OrderDeliverySubPrintSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_tax_amount_word(cls, obj):
         return FORMATTING.number_to_vietnamese(
-            number=cls.cal_tax(obj=obj)
+            number=CompanyHandler.round_by_company_config(
+                company=obj.company, value=cls.cal_tax(obj=obj)
+            )
         ).capitalize()
 
     @classmethod
@@ -400,7 +404,9 @@ class OrderDeliverySubPrintSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_total_amount_word(cls, obj):
         return FORMATTING.number_to_vietnamese(
-            number=cls.cal_total(obj=obj)
+            number=CompanyHandler.round_by_company_config(
+                company=obj.company, value=cls.cal_total(obj=obj)
+            )
         ).capitalize()
 
     class Meta:

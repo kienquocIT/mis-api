@@ -3238,7 +3238,7 @@ AppProp_SaleData_Consulting_data = {
     "ccd3658e-c210-45ae-8283-3fabe11e9880": {
         "application_id": "3a369ba5-82a0-4c4d-a447-3794b67d1d02",
         "title": "Category in Product Categories",
-        "code": "product_categories__product_category",
+        "code": "product_categories__title",
         "type": 5,
         'content_type': 'saledata.productcategory',
         'is_wf_zone': True,
