@@ -96,10 +96,10 @@ class JEForGoodsReceiptHandler:
                 for rule in rules_list:
 
                     # A. Tìm tài khoản theo rule này
-                    account_mapped = rule.get_account_mapped()
+                    account_mapped = rule.get_account_mapped(rule)
 
                     # B. Xác định số tiền (Dựa trên amount_source)
-                    amount = rule.get_amount_base_on_amount_source(**{'cost': cost})
+                    amount = rule.get_amount_base_on_amount_source(rule, **{'cost': cost})
 
                     # C. Tạo dòng JE Line Data
                     line_data = {

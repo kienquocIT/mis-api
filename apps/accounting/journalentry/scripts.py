@@ -154,9 +154,9 @@ class JournalEntryRun:
         print('#log docs')
         for doc in all_doc_sorted:
             print(f"> doc info: {doc['date_approved'].strftime('%d/%m/%Y')} - {doc['code']} ({doc['type']})")
-            if doc['type'] == 'ap_invoice':
-                instance = APInvoice.objects.get(id=doc['id'])
-                JEForAPInvoiceHandler.push_to_journal_entry(instance)
+            # if doc['type'] == 'ap_invoice':
+            #     instance = APInvoice.objects.get(id=doc['id'])
+            #     JEForAPInvoiceHandler.push_to_journal_entry(instance)
             # if doc['type'] == 'ar_invoice':
             #     instance = ARInvoice.objects.get(id=doc['id'])
             #     JEForARInvoiceHandler.push_to_journal_entry(instance)

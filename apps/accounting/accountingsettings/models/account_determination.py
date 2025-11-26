@@ -110,22 +110,22 @@ class AccountDeterminationSub(SimpleAbstractModel):
         return posting_lines
 
     @classmethod
-    def get_amount_base_on_amount_source(cls, **kwargs):
+    def get_amount_base_on_amount_source(cls, rule, **kwargs):
         """ Helper lấy amount dựa vào amount source """
         amount = 0
-        if cls.amount_source == 'COST':
+        if rule.amount_source == 'COST':
             amount = kwargs.get('cost', 0)
         return amount
 
     @classmethod
-    def get_account_mapped(cls):
+    def get_account_mapped(cls, rule):
         """
         Tìm tài khoản dựa trên Rule (Fixed/Dynamic).
         Đây là cầu nối giữa Config và Product thực tế.
         """
         # CASE 1: FIXED
-        if cls.account_source_type == 'FIXED':
-            return cls.fixed_account
+        if rule.account_source_type == 'FIXED':
+            return rule.fixed_account
         # CASE 2: DYNAMIC
         # ...
         return None
