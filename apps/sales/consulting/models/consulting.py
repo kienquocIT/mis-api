@@ -44,6 +44,16 @@ class Consulting(DataAbstractModel, BastionFieldAbstractModel):
     def get_app_id(cls, raise_exception=True) -> str or None:
         return '3a369ba5-82a0-4c4d-a447-3794b67d1d02' # consulting's application id
 
+    # FILE
+    @classmethod
+    def set_true_file_is_approved(cls, instance):
+        for m2m_attachment in instance.consulting_attachment_consulting.all():
+            attachment = m2m_attachment.attachment
+            if attachment:
+                attachment.is_approved = True
+                attachment.save(update_fields=['is_approved'])
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
@@ -51,6 +61,7 @@ class Consulting(DataAbstractModel, BastionFieldAbstractModel):
                     CompanyFunctionNumber.auto_gen_code_based_on_config(
                         app_code=None, instance=self, in_workflow=True, kwargs=kwargs
                     )
+                    self.set_true_file_is_approved(instance=self)  # file
 
         AdvanceHandler.push_opportunity_log(self)
         # hit DB

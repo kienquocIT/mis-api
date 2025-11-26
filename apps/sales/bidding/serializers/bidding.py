@@ -174,6 +174,7 @@ class BiddingDetailSerializer(AbstractDetailSerializerModel):
         model = Bidding
         fields = (
             'title',
+            'code',
             'opportunity',
             'customer',
             'venture_partner',
