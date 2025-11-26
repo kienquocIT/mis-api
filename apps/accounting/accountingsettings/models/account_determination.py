@@ -1,8 +1,5 @@
-import itertools
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from apps.accounting.accountingsettings.models.chart_of_account import ChartOfAccounts
-from apps.sales.report.models import ReportStockLog
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = [
@@ -111,18 +108,6 @@ class AccountDeterminationSub(SimpleAbstractModel):
             account_determination__transaction_key=transaction_key
         ).select_related('fixed_account').order_by('order')
         return posting_lines
-
-    @classmethod
-    def get_cost_from_stock_log(cls, transaction_obj, **kwargs):
-        """ Helper lấy giá vốn từ Stock Log """
-        sum_value = 0
-        for stock_log_item in ReportStockLog.objects.filter(
-            product=kwargs.get('product'),
-            trans_code=transaction_obj.code,
-            trans_id=str(transaction_obj.id)
-        ):
-            sum_value += stock_log_item.value
-        return sum_value
 
     @classmethod
     def get_amount_base_on_amount_source(cls, **kwargs):

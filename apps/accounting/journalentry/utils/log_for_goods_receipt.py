@@ -61,6 +61,18 @@ class JEForGoodsReceiptHandler:
         return debit_rows_data, credit_rows_data
 
     @classmethod
+    def get_cost_from_stock_log(cls, transaction_obj, **kwargs):
+        """ Helper lấy giá vốn từ Stock Log """
+        sum_value = 0
+        for stock_log_item in ReportStockLog.objects.filter(
+            product=kwargs.get('product'),
+            trans_code=transaction_obj.code,
+            trans_id=str(transaction_obj.id)
+        ):
+            sum_value += stock_log_item.value
+        return sum_value
+
+    @classmethod
     def parse_je_line_data(cls, gr_obj, transaction_key):
         """
         Hàm parse dữ liệu dựa trên RULES CONFIG
