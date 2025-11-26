@@ -1,8 +1,31 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-from apps.accounting.journalentry.models import JournalEntry, JE_ALLOWED_APP
+from apps.accounting.journalentry.models import JournalEntry, JE_ALLOWED_APP, AllowedAppAutoJournalEntry
 
 
+class AllowedAppAutoJEListSerializer(serializers.ModelSerializer):
+    app_code_parsed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AllowedAppAutoJournalEntry
+        fields = (
+            'id',
+            'app_code',
+            'app_code_parsed',
+            'is_auto_je',
+        )
+
+    @classmethod
+    def get_app_code_parsed(cls, obj):
+        return JE_ALLOWED_APP[obj.app_code]
+
+
+class AllowedAppAutoJEUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AllowedAppAutoJournalEntry
+        fields = ('is_auto_je',)
+
+# JE
 class JournalEntryListSerializer(serializers.ModelSerializer):
     employee_created = serializers.SerializerMethodField()
     original_transaction_parsed = serializers.SerializerMethodField()

@@ -1,4 +1,4 @@
-from apps.accounting.journalentry.models import JournalEntry
+from apps.accounting.journalentry.models import JournalEntry, JE_ALLOWED_APP, AllowedAppAutoJournalEntry
 from apps.accounting.journalentry.utils import (
     JEForAPInvoiceHandler, JEForARInvoiceHandler, JEForCIFHandler,
     JEForCOFHandler, JEForDeliveryHandler, JEForGoodsReceiptHandler
@@ -11,6 +11,14 @@ from apps.sales.financialcashflow.models.cif_models import CashInflow
 from apps.sales.financialcashflow.models.cof_models import CashOutflow
 from apps.sales.inventory.models.goods_receipt import GoodsReceipt
 
+
+class JournalEntryInitData:
+    @staticmethod
+    def create_app_supported(tenant_id, company_id):
+        """ Hàm khởi tạo các app hỗ trợ bút toán tự động """
+        for key, value in JE_ALLOWED_APP.items():
+            AllowedAppAutoJournalEntry.update_or_create_app(tenant_id, company_id, key, False)
+        return True
 
 class JournalEntryRun:
     @staticmethod

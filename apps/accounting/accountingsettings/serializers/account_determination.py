@@ -73,11 +73,14 @@ class AccountDeterminationDetailSerializer(serializers.ModelSerializer):
 
 class AccountDeterminationUpdateSerializer(serializers.ModelSerializer):
     rule_data = serializers.JSONField(default=dict)
-    special_rule_data = serializers.JSONField(default=dict)
+    # special_rule_data = serializers.JSONField(default=dict)
 
     class Meta:
         model = AccountDetermination
-        fields = ('rule_data', 'special_rule_data')
+        fields = (
+            'rule_data',
+            # 'special_rule_data'
+        )
 
     @classmethod
     def validate_rule_data(cls, rule_data):
@@ -95,49 +98,49 @@ class AccountDeterminationUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'account_mapped': _('Account mapped not found')})
         return valid_rule_data
 
-    @classmethod
-    def validate_special_rule_data(cls, special_rule_data):
-        valid_special_rule_data = {
-            'description_sub': special_rule_data.get('description_sub', ''),
-            'example_sub': special_rule_data.get('example_sub', ''),
-            'id_sub': special_rule_data.get('id_sub', ''),
-            'context_dict': {}
-        }
-        if special_rule_data:
-            # Validate Account
-            acc_id = special_rule_data.get('account_mapped')
-            account_mapped_obj = ChartOfAccounts.objects.filter(id=acc_id).first()
-            if not account_mapped_obj:
-                raise serializers.ValidationError({'account_mapped': _('Account not found')})
-            valid_special_rule_data['account_mapped_code'] = account_mapped_obj.acc_code
-
-            # Validate Warehouse
-            warehouse_id = special_rule_data.get('warehouse_id')
-            if warehouse_id:
-                warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
-                if not warehouse_obj:
-                    raise serializers.ValidationError({'warehouse_id': _('Warehouse not found')})
-                valid_special_rule_data['context_dict']['warehouse_id'] = warehouse_id
-
-            # Validate Product Type
-            product_type_id = special_rule_data.get('product_type_id')
-            if product_type_id:
-                product_type_obj = ProductType.objects.filter(id=product_type_id).first()
-                if not product_type_obj:
-                    raise serializers.ValidationError({'product_type_id': _('Product type not found')})
-                valid_special_rule_data['context_dict']['product_type_id'] = product_type_id
-
-            # Validate Product
-            product_id = special_rule_data.get('product_id')
-            if product_id:
-                product_obj = Product.objects.filter(id=product_id).first()
-                if not product_obj:
-                    raise serializers.ValidationError({'product_id': _('Product not found')})
-                valid_special_rule_data['context_dict']['product_id'] = product_id
-
-            if not warehouse_id and not product_type_id and not product_id:
-                raise serializers.ValidationError({'transaction_key_sub': _('Special condition is missing')})
-        return valid_special_rule_data
+    # @classmethod
+    # def validate_special_rule_data(cls, special_rule_data):
+    #     valid_special_rule_data = {
+    #         'description_sub': special_rule_data.get('description_sub', ''),
+    #         'example_sub': special_rule_data.get('example_sub', ''),
+    #         'id_sub': special_rule_data.get('id_sub', ''),
+    #         'context_dict': {}
+    #     }
+    #     if special_rule_data:
+    #         # Validate Account
+    #         acc_id = special_rule_data.get('account_mapped')
+    #         account_mapped_obj = ChartOfAccounts.objects.filter(id=acc_id).first()
+    #         if not account_mapped_obj:
+    #             raise serializers.ValidationError({'account_mapped': _('Account not found')})
+    #         valid_special_rule_data['account_mapped_code'] = account_mapped_obj.acc_code
+    #
+    #         # Validate Warehouse
+    #         warehouse_id = special_rule_data.get('warehouse_id')
+    #         if warehouse_id:
+    #             warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
+    #             if not warehouse_obj:
+    #                 raise serializers.ValidationError({'warehouse_id': _('Warehouse not found')})
+    #             valid_special_rule_data['context_dict']['warehouse_id'] = warehouse_id
+    #
+    #         # Validate Product Type
+    #         product_type_id = special_rule_data.get('product_type_id')
+    #         if product_type_id:
+    #             product_type_obj = ProductType.objects.filter(id=product_type_id).first()
+    #             if not product_type_obj:
+    #                 raise serializers.ValidationError({'product_type_id': _('Product type not found')})
+    #             valid_special_rule_data['context_dict']['product_type_id'] = product_type_id
+    #
+    #         # Validate Product
+    #         product_id = special_rule_data.get('product_id')
+    #         if product_id:
+    #             product_obj = Product.objects.filter(id=product_id).first()
+    #             if not product_obj:
+    #                 raise serializers.ValidationError({'product_id': _('Product not found')})
+    #             valid_special_rule_data['context_dict']['product_id'] = product_id
+    #
+    #         if not warehouse_id and not product_type_id and not product_id:
+    #             raise serializers.ValidationError({'transaction_key_sub': _('Special condition is missing')})
+    #     return valid_special_rule_data
 
     def validate(self, validate_data):
         if not self.instance.can_change_account and validate_data.get('rule_data'):
@@ -146,7 +149,7 @@ class AccountDeterminationUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         rule_data = validated_data.pop('rule_data', {})
-        special_rule_data = validated_data.pop('special_rule_data', {})
+        # special_rule_data = validated_data.pop('special_rule_data', {})
 
         if rule_data:
             AccountDeterminationSub.objects.update_or_create(
@@ -155,17 +158,17 @@ class AccountDeterminationUpdateSerializer(serializers.ModelSerializer):
                 defaults={**rule_data}
             )
 
-        if special_rule_data:
-            default_rule = instance.sub_items.filter(id=special_rule_data.get('id_sub')).first()
-            inherited_transaction_key_sub = default_rule.transaction_key_sub if default_rule else ''
-            AccountDeterminationSub.create_specific_rule(
-                company_id=instance.company_id,
-                transaction_key=instance.transaction_key,
-                account_code=special_rule_data.get('account_mapped_code'),
-                context_dict={**special_rule_data.get('context_dict', {})},
-                transaction_key_sub=inherited_transaction_key_sub,
-                description_sub=special_rule_data.get('description_sub'),
-                example_sub=special_rule_data.get('example_sub')
-            )
+        # if special_rule_data:
+        #     default_rule = instance.sub_items.filter(id=special_rule_data.get('id_sub')).first()
+        #     inherited_transaction_key_sub = default_rule.transaction_key_sub if default_rule else ''
+        #     AccountDeterminationSub.create_specific_rule(
+        #         company_id=instance.company_id,
+        #         transaction_key=instance.transaction_key,
+        #         account_code=special_rule_data.get('account_mapped_code'),
+        #         context_dict={**special_rule_data.get('context_dict', {})},
+        #         transaction_key_sub=inherited_transaction_key_sub,
+        #         description_sub=special_rule_data.get('description_sub'),
+        #         example_sub=special_rule_data.get('example_sub')
+        #     )
 
         return instance

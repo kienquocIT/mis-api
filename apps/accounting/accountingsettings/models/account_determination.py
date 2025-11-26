@@ -16,6 +16,27 @@ ACCOUNT_DETERMINATION_TYPE = [
     (3, _('Fixed Assets')),
 ]
 
+# 1. Bên Nợ/Có
+SIDE_CHOICES = [
+    (0, _('Debit')),
+    (1, _('Credit')),
+]
+
+# 2. Nguồn tiền
+AMOUNT_SOURCE_CHOICES = (
+    ('TOTAL', _('Tổng thanh toán')),
+    ('COST', _('Giá vốn (Cost)')),
+    ('SALES', _('Doanh thu (Sales)')),
+    ('TAX', _('Tiền thuế (Tax)')),
+    ('DISCOUNT', _('Chiết khấu')),
+)
+
+# 3. Loại nguồn Tài khoản
+ACCOUNT_SOURCE_TYPE_CHOICES = (
+    ('FIXED', _('Cố định (Chọn cứng TK)')),
+    ('DYNAMIC', _('Động (Theo Role/Nhóm)')),
+)
+
 
 class AccountDetermination(MasterDataAbstractModel):
     order = models.IntegerField(default=0)
@@ -40,7 +61,6 @@ class AccountDetermination(MasterDataAbstractModel):
 
 
 class AccountDeterminationSub(SimpleAbstractModel):
-    # DANH SÁCH CÁC FIELD THAM GIA ĐỊNH KHOẢN
     ALLOWED_DETERMINATION_KEYS = {
         'warehouse_id',
         'product_type_id',
@@ -50,139 +70,48 @@ class AccountDeterminationSub(SimpleAbstractModel):
     account_determination = models.ForeignKey(
         AccountDetermination, on_delete=models.CASCADE, related_name='sub_items'
     )
-    transaction_key_sub = models.CharField(max_length=25, db_index=True)
-    description = models.TextField(blank=True, null=True)
 
-    account_mapped = models.ForeignKey(
-        'accountingsettings.ChartOfAccounts', on_delete=models.CASCADE, related_name='determination_mappings'
+    # Thứ tự hiển thị (1, 2, 3...)
+    order = models.IntegerField(default=0, db_index=True)
+    # Bên Nợ hay Có
+    side = models.SmallIntegerField(choices=SIDE_CHOICES,)
+    # Lấy tiền từ đâu
+    amount_source = models.CharField(max_length=20, choices=AMOUNT_SOURCE_CHOICES)
+    # Chọn tài khoản từ đâu (cứng hay động)
+    account_source_type = models.CharField(max_length=10, choices=ACCOUNT_SOURCE_TYPE_CHOICES)
+
+    # CASE A: Cứng
+    fixed_account = models.ForeignKey(
+        'accountingsettings.ChartOfAccounts',
+        on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='determination_fixed_account',
     )
-    account_mapped_data = models.JSONField(default=dict, blank=True)
-    example = models.TextField(blank=True, null=True)
+    # CASE B: Động
+    role_key = models.CharField(max_length=50, blank=True, null=True,)
 
+    # --- LOGIC TÌM KIẾM & NGOẠI LỆ  ---
     match_context = models.JSONField(default=dict, blank=True)
     search_rule = models.CharField(max_length=500, blank=True, null=True, default='default', db_index=True)
     priority = models.IntegerField(default=0, db_index=True)
     is_custom = models.BooleanField(default=False, editable=False)
+    # Field bổ sung
+    description = models.TextField(blank=True, null=True)
+    example = models.TextField(blank=True, null=True)
 
     class Meta:
         verbose_name = 'Account Determination Sub'
-        verbose_name_plural = 'Account Determination Sub'
-        ordering = ('-priority', 'account_mapped__acc_code')
-        unique_together = ('account_determination', 'transaction_key_sub', 'search_rule')
+        verbose_name_plural = 'Account Determination Subs'
+        ordering = ('order', '-priority')
+        unique_together = ('account_determination', 'search_rule', 'order', 'side')
 
     def save(self, *args, **kwargs):
-        context_dict = self.match_context
-        if not isinstance(context_dict, dict):
-            context_dict = {}
-        valid_context_dict = {
-            k: v for k, v in context_dict.items()
-            if k in self.ALLOWED_DETERMINATION_KEYS and v is not None
-        }
-        self.match_context = valid_context_dict
-        self.priority = len(valid_context_dict)
-        self.search_rule = self.generate_search_rule(valid_context_dict)
-        self.is_custom = bool(valid_context_dict)
         super().save(*args, **kwargs)
 
     @classmethod
-    def create_specific_rule(
-            cls, company_id, transaction_key, account_code, context_dict,
-            transaction_key_sub='', description_sub='', example_sub=''
-    ):
-        try:
-            acc_deter_obj = AccountDetermination.objects.get(company_id=company_id, transaction_key=transaction_key)
-            acc_obj = ChartOfAccounts.get_acc(company_id, account_code)
-            if not acc_obj:
-                return False
-            search_key = cls.generate_search_rule(context_dict)
-            AccountDeterminationSub.objects.update_or_create(
-                account_determination=acc_deter_obj,
-                transaction_key_sub=transaction_key_sub,
-                search_rule=search_key,
-                defaults={
-                    'description': description_sub,
-                    'example': example_sub,
-                    'account_mapped_id': str(acc_obj.id),
-                    'account_mapped_data': {
-                        'id': str(acc_obj.id),
-                        'acc_code': acc_obj.acc_code,
-                        'acc_name': acc_obj.acc_name,
-                        'foreign_acc_name': acc_obj.foreign_acc_name,
-                    },
-                    'match_context': context_dict
-                    # priority và is_custom sẽ tự động tính trong hàm save()
-                }
-            )
-            return True
-        except Exception as err:
-            print(f"Error: {err}")
-            return False
-
-    @classmethod
-    def delete_specific_rule(cls, company_id, transaction_key, context_dict):
-        key = AccountDeterminationSub.generate_search_rule(context_dict)
-        AccountDeterminationSub.objects.filter(
+    def get_posting_lines(cls, company_id, transaction_key):
+        """ Lấy danh sách quy tắc hạch toán theo mã giao dịch """
+        posting_lines = cls.objects.filter(
             account_determination__company_id=company_id,
-            account_determination__transaction_key=transaction_key,
-            search_rule=key
-        ).delete()
-        return True
-
-    @classmethod
-    def generate_search_rule(cls, context_dict):
-        """ context_dict = {
-            'warehouse_id': xxx,
-            'product_type_id': yyy
-        } --->  'product_type_id:xxx|warehouse_id:yyy' """
-        if not context_dict:
-            return "default"
-        valid_context_dict = {
-            k: v for k, v in context_dict.items()
-            if k in cls.ALLOWED_DETERMINATION_KEYS and v is not None
-        }
-        if not valid_context_dict:
-            return "default"
-        sorted_keys = sorted(valid_context_dict.keys())
-        parts = [f"{k}:{str(valid_context_dict[k])}" for k in sorted_keys]
-        return "|".join(parts)
-
-    @classmethod
-    def generate_search_rule_list(cls, context_dict):
-        """
-            context_dict = {
-                'warehouse_id': xxx,
-                'product_type_id': yyy
-            } ---> [
-                'product_type_id:xxx|warehouse_id:yyy',  <-- Ưu tiên 1: Khớp cả 2 (Cụ thể nhất)
-                'product_type_id:xxx',                  <-- Ưu tiên 2: Chỉ khớp loại SP (Áp dụng mọi kho)
-                'warehouse_id:yyy',                    <-- Ưu tiên 2: Chỉ khớp kho (Áp dụng mọi SP)
-                'default'                            <-- Ưu tiên 3: Mặc định (Không khớp gì cả)
-            ]
-        """
-        if not context_dict:
-            return ["default"]
-        clean_context = {
-            k: v for k, v in context_dict.items()
-            if k in cls.ALLOWED_DETERMINATION_KEYS and v is not None
-        }
-        keys = sorted(clean_context.keys())
-        candidates = []
-        for subset_size in range(len(keys), 0, -1):
-            for combination in itertools.combinations(keys, subset_size):
-                subset_dict = {k: clean_context[k] for k in combination}
-                key_string = cls.generate_search_rule(subset_dict)
-                candidates.append(key_string)
-        candidates.append("default")
-        return candidates
-
-    @classmethod
-    def get_best_rule(cls, company_id, transaction_key, context_dict, transaction_key_sub=''):
-        """ Hàm tìm tài khoản tối ưu nhất """
-        search_rule_list = cls.generate_search_rule_list(context_dict)
-        best_rule_obj = cls.objects.filter(
-            account_determination__company_id=company_id,
-            account_determination__transaction_key=transaction_key,
-            transaction_key_sub=transaction_key_sub,
-            search_rule__in=search_rule_list
-        ).select_related('account_mapped').order_by('-priority').first()
-        return best_rule_obj
+            account_determination__transaction_key=transaction_key
+        ).select_related('fixed_account').order_by('order')
+        return list(posting_lines)
