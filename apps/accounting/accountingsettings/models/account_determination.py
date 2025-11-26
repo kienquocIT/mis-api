@@ -114,7 +114,15 @@ class AccountDeterminationSub(SimpleAbstractModel):
         """ Helper lấy amount dựa vào amount source """
         amount = 0
         if rule.amount_source == 'COST':
-            amount = kwargs.get('cost', 0)
+            amount = kwargs.get('COST', 0)
+        elif rule.amount_source == 'SALES':
+            amount = kwargs.get('SALES', 0)
+        elif rule.amount_source == 'TOTAL':
+            amount = kwargs.get('TOTAL', 0)
+        elif rule.amount_source == 'TAX':
+            amount = kwargs.get('TAX', 0)
+        elif rule.amount_source == 'NET':
+            amount = kwargs.get('NET', 0)
         return amount
 
     @classmethod
