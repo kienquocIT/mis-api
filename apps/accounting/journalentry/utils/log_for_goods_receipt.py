@@ -87,7 +87,6 @@ class JEForGoodsReceiptHandler:
         # 1. Duyệt qua từng dòng sản phẩm trong phiếu nhập
         for gr_prd_obj in gr_obj.goods_receipt_product_goods_receipt.all():
             for gr_wh_obj in gr_prd_obj.goods_receipt_warehouse_gr_product.all():
-
                 # 2. Trong GD này chỉ cần cost. Tính Cost cho dòng này
                 amount_source_data = {
                     'COST': cls.get_cost_from_stock_log(gr_obj, gr_prd_obj.product),
