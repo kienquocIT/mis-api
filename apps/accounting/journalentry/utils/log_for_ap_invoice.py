@@ -99,9 +99,7 @@ class JEForAPInvoiceHandler:
 
     @classmethod
     def parse_je_line_data(cls, ap_invoice_obj, transaction_key):
-        """
-        Hàm parse dữ liệu dựa trên RULES CONFIG ('PURCHASE_INVOICE')
-        """
+        """ Hàm parse dữ liệu dựa trên RULES CONFIG ('PURCHASE_INVOICE') """
         rules_list = AccountDeterminationSub.get_posting_lines(ap_invoice_obj.company_id, transaction_key)
         if not rules_list:
             logger.error(f"[JE] No Accounting Rules found for {transaction_key}")

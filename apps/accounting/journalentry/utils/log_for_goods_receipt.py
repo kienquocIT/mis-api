@@ -89,14 +89,15 @@ class JEForGoodsReceiptHandler:
             for gr_wh_obj in gr_prd_obj.goods_receipt_warehouse_gr_product.all():
 
                 # 2. Trong GD này chỉ cần cost. Tính Cost cho dòng này
-                cost = cls.get_cost_from_stock_log(gr_obj, gr_prd_obj.product)
-
+                amount_source_data = {
+                    'COST': cls.get_cost_from_stock_log(gr_obj, gr_prd_obj.product),
+                }
                 # 3. Áp dụng danh sách Rule cho dòng sản phẩm này
                 for rule in rules_list:
                     # A. Tìm tài khoản theo rule này
                     account_mapped = rule.get_account_mapped(rule)
                     # B. Xác định số tiền (Dựa trên amount_source)
-                    amount = rule.get_amount_base_on_amount_source(rule, **{'COST': cost})
+                    amount = rule.get_amount_base_on_amount_source(rule, **amount_source_data)
                     # C. Tạo dòng JE Line Data
                     line_data = {
                         'account': account_mapped,
