@@ -6,7 +6,7 @@ from apps.accounting.journalentry.utils import (
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
 from apps.sales.apinvoice.models import APInvoice
 from apps.sales.arinvoice.models import ARInvoice
-from apps.sales.delivery.models.delivery import OrderDelivery
+from apps.sales.delivery.models.delivery import OrderDeliverySub
 from apps.sales.financialcashflow.models.cif_models import CashInflow
 from apps.sales.financialcashflow.models.cof_models import CashOutflow
 from apps.sales.inventory.models.goods_receipt import GoodsReceipt
@@ -80,7 +80,7 @@ class JournalEntryRun:
     @staticmethod
     def get_all_delivery_this_period(company_id, this_period):
         print('...get all delivery this period', end='')
-        all_delivery = OrderDelivery.objects.filter(
+        all_delivery = OrderDeliverySub.objects.filter(
             company_id=company_id,
             system_status=3,
             date_approved__date__lte=this_period.end_date,
@@ -166,9 +166,9 @@ class JournalEntryRun:
             if doc['type'] == 'cof':
                 instance = CashOutflow.objects.get(id=doc['id'])
                 JEForCOFHandler.push_to_journal_entry(instance)
-            # if doc['type'] == 'delivery':
-            #     instance = OrderDelivery.objects.get(id=doc['id'])
-            #     JEForDeliveryHandler.push_to_journal_entry(instance)
+            if doc['type'] == 'delivery':
+                instance = OrderDeliverySub.objects.get(id=doc['id'])
+                JEForDeliveryHandler.push_to_journal_entry(instance)
             if doc['type'] == 'goods_receipt':
                 instance = GoodsReceipt.objects.get(id=doc['id'])
                 JEForGoodsReceiptHandler.push_to_journal_entry(instance)

@@ -102,12 +102,14 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
                 'order': item.order,
                 'account_data': item.account_data,
                 'business_partner_data': item.business_partner_data,
+                'business_employee_data': item.business_employee_data,
+                'product_mapped_data': item.product_mapped_data,
                 'debit': item.debit,
                 'credit': item.credit,
                 'is_fc': item.is_fc,
                 'je_line_type': item.je_line_type,
                 'taxable_value': item.taxable_value,
-                'dimensions': [item.business_partner_data]
+                'dimensions': [item.business_partner_data, item.business_employee_data, item.product_mapped_data]
             })
         return je_lines
 
