@@ -791,6 +791,40 @@ class AccountScript:
                     },
                 ]
             },
+            # THANH TOÁN
+            {
+                'key': 'PAYMENT_VOUCHER',
+                'title_en': 'Payment Voucher (Mixed)',
+                'title_vn': 'Phiếu chi / Ủy nhiệm chi',
+                'desc': 'Thanh toán công nợ (Tiền mặt + Ngân hàng)',
+                'type': 1,  # Purchasing
+                'sub_list': [
+                    # 1. Giảm nợ phải trả (Nợ 331) -> Lấy Tổng tiền
+                    {
+                        'order': 1, 'side': 'DEBIT',
+                        'role_key': 'PAYABLE',
+                        'amount_source': 'TOTAL',  # Cash + Bank
+                        'account_source_type': 'FIXED', 'fixed_account_code': '331',
+                        'desc': 'Giảm nợ phải trả NCC (331)'
+                    },
+                    # 2. Giảm tiền mặt (Có 111) -> Lấy tiền mặt
+                    {
+                        'order': 2, 'side': 'CREDIT',
+                        'role_key': 'CASH',
+                        'amount_source': 'CASH',  # <--- Chỉ lấy cash_value
+                        'account_source_type': 'FIXED', 'fixed_account_code': '1111',
+                        'desc': 'Chi tiền mặt (1111)'
+                    },
+                    # 3. Giảm tiền gửi (Có 112) -> Lấy tiền ngân hàng
+                    {
+                        'order': 3, 'side': 'CREDIT',
+                        'role_key': 'BANK',
+                        'amount_source': 'BANK',  # <--- Chỉ lấy bank_value
+                        'account_source_type': 'FIXED', 'fixed_account_code': '1121',
+                        'desc': 'Chi tiền gửi ngân hàng (1121)'
+                    }
+                ]
+            }
         ]
 
         with transaction.atomic():

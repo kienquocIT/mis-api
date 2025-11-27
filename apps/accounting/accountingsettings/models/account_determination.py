@@ -27,6 +27,8 @@ AMOUNT_SOURCE_CHOICES = (
     ('SALES', _('Doanh thu (Sales)')),
     ('TAX', _('Tiền thuế (Tax)')),
     ('DISCOUNT', _('Chiết khấu')),
+    ('CASH', _('Số tiền mặt')),
+    ('BANK', _('Số tiền ngân hàng'))
 )
 
 # 3. Loại nguồn Tài khoản
@@ -101,11 +103,11 @@ class AccountDeterminationSub(SimpleAbstractModel):
         super().save(*args, **kwargs)
 
     @classmethod
-    def get_posting_lines(cls, company_id, transaction_key):
+    def get_posting_lines(cls, company_id, transaction_key_list):
         """ Lấy danh sách quy tắc hạch toán theo mã giao dịch """
         posting_lines = cls.objects.filter(
             account_determination__company_id=company_id,
-            account_determination__transaction_key=transaction_key
+            account_determination__transaction_key__in=transaction_key_list
         ).select_related('fixed_account').order_by('order')
         return posting_lines
 

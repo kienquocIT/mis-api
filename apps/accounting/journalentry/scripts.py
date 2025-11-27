@@ -163,9 +163,9 @@ class JournalEntryRun:
             # if doc['type'] == 'cif':
             #     instance = CashInflow.objects.get(id=doc['id'])
             #     JEForCIFHandler.push_to_journal_entry(instance)
-            # if doc['type'] == 'cof':
-            #     instance = CashOutflow.objects.get(id=doc['id'])
-            #     JEForCOFHandler.push_to_journal_entry(instance)
+            if doc['type'] == 'cof':
+                instance = CashOutflow.objects.get(id=doc['id'])
+                JEForCOFHandler.push_to_journal_entry(instance)
             # if doc['type'] == 'delivery':
             #     instance = OrderDelivery.objects.get(id=doc['id'])
             #     JEForDeliveryHandler.push_to_journal_entry(instance)
