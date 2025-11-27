@@ -264,6 +264,7 @@ class ConsultingDetailSerializer(AbstractDetailSerializerModel):
         model = Consulting
         fields = (
             'title',
+            'code',
             'opportunity',
             'customer',
             'value',
