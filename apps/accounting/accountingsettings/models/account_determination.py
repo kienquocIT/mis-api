@@ -112,18 +112,7 @@ class AccountDeterminationSub(SimpleAbstractModel):
     @classmethod
     def get_amount_base_on_amount_source(cls, rule, **kwargs):
         """ Helper lấy amount dựa vào amount source """
-        amount = 0
-        if rule.amount_source == 'COST':
-            amount = kwargs.get('COST', 0)
-        elif rule.amount_source == 'SALES':
-            amount = kwargs.get('SALES', 0)
-        elif rule.amount_source == 'TOTAL':
-            amount = kwargs.get('TOTAL', 0)
-        elif rule.amount_source == 'TAX':
-            amount = kwargs.get('TAX', 0)
-        elif rule.amount_source == 'NET':
-            amount = kwargs.get('NET', 0)
-        return amount
+        return kwargs.get(rule.amount_source, 0)
 
     @classmethod
     def get_account_mapped(cls, rule):
