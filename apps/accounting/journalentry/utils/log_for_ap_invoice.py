@@ -98,11 +98,11 @@ class JEForAPInvoiceHandler:
         return sum_cost
 
     @classmethod
-    def parse_je_line_data(cls, ap_invoice_obj, transaction_key):
+    def parse_je_line_data(cls, ap_invoice_obj, transaction_key_list):
         """ Hàm parse dữ liệu dựa trên RULES CONFIG ('PURCHASE_INVOICE') """
-        rules_list = AccountDeterminationSub.get_posting_lines(ap_invoice_obj.company_id, transaction_key)
+        rules_list = AccountDeterminationSub.get_posting_lines(ap_invoice_obj.company_id, transaction_key_list)
         if not rules_list:
-            logger.error(f"[JE] No Accounting Rules found for {transaction_key}")
+            logger.error(f"[JE] No Accounting Rules found for {transaction_key_list}")
             return None
 
         debit_rows_data = []
@@ -147,7 +147,7 @@ class JEForAPInvoiceHandler:
         """ Chuẩn bị data để tự động tạo Bút Toán """
         try:
             with transaction.atomic():
-                debit_rows_data, credit_rows_data = cls.parse_je_line_data(ap_invoice_obj, 'PURCHASE_INVOICE')
+                debit_rows_data, credit_rows_data = cls.parse_je_line_data(ap_invoice_obj, ['PURCHASE_INVOICE'])
                 kwargs = {
                     'je_transaction_app_code': ap_invoice_obj.get_model_code(),
                     'je_transaction_id': str(ap_invoice_obj.id),
