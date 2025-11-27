@@ -148,20 +148,49 @@ class JournalEntryUpdateSerializer(serializers.ModelSerializer):
 
 # ====================== Journal Entry Line ================
 class JournalEntryLineListSerializer(serializers.ModelSerializer):
+    journal_entry_data = serializers.SerializerMethodField()
+    je_line_type_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = JournalEntryLine
         fields = (
             'id',
+            'journal_entry',
+            'journal_entry_data',
             'order',
             'account',
             'account_data',
             'je_line_type',
+            'je_line_type_parsed',
+            'product_mapped',
+            'product_mapped_data',
             'business_partner',
             'business_partner_data',
             'business_employee',
             'business_employee_data',
             'debit',
             'credit',
+            'is_fc',
+            'currency_mapped',
+            'currency_mapped_data',
+            'taxable_value',
+            'use_for_recon',
+            'use_for_recon_type',
             'date_created',
         )
+
+    @classmethod
+    def get_journal_entry_data(cls, obj):
+        if obj.journal_entry:
+            return {
+                'id': str(obj.journal_entry.id),
+                'code': obj.journal_entry.code,
+                'je_state': obj.journal_entry.je_state,
+                'total_debit': obj.journal_entry.total_debit,
+                'total_credit': obj.journal_entry.total_credit,
+            }
+        return {}
+
+    @classmethod
+    def get_je_line_type_parsed(cls, obj):
+        return 'Debit' if obj.je_line_type == 0 else 'Credit'
