@@ -234,6 +234,8 @@ class JournalEntryLine(MasterDataAbstractModel):
             currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
 
         return cls(
+            tenant_id=je_obj.tenant_id,
+            company_id=je_obj.company_id,
             journal_entry=je_obj,
             order=order,
             account=item.get('account'),
@@ -273,7 +275,7 @@ class JournalEntryLine(MasterDataAbstractModel):
             } if currency_mapped else {},
             taxable_value=item.get('taxable_value', 0),
             use_for_recon=item.get('use_for_recon', False),
-            use_for_recon_type=item.get('use_for_recon_type', '')
+            use_for_recon_type=item.get('use_for_recon_type', ''),
         )
 
     @classmethod
