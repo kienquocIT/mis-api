@@ -929,28 +929,21 @@ class AccountScript:
             AccountDetermination.objects.filter(company_id=company_id).delete()
             bulk_sub_create = []
             for order, item in enumerate(RULE_CONFIG):
+                rule_config = item.pop('rule_config')
                 deter_obj = AccountDetermination.objects.create(
                     tenant=company_obj.tenant,
                     company=company_obj,
                     order=order,
-                    transaction_key=item['transaction_key'],
-                    title=item['title'],
-                    foreign_title=item['foreign_title'],
-                    description=item['description'],
-                    account_determination_type=item['account_determination_type']
+                    **item
                 )
-                for rule in item['rule_config']:
-                    fixed_account_obj = ChartOfAccounts.get_acc(company_id, rule['fixed_account_code'])
+                for rule in rule_config:
+                    fixed_account_code = rule.pop('fixed_account_code')
+                    rule['order'] = rule.get('order') * 10
+                    fixed_account_obj = ChartOfAccounts.get_acc(company_id, fixed_account_code)
                     bulk_sub_create.append(AccountDeterminationSub(
                         account_determination=deter_obj,
-                        order=rule['order'] * 10,
-                        side=rule['side'],  # DEBIT/CREDIT
-                        amount_source=rule['amount_source'],  # COST, TOTAL...
-                        account_source_type=rule['account_source_type'],  # FIXED/DYNAMIC
                         fixed_account=fixed_account_obj,
-                        role_key=rule['role_key'],  # ASSET, REVENUE...
-                        description=rule['description'],
-                        rule_level=rule['rule_level']
+                        **rule
                     ))
             if bulk_sub_create:
                 AccountDeterminationSub.objects.bulk_create(bulk_sub_create)

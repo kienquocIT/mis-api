@@ -36,7 +36,7 @@ AMOUNT_SOURCE_CHOICES = (
 
 ACCOUNT_SOURCE_TYPE_CHOICES = (
     ('FIXED', _('Cố định (Chọn cứng TK)')),
-    ('DYNAMIC', _('Động (Theo Role/Nhóm)')),
+    ('LOOKUP', _('Động (Theo Role/Nhóm)')),
     ('CONDITIONAL', _('Theo điều kiện')),
 )
 
@@ -124,12 +124,12 @@ class AccountDeterminationSub(SimpleAbstractModel):
     @classmethod
     def get_account_mapped(cls, rule):
         """
-        Tìm tài khoản dựa trên Rule (Fixed/Dynamic).
+        Tìm tài khoản dựa trên Rule (Fixed/Lookup).
         Đây là cầu nối giữa Config và Product thực tế.
         """
         # CASE 1: FIXED
         if rule.account_source_type == 'FIXED':
             return rule.fixed_account
-        # CASE 2: DYNAMIC
-        # ...
+        # CASE 2: LOOKUP
+        # CASE 3: CONDITIONAL
         return None
