@@ -1,4 +1,4 @@
-from apps.accounting.journalentry.models import JournalEntry, JE_ALLOWED_APP, AllowedAppAutoJournalEntry
+from apps.accounting.journalentry.models import JournalEntry, JE_DOCUMENT_TYPE_APP, JEDocumentType
 from apps.accounting.journalentry.utils import (
     JEForAPInvoiceHandler, JEForARInvoiceHandler, JEForCIFHandler,
     JEForCOFHandler, JEForDeliveryHandler, JEForGoodsReceiptHandler
@@ -16,8 +16,8 @@ class JournalEntryInitData:
     @staticmethod
     def create_app_supported(tenant_id, company_id):
         """ Hàm khởi tạo các app hỗ trợ bút toán tự động """
-        for key, value in JE_ALLOWED_APP.items():
-            AllowedAppAutoJournalEntry.update_or_create_app(tenant_id, company_id, key, False)
+        for key, value in JE_DOCUMENT_TYPE_APP.items():
+            JEDocumentType.update_or_create_app(tenant_id, company_id, key, False)
         return True
 
 

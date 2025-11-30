@@ -7,7 +7,7 @@ from apps.accounting.accountingsettings.views.chart_of_account import (
     ChartOfAccountsList
 )
 from apps.accounting.accountingsettings.views.account_determination import (
-    AccountDeterminationList, AccountDeterminationDetail,
+    AccountDeterminationList, AccountDeterminationDetail, JEDocumentTypeList, JEDocumentTypeDetail,
 )
 from apps.accounting.accountingsettings.views.dimension import (
     DimensionDefinitionList, DimensionDefinitionDetail,
@@ -19,6 +19,8 @@ from apps.accounting.accountingsettings.views.dimension import (
 
 urlpatterns = [
     path('chart-of-accounts/list', ChartOfAccountsList.as_view(), name='ChartOfAccountsList'),
+    path('je-document-type/list', JEDocumentTypeList.as_view(), name='JEDocumentTypeList'),
+    path('je-document-type/detail/<str:pk>', JEDocumentTypeDetail.as_view(), name='JEDocumentTypeDetail'),
     path('account-determination/list', AccountDeterminationList.as_view(), name='AccountDeterminationList'),
     path(
         'account-determination/detail/<str:pk>',

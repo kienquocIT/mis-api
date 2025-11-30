@@ -2,10 +2,33 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.accounting.accountingsettings.models.chart_of_account import ChartOfAccounts
 from apps.accounting.accountingsettings.models.account_determination import (
-    ACCOUNT_DETERMINATION_TYPE,
-    AccountDetermination, AccountDeterminationSub,
+    DOCUMENT_TYPE,
+    AccountDetermination, AccountDeterminationSub, JEDocumentType,
 )
 from apps.masterdata.saledata.models import WareHouse, Product, ProductType
+
+
+class JEDocumentTypeListSerializer(serializers.ModelSerializer):
+    app_code_parsed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = JEDocumentType
+        fields = (
+            'id',
+            'app_code',
+            'app_code_parsed',
+            'is_auto_je',
+        )
+
+    @classmethod
+    def get_app_code_parsed(cls, obj):
+        return JE_DOCUMENT_TYPE_APP[obj.app_code]
+
+
+class JEDocumentTypeUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JEDocumentType
+        fields = ('is_auto_je',)
 
 
 class AccountDeterminationListSerializer(serializers.ModelSerializer):
@@ -50,7 +73,7 @@ class AccountDeterminationListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_account_determination_type_convert(cls, obj):
-        return ACCOUNT_DETERMINATION_TYPE[obj.account_determination_type][1]
+        return DOCUMENT_TYPE[obj.account_determination_type][1]
 
 
 class AccountDeterminationDetailSerializer(serializers.ModelSerializer):

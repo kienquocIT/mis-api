@@ -10,55 +10,6 @@ from apps.shared import DataAbstractModel, AutoDocumentAbstractModel, MasterData
 logger = logging.getLogger(__name__)
 
 
-JE_ALLOWED_APP = {
-    'delivery.orderdeliverysub': _('Delivery'),
-    'inventory.goodsreceipt': _('Goods Receipt'),
-    'arinvoice.arinvoice': _('AR Invoice'),
-    'apinvoice.apinvoice': _('AP Invoice'),
-    'financialcashflow.cashinflow': _('Cash Inflow'),
-    'financialcashflow.cashoutflow': _('Cash Outflow'),
-}
-
-
-class AllowedAppAutoJournalEntry(MasterDataAbstractModel):
-    app_code = models.CharField(
-        max_length=100,
-        verbose_name='Code of application',
-        help_text='{app_label}.{model}',
-        null = True
-    )
-    is_auto_je = models.BooleanField(default=False)
-
-    class Meta:
-        verbose_name = 'Allowed App Auto Journal Entry'
-        verbose_name_plural = 'Allowed Apps Auto Journal Entry'
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
-
-    @classmethod
-    def check_app_state(cls, app_code):
-        """ Kiểm tra trạng thái cấu hình """
-        if not app_code:
-            return False
-        config = cls.objects.filter_on_company(app_code=app_code).first()
-        return config.is_auto_je if config else False
-
-    @classmethod
-    def update_or_create_app(cls, tenant_id, company_id, app_code, state):
-        """ Tạo mới hoặc cập nhật cấu hình cho app_code """
-        if not app_code:
-            return None
-        obj, created = cls.objects.update_or_create(
-            tenant_id=tenant_id,
-            company_id=company_id,
-            app_code=app_code,
-            defaults={'is_auto_je': state}
-        )
-        print(f'Created {app_code} with state {state}.' if created else f'Updated {app_code} with state {state}.')
-        return obj
-
-
 class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
     je_transaction_app_code = models.CharField(
         max_length=100,

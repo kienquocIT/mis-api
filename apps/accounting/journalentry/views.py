@@ -1,46 +1,14 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from apps.accounting.journalentry.models import JournalEntry, JE_ALLOWED_APP, AllowedAppAutoJournalEntry
+
+from apps.accounting.accountingsettings.models.account_determination import JE_DOCUMENT_TYPE_APP
+from apps.accounting.journalentry.models import JournalEntry
 from apps.accounting.journalentry.serializers import (
-    JournalEntryListSerializer, JournalEntryCreateSerializer, JournalEntryDetailSerializer,
-    JournalEntryUpdateSerializer, AllowedAppAutoJEListSerializer, AllowedAppAutoJEUpdateSerializer
+    JournalEntryListSerializer, JournalEntryCreateSerializer,
+    JournalEntryDetailSerializer, JournalEntryUpdateSerializer
 )
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
-
-
-
-class AllowedAppAutoJEList(BaseListMixin):
-    queryset = AllowedAppAutoJournalEntry.objects
-    search_fields = ['title', 'code']
-    serializer_list = AllowedAppAutoJEListSerializer
-    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-
-    @swagger_auto_schema(
-        operation_summary="Allowed App Auto Journal Entry List",
-        operation_description="Allowed App Auto Journal Entry List",
-    )
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-
-class AllowedAppAutoJEDetail(BaseUpdateMixin):
-    queryset = AllowedAppAutoJournalEntry.objects
-    serializer_update = AllowedAppAutoJEUpdateSerializer
-    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
-
-    @swagger_auto_schema(
-        operation_summary="Update Allowed App Auto Journal Entr",
-        request_body=AllowedAppAutoJEUpdateSerializer
-    )
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
 
 
 class JournalEntryList(BaseListMixin, BaseCreateMixin):
@@ -114,7 +82,7 @@ def get_je_summarize(request, *args, **kwargs):
     summarize_total_debit = sum(all_je.values_list('total_debit', flat=True))
     summarize_total_credit = sum(all_je.values_list('total_credit', flat=True))
 
-    summarize_total_source_type = len(JE_ALLOWED_APP)
+    summarize_total_source_type = len(JE_DOCUMENT_TYPE_APP)
 
     return Response({
         'result': {

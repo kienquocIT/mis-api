@@ -1,29 +1,8 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-from apps.accounting.journalentry.models import JournalEntry, JE_ALLOWED_APP, AllowedAppAutoJournalEntry
 
-
-class AllowedAppAutoJEListSerializer(serializers.ModelSerializer):
-    app_code_parsed = serializers.SerializerMethodField()
-
-    class Meta:
-        model = AllowedAppAutoJournalEntry
-        fields = (
-            'id',
-            'app_code',
-            'app_code_parsed',
-            'is_auto_je',
-        )
-
-    @classmethod
-    def get_app_code_parsed(cls, obj):
-        return JE_ALLOWED_APP[obj.app_code]
-
-
-class AllowedAppAutoJEUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AllowedAppAutoJournalEntry
-        fields = ('is_auto_je',)
+from apps.accounting.accountingsettings.models.account_determination import JE_DOCUMENT_TYPE_APP
+from apps.accounting.journalentry.models import JournalEntry
 
 # JE
 class JournalEntryListSerializer(serializers.ModelSerializer):
@@ -54,7 +33,7 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_original_transaction_parsed(cls, obj):
-        return JE_ALLOWED_APP.get(obj.je_transaction_app_code, '')
+        return JE_DOCUMENT_TYPE_APP.get(obj.je_transaction_app_code, '')
 
     @classmethod
     def get_je_state_parsed(cls, obj):
@@ -91,7 +70,7 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_original_transaction_parsed(cls, obj):
-        return JE_ALLOWED_APP.get(obj.je_transaction_app_code, '')
+        return JE_DOCUMENT_TYPE_APP.get(obj.je_transaction_app_code, '')
 
     @classmethod
     def get_je_lines(cls, obj):
