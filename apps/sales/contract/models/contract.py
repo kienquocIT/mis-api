@@ -32,6 +32,16 @@ class ContractApproval(DataAbstractModel, BastionFieldAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    # FILE
+    @classmethod
+    def set_true_file_is_approved(cls, instance):
+        for m2m_attachment in instance.contract_attachment_contract_approval.all():
+            attachment = m2m_attachment.attachment
+            if attachment:
+                attachment.is_approved = True
+                attachment.save(update_fields=['is_approved'])
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3] and 'update_fields' in kwargs:  # added, finish
             # check if date_approved then call related functions
@@ -40,6 +50,7 @@ class ContractApproval(DataAbstractModel, BastionFieldAbstractModel):
                     CompanyFunctionNumber.auto_gen_code_based_on_config(
                         app_code=None, instance=self, in_workflow=True, kwargs=kwargs
                     )
+                    self.set_true_file_is_approved(instance=self)  # file
         # hit DB
         super().save(*args, **kwargs)
 

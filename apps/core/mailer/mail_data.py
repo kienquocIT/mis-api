@@ -36,6 +36,7 @@ APP_MAP_DATA = {
     },
     'leaseorder.leaseorder': {'title': 'Lease Order', 'url': 'leaseorder/detail/'},
     'bidding.bidding': {'title': 'Bidding', 'url': 'bidding/detail/'},
+    'consulting.consulting': {'title': 'Consulting', 'url': 'consulting/detail/'},
     'reconciliation.reconciliation': {'title': 'Reconciliation', 'url': 'financial-reconciliation/detail/'},
     'financialcashflow.cashinflow': {'title': 'Cash Inflow', 'url': 'financial-cashflow/detail/'},
     'financialcashflow.cashoutflow': {'title': 'Cash Outflow', 'url': 'financial-cashflow/detail/'},

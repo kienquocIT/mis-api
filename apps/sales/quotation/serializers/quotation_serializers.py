@@ -297,7 +297,8 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
                     'product_subtotal_price_after_tax': CompanyHandler.parse_currency(
                         obj=obj, value=data.get('product_subtotal_price_after_tax', 0)
                     ),
-                    'product_tax_value': str(data.get('product_tax_value', 0)) + '%',
+                    'product_tax_value': str(data.get('product_tax_value', 0)) + '%'
+                    if data.get('product_tax_value', 0) > 0 else "",
                 })
         return obj.quotation_products_data
 

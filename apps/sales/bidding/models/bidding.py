@@ -122,6 +122,16 @@ class Bidding(DataAbstractModel, BastionFieldAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    # FILE
+    @classmethod
+    def set_true_file_is_approved(cls, instance):
+        for m2m_attachment in instance.bidding_attachment_bidding.all():
+            attachment = m2m_attachment.attachment
+            if attachment:
+                attachment.is_approved = True
+                attachment.save(update_fields=['is_approved'])
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
             if isinstance(kwargs['update_fields'], list):
@@ -129,6 +139,7 @@ class Bidding(DataAbstractModel, BastionFieldAbstractModel):
                     CompanyFunctionNumber.auto_gen_code_based_on_config(
                         app_code=None, instance=self, in_workflow=True, kwargs=kwargs
                     )
+                    self.set_true_file_is_approved(instance=self)  # file
         AdvanceHandler.push_opportunity_log(self)
         # hit DB
         super().save(*args, **kwargs)
