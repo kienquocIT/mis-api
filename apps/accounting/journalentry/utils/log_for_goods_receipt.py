@@ -100,7 +100,7 @@ class JEForGoodsReceiptHandler:
                     # C. Tạo dòng JE Line Data
                     line_data = {
                         'account': account_mapped,
-                        'product_mapped': gr_prd_obj.product if rule.role_key == 'ASSET' else None,
+                        'product_mapped': gr_prd_obj.product,
                         # Chỉ map product cho dòng Kho
                         'business_partner': None,
                         'debit': amount if rule.side == 'DEBIT' else 0,  # 0: Debit

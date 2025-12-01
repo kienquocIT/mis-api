@@ -1,9 +1,6 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-from apps.accounting.journalentry.models import (
-    JournalEntry, JournalEntryLine, JE_ALLOWED_APP,
-    AllowedAppAutoJournalEntry,
-)
+from apps.accounting.journalentry.models import JournalEntry, JE_ALLOWED_APP, AllowedAppAutoJournalEntry
 
 
 class AllowedAppAutoJEListSerializer(serializers.ModelSerializer):
@@ -28,7 +25,6 @@ class AllowedAppAutoJEUpdateSerializer(serializers.ModelSerializer):
         model = AllowedAppAutoJournalEntry
         fields = ('is_auto_je',)
 
-
 # JE
 class JournalEntryListSerializer(serializers.ModelSerializer):
     employee_created = serializers.SerializerMethodField()
@@ -49,7 +45,7 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
             'date_created',
             'employee_created',
             'system_status',
-            'system_auto_create',
+            'system_auto_create'
         )
 
     @classmethod
@@ -101,20 +97,20 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
     def get_je_lines(cls, obj):
         je_lines = []
         for item in obj.je_lines.all():
-            je_lines.append(
-                {
-                    'id': item.id,
-                    'order': item.order,
-                    'account_data': item.account_data,
-                    'business_partner_data': item.business_partner_data,
-                    'debit': item.debit,
-                    'credit': item.credit,
-                    'is_fc': item.is_fc,
-                    'je_line_type': item.je_line_type,
-                    'taxable_value': item.taxable_value,
-                    'dimensions': [item.business_partner_data]
-                }
-            )
+            je_lines.append({
+                'id': item.id,
+                'order': item.order,
+                'account_data': item.account_data,
+                'business_partner_data': item.business_partner_data,
+                'business_employee_data': item.business_employee_data,
+                'product_mapped_data': item.product_mapped_data,
+                'debit': item.debit,
+                'credit': item.credit,
+                'is_fc': item.is_fc,
+                'je_line_type': item.je_line_type,
+                'taxable_value': item.taxable_value,
+                'dimensions': [item.business_partner_data, item.business_employee_data, item.product_mapped_data]
+            })
         return je_lines
 
 
@@ -122,53 +118,3 @@ class JournalEntryUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = JournalEntry
         fields = "__all__"
-
-
-# ====================== Journal Entry Line ================
-class JournalEntryLineListSerializer(serializers.ModelSerializer):
-    journal_entry_data = serializers.SerializerMethodField()
-    je_line_type_parsed = serializers.SerializerMethodField()
-
-    class Meta:
-        model = JournalEntryLine
-        fields = (
-            'id',
-            'journal_entry',
-            'journal_entry_data',
-            'order',
-            'account',
-            'account_data',
-            'je_line_type',
-            'je_line_type_parsed',
-            'product_mapped',
-            'product_mapped_data',
-            'business_partner',
-            'business_partner_data',
-            'business_employee',
-            'business_employee_data',
-            'debit',
-            'credit',
-            'is_fc',
-            'currency_mapped',
-            'currency_mapped_data',
-            'taxable_value',
-            'use_for_recon',
-            'use_for_recon_type',
-            'date_created',
-        )
-
-    @classmethod
-    def get_journal_entry_data(cls, obj):
-        if obj.journal_entry:
-            return {
-                'id': str(obj.journal_entry.id),
-                'code': obj.journal_entry.code,
-                'je_state': obj.journal_entry.je_state,
-                'total_debit': obj.journal_entry.total_debit,
-                'total_credit': obj.journal_entry.total_credit,
-            }
-        return {}
-
-    @classmethod
-    def get_je_line_type_parsed(cls, obj):
-        return 'Debit' if obj.je_line_type == 0 else 'Credit'

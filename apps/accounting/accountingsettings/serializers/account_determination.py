@@ -44,6 +44,7 @@ class AccountDeterminationListSerializer(serializers.ModelSerializer):
                 'search_rule': sub.search_rule,
                 'priority': sub.priority,
                 'is_custom': sub.is_custom,
+                'rule_level': sub.rule_level,
             })
         return data
 

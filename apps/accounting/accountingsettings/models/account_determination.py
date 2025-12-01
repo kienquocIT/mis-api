@@ -14,13 +14,16 @@ ACCOUNT_DETERMINATION_TYPE = [
     (3, _('Fixed Assets')),
 ]
 
-# 1. Bên Nợ/Có
 SIDE_CHOICES = [
     ('DEBIT', _('Bên nợ')),
     ('CREDIT', _('Bên có')),
 ]
 
-# 2. Nguồn tiền
+RULE_LEVEL = [
+    ('HEADER', _('Cả phiếu')),
+    ('LINE', _('Từng dòng')),
+]
+
 AMOUNT_SOURCE_CHOICES = (
     ('TOTAL', _('Tổng thanh toán')),
     ('COST', _('Giá vốn (Cost)')),
@@ -31,10 +34,10 @@ AMOUNT_SOURCE_CHOICES = (
     ('BANK', _('Số tiền ngân hàng'))
 )
 
-# 3. Loại nguồn Tài khoản
 ACCOUNT_SOURCE_TYPE_CHOICES = (
     ('FIXED', _('Cố định (Chọn cứng TK)')),
-    ('DYNAMIC', _('Động (Theo Role/Nhóm)')),
+    ('LOOKUP', _('Động (Theo Role/Nhóm)')),
+    ('CONDITIONAL', _('Theo điều kiện')),
 )
 
 
@@ -70,20 +73,22 @@ class AccountDeterminationSub(SimpleAbstractModel):
     account_determination = models.ForeignKey(AccountDetermination, on_delete=models.CASCADE, related_name='sub_items')
     # Thứ tự hiển thị (1, 2, 3...)
     order = models.IntegerField(default=0, db_index=True)
-    # Bên Nợ hay Có
-    side = models.CharField(max_length=10, choices=SIDE_CHOICES)
-    # Lấy tiền từ đâu
-    amount_source = models.CharField(max_length=20, choices=AMOUNT_SOURCE_CHOICES)
     # Chọn tài khoản từ đâu (cứng hay động)
-    account_source_type = models.CharField(max_length=10, choices=ACCOUNT_SOURCE_TYPE_CHOICES)
+    account_source_type = models.CharField(max_length=20, choices=ACCOUNT_SOURCE_TYPE_CHOICES)
     # CASE A: Cứng
     fixed_account = models.ForeignKey(
         'accountingsettings.ChartOfAccounts',
         on_delete=models.SET_NULL, null=True, blank=True,
         related_name='determination_fixed_account',
     )
-    # CASE B: Động
+    # Lấy tiền từ đâu
+    amount_source = models.CharField(max_length=20, choices=AMOUNT_SOURCE_CHOICES)
+    # Role là gì
     role_key = models.CharField(max_length=50, blank=True, null=True)
+    # Bên Nợ hay Có
+    side = models.CharField(max_length=10, choices=SIDE_CHOICES)
+    # Ghi cho tổng phiếu hay từng dòng trong phiếu
+    rule_level = models.CharField(max_length=10, choices=RULE_LEVEL)
     # --- LOGIC TÌM KIẾM & NGOẠI LỆ  ---
     match_context = models.JSONField(default=dict, blank=True)
     search_rule = models.CharField(max_length=500, blank=True, null=True, default='default', db_index=True)
@@ -119,12 +124,12 @@ class AccountDeterminationSub(SimpleAbstractModel):
     @classmethod
     def get_account_mapped(cls, rule):
         """
-        Tìm tài khoản dựa trên Rule (Fixed/Dynamic).
+        Tìm tài khoản dựa trên Rule (Fixed/Lookup).
         Đây là cầu nối giữa Config và Product thực tế.
         """
         # CASE 1: FIXED
         if rule.account_source_type == 'FIXED':
             return rule.fixed_account
-        # CASE 2: DYNAMIC
-        # ...
+        # CASE 2: LOOKUP
+        # CASE 3: CONDITIONAL
         return None
