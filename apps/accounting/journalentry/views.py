@@ -1,14 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from apps.accounting.journalentry.models import (
-    JournalEntry, JournalEntryLine, JE_ALLOWED_APP,
-    AllowedAppAutoJournalEntry,
-)
+from apps.accounting.journalentry.models import JournalEntry, JE_ALLOWED_APP, AllowedAppAutoJournalEntry
 from apps.accounting.journalentry.serializers import (
     JournalEntryListSerializer, JournalEntryCreateSerializer, JournalEntryDetailSerializer,
     JournalEntryUpdateSerializer, AllowedAppAutoJEListSerializer, AllowedAppAutoJEUpdateSerializer,
-    JournalEntryLineListSerializer,
 )
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -129,20 +125,3 @@ def get_je_summarize(request, *args, **kwargs):
             }
         }
     )
-
-
-class JournalEntryLineList(BaseListMixin):
-    queryset = JournalEntryLine.objects
-    serializer_list = JournalEntryLineListSerializer
-    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-
-    @swagger_auto_schema(
-        operation_summary="Journal Entry Line List",
-        operation_description="Get all Journal Entry Lines",
-    )
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
-    def get(self, request, *args, **kwargs):
-        # self.pagination_class.page_size = -1
-        return self.list(request, *args, **kwargs)
