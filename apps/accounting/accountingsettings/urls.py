@@ -7,7 +7,7 @@ from apps.accounting.accountingsettings.views.chart_of_account import (
     ChartOfAccountsList
 )
 from apps.accounting.accountingsettings.views.account_determination import (
-    AccountDeterminationList, AccountDeterminationDetail,
+    JEDocumentTypeList, JEDocumentTypeDetail, JEPostingRuleList,
 )
 from apps.accounting.accountingsettings.views.dimension import (
     DimensionDefinitionList, DimensionDefinitionDetail,
@@ -19,12 +19,9 @@ from apps.accounting.accountingsettings.views.dimension import (
 
 urlpatterns = [
     path('chart-of-accounts/list', ChartOfAccountsList.as_view(), name='ChartOfAccountsList'),
-    path('account-determination/list', AccountDeterminationList.as_view(), name='AccountDeterminationList'),
-    path(
-        'account-determination/detail/<str:pk>',
-        AccountDeterminationDetail.as_view(),
-        name='AccountDeterminationDetail'
-    ),
+    path('je-document-type/list', JEDocumentTypeList.as_view(), name='JEDocumentTypeList'),
+    path('je-document-type/detail/<str:pk>', JEDocumentTypeDetail.as_view(), name='JEDocumentTypeDetail'),
+    path('je-posting-rule/list', JEPostingRuleList.as_view(), name='JEPostingRuleList'),
 ] + [
     # Dimension
     path('dimension-definition/list', DimensionDefinitionList.as_view(), name='DimensionDefinitionList'),
@@ -54,15 +51,6 @@ urlpatterns = [
 ] + [
     path('asset-category/list', AssetCategoryList.as_view(), name='AssetCategoryList'),
     path('asset-category/detail/<str:pk>', AssetCategoryDetail.as_view(), name='AssetCategoryDetail'),
-      path('chart-of-accounts/list', ChartOfAccountsList.as_view(), name='ChartOfAccountsList'),
-      path(
-          'account-determination/list', AccountDeterminationList.as_view(), name='AccountDeterminationList'
-      ),
-      path(
-          'account-determination/detail/<str:pk>',
-          AccountDeterminationDetail.as_view(),
-          name='AccountDeterminationDetail'
-      ),
     ] + [
       # Dimension
       path('dimension-definition/list', DimensionDefinitionList.as_view(), name='DimensionDefinitionList'),

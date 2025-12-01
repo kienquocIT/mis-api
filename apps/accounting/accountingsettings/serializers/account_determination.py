@@ -1,162 +1,86 @@
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from apps.accounting.accountingsettings.models.chart_of_account import ChartOfAccounts
 from apps.accounting.accountingsettings.models.account_determination import (
-    ACCOUNT_DETERMINATION_TYPE,
-    AccountDetermination, AccountDeterminationSub,
+    DOCUMENT_TYPE_CHOICES, JEDocumentType, JE_DOCUMENT_TYPE_APP, JEPostingRule,
 )
-from apps.masterdata.saledata.models import WareHouse, Product, ProductType
 
 
-class AccountDeterminationListSerializer(serializers.ModelSerializer):
-    account_determination_sub_list = serializers.SerializerMethodField()
-    account_determination_type_convert = serializers.SerializerMethodField()
+class JEDocumentTypeListSerializer(serializers.ModelSerializer):
+    module_parsed = serializers.SerializerMethodField()
+    app_code_parsed = serializers.SerializerMethodField()
 
     class Meta:
-        model = AccountDetermination
+        model = JEDocumentType
         fields = (
-            'id', 'code', 'title', 'foreign_title', 'transaction_key',
-            'description', 'account_determination_sub_list',
-            'account_determination_type', 'account_determination_type_convert',
-            'can_change_account'
+            'id',
+            'code',
+            'title',
+            'module',
+            'module_parsed',
+            'app_code',
+            'app_code_parsed',
+            'is_auto_je',
         )
 
     @classmethod
-    def get_account_determination_sub_list(cls, obj):
-        subs = obj.sub_items.select_related('fixed_account').order_by('order')
-        data = []
-        for sub in subs:
-            data.append({
-                'id': sub.id,
-                'side': sub.side,
-                'amount_source': sub.amount_source,
-                'account_source_type': sub.account_source_type,
-                'fixed_account_data': {
-                    'id': str(sub.fixed_account.id),
-                    'acc_code': sub.fixed_account.acc_code,
-                    'acc_name': sub.fixed_account.acc_name,
-                    'foreign_acc_name': sub.fixed_account.foreign_acc_name,
-                } if sub.fixed_account else {},
-                'role_key': sub.role_key,
-                'description': sub.description,
-                'example': sub.example,
-                'match_context': sub.match_context,
-                'search_rule': sub.search_rule,
-                'priority': sub.priority,
-                'is_custom': sub.is_custom,
-                'rule_level': sub.rule_level,
-            })
-        return data
+    def get_module_parsed(cls, obj):
+        return dict(DOCUMENT_TYPE_CHOICES)[obj.module]
 
     @classmethod
-    def get_account_determination_type_convert(cls, obj):
-        return ACCOUNT_DETERMINATION_TYPE[obj.account_determination_type][1]
+    def get_app_code_parsed(cls, obj):
+        return dict(JE_DOCUMENT_TYPE_APP)[obj.app_code]
 
 
-class AccountDeterminationDetailSerializer(serializers.ModelSerializer):
+class JEDocumentTypeUpdateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AccountDetermination
-        fields = "__all__"
+        model = JEDocumentType
+        fields = ('is_auto_je',)
 
 
-class AccountDeterminationUpdateSerializer(serializers.ModelSerializer):
-    rule_data = serializers.JSONField(default=dict)
-    # special_rule_data = serializers.JSONField(default=dict)
+class JEPostingRuleListSerializer(serializers.ModelSerializer):
+    document_type_code = serializers.SerializerMethodField()
+    document_type_app_code_parsed = serializers.SerializerMethodField()
+    fixed_account = serializers.SerializerMethodField()
 
     class Meta:
-        model = AccountDetermination
+        model = JEPostingRule
         fields = (
-            'rule_data',
-            # 'special_rule_data'
+            'id',
+            'code',
+            'title',
+            'document_type_code',
+            'document_type_app_code_parsed',
+            'rule_level',
+            # Ưu tiên
+            'priority',
+            # Role là gì
+            'role_key',
+            # Bên Nợ hay Có
+            'side',
+            # Lấy tiền từ nguồn nào (field trong model)
+            'amount_source',
+            # Chọn tài khoản từ đâu (cứng hay động)
+            'account_source_type',
+            # CASE A: Cứng
+            'fixed_account',
+            # Field bổ sung
+            'description',
+            'example',
+            'is_active'
         )
 
     @classmethod
-    def validate_rule_data(cls, rule_data):
-        valid_rule_data = {}
-        if rule_data:
-            account_mapped_obj = ChartOfAccounts.objects.filter(id=rule_data.get('account_mapped')).first()
-            if account_mapped_obj:
-                valid_rule_data['account_mapped'] = account_mapped_obj,
-                valid_rule_data['account_mapped_data'] = {
-                    'id': str(account_mapped_obj.id),
-                    'acc_code': account_mapped_obj.acc_code,
-                    'acc_name': account_mapped_obj.acc_name,
-                    'foreign_acc_name': account_mapped_obj.foreign_acc_name,
-                }
-            raise serializers.ValidationError({'account_mapped': _('Account mapped not found')})
-        return valid_rule_data
+    def get_document_type_code(cls, obj):
+        return obj.je_document_type.code
 
-    # @classmethod
-    # def validate_special_rule_data(cls, special_rule_data):
-    #     valid_special_rule_data = {
-    #         'description_sub': special_rule_data.get('description_sub', ''),
-    #         'example_sub': special_rule_data.get('example_sub', ''),
-    #         'id_sub': special_rule_data.get('id_sub', ''),
-    #         'context_dict': {}
-    #     }
-    #     if special_rule_data:
-    #         # Validate Account
-    #         acc_id = special_rule_data.get('account_mapped')
-    #         account_mapped_obj = ChartOfAccounts.objects.filter(id=acc_id).first()
-    #         if not account_mapped_obj:
-    #             raise serializers.ValidationError({'account_mapped': _('Account not found')})
-    #         valid_special_rule_data['account_mapped_code'] = account_mapped_obj.acc_code
-    #
-    #         # Validate Warehouse
-    #         warehouse_id = special_rule_data.get('warehouse_id')
-    #         if warehouse_id:
-    #             warehouse_obj = WareHouse.objects.filter(id=warehouse_id).first()
-    #             if not warehouse_obj:
-    #                 raise serializers.ValidationError({'warehouse_id': _('Warehouse not found')})
-    #             valid_special_rule_data['context_dict']['warehouse_id'] = warehouse_id
-    #
-    #         # Validate Product Type
-    #         product_type_id = special_rule_data.get('product_type_id')
-    #         if product_type_id:
-    #             product_type_obj = ProductType.objects.filter(id=product_type_id).first()
-    #             if not product_type_obj:
-    #                 raise serializers.ValidationError({'product_type_id': _('Product type not found')})
-    #             valid_special_rule_data['context_dict']['product_type_id'] = product_type_id
-    #
-    #         # Validate Product
-    #         product_id = special_rule_data.get('product_id')
-    #         if product_id:
-    #             product_obj = Product.objects.filter(id=product_id).first()
-    #             if not product_obj:
-    #                 raise serializers.ValidationError({'product_id': _('Product not found')})
-    #             valid_special_rule_data['context_dict']['product_id'] = product_id
-    #
-    #         if not warehouse_id and not product_type_id and not product_id:
-    #             raise serializers.ValidationError({'transaction_key_sub': _('Special condition is missing')})
-    #     return valid_special_rule_data
+    @classmethod
+    def get_document_type_app_code_parsed(cls, obj):
+        return dict(JE_DOCUMENT_TYPE_APP)[obj.je_document_type.app_code]
 
-    def validate(self, validate_data):
-        if not self.instance.can_change_account and validate_data.get('rule_data'):
-            raise serializers.ValidationError({'detail': _('Not allowed to change default account for this rule')})
-        return validate_data
-
-    def update(self, instance, validated_data):
-        rule_data = validated_data.pop('rule_data', {})
-        # special_rule_data = validated_data.pop('special_rule_data', {})
-
-        if rule_data:
-            AccountDeterminationSub.objects.update_or_create(
-                account_determination=instance,
-                search_rule='default',
-                defaults={**rule_data}
-            )
-
-        # if special_rule_data:
-        #     default_rule = instance.sub_items.filter(id=special_rule_data.get('id_sub')).first()
-        #     inherited_transaction_key_sub = default_rule.transaction_key_sub if default_rule else ''
-        #     AccountDeterminationSub.create_specific_rule(
-        #         company_id=instance.company_id,
-        #         transaction_key=instance.transaction_key,
-        #         account_code=special_rule_data.get('account_mapped_code'),
-        #         context_dict={**special_rule_data.get('context_dict', {})},
-        #         transaction_key_sub=inherited_transaction_key_sub,
-        #         description_sub=special_rule_data.get('description_sub'),
-        #         example_sub=special_rule_data.get('example_sub')
-        #     )
-
-        return instance
+    @classmethod
+    def get_fixed_account(cls, obj):
+        return {
+            'id': str(obj.fixed_account.id),
+            'acc_code': obj.fixed_account.acc_code,
+            'acc_name': obj.fixed_account.acc_name,
+            'foreign_acc_name': obj.fixed_account.foreign_acc_name,
+        } if obj.fixed_account else {}

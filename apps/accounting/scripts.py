@@ -1,10 +1,6 @@
 from django.db import transaction
 from apps.core.company.models import Company
-from apps.accounting.accountingsettings.models import (
-    ChartOfAccounts,
-    AccountDetermination,
-    AccountDeterminationSub
-)
+from apps.accounting.accountingsettings.models import (ChartOfAccounts)
 from apps.masterdata.saledata.models.price import Currency
 
 TT200_DATA = {
@@ -916,46 +912,10 @@ class AccountScript:
         return True
 
     @staticmethod
-    def generate_account_determination_200(company_id):
-        """
-        Tạo bộ định khoản mặc định (Default Rules) theo TT200.
-        """
-        try:
-            company_obj = Company.objects.get(id=company_id)
-        except Company.DoesNotExist:
-            return False
-
-        with transaction.atomic():
-            AccountDetermination.objects.filter(company_id=company_id).delete()
-            bulk_sub_create = []
-            for order, item in enumerate(RULE_CONFIG):
-                rule_config = item.pop('rule_config')
-                deter_obj = AccountDetermination.objects.create(
-                    tenant=company_obj.tenant,
-                    company=company_obj,
-                    order=order,
-                    **item
-                )
-                for rule in rule_config:
-                    fixed_account_code = rule.pop('fixed_account_code')
-                    rule['order'] = rule.get('order') * 10
-                    fixed_account_obj = ChartOfAccounts.get_acc(company_id, fixed_account_code)
-                    bulk_sub_create.append(AccountDeterminationSub(
-                        account_determination=deter_obj,
-                        fixed_account=fixed_account_obj,
-                        **rule
-                    ))
-            if bulk_sub_create:
-                AccountDeterminationSub.objects.bulk_create(bulk_sub_create)
-        print(f'> Successfully initialized Accounting Rules for {company_obj.title}')
-        return True
-
-    @staticmethod
     def accounting_reset_default_200(company_id):
         """ Quản lý rule ngoại lệ và Reset hệ thống """
         print(f'--- START RESET ACCOUNTING FOR COMPANY ID {company_id} ---')
         AccountScript.generate_account_200(company_id)
         AccountScript.add_account_default_200(company_id)
-        AccountScript.generate_account_determination_200(company_id)
         print('--- RESET DONE :)) ---')
         return True

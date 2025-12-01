@@ -3,60 +3,12 @@ from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.company.models import CompanyFunctionNumber
-from apps.masterdata.saledata.models import Periods, Currency
+from apps.core.hr.models import Employee
+from apps.masterdata.saledata.models import Periods, Currency, Product, Account
 from apps.shared import DataAbstractModel, AutoDocumentAbstractModel, MasterDataAbstractModel
 
 
 logger = logging.getLogger(__name__)
-
-
-JE_ALLOWED_APP = {
-    'delivery.orderdeliverysub': _('Delivery'),
-    'inventory.goodsreceipt': _('Goods Receipt'),
-    'arinvoice.arinvoice': _('AR Invoice'),
-    'apinvoice.apinvoice': _('AP Invoice'),
-    'financialcashflow.cashinflow': _('Cash Inflow'),
-    'financialcashflow.cashoutflow': _('Cash Outflow'),
-}
-
-
-class AllowedAppAutoJournalEntry(MasterDataAbstractModel):
-    app_code = models.CharField(
-        max_length=100,
-        verbose_name='Code of application',
-        help_text='{app_label}.{model}',
-        null = True
-    )
-    is_auto_je = models.BooleanField(default=False)
-
-    class Meta:
-        verbose_name = 'Allowed App Auto Journal Entry'
-        verbose_name_plural = 'Allowed Apps Auto Journal Entry'
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
-
-    @classmethod
-    def check_app_state(cls, app_code):
-        """ Kiểm tra trạng thái cấu hình """
-        if not app_code:
-            return False
-        config = cls.objects.filter_on_company(app_code=app_code).first()
-        return config.is_auto_je if config else False
-
-    @classmethod
-    def update_or_create_app(cls, tenant_id, company_id, app_code, state):
-        """ Tạo mới hoặc cập nhật cấu hình cho app_code """
-        if not app_code:
-            return None
-        obj, created = cls.objects.update_or_create(
-            tenant_id=tenant_id,
-            company_id=company_id,
-            app_code=app_code,
-            defaults={'is_auto_je': state}
-        )
-        print(f'Created {app_code} with state {state}.' if created else f'Updated {app_code} with state {state}.')
-        return obj
 
 
 class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
@@ -105,7 +57,7 @@ class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
         debit_rows = je_line_data.get('debit_rows', [])
         credit_rows = je_line_data.get('credit_rows', [])
         if len(debit_rows) == 0 or len(credit_rows) == 0:
-            logger.error(msg='[JE] Debit list length != Credit list length => can not create.')
+            logger.error(msg='[JE] Debit list or Credit list is empty => can not create.')
             return False
         return True
 
@@ -233,6 +185,28 @@ class JournalEntryLine(MasterDataAbstractModel):
         if not currency_mapped:
             currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
 
+        product_mapped_data = {}
+        business_partner_data = {}
+        business_employee_data = {}
+        if item.get('product_mapped_id'):
+            product_obj = Product.objects.filter(id=item.get('product_mapped_id')).first()
+            product_mapped_data = {
+                'id': str(product_obj.id),
+                'code': product_obj.code,
+                'title': product_obj.title,
+            } if product_obj else {}
+        if item.get('business_partner_id'):
+            account_obj = Account.objects.filter(id=item.get('business_partner_id')).first()
+            business_partner_data = {
+                'id': str(account_obj.id),
+                'code': account_obj.code,
+                'name': account_obj.name,
+                'tax_code': account_obj.tax_code,
+            } if account_obj else {}
+        if item.get('business_employee_id'):
+            employee_obj = Employee.objects.filter(id=item.get('business_employee_id')).first()
+            business_employee_data = employee_obj.get_detail_with_group() if employee_obj else {}
+
         return cls(
             tenant_id=je_obj.tenant_id,
             company_id=je_obj.company_id,
@@ -246,29 +220,18 @@ class JournalEntryLine(MasterDataAbstractModel):
                 'foreign_acc_name': item.get('account').foreign_acc_name
             } if item.get('account') else {},
             je_line_type=je_line_type,
-            product_mapped=item.get('product_mapped'),
-            product_mapped_data={
-                'id': str(item.get('product_mapped').id),
-                'code': item.get('product_mapped').code,
-                'title': item.get('product_mapped').title,
-            } if item.get('product_mapped') else {},
-            business_partner=item.get('business_partner'),
-            business_partner_data={
-                'id': str(item.get('business_partner').id),
-                'code': item.get('business_partner').code,
-                'name': item.get('business_partner').name,
-                'tax_code': item.get('business_partner').tax_code,
-            } if item.get('business_partner') else {},
-            business_employee=item.get('business_employee'),
-            business_employee_data=item.get('business_employee').get_detail_with_group() if item.get(
-                'business_employee'
-            ) else {},
+            product_mapped_id=item.get('product_mapped_id'),
+            product_mapped_data=product_mapped_data,
+            business_partner_id=item.get('business_partner_id'),
+            business_partner_data=business_partner_data,
+            business_employee_id=item.get('business_employee_id'),
+            business_employee_data=business_employee_data,
             debit=item.get('debit', 0) if je_line_type == 0 else 0,
             credit=item.get('credit', 0) if je_line_type == 1 else 0,
             is_fc=item.get('is_fc', False),
             currency_mapped=currency_mapped,
             currency_mapped_data={
-                'id': str(currency_mapped.id),
+                "id": str(currency_mapped.id),
                 "abbreviation": currency_mapped.abbreviation,
                 "title": currency_mapped.title,
                 "rate": currency_mapped.rate
