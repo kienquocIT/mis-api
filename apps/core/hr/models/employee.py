@@ -284,7 +284,7 @@ class Employee(TenantAbstractModel):
         return employee detail data with their group_data if exist else {}
         """
         return {
-            'id': self.id,
+            'id': str(self.id),
             'code': self.code,
             'full_name': self.get_full_name(2),
             'email': self.email,
@@ -292,7 +292,7 @@ class Employee(TenantAbstractModel):
             'is_delete': self.is_delete,
             'is_admin_company': self.is_admin_company,
             'group': {
-                'id': self.group_id,
+                'id': str(self.group_id),
                 'title': self.group.title,
                 'code': self.group.code
             } if self.group else {}

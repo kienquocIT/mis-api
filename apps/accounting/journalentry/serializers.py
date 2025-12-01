@@ -33,7 +33,7 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_original_transaction_parsed(cls, obj):
-        return JE_DOCUMENT_TYPE_APP.get(obj.je_transaction_app_code, '')
+        return dict(JE_DOCUMENT_TYPE_APP)[obj.je_transaction_app_code]
 
     @classmethod
     def get_je_state_parsed(cls, obj):
@@ -70,7 +70,7 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_original_transaction_parsed(cls, obj):
-        return JE_DOCUMENT_TYPE_APP.get(obj.je_transaction_app_code, '')
+        return dict(JE_DOCUMENT_TYPE_APP)[obj.je_transaction_app_code]
 
     @classmethod
     def get_je_lines(cls, obj):
