@@ -64,6 +64,6 @@ class JournalEntryLineListSerializer(serializers.ModelSerializer):
     def get_dimensions(cls, obj):
         return [
             obj.business_partner_data,
-            obj.business_partner_data,
+            obj.business_employee_data,
             obj.product_mapped_data,
         ]
