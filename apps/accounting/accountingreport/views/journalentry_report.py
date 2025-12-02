@@ -9,6 +9,9 @@ class JournalEntryLineList(BaseListMixin):
     queryset = JournalEntryLine.objects
     serializer_list = JournalEntryLineListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    filterset_fields = {
+        'journal_entry__date_created': ['lte', 'gte'],
+    }
 
     @swagger_auto_schema(
         operation_summary="Journal Entry Line List",

@@ -39,7 +39,7 @@ class JournalEntryLineListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_journal_entry_info(cls, obj):
-        je = obj.journal_entry_info
+        je = obj.journal_entry
         return {
             'id': je.id,
             'code': je.code,
