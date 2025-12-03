@@ -623,10 +623,10 @@ RULE_CONFIG = [
     },
 
     # -------------------------------------------------------------------------
-    # 2. CHIỀU BÁN HÀNG: HÓA ĐƠN (SALES_INVOICE)
+    # 2. CHIỀU BÁN HÀNG: HÓA ĐƠN (SALE_INVOICE)
     # -------------------------------------------------------------------------
     {
-        'transaction_key': 'SALES_INVOICE',
+        'transaction_key': 'SALE_INVOICE',
         'foreign_title': 'VAT AR Invoice',
         'title': 'Hóa đơn bán hàng GTGT',
         'account_determination_type': 0,

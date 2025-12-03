@@ -32,6 +32,7 @@ class JournalEntryInitData:
             if je_doc_type_obj:
                 bulk_info = []
                 for rule_data in je_doc_type.get('posting_rule_list', []):
+                    print(rule_data)
                     rule_data['je_document_type'] = je_doc_type_obj
                     fixed_account_obj = ChartOfAccounts.objects.filter(
                         company_id=company_id, acc_code=rule_data.pop('fixed_account_code')

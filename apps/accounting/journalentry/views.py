@@ -13,7 +13,7 @@ from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveM
 
 class JournalEntryList(BaseListMixin, BaseCreateMixin):
     queryset = JournalEntry.objects
-    search_fields = ['title', 'code']
+    search_fields = ['title', 'code', 'je_transaction_data__code']
     serializer_list = JournalEntryListSerializer
     serializer_create = JournalEntryCreateSerializer
     serializer_detail = JournalEntryDetailSerializer

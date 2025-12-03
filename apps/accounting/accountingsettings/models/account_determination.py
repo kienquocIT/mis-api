@@ -169,7 +169,7 @@ class JEDocData(SimpleAbstractModel):
         return cls.objects.filter(doc_id=doc_id)
 
     @classmethod
-    def push_amount_source_doc_data(
+    def make_doc_data_obj(
             cls, company_id, app_code, doc_id, rule_level, amount_source, value, taxable_value, currency_mapped,
             tracking_by, tracking_id
     ):

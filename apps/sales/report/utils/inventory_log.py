@@ -111,9 +111,9 @@ class ReportInvCommonFunc:
             'period_mapped': this_period,
             'sub_period_order': this_sub.order,
             'sub_period': this_sub,
-            'opening_balance_quantity': last_sub_item.periodic_ending_balance_quantity,
-            'opening_balance_cost': last_sub_item.periodic_ending_balance_cost,
-            'opening_balance_value': last_sub_item.periodic_ending_balance_value,
+            'opening_balance_quantity': last_sub_item.ending_balance_quantity,
+            'opening_balance_cost': last_sub_item.ending_balance_cost,
+            'opening_balance_value': last_sub_item.ending_balance_value,
             'periodic_ending_balance_quantity': last_sub_item.periodic_ending_balance_quantity,
             'periodic_ending_balance_cost': last_sub_item.periodic_ending_balance_cost,
             'periodic_ending_balance_value': last_sub_item.periodic_ending_balance_value

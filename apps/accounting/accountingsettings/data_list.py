@@ -12,15 +12,17 @@ APP_LIST = [
 ]
 
 POSTING_RULE_APP_LIST = [
-    # -------------------------------------------------------------------------
-    # 1. XUẤT KHO BÁN HÀNG (DO_SALE)
-    # Đặc điểm: Toàn bộ là LINE (vì hạch toán theo từng mặt hàng)
-    # Thứ tự: Giá vốn (Nợ->Có) rồi đến Doanh thu (Nợ->Có)
+    # =========================================================================
+    # NHÓM 1: BÁN HÀNG (SALES CYCLE)
+    # Flow: DO_SALE (Treo 13881) -> SALE_INVOICE (Clear 13881, Ghi 131)
+    # =========================================================================
+
+    # 1.1. XUẤT KHO BÁN HÀNG (DO_SALE)
     # -------------------------------------------------------------------------
     {
         'je_doc_type': 'DO_SALE',
         'posting_rule_list': [
-            # Cụm 1: Giá vốn (Nợ 632 / Có 156)
+            # --- Cụm 1: Giá vốn (Nợ 632 / Có 156) ---
             {
                 'rule_level': 'LINE',
                 'priority': 10,
@@ -39,11 +41,11 @@ POSTING_RULE_APP_LIST = [
                 'account_source_type': 'FIXED', 'fixed_account_code': '1561',
                 'description': 'Giảm kho hàng hóa (1561)',
             },
-            # Cụm 2: Doanh thu (Nợ 13881 / Có 511)
+            # --- Cụm 2: Doanh thu tạm (Nợ 13881 / Có 511) ---
             {
                 'rule_level': 'LINE',
                 'priority': 30,
-                'role_key': 'DONI',
+                'role_key': 'DONI',  # Delivery Order Not Invoiced
                 'side': 'DEBIT',
                 'amount_source': 'SALES',
                 'account_source_type': 'FIXED', 'fixed_account_code': '13881',
@@ -61,14 +63,12 @@ POSTING_RULE_APP_LIST = [
         ]
     },
 
-    # -------------------------------------------------------------------------
-    # 2. HÓA ĐƠN BÁN HÀNG (SALES_INVOICE)
-    # Quy tắc: Nợ (Header) -> Có (Header: Thuế) -> Có (Line: Doanh thu)
+    # 1.2. HÓA ĐƠN BÁN HÀNG (SALE_INVOICE)
     # -------------------------------------------------------------------------
     {
-        'je_doc_type': 'SALES_INVOICE',
+        'je_doc_type': 'SALE_INVOICE',
         'posting_rule_list': [
-            # 1. Nợ: Phải thu (HEADER) - Tổng tiền
+            # 1. Nợ: Phải thu (HEADER - Tổng tiền thanh toán)
             {
                 'rule_level': 'HEADER',
                 'priority': 10,
@@ -78,7 +78,8 @@ POSTING_RULE_APP_LIST = [
                 'account_source_type': 'FIXED', 'fixed_account_code': '131',
                 'description': 'Phải thu khách hàng (131)',
             },
-            # 2. Có: Thuế (HEADER) - Ưu tiên Header trước Line
+
+            # 2. Có: Thuế (HEADER - Tổng thuế)
             {
                 'rule_level': 'HEADER',
                 'priority': 20,
@@ -88,26 +89,32 @@ POSTING_RULE_APP_LIST = [
                 'account_source_type': 'FIXED', 'fixed_account_code': '33311',
                 'description': 'Thuế GTGT đầu ra (33311)',
             },
-            # 3. Có: Đối trừ Doanh thu (LINE) - Chi tiết từng dòng
+
+            # 3. Có: Đối trừ Doanh thu tạm (LINE - Chi tiết từng dòng)
+            # [CHỐT]: Dùng LINE để khớp với DO_SALE
             {
                 'rule_level': 'LINE',
                 'priority': 30,
                 'role_key': 'DONI',
                 'side': 'CREDIT',
-                'amount_source': 'SALES',
+                'amount_source': 'SALES',  # Lấy Net Amount từng dòng
                 'account_source_type': 'FIXED', 'fixed_account_code': '13881',
                 'description': 'Đối trừ hàng đã xuất (13881)',
             },
         ]
     },
 
-    # -------------------------------------------------------------------------
-    # 3. NHẬP KHO MUA HÀNG (GRN_PURCHASE)
-    # Đặc điểm: Toàn bộ là LINE (chi tiết từng mặt hàng nhập)
+    # =========================================================================
+    # NHÓM 2: MUA HÀNG (PURCHASE CYCLE)
+    # Flow: GRN (Treo 33881) -> INVOICE (Clear 33881, Ghi 331)
+    # =========================================================================
+
+    # 2.1. NHẬP KHO MUA HÀNG (GRN_PURCHASE)
     # -------------------------------------------------------------------------
     {
         'je_doc_type': 'GRN_PURCHASE',
         'posting_rule_list': [
+            # 1. Nợ: Tăng kho (LINE)
             {
                 'rule_level': 'LINE',
                 'priority': 10,
@@ -117,6 +124,7 @@ POSTING_RULE_APP_LIST = [
                 'account_source_type': 'FIXED', 'fixed_account_code': '1561',
                 'description': 'Nhập kho hàng hóa (1561)',
             },
+            # 2. Có: Nợ tạm tính (LINE - Chi tiết để khớp Invoice sau này)
             {
                 'rule_level': 'LINE',
                 'priority': 20,
@@ -129,34 +137,35 @@ POSTING_RULE_APP_LIST = [
         ]
     },
 
-    # -------------------------------------------------------------------------
-    # 4. HÓA ĐƠN MUA HÀNG (PURCHASE_INVOICE)
-    # Quy tắc: Nợ (Header: Thuế) -> Nợ (Line: Hàng) -> Có (Header: Công nợ)
+    # 2.2. HÓA ĐƠN MUA HÀNG (PURCHASE_INVOICE)
     # -------------------------------------------------------------------------
     {
         'je_doc_type': 'PURCHASE_INVOICE',
         'posting_rule_list': [
-            # 1. Nợ: Thuế (HEADER) - Ưu tiên Header trước
+            # 1. Nợ: Đối trừ nợ tạm (LINE - Chi tiết từng dòng)
+            # [CHỐT]: Dùng LINE để khớp với GRN_PURCHASE
+            {
+                'rule_level': 'LINE',
+                'priority': 10,
+                'role_key': 'GRNI',
+                'side': 'DEBIT',
+                'amount_source': 'COST',  # Engine sẽ tìm các dòng LINE có COST trong JEDocData
+                'account_source_type': 'FIXED', 'fixed_account_code': '33881',
+                'description': 'Đối trừ hàng về chưa hóa đơn',
+            },
+
+            # 2. Nợ: Thuế (HEADER - Tổng thuế)
             {
                 'rule_level': 'HEADER',
-                'priority': 10,
+                'priority': 20,
                 'role_key': 'TAX_IN',
                 'side': 'DEBIT',
                 'amount_source': 'TAX',
                 'account_source_type': 'FIXED', 'fixed_account_code': '1331',
-                'description': 'Thuế GTGT đầu vào (1331)',
+                'description': 'Thuế GTGT đầu vào',
             },
-            # 2. Nợ: Đối trừ hàng về (LINE)
-            {
-                'rule_level': 'HEADER',
-                'priority': 20,
-                'role_key': 'GRNI',
-                'side': 'DEBIT',
-                'amount_source': 'COST',
-                'account_source_type': 'FIXED', 'fixed_account_code': '33881',
-                'description': 'Đối trừ hàng về chưa hóa đơn (33881)',
-            },
-            # 3. Có: Phải trả (HEADER)
+
+            # 3. Có: Phải trả (HEADER - Tổng phải trả)
             {
                 'rule_level': 'HEADER',
                 'priority': 30,
@@ -164,15 +173,16 @@ POSTING_RULE_APP_LIST = [
                 'side': 'CREDIT',
                 'amount_source': 'TOTAL',
                 'account_source_type': 'FIXED', 'fixed_account_code': '331',
-                'description': 'Phải trả người bán (331)',
+                'description': 'Phải trả người bán',
             },
         ]
     },
 
-    # -------------------------------------------------------------------------
-    # 5. PHIẾU CHI (CASH_OUT)
-    # Đặc điểm: Toàn bộ là HEADER (vì không chi tiết theo dòng hàng)
-    # Quy tắc: Nợ trước -> Có sau
+    # =========================================================================
+    # NHÓM 3: TIỀN TỆ (CASH & BANK)
+    # =========================================================================
+
+    # 3.1. PHIẾU CHI (CASH_OUT)
     # -------------------------------------------------------------------------
     {
         'je_doc_type': 'CASH_OUT',
