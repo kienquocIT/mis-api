@@ -130,4 +130,4 @@ class JELogHandler:
                 logger.error(msg='[JE] Can not found transaction_key.')
         except Exception as err:
             logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')
-            return None
+            return False

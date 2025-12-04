@@ -659,39 +659,47 @@ class InitialBalanceCommonFunction:
     @staticmethod
     def handle_money_tab(created_instances, updated_items):
         """Xử lý tab money"""
+        print(created_instances, updated_items)
         return True
 
     @staticmethod
     def handle_goods_tab(created_instances, updated_items):
         """Xử lý tab goods"""
+        print(created_instances, updated_items)
         return True
 
     @staticmethod
     def handle_customer_receivable_tab(created_instances, updated_items):
         """Xử lý tab customer receivable"""
+        print(created_instances, updated_items)
         return True
 
     @staticmethod
     def handle_supplier_payable_tab(created_instances, updated_items):
         """Xử lý tab supplier payable"""
+        print(created_instances, updated_items)
         return True
 
     @staticmethod
     def handle_employee_payable_tab(created_instances, updated_items):
         """Xử lý tab employee payable"""
+        print(created_instances, updated_items)
         return True
 
     @staticmethod
     def handle_fixed_assets_tab(created_instances, updated_items):
         """Xử lý tab fixed assets"""
+        print(created_instances, updated_items)
         return True
 
     @staticmethod
     def handle_tools_tab(created_instances, updated_items):
         """Xử lý tab expenses"""
-        pass
+        print(created_instances, updated_items)
+        return True
 
     @staticmethod
     def handle_accounts_tab(created_instances, updated_items):
         """Xử lý tab owner equity"""
-        pass
+        print(created_instances, updated_items)
+        return True

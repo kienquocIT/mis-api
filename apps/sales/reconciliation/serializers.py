@@ -72,8 +72,8 @@ class ReconCreateSerializer(AbstractCreateSerializerModel):
         return None
 
     def validate(self, validate_data):
-        tenant_id = self.context.get('tenant_id', None)
-        company_id = self.context.get('company_id', None)
+        # tenant_id = self.context.get('tenant_id', None)
+        # company_id = self.context.get('company_id', None)
         # ReconCommonFunction.common_validate(tenant_id, company_id, validate_data)
         return validate_data
 
@@ -148,8 +148,8 @@ class ReconUpdateSerializer(AbstractCreateSerializerModel):
         return ReconCreateSerializer.validate_business_partner(value)
 
     def validate(self, validate_data):
-        tenant_id = self.context.get('tenant_id', None)
-        company_id = self.context.get('company_id', None)
+        # tenant_id = self.context.get('tenant_id', None)
+        # company_id = self.context.get('company_id', None)
         # ReconCommonFunction.common_validate(tenant_id, company_id, validate_data)
         return validate_data
 

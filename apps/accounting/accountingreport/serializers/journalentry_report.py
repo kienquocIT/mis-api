@@ -39,26 +39,26 @@ class JournalEntryLineListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_journal_entry_info(cls, obj):
-        je = obj.journal_entry
+        je_obj = obj.journal_entry
         return {
-            'id': je.id,
-            'code': je.code,
-            'je_transaction_app_code': je.je_transaction_app_code,
-            'je_transaction_data': je.je_transaction_data,
-            'je_posting_date': je.je_posting_date,
-            'je_document_date': je.je_document_date,
-            'je_state': je.je_state,
-            'je_state_parsed': [_('Draft'), _('Posted'), _('Reversed')][je.je_state],
-            'total_debit': je.total_debit,
-            'total_credit': je.total_credit,
-            'system_status': je.system_status,
-            'system_auto_create': je.system_auto_create,
-            'date_created': je.date_created,
+            'id': je_obj.id,
+            'code': je_obj.code,
+            'je_transaction_app_code': je_obj.je_transaction_app_code,
+            'je_transaction_data': je_obj.je_transaction_data,
+            'je_posting_date': je_obj.je_posting_date,
+            'je_document_date': je_obj.je_document_date,
+            'je_state': je_obj.je_state,
+            'je_state_parsed': [_('Draft'), _('Posted'), _('Reversed')][je_obj.je_state],
+            'total_debit': je_obj.total_debit,
+            'total_credit': je_obj.total_credit,
+            'system_status': je_obj.system_status,
+            'system_auto_create': je_obj.system_auto_create,
+            'date_created': je_obj.date_created,
         }
 
     @classmethod
     def get_je_line_type_parsed(cls, obj):
-        return 'Debit' if obj.je_line_type == 'Debit' else 'Credit'
+        return obj.je_line_type
 
     @classmethod
     def get_dimensions(cls, obj):
