@@ -4,10 +4,11 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.base.models import Application
 from apps.core.company.utils import CompanyHandler
+from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerModel, AbstractListSerializerModel, \
     HRMsg, FORMATTING
-from apps.shared.translations.base import AttachmentMsg
+from apps.shared.translations.base import AttachmentMsg, BaseMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 from ..utils import DeliHandler
 
@@ -486,6 +487,13 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
         )
 
     @classmethod
+    def validate_employee_inherit_id(cls, value):
+        try:
+            return Employee.objects.get_on_company(id=value).id
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'employee_inherit': BaseMsg.NOT_EXIST})
+
+    @classmethod
     def validate_state(cls, value):
         if value < 2:
             return value
@@ -528,6 +536,8 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
             instance.delivery_logistic = validated_data['delivery_logistic']
         if 'system_status' in validated_data:
             instance.system_status = validated_data['system_status']
+        if 'employee_inherit_id' in validated_data:
+            instance.employee_inherit_id = validated_data['employee_inherit_id']
 
     @classmethod
     def update_prod(cls, sub, product_done, config):
@@ -582,6 +592,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
                 'date_done', 'state', 'is_updated', 'estimated_delivery_date',
                 'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic',
                 'system_status', 'next_association_id', 'next_node_collab_id',
+                'employee_inherit_id',
             ]
         )
         return True
@@ -619,7 +630,7 @@ class OrderDeliverySubUpdateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
-        DeliHandler.check_update_prod_and_emp(instance, validated_data)
+        # DeliHandler.check_update_prod_and_emp(instance, validated_data)
         validated_product = validated_data.get('products', [])
         attachments = validated_data.pop('attachments', None)
         config = instance.config_at_that_point
