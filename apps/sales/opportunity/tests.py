@@ -330,7 +330,7 @@ class TestCaseOpportunity(AdvanceTestCase):
                 'sale_order',
                 'quotation',
                 'is_close_lost',
-                'is_deal_close',
+                'is_deal_closed',
                 'members',
                 'estimated_gross_profit_percent',
                 'estimated_gross_profit_value',
