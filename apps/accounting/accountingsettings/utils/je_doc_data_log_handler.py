@@ -5,7 +5,7 @@ from apps.accounting.accountingsettings.models.account_determination import JEDo
 from apps.masterdata.saledata.models import Currency
 from apps.sales.apinvoice.models import APInvoice
 from apps.sales.arinvoice.models import ARInvoice
-from apps.sales.delivery.models import OrderDelivery, OrderDeliverySub
+from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.financialcashflow.models import CashOutflow, CashInflow
 from apps.sales.inventory.models import GoodsReceipt
 from apps.sales.report.models import ReportStockLog
@@ -68,7 +68,9 @@ class JEDocDataLogHandler:
                     'goods_receipt_mapped_id', flat=True
                 )
                 cost_map = cls.get_cost_from_stock_for_all(last_transaction_id_list)
-                JEDocData.objects.filter(doc_id=str(ap_invoice_obj.id), app_code=ap_invoice_obj.get_model_code()).delete()
+                JEDocData.objects.filter(
+                    doc_id=str(ap_invoice_obj.id), app_code=ap_invoice_obj.get_model_code()
+                ).delete()
                 data_1 = JEDocData.make_doc_data_obj(
                     company_id=ap_invoice_obj.company_id,
                     app_code=ap_invoice_obj.get_model_code(),
@@ -223,7 +225,9 @@ class JEDocDataLogHandler:
         try:
             with transaction.atomic():
                 currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
-                JEDocData.objects.filter(doc_id=str(ar_invoice_obj.id), app_code=ar_invoice_obj.get_model_code()).delete()
+                JEDocData.objects.filter(
+                    doc_id=str(ar_invoice_obj.id), app_code=ar_invoice_obj.get_model_code()
+                ).delete()
                 data_1 = JEDocData.make_doc_data_obj(
                     company_id=ar_invoice_obj.company_id,
                     app_code=ar_invoice_obj.get_model_code(),

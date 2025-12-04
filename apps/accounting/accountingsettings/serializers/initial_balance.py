@@ -571,6 +571,7 @@ class InitialBalanceCommonFunction:
 
         for item in tab_data:
             detail_data = item.pop('detail_data', {})
+            print(detail_data)
             # logic here
         return tab_data
 
@@ -584,6 +585,7 @@ class InitialBalanceCommonFunction:
         for item in tab_data:
             # logic here
             detail_data = item.pop('detail_data', {})
+            print(detail_data)
         return tab_data
 
     @staticmethod
@@ -594,6 +596,7 @@ class InitialBalanceCommonFunction:
             raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
         for item in tab_data:
             detail_data = item.pop('detail_data', {})
+            print(detail_data)
             item['account_value'] = item.get('debit_value', 0) + item.get('credit_value', 0)
         return tab_data
 
@@ -656,32 +659,32 @@ class InitialBalanceCommonFunction:
     @staticmethod
     def handle_money_tab(created_instances, updated_items):
         """Xử lý tab money"""
-        pass
+        return True
 
     @staticmethod
     def handle_goods_tab(created_instances, updated_items):
         """Xử lý tab goods"""
-        pass
+        return True
 
     @staticmethod
     def handle_customer_receivable_tab(created_instances, updated_items):
         """Xử lý tab customer receivable"""
-        pass
+        return True
 
     @staticmethod
     def handle_supplier_payable_tab(created_instances, updated_items):
         """Xử lý tab supplier payable"""
-        pass
+        return True
 
     @staticmethod
     def handle_employee_payable_tab(created_instances, updated_items):
         """Xử lý tab employee payable"""
-        pass
+        return True
 
     @staticmethod
     def handle_fixed_assets_tab(created_instances, updated_items):
         """Xử lý tab fixed assets"""
-        pass
+        return True
 
     @staticmethod
     def handle_tools_tab(created_instances, updated_items):

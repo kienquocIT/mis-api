@@ -58,14 +58,14 @@ class JELogHandler:
         # 1. Lấy Rules
         rules = cls.get_rules(transaction_obj.company_id, transaction_key)
         if not rules:
-            logger.error(f"[JE] No Rules found for {transaction_key}")
+            logger.error("[JE] No Rules found for %s", transaction_key)
             return [], []
 
         # 2. Lấy Data (Dữ liệu thô từ bảng trung gian)
         doc_data_list = list(JEDocData.get_amount_source_doc_data(transaction_obj.id))
 
         if not doc_data_list:
-            logger.error(f"[JE] No JEDocData found for Doc ID {transaction_obj.id}. Please push data first.")
+            logger.error("[JE] No JEDocData found for Doc ID %s. Please push data first.", transaction_obj.id)
             return [], []
 
         debit_rows_data = []
@@ -82,10 +82,12 @@ class JELogHandler:
             for data_item in matched_data:
                 # A. Lấy giá trị tiền (Đã có sẵn trong JEDocData)
                 value = float(data_item.value)
-                if value <= 0: continue
+                if value <= 0:
+                    continue
                 # B. Tìm tài khoản
                 account = cls.get_account(rule)
-                if not account: continue
+                if not account:
+                    continue
                 # C. Tạo dòng
                 line_data = cls.create_single_je_line(rule, value, data_item.taxable_value, account, data_item,)
                 # D. Phân loại Nợ/Có
@@ -93,6 +95,7 @@ class JELogHandler:
                     debit_rows_data.append(line_data)
                 else:
                     credit_rows_data.append(line_data)
+
         return debit_rows_data, credit_rows_data
 
     @classmethod
