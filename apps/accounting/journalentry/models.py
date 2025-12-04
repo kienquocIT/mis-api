@@ -166,10 +166,10 @@ class JournalEntryLine(MasterDataAbstractModel):
     credit = models.FloatField(default=0)
     is_fc = models.BooleanField(default=False)
     currency_mapped = models.ForeignKey('saledata.Currency', on_delete=models.SET_NULL, null=True)
-    currency_mapped_data = models.JSONField(default=dict) # {id, title, abbreviation, rate}
+    currency_mapped_data = models.JSONField(default=dict)  # {id, title, abbreviation, rate}
     taxable_value = models.FloatField(default=0)
-    use_for_recon = models.BooleanField(default=False) # để biết đc là dòng bút toán này dùng để cấn trừ
-    use_for_recon_type = models.CharField(max_length=100, blank=True) # để biết đc cặp bút toán làm cấn trừ.
+    use_for_recon = models.BooleanField(default=False)  # để biết đc là dòng bút toán này dùng để cấn trừ
+    use_for_recon_type = models.CharField(max_length=100, blank=True)  # để biết đc cặp bút toán làm cấn trừ.
 
     class Meta:
         verbose_name = 'Journal Entry Line'
