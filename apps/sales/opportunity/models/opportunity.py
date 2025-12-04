@@ -161,7 +161,7 @@ class Opportunity(DataAbstractModel):
 
     is_close_lost = models.BooleanField(default=False)
 
-    is_deal_close = models.BooleanField(default=False)
+    is_deal_closed = models.BooleanField(default=False)
 
     delivery = models.OneToOneField(
         'delivery.OrderDelivery',
@@ -322,7 +322,7 @@ class Opportunity(DataAbstractModel):
                         'id': condition_id,
                         'title': condition_title,
                     },
-                    'comparison_operator': '=' if obj.is_deal_close else '≠',
+                    'comparison_operator': '=' if obj.is_deal_closed else '≠',
                     'compare_data': compare_data,
                 }
             ]
@@ -345,7 +345,7 @@ class Opportunity(DataAbstractModel):
                     'compare_data': compare_data,
                 }
             ]
-        if condition_title == 'SaleOrder Status':
+        if condition_title == 'Order Status':
             stages = [
                 {
                     'condition_property': {
@@ -356,7 +356,7 @@ class Opportunity(DataAbstractModel):
                     'compare_data': compare_data,
                 }
             ]
-        if condition_title == 'SaleOrder Delivery Status':
+        if condition_title == 'Order Delivery Status':
             stages = [
                 {
                     'condition_property': {

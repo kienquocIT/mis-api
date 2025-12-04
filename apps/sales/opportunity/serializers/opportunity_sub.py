@@ -7,6 +7,7 @@ from apps.core.hr.serializers.common import validate_license_used
 from apps.core.tenant.models import TenantPlan
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
+from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.lead.models import LeadParser, LeadOpportunity, LeadStage, LeadChartInformation
 from apps.sales.opportunity.models import (
     OpportunityProductCategory, OpportunityProduct,
@@ -603,9 +604,9 @@ class OpportunityCommonFunction:
                     )
                 )
             if len(data_bulk) > 0:
-                if data_bulk[-1].stage.indicator == 'Closed Lost' and 'SaleOrder Status=0' in opp_condition_data_list:
+                if data_bulk[-1].stage.indicator == 'Closed Lost' and 'Order Status=0' in opp_condition_data_list:
                     raise serializers.ValidationError(
-                        {'Closed Lost': 'Can not update to stage "Closed Lost". You are having an Approved Sale Order.'}
+                        {'Closed Lost': 'Can not update to stage "Closed Lost". You are having an Approved Order.'}
                     )
             OpportunityStage.objects.filter(opportunity=opp_obj).delete()
             OpportunityStage.objects.bulk_create(data_bulk)
@@ -772,13 +773,33 @@ class CheckOppStageFunction:
         quotation_status = opp_obj.quotation.system_status if opp_obj.quotation else None
         # Quotation Status
         opp_condition_data_list.append('Quotation Status=0' if quotation_status == 3 else 'Quotation Status!=0')
-        # Sale Order Status
-        sale_order_status = opp_obj.sale_order.system_status if opp_obj.sale_order else None
-        opp_condition_data_list.append('SaleOrder Status=0' if sale_order_status == 3 else 'SaleOrder Status!=0')
-        # Sale Order Delivery Status
-        delivery_status = opp_obj.sale_order.delivery_status if opp_obj.sale_order else None
+        # Order Status
+        so_mapped = opp_obj.sale_order_opportunity.filter(system_status=3)
+        lo_mapped = opp_obj.lease_opportunity.filter(system_status=3)
+        svr_mapped = opp_obj.serviceorder_serviceorder_opp.filter(system_status=3)
         opp_condition_data_list.append(
-            'SaleOrder Delivery Status=0' if delivery_status == 3 else 'SaleOrder Delivery Status!=0'
+            'Order Status=0' if (
+                    so_mapped.count() > 0 or
+                    lo_mapped.count() > 0 or
+                    svr_mapped.count() > 0
+            ) else 'Order Status!=0'
+        )
+        # Order Delivery Status
+        so_delivery_mapped = OrderDeliverySub.objects.filter(
+            sale_order_id__in=so_mapped.values_list('id', flat=True), system_status=3
+        )
+        lo_delivery_mapped = OrderDeliverySub.objects.filter(
+            lease_order_id__in=lo_mapped.values_list('id', flat=True), system_status=3
+        )
+        svr_delivery_mapped = OrderDeliverySub.objects.filter(
+            service_order_id__in=svr_mapped.values_list('id', flat=True), system_status=3
+        )
+        opp_condition_data_list.append(
+            'Order Delivery Status=0' if (
+                    so_delivery_mapped.count() > 0 or
+                    lo_delivery_mapped.count() > 0 or
+                    svr_delivery_mapped.count() > 0
+            ) else 'Order Delivery Status!=0'
         )
         # Customer Annual Revenue
         customer = opp_obj.customer if opp_obj.customer else None
@@ -874,7 +895,7 @@ class CheckOppStageFunction:
                         'current': 0
                     })
 
-            if stage.get('indicator') == 'Deal Close' and opp_obj.is_deal_close:
+            if stage.get('indicator') == 'Deal Close' and opp_obj.is_deal_closed:
                 current_stage_indicator.append(stage.get('indicator'))
                 opp_range_stage_list.append({
                     'id': str(stage.get('id')),

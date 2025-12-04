@@ -273,7 +273,7 @@ class ReturnAdvanceCommonFunction:
             try:
                 ap_obj = AdvancePayment.objects.get(id=advance_payment_id)
                 if ap_obj.opportunity:
-                    if ap_obj.opportunity.is_deal_close:
+                    if ap_obj.opportunity.is_deal_closed:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
                 return ap_obj
             except AdvancePayment.DoesNotExist:
@@ -287,7 +287,7 @@ class ReturnAdvanceCommonFunction:
                 try:
                     ap_obj = AdvancePayment.objects.get(id=validate_data.get('advance_payment_id'))
                     if ap_obj.opportunity:
-                        if ap_obj.opportunity.is_deal_close:
+                        if ap_obj.opportunity.is_deal_closed:
                             raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
                     validate_data['advance_payment_id'] = str(ap_obj.id)
                 except AdvancePayment.DoesNotExist:

@@ -93,7 +93,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_is_close(cls, obj):
-        if obj.is_deal_close or obj.is_close_lost:
+        if obj.is_deal_closed or obj.is_close_lost:
             return True
         return False
 
@@ -350,7 +350,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'sale_order',
             'quotation',
             'is_close_lost',
-            'is_deal_close',
+            'is_deal_closed',
             'members',
             'estimated_gross_profit_percent',
             'estimated_gross_profit_value',
@@ -556,7 +556,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'lost_by_other_reason',
             'list_stage',
             'is_close_lost',
-            'is_deal_close',
+            'is_deal_closed',
             'estimated_gross_profit_percent',
             'estimated_gross_profit_value'
         )

@@ -136,7 +136,7 @@ class QuotationDetailSerializer(AbstractDetailSerializerModel, AbstractCurrencyD
             'title': obj.opportunity.title,
             'code': obj.opportunity.code,
             'is_close_lost': obj.opportunity.is_close_lost,
-            'is_deal_close': obj.opportunity.is_deal_close,
+            'is_deal_closed': obj.opportunity.is_deal_closed,
             'sale_order_id': str(obj.opportunity.sale_order_id),
             'customer': {
                 'id': str(obj.opportunity.customer_id),
@@ -249,7 +249,7 @@ class QuotationDetailPrintSerializer(AbstractDetailSerializerModel, AbstractCurr
             'title': obj.opportunity.title,
             'code': obj.opportunity.code,
             'is_close_lost': obj.opportunity.is_close_lost,
-            'is_deal_close': obj.opportunity.is_deal_close,
+            'is_deal_closed': obj.opportunity.is_deal_closed,
             'sale_order_id': str(obj.opportunity.sale_order_id),
             'customer': {
                 'id': str(obj.opportunity.customer_id),
@@ -468,7 +468,7 @@ class QuotationCreateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
     #         if validate_data['opportunity_id'] is not None:
     #             opportunity = Opportunity.objects.filter_on_company(id=validate_data['opportunity_id']).first()
     #             if opportunity:
-    #                 if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
+    #                 if opportunity.is_close_lost is True or opportunity.is_deal_closed is True:
     #                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
     #                 if opportunity.sale_order_opportunity.filter(system_status__in=[0, 1, 2, 3]).exists():
     #                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
@@ -649,7 +649,7 @@ class QuotationUpdateSerializer(AbstractCreateSerializerModel, AbstractCurrencyC
     #         if validate_data['opportunity_id'] is not None:
     #             opportunity = Opportunity.objects.filter_on_company(id=validate_data['opportunity_id']).first()
     #             if opportunity:
-    #                 if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
+    #                 if opportunity.is_close_lost is True or opportunity.is_deal_closed is True:
     #                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
     #                 if opportunity.quotation_opportunity.filter(
     #                         system_status__in=[0, 1, 2, 3]

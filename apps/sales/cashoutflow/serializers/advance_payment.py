@@ -85,7 +85,7 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
     def get_opportunity(cls, obj):
         if obj.opportunity:
             is_close = False
-            if obj.opportunity.is_close_lost or obj.opportunity.is_deal_close:
+            if obj.opportunity.is_close_lost or obj.opportunity.is_deal_closed:
                 is_close = True
             return {
                 'id': obj.opportunity_id,
@@ -100,7 +100,7 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
         if obj.quotation_mapped:
             is_close = False
             if obj.quotation_mapped.opportunity:
-                if obj.quotation_mapped.opportunity.is_close_lost or obj.quotation_mapped.opportunity.is_deal_close:
+                if obj.quotation_mapped.opportunity.is_close_lost or obj.quotation_mapped.opportunity.is_deal_closed:
                     is_close = True
                 return {
                     'id': obj.quotation_mapped_id,
@@ -125,14 +125,14 @@ class AdvancePaymentListSerializer(AbstractListSerializerModel):
         if obj.sale_order_mapped:
             is_close = False
             if obj.sale_order_mapped.opportunity:
-                if obj.sale_order_mapped.opportunity.is_close_lost or obj.sale_order_mapped.opportunity.is_deal_close:
+                if obj.sale_order_mapped.opportunity.is_close_lost or obj.sale_order_mapped.opportunity.is_deal_closed:
                     is_close = True
                 return {
                     'id': obj.sale_order_mapped_id,
                     'code': obj.sale_order_mapped.code,
                     'title': obj.sale_order_mapped.title,
                     'opportunity_id': obj.sale_order_mapped.opportunity_id,
-                    'opportunity_code': obj.sale_order_mapped.opportunity.is_deal_close,
+                    'opportunity_code': obj.sale_order_mapped.opportunity.is_deal_closed,
                     'is_close': is_close
                 }
             return {
@@ -687,7 +687,7 @@ class APCommonFunction:
             if validate_data.get('opportunity_id'):
                 try:
                     opportunity = Opportunity.objects.get(id=validate_data.get('opportunity_id'))
-                    if opportunity.is_close_lost or opportunity.is_deal_close:
+                    if opportunity.is_close_lost or opportunity.is_deal_closed:
                         raise serializers.ValidationError({'opportunity_id': SaleMsg.OPPORTUNITY_CLOSED})
                     validate_data['opportunity_id'] = str(opportunity.id)
                 except Opportunity.DoesNotExist:

@@ -158,7 +158,7 @@ class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
                 is_input_win_rate = opp_cfg_obj.is_input_win_rate
 
             if is_select_stage:
-                if opp_obj.is_deal_close:
+                if opp_obj.is_deal_closed:
                     raise ValidationError({'detail': _("This opportunity is in 'Deal Close' stage.")})
 
                 stage_id = self.request.query_params.get('current_stage_id_manual_update')

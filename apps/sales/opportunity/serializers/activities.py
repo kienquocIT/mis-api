@@ -132,7 +132,7 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
     def validate_opportunity_id(cls, value):
         try:
             opportunity_obj = Opportunity.objects.get(id=value)
-            if opportunity_obj.is_close_lost or opportunity_obj.is_deal_close:
+            if opportunity_obj.is_close_lost or opportunity_obj.is_deal_closed:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
             return opportunity_obj.id
         except Opportunity.DoesNotExist:
@@ -368,7 +368,7 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
     def validate_opportunity_id(cls, value):
         try:
             opportunity_obj = Opportunity.objects.get(id=value)
-            if opportunity_obj.is_close_lost or opportunity_obj.is_deal_close:
+            if opportunity_obj.is_close_lost or opportunity_obj.is_deal_closed:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
             return opportunity_obj.id
         except Opportunity.DoesNotExist:
@@ -653,7 +653,7 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
     def validate_opportunity_id(cls, value):
         try:
             opportunity_obj = Opportunity.objects.get(id=value)
-            if opportunity_obj.is_close_lost or opportunity_obj.is_deal_close:
+            if opportunity_obj.is_close_lost or opportunity_obj.is_deal_closed:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
             return opportunity_obj.id
         except Opportunity.DoesNotExist:
@@ -952,7 +952,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         if validate_data.get('opportunity', None):
-            if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
+            if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_closed:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
             if not ActivitiesCommonFunc.check_permission_in_opp(
                     self.context.get('employee_id'), validate_data['opportunity']

@@ -235,7 +235,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_opportunity(cls, value):
         if value:
-            if value.is_close_lost or value.is_deal_close:
+            if value.is_close_lost or value.is_deal_closed:
                 raise serializers.ValidationError(
                     {'opportunity': SaleMsg.OPPORTUNITY_CLOSED}
                 )
@@ -585,7 +585,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
                 {'title': SaleTask.ERROR_NOT_CHANGE}
             )
 
-        if attrs.is_close_lost or attrs.is_deal_close:
+        if attrs.is_close_lost or attrs.is_deal_closed:
             raise serializers.ValidationError(
                 {'opportunity': SaleMsg.OPPORTUNITY_CLOSED}
             )
