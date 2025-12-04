@@ -87,8 +87,7 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
                 'credit': item.credit,
                 'is_fc': item.is_fc,
                 'je_line_type': item.je_line_type,
-                'taxable_value': item.taxable_value,
-                'dimensions': [item.business_partner_data, item.business_employee_data, item.product_mapped_data]
+                'taxable_value': item.taxable_value
             })
         return je_lines
 

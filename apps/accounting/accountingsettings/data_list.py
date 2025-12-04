@@ -219,4 +219,44 @@ POSTING_RULE_APP_LIST = [
             },
         ]
     },
+
+    # -------------------------------------------------------------------------
+    # 3.2. PHIẾU THU (CASH_IN)
+    # Nghiệp vụ: Thu tiền khách hàng (Nợ 111, 112 / Có 131)
+    # -------------------------------------------------------------------------
+    {
+        'je_doc_type': 'CASH_IN',
+        'posting_rule_list': [
+            # 1. Nợ: Tăng Tiền mặt (HEADER)
+            {
+                'rule_level': 'HEADER',
+                'priority': 10,
+                'role_key': 'CASH',
+                'side': 'DEBIT', # <--- Nợ (Tiền tăng)
+                'amount_source': 'CASH', # Lấy số tiền mặt thực thu
+                'account_source_type': 'FIXED', 'fixed_account_code': '1111',
+                'description': 'Thu tiền mặt',
+            },
+            # 2. Nợ: Tăng Tiền gửi (HEADER)
+            {
+                'rule_level': 'HEADER',
+                'priority': 20,
+                'role_key': 'BANK',
+                'side': 'DEBIT', # <--- Nợ (Tiền tăng)
+                'amount_source': 'BANK', # Lấy số tiền chuyển khoản thực thu
+                'account_source_type': 'FIXED', 'fixed_account_code': '1121',
+                'description': 'Thu tiền gửi ngân hàng',
+            },
+            # 3. Có: Giảm Phải thu (HEADER)
+            {
+                'rule_level': 'HEADER',
+                'priority': 30,
+                'role_key': 'RECEIVABLE',
+                'side': 'CREDIT', # <--- Có (Giảm nợ phải thu)
+                'amount_source': 'TOTAL', # Tổng tiền thu được (Cash + Bank)
+                'account_source_type': 'FIXED', 'fixed_account_code': '131',
+                'description': 'Thu tiền khách hàng (Giảm nợ)',
+            },
+        ]
+    },
 ]

@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models import Currency
 from apps.sales.apinvoice.models import APInvoice
 from apps.sales.arinvoice.models import ARInvoice
 from apps.sales.delivery.models import OrderDelivery, OrderDeliverySub
-from apps.sales.financialcashflow.models import CashOutflow
+from apps.sales.financialcashflow.models import CashOutflow, CashInflow
 from apps.sales.inventory.models import GoodsReceipt
 from apps.sales.report.models import ReportStockLog
 
@@ -68,7 +68,6 @@ class JEDocDataLogHandler:
                     'goods_receipt_mapped_id', flat=True
                 )
                 cost_map = cls.get_cost_from_stock_for_all(last_transaction_id_list)
-                print(cost_map)
                 JEDocData.objects.filter(doc_id=str(ap_invoice_obj.id), app_code=ap_invoice_obj.get_model_code()).delete()
                 data_1 = JEDocData.make_doc_data_obj(
                     company_id=ap_invoice_obj.company_id,
@@ -97,7 +96,6 @@ class JEDocDataLogHandler:
                 bulk_info = [data_1, data_2]
                 for item in ap_invoice_obj.ap_invoice_items.all():
                     line_value = cost_map.get(str(item.product_id), 0)
-                    print(ap_invoice_obj.code, line_value)
                     data_row = JEDocData.make_doc_data_obj(
                         company_id=ap_invoice_obj.company_id,
                         app_code=ap_invoice_obj.get_model_code(),
@@ -257,7 +255,6 @@ class JEDocDataLogHandler:
                     if delivery_mapped_obj.delivery_mapped.sale_order:
                         currency_exchange_rate = delivery_mapped_obj.delivery_mapped.sale_order.currency_exchange_rate
                     line_value = item.product_subtotal * currency_exchange_rate
-                    print(line_value)
                     data_row = JEDocData.make_doc_data_obj(
                         company_id=ar_invoice_obj.company_id,
                         app_code=ar_invoice_obj.get_model_code(),
@@ -271,6 +268,56 @@ class JEDocDataLogHandler:
                         tracking_id=item.product_id
                     )
                     bulk_info.append(data_row)
+                JEDocData.objects.bulk_create(bulk_info)
+                return True
+        except Exception as err:
+            logger.error(msg=f'[JE] Error while push to JEDocData: {err}')
+            return None
+
+    # CIF
+    @classmethod
+    def push_for_cif(cls, cif_obj):
+        try:
+            with transaction.atomic():
+                currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
+                JEDocData.objects.filter(doc_id=str(cif_obj.id), app_code=cif_obj.get_model_code()).delete()
+                data_1 = JEDocData.make_doc_data_obj(
+                    company_id=cif_obj.company_id,
+                    app_code=cif_obj.get_model_code(),
+                    doc_id=cif_obj.id,
+                    rule_level='HEADER',
+                    amount_source='TOTAL',
+                    value=cif_obj.total_value,
+                    taxable_value=0,
+                    currency_mapped=currency_mapped,
+                    tracking_by='account',
+                    tracking_id=cif_obj.customer_id
+                )
+                data_2 = JEDocData.make_doc_data_obj(
+                    company_id=cif_obj.company_id,
+                    app_code=cif_obj.get_model_code(),
+                    doc_id=cif_obj.id,
+                    rule_level='HEADER',
+                    amount_source='CASH',
+                    value=cif_obj.cash_value,
+                    taxable_value=0,
+                    currency_mapped=currency_mapped,
+                    tracking_by=None,
+                    tracking_id=None
+                )
+                data_3 = JEDocData.make_doc_data_obj(
+                    company_id=cif_obj.company_id,
+                    app_code=cif_obj.get_model_code(),
+                    doc_id=cif_obj.id,
+                    rule_level='HEADER',
+                    amount_source='BANK',
+                    value=cif_obj.bank_value,
+                    taxable_value=0,
+                    currency_mapped=currency_mapped,
+                    tracking_by=None,
+                    tracking_id=None
+                )
+                bulk_info = [data_1, data_2, data_3]
                 JEDocData.objects.bulk_create(bulk_info)
                 return True
         except Exception as err:
@@ -293,5 +340,8 @@ class JEDocDataLogHandler:
             print(f"#run successfully {transaction_obj.code}!")
         for transaction_obj in ARInvoice.objects.filter(company_id=company_id, system_status=3):
             cls.push_for_ar_invoice(transaction_obj)
+            print(f"#run successfully {transaction_obj.code}!")
+        for transaction_obj in CashInflow.objects.filter(company_id=company_id, system_status=3):
+            cls.push_for_cif(transaction_obj)
             print(f"#run successfully {transaction_obj.code}!")
         return True

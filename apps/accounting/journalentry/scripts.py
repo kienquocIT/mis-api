@@ -147,8 +147,8 @@ class JournalEntryRun:
                 instance = APInvoice.objects.get(id=doc['id'])
             if doc['type'] == 'ar_invoice':
                 instance = ARInvoice.objects.get(id=doc['id'])
-            # if doc['type'] == 'cif':
-            #     instance = CashInflow.objects.get(id=doc['id'])
+            if doc['type'] == 'cif':
+                instance = CashInflow.objects.get(id=doc['id'])
             if doc['type'] == 'cof':
                 instance = CashOutflow.objects.get(id=doc['id'])
             if doc['type'] == 'delivery':
