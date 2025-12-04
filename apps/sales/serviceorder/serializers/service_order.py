@@ -434,7 +434,7 @@ class ServiceOrderDetailSerializer(AbstractDetailSerializerModel):
             'title': obj.opportunity.title,
             'code': obj.opportunity.code,
             'customer': obj.customer_data,
-            'is_deal_close': obj.opportunity.is_deal_close,
+            'is_deal_closed': obj.opportunity.is_deal_closed,
         } if obj.opportunity else {}
 
     class Meta:

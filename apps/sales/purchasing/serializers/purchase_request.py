@@ -839,5 +839,5 @@ class PurchaseRequestSaleListSerializer(AbstractListSerializerModel):
             'id': obj.sale_order_id,
             'title': obj.sale_order.title,
             'code': obj.sale_order.code,
-            'is_deal_close': obj.sale_order.opportunity.is_deal_close if obj.sale_order.opportunity else False,
+            'is_deal_closed': obj.sale_order.opportunity.is_deal_closed if obj.sale_order.opportunity else False,
         } if obj.sale_order else {}

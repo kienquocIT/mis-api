@@ -646,8 +646,8 @@ class ConfigDefaultData:
                 {
                     'condition_property': {
                         'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
-                        'title': 'SaleOrder Status'
-                    },  # application property SaleOrder Status
+                        'title': 'Order Status'
+                    },  # application property Order Status
                     'comparison_operator': '=',
                     'compare_data': 0,
                 },
@@ -697,7 +697,7 @@ class ConfigDefaultData:
                 {
                     'condition_property': {
                         'id': 'b5aa8550-7fc5-4cb8-a952-b6904b2599e5',
-                        'title': 'SaleOrder Delivery Status'
+                        'title': 'Order Delivery Status'
                     },  # application property SaleOrder Delivery Status
                     'comparison_operator': '=',
                     'compare_data': 0,

@@ -21,7 +21,7 @@ class LeaseOrderList(BaseListMixin, BaseCreateMixin):
         'employee_inherit_id': ['exact', 'in'],
         'employee_inherit__group_id': ['exact', 'in'],
         'opportunity_id': ['exact', 'in'],
-        'opportunity__is_deal_close': ['exact'],
+        'opportunity__is_deal_closed': ['exact'],
         'customer_id': ['exact', 'in'],
         'indicator_revenue': ['exact', 'gt', 'lt', 'gte', 'lte'],
         'date_approved': ['lte', 'gte'],
@@ -90,7 +90,7 @@ class LeaseOrderDDList(BaseListMixin):
         'employee_inherit_id': ['exact', 'in'],
         'employee_inherit__group_id': ['exact', 'in'],
         'opportunity_id': ['exact', 'in'],
-        'opportunity__is_deal_close': ['exact'],
+        'opportunity__is_deal_closed': ['exact'],
         'has_regis': ['exact'],
         'is_recurring': ['exact'],
     }

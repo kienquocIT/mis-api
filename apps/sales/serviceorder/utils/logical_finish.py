@@ -322,7 +322,7 @@ class ServiceOrderFinishHandler:
                 'title': instance.opportunity.title,
                 'code': instance.opportunity.code,
                 'customer': instance.customer_data,
-                'is_deal_close': instance.opportunity.is_deal_close,
+                'is_deal_closed': instance.opportunity.is_deal_closed,
             }
 
         # Get employee inherit data

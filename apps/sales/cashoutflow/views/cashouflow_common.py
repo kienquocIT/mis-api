@@ -17,7 +17,7 @@ class CashOutflowQuotationList(BaseListMixin):
         'employee_inherit': ['exact'],
         'opportunity__sale_order': ['exact', 'isnull'],
         'opportunity__is_close_lost': ['exact'],
-        'opportunity__is_deal_close': ['exact'],
+        'opportunity__is_deal_closed': ['exact'],
         'system_status': ['exact', 'in'],
         'id': ['exact'],
     }

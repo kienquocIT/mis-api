@@ -165,7 +165,7 @@ class LeaveRequest(DataAbstractModel):
                 app_model='opportunity.OpportunitySaleTeamMember'
         ).get_model().objects.filter_on_company(
                 member_id=str(self.employee_inherit.id), opportunity__is_close_lost=False,
-                opportunity__is_deal_close=False
+                opportunity__is_deal_closed=False
         ):
             if hasattr(emp.opportunity.employee_inherit, 'email'):
                 email_lst.append(emp.opportunity.employee_inherit.email)

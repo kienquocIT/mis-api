@@ -15,8 +15,8 @@ STAGE_CONDITION_ATTRIBUTE = [
     (7, _('Product Line Detail')),
     (8, _('Competitor Win')),
     (9, _('Quotation Status')),
-    (10, _('SaleOrder Status')),
-    (11, _('SaleOrder Delivery Status')),
+    (10, _('Order Status')),
+    (11, _('Order Delivery Status')),
     (12, _('Close Deal')),
 ]
 

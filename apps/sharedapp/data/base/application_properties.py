@@ -1071,8 +1071,8 @@ AppProp_SaleData_Opportunity_data = {
     },
     '9db4e835-c647-4de5-aa1c-43304ddeccd1': {
         'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
-        'title': 'SaleOrder Status',
-        'code': 'sale_order_status',
+        'title': 'Order Status',
+        'code': 'order_status',
         'type': 1,
         "content_type": "sales_opportunity",
         'opp_stage_operator': ['=', '≠'],
@@ -1093,8 +1093,8 @@ AppProp_SaleData_Opportunity_data = {
     },
     'b5aa8550-7fc5-4cb8-a952-b6904b2599e5': {
         'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
-        'title': 'SaleOrder Delivery Status',
-        'code': 'sale_order_delivery_status',
+        'title': 'Order Delivery Status',
+        'code': 'order_delivery_status',
         'type': 1,
         "content_type": "sales_opportunity",
         'opp_stage_operator': ['=', '≠'],

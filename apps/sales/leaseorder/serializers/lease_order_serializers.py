@@ -63,7 +63,7 @@ class LeaseOrderListSerializer(AbstractListSerializerModel):
             'id': obj.opportunity_id,
             'title': obj.opportunity.title,
             'code': obj.opportunity.code,
-            'is_deal_close': obj.opportunity.is_deal_close,
+            'is_deal_closed': obj.opportunity.is_deal_closed,
         } if obj.opportunity else {}
 
     @classmethod
@@ -184,7 +184,7 @@ class LeaseOrderDetailSerializer(AbstractDetailSerializerModel):
                 'id': obj.opportunity.customer_id,
                 'title': obj.opportunity.customer.title
             } if obj.opportunity.customer else {},
-            'is_deal_close': obj.opportunity.is_deal_close,
+            'is_deal_closed': obj.opportunity.is_deal_closed,
         } if obj.opportunity else {}
 
     @classmethod
@@ -358,7 +358,7 @@ class LeaseOrderCreateSerializer(AbstractCreateSerializerModel):
             if validate_data['opportunity_id'] is not None:
                 opportunity = Opportunity.objects.filter(id=validate_data['opportunity_id']).first()
                 if opportunity:
-                    if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
+                    if opportunity.is_close_lost is True or opportunity.is_deal_closed is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
                     is_change = validate_data.get('is_change', False)
                     if is_change is False:
@@ -553,7 +553,7 @@ class LeaseOrderUpdateSerializer(AbstractCreateSerializerModel):
             if validate_data['opportunity_id'] is not None:
                 opportunity = Opportunity.objects.filter_on_company(id=validate_data['opportunity_id']).first()
                 if opportunity:
-                    if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
+                    if opportunity.is_close_lost is True or opportunity.is_deal_closed is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
                     if opportunity.lease_opportunity.filter(
                             system_status__in=[0, 1, 2, 3]
