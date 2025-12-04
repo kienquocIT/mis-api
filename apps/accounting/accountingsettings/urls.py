@@ -7,7 +7,8 @@ from apps.accounting.accountingsettings.views.chart_of_account import (
     ChartOfAccountsList
 )
 from apps.accounting.accountingsettings.views.account_determination import (
-    JEDocumentTypeList, JEDocumentTypeDetail, JEPostingRuleList,
+    JEDocumentTypeList, JEDocumentTypeDetail, JEPostingRuleList, JEPostingGroupList, JEGroupAssignmentList,
+    JEGLAccountMappingList,
 )
 from apps.accounting.accountingsettings.views.dimension import (
     DimensionDefinitionList, DimensionDefinitionDetail,
@@ -21,6 +22,9 @@ urlpatterns = [
     path('chart-of-accounts/list', ChartOfAccountsList.as_view(), name='ChartOfAccountsList'),
     path('je-document-type/list', JEDocumentTypeList.as_view(), name='JEDocumentTypeList'),
     path('je-document-type/detail/<str:pk>', JEDocumentTypeDetail.as_view(), name='JEDocumentTypeDetail'),
+    path('je-posting-group/list', JEPostingGroupList.as_view(), name='JEPostingGroupList'),
+    path('je-group-assignment/list', JEGroupAssignmentList.as_view(), name='JEGroupAssignmentList'),
+    path('je-gl-account-mapping/list', JEGLAccountMappingList.as_view(), name='JEGLAccountMappingList'),
     path('je-posting-rule/list', JEPostingRuleList.as_view(), name='JEPostingRuleList'),
 ] + [
     # Dimension

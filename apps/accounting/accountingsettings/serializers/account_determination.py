@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.accounting.accountingsettings.models.account_determination import (
-    DOCUMENT_TYPE_CHOICES, JEDocumentType, JE_DOCUMENT_TYPE_APP, JEPostingRule,
+    JEDocumentType, JEPostingRule, JEPostingGroup, JEGroupAssignment, JEGLAccountMapping,
+    JE_DOCUMENT_TYPE_APP, DOCUMENT_TYPE_CHOICES, TRACKING_APP_CHOICES, GROUP_TYPE_CHOICES,
 )
 
 
@@ -39,7 +40,7 @@ class JEDocumentTypeUpdateSerializer(serializers.ModelSerializer):
 class JEPostingRuleListSerializer(serializers.ModelSerializer):
     document_type_code = serializers.SerializerMethodField()
     document_type_app_code_parsed = serializers.SerializerMethodField()
-    fixed_account = serializers.SerializerMethodField()
+    fixed_account_data = serializers.SerializerMethodField()
 
     class Meta:
         model = JEPostingRule
@@ -61,7 +62,7 @@ class JEPostingRuleListSerializer(serializers.ModelSerializer):
             # Chọn tài khoản từ đâu (cứng hay động)
             'account_source_type',
             # CASE A: Cứng
-            'fixed_account',
+            'fixed_account_data',
             # Field bổ sung
             'description',
             'example',
@@ -77,10 +78,92 @@ class JEPostingRuleListSerializer(serializers.ModelSerializer):
         return dict(JE_DOCUMENT_TYPE_APP)[obj.je_document_type.app_code]
 
     @classmethod
-    def get_fixed_account(cls, obj):
+    def get_fixed_account_data(cls, obj):
         return {
             'id': str(obj.fixed_account.id),
             'acc_code': obj.fixed_account.acc_code,
             'acc_name': obj.fixed_account.acc_name,
             'foreign_acc_name': obj.fixed_account.foreign_acc_name,
         } if obj.fixed_account else {}
+
+
+class JEPostingGroupListSerializer(serializers.ModelSerializer):
+    posting_group_type_parsed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = JEPostingGroup
+        fields = (
+            'id',
+            'code',
+            'title',
+            'posting_group_type',
+            'posting_group_type_parsed',
+            'is_active'
+        )
+
+    @classmethod
+    def get_posting_group_type_parsed(cls, obj):
+        return dict(GROUP_TYPE_CHOICES)[obj.posting_group_type]
+
+
+class JEGroupAssignmentListSerializer(serializers.ModelSerializer):
+    tracking_app_parsed = serializers.SerializerMethodField()
+    posting_group = serializers.SerializerMethodField()
+
+    class Meta:
+        model = JEGroupAssignment
+        fields = (
+            'id',
+            'tracking_app',
+            'tracking_app_parsed',
+            'posting_group',
+            'is_active'
+        )
+
+    @classmethod
+    def get_tracking_app_parsed(cls, obj):
+        return dict(TRACKING_APP_CHOICES)[obj.tracking_app]
+
+    @classmethod
+    def get_posting_group(cls, obj):
+        return {
+            'id': obj.posting_group_id,
+            'code': obj.posting_group.code,
+            'title': obj.posting_group.title,
+            'posting_group_type': obj.posting_group.posting_group_type,
+            'is_active': obj.posting_group.is_active
+        } if obj.posting_group else {}
+
+
+class JEGLAccountMappingListSerializer(serializers.ModelSerializer):
+    posting_group = serializers.SerializerMethodField()
+    account_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = JEGLAccountMapping
+        fields = (
+            'id',
+            'role_key',
+            'posting_group',
+            'account_data',
+            'is_active'
+        )
+
+    @classmethod
+    def get_posting_group(cls, obj):
+        return {
+            'id': obj.posting_group_id,
+            'code': obj.posting_group.code,
+            'title': obj.posting_group.title,
+            'posting_group_type': obj.posting_group.posting_group_type,
+            'is_active': obj.posting_group.is_active
+        }
+
+    @classmethod
+    def get_account_data(cls, obj):
+        return {
+            'id': str(obj.account.id),
+            'acc_code': obj.account.acc_code,
+            'acc_name': obj.account.acc_name,
+            'foreign_acc_name': obj.account.foreign_acc_name,
+        } if obj.account else {}
