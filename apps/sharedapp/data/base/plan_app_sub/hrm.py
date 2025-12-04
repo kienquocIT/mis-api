@@ -212,7 +212,7 @@ SHIFT_APP_CONFIG = {
     "code": "shiftinfo",
     "permit_mapping": {},
     "model_code": "shiftinfo",
-    "app_label": "hrm",
+    "app_label": "attendance",
     "allow_import": True,
 }
 
