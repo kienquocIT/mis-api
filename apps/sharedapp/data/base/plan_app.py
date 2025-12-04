@@ -99,6 +99,10 @@ _PlanApplication_hrm_data = {
     "fc16cfb2-da09-4735-aba5-c476489b4d0e": {
         "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",  # HRM
         "application_id": "fc16cfb2-da09-4735-aba5-c476489b4d0e",  # Payroll template
+    },
+    "2b015840-7032-4e82-986d-3b0d48c85e8f": {
+        "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",  # HRM
+        "application_id": "2b015840-7032-4e82-986d-3b0d48c85e8f",  # Shift
     }
 }
 

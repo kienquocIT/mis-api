@@ -206,6 +206,16 @@ HRM_PAYROLL_TEMPLATE = {
     "allow_mail": True,
 }
 
+SHIFT_APP_CONFIG = {
+    "id": "2b015840-7032-4e82-986d-3b0d48c85e8f",
+    "title": "Shift",
+    "code": "shiftinfo",
+    "permit_mapping": {},
+    "model_code": "shiftinfo",
+    "app_label": "hrm",
+    "allow_import": True,
+}
+
 Application_hrm_data = {
     "7436c857-ad09-4213-a190-c1c7472e99be": ApplicationConfigFrame(**EMPLOYEE_INFO).data(
         depend_follow_main=False,
@@ -224,6 +234,10 @@ Application_hrm_data = {
         filtering_inheritor=False,
     ),
     "fc16cfb2-da09-4735-aba5-c476489b4d0e": ApplicationConfigFrame(**HRM_PAYROLL_TEMPLATE).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "2b015840-7032-4e82-986d-3b0d48c85e8f": ApplicationConfigFrame(**SHIFT_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=False,
     ),

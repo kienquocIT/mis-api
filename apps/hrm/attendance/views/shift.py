@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.hrm.attendance.models.shift import ShiftInfo
 from apps.hrm.attendance.serializers import ShiftListSerializer, ShiftCreateSerializer, ShiftDetailSerializer, \
-    ShiftUpdateSerializer
+    ShiftUpdateSerializer, ShiftImportCreateSerializer
 from apps.shared import (
     mask_view,
     BaseListMixin,
@@ -69,3 +69,22 @@ class ShiftMasterDataDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class ShiftMasterDataImport(BaseCreateMixin):
+    queryset = ShiftInfo.objects
+    serializer_create = ShiftImportCreateSerializer
+    serializer_detail = ShiftDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Create shift",
+        operation_description="Create new shift"
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)

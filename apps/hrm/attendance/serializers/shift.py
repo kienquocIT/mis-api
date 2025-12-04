@@ -236,3 +236,37 @@ class ShiftUpdateSerializer(serializers.ModelSerializer):
             'checkout_threshold',
             'working_day_list',
         )
+
+
+class ShiftImportCreateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ShiftInfo
+        fields = (
+            'title',
+            'checkin_time',
+            'checkin_gr_start',
+            'checkin_gr_end',
+            'checkin_threshold',
+            'break_in_time',
+            'break_in_gr_start',
+            'break_in_gr_end',
+            'break_in_threshold',
+            'break_out_time',
+            'break_out_gr_start',
+            'break_out_gr_end',
+            'break_out_threshold',
+            'checkout_time',
+            'checkout_gr_start',
+            'checkout_gr_end',
+            'checkout_threshold',
+            'working_day_list',
+        )
+
+    def create(self, validated_data):
+        checkin_time_str = validated_data.get('checkin_time', '')
+        checkout_time_str = validated_data.get('checkout_time', '')
+        working_days = validated_data.get('working_day_list', [])
+        active_days = [key for key, val in working_days.items() if val] if working_days else []
+        validated_data['description'] = f'{checkin_time_str} - {checkout_time_str} {", ".join(active_days)}'
+        return ShiftInfo.objects.create(**validated_data)
