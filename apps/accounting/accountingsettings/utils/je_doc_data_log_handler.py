@@ -30,7 +30,7 @@ class JEDocDataLogHandler:
 
     # Goods receipt
     @classmethod
-    def push_for_goods_receipt(cls, gr_obj):
+    def push_goods_receipt_doc_data(cls, gr_obj):
         try:
             with transaction.atomic():
                 currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
@@ -60,7 +60,7 @@ class JEDocDataLogHandler:
 
     # AP invoice
     @classmethod
-    def push_for_ap_invoice(cls, ap_invoice_obj):
+    def push_ap_invoice_doc_data(cls, ap_invoice_obj):
         try:
             with transaction.atomic():
                 currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
@@ -119,7 +119,7 @@ class JEDocDataLogHandler:
 
     # COF
     @classmethod
-    def push_for_cof(cls, cof_obj):
+    def push_cof_doc_data(cls, cof_obj):
         try:
             with transaction.atomic():
                 currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
@@ -173,7 +173,7 @@ class JEDocDataLogHandler:
 
     # Delivery
     @classmethod
-    def push_for_delivery(cls, delivery_sub_obj):
+    def push_delivery_doc_data(cls, delivery_sub_obj):
         try:
             with transaction.atomic():
                 currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
@@ -221,7 +221,7 @@ class JEDocDataLogHandler:
 
     # AR invoice
     @classmethod
-    def push_for_ar_invoice(cls, ar_invoice_obj):
+    def push_ar_invoice_doc_data(cls, ar_invoice_obj):
         try:
             with transaction.atomic():
                 currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
@@ -280,7 +280,7 @@ class JEDocDataLogHandler:
 
     # CIF
     @classmethod
-    def push_for_cif(cls, cif_obj):
+    def push_cif_doc_data(cls, cif_obj):
         try:
             with transaction.atomic():
                 currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
@@ -331,21 +331,21 @@ class JEDocDataLogHandler:
     @classmethod
     def run(cls, company_id):
         for transaction_obj in GoodsReceipt.objects.filter(company_id=company_id, system_status=3):
-            cls.push_for_goods_receipt(transaction_obj)
+            cls.push_goods_receipt_doc_data(transaction_obj)
             print(f"#run successfully {transaction_obj.code}!")
         for transaction_obj in APInvoice.objects.filter(company_id=company_id, system_status=3):
-            cls.push_for_ap_invoice(transaction_obj)
+            cls.push_ap_invoice_doc_data(transaction_obj)
             print(f"#run successfully {transaction_obj.code}!")
         for transaction_obj in CashOutflow.objects.filter(company_id=company_id, system_status=3):
-            cls.push_for_cof(transaction_obj)
+            cls.push_cof_doc_data(transaction_obj)
             print(f"#run successfully {transaction_obj.code}!")
         for transaction_obj in OrderDeliverySub.objects.filter(company_id=company_id, system_status=3):
-            cls.push_for_delivery(transaction_obj)
+            cls.push_delivery_doc_data(transaction_obj)
             print(f"#run successfully {transaction_obj.code}!")
         for transaction_obj in ARInvoice.objects.filter(company_id=company_id, system_status=3):
-            cls.push_for_ar_invoice(transaction_obj)
+            cls.push_ar_invoice_doc_data(transaction_obj)
             print(f"#run successfully {transaction_obj.code}!")
         for transaction_obj in CashInflow.objects.filter(company_id=company_id, system_status=3):
-            cls.push_for_cif(transaction_obj)
+            cls.push_cif_doc_data(transaction_obj)
             print(f"#run successfully {transaction_obj.code}!")
         return True
