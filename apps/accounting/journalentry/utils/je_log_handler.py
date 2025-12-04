@@ -128,6 +128,7 @@ class JELogHandler:
                     JournalEntry.auto_create_journal_entry(transaction_obj, **kwargs)
                     return True
                 logger.error(msg='[JE] Can not found transaction_key.')
+                return False
         except Exception as err:
             logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')
             return False
