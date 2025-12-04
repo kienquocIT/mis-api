@@ -10,7 +10,7 @@ from apps.shared import AbstractDetailSerializerModel, AbstractCreateSerializerM
     HRMsg, FORMATTING
 from apps.shared.translations.base import AttachmentMsg, BaseMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
-from ..utils import DeliHandler
+# from ..utils import DeliHandler
 
 __all__ = [
     'OrderDeliveryListSerializer',
