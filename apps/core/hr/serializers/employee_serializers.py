@@ -105,6 +105,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'email',
             'phone',
             'date_joined',
+            'dob',
             'role',
             'is_active',
             'group',
