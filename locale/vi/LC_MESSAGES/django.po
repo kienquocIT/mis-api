@@ -1563,6 +1563,10 @@ msgid "Inventory"
 msgstr "Hàng tồn kho"
 
 #
+msgid "Fixed Assets"
+msgstr "Tài sản cố định"
+
+#
 msgid "Product information"
 msgstr "Thông tin sản phẩm"
 

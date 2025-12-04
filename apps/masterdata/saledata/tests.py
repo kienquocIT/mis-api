@@ -332,7 +332,6 @@ class ProductTestCase(AdvanceTestCase):
                 'product_variant_attribute_list',
                 'product_variant_item_list',
                 'is_public_website',
-                'account_deter_referenced_by',
                 # Transaction information
                 'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount',
                 'component_list_data',
@@ -419,7 +418,6 @@ class ProductTestCase(AdvanceTestCase):
                 'product_variant_attribute_list',
                 'product_variant_item_list',
                 'is_public_website',
-                'account_deter_referenced_by',
                 # Transaction information
                 'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount',
                 'component_list_data',

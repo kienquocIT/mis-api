@@ -190,6 +190,8 @@ class SaleOrderExpenseListForCOF(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
+        if 'id' not in self.request.query_params and 'sale_order_id' not in self.request.query_params:
+            return super().get_queryset().none()
         return super().get_queryset().filter().prefetch_related().select_related()
 
     @swagger_auto_schema(
@@ -240,6 +242,8 @@ class LeaseOrderExpenseListForCOF(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
+        if 'id' not in self.request.query_params and 'lease_order_id' not in self.request.query_params:
+            return super().get_queryset().none()
         return super().get_queryset().filter().prefetch_related().select_related()
 
     @swagger_auto_schema(

@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-from apps.accounting.journalentry.models import JournalEntry, JE_ALLOWED_APP
 
+from apps.accounting.accountingsettings.models.account_determination import JE_DOCUMENT_TYPE_APP
+from apps.accounting.journalentry.models import JournalEntry
 
+# JE
 class JournalEntryListSerializer(serializers.ModelSerializer):
     employee_created = serializers.SerializerMethodField()
     original_transaction_parsed = serializers.SerializerMethodField()
@@ -31,7 +33,7 @@ class JournalEntryListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_original_transaction_parsed(cls, obj):
-        return JE_ALLOWED_APP.get(obj.je_transaction_app_code, '')
+        return dict(JE_DOCUMENT_TYPE_APP)[obj.je_transaction_app_code]
 
     @classmethod
     def get_je_state_parsed(cls, obj):
@@ -68,7 +70,7 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_original_transaction_parsed(cls, obj):
-        return JE_ALLOWED_APP.get(obj.je_transaction_app_code, '')
+        return dict(JE_DOCUMENT_TYPE_APP)[obj.je_transaction_app_code]
 
     @classmethod
     def get_je_lines(cls, obj):
@@ -79,12 +81,13 @@ class JournalEntryDetailSerializer(serializers.ModelSerializer):
                 'order': item.order,
                 'account_data': item.account_data,
                 'business_partner_data': item.business_partner_data,
+                'business_employee_data': item.business_employee_data,
+                'product_mapped_data': item.product_mapped_data,
                 'debit': item.debit,
                 'credit': item.credit,
                 'is_fc': item.is_fc,
                 'je_line_type': item.je_line_type,
-                'taxable_value': item.taxable_value,
-                'dimensions': [item.business_partner_data]
+                'taxable_value': item.taxable_value
             })
         return je_lines
 

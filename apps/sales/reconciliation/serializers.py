@@ -1,6 +1,5 @@
 import logging
 from rest_framework import serializers
-from apps.accounting.accountingsettings.models import AccountDetermination
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account
 from apps.sales.apinvoice.models import APInvoice
@@ -73,9 +72,9 @@ class ReconCreateSerializer(AbstractCreateSerializerModel):
         return None
 
     def validate(self, validate_data):
-        tenant_id = self.context.get('tenant_id', None)
-        company_id = self.context.get('company_id', None)
-        ReconCommonFunction.common_validate(tenant_id, company_id, validate_data)
+        # tenant_id = self.context.get('tenant_id', None)
+        # company_id = self.context.get('company_id', None)
+        # ReconCommonFunction.common_validate(tenant_id, company_id, validate_data)
         return validate_data
 
     @decorator_run_workflow
@@ -149,9 +148,9 @@ class ReconUpdateSerializer(AbstractCreateSerializerModel):
         return ReconCreateSerializer.validate_business_partner(value)
 
     def validate(self, validate_data):
-        tenant_id = self.context.get('tenant_id', None)
-        company_id = self.context.get('company_id', None)
-        ReconCommonFunction.common_validate(tenant_id, company_id, validate_data)
+        # tenant_id = self.context.get('tenant_id', None)
+        # company_id = self.context.get('company_id', None)
+        # ReconCommonFunction.common_validate(tenant_id, company_id, validate_data)
         return validate_data
 
     @decorator_run_workflow
@@ -185,132 +184,6 @@ class ReconCommonFunction:
         ReconciliationItem.objects.filter(recon=recon_obj).delete()
         ReconciliationItem.objects.bulk_create(bulk_info)
         return True
-
-    @staticmethod
-    def sub_validate_recon_type_0(tenant_id, company_id, recon_item_data):
-        for item in recon_item_data:
-            if item.get('credit_doc_id'):
-                ar_invoice_obj = ARInvoice.objects.filter(id=item.get('credit_doc_id')).first()
-                if ar_invoice_obj:
-                    item['credit_app_code'] = ar_invoice_obj.get_model_code()
-                    item['credit_doc_data'] = {
-                        'id': str(ar_invoice_obj.id),
-                        'code': ar_invoice_obj.code,
-                        'title': ar_invoice_obj.title,
-                        'document_date': str(ar_invoice_obj.document_date),
-                        'posting_date': str(ar_invoice_obj.posting_date),
-                        'app_code': ar_invoice_obj.get_model_code()
-                    }
-            if item.get('debit_doc_id'):
-                cif_obj = CashInflow.objects.filter(id=item.get('debit_doc_id')).first()
-                if cif_obj:
-                    item['debit_app_code'] = cif_obj.get_model_code()
-                    item['debit_doc_data'] = {
-                        'id': str(cif_obj.id),
-                        'code': cif_obj.code,
-                        'title': cif_obj.title,
-                        'document_date': str(cif_obj.document_date),
-                        'posting_date': str(cif_obj.posting_date),
-                        'app_code': cif_obj.get_model_code()
-                    }
-            # get debit & credit account obj
-            account_list = AccountDetermination.get_account_determination_sub_data(
-                tenant_id=tenant_id,
-                company_id=company_id,
-                foreign_title='Receivables from customers'
-            )
-            if len(account_list) == 1:
-                item['credit_account_id'] = str(account_list[0].id)
-                item['credit_account_data'] = {
-                    'id': str(account_list[0].id),
-                    'acc_code': account_list[0].acc_code,
-                    'acc_name': account_list[0].acc_name,
-                    'foreign_acc_name': account_list[0].foreign_acc_name
-                }
-                item['debit_account_id'] = str(account_list[0].id)
-                item['debit_account_data'] = {
-                    'id': str(account_list[0].id),
-                    'acc_code': account_list[0].acc_code,
-                    'acc_name': account_list[0].acc_name,
-                    'foreign_acc_name': account_list[0].foreign_acc_name
-                }
-            else:
-                logger.error(msg='No debit account has found.')
-        return True
-
-    @staticmethod
-    def sub_validate_recon_type_1(tenant_id, company_id, recon_item_data):
-        for item in recon_item_data:
-            if item.get('credit_doc_id'):
-                ap_invoice_obj = APInvoice.objects.filter(id=item.get('credit_doc_id')).first()
-                if ap_invoice_obj:
-                    item['credit_app_code'] = ap_invoice_obj.get_model_code()
-                    item['credit_doc_data'] = {
-                        'id': str(ap_invoice_obj.id),
-                        'code': ap_invoice_obj.code,
-                        'title': ap_invoice_obj.title,
-                        'document_date': str(ap_invoice_obj.document_date),
-                        'posting_date': str(ap_invoice_obj.posting_date),
-                        'app_code': ap_invoice_obj.get_model_code()
-                    }
-            if item.get('debit_doc_id'):
-                cof_obj = CashOutflow.objects.filter(id=item.get('debit_doc_id')).first()
-                if cof_obj:
-                    item['debit_app_code'] = cof_obj.get_model_code()
-                    item['debit_doc_data'] = {
-                        'id': str(cof_obj.id),
-                        'code': cof_obj.code,
-                        'title': cof_obj.title,
-                        'document_date': str(cof_obj.document_date),
-                        'posting_date': str(cof_obj.posting_date),
-                        'app_code': cof_obj.get_model_code()
-                    }
-            # get debit & credit account obj
-            account_list = AccountDetermination.get_account_determination_sub_data(
-                tenant_id=tenant_id,
-                company_id=company_id,
-                foreign_title='Payable to suppliers'
-            )
-            if len(account_list) == 1:
-                item['credit_account_id'] = str(account_list[0].id)
-                item['credit_account_data'] = {
-                    'id': str(account_list[0].id),
-                    'acc_code': account_list[0].acc_code,
-                    'acc_name': account_list[0].acc_name,
-                    'foreign_acc_name': account_list[0].foreign_acc_name
-                }
-                item['debit_account_id'] = str(account_list[0].id)
-                item['debit_account_data'] = {
-                    'id': str(account_list[0].id),
-                    'acc_code': account_list[0].acc_code,
-                    'acc_name': account_list[0].acc_name,
-                    'foreign_acc_name': account_list[0].foreign_acc_name
-                }
-            else:
-                logger.error(msg='No debit account has found.')
-        return True
-
-    @staticmethod
-    def common_validate(tenant_id, company_id, validate_data):
-        business_partner_obj = validate_data.get('business_partner')
-        if business_partner_obj:
-            if not business_partner_obj.is_customer_account and validate_data.get('recon_type') == 0:
-                raise serializers.ValidationError({'business_partner': ReconMsg.ACCOUNT_NOT_CUSTOMER})
-            if not business_partner_obj.is_supplier_account and validate_data.get('recon_type') == 1:
-                raise serializers.ValidationError({'business_partner': ReconMsg.ACCOUNT_NOT_SUPPLIER})
-            validate_data['business_partner_data'] = {
-                'id': str(business_partner_obj.id),
-                'code': business_partner_obj.code,
-                'name': business_partner_obj.name,
-                'tax_code': business_partner_obj.tax_code,
-            } if business_partner_obj else {}
-
-        recon_item_data = validate_data.get('recon_item_data', [])
-        if validate_data.get('recon_type') == 0:
-            ReconCommonFunction.sub_validate_recon_type_0(tenant_id, company_id, recon_item_data)
-        elif validate_data.get('recon_type') == 1:
-            ReconCommonFunction.sub_validate_recon_type_1(tenant_id, company_id, recon_item_data)
-        return validate_data
 
 # related features
 class APInvoiceListForReconSerializer(serializers.ModelSerializer):

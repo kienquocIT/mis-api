@@ -141,6 +141,7 @@ class DimensionValueCreateSerializer(serializers.ModelSerializer):
         validate_data['period_mapped'] = period_mapped if period_mapped else None
         return validate_data
 
+
 class DimensionValueUpdateSerializer(serializers.ModelSerializer):
     dimension_id = serializers.UUIDField(error_messages={
         'required': _("Dimension is required."),

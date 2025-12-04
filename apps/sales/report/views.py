@@ -623,8 +623,8 @@ class PurchaseOrderListReport(BaseListMixin):
         try:
             period_mapped_id = self.request.query_params.get('period_mapped')
             sub_period_order = self.request.query_params.get('sub_period_order')
-            start_day = int(self.request.query_params.get('start_day'))
-            end_day = int(self.request.query_params.get('end_day'))
+            start_day = int(self.request.query_params.get('start_day', 1))
+            end_day = int(self.request.query_params.get('end_day', 1))
             period_mapped = Periods.objects.filter(id=period_mapped_id).first()
             if period_mapped and sub_period_order and start_day and end_day:
                 sub_period_order = int(sub_period_order) + period_mapped.space_month
@@ -647,7 +647,7 @@ class PurchaseOrderListReport(BaseListMixin):
             ).filter(
                 system_status=3,
                 delivered_date__year=period_mapped.fiscal_year
-            ))
+            )) if period_mapped else super().get_queryset().none()
         except KeyError:
             return super().get_queryset().none()
 

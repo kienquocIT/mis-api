@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from apps.accounting.journalentry.utils.log_for_ar_invoice import JEForARInvoiceHandler
+from apps.accounting.journalentry.utils import JELogHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
@@ -108,7 +108,7 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
                         app_code=None, instance=self, in_workflow=True, kwargs=kwargs
                     )
                     self.update_order_delivery_has_ar_invoice_already(self)
-                    JEForARInvoiceHandler.push_to_journal_entry(self)
+                    JELogHandler.push_to_journal_entry(self)
                     ReconForARInvoiceHandler.auto_create_recon_doc(self)
 
         if self.invoice_status == 1:  # published
@@ -132,7 +132,7 @@ class ARInvoiceItems(SimpleAbstractModel):
     product_data = models.JSONField(default=dict)
     product_uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.SET_NULL, null=True)
     product_uom_data = models.JSONField(default=dict)
-    product_quantity = models.FloatField(default=0)
+    product_quantity = models.FloatField(default=1)
     product_unit_price = models.FloatField(default=0)
 
     ar_product_des = models.TextField(null=True, blank=True)

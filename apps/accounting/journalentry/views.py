@@ -1,17 +1,19 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from apps.accounting.journalentry.models import JournalEntry, JE_ALLOWED_APP
+
+from apps.accounting.accountingsettings.models.account_determination import JE_DOCUMENT_TYPE_APP
+from apps.accounting.journalentry.models import JournalEntry
 from apps.accounting.journalentry.serializers import (
-    JournalEntryListSerializer, JournalEntryCreateSerializer, JournalEntryDetailSerializer, JournalEntryUpdateSerializer
+    JournalEntryListSerializer, JournalEntryCreateSerializer,
+    JournalEntryDetailSerializer, JournalEntryUpdateSerializer
 )
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
 
 
-# Create your views here.
 class JournalEntryList(BaseListMixin, BaseCreateMixin):
     queryset = JournalEntry.objects
-    search_fields = ['title', 'code']
+    search_fields = ['title', 'code', 'je_transaction_data__code']
     serializer_list = JournalEntryListSerializer
     serializer_create = JournalEntryCreateSerializer
     serializer_detail = JournalEntryDetailSerializer
@@ -80,7 +82,7 @@ def get_je_summarize(request, *args, **kwargs):
     summarize_total_debit = sum(all_je.values_list('total_debit', flat=True))
     summarize_total_credit = sum(all_je.values_list('total_credit', flat=True))
 
-    summarize_total_source_type = len(JE_ALLOWED_APP)
+    summarize_total_source_type = len(JE_DOCUMENT_TYPE_APP)
 
     return Response({
         'result': {

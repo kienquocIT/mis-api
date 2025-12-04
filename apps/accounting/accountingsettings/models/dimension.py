@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from apps.shared import MasterDataAbstractModel
+from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 ACCOUNT_DIMENSION_TYPE = [
     (0, _("Required")),
@@ -11,7 +11,9 @@ __all__ = [
     'DimensionSyncConfig',
     'Dimension',
     'DimensionValue',
-    'AccountDimensionMap'
+    'AccountDimensionMap',
+    'DimensionSplitTemplate',
+    'DimensionSplitTemplateLine'
 ]
 
 class DimensionSyncConfig(MasterDataAbstractModel):
@@ -114,5 +116,47 @@ class AccountDimensionMap(MasterDataAbstractModel):
         verbose_name = 'Account Dimension Map'
         verbose_name_plural = 'Account Dimension Maps'
         ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class DimensionSplitTemplate(MasterDataAbstractModel):
+    dimension = models.ForeignKey(
+        'Dimension',
+        on_delete=models.CASCADE,
+        related_name='dimension_split_templates',
+    )
+
+    class Meta:
+        verbose_name = 'Dimension Split Template'
+        verbose_name_plural = 'Dimension Split Templates'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+class DimensionSplitTemplateLine(SimpleAbstractModel):
+    split_template = models.ForeignKey(
+        'DimensionSplitTemplate',
+        on_delete=models.CASCADE,
+        related_name = 'split_template_lines',
+    )
+    order = models.PositiveIntegerField(default=0)
+    dimension_value = models.ForeignKey(
+        'DimensionValue',
+        on_delete=models.CASCADE,
+        related_name='dimension_value_split_template_lines',
+    )
+    overwrite_account = models.ForeignKey(
+        'ChartOfAccounts',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='account_split_template_lines',
+    )
+    percent = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Dimension Split Template'
+        verbose_name_plural = 'Dimension Split Templates'
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()

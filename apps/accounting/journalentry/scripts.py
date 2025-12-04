@@ -1,12 +1,9 @@
 from apps.accounting.journalentry.models import JournalEntry
-from apps.accounting.journalentry.utils import (
-    JEForAPInvoiceHandler, JEForARInvoiceHandler, JEForCIFHandler,
-    JEForCOFHandler, JEForDeliveryHandler, JEForGoodsReceiptHandler
-)
+from apps.accounting.journalentry.utils import JELogHandler
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
 from apps.sales.apinvoice.models import APInvoice
 from apps.sales.arinvoice.models import ARInvoice
-from apps.sales.delivery.models.delivery import OrderDelivery
+from apps.sales.delivery.models.delivery import OrderDeliverySub
 from apps.sales.financialcashflow.models.cif_models import CashInflow
 from apps.sales.financialcashflow.models.cof_models import CashOutflow
 from apps.sales.inventory.models.goods_receipt import GoodsReceipt
@@ -71,7 +68,7 @@ class JournalEntryRun:
     @staticmethod
     def get_all_delivery_this_period(company_id, this_period):
         print('...get all delivery this period', end='')
-        all_delivery = OrderDelivery.objects.filter(
+        all_delivery = OrderDeliverySub.objects.filter(
             company_id=company_id,
             system_status=3,
             date_approved__date__lte=this_period.end_date,
@@ -145,24 +142,22 @@ class JournalEntryRun:
         print('#log docs')
         for doc in all_doc_sorted:
             print(f"> doc info: {doc['date_approved'].strftime('%d/%m/%Y')} - {doc['code']} ({doc['type']})")
+            instance = None
             if doc['type'] == 'ap_invoice':
                 instance = APInvoice.objects.get(id=doc['id'])
-                JEForAPInvoiceHandler.push_to_journal_entry(instance)
             if doc['type'] == 'ar_invoice':
                 instance = ARInvoice.objects.get(id=doc['id'])
-                JEForARInvoiceHandler.push_to_journal_entry(instance)
             if doc['type'] == 'cif':
                 instance = CashInflow.objects.get(id=doc['id'])
-                JEForCIFHandler.push_to_journal_entry(instance)
             if doc['type'] == 'cof':
                 instance = CashOutflow.objects.get(id=doc['id'])
-                JEForCOFHandler.push_to_journal_entry(instance)
             if doc['type'] == 'delivery':
-                instance = OrderDelivery.objects.get(id=doc['id'])
-                JEForDeliveryHandler.push_to_journal_entry(instance)
+                instance = OrderDeliverySub.objects.get(id=doc['id'])
             if doc['type'] == 'goods_receipt':
                 instance = GoodsReceipt.objects.get(id=doc['id'])
-                JEForGoodsReceiptHandler.push_to_journal_entry(instance)
+
+            if instance:
+                JELogHandler.push_to_journal_entry(instance)
         return True
 
     @staticmethod

@@ -18,6 +18,7 @@ class DimensionListForAccountingAccountSerializer(serializers.ModelSerializer):
             'id',
             'acc_code',
             'acc_name',
+            'foreign_acc_name',
             'dimension_map_data'
         )
 

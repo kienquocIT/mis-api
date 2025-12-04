@@ -2,10 +2,10 @@ import json
 from apps.masterdata.saledata.models.periods import Periods
 from apps.core.company.models import Company, CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import (
-    ProductType, Product, UnitOfMeasure
+    ProductType, Product, UnitOfMeasure, UnitOfMeasureGroup
 )
 from apps.masterdata.saledata.models.price import (
-    UnitOfMeasureGroup, Tax, TaxCategory, Currency
+    Tax, TaxCategory, Currency
 )
 from apps.masterdata.saledata.models.accounts import (
     Account, AccountCreditCards, AccountActivity, AccountContacts
@@ -44,6 +44,7 @@ from ..hrm.employeeinfo.models import EmployeeHRNotMapEmployeeHRM
 from ..hrm.payrolltemplate.models import AttributeComponent
 from ..masterdata.promotion.models import Promotion
 from ..masterdata.saledata.models.product_warehouse import ProductWareHouseLotTransaction
+from ..sales.apinvoice.models import APInvoice, APInvoiceGoodsReceipt
 from ..sales.arinvoice.models import ARInvoice, ARInvoiceItems, ARInvoiceDelivery
 from ..sales.arinvoice.utils.logical_finish import ARInvoiceFinishHandler
 from ..sales.delivery.models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct, OrderPickingProduct, \
@@ -6814,3 +6815,21 @@ def make_sure_default_dimension():
     for obj in Company.objects.all():
         SaleDefaultData(obj).create_dimension()
     print('make_sure_default_dimension done.')
+
+
+def map_gr_to_ap(company_id):
+    for ap in APInvoice.objects.filter(company_id=company_id):
+        po = ap.purchase_order_mapped
+        for gr in GoodsReceipt.objects.filter(purchase_order=po):
+            APInvoiceGoodsReceipt.objects.create(
+                ap_invoice=ap,
+                goods_receipt_mapped=gr,
+                goods_receipt_mapped_data={
+                    'id': str(gr.id),
+                    'code': gr.code,
+                    'title': gr.title,
+                }
+            )
+    print('Done :))')
+    return True
+

@@ -1,84 +1,86 @@
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from apps.accounting.accountingsettings.models.chart_of_account import (
-    ChartOfAccounts
-)
 from apps.accounting.accountingsettings.models.account_determination import (
-    ACCOUNT_DETERMINATION_TYPE,
-    AccountDetermination, AccountDeterminationSub,
+    DOCUMENT_TYPE_CHOICES, JEDocumentType, JE_DOCUMENT_TYPE_APP, JEPostingRule,
 )
 
 
-class AccountDeterminationListSerializer(serializers.ModelSerializer):
-    account_mapped = serializers.SerializerMethodField()
-    account_determination_type_convert = serializers.SerializerMethodField()
+class JEDocumentTypeListSerializer(serializers.ModelSerializer):
+    module_parsed = serializers.SerializerMethodField()
+    app_code_parsed = serializers.SerializerMethodField()
 
     class Meta:
-        model = AccountDetermination
+        model = JEDocumentType
         fields = (
             'id',
+            'code',
             'title',
-            'foreign_title',
-            'account_mapped',
-            'account_determination_type',
-            'account_determination_type_convert',
-            'can_change_account'
+            'module',
+            'module_parsed',
+            'app_code',
+            'app_code_parsed',
+            'is_auto_je',
         )
 
     @classmethod
-    def get_account_mapped(cls, obj):
-        return [item.account_mapped_data for item in obj.account_determination_sub.all()]
+    def get_module_parsed(cls, obj):
+        return dict(DOCUMENT_TYPE_CHOICES)[obj.module]
 
     @classmethod
-    def get_account_determination_type_convert(cls, obj):
-        return ACCOUNT_DETERMINATION_TYPE[obj.account_determination_type][1]
+    def get_app_code_parsed(cls, obj):
+        return dict(JE_DOCUMENT_TYPE_APP)[obj.app_code]
 
 
-class AccountDeterminationDetailSerializer(serializers.ModelSerializer):
+class JEDocumentTypeUpdateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AccountDetermination
-        fields = "__all__"
+        model = JEDocumentType
+        fields = ('is_auto_je',)
 
 
-class AccountDeterminationUpdateSerializer(serializers.ModelSerializer):
-    replace_account = serializers.JSONField(default=list)
+class JEPostingRuleListSerializer(serializers.ModelSerializer):
+    document_type_code = serializers.SerializerMethodField()
+    document_type_app_code_parsed = serializers.SerializerMethodField()
+    fixed_account = serializers.SerializerMethodField()
 
     class Meta:
-        model = AccountDetermination
+        model = JEPostingRule
         fields = (
-            'replace_account',
+            'id',
+            'code',
+            'title',
+            'document_type_code',
+            'document_type_app_code_parsed',
+            'rule_level',
+            # Ưu tiên
+            'priority',
+            # Role là gì
+            'role_key',
+            # Bên Nợ hay Có
+            'side',
+            # Lấy tiền từ nguồn nào (field trong model)
+            'amount_source',
+            # Chọn tài khoản từ đâu (cứng hay động)
+            'account_source_type',
+            # CASE A: Cứng
+            'fixed_account',
+            # Field bổ sung
+            'description',
+            'example',
+            'is_active'
         )
 
     @classmethod
-    def validate_replace_account(cls, replace_account):
-        if len([replace_account]) == 1:
-            replace_account_list = []
-            for account_id in [replace_account]:
-                account_mapped_obj = ChartOfAccounts.objects.filter(id=account_id).first()
-                if account_mapped_obj:
-                    replace_account_list.append({
-                        'account_mapped': account_mapped_obj,
-                        'account_mapped_data': {
-                            'id': str(account_mapped_obj.id),
-                            'acc_code': account_mapped_obj.acc_code,
-                            'acc_name': account_mapped_obj.acc_name,
-                            'foreign_acc_name': account_mapped_obj.foreign_acc_name,
-                        }
-                    })
-                else:
-                    raise serializers.ValidationError({'account_mapped': _('Replace account mapped not found')})
-            return replace_account_list
-        raise serializers.ValidationError({'replace_account': _('Replace account length is not valid')})
+    def get_document_type_code(cls, obj):
+        return obj.je_document_type.code
 
-    def update(self, instance, validated_data):
-        replace_account = validated_data.pop('replace_account')
-        bulk_info = []
-        for item in replace_account:
-            bulk_info.append(
-                AccountDeterminationSub(account_determination=instance, **item)
-            )
-        instance.account_determination_sub.all().delete()
-        AccountDeterminationSub.objects.bulk_create(bulk_info)
-        instance.is_changed = True
-        instance.save(update_fields=['is_changed'])
-        return instance
+    @classmethod
+    def get_document_type_app_code_parsed(cls, obj):
+        return dict(JE_DOCUMENT_TYPE_APP)[obj.je_document_type.app_code]
+
+    @classmethod
+    def get_fixed_account(cls, obj):
+        return {
+            'id': str(obj.fixed_account.id),
+            'acc_code': obj.fixed_account.acc_code,
+            'acc_name': obj.fixed_account.acc_name,
+            'foreign_acc_name': obj.fixed_account.foreign_acc_name,
+        } if obj.fixed_account else {}

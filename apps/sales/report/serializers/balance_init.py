@@ -496,7 +496,7 @@ class BalanceInitCommonFunction:
             wh_obj = WareHouse.objects.filter(
                 tenant=tenant_current, company=company_current, id=balance_init_data.get('warehouse_id')
             ).first()
-        if 'product_code' in balance_init_data:
+        if 'warehouse_code' in balance_init_data:
             wh_obj = WareHouse.objects.filter(
                 tenant=tenant_current, company=company_current, code=balance_init_data.get('warehouse_code')
             ).first()

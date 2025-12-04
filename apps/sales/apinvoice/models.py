@@ -1,5 +1,5 @@
 from django.db import models
-from apps.accounting.journalentry.utils import JEForAPInvoiceHandler
+from apps.accounting.journalentry.utils import JELogHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.reconciliation.utils import ReconForAPInvoiceHandler
@@ -61,7 +61,7 @@ class APInvoice(DataAbstractModel):
                         app_code=None, instance=self, in_workflow=True, kwargs=kwargs
                     )
                     self.update_goods_receipt_has_ap_invoice_already(self)
-                    JEForAPInvoiceHandler.push_to_journal_entry(self)
+                    JELogHandler.push_to_journal_entry(self)
                     ReconForAPInvoiceHandler.auto_create_recon_doc(self)
         # hit DB
         super().save(*args, **kwargs)
@@ -75,7 +75,7 @@ class APInvoiceItems(SimpleAbstractModel):
     product_data = models.JSONField(default=dict)
     product_uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE, null=True)
     product_uom_data = models.JSONField(default=dict)
-    product_quantity = models.FloatField(default=0)
+    product_quantity = models.FloatField(default=1)
     product_unit_price = models.FloatField(default=0)
 
     ap_product_des = models.TextField(null=True, blank=True)

@@ -1,5 +1,5 @@
 from django.db import models
-from apps.accounting.journalentry.utils import JEForGoodsReceiptHandler
+from apps.accounting.journalentry.utils import JELogHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods, ProductWareHouseLot
@@ -307,7 +307,7 @@ class GoodsReceipt(DataAbstractModel):
 
                     self.push_goods_receipt_data_to_goods_detail(self)
                     IRForGoodsReceiptHandler.push_to_inventory_report(self)
-                    JEForGoodsReceiptHandler.push_to_journal_entry(self)
+                    JELogHandler.push_to_journal_entry(self)
 
         if self.system_status in [4]:  # cancel
             GRFinishHandler.push_product_info(instance=self)

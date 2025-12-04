@@ -1,3 +1,4 @@
+from django.db.models import Count
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
@@ -117,7 +118,20 @@ class DimensionDefinitionWithValuesSerializer(serializers.ModelSerializer):
 
     def get_values(self, obj):
         """Return all DimensionValues under this definition."""
-        values = DimensionValue.objects.filter(dimension=obj).select_related('parent')
+        only_leaf = self.context.get('only_leaf', False)
+        allow_posting = self.context.get('allow_posting', None)
+        if allow_posting is None:
+            values = DimensionValue.objects.filter(dimension=obj).select_related('parent')
+        else:
+            values = DimensionValue.objects.filter(
+                dimension=obj,
+                allow_posting=allow_posting
+            ).select_related('parent')
+
+        if only_leaf:
+            values = values.annotate(
+                children_count=Count('child_values')
+            ).filter(children_count=0)
 
         result = []
         for item in values:
@@ -142,7 +156,8 @@ class DimensionDefinitionWithValuesSerializer(serializers.ModelSerializer):
 
         return result
 
-    def get_is_system_dimension(self, obj):
+    @classmethod
+    def get_is_system_dimension(cls, obj):
         return bool(obj.related_app)
 
 
