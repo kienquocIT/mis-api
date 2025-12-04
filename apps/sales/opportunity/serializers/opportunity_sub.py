@@ -777,10 +777,13 @@ class CheckOppStageFunction:
         so_mapped = opp_obj.sale_order_opportunity.filter(system_status=3)
         lo_mapped = opp_obj.lease_opportunity.filter(system_status=3)
         svr_mapped = opp_obj.serviceorder_serviceorder_opp.filter(system_status=3)
-        order_status= 'Order Status!=0'
-        if so_mapped.count() > 0 or lo_mapped.count() > 0 or svr_mapped.count() > 0:
-            order_status = 'Order Status=0'
-        opp_condition_data_list.append(order_status)
+        opp_condition_data_list.append(
+            'Order Status=0' if (
+                    so_mapped.count() > 0 or
+                    lo_mapped.count() > 0 or
+                    svr_mapped.count() > 0
+            ) else 'Order Status!=0'
+        )
         # Order Delivery Status
         so_delivery_mapped = OrderDeliverySub.objects.filter(
             sale_order_id__in=so_mapped.values_list('id', flat=True), system_status=3
@@ -791,10 +794,13 @@ class CheckOppStageFunction:
         svr_delivery_mapped = OrderDeliverySub.objects.filter(
             service_order_id__in=svr_mapped.values_list('id', flat=True), system_status=3
         )
-        delivery_status = 'Order Delivery Status!=0'
-        if so_delivery_mapped.count() > 0 or lo_delivery_mapped.count() > 0 or svr_delivery_mapped.count() > 0:
-            delivery_status = 'Order Delivery Status=0'
-        opp_condition_data_list.append(delivery_status)
+        opp_condition_data_list.append(
+            'Order Delivery Status=0' if (
+                    so_delivery_mapped.count() > 0 or
+                    lo_delivery_mapped.count() > 0 or
+                    svr_delivery_mapped.count() > 0
+            ) else 'Order Delivery Status!=0'
+        )
         # Customer Annual Revenue
         customer = opp_obj.customer if opp_obj.customer else None
         opp_condition_data_list.append('Customer=0' if not customer else 'Customer!=0')
