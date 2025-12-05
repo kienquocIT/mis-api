@@ -1,5 +1,5 @@
 from django.db import models
-from apps.accounting.journalentry.utils import JELogHandler
+from apps.accounting.accountingsettings.utils.je_doc_data_log_handler import JEDocDataLogHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.reconciliation.utils import ReconForAPInvoiceHandler
@@ -61,8 +61,8 @@ class APInvoice(DataAbstractModel):
                         app_code=None, instance=self, in_workflow=True, kwargs=kwargs
                     )
                     self.update_goods_receipt_has_ap_invoice_already(self)
-                    JELogHandler.push_to_journal_entry(self)
-                    ReconForAPInvoiceHandler.auto_create_recon_doc(self)
+                    JEDocDataLogHandler.push_data_to_je_doc_data(self)
+                    # ReconForAPInvoiceHandler.auto_create_recon_doc(self)
         # hit DB
         super().save(*args, **kwargs)
 
