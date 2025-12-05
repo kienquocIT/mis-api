@@ -100,8 +100,7 @@ class PrintTemplateUsingDetail(APIView):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         if 'application_id' in self.kwargs and TypeCheck.check_uuid(self.kwargs['application_id']):
-            template_objs = PrintTemplates.objects.filter_current(
-                fill__tenant=True, fill__company=True,
+            template_objs = PrintTemplates.objects.filter_on_company(
                 is_active=True,
                 application=self.kwargs['application_id'],
             )
