@@ -1,10 +1,10 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from apps.accounting.journalentry.utils import JELogHandler
+from apps.accounting.accountingsettings.utils.je_doc_data_log_handler import JEDocDataLogHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
-from apps.sales.reconciliation.utils.autocreate_recon_for_ar_invoice import ReconForARInvoiceHandler
+# from apps.sales.reconciliation.utils.autocreate_recon_for_ar_invoice import ReconForARInvoiceHandler
 from apps.shared import SimpleAbstractModel, DataAbstractModel, RecurrenceAbstractModel
 
 
@@ -108,8 +108,8 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
                         app_code=None, instance=self, in_workflow=True, kwargs=kwargs
                     )
                     self.update_order_delivery_has_ar_invoice_already(self)
-                    JELogHandler.push_to_journal_entry(self)
-                    ReconForARInvoiceHandler.auto_create_recon_doc(self)
+                    JEDocDataLogHandler.push_data_to_je_doc_data(self)
+                    # ReconForARInvoiceHandler.auto_create_recon_doc(self)
 
         if self.invoice_status == 1:  # published
             self.push_final_acceptance_invoice(instance=self)

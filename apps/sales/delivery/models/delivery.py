@@ -2,7 +2,7 @@ import json
 from copy import deepcopy
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from apps.accounting.journalentry.utils import JELogHandler
+from apps.accounting.accountingsettings.utils.je_doc_data_log_handler import JEDocDataLogHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import SubPeriods
@@ -371,7 +371,7 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliHandler.push_diagram(instance=self)  # diagram
                     IRForDeliveryHandler.push_to_inventory_report(self)
                     IRForDeliveryHandler.push_to_inventory_report_lease(self)
-                    JELogHandler.push_to_journal_entry(self)
+                    JEDocDataLogHandler.push_data_to_je_doc_data(self)
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
             times_arr = OrderDeliverySub.objects.filter(

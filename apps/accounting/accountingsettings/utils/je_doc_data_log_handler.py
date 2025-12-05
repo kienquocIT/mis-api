@@ -1,14 +1,11 @@
 import logging
 from django.db import transaction
 from django.db.models import Sum
-from apps.accounting.accountingsettings.models.account_determination import JEDocData
+from apps.accounting.accountingsettings.models.account_determination import JEDocData, JEDocumentType
+from apps.accounting.journalentry.utils import JELogHandler
 from apps.masterdata.saledata.models import Currency
-from apps.sales.apinvoice.models import APInvoice
-from apps.sales.arinvoice.models import ARInvoice
-from apps.sales.delivery.models import OrderDeliverySub
-from apps.sales.financialcashflow.models import CashOutflow, CashInflow
-from apps.sales.inventory.models import GoodsReceipt
 from apps.sales.report.models import ReportStockLog
+
 
 logger = logging.getLogger(__name__)
 
@@ -30,18 +27,22 @@ class JEDocDataLogHandler:
 
     # Goods receipt
     @classmethod
-    def push_goods_receipt_doc_data(cls, gr_obj):
+    def push_goods_receipt_doc_data(cls, gr_obj, app_code):
         try:
             with transaction.atomic():
+                if not JEDocumentType.objects.filter(
+                    company_id=gr_obj.company_id, app_code=app_code, is_auto_je=True
+                ).exists():
+                    return False
                 currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
                 cost_map = cls.get_cost_from_stock_for_each_product(gr_obj)
-                JEDocData.objects.filter(doc_id=str(gr_obj.id), app_code=gr_obj.get_model_code()).delete()
+                JEDocData.objects.filter(doc_id=str(gr_obj.id), app_code=app_code).delete()
                 bulk_info = []
                 for gr_prd_obj in gr_obj.goods_receipt_product_goods_receipt.all():
                     line_value = cost_map.get(str(gr_prd_obj.product_id), 0)
                     data_row = JEDocData.make_doc_data_obj(
                         company_id=gr_obj.company_id,
-                        app_code=gr_obj.get_model_code(),
+                        app_code=app_code,
                         doc_id=gr_obj.id,
                         rule_level='LINE',
                         amount_source='COST',
@@ -56,24 +57,28 @@ class JEDocDataLogHandler:
                 return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while push to JEDocData: {err}')
-            return None
+            return False
 
     # AP invoice
     @classmethod
-    def push_ap_invoice_doc_data(cls, ap_invoice_obj):
+    def push_ap_invoice_doc_data(cls, ap_invoice_obj, app_code):
         try:
             with transaction.atomic():
+                if not JEDocumentType.objects.filter(
+                    company_id=ap_invoice_obj.company_id, app_code=app_code, is_auto_je=True
+                ).exists():
+                    return False
                 currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
                 last_transaction_id_list = ap_invoice_obj.ap_invoice_goods_receipts.values_list(
                     'goods_receipt_mapped_id', flat=True
                 )
                 cost_map = cls.get_cost_from_stock_for_all(last_transaction_id_list)
                 JEDocData.objects.filter(
-                    doc_id=str(ap_invoice_obj.id), app_code=ap_invoice_obj.get_model_code()
+                    doc_id=str(ap_invoice_obj.id), app_code=app_code
                 ).delete()
                 data_1 = JEDocData.make_doc_data_obj(
                     company_id=ap_invoice_obj.company_id,
-                    app_code=ap_invoice_obj.get_model_code(),
+                    app_code=app_code,
                     doc_id=ap_invoice_obj.id,
                     rule_level='HEADER',
                     amount_source='TAX',
@@ -85,7 +90,7 @@ class JEDocDataLogHandler:
                 )
                 data_2 = JEDocData.make_doc_data_obj(
                     company_id=ap_invoice_obj.company_id,
-                    app_code=ap_invoice_obj.get_model_code(),
+                    app_code=app_code,
                     doc_id=ap_invoice_obj.id,
                     rule_level='HEADER',
                     amount_source='TOTAL',
@@ -100,7 +105,7 @@ class JEDocDataLogHandler:
                     line_value = cost_map.get(str(item.product_id), 0)
                     data_row = JEDocData.make_doc_data_obj(
                         company_id=ap_invoice_obj.company_id,
-                        app_code=ap_invoice_obj.get_model_code(),
+                        app_code=app_code,
                         doc_id=ap_invoice_obj.id,
                         rule_level='LINE',
                         amount_source='COST',
@@ -115,18 +120,22 @@ class JEDocDataLogHandler:
                 return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while push to JEDocData: {err}')
-            return None
+            return False
 
     # COF
     @classmethod
-    def push_cof_doc_data(cls, cof_obj):
+    def push_cof_doc_data(cls, cof_obj, app_code):
         try:
             with transaction.atomic():
+                if not JEDocumentType.objects.filter(
+                    company_id=cof_obj.company_id, app_code=app_code, is_auto_je=True
+                ).exists():
+                    return False
                 currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
-                JEDocData.objects.filter(doc_id=str(cof_obj.id), app_code=cof_obj.get_model_code()).delete()
+                JEDocData.objects.filter(doc_id=str(cof_obj.id), app_code=app_code).delete()
                 data_1 = JEDocData.make_doc_data_obj(
                     company_id=cof_obj.company_id,
-                    app_code=cof_obj.get_model_code(),
+                    app_code=app_code,
                     doc_id=cof_obj.id,
                     rule_level='HEADER',
                     amount_source='TOTAL',
@@ -142,7 +151,7 @@ class JEDocDataLogHandler:
                 )
                 data_2 = JEDocData.make_doc_data_obj(
                     company_id=cof_obj.company_id,
-                    app_code=cof_obj.get_model_code(),
+                    app_code=app_code,
                     doc_id=cof_obj.id,
                     rule_level='HEADER',
                     amount_source='CASH',
@@ -154,7 +163,7 @@ class JEDocDataLogHandler:
                 )
                 data_3 = JEDocData.make_doc_data_obj(
                     company_id=cof_obj.company_id,
-                    app_code=cof_obj.get_model_code(),
+                    app_code=app_code,
                     doc_id=cof_obj.id,
                     rule_level='HEADER',
                     amount_source='BANK',
@@ -169,27 +178,31 @@ class JEDocDataLogHandler:
                 return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while push to JEDocData: {err}')
-            return None
+            return False
 
     # Delivery
     @classmethod
-    def push_delivery_doc_data(cls, delivery_sub_obj):
+    def push_delivery_doc_data(cls, delivery_sub_obj, app_code):
         try:
             with transaction.atomic():
+                if not JEDocumentType.objects.filter(
+                    company_id=delivery_sub_obj.company_id, app_code=app_code, is_auto_je=True
+                ).exists():
+                    return False
                 currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
                 cost_map = cls.get_cost_from_stock_for_each_product(delivery_sub_obj)
                 currency_exchange_rate = 1
                 if delivery_sub_obj.order_delivery.sale_order:
                     currency_exchange_rate = delivery_sub_obj.order_delivery.sale_order.currency_exchange_rate
                 JEDocData.objects.filter(
-                    doc_id=str(delivery_sub_obj.id), app_code=delivery_sub_obj.get_model_code()
+                    doc_id=str(delivery_sub_obj.id), app_code=app_code
                 ).delete()
                 bulk_info = []
                 for deli_product in delivery_sub_obj.delivery_product_delivery_sub.all():
                     line_value = cost_map.get(str(deli_product.product_id), 0)
                     data_row_cost = JEDocData.make_doc_data_obj(
                         company_id=delivery_sub_obj.company_id,
-                        app_code=delivery_sub_obj.get_model_code(),
+                        app_code=app_code,
                         doc_id=delivery_sub_obj.id,
                         rule_level='LINE',
                         amount_source='COST',
@@ -201,7 +214,7 @@ class JEDocDataLogHandler:
                     )
                     data_row_sales = JEDocData.make_doc_data_obj(
                         company_id=delivery_sub_obj.company_id,
-                        app_code=delivery_sub_obj.get_model_code(),
+                        app_code=app_code,
                         doc_id=delivery_sub_obj.id,
                         rule_level='LINE',
                         amount_source='SALES',
@@ -217,20 +230,24 @@ class JEDocDataLogHandler:
                 return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while push to JEDocData: {err}')
-            return None
+            return False
 
     # AR invoice
     @classmethod
-    def push_ar_invoice_doc_data(cls, ar_invoice_obj):
+    def push_ar_invoice_doc_data(cls, ar_invoice_obj, app_code):
         try:
             with transaction.atomic():
+                if not JEDocumentType.objects.filter(
+                    company_id=ar_invoice_obj.company_id, app_code=app_code, is_auto_je=True
+                ).exists():
+                    return False
                 currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
                 JEDocData.objects.filter(
-                    doc_id=str(ar_invoice_obj.id), app_code=ar_invoice_obj.get_model_code()
+                    doc_id=str(ar_invoice_obj.id), app_code=app_code
                 ).delete()
                 data_1 = JEDocData.make_doc_data_obj(
                     company_id=ar_invoice_obj.company_id,
-                    app_code=ar_invoice_obj.get_model_code(),
+                    app_code=app_code,
                     doc_id=ar_invoice_obj.id,
                     rule_level='HEADER',
                     amount_source='TAX',
@@ -242,7 +259,7 @@ class JEDocDataLogHandler:
                 )
                 data_2 = JEDocData.make_doc_data_obj(
                     company_id=ar_invoice_obj.company_id,
-                    app_code=ar_invoice_obj.get_model_code(),
+                    app_code=app_code,
                     doc_id=ar_invoice_obj.id,
                     rule_level='HEADER',
                     amount_source='TOTAL',
@@ -261,7 +278,7 @@ class JEDocDataLogHandler:
                     line_value = item.product_subtotal * currency_exchange_rate
                     data_row = JEDocData.make_doc_data_obj(
                         company_id=ar_invoice_obj.company_id,
-                        app_code=ar_invoice_obj.get_model_code(),
+                        app_code=app_code,
                         doc_id=ar_invoice_obj.id,
                         rule_level='LINE',
                         amount_source='SALES',
@@ -276,18 +293,22 @@ class JEDocDataLogHandler:
                 return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while push to JEDocData: {err}')
-            return None
+            return False
 
     # CIF
     @classmethod
-    def push_cif_doc_data(cls, cif_obj):
+    def push_cif_doc_data(cls, cif_obj, app_code):
         try:
             with transaction.atomic():
+                if not JEDocumentType.objects.filter(
+                    company_id=cif_obj.company_id, app_code=app_code, is_auto_je=True
+                ).exists():
+                    return False
                 currency_mapped = Currency.objects.filter_on_company(is_primary=True).first()
-                JEDocData.objects.filter(doc_id=str(cif_obj.id), app_code=cif_obj.get_model_code()).delete()
+                JEDocData.objects.filter(doc_id=str(cif_obj.id), app_code=app_code).delete()
                 data_1 = JEDocData.make_doc_data_obj(
                     company_id=cif_obj.company_id,
-                    app_code=cif_obj.get_model_code(),
+                    app_code=app_code,
                     doc_id=cif_obj.id,
                     rule_level='HEADER',
                     amount_source='TOTAL',
@@ -299,7 +320,7 @@ class JEDocDataLogHandler:
                 )
                 data_2 = JEDocData.make_doc_data_obj(
                     company_id=cif_obj.company_id,
-                    app_code=cif_obj.get_model_code(),
+                    app_code=app_code,
                     doc_id=cif_obj.id,
                     rule_level='HEADER',
                     amount_source='CASH',
@@ -311,7 +332,7 @@ class JEDocDataLogHandler:
                 )
                 data_3 = JEDocData.make_doc_data_obj(
                     company_id=cif_obj.company_id,
-                    app_code=cif_obj.get_model_code(),
+                    app_code=app_code,
                     doc_id=cif_obj.id,
                     rule_level='HEADER',
                     amount_source='BANK',
@@ -326,26 +347,33 @@ class JEDocDataLogHandler:
                 return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while push to JEDocData: {err}')
-            return None
+            return False
 
     @classmethod
-    def run(cls, company_id):
-        for transaction_obj in GoodsReceipt.objects.filter(company_id=company_id, system_status=3):
-            cls.push_goods_receipt_doc_data(transaction_obj)
-            print(f"#run successfully {transaction_obj.code}!")
-        for transaction_obj in APInvoice.objects.filter(company_id=company_id, system_status=3):
-            cls.push_ap_invoice_doc_data(transaction_obj)
-            print(f"#run successfully {transaction_obj.code}!")
-        for transaction_obj in CashOutflow.objects.filter(company_id=company_id, system_status=3):
-            cls.push_cof_doc_data(transaction_obj)
-            print(f"#run successfully {transaction_obj.code}!")
-        for transaction_obj in OrderDeliverySub.objects.filter(company_id=company_id, system_status=3):
-            cls.push_delivery_doc_data(transaction_obj)
-            print(f"#run successfully {transaction_obj.code}!")
-        for transaction_obj in ARInvoice.objects.filter(company_id=company_id, system_status=3):
-            cls.push_ar_invoice_doc_data(transaction_obj)
-            print(f"#run successfully {transaction_obj.code}!")
-        for transaction_obj in CashInflow.objects.filter(company_id=company_id, system_status=3):
-            cls.push_cif_doc_data(transaction_obj)
-            print(f"#run successfully {transaction_obj.code}!")
+    def push_data_to_je_doc_data(cls, transaction_obj):
+        app_code = transaction_obj.get_model_code()
+        if app_code == 'inventory.goodsreceipt':
+            is_auto_je = cls.push_goods_receipt_doc_data(transaction_obj, app_code)
+            if is_auto_je:
+                JELogHandler.push_to_journal_entry(transaction_obj)
+        if app_code == 'apinvoice.apinvoice':
+            is_auto_je = cls.push_ap_invoice_doc_data(transaction_obj, app_code)
+            if is_auto_je:
+                JELogHandler.push_to_journal_entry(transaction_obj)
+        if app_code == 'financialcashflow.cashoutflow':
+            is_auto_je = cls.push_cof_doc_data(transaction_obj, app_code)
+            if is_auto_je:
+                JELogHandler.push_to_journal_entry(transaction_obj)
+        if app_code == 'delivery.orderdeliverysub':
+            is_auto_je = cls.push_delivery_doc_data(transaction_obj, app_code)
+            if is_auto_je:
+                JELogHandler.push_to_journal_entry(transaction_obj)
+        if app_code == 'arinvoice.arinvoice':
+            is_auto_je = cls.push_ar_invoice_doc_data(transaction_obj, app_code)
+            if is_auto_je:
+                JELogHandler.push_to_journal_entry(transaction_obj)
+        if app_code == 'financialcashflow.cashinflow':
+            is_auto_je = cls.push_cif_doc_data(transaction_obj, app_code)
+            if is_auto_je:
+                JELogHandler.push_to_journal_entry(transaction_obj)
         return True

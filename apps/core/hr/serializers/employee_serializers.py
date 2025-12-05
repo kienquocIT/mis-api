@@ -89,6 +89,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     group = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -107,6 +108,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'date_joined',
             'dob',
             'role',
+            'user',
             'is_active',
             'group',
             'role',
@@ -137,6 +139,18 @@ class EmployeeListSerializer(serializers.ModelSerializer):
                 'code': x.code,
             } for x in obj.role.all()
         ]
+
+    @classmethod
+    def get_user(cls, obj):
+        return {
+            'id': obj.user_id,
+            'full_name': obj.user.get_full_name(2),
+            'first_name': obj.user.first_name,
+            'last_name': obj.user.last_name,
+            'email': obj.user.email,
+            'phone': obj.user.phone,
+            'username': obj.user.username,
+        } if obj.user else {}
 
 
 class EmployeeDetailSerializer(serializers.ModelSerializer):
@@ -196,16 +210,15 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_user(cls, obj):
-        if obj.user:
-            return {
-                'id': obj.user_id,
-                'full_name': obj.user.get_full_name(2),
-                'first_name': obj.user.first_name,
-                'last_name': obj.user.last_name,
-                'email': obj.user.email,
-                'phone': obj.user.phone,
-            }
-        return {}
+        return {
+            'id': obj.user_id,
+            'full_name': obj.user.get_full_name(2),
+            'first_name': obj.user.first_name,
+            'last_name': obj.user.last_name,
+            'email': obj.user.email,
+            'phone': obj.user.phone,
+            'username': obj.user.username,
+        } if obj.user else {}
 
     @classmethod
     def get_group(cls, obj):

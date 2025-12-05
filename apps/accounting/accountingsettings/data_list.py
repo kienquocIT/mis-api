@@ -1,4 +1,4 @@
-APP_LIST = [
+DOCUMENT_TYPE_LIST = [
     # Sales
     [0, 'DO_SALE', 'delivery.orderdeliverysub'],
     [0, 'SALE_INVOICE', 'arinvoice.arinvoice'],
@@ -11,7 +11,7 @@ APP_LIST = [
     # asset
 ]
 
-POSTING_RULE_APP_LIST = [
+POSTING_RULE_LIST = [
     # =========================================================================
     # NHÓM 1: BÁN HÀNG (SALES CYCLE)
     # Flow: DO_SALE (Treo 13881) -> SALE_INVOICE (Clear 13881, Ghi 131)
@@ -260,3 +260,137 @@ POSTING_RULE_APP_LIST = [
         ]
     },
 ]
+
+POSTING_GROUP_LIST = [
+    # =========================================================================
+    # 1. NHÓM SẢN PHẨM / VẬT TƯ (ITEM_GROUP)
+    # Mục đích: Định tuyến vào các TK 156, 155, 152, 153, 5111, 5112, 5113...
+    # =========================================================================
+    {
+        'code': 'GOODS',
+        'title': 'Hàng hóa',  # Mua đi bán lại (1561)
+        'posting_group_type': 'ITEM_GROUP',
+    },
+    {
+        'code': 'FINISHED_GOODS',
+        'title': 'Thành phẩm',  # Tự sản xuất (155)
+        'posting_group_type': 'ITEM_GROUP',
+    },
+    {
+        'code': 'SEMI_FINISHED',  # Bổ sung
+        'title': 'Bán thành phẩm',  # Dở dang (154)
+        'posting_group_type': 'ITEM_GROUP',
+    },
+    {
+        'code': 'MATERIAL',
+        'title': 'Nguyên vật liệu',  # Nguyên liệu sx (152)
+        'posting_group_type': 'ITEM_GROUP',
+    },
+    {
+        'code': 'TOOL',
+        'title': 'Công cụ - Dụng cụ',  # Phân bổ dần (153)
+        'posting_group_type': 'ITEM_GROUP',
+    },
+    {
+        'code': 'SERVICE',
+        'title': 'Dịch vụ',  # [FIX] Sửa lại title thành Dịch vụ (Không kho, 5113)
+        'posting_group_type': 'ITEM_GROUP',
+    },
+    {
+        'code': 'CONSIGNMENT',  # Bổ sung
+        'title': 'Hàng gửi đi bán',  # Ký gửi đại lý (157)
+        'posting_group_type': 'ITEM_GROUP',
+    },
+
+    # =========================================================================
+    # 2. NHÓM ĐỐI TÁC (PARTNER_GROUP)
+    # Mục đích: Định tuyến vào các TK 131, 331 (Nội địa/Ngoại tệ)
+    # =========================================================================
+
+    # --- KHÁCH HÀNG (Dùng cho 131) ---
+    {
+        'code': 'CUSTOMER_VN',
+        'title': 'Khách hàng Nội địa',  # 1311
+        'posting_group_type': 'PARTNER_GROUP',
+    },
+    {
+        'code': 'CUSTOMER_FOREIGN',  # Bổ sung
+        'title': 'Khách hàng Nước ngoài',  # 1312 (Theo dõi ngoại tệ)
+        'posting_group_type': 'PARTNER_GROUP',
+    },
+    {
+        'code': 'CUSTOMER_RETAIL',  # Bổ sung
+        'title': 'Khách lẻ / Vãng lai',  # Thường không theo dõi chi tiết công nợ lâu dài
+        'posting_group_type': 'PARTNER_GROUP',
+    },
+
+    # --- NHÀ CUNG CẤP (Dùng cho 331) ---
+    {
+        'code': 'SUPPLIER_VN',  # Bổ sung
+        'title': 'Nhà cung cấp Nội địa',  # 3311
+        'posting_group_type': 'PARTNER_GROUP',
+    },
+    {
+        'code': 'SUPPLIER_FOREIGN',  # Bổ sung
+        'title': 'Nhà cung cấp Nước ngoài',  # 3312 (Nhập khẩu)
+        'posting_group_type': 'PARTNER_GROUP',
+    },
+
+    # --- NHÂN VIÊN (Dùng cho 141 - Tạm ứng) ---
+    {
+        'code': 'EMPLOYEE',  # Bổ sung
+        'title': 'Nhân viên',
+        'posting_group_type': 'PARTNER_GROUP',
+    },
+]
+
+GL_MAPPING_TEMPLATE = {
+    # --- ITEM GROUPS ---
+    'GOODS': { # Hàng hóa
+        'ASSET': '1561', 'COGS': '632', 'REVENUE': '5111',
+        'DONI': '13881', 'GRNI': '33881'
+    },
+    'FINISHED_GOODS': { # Thành phẩm
+        'ASSET': '155', 'COGS': '632', 'REVENUE': '5112', # DT bán thành phẩm
+        'DONI': '13881', 'GRNI': '33881'
+    },
+    'SEMI_FINISHED': { # Bán thành phẩm
+        'ASSET': '154', 'COGS': '632', 'REVENUE': '5112',
+        'DONI': '13881', 'GRNI': '33881'
+    },
+    'MATERIAL': { # Nguyên vật liệu
+        'ASSET': '152', 'COGS': '632', 'REVENUE': '5111', # Thường ít bán NVL, nếu bán ghi vào 511 hoặc 711
+        'DONI': '13881', 'GRNI': '33881'
+    },
+    'TOOL': { # CCDC
+        'ASSET': '153', 'COGS': '632', 'REVENUE': '5111',
+        'DONI': '13881', 'GRNI': '33881'
+    },
+    'SERVICE': { # Dịch vụ (Không kho)
+        'ASSET': None, # Không có TK kho
+        'COGS': '632', 'REVENUE': '5113', # DT Dịch vụ
+        'DONI': '13881', 'GRNI': '33881'
+    },
+    'CONSIGNMENT': { # Hàng gửi bán
+        'ASSET': '157', 'COGS': '632', 'REVENUE': '5111',
+        'DONI': '13881', 'GRNI': '33881'
+    },
+
+    # --- PARTNER GROUPS ---
+    'CUSTOMER_VN': {
+        'RECEIVABLE': '131', 'TAX_OUT': '33311', 'CASH': '1111', 'BANK': '1121'
+    },
+    'CUSTOMER_FOREIGN': {
+        'RECEIVABLE': '131', 'TAX_OUT': '33311', 'CASH': '1112', 'BANK': '1122' # Ngoại tệ
+    },
+    'SUPPLIER_VN': {
+        'PAYABLE': '331', 'TAX_IN': '1331', 'CASH': '1111', 'BANK': '1121'
+    },
+    'SUPPLIER_FOREIGN': {
+        'PAYABLE': '331', 'TAX_IN': '1331', 'CASH': '1112', 'BANK': '1122'
+    },
+    'EMPLOYEE': {
+        'PAYABLE': '334', # Phải trả người lao động
+        'RECEIVABLE': '141' # Tạm ứng
+    }
+}

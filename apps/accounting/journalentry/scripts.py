@@ -1,3 +1,4 @@
+from apps.accounting.accountingsettings.utils.je_doc_data_log_handler import JEDocDataLogHandler
 from apps.accounting.journalentry.models import JournalEntry
 from apps.accounting.journalentry.utils import JELogHandler
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
@@ -157,7 +158,7 @@ class JournalEntryRun:
                 instance = GoodsReceipt.objects.get(id=doc['id'])
 
             if instance:
-                JELogHandler.push_to_journal_entry(instance)
+                JEDocDataLogHandler.push_data_to_je_doc_data(instance)
         return True
 
     @staticmethod

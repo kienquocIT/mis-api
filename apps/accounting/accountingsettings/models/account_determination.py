@@ -5,6 +5,9 @@ from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 __all__ = [
     'JEDocumentType',
     'JEPostingRule',
+    'JEPostingGroup',
+    'JEGLAccountMapping',
+    'JEGroupAssignment',
     'JEDocData',
     'JE_DOCUMENT_TYPE_APP',
     'DOCUMENT_TYPE_CHOICES',
@@ -14,6 +17,8 @@ __all__ = [
     'ROLE_KEY_CHOICES',
     'ACCOUNT_SOURCE_TYPE_CHOICES',
     'TRACKING_BY_CHOICES',
+    'GROUP_TYPE_CHOICES',
+    'TRACKING_APP_CHOICES',
 ]
 
 JE_DOCUMENT_TYPE_APP = [
@@ -84,6 +89,20 @@ TRACKING_BY_CHOICES = [
     ('employee', _('Nhân viên')),
 ]
 
+GROUP_TYPE_CHOICES = [
+    ('ITEM_GROUP', _('Item group')),
+    ('PARTNER_GROUP', _('Partner group')),
+]
+
+TRACKING_APP_CHOICES = [
+    # ITEM_GROUP
+    ('saledata.ProductType', _('Product Type')),
+    ('saledata.Product', _('Product')),
+    # PARTNER_GROUP
+    ('saledata.AccountType', _('Account Type')),
+    ('saledata.Account', _('Account')),
+]
+
 
 class JEDocumentType(MasterDataAbstractModel):
     module = models.SmallIntegerField(choices=DOCUMENT_TYPE_CHOICES)
@@ -108,6 +127,62 @@ class JEDocumentType(MasterDataAbstractModel):
             return False
         config = cls.objects.filter_on_company(app_code=app_code).first()
         return config.is_auto_je if config else False
+
+
+class JEPostingGroup(MasterDataAbstractModel):
+    """Bảng quản lý chung tất cả các nhóm định khoản. Phân loại bằng field 'type'"""
+
+    posting_group_type = models.CharField(max_length=20, choices=GROUP_TYPE_CHOICES)
+
+    class Meta:
+        verbose_name = 'JE Posting Group'
+        verbose_name_plural = 'JE Posting Groups'
+        ordering = ('posting_group_type', 'code')
+        unique_together = ('company', 'posting_group_type', 'code')
+
+
+class JEGroupAssignment(MasterDataAbstractModel):
+    """Bảng duy nhất quản lý việc: Đối tượng nào thuộc Nhóm định khoản nào"""
+
+    tracking_app = models.CharField(
+        max_length=100,
+        verbose_name='Code of application',
+        help_text='{app_label}.{model}',
+        choices=TRACKING_APP_CHOICES
+    )
+    tracking_id = models.UUIDField()
+    posting_group = models.ForeignKey(JEPostingGroup, on_delete=models.CASCADE, related_name='assignment_posting_group')
+
+    class Meta:
+        verbose_name = 'GL Group Assignment'
+        verbose_name_plural = 'GL Group Assignments'
+        ordering = ('posting_group__code', 'tracking_app')
+        unique_together = ('company', 'tracking_app', 'tracking_id')
+
+
+class JEGLAccountMapping(MasterDataAbstractModel):
+    """Bảng tra cứu: posting_group + role_key => Tài khoản"""
+
+    # Input 1: Posting group
+    posting_group = models.ForeignKey(
+        JEPostingGroup, on_delete=models.CASCADE, related_name='gl_mappings'
+    )
+
+    # Input 2: Role Key
+    role_key = models.CharField(max_length=50, choices=ROLE_KEY_CHOICES)
+
+    # Output: Account
+    account = models.ForeignKey(
+        'accountingsettings.ChartOfAccounts',
+        on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='gl_account_mapping_account',
+    )
+
+    class Meta:
+        verbose_name = 'JE GL Account Mapping'
+        verbose_name_plural = 'JE GL Accounts Mapping'
+        ordering = ('posting_group__code', 'role_key')
+        unique_together = ('company', 'posting_group', 'role_key')
 
 
 class JEPostingRule(MasterDataAbstractModel):
@@ -137,7 +212,7 @@ class JEPostingRule(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'JE Posting Rule'
         verbose_name_plural = 'JE Posting Rules'
-        ordering = ('-je_document_type__code', 'rule_level', 'priority')
+        ordering = ('je_document_type__code', 'rule_level', 'priority')
 
 
 class JEDocData(SimpleAbstractModel):
