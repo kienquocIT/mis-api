@@ -11,6 +11,7 @@ class JournalEntryLineList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
         'journal_entry__date_created': ['lte', 'gte'],
+        'account_id': ['exact'],
     }
 
     def get_queryset(self):
