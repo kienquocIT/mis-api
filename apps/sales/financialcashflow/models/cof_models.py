@@ -4,7 +4,7 @@ from apps.accounting.accountingsettings.utils.je_doc_data_log_handler import JED
 from apps.accounting.budget.utils.budget_extend import BudgetExtendHandler
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.financialcashflow.utils.logical_finish_cof import CashOutFlowFinishHandler
-from apps.sales.reconciliation.utils.autocreate_recon_for_cash_outflow import ReconForCOFHandler
+# from apps.sales.reconciliation.utils.autocreate_recon_for_cash_outflow import ReconForCOFHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 

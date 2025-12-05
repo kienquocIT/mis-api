@@ -2,7 +2,7 @@ from django.db import models
 from apps.accounting.accountingsettings.utils.je_doc_data_log_handler import JEDocDataLogHandler
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.financialcashflow.utils.logical_finish_cif import CashInFlowFinishHandler
-from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
+# from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
