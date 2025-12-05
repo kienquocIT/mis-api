@@ -2727,6 +2727,15 @@ AppProp_SaleData_Advance_Payment_data = {
         'is_wf_condition': True,
         'is_wf_zone': True,
     },
+    'a6e612a9-551d-4ffa-bf4a-7adbf87f7791': {
+        'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
+        'title': 'Expense',
+        'code': 'expense_items__expense_type__title',
+        'type': 5,
+        'content_type': 'saledata.expenseitem',
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
     **AdvancePayment_data__params
 }
 
@@ -2889,6 +2898,15 @@ AppProp_SaleData_Payment_data = {
         'type': 6,
         'is_wf_condition': True,
         'is_wf_zone': True,
+    },
+    '614505ec-e918-4d6f-8e81-755a4912632c': {
+        'application_id': '1010563f-7c94-42f9-ba99-63d5d26a1aca',
+        'title': 'Expense',
+        'code': 'expense_items__expense_type__title',
+        'type': 5,
+        'content_type': 'saledata.expenseitem',
+        'is_wf_zone': False,
+        'is_wf_condition': True,
     },
     **Payment_data__params
 }
