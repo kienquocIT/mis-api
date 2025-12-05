@@ -13,6 +13,21 @@ class JournalEntryLineList(BaseListMixin):
         'journal_entry__date_created': ['lte', 'gte'],
     }
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'journal_entry',
+            'account',
+            'product_mapped',
+            'business_partner',
+            'business_employee',
+            'currency_mapped'
+        ).order_by(
+            'journal_entry__date_created',
+            'journal_entry__id',
+            'je_line_type',
+            'order'
+        )
+
     @swagger_auto_schema(
         operation_summary="Journal Entry Line List",
         operation_description="Get all Journal Entry Lines",
