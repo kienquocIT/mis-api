@@ -4,7 +4,7 @@ from apps.accounting.accountingsettings.utils.je_doc_data_log_handler import JED
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
-from apps.sales.reconciliation.utils.autocreate_recon_for_ar_invoice import ReconForARInvoiceHandler
+# from apps.sales.reconciliation.utils.autocreate_recon_for_ar_invoice import ReconForARInvoiceHandler
 from apps.shared import SimpleAbstractModel, DataAbstractModel, RecurrenceAbstractModel
 
 

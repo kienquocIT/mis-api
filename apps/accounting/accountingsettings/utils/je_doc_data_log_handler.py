@@ -2,9 +2,8 @@ import logging
 from django.db import transaction
 from django.db.models import Sum
 from apps.accounting.accountingsettings.models.account_determination import JEDocData, JEDocumentType
-from apps.accounting.journalentry.models import JournalEntry
 from apps.accounting.journalentry.utils import JELogHandler
-from apps.masterdata.saledata.models import Currency, Periods, SubPeriods
+from apps.masterdata.saledata.models import Currency
 from apps.sales.report.models import ReportStockLog
 
 
