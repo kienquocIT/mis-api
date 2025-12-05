@@ -1789,3 +1789,7 @@ msgstr "Bạn không được phép chọn trạng thái thủ công."
 #
 msgid "Payroll template"
 msgstr "Biểu mẫu bảng lương"
+
+#
+msgid "Shift info"
+msgstr "Thông tin ca"
