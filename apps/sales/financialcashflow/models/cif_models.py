@@ -1,5 +1,5 @@
 from django.db import models
-from apps.accounting.journalentry.utils import JELogHandler
+from apps.accounting.accountingsettings.utils.je_doc_data_log_handler import JEDocDataLogHandler
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.financialcashflow.utils.logical_finish_cif import CashInFlowFinishHandler
 from apps.sales.reconciliation.utils.autocreate_recon_for_cash_inflow import ReconForCIFHandler
@@ -92,8 +92,8 @@ class CashInflow(DataAbstractModel):
                     self.update_ar_invoice_cash_inflow_done()
                     self.update_so_stage_cash_inflow_done()
                     CashInFlowFinishHandler.push_to_payment_plan(instance=self)  # payment plan
-                    JELogHandler.push_to_journal_entry(self)
-                    ReconForCIFHandler.auto_create_recon_doc(self)
+                    JEDocDataLogHandler.push_data_to_je_doc_data(self)
+                    # ReconForCIFHandler.auto_create_recon_doc(self)
         super().save(*args, **kwargs)
 
 
