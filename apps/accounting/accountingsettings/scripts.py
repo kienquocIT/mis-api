@@ -1,6 +1,5 @@
-from django.db import transaction
 from apps.accounting.accountingsettings.data_list import (
-    DOCUMENT_TYPE_LIST, POSTING_RULE_LIST, POSTING_GROUP_LIST, GL_MAPPING_TEMPLATE
+    DOCUMENT_TYPE_LIST, POSTING_RULE_LIST, GL_MAPPING_TEMPLATE
 )
 from apps.accounting.accountingsettings.models import ChartOfAccounts
 from apps.accounting.accountingsettings.models.account_determination import (
@@ -50,7 +49,7 @@ class JournalEntryInitData:
     def generate_default_je_posting_group(company_id):
         """ Bước 1: Tạo các Nhóm định khoản """
         company_obj = Company.objects.get(id=company_id)
-        for group_data in POSTING_GROUP_LIST:
+        for group_data in POSTING_RULE_LIST:
             JEPostingGroup.objects.create(
                 tenant_id=company_obj.tenant_id,
                 company_id=company_id,
