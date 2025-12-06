@@ -1,19 +1,25 @@
+# =============================================================================
+# 1. DOCUMENT TYPE LIST (Loại chứng từ)
+# Format: [ModuleID, TransactionKey, DjangoAppModel]
+# =============================================================================
 DOCUMENT_TYPE_LIST = [
-    # Sales
-    [0, 'DO_SALE', 'delivery.orderdeliverysub'],
-    [0, 'SALE_INVOICE', 'arinvoice.arinvoice'],
-    [0, 'CASH_IN', 'financialcashflow.cashinflow'],
-    # purchase
-    [1, 'GRN_PURCHASE', 'inventory.goodsreceipt'],
-    [1, 'PURCHASE_INVOICE', 'apinvoice.apinvoice'],
-    [0, 'CASH_OUT', 'financialcashflow.cashoutflow'],
-    # inventory
-    # asset
+    # --- BÁN HÀNG ---
+    [0, 'DO_SALE', 'delivery.orderdeliverysub'],        # Xuất kho bán hàng
+    [0, 'SALES_INVOICE', 'arinvoice.arinvoice'],        # Hóa đơn bán hàng
+    [0, 'CASH_IN', 'financialcashflow.cashinflow'],     # Phiếu thu
+
+    # --- MUA HÀNG ---
+    [1, 'GRN_PURCHASE', 'inventory.goodsreceipt'],      # Nhập kho mua hàng
+    [1, 'PURCHASE_INVOICE', 'apinvoice.apinvoice'],     # Hóa đơn mua hàng
+    [1, 'CASH_OUT', 'financialcashflow.cashoutflow'],   # Phiếu chi
 ]
 
-# Danh sách các Nhóm định khoản cần tạo
-POSTING_RULE_LIST = [
-    # --- ITEM GROUPS ---
+# =============================================================================
+# 2. POSTING GROUP LIST (Nhóm định khoản)
+# Dùng để tạo Master Data cho Dropdown chọn nhóm
+# =============================================================================
+POSTING_GROUP_LIST = [
+    # --- NHÓM SẢN PHẨM (ITEM_GROUP) ---
     {'code': 'GOODS', 'title': 'Hàng hóa', 'posting_group_type': 'ITEM_GROUP'},
     {'code': 'FINISHED_GOODS', 'title': 'Thành phẩm', 'posting_group_type': 'ITEM_GROUP'},
     {'code': 'SEMI_FINISHED', 'title': 'Bán thành phẩm', 'posting_group_type': 'ITEM_GROUP'},
@@ -22,7 +28,7 @@ POSTING_RULE_LIST = [
     {'code': 'SERVICE', 'title': 'Dịch vụ', 'posting_group_type': 'ITEM_GROUP'},
     {'code': 'CONSIGNMENT', 'title': 'Hàng gửi đi bán', 'posting_group_type': 'ITEM_GROUP'},
 
-    # --- PARTNER GROUPS ---
+    # --- NHÓM ĐỐI TÁC (PARTNER_GROUP) ---
     {'code': 'CUSTOMER_VN', 'title': 'Khách hàng Nội địa', 'posting_group_type': 'PARTNER_GROUP'},
     {'code': 'CUSTOMER_FOREIGN', 'title': 'Khách hàng Nước ngoài', 'posting_group_type': 'PARTNER_GROUP'},
     {'code': 'CUSTOMER_RETAIL', 'title': 'Khách lẻ / Vãng lai', 'posting_group_type': 'PARTNER_GROUP'},
@@ -31,29 +37,39 @@ POSTING_RULE_LIST = [
     {'code': 'EMPLOYEE', 'title': 'Nhân viên', 'posting_group_type': 'PARTNER_GROUP'},
 ]
 
-# Template mapping tài khoản chi tiết cho từng nhóm
+# =============================================================================
+# 3. GL MAPPING TEMPLATE (Bảng ánh xạ tài khoản mẫu)
+# Dùng để map tài khoản cho từng nhóm khi khởi tạo
+# =============================================================================
 GL_MAPPING_TEMPLATE = {
     # --- ITEM GROUPS ---
     'GOODS': {
-        'ASSET': '1561', 'COGS': '632', 'REVENUE': '5111', 'DONI': '13881', 'GRNI': '33881'
+        'ASSET': '1561', 'COGS': '632', 'REVENUE': '5111', 
+        'DONI': '13881', 'GRNI': '33881'
     },
     'FINISHED_GOODS': {
-        'ASSET': '155', 'COGS': '632', 'REVENUE': '5112', 'DONI': '13881', 'GRNI': '33881'
+        'ASSET': '155', 'COGS': '632', 'REVENUE': '5112', 
+        'DONI': '13881', 'GRNI': '33881'
     },
     'SEMI_FINISHED': {
-        'ASSET': '154', 'COGS': '632', 'REVENUE': '5112', 'DONI': '13881', 'GRNI': '33881'
+        'ASSET': '154', 'COGS': '632', 'REVENUE': '5112', 
+        'DONI': '13881', 'GRNI': '33881'
     },
     'MATERIAL': {
-        'ASSET': '152', 'COGS': '632', 'REVENUE': '5111', 'DONI': '13881', 'GRNI': '33881'
+        'ASSET': '152', 'COGS': '632', 'REVENUE': '5111', 
+        'DONI': '13881', 'GRNI': '33881'
     },
     'TOOL': {
-        'ASSET': '153', 'COGS': '632', 'REVENUE': '5111', 'DONI': '13881', 'GRNI': '33881'
+        'ASSET': '153', 'COGS': '632', 'REVENUE': '5111', 
+        'DONI': '13881', 'GRNI': '33881'
     },
     'SERVICE': {
-        'ASSET': None, 'COGS': '632', 'REVENUE': '5113', 'DONI': '13881', 'GRNI': '33881'
+        'ASSET': None, 'COGS': '632', 'REVENUE': '5113', # Dịch vụ ko có kho
+        'DONI': '13881', 'GRNI': '33881'
     },
     'CONSIGNMENT': {
-        'ASSET': '157', 'COGS': '632', 'REVENUE': '5111', 'DONI': '13881', 'GRNI': '33881'
+        'ASSET': '157', 'COGS': '632', 'REVENUE': '5111', 
+        'DONI': '13881', 'GRNI': '33881'
     },
 
     # --- PARTNER GROUPS ---
@@ -76,3 +92,189 @@ GL_MAPPING_TEMPLATE = {
         'PAYABLE': '334', 'RECEIVABLE': '141'
     }
 }
+
+# =============================================================================
+# 4. POSTING RULE LIST (Quy tắc hạch toán)
+# Cấu hình Nợ/Có cho từng loại chứng từ
+# =============================================================================
+POSTING_RULE_LIST = [
+    # -------------------------------------------------------------------------
+    # 1. XUẤT KHO BÁN HÀNG (DO_SALE)
+    # -------------------------------------------------------------------------
+    {
+        'je_doc_type': 'DO_SALE',
+        'posting_rule_list': [
+            # Giá vốn (Nợ) -> LOOKUP (Để phân biệt 632 hàng hóa/thành phẩm/dịch vụ)
+            {
+                'rule_level': 'LINE', 'priority': 10, 'role_key': 'COGS', 
+                'side': 'DEBIT', 'amount_source': 'COST',
+                'account_source_type': 'LOOKUP', # <--- LOOKUP
+                'description': 'Giá vốn hàng bán',
+            },
+            # Giảm kho (Có) -> LOOKUP (Để phân biệt 1561/155)
+            {
+                'rule_level': 'LINE', 'priority': 20, 'role_key': 'ASSET', 
+                'side': 'CREDIT', 'amount_source': 'COST',
+                'account_source_type': 'LOOKUP', # <--- LOOKUP
+                'description': 'Giảm kho hàng hóa',
+            },
+            # Phải thu tạm (Nợ) -> FIXED (Luôn treo 13881)
+            {
+                'rule_level': 'LINE', 'priority': 30, 'role_key': 'DONI',
+                'side': 'DEBIT', 'amount_source': 'SALES',
+                'account_source_type': 'FIXED', 'fixed_account_code': '13881',
+                'description': 'Phải thu tạm tính (13881)',
+            },
+            # Doanh thu (Có) -> LOOKUP (Để phân biệt 5111/5112/5113)
+            {
+                'rule_level': 'LINE', 'priority': 40, 'role_key': 'REVENUE',
+                'side': 'CREDIT', 'amount_source': 'SALES',
+                'account_source_type': 'LOOKUP', # <--- LOOKUP
+                'description': 'Doanh thu bán hàng',
+            },
+        ]
+    },
+
+    # -------------------------------------------------------------------------
+    # 2. HÓA ĐƠN BÁN HÀNG (SALES_INVOICE)
+    # -------------------------------------------------------------------------
+    {
+        'je_doc_type': 'SALES_INVOICE',
+        'posting_rule_list': [
+            # Phải thu (Nợ) -> FIXED (131) - Hoặc LOOKUP nếu muốn tách 1311/1312
+            {
+                'rule_level': 'HEADER', 'priority': 10, 'role_key': 'RECEIVABLE',
+                'side': 'DEBIT', 'amount_source': 'TOTAL',
+                'account_source_type': 'FIXED', 'fixed_account_code': '131',
+                'description': 'Phải thu khách hàng (131)',
+            },
+            # Thuế đầu ra (Có) -> FIXED (33311)
+            {
+                'rule_level': 'HEADER', 'priority': 20, 'role_key': 'TAX_OUT',
+                'side': 'CREDIT', 'amount_source': 'TAX',
+                'account_source_type': 'FIXED', 'fixed_account_code': '33311',
+                'description': 'Thuế GTGT đầu ra (33311)',
+            },
+            # Đối trừ Doanh thu tạm (Có) -> FIXED (13881)
+            {
+                'rule_level': 'LINE', 'priority': 30, 'role_key': 'DONI',
+                'side': 'CREDIT', 'amount_source': 'SALES',
+                'account_source_type': 'FIXED', 'fixed_account_code': '13881',
+                'description': 'Đối trừ hàng đã xuất (13881)',
+            },
+        ]
+    },
+
+    # -------------------------------------------------------------------------
+    # 3. NHẬP KHO MUA HÀNG (GRN_PURCHASE)
+    # -------------------------------------------------------------------------
+    {
+        'je_doc_type': 'GRN_PURCHASE',
+        'posting_rule_list': [
+            # Tăng kho (Nợ) -> LOOKUP (1561/152...)
+            {
+                'rule_level': 'LINE', 'priority': 10, 'role_key': 'ASSET',
+                'side': 'DEBIT', 'amount_source': 'COST',
+                'account_source_type': 'LOOKUP', # <--- LOOKUP
+                'description': 'Nhập kho hàng hóa',
+            },
+            # Phải trả tạm (Có) -> FIXED (33881)
+            {
+                'rule_level': 'LINE', 'priority': 20, 'role_key': 'GRNI',
+                'side': 'CREDIT', 'amount_source': 'COST',
+                'account_source_type': 'FIXED', 'fixed_account_code': '33881',
+                'description': 'Phải trả tạm tính (33881)',
+            },
+        ]
+    },
+
+    # -------------------------------------------------------------------------
+    # 4. HÓA ĐƠN MUA HÀNG (PURCHASE_INVOICE)
+    # -------------------------------------------------------------------------
+    {
+        'je_doc_type': 'PURCHASE_INVOICE',
+        'posting_rule_list': [
+            # Đối trừ nợ tạm (Nợ) -> FIXED (33881)
+            {
+                'rule_level': 'LINE', 'priority': 10, 'role_key': 'GRNI',
+                'side': 'DEBIT', 'amount_source': 'COST',
+                'account_source_type': 'FIXED', 'fixed_account_code': '33881',
+                'description': 'Đối trừ hàng về chưa hóa đơn',
+            },
+            # Thuế đầu vào (Nợ) -> FIXED (1331)
+            {
+                'rule_level': 'HEADER', 'priority': 20, 'role_key': 'TAX_IN',
+                'side': 'DEBIT', 'amount_source': 'TAX',
+                'account_source_type': 'FIXED', 'fixed_account_code': '1331',
+                'description': 'Thuế GTGT đầu vào',
+            },
+            # Phải trả (Có) -> FIXED (331)
+            {
+                'rule_level': 'HEADER', 'priority': 30, 'role_key': 'PAYABLE',
+                'side': 'CREDIT', 'amount_source': 'TOTAL',
+                'account_source_type': 'FIXED', 'fixed_account_code': '331',
+                'description': 'Phải trả người bán',
+            },
+        ]
+    },
+
+    # -------------------------------------------------------------------------
+    # 5. PHIẾU CHI (CASH_OUT)
+    # -------------------------------------------------------------------------
+    {
+        'je_doc_type': 'CASH_OUT',
+        'posting_rule_list': [
+            # Giảm phải trả (Nợ) -> FIXED (331)
+            {
+                'rule_level': 'HEADER', 'priority': 10, 'role_key': 'PAYABLE',
+                'side': 'DEBIT', 'amount_source': 'TOTAL',
+                'account_source_type': 'FIXED', 'fixed_account_code': '331',
+                'description': 'Giảm nợ phải trả NCC',
+            },
+            # Tiền mặt (Có) -> FIXED (1111)
+            {
+                'rule_level': 'HEADER', 'priority': 20, 'role_key': 'CASH',
+                'side': 'CREDIT', 'amount_source': 'CASH',
+                'account_source_type': 'FIXED', 'fixed_account_code': '1111',
+                'description': 'Chi tiền mặt',
+            },
+            # Tiền gửi (Có) -> FIXED (1121)
+            {
+                'rule_level': 'HEADER', 'priority': 30, 'role_key': 'BANK',
+                'side': 'CREDIT', 'amount_source': 'BANK',
+                'account_source_type': 'FIXED', 'fixed_account_code': '1121',
+                'description': 'Chi tiền gửi ngân hàng',
+            },
+        ]
+    },
+
+    # -------------------------------------------------------------------------
+    # 6. PHIẾU THU (CASH_IN)
+    # -------------------------------------------------------------------------
+    {
+        'je_doc_type': 'CASH_IN',
+        'posting_rule_list': [
+            # Tăng Tiền mặt (Nợ) -> FIXED (1111)
+            {
+                'rule_level': 'HEADER', 'priority': 10, 'role_key': 'CASH',
+                'side': 'DEBIT', 'amount_source': 'CASH',
+                'account_source_type': 'FIXED', 'fixed_account_code': '1111',
+                'description': 'Thu tiền mặt',
+            },
+            # Tăng Tiền gửi (Nợ) -> FIXED (1121)
+            {
+                'rule_level': 'HEADER', 'priority': 20, 'role_key': 'BANK',
+                'side': 'DEBIT', 'amount_source': 'BANK',
+                'account_source_type': 'FIXED', 'fixed_account_code': '1121',
+                'description': 'Thu tiền gửi ngân hàng',
+            },
+            # Giảm Phải thu (Có) -> FIXED (131)
+            {
+                'rule_level': 'HEADER', 'priority': 30, 'role_key': 'RECEIVABLE',
+                'side': 'CREDIT', 'amount_source': 'TOTAL',
+                'account_source_type': 'FIXED', 'fixed_account_code': '131',
+                'description': 'Thu tiền khách hàng',
+            },
+        ]
+    },
+]
