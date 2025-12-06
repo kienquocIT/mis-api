@@ -12,7 +12,7 @@ DOCUMENT_TYPE_LIST = [
 ]
 
 # Danh sách các Nhóm định khoản cần tạo
-POSTING_RULE_LIST = [
+POSTING_GROUP_LIST = [
     # --- ITEM GROUPS ---
     {'code': 'GOODS', 'title': 'Hàng hóa', 'posting_group_type': 'ITEM_GROUP'},
     {'code': 'FINISHED_GOODS', 'title': 'Thành phẩm', 'posting_group_type': 'ITEM_GROUP'},
