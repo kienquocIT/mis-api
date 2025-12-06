@@ -352,28 +352,20 @@ class JEDocDataLogHandler:
     @classmethod
     def push_data_to_je_doc_data(cls, transaction_obj):
         app_code = transaction_obj.get_model_code()
+        is_auto_je = False
         if app_code == 'inventory.goodsreceipt':
             is_auto_je = cls.push_goods_receipt_doc_data(transaction_obj, app_code)
-            if is_auto_je:
-                JELogHandler.push_to_journal_entry(transaction_obj)
         if app_code == 'apinvoice.apinvoice':
             is_auto_je = cls.push_ap_invoice_doc_data(transaction_obj, app_code)
-            if is_auto_je:
-                JELogHandler.push_to_journal_entry(transaction_obj)
         if app_code == 'financialcashflow.cashoutflow':
             is_auto_je = cls.push_cof_doc_data(transaction_obj, app_code)
-            if is_auto_je:
-                JELogHandler.push_to_journal_entry(transaction_obj)
         if app_code == 'delivery.orderdeliverysub':
             is_auto_je = cls.push_delivery_doc_data(transaction_obj, app_code)
-            if is_auto_je:
-                JELogHandler.push_to_journal_entry(transaction_obj)
         if app_code == 'arinvoice.arinvoice':
             is_auto_je = cls.push_ar_invoice_doc_data(transaction_obj, app_code)
-            if is_auto_je:
-                JELogHandler.push_to_journal_entry(transaction_obj)
         if app_code == 'financialcashflow.cashinflow':
             is_auto_je = cls.push_cif_doc_data(transaction_obj, app_code)
-            if is_auto_je:
-                JELogHandler.push_to_journal_entry(transaction_obj)
+
+        if is_auto_je:
+            JELogHandler.push_to_journal_entry(transaction_obj)
         return True

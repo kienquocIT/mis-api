@@ -9,14 +9,11 @@ logger = logging.getLogger(__name__)
 
 class JELogHandler:
     @classmethod
-    def get_rules(cls, company_id, transaction_key):
-        je_document_type_obj = JEDocumentType.objects.filter(code=transaction_key, is_auto_je=True).first()
-        if je_document_type_obj:
-            return JEPostingRule.objects.filter(
-                company_id=company_id,
-                je_document_type=je_document_type_obj,
-            ).select_related('fixed_account').order_by('priority')
-        return []
+    def get_rules(cls, company_id, je_document_type):
+        return JEPostingRule.objects.filter(
+            company_id=company_id,
+            je_document_type=je_document_type,
+        ).select_related('fixed_account').order_by('priority') if je_document_type else []
 
     @classmethod
     def get_account(cls, rule_obj):
@@ -53,10 +50,15 @@ class JELogHandler:
         }
 
     @classmethod
-    def parse_je_line_data(cls, transaction_obj, transaction_key):
+    def parse_je_line_data(cls, transaction_obj, je_document_type):
         """ Hàm parse dữ liệu từ JEDocData """
+        transaction_key = je_document_type.code if je_document_type else None
+        if not transaction_key:
+            logger.error(msg='[JE] Can not found transaction_key.')
+            return [], []
+
         # 1. Lấy Rules
-        rules = cls.get_rules(transaction_obj.company_id, transaction_key)
+        rules = cls.get_rules(transaction_obj.company_id, je_document_type)
         if not rules:
             logger.error("[JE] No Rules found for %s", transaction_key)
             return [], []
@@ -105,30 +107,28 @@ class JELogHandler:
             with transaction.atomic():
                 app_code = transaction_obj.get_model_code()
                 je_document_type = JEDocumentType.objects.filter(
-                    company_id=transaction_obj.company_id, app_code=app_code
+                    company_id=transaction_obj.company_id, app_code=app_code, is_auto_je=True
                 ).first()
-                transaction_key = je_document_type.code if je_document_type else None
-                if transaction_key:
-                    debit_rows_data, credit_rows_data = cls.parse_je_line_data(transaction_obj, transaction_key)
-                    kwargs = {
-                        'je_transaction_app_code': app_code,
-                        'je_transaction_id': str(transaction_obj.id),
-                        'je_transaction_data': {
-                            'id': str(transaction_obj.id),
-                            'code': transaction_obj.code,
-                            'title': transaction_obj.title,
-                            'date_created': str(transaction_obj.date_created),
-                            'date_approved': str(transaction_obj.date_approved),
-                        },
-                        'je_line_data': {
-                            'debit_rows': debit_rows_data,
-                            'credit_rows': credit_rows_data
-                        }
+                debit_rows_data, credit_rows_data = cls.parse_je_line_data(transaction_obj, je_document_type)
+                if len(debit_rows_data) == 0 and len(credit_rows_data) == 0:
+                    return False
+                kwargs = {
+                    'je_transaction_app_code': app_code,
+                    'je_transaction_id': str(transaction_obj.id),
+                    'je_transaction_data': {
+                        'id': str(transaction_obj.id),
+                        'code': transaction_obj.code,
+                        'title': transaction_obj.title,
+                        'date_created': str(transaction_obj.date_created),
+                        'date_approved': str(transaction_obj.date_approved),
+                    },
+                    'je_line_data': {
+                        'debit_rows': debit_rows_data,
+                        'credit_rows': credit_rows_data
                     }
-                    JournalEntry.auto_create_journal_entry(transaction_obj, **kwargs)
-                    return True
-                logger.error(msg='[JE] Can not found transaction_key.')
-                return False
+                }
+                JournalEntry.auto_create_journal_entry(transaction_obj, **kwargs)
+                return True
         except Exception as err:
             logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')
             return False
