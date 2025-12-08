@@ -171,7 +171,7 @@ class JELogHandler:
                     continue
                 # B. Tìm tài khoản
                 account = cls.get_account(rule, data_item)
-                print(rule.account_source_type, data_item.context_data, ' --> ', account.acc_code)
+                print(rule.account_source_type, data_item.context_data, ' --> ', account.acc_code if account else '')
                 if not account:
                     continue
                 # C. Tạo dòng

@@ -110,7 +110,6 @@ class JEDocumentType(MasterDataAbstractModel):
         verbose_name = 'JE Document Type'
         verbose_name_plural = 'JE Document Types'
         ordering = ('-module', '-app_code')
-        unique_together = ('company', 'module', 'code')
 
     @classmethod
     def check_app_state(cls, app_code):
@@ -130,7 +129,6 @@ class JEPostingGroup(MasterDataAbstractModel):
         verbose_name = 'JE Posting Group'
         verbose_name_plural = 'JE Posting Groups'
         ordering = ('posting_group_type', 'code')
-        unique_together = ('company', 'posting_group_type', 'code')
 
 
 class JEGroupAssignment(MasterDataAbstractModel):
@@ -149,7 +147,6 @@ class JEGroupAssignment(MasterDataAbstractModel):
         verbose_name = 'GL Group Assignment'
         verbose_name_plural = 'GL Group Assignments'
         ordering = ('posting_group__posting_group_type', 'posting_group__code', 'item_app')
-        unique_together = ('company', 'item_app', 'item_id')
 
 
 class JEGLAccountMapping(MasterDataAbstractModel):
@@ -174,7 +171,6 @@ class JEGLAccountMapping(MasterDataAbstractModel):
         verbose_name = 'JE GL Account Mapping'
         verbose_name_plural = 'JE GL Accounts Mapping'
         ordering = ('posting_group__code', 'role_key')
-        unique_together = ('company', 'posting_group', 'role_key')
 
 
 class JEPostingRule(MasterDataAbstractModel):
