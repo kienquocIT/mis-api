@@ -274,6 +274,10 @@ msgstr "Vai Trò"
 msgid "Sale Order"
 msgstr "Đơn hàng bán"
 
+# 2b015840-7032-4e82-986d-3b0d48c85e8f
+msgid "Shift"
+msgstr "Ca làm việc"
+
 # e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a
 msgid "Shipping"
 msgstr "Vận chuyển"
@@ -1789,3 +1793,7 @@ msgstr "Bạn không được phép chọn trạng thái thủ công."
 #
 msgid "Payroll template"
 msgstr "Biểu mẫu bảng lương"
+
+#
+msgid "Shift info"
+msgstr "Thông tin ca"
