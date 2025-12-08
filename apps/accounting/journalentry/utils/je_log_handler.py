@@ -1,13 +1,19 @@
 import logging
 from django.db import transaction
-from apps.accounting.accountingsettings.models import JEPostingRule, JEDocData, JEDocumentType
+from apps.accounting.accountingsettings.models import JEPostingRule, JEDocData, JEDocumentType, JEGroupAssignment, \
+    JEGLAccountMapping
 from apps.accounting.journalentry.models import JournalEntry
-
+from apps.shared import DisperseModel
 
 logger = logging.getLogger(__name__)
 
 
 class JELogHandler:
+    TRACKING_HIERARCHY_MAP = {
+        'saledata.Product': ('product_product_types__product_type_id', 'saledata.ProductType'),
+        'saledata.Account': ('account_account_types_mapped__account_type_id', 'saledata.AccountType'),
+    }
+
     @classmethod
     def get_rules(cls, company_id, je_document_type):
         return JEPostingRule.objects.filter(
@@ -16,14 +22,89 @@ class JELogHandler:
         ).select_related('fixed_account').order_by('priority') if je_document_type else []
 
     @classmethod
-    def get_account(cls, rule_obj):
-        if rule_obj.account_source_type == 'FIXED':
-            return rule_obj.fixed_account
-        # Nếu sau này có LOOKUP/DYNAMIC thì code thêm ở đây
+    def _resolve_lookup_account(cls, rule, data_item):
+        """
+        Logic tra cứu:
+        1. Lấy thông tin từ Context JSON.
+        2. Tìm Gán theo Đối tượng (Tracking) -> Leo thang (Hierarchy).
+        3. Tìm Account mapped.
+        """
+        # Lấy dữ liệu từ JSON
+        context_data = data_item.context_data or {}
+        tracking_app = context_data.get('tracking_app')
+        tracking_id = context_data.get('tracking_id')
+
+        assignment = None
+
+        if not tracking_id or not tracking_app:
+            return None
+
+        candidate_ids = [tracking_id]
+
+        max_depth = 3
+        current_depth = 0
+
+        while candidate_ids and tracking_app and current_depth < max_depth:
+            # A. Tìm xem có gán nhóm cho đối tượng này không?
+            assignment = JEGroupAssignment.objects.filter(
+                company_id=rule.company_id,
+                item_app=tracking_app,
+                item_id__in=candidate_ids
+            ).first()
+
+            if assignment:
+                break  # tìm ra
+
+            # B. Nếu không thấy, tra bản đồ để leo lên cấp cha (Lấy TẤT CẢ cha của TẤT CẢ con)
+            parent_config = cls.TRACKING_HIERARCHY_MAP.get(tracking_app)
+            if not parent_config or not parent_config[0]:
+                break
+
+            parent_related_name, parent_app_label = parent_config
+
+            try:
+                model_tracking = DisperseModel(app_model=tracking_app).get_model()
+                if not model_tracking:
+                    break
+
+                parent_ids = model_tracking.objects.filter(
+                    id__in=candidate_ids
+                ).values_list(parent_related_name, flat=True)
+
+                # Làm sạch list (bỏ None, bỏ trùng lặp)
+                candidate_ids = list(set([uid for uid in parent_ids if uid]))
+                # Cập nhật app để vòng sau check bảng cha
+                tracking_app = parent_app_label
+                current_depth += 1
+            except Exception as err:
+                logger.error(msg=f"Error in tracking hierarchy for {tracking_app}: {err}")
+                break
+
+        # --- GIAI ĐOẠN 2: MAPPING RA TÀI KHOẢN ---
+        if assignment:
+            # Có Nhóm rồi -> Tra bảng Mapping với Role Key để lấy Tài khoản
+            mapping = JEGLAccountMapping.objects.filter(
+                company_id=rule.company_id,
+                posting_group=assignment.posting_group,
+                role_key=rule.role_key  # VD: ASSET, COGS
+            ).select_related('account').first()
+
+            return mapping.account if mapping else None
+
         return None
 
     @classmethod
-    def create_single_je_line(cls, rule, value, taxable_value, account, data_item):
+    def get_account(cls, rule_obj, data_item):
+        # CASE 1: FIXED
+        if rule_obj.account_source_type == 'FIXED':
+            return rule_obj.fixed_account
+        # CASE 2: LOOKUP
+        if rule_obj.account_source_type == 'LOOKUP':
+            return cls._resolve_lookup_account(rule_obj, data_item)
+        return None
+
+    @classmethod
+    def create_single_je_line(cls, rule, value, account, data_item):
         """ Helper tạo dict dữ liệu cho 1 dòng JE """
         # 1. Xác định Loại đối soát (Recon Type), map từ Role Key sang Recon Type
         recon_map = {
@@ -34,15 +115,21 @@ class JELogHandler:
         }
         recon_type = recon_map.get(rule.role_key, '')
 
+        context_data = data_item.context_data or {}
+        def get_tracking_id(app_code):
+            tracking_app = context_data.get('tracking_app')
+            tracking_id = context_data.get('tracking_id')
+            return tracking_id if tracking_app == app_code else None
+
         return {
             'account': account,
-            'product_mapped_id': data_item.tracking_id if data_item.tracking_by == 'product' else None,
-            'business_partner_id': data_item.tracking_id if data_item.tracking_by == 'account' else None,
-            'business_employee_id': data_item.tracking_id if data_item.tracking_by == 'employee' else None,
+            'product_mapped_id': get_tracking_id('saledata.Product'),
+            'business_partner_id': get_tracking_id('saledata.Account'),
+            'business_employee_id': get_tracking_id('hr.Employee'),
             'debit': value if rule.side == 'DEBIT' else 0,
             'credit': value if rule.side == 'CREDIT' else 0,
             'is_fc': False,
-            'taxable_value': taxable_value if rule.role_key in ['TAX_IN', 'TAX_OUT'] else 0,
+            'taxable_value': data_item.taxable_value if rule.role_key in ['TAX_IN', 'TAX_OUT'] else 0,
             # Logic Reconciliation (Đối soát)
             'use_for_recon': bool(recon_type),
             'use_for_recon_type': recon_type,
@@ -87,11 +174,12 @@ class JELogHandler:
                 if value <= 0:
                     continue
                 # B. Tìm tài khoản
-                account = cls.get_account(rule)
+                account = cls.get_account(rule, data_item)
+                print(rule.account_source_type, data_item.context_data, ' --> ', account.acc_code)
                 if not account:
                     continue
                 # C. Tạo dòng
-                line_data = cls.create_single_je_line(rule, value, data_item.taxable_value, account, data_item,)
+                line_data = cls.create_single_je_line(rule, value, account, data_item)
                 # D. Phân loại Nợ/Có
                 if rule.side == 'DEBIT':
                     debit_rows_data.append(line_data)

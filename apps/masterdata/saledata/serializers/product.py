@@ -2,7 +2,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import (
-    ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer
+    ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, Manufacturer, ProductType
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price, ProductPriceList
 from apps.masterdata.saledata.serializers.product_common import ProductCommonFunction
@@ -127,6 +127,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     general_uom_group = serializers.UUIDField()
     general_manufacturer = serializers.UUIDField(required=False, allow_null=True)
     representative_product = serializers.UUIDField(required=False, allow_null=True)
+    product_types_mapped_list = serializers.ListField()
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
@@ -146,7 +147,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             # General
             'general_product_category', 'general_uom_group', 'general_traceability_method', 'general_manufacturer',
             'standard_price', 'width', 'height', 'length', 'volume', 'weight',
-            'representative_product',
+            'representative_product', 'product_types_mapped_list',
             # Sale
             'sale_default_uom', 'sale_tax', 'online_price_list', 'available_notify', 'available_notify_quantity',
             # Inventory
@@ -218,6 +219,16 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             except Product.DoesNotExist:
                 raise serializers.ValidationError({'representative_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
         return None
+
+    @classmethod
+    def validate_product_types_mapped_list(cls, product_types_mapped_list):
+        if len(product_types_mapped_list) == 1:
+            try:
+                product_type_obj = ProductType.objects.get(id=product_types_mapped_list[0])
+                return [str(product_type_obj.id)]
+            except Product.DoesNotExist:
+                raise serializers.ValidationError({'product_types_mapped_list': ProductMsg.PRODUCT_TYPE_NOT_EXIST})
+        raise serializers.ValidationError({'product_types_mapped_list': ProductMsg.PRODUCT_TYPE_NOT_NULL})
 
     @classmethod
     def validate_available_notify_quantity(cls, value):
@@ -362,6 +373,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
+        product_types_mapped_list = validated_data.pop('product_types_mapped_list', [])
+
         validated_data.update(
             {'volume': ProductCommonFunction.sub_validate_volume_obj(self.initial_data, validated_data)}
         )
@@ -372,9 +385,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             {'sale_product_price_list': ProductCommonFunction.setup_price_list_data_in_sale(self.initial_data)}
         )
         product_obj = Product.objects.create(**validated_data)
-        ProductCommonFunction.create_product_types_mapped(
-            product_obj, self.initial_data.get('product_types_mapped_list', [])
-        )
+
+        ProductCommonFunction.create_product_types_mapped(product_obj, product_types_mapped_list)
         if 'volume' in validated_data and 'weight' in validated_data:
             measure_data = {'weight': validated_data['weight'], 'volume': validated_data['volume']}
             if measure_data:
@@ -685,6 +697,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     general_uom_group = serializers.UUIDField()
     general_manufacturer = serializers.UUIDField(required=False, allow_null=True)
     representative_product = serializers.UUIDField(required=False, allow_null=True)
+    product_types_mapped_list = serializers.ListField()
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     online_price_list = serializers.UUIDField(required=False, allow_null=True)
@@ -707,7 +720,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'general_product_category', 'general_uom_group', 'general_manufacturer', 'general_traceability_method',
             'standard_price',
             'width', 'height', 'length', 'volume', 'weight',
-            'representative_product',
+            'representative_product', 'product_types_mapped_list',
             'sale_default_uom', 'sale_tax', 'online_price_list', 'available_notify', 'available_notify_quantity',
             'inventory_uom', 'inventory_level_min', 'inventory_level_max',
             'valuation_method',
@@ -748,6 +761,16 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             except Product.DoesNotExist:
                 raise serializers.ValidationError({'representative_product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
         return None
+
+    @classmethod
+    def validate_product_types_mapped_list(cls, product_types_mapped_list):
+        if len(product_types_mapped_list) == 1:
+            try:
+                product_type_obj = ProductType.objects.get(id=product_types_mapped_list[0])
+                return [str(product_type_obj.id)]
+            except Product.DoesNotExist:
+                raise serializers.ValidationError({'product_types_mapped_list': ProductMsg.PRODUCT_TYPE_NOT_EXIST})
+        raise serializers.ValidationError({'product_types_mapped_list': ProductMsg.PRODUCT_TYPE_NOT_NULL})
 
     @classmethod
     def validate_available_notify_quantity(cls, value):
@@ -862,6 +885,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def update(self, instance, validated_data):
+        product_types_mapped_list = validated_data.pop('product_types_mapped_list', [])
+
         old_representative_product_obj = instance.representative_product
         if old_representative_product_obj:
             old_representative_product_obj.is_representative_product = False
@@ -885,9 +910,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        ProductCommonFunction.create_product_types_mapped(
-            instance, self.initial_data.get('product_types_mapped_list', [])
-        )
+        ProductCommonFunction.create_product_types_mapped(instance, product_types_mapped_list)
         if 'volume' in validated_data and 'weight' in validated_data:
             measure_data = {'weight': validated_data['weight'], 'volume': validated_data['volume']}
             if measure_data:

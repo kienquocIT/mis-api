@@ -16,9 +16,8 @@ __all__ = [
     'AMOUNT_SOURCE_CHOICES',
     'ROLE_KEY_CHOICES',
     'ACCOUNT_SOURCE_TYPE_CHOICES',
-    'TRACKING_BY_CHOICES',
     'GROUP_TYPE_CHOICES',
-    'TRACKING_APP_CHOICES',
+    'ASSIGNMENT_APP_CHOICES',
 ]
 
 JE_DOCUMENT_TYPE_APP = [
@@ -83,24 +82,18 @@ ACCOUNT_SOURCE_TYPE_CHOICES = [
     ('CONDITIONAL', _('Theo điều kiện')),
 ]
 
-TRACKING_BY_CHOICES = [
-    ('product', _('Sản phẩm')),
-    ('account', _('Tài khoản')),
-    ('employee', _('Nhân viên')),
-]
-
 GROUP_TYPE_CHOICES = [
     ('ITEM_GROUP', _('Item group')),
     ('PARTNER_GROUP', _('Partner group')),
 ]
 
-TRACKING_APP_CHOICES = [
+ASSIGNMENT_APP_CHOICES = [
     # ITEM_GROUP
-    ('saledata.ProductType', _('Product Type')),
-    ('saledata.Product', _('Product')),
+    ('saledata.producttype', _('Product Type')),
+    ('saledata.product', _('Product')),
     # PARTNER_GROUP
-    ('saledata.AccountType', _('Account Type')),
-    ('saledata.Account', _('Account')),
+    ('saledata.accounttype', _('Account Type')),
+    ('saledata.account', _('Account')),
 ]
 
 
@@ -109,8 +102,7 @@ class JEDocumentType(MasterDataAbstractModel):
     app_code = models.CharField(
         max_length=100,
         verbose_name='Code of application',
-        help_text='{app_label}.{model}',
-        choices=JE_DOCUMENT_TYPE_APP
+        help_text='{app_label}.{model}'
     )
     is_auto_je = models.BooleanField(default=False)
 
@@ -144,20 +136,20 @@ class JEPostingGroup(MasterDataAbstractModel):
 class JEGroupAssignment(MasterDataAbstractModel):
     """Bảng duy nhất quản lý việc: Đối tượng nào thuộc Nhóm định khoản nào"""
 
-    tracking_app = models.CharField(
+    item_app = models.CharField(
         max_length=100,
         verbose_name='Code of application',
-        help_text='{app_label}.{model}',
-        choices=TRACKING_APP_CHOICES
+        help_text='{app_label}.{model}'
     )
-    tracking_id = models.UUIDField()
+    item_id = models.UUIDField()
+    item_app_data = models.JSONField(default=dict)
     posting_group = models.ForeignKey(JEPostingGroup, on_delete=models.CASCADE, related_name='assignment_posting_group')
 
     class Meta:
         verbose_name = 'GL Group Assignment'
         verbose_name_plural = 'GL Group Assignments'
-        ordering = ('posting_group__code', 'tracking_app')
-        unique_together = ('company', 'tracking_app', 'tracking_id')
+        ordering = ('posting_group__posting_group_type', 'posting_group__code', 'item_app')
+        unique_together = ('company', 'item_app', 'item_id')
 
 
 class JEGLAccountMapping(MasterDataAbstractModel):
@@ -169,7 +161,7 @@ class JEGLAccountMapping(MasterDataAbstractModel):
     )
 
     # Input 2: Role Key
-    role_key = models.CharField(max_length=50, choices=ROLE_KEY_CHOICES)
+    role_key = models.CharField(max_length=50)
 
     # Output: Account
     account = models.ForeignKey(
@@ -226,13 +218,16 @@ class JEDocData(SimpleAbstractModel):
     doc_id = models.UUIDField(verbose_name='Document ID')
     # Ghi cho tổng phiếu (HEADER) hay từng dòng trong phiếu (LINE)
     rule_level = models.CharField(max_length=10, choices=RULE_LEVEL_CHOICES)
-    amount_source = models.CharField(max_length=20, choices=AMOUNT_SOURCE_CHOICES)
+    amount_source = models.CharField(max_length=20)
     value = models.FloatField(default=0)
     taxable_value = models.FloatField(default=0)
     currency_mapped = models.ForeignKey('saledata.Currency', on_delete=models.CASCADE, null=True)
     currency_mapped_data = models.JSONField(default=dict)
-    tracking_by = models.CharField(max_length=20, choices=TRACKING_BY_CHOICES, null=True)
-    tracking_id = models.UUIDField(verbose_name='Tracking ID', null=True)
+    context_data = models.JSONField(default=dict)
+    # context_data = {
+    #     'tracking_app': {app_label}.{model},
+    #     'tracking_id': UUID,
+    # }
 
     class Meta:
         verbose_name = 'JE Doc Data'
@@ -246,7 +241,7 @@ class JEDocData(SimpleAbstractModel):
     @classmethod
     def make_doc_data_obj(
             cls, company_id, app_code, doc_id, rule_level, amount_source, value, taxable_value, currency_mapped,
-            tracking_by, tracking_id
+            context_data=None
     ):
         return cls(
             company_id=str(company_id),
@@ -263,6 +258,5 @@ class JEDocData(SimpleAbstractModel):
                 "title": currency_mapped.title,
                 "rate": currency_mapped.rate
             },
-            tracking_by=tracking_by,
-            tracking_id=str(tracking_id) if tracking_id else None
+            context_data=context_data or {}
         )

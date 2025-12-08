@@ -29,12 +29,9 @@ POSTING_GROUP_LIST = [
     {'code': 'CONSIGNMENT', 'title': 'Hàng gửi đi bán', 'posting_group_type': 'ITEM_GROUP'},
 
     # --- NHÓM ĐỐI TÁC (PARTNER_GROUP) ---
-    {'code': 'CUSTOMER_VN', 'title': 'Khách hàng Nội địa', 'posting_group_type': 'PARTNER_GROUP'},
-    {'code': 'CUSTOMER_FOREIGN', 'title': 'Khách hàng Nước ngoài', 'posting_group_type': 'PARTNER_GROUP'},
-    {'code': 'CUSTOMER_RETAIL', 'title': 'Khách lẻ / Vãng lai', 'posting_group_type': 'PARTNER_GROUP'},
-    {'code': 'SUPPLIER_VN', 'title': 'Nhà cung cấp Nội địa', 'posting_group_type': 'PARTNER_GROUP'},
-    {'code': 'SUPPLIER_FOREIGN', 'title': 'Nhà cung cấp Nước ngoài', 'posting_group_type': 'PARTNER_GROUP'},
-    {'code': 'EMPLOYEE', 'title': 'Nhân viên', 'posting_group_type': 'PARTNER_GROUP'},
+    {'code': 'CUSTOMER', 'title': 'Khách hàng', 'posting_group_type': 'PARTNER_GROUP'},
+    {'code': 'SUPPLIER', 'title': 'Nhà cung cấp', 'posting_group_type': 'PARTNER_GROUP'},
+    {'code': 'PARTNER_OTHER', 'title': 'Đối tác khác', 'posting_group_type': 'PARTNER_GROUP'},
 ]
 
 # =============================================================================
@@ -44,53 +41,37 @@ POSTING_GROUP_LIST = [
 GL_MAPPING_TEMPLATE = {
     # --- ITEM GROUPS ---
     'GOODS': {
-        'ASSET': '1561', 'COGS': '632', 'REVENUE': '5111', 
-        'DONI': '13881', 'GRNI': '33881'
+        'ASSET': '1561', 'COGS': '632', 'REVENUE': '5111', 'DONI': '13881', 'GRNI': '33881'
     },
     'FINISHED_GOODS': {
-        'ASSET': '155', 'COGS': '632', 'REVENUE': '5112', 
-        'DONI': '13881', 'GRNI': '33881'
+        'ASSET': '155', 'COGS': '632', 'REVENUE': '5112', 'DONI': '13881', 'GRNI': '33881'
     },
     'SEMI_FINISHED': {
-        'ASSET': '154', 'COGS': '632', 'REVENUE': '5112', 
-        'DONI': '13881', 'GRNI': '33881'
+        'ASSET': '154', 'COGS': '632', 'REVENUE': '5112', 'DONI': '13881', 'GRNI': '33881'
     },
     'MATERIAL': {
-        'ASSET': '152', 'COGS': '632', 'REVENUE': '5111', 
-        'DONI': '13881', 'GRNI': '33881'
+        'ASSET': '152', 'COGS': '632', 'REVENUE': '5111', 'DONI': '13881', 'GRNI': '33881'
     },
     'TOOL': {
-        'ASSET': '153', 'COGS': '632', 'REVENUE': '5111', 
-        'DONI': '13881', 'GRNI': '33881'
+        'ASSET': '153', 'COGS': '632', 'REVENUE': '5111', 'DONI': '13881', 'GRNI': '33881'
     },
     'SERVICE': {
-        'ASSET': None, 'COGS': '632', 'REVENUE': '5113', # Dịch vụ ko có kho
-        'DONI': '13881', 'GRNI': '33881'
+        'ASSET': None, 'COGS': '632', 'REVENUE': '5113', 'DONI': '13881', 'GRNI': '33881'
     },
     'CONSIGNMENT': {
-        'ASSET': '157', 'COGS': '632', 'REVENUE': '5111', 
-        'DONI': '13881', 'GRNI': '33881'
+        'ASSET': '157', 'COGS': '632', 'REVENUE': '5111', 'DONI': '13881', 'GRNI': '33881'
     },
 
     # --- PARTNER GROUPS ---
-    'CUSTOMER_VN': {
+    'CUSTOMER': {
         'RECEIVABLE': '131', 'TAX_OUT': '33311', 'CASH': '1111', 'BANK': '1121'
     },
-    'CUSTOMER_FOREIGN': {
-        'RECEIVABLE': '131', 'TAX_OUT': '33311', 'CASH': '1112', 'BANK': '1122'
-    },
-    'CUSTOMER_RETAIL': {
-        'RECEIVABLE': '131', 'TAX_OUT': '33311', 'CASH': '1111', 'BANK': '1121'
-    },
-    'SUPPLIER_VN': {
+    'SUPPLIER': {
         'PAYABLE': '331', 'TAX_IN': '1331', 'CASH': '1111', 'BANK': '1121'
     },
-    'SUPPLIER_FOREIGN': {
-        'PAYABLE': '331', 'TAX_IN': '1331', 'CASH': '1112', 'BANK': '1122'
+    'PARTNER_OTHER': {
+        'RECEIVABLE': '1388', 'PAYABLE': '3388', 'TAX_OUT': '33311', 'CASH': '1111', 'BANK': '1121'
     },
-    'EMPLOYEE': {
-        'PAYABLE': '334', 'RECEIVABLE': '141'
-    }
 }
 
 # =============================================================================
@@ -194,12 +175,12 @@ POSTING_RULE_LIST = [
     {
         'je_doc_type': 'PURCHASE_INVOICE',
         'posting_rule_list': [
-            # Đối trừ nợ tạm (Nợ) -> FIXED (33881)
+            # Phải trả (Có) -> FIXED (331)
             {
-                'rule_level': 'LINE', 'priority': 10, 'role_key': 'GRNI',
-                'side': 'DEBIT', 'amount_source': 'COST',
-                'account_source_type': 'FIXED', 'fixed_account_code': '33881',
-                'description': 'Đối trừ hàng về chưa hóa đơn',
+                'rule_level': 'HEADER', 'priority': 10, 'role_key': 'PAYABLE',
+                'side': 'CREDIT', 'amount_source': 'TOTAL',
+                'account_source_type': 'FIXED', 'fixed_account_code': '331',
+                'description': 'Phải trả người bán',
             },
             # Thuế đầu vào (Nợ) -> FIXED (1331)
             {
@@ -208,12 +189,12 @@ POSTING_RULE_LIST = [
                 'account_source_type': 'FIXED', 'fixed_account_code': '1331',
                 'description': 'Thuế GTGT đầu vào',
             },
-            # Phải trả (Có) -> FIXED (331)
+            # Đối trừ nợ tạm (Nợ) -> FIXED (33881)
             {
-                'rule_level': 'HEADER', 'priority': 30, 'role_key': 'PAYABLE',
-                'side': 'CREDIT', 'amount_source': 'TOTAL',
-                'account_source_type': 'FIXED', 'fixed_account_code': '331',
-                'description': 'Phải trả người bán',
+                'rule_level': 'LINE', 'priority': 30, 'role_key': 'GRNI',
+                'side': 'DEBIT', 'amount_source': 'COST',
+                'account_source_type': 'FIXED', 'fixed_account_code': '33881',
+                'description': 'Đối trừ hàng về chưa hóa đơn',
             },
         ]
     },

@@ -49,8 +49,10 @@ class JEDocDataLogHandler:
                         value=line_value,
                         taxable_value=0,
                         currency_mapped=currency_mapped,
-                        tracking_by='product',
-                        tracking_id=gr_prd_obj.product_id
+                        context_data={
+                            'tracking_app': 'saledata.Product',
+                            'tracking_id': str(gr_prd_obj.product_id)
+                        }
                     )
                     bulk_info.append(data_row)
                 JEDocData.objects.bulk_create(bulk_info)
@@ -85,8 +87,7 @@ class JEDocDataLogHandler:
                     value=ap_invoice_obj.sum_tax_value,
                     taxable_value=ap_invoice_obj.sum_after_tax_value,
                     currency_mapped=currency_mapped,
-                    tracking_by=None,
-                    tracking_id=None
+                    context_data=None
                 )
                 data_2 = JEDocData.make_doc_data_obj(
                     company_id=ap_invoice_obj.company_id,
@@ -97,8 +98,10 @@ class JEDocDataLogHandler:
                     value=ap_invoice_obj.sum_after_tax_value,
                     taxable_value=0,
                     currency_mapped=currency_mapped,
-                    tracking_by='account',
-                    tracking_id=ap_invoice_obj.supplier_mapped_id
+                    context_data={
+                        'tracking_app': 'saledata.Account',
+                        'tracking_id': str(ap_invoice_obj.supplier_mapped_id)
+                    }
                 )
                 bulk_info = [data_1, data_2]
                 for item in ap_invoice_obj.ap_invoice_items.all():
@@ -112,8 +115,10 @@ class JEDocDataLogHandler:
                         value=line_value,
                         taxable_value=0,
                         currency_mapped=currency_mapped,
-                        tracking_by='product',
-                        tracking_id=item.product_id
+                        context_data={
+                            'tracking_app': 'saledata.Product',
+                            'tracking_id': str(item.product_id)
+                        }
                     )
                     bulk_info.append(data_row)
                 JEDocData.objects.bulk_create(bulk_info)
@@ -142,12 +147,14 @@ class JEDocDataLogHandler:
                     value=cof_obj.total_value,
                     taxable_value=0,
                     currency_mapped=currency_mapped,
-                    tracking_by=[
-                        'account', 'account', 'employee'
-                    ][cof_obj.cof_type],
-                    tracking_id=[
-                        cof_obj.supplier_id, cof_obj.customer_id, cof_obj.employee_inherit_id
-                    ][cof_obj.cof_type]
+                    context_data={
+                        'tracking_app': [
+                            'saledata.Account', 'saledata.Account', 'hr.Employee'
+                        ][cof_obj.cof_type],
+                        'tracking_id': str([
+                            cof_obj.supplier_id, cof_obj.customer_id, cof_obj.employee_inherit_id
+                        ][cof_obj.cof_type])
+                    }
                 )
                 data_2 = JEDocData.make_doc_data_obj(
                     company_id=cof_obj.company_id,
@@ -158,8 +165,7 @@ class JEDocDataLogHandler:
                     value=cof_obj.cash_value,
                     taxable_value=0,
                     currency_mapped=currency_mapped,
-                    tracking_by=None,
-                    tracking_id=None
+                    context_data=None
                 )
                 data_3 = JEDocData.make_doc_data_obj(
                     company_id=cof_obj.company_id,
@@ -170,8 +176,7 @@ class JEDocDataLogHandler:
                     value=cof_obj.bank_value,
                     taxable_value=0,
                     currency_mapped=currency_mapped,
-                    tracking_by=None,
-                    tracking_id=None
+                    context_data=None
                 )
                 bulk_info = [data_1, data_2, data_3]
                 JEDocData.objects.bulk_create(bulk_info)
@@ -209,8 +214,10 @@ class JEDocDataLogHandler:
                         value=line_value,
                         taxable_value=0,
                         currency_mapped=currency_mapped,
-                        tracking_by='product',
-                        tracking_id=deli_product.product_id
+                        context_data={
+                            'tracking_app': 'saledata.Product',
+                            'tracking_id': str(deli_product.product_id)
+                        }
                     )
                     data_row_sales = JEDocData.make_doc_data_obj(
                         company_id=delivery_sub_obj.company_id,
@@ -221,8 +228,10 @@ class JEDocDataLogHandler:
                         value=deli_product.product_subtotal_cost * currency_exchange_rate,
                         taxable_value=0,
                         currency_mapped=currency_mapped,
-                        tracking_by='product',
-                        tracking_id=deli_product.product_id
+                        context_data={
+                            'tracking_app': 'saledata.Product',
+                            'tracking_id': str(deli_product.product_id)
+                        }
                     )
                     bulk_info.append(data_row_cost)
                     bulk_info.append(data_row_sales)
@@ -254,8 +263,7 @@ class JEDocDataLogHandler:
                     value=ar_invoice_obj.sum_tax_value,
                     taxable_value=ar_invoice_obj.sum_after_tax_value,
                     currency_mapped=currency_mapped,
-                    tracking_by=None,
-                    tracking_id=None
+                    context_data=None
                 )
                 data_2 = JEDocData.make_doc_data_obj(
                     company_id=ar_invoice_obj.company_id,
@@ -266,8 +274,10 @@ class JEDocDataLogHandler:
                     value=ar_invoice_obj.sum_after_tax_value,
                     taxable_value=0,
                     currency_mapped=currency_mapped,
-                    tracking_by='account',
-                    tracking_id=ar_invoice_obj.customer_mapped_id
+                    context_data = {
+                        'tracking_app': 'saledata.Account',
+                        'tracking_id': str(ar_invoice_obj.customer_mapped_id)
+                    }
                 )
                 bulk_info = [data_1, data_2]
                 for item in ar_invoice_obj.ar_invoice_items.all():
@@ -285,8 +295,10 @@ class JEDocDataLogHandler:
                         value=line_value,
                         taxable_value=0,
                         currency_mapped=currency_mapped,
-                        tracking_by='product',
-                        tracking_id=item.product_id
+                        context_data = {
+                            'tracking_app': 'saledata.Product',
+                            'tracking_id': str(item.product_id)
+                        }
                     )
                     bulk_info.append(data_row)
                 JEDocData.objects.bulk_create(bulk_info)
@@ -315,8 +327,10 @@ class JEDocDataLogHandler:
                     value=cif_obj.total_value,
                     taxable_value=0,
                     currency_mapped=currency_mapped,
-                    tracking_by='account',
-                    tracking_id=cif_obj.customer_id
+                    context_data={
+                        'tracking_app': 'saledata.Account',
+                        'tracking_id': str(cif_obj.customer_id)
+                    }
                 )
                 data_2 = JEDocData.make_doc_data_obj(
                     company_id=cif_obj.company_id,
@@ -327,8 +341,7 @@ class JEDocDataLogHandler:
                     value=cif_obj.cash_value,
                     taxable_value=0,
                     currency_mapped=currency_mapped,
-                    tracking_by=None,
-                    tracking_id=None
+                    context_data=None
                 )
                 data_3 = JEDocData.make_doc_data_obj(
                     company_id=cif_obj.company_id,
@@ -339,8 +352,7 @@ class JEDocDataLogHandler:
                     value=cif_obj.bank_value,
                     taxable_value=0,
                     currency_mapped=currency_mapped,
-                    tracking_by=None,
-                    tracking_id=None
+                    context_data=None
                 )
                 bulk_info = [data_1, data_2, data_3]
                 JEDocData.objects.bulk_create(bulk_info)
