@@ -41,7 +41,7 @@ class JELogHandler:
 
         candidate_ids = [tracking_id]
 
-        max_depth = 3
+        max_depth = 2
         current_depth = 0
 
         while candidate_ids and tracking_app and current_depth < max_depth:
