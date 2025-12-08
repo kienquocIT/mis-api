@@ -31,24 +31,22 @@ class JELogHandler:
         """
         # Lấy dữ liệu từ JSON
         context_data = data_item.context_data or {}
-        tracking_app = context_data.get('tracking_app')
-        tracking_id = context_data.get('tracking_id')
 
         assignment = None
 
-        if not tracking_id or not tracking_app:
+        if not context_data.get('tracking_app') or not context_data.get('tracking_id'):
             return None
 
-        candidate_ids = [tracking_id]
+        candidate_ids = [context_data.get('tracking_id')]
 
         max_depth = 2
         current_depth = 0
 
-        while candidate_ids and tracking_app and current_depth < max_depth:
+        while candidate_ids and current_depth < max_depth:
             # A. Tìm xem có gán nhóm cho đối tượng này không?
             assignment = JEGroupAssignment.objects.filter(
                 company_id=rule.company_id,
-                item_app=tracking_app,
+                item_app=context_data.get('tracking_app'),
                 item_id__in=candidate_ids
             ).first()
 
@@ -56,14 +54,14 @@ class JELogHandler:
                 break  # tìm ra
 
             # B. Nếu không thấy, tra bản đồ để leo lên cấp cha (Lấy TẤT CẢ cha của TẤT CẢ con)
-            parent_config = cls.TRACKING_HIERARCHY_MAP.get(tracking_app)
+            parent_config = cls.TRACKING_HIERARCHY_MAP.get(context_data.get('tracking_app'))
             if not parent_config or not parent_config[0]:
                 break
 
             parent_related_name, parent_app_label = parent_config
 
             try:
-                model_tracking = DisperseModel(app_model=tracking_app).get_model()
+                model_tracking = DisperseModel(app_model=context_data.get('tracking_app')).get_model()
                 if not model_tracking:
                     break
 
@@ -74,10 +72,10 @@ class JELogHandler:
                 # Làm sạch list (bỏ None, bỏ trùng lặp)
                 candidate_ids = list(set([uid for uid in parent_ids if uid]))
                 # Cập nhật app để vòng sau check bảng cha
-                tracking_app = parent_app_label
+                context_data['tracking_app'] = parent_app_label
                 current_depth += 1
             except Exception as err:
-                logger.error(msg=f"Error in tracking hierarchy for {tracking_app}: {err}")
+                logger.error(msg=f"Error in tracking hierarchy: {err}")
                 break
 
         # --- GIAI ĐOẠN 2: MAPPING RA TÀI KHOẢN ---
