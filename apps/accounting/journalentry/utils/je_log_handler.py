@@ -70,7 +70,7 @@ class JELogHandler:
                 ).values_list(parent_related_name, flat=True)
 
                 # Làm sạch list (bỏ None, bỏ trùng lặp)
-                candidate_ids = list(set([uid for uid in parent_ids if uid]))
+                candidate_ids = list({uid for uid in parent_ids if uid})
                 # Cập nhật app để vòng sau check bảng cha
                 context_data['tracking_app'] = parent_app_label
                 current_depth += 1
