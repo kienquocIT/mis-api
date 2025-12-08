@@ -11,7 +11,25 @@ class JournalEntryLineList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
         'journal_entry__date_created': ['lte', 'gte'],
+        'account_id': ['exact'],
     }
+
+    def get_queryset(self):
+        if 'is_general_ledger' in self.request.query_params and self.request.query_params.get('account_id') is None:
+            return super().get_queryset().none()
+        return super().get_queryset().select_related(
+            'journal_entry',
+            'account',
+            'product_mapped',
+            'business_partner',
+            'business_employee',
+            'currency_mapped'
+        ).order_by(
+            'journal_entry__date_created',
+            'journal_entry__id',
+            'je_line_type',
+            'order'
+        )
 
     @swagger_auto_schema(
         operation_summary="Journal Entry Line List",

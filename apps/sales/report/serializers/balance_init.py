@@ -284,9 +284,9 @@ class BalanceInitializationCreateSerializer(serializers.ModelSerializer):
                         'trans_id': '',
                         'trans_code': '',
                         'trans_title': 'Balance init input',
-                        'quantity': lot_mapped.quantity_import,
+                        'quantity': float(lot.get('quantity_import', 0)),
                         'cost': casted_cost,
-                        'value': casted_cost * lot_mapped.quantity_import,
+                        'value': casted_cost * float(lot.get('quantity_import', 0)),
                         'lot_data': {
                             'lot_id': str(lot_mapped.id),
                             'lot_number': lot_mapped.lot_number,

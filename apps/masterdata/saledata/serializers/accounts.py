@@ -192,11 +192,11 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_tax_code(cls, value):
-        if value != '#':
+        if value:
             if Account.objects.filter_on_company(tax_code=value).exists():
                 raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
             return value
-        return '#'
+        return ''
 
     @classmethod
     def validate_account_type(cls, value):
@@ -265,9 +265,9 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                 validate_data['email'] = contact_mapped_obj.email
             else:
                 raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
-        # else:
-            # if not validate_data.get('tax_code'):
-                # raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
+        else:
+            if not validate_data.get('tax_code'):
+                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         try:
             validate_data['price_list_mapped'] = Price.objects.filter_on_company(is_default=True).first()
         except Price.DoesNotExist:
@@ -544,11 +544,11 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"name": AccountsMsg.NAME_NOT_NULL})
 
     def validate_tax_code(self, value):
-        if value != '#':
+        if value:
             if Account.objects.filter_on_company(tax_code=value).exclude(id=self.instance.id).count() > 0:
                 raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_IS_EXIST})
             return value
-        return '#'
+        return ''
 
     @classmethod
     def validate_account_type(cls, value):
@@ -653,9 +653,9 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                 validate_data['email'] = contact_mapped_obj.email
             else:
                 raise serializers.ValidationError({"contact_mapped": AccountsMsg.CONTACT_NOT_EXIST})
-        # else:
-        #     if not validate_data.get('tax_code'):
-        #         raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
+        else:
+            if not validate_data.get('tax_code'):
+                raise serializers.ValidationError({"tax_code": AccountsMsg.TAX_CODE_NOT_NONE})
         return validate_data
 
     def update(self, instance, validated_data):

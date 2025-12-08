@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from apps.accounting.accountingsettings.models.account_determination import (
     JEDocumentType, JEPostingRule, JEPostingGroup, JEGroupAssignment, JEGLAccountMapping,
-    JE_DOCUMENT_TYPE_APP, DOCUMENT_TYPE_CHOICES, TRACKING_APP_CHOICES, GROUP_TYPE_CHOICES,
+    JE_DOCUMENT_TYPE_APP, DOCUMENT_TYPE_CHOICES, ASSIGNMENT_APP_CHOICES, GROUP_TYPE_CHOICES, ROLE_KEY_CHOICES,
+    AMOUNT_SOURCE_CHOICES, RULE_LEVEL_CHOICES, SIDE_CHOICES,
 )
 
 
@@ -41,6 +42,10 @@ class JEPostingRuleListSerializer(serializers.ModelSerializer):
     document_type_code = serializers.SerializerMethodField()
     document_type_app_code_parsed = serializers.SerializerMethodField()
     fixed_account_data = serializers.SerializerMethodField()
+    rule_level_parsed = serializers.SerializerMethodField()
+    role_key_parsed = serializers.SerializerMethodField()
+    side_parsed = serializers.SerializerMethodField()
+    amount_source_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = JEPostingRule
@@ -51,14 +56,18 @@ class JEPostingRuleListSerializer(serializers.ModelSerializer):
             'document_type_code',
             'document_type_app_code_parsed',
             'rule_level',
+            'rule_level_parsed',
             # Ưu tiên
             'priority',
             # Role là gì
             'role_key',
+            'role_key_parsed',
             # Bên Nợ hay Có
             'side',
+            'side_parsed',
             # Lấy tiền từ nguồn nào (field trong model)
             'amount_source',
+            'amount_source_parsed',
             # Chọn tài khoản từ đâu (cứng hay động)
             'account_source_type',
             # CASE A: Cứng
@@ -68,6 +77,22 @@ class JEPostingRuleListSerializer(serializers.ModelSerializer):
             'example',
             'is_active'
         )
+
+    @classmethod
+    def get_rule_level_parsed(cls, obj):
+        return dict(RULE_LEVEL_CHOICES)[obj.rule_level]
+
+    @classmethod
+    def get_role_key_parsed(cls, obj):
+        return dict(ROLE_KEY_CHOICES)[obj.role_key]
+
+    @classmethod
+    def get_side_parsed(cls, obj):
+        return dict(SIDE_CHOICES)[obj.side]
+
+    @classmethod
+    def get_amount_source_parsed(cls, obj):
+        return dict(AMOUNT_SOURCE_CHOICES)[obj.amount_source]
 
     @classmethod
     def get_document_type_code(cls, obj):
@@ -107,22 +132,25 @@ class JEPostingGroupListSerializer(serializers.ModelSerializer):
 
 
 class JEGroupAssignmentListSerializer(serializers.ModelSerializer):
-    tracking_app_parsed = serializers.SerializerMethodField()
+    item_app_parsed = serializers.SerializerMethodField()
     posting_group = serializers.SerializerMethodField()
+    posting_group_type_parsed = serializers.SerializerMethodField()
 
     class Meta:
         model = JEGroupAssignment
         fields = (
             'id',
-            'tracking_app',
-            'tracking_app_parsed',
+            'item_app',
+            'item_app_parsed',
+            'item_app_data',
             'posting_group',
+            'posting_group_type_parsed',
             'is_active'
         )
 
     @classmethod
-    def get_tracking_app_parsed(cls, obj):
-        return dict(TRACKING_APP_CHOICES)[obj.tracking_app]
+    def get_item_app_parsed(cls, obj):
+        return dict(ASSIGNMENT_APP_CHOICES)[obj.item_app]
 
     @classmethod
     def get_posting_group(cls, obj):
@@ -134,8 +162,13 @@ class JEGroupAssignmentListSerializer(serializers.ModelSerializer):
             'is_active': obj.posting_group.is_active
         } if obj.posting_group else {}
 
+    @classmethod
+    def get_posting_group_type_parsed(cls, obj):
+        return dict(GROUP_TYPE_CHOICES)[obj.posting_group.posting_group_type]
+
 
 class JEGLAccountMappingListSerializer(serializers.ModelSerializer):
+    role_key_parsed = serializers.SerializerMethodField()
     posting_group = serializers.SerializerMethodField()
     account_data = serializers.SerializerMethodField()
 
@@ -144,10 +177,15 @@ class JEGLAccountMappingListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'role_key',
+            'role_key_parsed',
             'posting_group',
             'account_data',
             'is_active'
         )
+
+    @classmethod
+    def get_role_key_parsed(cls, obj):
+        return dict(ROLE_KEY_CHOICES)[obj.role_key]
 
     @classmethod
     def get_posting_group(cls, obj):
@@ -157,7 +195,7 @@ class JEGLAccountMappingListSerializer(serializers.ModelSerializer):
             'title': obj.posting_group.title,
             'posting_group_type': obj.posting_group.posting_group_type,
             'is_active': obj.posting_group.is_active
-        }
+        } if obj.posting_group else {}
 
     @classmethod
     def get_account_data(cls, obj):
