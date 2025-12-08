@@ -2,7 +2,7 @@ from django.db import models
 from apps.accounting.accountingsettings.utils.je_doc_data_log_handler import JEDocDataLogHandler
 from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
-from apps.sales.reconciliation.utils import ReconForAPInvoiceHandler
+# from apps.sales.reconciliation.utils import ReconForAPInvoiceHandler
 from apps.shared import SimpleAbstractModel, DataAbstractModel
 
 

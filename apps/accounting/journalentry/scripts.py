@@ -1,6 +1,5 @@
 from apps.accounting.accountingsettings.utils.je_doc_data_log_handler import JEDocDataLogHandler
 from apps.accounting.journalentry.models import JournalEntry
-from apps.accounting.journalentry.utils import JELogHandler
 from apps.masterdata.saledata.models.periods import Periods, SubPeriods
 from apps.sales.apinvoice.models import APInvoice
 from apps.sales.arinvoice.models import ARInvoice
