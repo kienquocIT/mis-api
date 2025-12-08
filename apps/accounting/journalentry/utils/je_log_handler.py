@@ -37,11 +37,9 @@ class JELogHandler:
         if not context_data.get('tracking_app') or not context_data.get('tracking_id'):
             return None
 
-        candidate_ids = [context_data.get('tracking_id')]
-
         max_depth = 2
         current_depth = 0
-
+        candidate_ids = [context_data.get('tracking_id')]
         while candidate_ids and current_depth < max_depth:
             # A. Tìm xem có gán nhóm cho đối tượng này không?
             assignment = JEGroupAssignment.objects.filter(
