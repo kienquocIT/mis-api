@@ -385,8 +385,8 @@ class DeliFinishAssetToolHandler:
                                 delivery_offset=delivery_offset,
                                 delivery_warehouse=delivery_warehouse
                             )
-                        delivery_product.asset_data = asset_data
-                        delivery_product.save(update_fields=['asset_data'])
+                delivery_product.asset_data = asset_data
+                delivery_product.save(update_fields=['asset_data'])
         return True
 
     @classmethod
