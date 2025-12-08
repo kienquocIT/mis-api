@@ -15,6 +15,8 @@ class JournalEntryLineList(BaseListMixin):
     }
 
     def get_queryset(self):
+        if 'is_general_ledger' in self.request.query_params and self.request.query_params.get('account_id') is None:
+            return super().get_queryset().none()
         return super().get_queryset().select_related(
             'journal_entry',
             'account',
