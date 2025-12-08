@@ -225,7 +225,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                 'trans_title': log.trans_title,
                 'trans_code': log.trans_code,
             })
-        if len(log.serial_data) > 0:
+        elif len(log.serial_data) > 0:
             serial = log.serial_data
             data_stock_activity.append({
                 'in_quantity': 1,
@@ -263,7 +263,7 @@ class ReportInventoryCostListSerializer(serializers.ModelSerializer):
                 'trans_title': log.trans_title,
                 'trans_code': log.trans_code,
             })
-        if len(log.serial_data) > 0:
+        elif len(log.serial_data) > 0:
             serial = log.serial_data
             data_stock_activity.append({
                 'out_quantity': 1,
