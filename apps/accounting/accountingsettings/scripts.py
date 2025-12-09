@@ -1,6 +1,4 @@
 from django.db import transaction
-from sklearn.gaussian_process.kernels import Product
-
 from apps.accounting.accountingsettings.data_list import (
     DOCUMENT_TYPE_LIST, POSTING_RULE_LIST, POSTING_GROUP_LIST, GL_MAPPING_TEMPLATE
 )
