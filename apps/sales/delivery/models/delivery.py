@@ -365,7 +365,6 @@ class OrderDeliverySub(DataAbstractModel):
                     DeliFinishAssetToolHandler.update_asset_status(instance=self)  # asset status => delivered
                     DeliFinishAssetToolHandler.force_create_new_asset(instance=self)  # create new asset
                     DeliFinishAssetToolHandler.force_create_new_tool(instance=self)  # create new tool
-                    DeliFinishHandler.push_product_info(instance=self)  # product
                     DeliFinishHandler.push_so_lo_status(instance=self)  # sale order
                     DeliFinishHandler.push_final_acceptance(instance=self)  # final acceptance
                     DeliHandler.push_diagram(instance=self)  # diagram

@@ -199,33 +199,6 @@ class DeliFinishHandler:
                 serial.product_warehouse_serial.save(update_fields=['serial_status'])
         return True
 
-    # PRODUCT INFO
-    @classmethod
-    def push_product_info(cls, instance):
-        for deli_product in instance.delivery_product_delivery_sub.all():
-            if deli_product.product and deli_product.uom:
-                if deli_product.offset_data:
-                    for deli_offset in deli_product.delivery_po_delivery_product.filter(offset__isnull=False):
-                        deli_offset.offset.save(**{
-                            'update_stock_info': {
-                                'quantity_delivery': deli_product.picked_quantity,
-                                'system_status': 3,
-                            },
-                            'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
-                        })
-                    return True
-                final_ratio = DeliFinishSubHandler.get_final_uom_ratio(
-                    product_obj=deli_product.product, uom_transaction=deli_product.uom
-                )
-                deli_product.product.save(**{
-                    'update_stock_info': {
-                        'quantity_delivery': deli_product.picked_quantity * final_ratio,
-                        'system_status': 3,
-                    },
-                    'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
-                })
-        return True
-
     # SALE/ LEASE ORDER STATUS
     @classmethod
     def push_so_lo_status(cls, instance):

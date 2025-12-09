@@ -294,7 +294,6 @@ class GoodsReceipt(DataAbstractModel):
                         app_code=None, instance=self, in_workflow=True, kwargs=kwargs
                     )
                     GRFinishHandler.push_to_warehouse_stock(instance=self)
-                    GRFinishHandler.push_product_info(instance=self)
                     GRFinishHandler.push_relate_gr_info(instance=self)
                     # update lot_id in GoodsReceiptLot (for new LOT)
                     for item in self.goods_receipt_lot_goods_receipt.all():
@@ -308,9 +307,6 @@ class GoodsReceipt(DataAbstractModel):
                     self.push_goods_receipt_data_to_goods_detail(self)
                     IRForGoodsReceiptHandler.push_to_inventory_report(self)
                     JEDocDataLogHandler.push_data_to_je_doc_data(self)
-
-        if self.system_status in [4]:  # cancel
-            GRFinishHandler.push_product_info(instance=self)
 
         # diagram
         GRHandler.push_diagram(instance=self)

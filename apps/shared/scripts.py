@@ -537,35 +537,6 @@ def reset_and_run_reports_sale(run_type=0):
     return True
 
 
-def reset_and_run_product_info(company_id):
-    # reset
-    update_fields = ['stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount']
-    for product in Product.objects.filter(company_id=company_id):
-        product.stock_amount = 0
-        product.wait_delivery_amount = 0
-        product.wait_receipt_amount = 0
-        product.available_amount = 0
-        product.save(update_fields=update_fields)
-    # set input, output, return
-    # input
-    for po in PurchaseOrder.objects.filter(system_status=3, company_id=company_id):
-        POFinishHandler.push_product_info(instance=po)
-    for gr in GoodsReceipt.objects.filter(system_status=3, company_id=company_id):
-        GRFinishHandler.push_product_info(instance=gr)
-    for gd in GoodsDetail.objects.filter(company_id=company_id):
-        gd.push_product_info(instance=gd)
-    # output
-    for so in SaleOrder.objects.filter(system_status=3, company_id=company_id):
-        SOFinishHandler.push_product_info(instance=so)
-    for deli_sub in OrderDeliverySub.objects.filter(system_status=3, company_id=company_id):
-        DeliFinishHandler.push_product_info(instance=deli_sub)
-    # return
-    for return_obj in GoodsReturn.objects.filter(system_status=3, company_id=company_id):
-        ReturnFinishHandler.push_product_info(instance=return_obj)
-    print('reset_and_run_product_info done.')
-    return True
-
-
 def reset_and_run_warehouse_stock(company_id, run_type=0):
     # input, output, provide
     if run_type == 0:  # input

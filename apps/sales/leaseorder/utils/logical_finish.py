@@ -16,22 +16,6 @@ class DocHandler:
 
 
 class LOFinishHandler:
-    # PRODUCT INFO
-    @classmethod
-    def push_product_info(cls, instance):
-        for product_order in instance.lease_order_product_offset_lease_order.filter(
-                product__isnull=False, offset__isnull=False
-        ):
-            if product_order.offset:
-                product_order.offset.save(**{
-                    'update_stock_info': {
-                        'quantity_order': product_order.product_quantity,
-                        'system_status': instance.system_status,
-                    },
-                    'update_fields': ['wait_delivery_amount', 'available_amount']
-                })
-        return True
-
     # ASSET
     @classmethod
     def update_asset_status(cls, instance):
