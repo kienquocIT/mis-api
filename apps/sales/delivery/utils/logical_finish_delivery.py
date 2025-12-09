@@ -385,8 +385,8 @@ class DeliFinishAssetToolHandler:
                                 delivery_offset=delivery_offset,
                                 delivery_warehouse=delivery_warehouse
                             )
-                        delivery_product.asset_data = asset_data
-                        delivery_product.save(update_fields=['asset_data'])
+                delivery_product.asset_data = asset_data
+                delivery_product.save(update_fields=['asset_data'])
         return True
 
     @classmethod
@@ -496,17 +496,19 @@ class DeliFinishAssetToolHandler:
         model_tool_m2m = DisperseModel(app_model='asset.instrumenttoolusedepartment').get_model()
         if all(hasattr(model, 'objects') for model in [model_tool, model_tool_m2m]):
             for delivery_product in instance.delivery_product_delivery_sub.all():
+                tool_data = []
                 for delivery_offset in delivery_product.delivery_po_delivery_product.filter(offset__isnull=False):
-                    DeliFinishAssetToolHandler.create_new_tool(
+                    tool_data += DeliFinishAssetToolHandler.create_new_tool(
                         model_tool=model_tool,
                         model_tool_m2m=model_tool_m2m,
-                        delivery_product=delivery_product,
                         delivery_offset=delivery_offset,
                     )
+                delivery_product.tool_data = tool_data
+                delivery_product.save(update_fields=['tool_data'])
         return True
 
     @classmethod
-    def create_new_tool(cls, model_tool, model_tool_m2m, delivery_product, delivery_offset):
+    def create_new_tool(cls, model_tool, model_tool_m2m, delivery_offset):
         if delivery_offset.product_convert_into == 1:
             price_list = []
             quantity = 0
@@ -519,16 +521,14 @@ class DeliFinishAssetToolHandler:
                 if cost not in price_list:
                     price_list.append(cost)
                 quantity += delivery_warehouse.quantity_delivery
-            tool_data = DeliFinishAssetToolHandler.create_obj_and_set_tool_data(
+            return DeliFinishAssetToolHandler.create_obj_and_set_tool_data(
                 model_tool=model_tool,
                 model_tool_m2m=model_tool_m2m,
                 delivery_offset=delivery_offset,
-                cost=(sum(price_list) / len(price_list)),
+                cost=(sum(price_list) / len(price_list)) if price_list else 0,
                 quantity=quantity
             )
-            delivery_product.tool_data = tool_data
-            delivery_product.save(update_fields=['tool_data'])
-        return True
+        return []
 
     @classmethod
     def create_obj_and_set_tool_data(
