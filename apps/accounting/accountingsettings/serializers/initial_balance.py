@@ -569,9 +569,9 @@ class InitialBalanceCommonFunction:
         if not tenant_obj or not company_obj or not period_mapped_obj:
             raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
 
-        for item in tab_data:
-            detail_data = item.pop('detail_data', {})
-            print(detail_data)
+        # for item in tab_data:
+            # detail_data = item.pop('detail_data', {})
+            # print(detail_data)
             # logic here
         return tab_data
 
@@ -582,10 +582,10 @@ class InitialBalanceCommonFunction:
         if not tenant_obj or not company_obj or not period_mapped_obj:
             raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
 
-        for item in tab_data:
-            # logic here
-            detail_data = item.pop('detail_data', {})
-            print(detail_data)
+        # for item in tab_data:
+        #     # logic here
+        #     detail_data = item.pop('detail_data', {})
+        #     print(detail_data)
         return tab_data
 
     @staticmethod
@@ -595,8 +595,8 @@ class InitialBalanceCommonFunction:
         if not tenant_obj or not company_obj or not period_mapped_obj:
             raise serializers.ValidationError({"error": "Tenant or Company or Period is missing."})
         for item in tab_data:
-            detail_data = item.pop('detail_data', {})
-            print(detail_data)
+            # detail_data = item.pop('detail_data', {})
+            # print(detail_data)
             item['account_value'] = item.get('debit_value', 0) + item.get('credit_value', 0)
         return tab_data
 
@@ -632,74 +632,74 @@ class InitialBalanceCommonFunction:
         ib_obj.save(update_fields=['tab_account_balance_data'])
 
         # Gọi hàm xử lý sau khi update tab
-        cls.common_after_update_tab(tab_name, created_instances, to_update)
+        # cls.common_after_update_tab(tab_name, created_instances, to_update)
         return True
 
-    @classmethod
-    def common_after_update_tab(cls, tab_name, created_instances=None, updated_items=None):
-        """Xử lý sau khi update tab"""
-        handlers = {
-            'tab_money_data': cls.handle_money_tab,
-            'tab_goods_data': cls.handle_goods_tab,
-            'tab_customer_receivable_data': cls.handle_customer_receivable_tab,
-            'tab_supplier_payable_data': cls.handle_supplier_payable_tab,
-            'tab_employee_payable_data': cls.handle_employee_payable_tab,
-            'tab_fixed_assets_data': cls.handle_fixed_assets_tab,
-            'tab_tools_data': cls.handle_tools_tab,
-            'tab_accounts_data': cls.handle_accounts_tab,
-        }
-        handler = handlers.get(tab_name)
-        if handler:
-            handler(created_instances, updated_items)
-            return True
-        print(f'Invalid tab name: {tab_name}')
-        return False
+    # @classmethod
+    # def common_after_update_tab(cls, tab_name, created_instances=None, updated_items=None):
+    #     """Xử lý sau khi update tab"""
+    #     handlers = {
+    #         'tab_money_data': cls.handle_money_tab ,
+    #         'tab_goods_data': cls.handle_goods_tab,
+    #         'tab_customer_receivable_data': cls.handle_customer_receivable_tab,
+    #         'tab_supplier_payable_data': cls.handle_supplier_payable_tab,
+    #         'tab_employee_payable_data': cls.handle_employee_payable_tab,
+    #         'tab_fixed_assets_data': cls.handle_fixed_assets_tab,
+    #         'tab_tools_data': cls.handle_tools_tab,
+    #         'tab_accounts_data': cls.handle_accounts_tab,
+    #     }
+    #     handler = handlers.get(tab_name)
+    #     if handler:
+    #         handler(created_instances, updated_items)
+    #         return True
+    #     print(f'Invalid tab name: {tab_name}')
+    #     return False
 
     # Handler methods
-    @staticmethod
-    def handle_money_tab(created_instances, updated_items):
-        """Xử lý tab money"""
-        print(created_instances, updated_items)
-        return True
-
-    @staticmethod
-    def handle_goods_tab(created_instances, updated_items):
-        """Xử lý tab goods"""
-        print(created_instances, updated_items)
-        return True
-
-    @staticmethod
-    def handle_customer_receivable_tab(created_instances, updated_items):
-        """Xử lý tab customer receivable"""
-        print(created_instances, updated_items)
-        return True
-
-    @staticmethod
-    def handle_supplier_payable_tab(created_instances, updated_items):
-        """Xử lý tab supplier payable"""
-        print(created_instances, updated_items)
-        return True
-
-    @staticmethod
-    def handle_employee_payable_tab(created_instances, updated_items):
-        """Xử lý tab employee payable"""
-        print(created_instances, updated_items)
-        return True
-
-    @staticmethod
-    def handle_fixed_assets_tab(created_instances, updated_items):
-        """Xử lý tab fixed assets"""
-        print(created_instances, updated_items)
-        return True
-
-    @staticmethod
-    def handle_tools_tab(created_instances, updated_items):
-        """Xử lý tab expenses"""
-        print(created_instances, updated_items)
-        return True
-
-    @staticmethod
-    def handle_accounts_tab(created_instances, updated_items):
-        """Xử lý tab owner equity"""
-        print(created_instances, updated_items)
-        return True
+    # @staticmethod
+    # def handle_money_tab(created_instances, updated_items):
+    #     """Xử lý tab money"""
+    #     print(created_instances, updated_items)
+    #     return True
+    #
+    # @staticmethod
+    # def handle_goods_tab(created_instances, updated_items):
+    #     """Xử lý tab goods"""
+    #     print(created_instances, updated_items)
+    #     return True
+    #
+    # @staticmethod
+    # def handle_customer_receivable_tab(created_instances, updated_items):
+    #     """Xử lý tab customer receivable"""
+    #     print(created_instances, updated_items)
+    #     return True
+    #
+    # @staticmethod
+    # def handle_supplier_payable_tab(created_instances, updated_items):
+    #     """Xử lý tab supplier payable"""
+    #     print(created_instances, updated_items)
+    #     return True
+    #
+    # @staticmethod
+    # def handle_employee_payable_tab(created_instances, updated_items):
+    #     """Xử lý tab employee payable"""
+    #     print(created_instances, updated_items)
+    #     return True
+    #
+    # @staticmethod
+    # def handle_fixed_assets_tab(created_instances, updated_items):
+    #     """Xử lý tab fixed assets"""
+    #     print(created_instances, updated_items)
+    #     return True
+    #
+    # @staticmethod
+    # def handle_tools_tab(created_instances, updated_items):
+    #     """Xử lý tab expenses"""
+    #     print(created_instances, updated_items)
+    #     return True
+    #
+    # @staticmethod
+    # def handle_accounts_tab(created_instances, updated_items):
+    #     """Xử lý tab owner equity"""
+    #     print(created_instances, updated_items)
+    #     return True
