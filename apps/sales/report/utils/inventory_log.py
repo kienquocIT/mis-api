@@ -11,7 +11,7 @@ class ReportInvLog:
     @classmethod
     def log(cls, doc_obj, doc_date, doc_data, for_balance_init=False):
         if not doc_obj or not doc_date or len(doc_data) == 0:
-            print(f'*** NOT LOG (doc detail: {doc_obj.code}, {doc_date}, {len(doc_data)})\n ***')
+            print(f'*** NOT LOG (doc detail: {doc_obj.code}, {doc_date}, {len(doc_data)}) ***')
             return None
         try:
             with transaction.atomic():

@@ -108,6 +108,7 @@ class IRForDeliveryHandler:
     @classmethod
     def push_to_inventory_report(cls, instance):
         """ Chuẩn bị data để ghi vào báo cáo tồn kho và tính giá Cost """
+        print('(For sale/service)')
         doc_data = []
         sale_order_obj = instance.order_delivery.sale_order if instance.order_delivery else None
         service_order_obj = instance.order_delivery.service_order if instance.order_delivery else None
@@ -159,6 +160,7 @@ class IRForDeliveryHandler:
     @classmethod
     def push_to_inventory_report_lease(cls, instance):
         """ Chuẩn bị data để ghi vào báo cáo tồn kho và tính giá Cost """
+        print('(For lease)')
         doc_data = []
         lease_order_obj = instance.order_delivery.lease_order if instance.order_delivery else None
         for deli_product in instance.delivery_product_delivery_sub.all():
