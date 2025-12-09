@@ -431,6 +431,7 @@ class ProductList(BaseListMixin, BaseCreateMixin):
             'sale_default_uom',
             'inventory_uom'
         ).prefetch_related(
+            'product_warehouse_product',
             'general_product_types_mapped',
             Prefetch(
                 'product_price_product',

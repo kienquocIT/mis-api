@@ -146,6 +146,7 @@ class InventoryReportRun:
             if doc['type'] == 'delivery':
                 instance = OrderDeliverySub.objects.get(id=doc['id'])
                 IRForDeliveryHandler.push_to_inventory_report(instance)
+                IRForDeliveryHandler.push_to_inventory_report_lease(instance)
             if doc['type'] == 'goods_issue':
                 instance = GoodsIssue.objects.get(id=doc['id'])
                 IRForGoodsIssueHandler.push_to_inventory_report(instance)

@@ -23,6 +23,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     purchase_information = serializers.SerializerMethodField()
     attribute_list_data = serializers.SerializerMethodField()
     duration_unit_data = serializers.SerializerMethodField()
+    stock_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -119,6 +120,13 @@ class ProductListSerializer(serializers.ModelSerializer):
                 'code': obj.duration_unit.group.code
             } if obj.duration_unit.group else {},
         } if obj.duration_unit else {}
+
+    @classmethod
+    def get_stock_amount(cls, obj):
+        stock_amount = 0
+        for warehouse_id in obj.product_warehouse_product.all().values_list('warehouse_id', flat=True):
+            stock_amount += obj.get_cost_info_by_warehouse(warehouse_id=warehouse_id, get_type=0)
+        return stock_amount
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
