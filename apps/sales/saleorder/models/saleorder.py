@@ -287,7 +287,6 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
                     )
                     if self.opportunity:  # registration
                         GoodsRegistration.check_and_create_goods_registration(self)
-                    SOFinishHandler.push_product_info(instance=self)  # product info
                     SOFinishHandler.update_opportunity(instance=self)  # opportunity
                     SOFinishHandler.push_to_customer_activity(instance=self)  # customer
                     SOFinishHandler.push_to_report_revenue(instance=self)  # reports
@@ -308,8 +307,6 @@ class SaleOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstract
                     SOFinishHandler.push_budget(instance=self)  # budget
 
         if self.system_status in [4]:  # cancel
-            # product
-            SOFinishHandler.push_product_info(instance=self)
             # opportunity
             SOFinishHandler.update_opportunity(instance=self)
         # opportunity log

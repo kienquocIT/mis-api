@@ -291,7 +291,6 @@ class LeaseOrder(DataAbstractModel, BastionFieldAbstractModel, RecurrenceAbstrac
                     CompanyFunctionNumber.auto_gen_code_based_on_config(
                         app_code=None, instance=self, in_workflow=True, kwargs=kwargs
                     )
-                    LOFinishHandler.push_product_info(instance=self)  # product info
                     LOFinishHandler.update_asset_status(instance=self)  # asset status => leased
                     LOFinishHandler.push_to_report_revenue(instance=self)  # reports
                     LOFinishHandler.push_to_report_customer(instance=self)

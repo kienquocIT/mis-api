@@ -26,23 +26,6 @@ class DocHandler:
 
 
 class SOFinishHandler:
-    # PRODUCT INFO
-    @classmethod
-    def push_product_info(cls, instance):
-        for product_order in instance.sale_order_product_sale_order.filter(product__isnull=False):
-            if product_order.product:
-                final_ratio = DocHandler.get_final_uom_ratio(
-                    product_obj=product_order.product, uom_transaction=product_order.unit_of_measure
-                )
-                product_order.product.save(**{
-                    'update_stock_info': {
-                        'quantity_order': product_order.product_quantity * final_ratio,
-                        'system_status': instance.system_status,
-                    },
-                    'update_fields': ['wait_delivery_amount', 'available_amount']
-                })
-        return True
-
     # REPORT
     @classmethod
     def push_to_report_revenue(cls, instance):
