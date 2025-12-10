@@ -1,11 +1,28 @@
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.hrm.overtimerequest.models import OvertimeRequest
-from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, DisperseModel
+from apps.hrm.overtimerequest.models import OvertimeRequest, OTMapWithEmployeeShift
+from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, DisperseModel, \
+    AbstractListSerializerModel
 
 
-class OvertimeRequestListSerializers(serializers.ModelSerializer):
+def create_mapped_with_shift(data, ot_id, employee_lst):
+    bulk_create_lst = []
+    for empl_id in employee_lst:
+        for item in data:
+            if item['shift']:
+                bulk_create_lst.append(OTMapWithEmployeeShift(
+                    overtime_request_id=ot_id,
+                    shift_id=item['shift']['id'],
+                    date=item['date'],
+                    employee_id=empl_id,
+                    type=item['ot_type'],
+                ))
+    if bulk_create_lst:
+        OTMapWithEmployeeShift.objects.bulk_create(bulk_create_lst)
+
+
+class OvertimeRequestListSerializers(AbstractListSerializerModel):
     class Meta:
         model = OvertimeRequest
         fields = (
@@ -15,7 +32,6 @@ class OvertimeRequestListSerializers(serializers.ModelSerializer):
             'employee_created_data',
             'employee_list_data',
             'employee_inherit_data',
-            'ot_type',
             'date_created',
             'system_status',
         )
@@ -40,6 +56,7 @@ class OvertimeRequestCreateSerializers(AbstractCreateSerializerModel):
     @decorator_run_workflow
     def create(self, validated_data):
         overtime = OvertimeRequest.objects.create(**validated_data)
+        create_mapped_with_shift(overtime.date_list, overtime.id, overtime.employee_list)
         return overtime
 
     class Meta:
@@ -49,29 +66,19 @@ class OvertimeRequestCreateSerializers(AbstractCreateSerializerModel):
             'employee_inherit',
             'employee_list',
             'employee_list_data',
-            'ot_type',
-            'start_date',
-            'end_date',
             'start_time',
             'end_time',
             'reason',
-            'shift',
+            'date_list',
         )
 
 
 class OvertimeRequestDetailSerializers(AbstractDetailSerializerModel):
-    shift = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     @classmethod
-    def get_shift(cls, obj):
-        item_list = {
-            'id': obj.shift.id,
-            'code': obj.shift.code,
-            'title': obj.shift.title,
-            'checkin_time': obj.shift.checkin_time,
-            'checkout_time': obj.shift.checkout_time,
-        } if obj.shift else {}
-        return item_list
+    def get_employee_inherit(cls, obj):
+        return obj.employee_inherit_data
 
     class Meta:
         model = OvertimeRequest
@@ -79,16 +86,13 @@ class OvertimeRequestDetailSerializers(AbstractDetailSerializerModel):
             'id',
             'title',
             'code',
-            'employee_inherit_data',
+            'employee_inherit',
             'employee_list_data',
             'employee_created_data',
-            'ot_type',
-            'start_date',
-            'end_date',
             'start_time',
             'end_time',
             'reason',
-            'shift',
+            'date_list',
         )
 
 
@@ -114,6 +118,8 @@ class OvertimeRequestUpdateSerializers(AbstractCreateSerializerModel):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        instance.ot_map_with_employee_shift.all().delete()
+        create_mapped_with_shift(instance.date_list, instance.id, instance.employee_list)
         return instance
 
     class Meta:
@@ -123,11 +129,8 @@ class OvertimeRequestUpdateSerializers(AbstractCreateSerializerModel):
             'employee_inherit',
             'employee_list',
             'employee_list_data',
-            'ot_type',
-            'start_date',
-            'end_date',
             'start_time',
             'end_time',
             'reason',
-            'shift',
+            'date_list',
         )

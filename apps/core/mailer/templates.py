@@ -113,7 +113,7 @@ TEMPLATE_MENTION_COMMENT_DEFAULT = _(
     "<p><a href=\"_mention__links\" style=\"text-decoration:none;color:#fff;width: 150px;display: inline-block;background: #007D88;padding: 6px;text-transform: uppercase;letter-spacing: .95px; text-align:center;\">View document</a></p>"
 )
 
-SUBJECT_NEW_TASK_DEFAULT = _('🔔 Notification: You have new to do tasks')
+SUBJECT_NEW_TASK_DEFAULT = _('Notification: You have new to do tasks')
 
 TEMPLATE_NEW_TASKS_DEFAULT = _(
     "<h2 style=\"font-weight: 500; font-size: 20px\">Company: <strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
@@ -123,7 +123,7 @@ TEMPLATE_NEW_TASKS_DEFAULT = _(
 )
 
 
-SUBJECT_NEW_OVERTIME_DEFAULT = _('🔔 Notification: New Overtime Request Received')
+SUBJECT_NEW_OVERTIME_DEFAULT = _('Notification: New Overtime Request Received')
 
 TEMPLATE_NEW_OVERTIME_DEFAULT = _(
     "<h2 style=\"font-weight: 500; font-size: 20px\">Company: <strong><span style=\"text-align: center;\"> __company_title__ </span></strong></h2>"
@@ -131,8 +131,7 @@ TEMPLATE_NEW_OVERTIME_DEFAULT = _(
     "<p>A new overtime request has been submitted to your on BFLOW. Please review the details at your earliest convenience to ensure timely action</p>"
     "<p><strong>Detail info Overtime request:</strong></p>"
     "<ul>"
-    "<li><strong>Start date:</strong> <span class=\"params-data\" data-code=\"_ot__start_date\"></span></li>"
-    "<li><strong>End date:</strong> <span class=\"params-data\" data-code=\"_ot__end_date\"></span></li>"
+    "<li><strong>Date:</strong> <span class=\"params-data\" data-code=\"_ot__ot_date\"></span></li>"
     "<li><strong>Start time:</strong> <span class=\"params-data\" data-code=\"_ot__start_time\"></span></li>"
     "<li><strong>End time:</strong> <span class=\"params-data\" data-code=\"_ot__end_time\"></span></li>"
     "</ul>"

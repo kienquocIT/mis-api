@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from celery import shared_task
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -18,8 +20,7 @@ def send_mail_new_overtime(cls, log_cls, **kwargs):
     template_obj = kwargs.get('template_obj', None)
     tenant_obj = DisperseModel(app_model='tenant.Tenant').get_model().objects.filter(pk=tenant_id).first()
     email_list = kwargs.get('employee_inherit', [])
-    start_date = kwargs.get('start_date', [])
-    end_date = kwargs.get('end_date', [])
+    ot_date = kwargs.get('ot_date', [])
     start_time = kwargs.get('start_time', [])
     end_time = kwargs.get('end_time', [])
     log_cls.update(
@@ -47,8 +48,7 @@ def send_mail_new_overtime(cls, log_cls, **kwargs):
                 tenant_obj=tenant_obj,
                 doc_id=doc_id,
                 app_code=doc_code,
-                start_date=start_date,
-                end_date=end_date,
+                ot_date=ot_date,
                 start_time=start_time,
                 end_time=end_time,
             ),
@@ -94,8 +94,7 @@ def prepare_send_mail_new_overtime(data_list):
         doc_id=data_list.get('doc_id'),
         doc_code=data_list.get('doc_app'),
         employee_inherit=data_list.get('employee_inherit_email_list'),
-        start_date=data_list.get('start_date'),
-        end_date=data_list.get('end_date'),
+        ot_date=data_list.get('ot_date'),
         start_time=data_list.get('start_time'),
         end_time=data_list.get('end_time'),
     )
@@ -124,14 +123,20 @@ def hrm_overtime_request_create(sender, instance, created, **kwargs):
         if len(mail_list) == 0:
             print('Email not found can not send email noti overtime request')
             return True
+
+        date_list = []
+        for item in instance.date_list:
+            get_date = item.get('date', None)
+            if get_date:
+                date_list.append(datetime.strptime(get_date, "%Y-%m-%d").strftime('%d/%m/%Y'))
+
         task_kwargs = {
             'tenant_id': str(instance.tenant_id),
             'company_id': str(instance.company_id),
             'doc_id': str(instance.id),
             'doc_app': 'overtimerequest.overtimerequest',
             'employee_inherit_email_list': mail_list,
-            'start_date': instance.start_date.strftime('%Y-%m-%d'),
-            'end_date': instance.end_date.strftime('%Y-%m-%d'),
+            'ot_date': date_list,
             'start_time': instance.start_time.strftime('%H:%M:%S'),
             'end_time': instance.end_time.strftime('%H:%M:%S'),
         }
