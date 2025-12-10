@@ -123,10 +123,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_stock_amount(cls, obj):
-        stock_amount = 0
-        for warehouse_id in obj.product_warehouse_product.all().values_list('warehouse_id', flat=True):
-            stock_amount += obj.get_cost_info_by_warehouse(warehouse_id=warehouse_id, get_type=0)
-        return stock_amount
+        return sum(obj.product_warehouse_product.values_list("stock_amount", flat=True))
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
