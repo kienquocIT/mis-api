@@ -56,6 +56,7 @@ from .. import ProjectMsg
 from apps.core.printer.models import PrintTemplates
 from ...accounting.accountingsettings.models import Dimension, DimensionSyncConfig
 from ...core.printer.template_content import TEMPLATE_CONTENT_MAP
+from ...hrm.attendance.models import ShiftAssignmentAppConfig
 from ...hrm.payroll.models import PayrollConfig, PayrollInsuranceRule, PayrollDeductionRule, PayrollTaxBracket
 from ...sales.leaseorder.models import LeaseOrderAppConfig
 from apps.sales.project.tasks import create_project_news
@@ -1276,6 +1277,12 @@ class ConfigDefaultData:
                 for data in tax_bracket_data
             ])
 
+    def shift_assignment_config(self):
+        ShiftAssignmentAppConfig.objects.create(
+            company=self.company_obj,
+            tenant=self.company_obj.tenant
+        )
+
     def call_new(self):
         config = self.company_config()
         self.delivery_config()
@@ -1297,6 +1304,7 @@ class ConfigDefaultData:
         self.lease_order_config()
         self.create_print_template_default(config.company)
         self.payroll_config()
+        self.shift_assignment_config()
         return True
 
 

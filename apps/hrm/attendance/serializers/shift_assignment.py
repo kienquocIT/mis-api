@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.hr.models import Employee, Group
-from apps.hrm.attendance.models import ShiftAssignment, ShiftInfo
+from apps.hrm.attendance.models import ShiftAssignment, ShiftInfo, ShiftAssignmentAppConfig
 from apps.shared import BaseMsg
 
 
@@ -158,3 +158,28 @@ class ShiftAssignmentCreateSerializer(serializers.ModelSerializer):
                 ))
         results = ShiftAssignment.objects.bulk_create(bulk_data)
         return results[0]
+
+
+class ShiftAssignmentConfigUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ShiftAssignmentAppConfig
+        fields = (
+            'employees_config',
+        )
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
+
+
+class ShiftAssignmentConfigDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ShiftAssignmentAppConfig
+        fields = (
+            'id',
+            'employees_config',
+        )

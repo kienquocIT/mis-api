@@ -1,8 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.hrm.attendance.models import ShiftAssignment
-from apps.hrm.attendance.serializers import ShiftAssignmentListSerializer, ShiftAssignmentCreateSerializer
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin
+from apps.hrm.attendance.models import ShiftAssignment, ShiftAssignmentAppConfig
+from apps.hrm.attendance.serializers import ShiftAssignmentListSerializer, ShiftAssignmentCreateSerializer, \
+    ShiftAssignmentConfigDetailSerializer, ShiftAssignmentConfigUpdateSerializer
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
 class ShiftAssignmentList(BaseListMixin, BaseCreateMixin):
@@ -49,3 +50,33 @@ class ShiftAssignmentList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+
+class ShiftAssignmentConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = ShiftAssignmentAppConfig.objects
+    serializer_detail = ShiftAssignmentConfigDetailSerializer
+    serializer_update = ShiftAssignmentConfigUpdateSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Shift Assignment Config Detail",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        self.lookup_field = 'company_id'
+        self.kwargs['company_id'] = request.user.company_current_id
+        return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Shift Assignment Config Update",
+        request_body=ShiftAssignmentConfigUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def put(self, request, *args, **kwargs):
+        self.lookup_field = 'company_id'
+        self.kwargs['company_id'] = request.user.company_current_id
+        return self.update(request, *args, **kwargs)
