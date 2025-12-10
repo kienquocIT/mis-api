@@ -219,13 +219,14 @@ class JEDocDataLogHandler:
                             'tracking_id': str(deli_product.product_id)
                         }
                     )
+                    print(deli_product.product_cost * deli_product.picked_quantity, currency_exchange_rate)
                     data_row_sales = JEDocData.make_doc_data_obj(
                         company_id=delivery_sub_obj.company_id,
                         app_code=app_code,
                         doc_id=delivery_sub_obj.id,
                         rule_level='LINE',
                         amount_source='SALES',
-                        value=deli_product.product_subtotal_cost * currency_exchange_rate,
+                        value=deli_product.product_cost * deli_product.picked_quantity * currency_exchange_rate,
                         taxable_value=0,
                         currency_mapped=currency_mapped,
                         context_data={
