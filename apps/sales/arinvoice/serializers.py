@@ -192,8 +192,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                         {'product_discount_value': "Discount value can not be greater than Total value."})
 
             # Tính thuế cho đợt này
-            tax_rate = tax_obj.rate if tax_obj else 0
-            product_tax_value = (product_payment_value - product_discount_value) * tax_rate / 100
+            product_tax_value = (product_payment_value - product_discount_value) * (tax_obj.rate/100 if tax_obj else 0)
 
             valid_data_item_list.append({
                 'delivery_item_mapped': None,
@@ -280,8 +279,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                         {'product_discount_value': "Discount value can not be greater than Total value."})
 
             # Tính thuế cho đợt này
-            tax_rate = tax_obj.rate if tax_obj else 0
-            product_tax_value = (product_payment_value - product_discount_value) * tax_rate / 100
+            product_tax_value = (product_payment_value - product_discount_value) * (tax_obj.rate/100 if tax_obj else 0)
 
             valid_data_item_list.append({
                 'delivery_item_mapped': delivery_item_obj,
