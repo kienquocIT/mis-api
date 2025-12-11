@@ -12,11 +12,14 @@ from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateM
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import ARInvoice, ARInvoiceSign
 from apps.sales.arinvoice.serializers import (
-    DeliveryListSerializerForARInvoice,
     ARInvoiceListSerializer, ARInvoiceDetailSerializer,
     ARInvoiceCreateSerializer, ARInvoiceUpdateSerializer,
+)
+from apps.sales.arinvoice.serializers_sub import (
+    DeliveryListSerializerForARInvoice,
     ARInvoiceSignListSerializer, ARInvoiceSignCreateSerializer,
-    ARInvoiceSignDetailSerializer, ARInvoiceRecurrenceListSerializer, SaleOrderListSerializerForARInvoice,
+    ARInvoiceSignDetailSerializer, ARInvoiceRecurrenceListSerializer,
+    SaleOrderListSerializerForARInvoice,
     LeaseOrderListSerializerForARInvoice
 )
 
