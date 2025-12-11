@@ -14,3 +14,6 @@ class HRMMsg:
 
     PAYROLL_TEMPLATE = _('Payroll template')
     PAYROLL_ATTR_ERROR_CODE = _('Payroll attribute code already exists')
+
+    # overtime request error
+    HRM_OVERTIME_VALID_DATE = _('Your date and time entry is duplicated')
