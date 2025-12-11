@@ -12,11 +12,12 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import (
     Account, Product, UnitOfMeasure, Tax, AccountBillingAddress, BankAccount
 )
-from apps.sales.delivery.models import OrderDeliverySub
+from apps.sales.delivery.models import OrderDeliverySub, OrderDeliveryProduct
 from apps.sales.arinvoice.models import (
     ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile, ARInvoiceSign
 )
-from apps.sales.saleorder.models import SaleOrder
+from apps.sales.leaseorder.models import LeaseOrder, LeaseOrderProduct
+from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
 from apps.shared import (
     AbstractListSerializerModel, AbstractCreateSerializerModel, AbstractDetailSerializerModel,
     SerializerCommonValidate, SerializerCommonHandle
@@ -71,6 +72,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
     billing_address_id = serializers.UUIDField(allow_null=True)
     company_bank_account = serializers.UUIDField(allow_null=True)
     sale_order_mapped = serializers.UUIDField(allow_null=True)
+    lease_order_mapped = serializers.UUIDField(allow_null=True)
     delivery_mapped_list = serializers.JSONField(default=list)
     data_item_list = serializers.JSONField(default=list)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
@@ -85,6 +87,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
             'buyer_name',
             'invoice_method',
             'sale_order_mapped',
+            'lease_order_mapped',
             'posting_date',
             'document_date',
             'invoice_date',
@@ -115,6 +118,15 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                 return SaleOrder.objects.get(id=value)
             except SaleOrder.DoesNotExist:
                 raise serializers.ValidationError({'sale_order_mapped': "Sale order does not exist."})
+        return None
+
+    @classmethod
+    def validate_lease_order_mapped(cls, value):
+        if value:
+            try:
+                return LeaseOrder.objects.get(id=value)
+            except LeaseOrder.DoesNotExist:
+                raise serializers.ValidationError({'lease_order_mapped': "Lease order does not exist."})
         return None
 
     @classmethod
@@ -173,7 +185,16 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                 'title': sale_order_mapped.title,
                 'sale_order_payment_stage': sale_order_mapped.sale_order_payment_stage
             }
-        # parse data sale_order_mapped
+        # parse data lease_order_mapped
+        lease_order_mapped = validate_data.get('lease_order_mapped')
+        if lease_order_mapped:
+            validate_data['lease_order_mapped_data'] = {
+                'id': str(lease_order_mapped.id),
+                'code': lease_order_mapped.code,
+                'title': lease_order_mapped.title,
+                'lease_payment_stage': lease_order_mapped.lease_payment_stage
+            }
+        # parse data bank_account
         bank_account = validate_data.get('company_bank_account')
         if bank_account:
             validate_data['company_bank_account_data'] = {
@@ -185,45 +206,160 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
         if validate_data.get('invoice_method') == 2 and not validate_data.get('company_bank_account'):
             raise serializers.ValidationError({'company_bank_account': "Company bank account is not null."})
         # check valid data data_item_list
-        for item in validate_data.get('data_item_list', []):
-            if item.get('ar_product_des'):
-                tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
-                item['product_tax_data'] = {
-                    'id': str(tax_obj.id),
-                    'code': tax_obj.code,
-                    'title': tax_obj.title,
-                    'rate': tax_obj.rate,
-                } if tax_obj else {}
-            else:
+        valid_data_item_list = []
+        if not sale_order_mapped and not lease_order_mapped:
+            for item in validate_data.get('data_item_list', []):
                 product_obj = Product.objects.filter(id=item.get('product_id')).first()
                 uom_obj = UnitOfMeasure.objects.filter(id=item.get('product_uom_id')).first()
                 tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
-                if any([
-                    product_obj is None,
-                    uom_obj is None,
-                    float(item.get('product_quantity', 0)) <= 0,
-                    float(item.get('product_unit_price', 0)) <= 0,
-                    float(item.get('product_subtotal', 0)) <= 0,
-                ]):
-                    raise serializers.ValidationError({'data_item_list': "Data items are not valid."})
-                item['product_data'] = {
-                    'id': str(product_obj.id),
-                    'code': product_obj.code,
-                    'title': product_obj.title,
-                    'description': product_obj.description,
-                } if product_obj else {}
-                item['product_uom_data'] = {
-                    'id': str(uom_obj.id),
-                    'code': uom_obj.code,
-                    'title': uom_obj.title,
-                    'group_id': str(uom_obj.group_id)
-                } if uom_obj else {}
-                item['product_tax_data'] = {
-                    'id': str(tax_obj.id),
-                    'code': tax_obj.code,
-                    'title': tax_obj.title,
-                    'rate': tax_obj.rate,
-                } if tax_obj else {}
+
+                if not all([product_obj, uom_obj]):
+                    raise serializers.ValidationError({'data_item_list': "Missing delivery item info."})
+
+                # Lấy giá trị gốc
+                product_quantity = float(item.get('product_quantity', 0))
+                product_unit_price = float(item.get('product_unit_price', 0))
+                product_subtotal = product_quantity * product_unit_price
+
+                # Lấy input từ client
+                product_payment_percent = item.get('product_payment_percent')
+                product_payment_value = float(item.get('product_payment_value', 0))
+                product_discount_percent = item.get('product_discount_percent')
+                product_discount_value = float(item.get('product_discount_value', 0))
+
+                # Tính giá trị hàng hóa đợt này (Trước khi trừ KM)
+                if product_payment_percent:
+                    product_payment_percent = float(product_payment_percent)
+                    if not (0 <= product_payment_percent <= 100):
+                        raise serializers.ValidationError(
+                            {'product_payment_percent': "Payment percent must be 0-100."})
+                    product_payment_value = product_subtotal * product_payment_percent / 100
+
+                # Tính giảm giá (Discount)
+                if product_discount_percent > 0:
+                    if not (0 <= product_discount_percent <= 100):
+                        raise serializers.ValidationError(
+                            {'product_discount_percent': "Discount percent must be 0-100."})
+                    product_discount_value = product_subtotal * product_discount_percent / 100
+
+                # Tính thuế cho đợt này
+                tax_rate = tax_obj.rate if tax_obj else 0
+                product_tax_value = (product_payment_value - product_discount_value) * tax_rate / 100
+
+                valid_data_item_list.append({
+                    'delivery_item_mapped': None,
+                    'product': product_obj,
+                    'product_data': {
+                        'id': str(product_obj.id),
+                        'code': product_obj.code,
+                        'title': product_obj.title,
+                        'description': product_obj.description,
+                    } if product_obj else {},
+                    'product_uom': uom_obj,
+                    'product_uom_data': {
+                        'id': str(uom_obj.id),
+                        'code': uom_obj.code,
+                        'title': uom_obj.title,
+                        'group_id': str(uom_obj.group_id)
+                    } if uom_obj else {},
+                    'product_quantity': product_quantity,
+                    'product_unit_price': product_unit_price,
+                    'ar_product_des': '',
+                    'product_subtotal': product_subtotal,
+                    # Các số liệu tính toán cho Hóa đơn này
+                    'product_payment_percent': product_payment_percent,
+                    'product_payment_value': product_payment_value,
+                    'product_discount_percent': product_discount_percent,
+                    'product_discount_value': product_discount_value,
+                    'product_tax': tax_obj,
+                    'product_tax_data': {
+                        'id': str(tax_obj.id),
+                        'code': tax_obj.code,
+                        'title': tax_obj.title,
+                        'rate': tax_obj.rate,
+                    } if tax_obj else {},
+                    'product_tax_value': product_tax_value,
+                    'product_subtotal_final': product_payment_value - product_discount_value + product_tax_value,
+                    'note': item.get('note', '')
+                })
+        else:
+            for item in validate_data.get('data_item_list', []):
+                delivery_item_obj = OrderDeliveryProduct.objects.filter(
+                    id=item.get('delivery_item_mapped_id')
+                ).first()
+                product_obj = Product.objects.filter(id=item.get('product_id')).first()
+                uom_obj = UnitOfMeasure.objects.filter(id=item.get('product_uom_id')).first()
+                tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
+
+                if not all([product_obj, uom_obj, delivery_item_obj]):
+                    raise serializers.ValidationError({'data_item_list': "Missing delivery item info."})
+
+                # Lấy giá trị gốc
+                product_subtotal = delivery_item_obj.product_subtotal_cost  # Tổng (Net)
+
+                # Lấy input từ client
+                product_payment_percent = item.get('product_payment_percent')
+                product_payment_value = float(item.get('product_payment_value', 0))
+                product_discount_percent = item.get('product_discount_percent')
+                product_discount_value = float(item.get('product_discount_value', 0))
+
+                # Tính giá trị hàng hóa đợt này (Trước khi trừ KM)
+                if product_payment_percent:
+                    product_payment_percent = float(product_payment_percent)
+                    if not (0 <= product_payment_percent <= 100):
+                        raise serializers.ValidationError(
+                            {'product_payment_percent': "Payment percent must be 0-100."})
+                    product_payment_value = product_subtotal * product_payment_percent / 100
+
+                # Tính giảm giá (Discount)
+                if product_discount_percent > 0:
+                    if not (0 <= product_discount_percent <= 100):
+                        raise serializers.ValidationError(
+                            {'product_discount_percent': "Discount percent must be 0-100."})
+                    product_discount_value = product_subtotal * product_discount_percent / 100
+
+                # Tính thuế cho đợt này
+                tax_rate = tax_obj.rate if tax_obj else 0
+                product_tax_value = (product_payment_value - product_discount_value) * tax_rate / 100
+
+                valid_data_item_list.append({
+                    'delivery_item_mapped': delivery_item_obj,
+                    'product': product_obj,
+                    'product_data': {
+                        'id': str(product_obj.id),
+                        'code': product_obj.code,
+                        'title': product_obj.title,
+                        'description': product_obj.description,
+                    } if product_obj else {},
+                    'product_uom': uom_obj,
+                    'product_uom_data': {
+                        'id': str(uom_obj.id),
+                        'code': uom_obj.code,
+                        'title': uom_obj.title,
+                        'group_id': str(uom_obj.group_id)
+                    } if uom_obj else {},
+                    'product_quantity': delivery_item_obj.product_quantity,
+                    'product_unit_price': delivery_item_obj.product_cost,
+                    'ar_product_des': '',
+                    'product_subtotal': product_subtotal,
+                    # Các số liệu tính toán cho Hóa đơn này
+                    'product_payment_percent': product_payment_percent,
+                    'product_payment_value': product_payment_value,
+                    'product_discount_percent': product_discount_percent,
+                    'product_discount_value': product_discount_value,
+                    'product_tax': tax_obj,
+                    'product_tax_data': {
+                        'id': str(tax_obj.id),
+                        'code': tax_obj.code,
+                        'title': tax_obj.title,
+                        'rate': tax_obj.rate,
+                    } if tax_obj else {},
+                    'product_tax_value': product_tax_value,
+                    'product_subtotal_final': product_payment_value - product_discount_value + product_tax_value,
+                    'note': item.get('note', '')
+                })
+
+        validate_data['data_item_list'] = valid_data_item_list
         return validate_data
 
     @decorator_run_workflow
@@ -258,6 +394,7 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
             'buyer_name',
             'invoice_method',
             'sale_order_mapped_data',
+            'lease_order_mapped_data',
             'company_bank_account_data',
             'posting_date',
             'document_date',
@@ -352,6 +489,7 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
     billing_address_id = serializers.UUIDField(allow_null=True)
     company_bank_account = serializers.UUIDField(allow_null=True)
     sale_order_mapped = serializers.UUIDField(allow_null=True)
+    lease_order_mapped = serializers.UUIDField(allow_null=True)
     delivery_mapped_list = serializers.JSONField(default=list)
     data_item_list = serializers.JSONField(default=list)
     attachment = serializers.ListSerializer(child=serializers.CharField(), required=False)
@@ -366,6 +504,7 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
             'buyer_name',
             'invoice_method',
             'sale_order_mapped',
+            'lease_order_mapped',
             'posting_date',
             'document_date',
             'invoice_date',
@@ -385,6 +524,10 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
     @classmethod
     def validate_sale_order_mapped(cls, value):
         return ARInvoiceCreateSerializer.validate_sale_order_mapped(value)
+
+    @classmethod
+    def validate_lease_order_mapped(cls, value):
+        return ARInvoiceCreateSerializer.validate_lease_order_mapped(value)
 
     @classmethod
     def validate_company_bank_account(cls, value):
@@ -704,7 +847,35 @@ class SaleOrderListSerializerForARInvoice(serializers.ModelSerializer):
 
     @classmethod
     def get_has_not_ar_delivery(cls, obj):
-        return OrderDeliverySub.objects.filter(order_delivery__sale_order=obj, has_ar_invoice_already=False).exists()
+        return OrderDeliverySub.objects.filter(order_delivery__sale_order=obj, is_done_ar_invoice=False).exists()
+
+
+class LeaseOrderListSerializerForARInvoice(serializers.ModelSerializer):
+    opportunity = serializers.SerializerMethodField()
+    has_not_ar_delivery = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeaseOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+            'opportunity',
+            'lease_payment_stage',
+            'has_not_ar_delivery'
+        )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        return {
+            'id': obj.opportunity_id,
+            'title': obj.opportunity.title,
+            'code': obj.opportunity.code,
+        } if obj.opportunity else {}
+
+    @classmethod
+    def get_has_not_ar_delivery(cls, obj):
+        return OrderDeliverySub.objects.filter(order_delivery__lease_order=obj, is_done_ar_invoice=False).exists()
 
 
 class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
@@ -755,6 +926,8 @@ class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
                     product_subtotal - product_discount_amount
                 ) + so_product_data_get.get('product_tax_value', 0)
             details.append({
+                'id': str(item.id),
+                'delivery_id': str(obj.id),
                 'product_uom_data': item.uom_data,
                 'delivery_quantity': item.delivery_quantity,
                 'product_quantity': item.picked_quantity,
@@ -764,7 +937,7 @@ class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
 
     @classmethod
     def get_already(cls, obj):
-        return obj.has_ar_invoice_already
+        return obj.is_done_ar_invoice
 
 
 class ARInvoiceSignCreateSerializer(serializers.ModelSerializer):

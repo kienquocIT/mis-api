@@ -331,7 +331,7 @@ class OrderDeliverySub(DataAbstractModel):
         blank=True,
         related_name='file_of_delivery',
     )
-    has_ar_invoice_already = models.BooleanField(
+    is_done_ar_invoice = models.BooleanField(
         default=False, help_text='is true if this Delivery has AR invoice'
     )
 
@@ -487,6 +487,8 @@ class OrderDeliveryProduct(MasterDataAbstractModel):
     quantity_remain_recovery = models.FloatField(default=0, help_text="minus when recovery")
     work_data = models.JSONField(default=dict, help_text='data json of work(service order)')
     contribution_data = models.JSONField(default=dict, help_text='data json of contribution(service order)')
+
+    ar_value_done = models.FloatField(default=0)
 
     def put_backup_data(self):
         if self.product and not self.product_data:

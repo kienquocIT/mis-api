@@ -1318,13 +1318,13 @@ class SubScripts:
         return True
 
     @classmethod
-    def update_order_delivery_has_ar_invoice_already(cls):
+    def update_order_delivery_is_done_ar_invoice(cls):
         for obj in OrderDeliverySub.objects.all():
-            obj.has_ar_invoice_already = ARInvoiceDelivery.objects.filter(
+            obj.is_done_ar_invoice = ARInvoiceDelivery.objects.filter(
                 ar_invoice__system_status=3,
                 delivery_mapped=obj
             ).exists()
-            obj.save(update_fields=['has_ar_invoice_already'], **{'skip_check_period': True})
+            obj.save(update_fields=['is_done_ar_invoice'], **{'skip_check_period': True})
         print('Done :))')
         return True
 
