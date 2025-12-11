@@ -101,7 +101,7 @@ class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
                             system_auto_create=True,
                             tenant=tenant,
                             company=company,
-                            employee_created_id=doc_obj.employee_created_id,
+                            employee_created_id=doc_obj.employee_created_id or doc_obj.employee_inherit_id,
                             employee_inherit_id=doc_obj.employee_inherit_id,
                             date_created=str(doc_obj.date_approved),
                             date_approved=str(doc_obj.date_approved)
