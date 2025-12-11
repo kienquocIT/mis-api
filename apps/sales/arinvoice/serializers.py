@@ -148,174 +148,183 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
         return SerializerCommonValidate.validate_attachment(user=user, model_cls=ARInvoiceAttachmentFile, value=value)
 
     @staticmethod
-    def check_data_item_list(data_item_list, sale_order_mapped, lease_order_mapped):
+    def check_data_item_list_orders(data_item_list):
         valid_data_item_list = []
-        if not sale_order_mapped and not lease_order_mapped:
-            for item in data_item_list:
-                product_obj = Product.objects.filter(id=item.get('product_id')).first()
-                uom_obj = UnitOfMeasure.objects.filter(id=item.get('product_uom_id')).first()
-                tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
+        for item in data_item_list:
+            product_obj = Product.objects.filter(id=item.get('product_id')).first()
+            uom_obj = UnitOfMeasure.objects.filter(id=item.get('product_uom_id')).first()
+            tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
 
-                if not all([product_obj, uom_obj]):
-                    raise serializers.ValidationError({'data_item_list': "Missing delivery item info."})
+            if not all([product_obj, uom_obj]):
+                raise serializers.ValidationError({'data_item_list': "Missing delivery item info."})
 
-                # Lấy giá trị gốc
-                product_quantity = float(item.get('product_quantity', 0))
-                product_unit_price = float(item.get('product_unit_price', 0))
-                product_subtotal = product_quantity * product_unit_price
+            # Lấy giá trị gốc
+            product_quantity = float(item.get('product_quantity', 0))
+            product_unit_price = float(item.get('product_unit_price', 0))
+            product_subtotal = product_quantity * product_unit_price
 
-                # Lấy input từ client
-                product_payment_percent = item.get('product_payment_percent')
-                product_payment_value = float(item.get('product_payment_value', 0))
-                product_discount_percent = item.get('product_discount_percent')
-                product_discount_value = float(item.get('product_discount_value', 0))
+            # Lấy input từ client
+            product_payment_percent = item.get('product_payment_percent')
+            product_payment_value = float(item.get('product_payment_value', 0))
+            product_discount_percent = item.get('product_discount_percent')
+            product_discount_value = float(item.get('product_discount_value', 0))
 
-                # Tính giá trị hàng hóa đợt này (Trước khi trừ KM)
-                if product_payment_percent:
-                    product_payment_percent = float(product_payment_percent)
-                    if not 0 <= product_payment_percent <= 100:
-                        raise serializers.ValidationError(
-                            {'product_payment_percent': "Payment percent must be 0-100."})
-                    product_payment_value = product_subtotal * product_payment_percent / 100
-                    if product_payment_value > product_subtotal:
-                        raise serializers.ValidationError(
-                            {'product_payment_value': "Payment value can not be greater than Total value."})
+            # Tính giá trị hàng hóa đợt này (Trước khi trừ KM)
+            if product_payment_percent:
+                product_payment_percent = float(product_payment_percent)
+                if not 0 <= product_payment_percent <= 100:
+                    raise serializers.ValidationError(
+                        {'product_payment_percent': "Payment percent must be 0-100."})
+                product_payment_value = product_subtotal * product_payment_percent / 100
+                if product_payment_value > product_subtotal:
+                    raise serializers.ValidationError(
+                        {'product_payment_value': "Payment value can not be greater than Total value."})
 
-                # Tính giảm giá (Discount)
-                if product_discount_percent:
-                    product_discount_percent = float(product_discount_percent)
-                    if not 0 <= product_discount_percent <= 100:
-                        raise serializers.ValidationError(
-                            {'product_discount_percent': "Discount percent must be 0-100."})
-                    product_discount_value = product_subtotal * product_discount_percent / 100
-                    if product_discount_value > product_subtotal:
-                        raise serializers.ValidationError(
-                            {'product_discount_value': "Discount value can not be greater than Total value."})
+            # Tính giảm giá (Discount)
+            if product_discount_percent:
+                product_discount_percent = float(product_discount_percent)
+                if not 0 <= product_discount_percent <= 100:
+                    raise serializers.ValidationError(
+                        {'product_discount_percent': "Discount percent must be 0-100."})
+                product_discount_value = product_subtotal * product_discount_percent / 100
+                if product_discount_value > product_subtotal:
+                    raise serializers.ValidationError(
+                        {'product_discount_value': "Discount value can not be greater than Total value."})
 
-                # Tính thuế cho đợt này
-                tax_rate = tax_obj.rate if tax_obj else 0
-                product_tax_value = (product_payment_value - product_discount_value) * tax_rate / 100
+            # Tính thuế cho đợt này
+            tax_rate = tax_obj.rate if tax_obj else 0
+            product_tax_value = (product_payment_value - product_discount_value) * tax_rate / 100
 
-                valid_data_item_list.append({
-                    'delivery_item_mapped': None,
-                    'product': product_obj,
-                    'product_data': {
-                        'id': str(product_obj.id),
-                        'code': product_obj.code,
-                        'title': product_obj.title,
-                        'description': product_obj.description,
-                    } if product_obj else {},
-                    'product_uom': uom_obj,
-                    'product_uom_data': {
-                        'id': str(uom_obj.id),
-                        'code': uom_obj.code,
-                        'title': uom_obj.title,
-                        'group_id': str(uom_obj.group_id)
-                    } if uom_obj else {},
-                    'product_quantity': product_quantity,
-                    'product_unit_price': product_unit_price,
-                    'product_subtotal': product_subtotal,
-                    # Các số liệu tính toán cho Hóa đơn này
-                    'product_payment_percent': product_payment_percent,
-                    'product_payment_value': product_payment_value,
-                    'product_discount_percent': product_discount_percent,
-                    'product_discount_value': product_discount_value,
-                    'product_tax': tax_obj,
-                    'product_tax_data': {
-                        'id': str(tax_obj.id),
-                        'code': tax_obj.code,
-                        'title': tax_obj.title,
-                        'rate': tax_obj.rate,
-                    } if tax_obj else {},
-                    'product_tax_value': product_tax_value,
-                    'product_subtotal_final': product_payment_value - product_discount_value + product_tax_value,
-                    'note': item.get('note', '')
-                })
-        else:
-            for item in data_item_list:
-                delivery_item_obj = OrderDeliveryProduct.objects.filter(
-                    id=item.get('delivery_item_mapped_id')
-                ).first()
-                product_obj = Product.objects.filter(id=item.get('product_id')).first()
-                uom_obj = UnitOfMeasure.objects.filter(id=item.get('product_uom_id')).first()
-                tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
-
-                if not all([product_obj, uom_obj, delivery_item_obj]):
-                    raise serializers.ValidationError({'data_item_list': "Missing delivery item info."})
-
-                # Lấy giá trị gốc
-                product_quantity = delivery_item_obj.picked_quantity
-                product_unit_price = delivery_item_obj.product_cost
-                product_subtotal = product_quantity * product_unit_price  # Tổng (Net)
-
-                # Lấy input từ client
-                product_payment_percent = item.get('product_payment_percent')
-                product_payment_value = float(item.get('product_payment_value', 0))
-                product_discount_percent = item.get('product_discount_percent')
-                product_discount_value = float(item.get('product_discount_value', 0))
-
-                # Tính giá trị hàng hóa đợt này (Trước khi trừ KM)
-                if product_payment_percent:
-                    product_payment_percent = float(product_payment_percent)
-                    if not (0 <= product_payment_percent <= 100):
-                        raise serializers.ValidationError(
-                            {'product_payment_percent': "Payment percent must be 0-100."})
-                    product_payment_value = product_subtotal * product_payment_percent / 100
-                    if product_payment_value > product_subtotal - delivery_item_obj.ar_value_done:
-                        raise serializers.ValidationError(
-                            {'product_payment_value': "Payment value can not be greater than Total value."})
-
-                # Tính giảm giá (Discount)
-                if product_discount_percent:
-                    product_discount_percent = float(product_discount_percent)
-                    if not (0 <= product_discount_percent <= 100):
-                        raise serializers.ValidationError(
-                            {'product_discount_percent': "Discount percent must be 0-100."})
-                    product_discount_value = product_subtotal * product_discount_percent / 100
-                    if product_discount_value > product_subtotal - delivery_item_obj.ar_value_done:
-                        raise serializers.ValidationError(
-                            {'product_discount_value': "Discount value can not be greater than Total value."})
-
-                # Tính thuế cho đợt này
-                tax_rate = tax_obj.rate if tax_obj else 0
-                product_tax_value = (product_payment_value - product_discount_value) * tax_rate / 100
-
-                valid_data_item_list.append({
-                    'delivery_item_mapped': delivery_item_obj,
-                    'product': product_obj,
-                    'product_data': {
-                        'id': str(product_obj.id),
-                        'code': product_obj.code,
-                        'title': product_obj.title,
-                        'description': product_obj.description,
-                    } if product_obj else {},
-                    'product_uom': uom_obj,
-                    'product_uom_data': {
-                        'id': str(uom_obj.id),
-                        'code': uom_obj.code,
-                        'title': uom_obj.title,
-                        'group_id': str(uom_obj.group_id)
-                    } if uom_obj else {},
-                    'product_quantity': product_quantity,
-                    'product_unit_price': product_unit_price,
-                    'product_subtotal': product_subtotal,
-                    # Các số liệu tính toán cho Hóa đơn này
-                    'product_payment_percent': product_payment_percent,
-                    'product_payment_value': product_payment_value,
-                    'product_discount_percent': product_discount_percent,
-                    'product_discount_value': product_discount_value,
-                    'product_tax': tax_obj,
-                    'product_tax_data': {
-                        'id': str(tax_obj.id),
-                        'code': tax_obj.code,
-                        'title': tax_obj.title,
-                        'rate': tax_obj.rate,
-                    } if tax_obj else {},
-                    'product_tax_value': product_tax_value,
-                    'product_subtotal_final': product_payment_value - product_discount_value + product_tax_value,
-                    'note': item.get('note', '')
-                })
+            valid_data_item_list.append({
+                'delivery_item_mapped': None,
+                'product': product_obj,
+                'product_data': {
+                    'id': str(product_obj.id),
+                    'code': product_obj.code,
+                    'title': product_obj.title,
+                    'description': product_obj.description,
+                } if product_obj else {},
+                'product_uom': uom_obj,
+                'product_uom_data': {
+                    'id': str(uom_obj.id),
+                    'code': uom_obj.code,
+                    'title': uom_obj.title,
+                    'group_id': str(uom_obj.group_id)
+                } if uom_obj else {},
+                'product_quantity': product_quantity,
+                'product_unit_price': product_unit_price,
+                'product_subtotal': product_subtotal,
+                # Các số liệu tính toán cho Hóa đơn này
+                'product_payment_percent': product_payment_percent,
+                'product_payment_value': product_payment_value,
+                'product_discount_percent': product_discount_percent,
+                'product_discount_value': product_discount_value,
+                'product_tax': tax_obj,
+                'product_tax_data': {
+                    'id': str(tax_obj.id),
+                    'code': tax_obj.code,
+                    'title': tax_obj.title,
+                    'rate': tax_obj.rate,
+                } if tax_obj else {},
+                'product_tax_value': product_tax_value,
+                'product_subtotal_final': product_payment_value - product_discount_value + product_tax_value,
+                'note': item.get('note', '')
+            })
         return valid_data_item_list
+
+    @staticmethod
+    def check_data_item_list_free(data_item_list):
+        valid_data_item_list = []
+        for item in data_item_list:
+            delivery_item_obj = OrderDeliveryProduct.objects.filter(
+                id=item.get('delivery_item_mapped_id')
+            ).first()
+            product_obj = Product.objects.filter(id=item.get('product_id')).first()
+            uom_obj = UnitOfMeasure.objects.filter(id=item.get('product_uom_id')).first()
+            tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
+
+            if not all([product_obj, uom_obj, delivery_item_obj]):
+                raise serializers.ValidationError({'data_item_list': "Missing delivery item info."})
+
+            # Lấy giá trị gốc
+            product_quantity = delivery_item_obj.picked_quantity
+            product_unit_price = delivery_item_obj.product_cost
+            product_subtotal = product_quantity * product_unit_price  # Tổng (Net)
+
+            # Lấy input từ client
+            product_payment_percent = item.get('product_payment_percent')
+            product_payment_value = float(item.get('product_payment_value', 0))
+            product_discount_percent = item.get('product_discount_percent')
+            product_discount_value = float(item.get('product_discount_value', 0))
+
+            # Tính giá trị hàng hóa đợt này (Trước khi trừ KM)
+            if product_payment_percent:
+                product_payment_percent = float(product_payment_percent)
+                if not 0 <= product_payment_percent <= 100:
+                    raise serializers.ValidationError(
+                        {'product_payment_percent': "Payment percent must be 0-100."})
+                product_payment_value = product_subtotal * product_payment_percent / 100
+                if product_payment_value > product_subtotal - delivery_item_obj.ar_value_done:
+                    raise serializers.ValidationError(
+                        {'product_payment_value': "Payment value can not be greater than Total value."})
+
+            # Tính giảm giá (Discount)
+            if product_discount_percent:
+                product_discount_percent = float(product_discount_percent)
+                if not 0 <= product_discount_percent <= 100:
+                    raise serializers.ValidationError(
+                        {'product_discount_percent': "Discount percent must be 0-100."})
+                product_discount_value = product_subtotal * product_discount_percent / 100
+                if product_discount_value > product_subtotal - delivery_item_obj.ar_value_done:
+                    raise serializers.ValidationError(
+                        {'product_discount_value': "Discount value can not be greater than Total value."})
+
+            # Tính thuế cho đợt này
+            tax_rate = tax_obj.rate if tax_obj else 0
+            product_tax_value = (product_payment_value - product_discount_value) * tax_rate / 100
+
+            valid_data_item_list.append({
+                'delivery_item_mapped': delivery_item_obj,
+                'product': product_obj,
+                'product_data': {
+                    'id': str(product_obj.id),
+                    'code': product_obj.code,
+                    'title': product_obj.title,
+                    'description': product_obj.description,
+                } if product_obj else {},
+                'product_uom': uom_obj,
+                'product_uom_data': {
+                    'id': str(uom_obj.id),
+                    'code': uom_obj.code,
+                    'title': uom_obj.title,
+                    'group_id': str(uom_obj.group_id)
+                } if uom_obj else {},
+                'product_quantity': product_quantity,
+                'product_unit_price': product_unit_price,
+                'product_subtotal': product_subtotal,
+                # Các số liệu tính toán cho Hóa đơn này
+                'product_payment_percent': product_payment_percent,
+                'product_payment_value': product_payment_value,
+                'product_discount_percent': product_discount_percent,
+                'product_discount_value': product_discount_value,
+                'product_tax': tax_obj,
+                'product_tax_data': {
+                    'id': str(tax_obj.id),
+                    'code': tax_obj.code,
+                    'title': tax_obj.title,
+                    'rate': tax_obj.rate,
+                } if tax_obj else {},
+                'product_tax_value': product_tax_value,
+                'product_subtotal_final': product_payment_value - product_discount_value + product_tax_value,
+                'note': item.get('note', '')
+            })
+        return valid_data_item_list
+
+    @classmethod
+    def check_data_item_list(cls, data_item_list, sale_order_mapped, lease_order_mapped):
+        if not sale_order_mapped and not lease_order_mapped:
+            return cls.check_data_item_list_orders(data_item_list)
+        return cls.check_data_item_list_free(data_item_list)
 
     def validate(self, validate_data):
         billing_address_id = validate_data.pop('billing_address_id')
