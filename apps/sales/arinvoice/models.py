@@ -49,7 +49,7 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
     invoice_example = models.SmallIntegerField(choices=INVOICE_EXP)
     invoice_method = models.SmallIntegerField(choices=INVOICE_METHOD, default=3)
     invoice_status = models.SmallIntegerField(choices=INVOICE_STATUS, default=0)
-    buyer_name = models.CharField(max_length=250, null=True, blank=True)
+    buyer_information = models.TextField(blank=True)
     is_created_einvoice = models.BooleanField(default=False)
     sum_pretax_value = models.FloatField(default=0)
     sum_discount_value = models.FloatField(default=0)

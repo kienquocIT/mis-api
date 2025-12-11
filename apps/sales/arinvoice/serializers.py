@@ -48,7 +48,7 @@ class ARInvoiceListSerializer(AbstractListSerializerModel):
             'title',
             'code',
             'customer_mapped_data',
-            'buyer_name',
+            'buyer_information',
             'sale_order_mapped_data',
             'posting_date',
             'document_date',
@@ -84,7 +84,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
             'customer_mapped',
             'billing_address_id',
             'company_bank_account',
-            'buyer_name',
+            'buyer_information',
             'invoice_method',
             'sale_order_mapped',
             'lease_order_mapped',
@@ -405,7 +405,7 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
             'code',
             'title',
             'customer_mapped_data',
-            'buyer_name',
+            'buyer_information',
             'invoice_method',
             'sale_order_mapped_data',
             'lease_order_mapped_data',
@@ -518,7 +518,7 @@ class ARInvoiceUpdateSerializer(AbstractCreateSerializerModel):
             'customer_mapped',
             'billing_address_id',
             'company_bank_account',
-            'buyer_name',
+            'buyer_information',
             'invoice_method',
             'sale_order_mapped',
             'lease_order_mapped',
@@ -656,13 +656,13 @@ class ARInvoiceCommonFunc:
         money_text = ARInvoiceCommonFunc.read_money_vnd(int(amount))
         money_text = money_text[:-1] if money_text[-1] == ',' else money_text
 
-        buyer_name = ''
-        if instance.buyer_name:
-            buyer_name = instance.buyer_name
+        buyer_information = ''
+        if instance.buyer_information:
+            buyer_information = instance.buyer_information
         elif instance.customer_mapped:
-            buyer_name = instance.customer_mapped.name
+            buyer_information = instance.customer_mapped.name
 
-        return [cus_address, bank_code, bank_number, money_text, buyer_name]
+        return [cus_address, bank_code, bank_number, money_text, buyer_information]
 
     @classmethod
     def create_xml(cls, instance, item_mapped, pattern):
@@ -731,7 +731,7 @@ class ARInvoiceCommonFunc:
             raise serializers.ValidationError({'error': "Product rows in sales invoice can not have VAT (API)."})
 
         value_xml = cls.process_value_xml(instance, amount)
-        # [cus_address, bank_code, bank_number, money_text, buyer_name]
+        # [cus_address, bank_code, bank_number, money_text, buyer_information]
 
         return (
             "<Invoices>"
