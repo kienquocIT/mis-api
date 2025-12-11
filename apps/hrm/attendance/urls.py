@@ -2,7 +2,7 @@ from django.urls import path
 
 from apps.hrm.attendance.views import ShiftMasterDataList, ShiftMasterDataDetail, ShiftAssignmentList, \
     DeviceIntegrateEmployeeList, DeviceIntegrateEmployeeDetail, AttendanceDeviceList, AttendanceDeviceDetail, \
-    ShiftMasterDataImport
+    ShiftMasterDataImport, ShiftAssignmentConfigDetail
 from apps.hrm.attendance.views.attendance import AttendanceDataList
 
 urlpatterns = [
@@ -11,6 +11,7 @@ urlpatterns = [
     path('shift/import', ShiftMasterDataImport.as_view(), name='ShiftMasterDataImport'),
 
     # shift assignment
+    path('shift-assignment-config', ShiftAssignmentConfigDetail.as_view(), name='ShiftAssignmentConfigDetail'),
     path('shift-assignment/list', ShiftAssignmentList.as_view(), name='ShiftAssignmentList'),
 
     # attendance

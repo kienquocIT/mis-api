@@ -3,6 +3,20 @@ from django.db import models
 from apps.shared import MasterDataAbstractModel
 
 
+# CONFIG
+class ShiftAssignmentAppConfig(MasterDataAbstractModel):
+    employees_config = models.JSONField(
+        default=list,
+        help_text="Employee list that allowed to use shift assignment"
+    )
+
+    class Meta:
+        verbose_name = 'Shift Assignment Config'
+        verbose_name_plural = 'Shift Assignment Configs'
+        default_permissions = ()
+        permissions = ()
+
+
 class ShiftAssignment(MasterDataAbstractModel):
     employee = models.ForeignKey(
         'hr.Employee',

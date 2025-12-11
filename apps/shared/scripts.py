@@ -6795,3 +6795,8 @@ def map_gr_to_ap(company_id):
     print('Done :))')
     return True
 
+
+def make_sure_shift_assignment_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).shift_assignment_config()
+    print('make_sure_shift_assignment_config is done!')
