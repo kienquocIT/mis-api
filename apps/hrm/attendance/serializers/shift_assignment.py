@@ -116,6 +116,11 @@ class ShiftAssignmentCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'shift': BaseMsg.NOT_EXIST})
 
     def validate(self, validate_data):
+        user = self.context.get('user', None)
+        if user:
+            config = user.company_current.attendance_shiftassignmentappconfig_belong_to_company.first()
+            if str(user.employee_current_id) not in [emp.get('id', None) for emp in config.employees_config]:
+                raise serializers.ValidationError({'detail': "Not allowed."})
         all_company = validate_data.get('all_company', False)
         group_list = validate_data.get('group_list', [])
         employee_list = validate_data.get('employee_list', [])

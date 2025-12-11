@@ -49,6 +49,7 @@ class ShiftAssignmentList(BaseListMixin, BaseCreateMixin):
         login_require=True, auth_require=False,
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.create(request, *args, **kwargs)
 
 
