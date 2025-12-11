@@ -3,8 +3,7 @@ import json
 from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
-from apps.shared import DataAbstractModel
-
+from apps.shared import DataAbstractModel, MasterDataAbstractModel
 OVERTIME_TYPE = (
     (0, 'post_shift'),
     (1, 'weekend'),
@@ -14,14 +13,6 @@ OVERTIME_TYPE = (
 
 
 class OvertimeRequest(DataAbstractModel):
-    shift = models.ForeignKey(
-        'attendance.ShiftInfo',
-        on_delete=models.SET_NULL,
-        verbose_name="Shift",
-        null=True,
-        blank=True,
-        related_name='overtime_request_shift'
-    )
     employee_list = models.JSONField(
         verbose_name="employee list",
         default=list,
@@ -56,7 +47,7 @@ class OvertimeRequest(DataAbstractModel):
     )
     employee_inherit_data = models.JSONField(
         verbose_name="employee inherit data",
-        default=list,
+        default=dict,
         help_text=json.dumps(
             {
                 'id': 'uuid',
@@ -71,23 +62,22 @@ class OvertimeRequest(DataAbstractModel):
     end_time = models.TimeField(
         verbose_name="end time OT",
     )
-    start_date = models.DateField(
-        verbose_name="start date OT",
-    )
-    end_date = models.DateField(
-        verbose_name="end date OT",
-    )
-    ot_type = models.IntegerField(
-        verbose_name="Overtime type",
-        choices=OVERTIME_TYPE,
-        null=True,
-        blank=True
-    )
     reason = models.CharField(
         max_length=250,
         verbose_name="remarks",
         null=True,
         blank=True
+    )
+    date_list = models.JSONField(
+        verbose_name="date list of employee selected for OT",
+        default=list,
+        help_text=json.dumps(
+            [
+                {"date": "2025-12-22", "type": "0", "shift": {}, },
+                {"date": "2025-12-18", "type": "1", "shift": {}, },
+                {"date": "2025-12-16", "type": "1", "shift": {}, },
+            ]
+        )
     )
 
     def before_save(self):
@@ -129,6 +119,45 @@ class OvertimeRequest(DataAbstractModel):
     class Meta:
         verbose_name = 'Overtime request'
         verbose_name_plural = 'Overtime request'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class OTMapWithEmployeeShift(MasterDataAbstractModel):
+    overtime_request = models.ForeignKey(
+        OvertimeRequest,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="ot_map_with_employee_shift"
+    )
+    shift = models.ForeignKey(
+        'attendance.ShiftInfo',
+        on_delete=models.CASCADE,
+        verbose_name="shift",
+        related_name="ot_map_with_shift_info",
+        null=True
+    )
+    date = models.DateField(
+        help_text='Date ot selected',
+    )
+    employee = models.ForeignKey(
+        'hr.Employee',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="employee_map_with_otmap"
+    )
+    type = models.IntegerField(
+        default=0,
+        choices=OVERTIME_TYPE,
+        verbose_name="type of overtime",
+    )
+
+    class Meta:
+        verbose_name = 'Overtime request map with employee'
+        verbose_name_plural = 'Overtime request map with employee'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

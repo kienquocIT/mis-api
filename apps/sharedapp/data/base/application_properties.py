@@ -3549,20 +3549,6 @@ AppProp_HRM_OvertimeRequest_data = {
         'type': 2,
         'is_print': True,
     },
-    "a5aaa28c-ceb0-4fb1-b47e-07aef3f9bf1d": {
-        'application_id': '4a996500-fcc4-484f-be62-b3c73a2db927',
-        'title': 'Start date',
-        'code': 'start_date',
-        'type': 2,
-        'is_print': True,
-    },
-    "7833bcb3-3dae-4d7c-8297-993d11e1de33": {
-        'application_id': '4a996500-fcc4-484f-be62-b3c73a2db927',
-        'title': 'End time',
-        'code': 'end_date',
-        'type': 2,
-        'is_print': True,
-    },
     "46576e58-8c46-4256-b007-4802c4008877": {
         'application_id': '4a996500-fcc4-484f-be62-b3c73a2db927',
         'title': 'Employee created - full name',

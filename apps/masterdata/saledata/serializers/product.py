@@ -642,29 +642,35 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_wait_delivery_amount(cls, obj):
-        if obj.inventory_uom:
-            casted_wd_amount = obj.wait_delivery_amount / obj.inventory_uom.ratio \
-                if obj.inventory_uom.ratio != 0 else None
-            return casted_wd_amount
-        return None
+        quantity_so = obj.sale_order_product_product.filter(
+            sale_order__system_status=3
+        ).values_list('product_quantity', flat=True)
+        quantity_lo = obj.lease_order_product_offset_product.filter(
+            lease_order__system_status=3
+        ).values_list('product_quantity', flat=True)
+        quantity_delivery = obj.delivery_product_product.filter(
+            delivery_sub__system_status=3
+        ).values_list('picked_quantity', flat=True)
+        result = sum(quantity_so) + sum(quantity_lo) - sum(quantity_delivery)
+        return result if result > 0 else 0
 
     @classmethod
     def get_wait_receipt_amount(cls, obj):
-        if obj.inventory_uom:
-            casted_wr_amount = obj.wait_receipt_amount / obj.inventory_uom.ratio \
-                if obj.inventory_uom.ratio != 0 else None
-            return casted_wr_amount
-        return None
+        quantity_po = obj.purchase_order_product_product.filter(
+            purchase_order__system_status=3
+        ).values_list('product_quantity_order_actual', flat=True)
+        quantity_gr = obj.goods_receipt_product_product.filter(
+            goods_receipt__system_status=3
+        ).values_list('quantity_import', flat=True)
+        result = sum(quantity_po) - sum(quantity_gr)
+        return result if result > 0 else 0
 
     @classmethod
     def get_available_amount(cls, obj):
-        if obj.inventory_uom:
-            stock = 0
-            for product_wh in obj.product_warehouse_product.all():
-                stock += product_wh.stock_amount
-            available = stock - obj.wait_delivery_amount + obj.wait_receipt_amount + obj.production_amount
-            return available / obj.inventory_uom.ratio if obj.inventory_uom.ratio > 0 else 0
-        return 0
+        stock = cls.get_stock_amount(obj=obj)
+        wait_delivery = cls.get_wait_delivery_amount(obj=obj)
+        wait_receipt = cls.get_wait_receipt_amount(obj=obj)
+        return stock - wait_delivery + wait_receipt
 
     @classmethod
     def get_component_list_data(cls, obj):

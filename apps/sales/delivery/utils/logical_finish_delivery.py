@@ -199,33 +199,6 @@ class DeliFinishHandler:
                 serial.product_warehouse_serial.save(update_fields=['serial_status'])
         return True
 
-    # PRODUCT INFO
-    @classmethod
-    def push_product_info(cls, instance):
-        for deli_product in instance.delivery_product_delivery_sub.all():
-            if deli_product.product and deli_product.uom:
-                if deli_product.offset_data:
-                    for deli_offset in deli_product.delivery_po_delivery_product.filter(offset__isnull=False):
-                        deli_offset.offset.save(**{
-                            'update_stock_info': {
-                                'quantity_delivery': deli_product.picked_quantity,
-                                'system_status': 3,
-                            },
-                            'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
-                        })
-                    return True
-                final_ratio = DeliFinishSubHandler.get_final_uom_ratio(
-                    product_obj=deli_product.product, uom_transaction=deli_product.uom
-                )
-                deli_product.product.save(**{
-                    'update_stock_info': {
-                        'quantity_delivery': deli_product.picked_quantity * final_ratio,
-                        'system_status': 3,
-                    },
-                    'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
-                })
-        return True
-
     # SALE/ LEASE ORDER STATUS
     @classmethod
     def push_so_lo_status(cls, instance):
@@ -370,11 +343,11 @@ class DeliFinishAssetToolHandler:
 
     @classmethod
     def force_create_new_asset(cls, instance):
-        # Tạo ra sl tài sản theo sl giao với giá kho tương úng
+        # Tạo ra sl tài sản theo sl giao với giá kho tương úng (Thuê loại hàng hóa)
         model_asset = DisperseModel(app_model='asset.fixedasset').get_model()
         model_asset_m2m = DisperseModel(app_model='asset.fixedassetusedepartment').get_model()
         if all(hasattr(model, 'objects') for model in [model_asset, model_asset_m2m]):
-            for delivery_product in instance.delivery_product_delivery_sub.all():
+            for delivery_product in instance.delivery_product_delivery_sub.filter(asset_type=1):
                 asset_data = []
                 for delivery_offset in delivery_product.delivery_po_delivery_product.filter(offset__isnull=False):
                     if delivery_offset.product_convert_into == 2:
@@ -495,7 +468,7 @@ class DeliFinishAssetToolHandler:
         model_tool = DisperseModel(app_model='asset.instrumenttool').get_model()
         model_tool_m2m = DisperseModel(app_model='asset.instrumenttoolusedepartment').get_model()
         if all(hasattr(model, 'objects') for model in [model_tool, model_tool_m2m]):
-            for delivery_product in instance.delivery_product_delivery_sub.all():
+            for delivery_product in instance.delivery_product_delivery_sub.filter(asset_type=1):
                 tool_data = []
                 for delivery_offset in delivery_product.delivery_po_delivery_product.filter(offset__isnull=False):
                     tool_data += DeliFinishAssetToolHandler.create_new_tool(

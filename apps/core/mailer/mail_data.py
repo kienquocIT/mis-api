@@ -224,7 +224,7 @@ class MailDataResolver:
         }
 
     @classmethod
-    def new_overtime(cls, tenant_obj, doc_id, app_code, start_date, end_date, start_time, end_time):
+    def new_overtime(cls, tenant_obj, doc_id, app_code, ot_date, start_time, end_time):
         full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{tenant_obj.code.lower()}{settings.UI_DOMAIN_SUFFIX}'
         if settings.UI_FIXED_DOMAIN:
             full_domain = f'{settings.UI_DOMAIN_PROTOCOL}://{settings.UI_DOMAIN}'
@@ -233,8 +233,7 @@ class MailDataResolver:
         return {
             '_ot': {
                 'links': f'{full_domain}/{app_url}{doc_id}',
-                'start_date': start_date,
-                'end_date': end_date,
+                'ot_date': ', '.join(ot_date),
                 'start_time': start_time,
                 'end_time': end_time,
             },

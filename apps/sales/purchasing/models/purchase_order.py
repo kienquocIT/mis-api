@@ -123,12 +123,8 @@ class PurchaseOrder(DataAbstractModel):
                     )
                     POFinishHandler.update_remain_and_status_purchase_request(instance=self)
                     POFinishHandler.update_is_all_ordered_purchase_request(instance=self)
-                    POFinishHandler.push_product_info(instance=self)
                     POFinishHandler.push_to_report_cashflow(instance=self)  # report
                     POFinishHandler.push_to_payment_plan(instance=self)  # payment plan
-
-        if self.system_status in [4]:  # cancel
-            POFinishHandler.push_product_info(instance=self)
 
         # diagram
         POHandler.push_diagram(instance=self)

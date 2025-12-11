@@ -50,7 +50,10 @@ class OvertimeRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('shift')
+        return super().get_queryset().prefetch_related(
+            'ot_map_with_employee_shift__shift',
+            'ot_map_with_employee_shift__employee',
+        )
 
     @swagger_auto_schema(
         operation_summary="Overtime request Detail",

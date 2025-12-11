@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.hr.models import Employee, Group
-from apps.hrm.attendance.models import ShiftAssignment, ShiftInfo
+from apps.hrm.attendance.models import ShiftAssignment, ShiftInfo, ShiftAssignmentAppConfig
 from apps.shared import BaseMsg
 
 
@@ -116,6 +116,11 @@ class ShiftAssignmentCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'shift': BaseMsg.NOT_EXIST})
 
     def validate(self, validate_data):
+        user = self.context.get('user', None)
+        if user:
+            config = user.company_current.attendance_shiftassignmentappconfig_belong_to_company.first()
+            if str(user.employee_current_id) not in [emp.get('id', None) for emp in config.employees_config]:
+                raise serializers.ValidationError({'detail': "Not allowed."})
         all_company = validate_data.get('all_company', False)
         group_list = validate_data.get('group_list', [])
         employee_list = validate_data.get('employee_list', [])
@@ -158,3 +163,28 @@ class ShiftAssignmentCreateSerializer(serializers.ModelSerializer):
                 ))
         results = ShiftAssignment.objects.bulk_create(bulk_data)
         return results[0]
+
+
+class ShiftAssignmentConfigUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ShiftAssignmentAppConfig
+        fields = (
+            'employees_config',
+        )
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
+
+
+class ShiftAssignmentConfigDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ShiftAssignmentAppConfig
+        fields = (
+            'id',
+            'employees_config',
+        )
