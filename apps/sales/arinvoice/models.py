@@ -102,7 +102,7 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
                 item.delivery_item_mapped.save(update_fields=['ar_value_done'])
         for item_mapped in instance.ar_invoice_deliveries.all():
             count = 0
-            all_delivery_item = item_mapped.delivery_product_delivery_sub.all()
+            all_delivery_item = item_mapped.delivery_mapped.delivery_product_delivery_sub.all()
             for prd in all_delivery_item:
                 if prd.ar_value_done == prd.product_cost * prd.picked_quantity:
                     count += 1
@@ -146,8 +146,6 @@ class ARInvoiceItems(SimpleAbstractModel):
     product_uom_data = models.JSONField(default=dict)
     product_quantity = models.FloatField(default=1)
     product_unit_price = models.FloatField(default=0)
-
-    ar_product_des = models.TextField(null=True, blank=True)
 
     product_subtotal = models.FloatField(default=0)
 

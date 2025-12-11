@@ -234,13 +234,20 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                         raise serializers.ValidationError(
                             {'product_payment_percent': "Payment percent must be 0-100."})
                     product_payment_value = product_subtotal * product_payment_percent / 100
+                    if product_payment_value > product_subtotal:
+                        raise serializers.ValidationError(
+                            {'product_payment_value': "Payment value can not be greater than Total value."})
 
                 # Tính giảm giá (Discount)
-                if product_discount_percent > 0:
+                if product_discount_percent:
+                    product_discount_percent = float(product_discount_percent)
                     if not (0 <= product_discount_percent <= 100):
                         raise serializers.ValidationError(
                             {'product_discount_percent': "Discount percent must be 0-100."})
                     product_discount_value = product_subtotal * product_discount_percent / 100
+                    if product_discount_value > product_subtotal:
+                        raise serializers.ValidationError(
+                            {'product_discount_value': "Discount value can not be greater than Total value."})
 
                 # Tính thuế cho đợt này
                 tax_rate = tax_obj.rate if tax_obj else 0
@@ -264,7 +271,6 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                     } if uom_obj else {},
                     'product_quantity': product_quantity,
                     'product_unit_price': product_unit_price,
-                    'ar_product_des': '',
                     'product_subtotal': product_subtotal,
                     # Các số liệu tính toán cho Hóa đơn này
                     'product_payment_percent': product_payment_percent,
@@ -295,7 +301,9 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                     raise serializers.ValidationError({'data_item_list': "Missing delivery item info."})
 
                 # Lấy giá trị gốc
-                product_subtotal = delivery_item_obj.product_subtotal_cost  # Tổng (Net)
+                product_quantity = delivery_item_obj.picked_quantity
+                product_unit_price = delivery_item_obj.product_cost
+                product_subtotal = product_quantity * product_unit_price  # Tổng (Net)
 
                 # Lấy input từ client
                 product_payment_percent = item.get('product_payment_percent')
@@ -310,13 +318,20 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                         raise serializers.ValidationError(
                             {'product_payment_percent': "Payment percent must be 0-100."})
                     product_payment_value = product_subtotal * product_payment_percent / 100
+                    if product_payment_value > product_subtotal - delivery_item_obj.ar_value_done:
+                        raise serializers.ValidationError(
+                            {'product_payment_value': "Payment value can not be greater than Total value."})
 
                 # Tính giảm giá (Discount)
-                if product_discount_percent > 0:
+                if product_discount_percent:
+                    product_discount_percent = float(product_discount_percent)
                     if not (0 <= product_discount_percent <= 100):
                         raise serializers.ValidationError(
                             {'product_discount_percent': "Discount percent must be 0-100."})
                     product_discount_value = product_subtotal * product_discount_percent / 100
+                    if product_discount_value > product_subtotal - delivery_item_obj.ar_value_done:
+                        raise serializers.ValidationError(
+                            {'product_discount_value': "Discount value can not be greater than Total value."})
 
                 # Tính thuế cho đợt này
                 tax_rate = tax_obj.rate if tax_obj else 0
@@ -338,9 +353,8 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                         'title': uom_obj.title,
                         'group_id': str(uom_obj.group_id)
                     } if uom_obj else {},
-                    'product_quantity': delivery_item_obj.product_quantity,
-                    'product_unit_price': delivery_item_obj.product_cost,
-                    'ar_product_des': '',
+                    'product_quantity': product_quantity,
+                    'product_unit_price': product_unit_price,
                     'product_subtotal': product_subtotal,
                     # Các số liệu tính toán cho Hóa đơn này
                     'product_payment_percent': product_payment_percent,
@@ -443,12 +457,15 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
         return [{
             'id': item.id,
             'order': item.order,
+            'delivery_item_mapped_id': str(item.delivery_item_mapped_id),
             'product_data': item.product_data,
             'product_uom_data': item.product_uom_data,
             'product_quantity': item.product_quantity,
             'product_unit_price': item.product_unit_price,
-            'ar_product_des': item.ar_product_des,
             'product_subtotal': item.product_subtotal,
+            'product_payment_percent': item.product_payment_percent,
+            'product_payment_value': item.product_payment_value,
+            'product_discount_percent': item.product_discount_percent,
             'product_discount_value': item.product_discount_value,
             'product_tax_data': item.product_tax_data,
             'product_tax_value': item.product_tax_value,
