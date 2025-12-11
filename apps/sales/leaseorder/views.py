@@ -7,6 +7,8 @@ from apps.sales.leaseorder.serializers import (
 )
 from apps.sales.leaseorder.serializers.lease_order_config import LeaseOrderConfigDetailSerializer, \
     LeaseOrderConfigUpdateSerializer
+from apps.sales.partnercenter.models import List
+from apps.sales.partnercenter.services import ListFilterService
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -46,12 +48,23 @@ class LeaseOrderList(BaseListMixin, BaseCreateMixin):
         if is_minimal:
             return super().get_queryset()
 
-        return super().get_queryset().select_related(
+        query_set = super().get_queryset().select_related(
             "customer",
             "opportunity",
             "quotation",
             "employee_inherit",
         )
+
+        # Get filter ID from query parameters
+        filter_item_id = self.request.query_params.get('advance_filter_id')
+
+        if filter_item_id:
+            filter_item_obj = List.objects.filter(id=filter_item_id).first()
+            if filter_item_obj:
+                # Apply the filter
+                query_set = ListFilterService.filter(filter_item_obj, query_set)
+
+        return query_set
 
     @swagger_auto_schema(
         operation_summary="Lease Order List",

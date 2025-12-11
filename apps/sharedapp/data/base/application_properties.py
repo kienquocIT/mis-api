@@ -2115,6 +2115,7 @@ AppProp_SaleData_LeaseOrder_data = {
         'code': 'contact',
         'type': 5,
         'content_type': 'saledata.contact',
+        'is_filter_condition': True,
     },
     '4c629543-a5bb-456a-81ef-62e470c9e2f4': {
         'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
@@ -2242,6 +2243,7 @@ AppProp_SaleData_LeaseOrder_data = {
         'type': 1,
         'is_wf_zone': True,
         'is_wf_condition': False,
+        'is_filter_condition': True,
     },
     '7bc86e87-e7be-438d-9fdf-4647f0ab88f6': {
         'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
@@ -2251,6 +2253,7 @@ AppProp_SaleData_LeaseOrder_data = {
         'content_type': 'hr.employee',
         'is_wf_zone': True,
         'is_wf_condition': True,
+        'is_filter_condition': True,
     },
     '05d0d9cc-98ed-41e7-9e59-95a23f74725d': {
         'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
@@ -2392,6 +2395,7 @@ AppProp_SaleData_LeaseOrder_data = {
         'type': 6,
         'is_wf_zone': False,
         'is_wf_condition': True,
+        'is_filter_condition': True,
     },
     '01bc3e9c-98c1-429f-b351-33d020c63754': {
         'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',

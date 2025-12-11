@@ -2008,4 +2008,14 @@ LeaseOrder_data__params = {
         'type': 1,
         'is_print': True,
     },
+    '1900017c-7dd8-439c-ae50-55c113a8f5a3': {
+        'application_id': '010404b3-bb91-4b24-9538-075f5f00ef14',
+        'title': 'Customer',
+        'code': 'customer',
+        'type': 5,
+        'content_type': 'saledata.account',
+        'is_wf_zone': True,
+        'is_wf_condition': True,
+        'is_filter_condition': True,
+    },
 }
