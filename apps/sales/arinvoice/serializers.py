@@ -147,56 +147,11 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
         user = self.context.get('user', None)
         return SerializerCommonValidate.validate_attachment(user=user, model_cls=ARInvoiceAttachmentFile, value=value)
 
-    def validate(self, validate_data):
-        billing_address_id = validate_data.pop('billing_address_id')
-        # parse data customer_mapped
-        customer_mapped = validate_data.get('customer_mapped')
-        if customer_mapped:
-            if not AccountBillingAddress.objects.filter(id=billing_address_id).exists():
-                if customer_mapped.account_type_selection == 1:
-                    raise serializers.ValidationError({
-                        'billing_address': "Billing address is required for organization customer."
-                    })
-            validate_data['customer_mapped_data'] = {
-                'id': str(customer_mapped.id),
-                'code': customer_mapped.code,
-                'name': customer_mapped.name,
-                'tax_code': customer_mapped.tax_code,
-                'billing_address_id': str(billing_address_id),
-            }
-        # parse data sale_order_mapped
-        sale_order_mapped = validate_data.get('sale_order_mapped')
-        if sale_order_mapped:
-            validate_data['sale_order_mapped_data'] = {
-                'id': str(sale_order_mapped.id),
-                'code': sale_order_mapped.code,
-                'title': sale_order_mapped.title,
-                'sale_order_payment_stage': sale_order_mapped.sale_order_payment_stage
-            }
-        # parse data lease_order_mapped
-        lease_order_mapped = validate_data.get('lease_order_mapped')
-        if lease_order_mapped:
-            validate_data['lease_order_mapped_data'] = {
-                'id': str(lease_order_mapped.id),
-                'code': lease_order_mapped.code,
-                'title': lease_order_mapped.title,
-                'lease_payment_stage': lease_order_mapped.lease_payment_stage
-            }
-        # parse data bank_account
-        bank_account = validate_data.get('company_bank_account')
-        if bank_account:
-            validate_data['company_bank_account_data'] = {
-                'id': str(bank_account.id),
-                'title': (f"{bank_account.bank_account_number} ({bank_account.bank_account_owner}) - "
-                          f"{bank_account.bank_mapped.bank_name} ({bank_account.bank_mapped.bank_abbreviation})")
-            }
-        # check valid data bank number
-        if validate_data.get('invoice_method') == 2 and not validate_data.get('company_bank_account'):
-            raise serializers.ValidationError({'company_bank_account': "Company bank account is not null."})
-        # check valid data data_item_list
+    @staticmethod
+    def check_data_item_list(data_item_list, sale_order_mapped, lease_order_mapped):
         valid_data_item_list = []
         if not sale_order_mapped and not lease_order_mapped:
-            for item in validate_data.get('data_item_list', []):
+            for item in data_item_list:
                 product_obj = Product.objects.filter(id=item.get('product_id')).first()
                 uom_obj = UnitOfMeasure.objects.filter(id=item.get('product_uom_id')).first()
                 tax_obj = Tax.objects.filter(id=item.get('product_tax_id')).first()
@@ -218,7 +173,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                 # Tính giá trị hàng hóa đợt này (Trước khi trừ KM)
                 if product_payment_percent:
                     product_payment_percent = float(product_payment_percent)
-                    if not (0 <= product_payment_percent <= 100):
+                    if not 0 <= product_payment_percent <= 100:
                         raise serializers.ValidationError(
                             {'product_payment_percent': "Payment percent must be 0-100."})
                     product_payment_value = product_subtotal * product_payment_percent / 100
@@ -229,7 +184,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                 # Tính giảm giá (Discount)
                 if product_discount_percent:
                     product_discount_percent = float(product_discount_percent)
-                    if not (0 <= product_discount_percent <= 100):
+                    if not 0 <= product_discount_percent <= 100:
                         raise serializers.ValidationError(
                             {'product_discount_percent': "Discount percent must be 0-100."})
                     product_discount_value = product_subtotal * product_discount_percent / 100
@@ -277,7 +232,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                     'note': item.get('note', '')
                 })
         else:
-            for item in validate_data.get('data_item_list', []):
+            for item in data_item_list:
                 delivery_item_obj = OrderDeliveryProduct.objects.filter(
                     id=item.get('delivery_item_mapped_id')
                 ).first()
@@ -360,8 +315,60 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                     'product_subtotal_final': product_payment_value - product_discount_value + product_tax_value,
                     'note': item.get('note', '')
                 })
+        return valid_data_item_list
 
-        validate_data['data_item_list'] = valid_data_item_list
+    def validate(self, validate_data):
+        billing_address_id = validate_data.pop('billing_address_id')
+        # parse data customer_mapped
+        customer_mapped = validate_data.get('customer_mapped')
+        if customer_mapped:
+            if not AccountBillingAddress.objects.filter(id=billing_address_id).exists():
+                if customer_mapped.account_type_selection == 1:
+                    raise serializers.ValidationError({
+                        'billing_address': "Billing address is required for organization customer."
+                    })
+            validate_data['customer_mapped_data'] = {
+                'id': str(customer_mapped.id),
+                'code': customer_mapped.code,
+                'name': customer_mapped.name,
+                'tax_code': customer_mapped.tax_code,
+                'billing_address_id': str(billing_address_id),
+            }
+        # parse data sale_order_mapped
+        sale_order_mapped = validate_data.get('sale_order_mapped')
+        if sale_order_mapped:
+            validate_data['sale_order_mapped_data'] = {
+                'id': str(sale_order_mapped.id),
+                'code': sale_order_mapped.code,
+                'title': sale_order_mapped.title,
+                'sale_order_payment_stage': sale_order_mapped.sale_order_payment_stage
+            }
+        # parse data lease_order_mapped
+        lease_order_mapped = validate_data.get('lease_order_mapped')
+        if lease_order_mapped:
+            validate_data['lease_order_mapped_data'] = {
+                'id': str(lease_order_mapped.id),
+                'code': lease_order_mapped.code,
+                'title': lease_order_mapped.title,
+                'lease_payment_stage': lease_order_mapped.lease_payment_stage
+            }
+        # parse data bank_account
+        bank_account = validate_data.get('company_bank_account')
+        if bank_account:
+            validate_data['company_bank_account_data'] = {
+                'id': str(bank_account.id),
+                'title': (f"{bank_account.bank_account_number} ({bank_account.bank_account_owner}) - "
+                          f"{bank_account.bank_mapped.bank_name} ({bank_account.bank_mapped.bank_abbreviation})")
+            }
+        # check valid data bank number
+        if validate_data.get('invoice_method') == 2 and not validate_data.get('company_bank_account'):
+            raise serializers.ValidationError({'company_bank_account': "Company bank account is not null."})
+        # check valid data data_item_list
+        validate_data['data_item_list'] = self.check_data_item_list(
+            validate_data.get('data_item_list', []),
+            sale_order_mapped,
+            lease_order_mapped
+        )
         return validate_data
 
     @decorator_run_workflow
