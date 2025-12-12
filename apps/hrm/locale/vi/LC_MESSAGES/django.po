@@ -29,3 +29,6 @@ msgstr "Không tìm thấy hợp đồng vui lòng tải lại trang"
 #
 msgid "You do not permissions in this contract"
 msgstr "Bạn không có quyền trên hợp đồng này"
+#
+msgid "Your date and time entry is duplicated"
+msgstr "Ngày bạn đăng ký bị trùng"
