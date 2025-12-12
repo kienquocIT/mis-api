@@ -30,19 +30,17 @@ class JELogHandler:
         3. Tìm Account mapped.
         """
         # Lấy dữ liệu từ JSON
-        context_data = data_item.context_data or {}
-        current_app = context_data.get('tracking_app')
-        tracking_id = context_data.get('tracking_id')
+        current_app = (data_item.context_data or {}).get('tracking_app')
+        tracking_id = (data_item.context_data or {}).get('tracking_id')
 
         assignment = None
 
         if not current_app or not tracking_id:
             return None
 
-        max_depth = 2
         current_depth = 0
         candidate_ids = [tracking_id]
-        while candidate_ids and current_depth < max_depth:
+        while candidate_ids and current_depth < 2:  # 2 là max_depth
             # A. Tìm xem có gán nhóm cho đối tượng này không?
             assignment = JEGroupAssignment.objects.filter(
                 company_id=rule.company_id,
