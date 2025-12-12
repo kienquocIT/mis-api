@@ -4,20 +4,28 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.hrm.overtimerequest.models import OvertimeRequest, OTMapWithEmployeeShift
 from apps.shared import AbstractCreateSerializerModel, AbstractDetailSerializerModel, DisperseModel, \
     AbstractListSerializerModel
+from apps.shared.translations.hrm import HRMMsg
 
 
-def create_mapped_with_shift(data, ot_id, employee_lst):
+def create_mapped_with_shift(obj):
+    data = obj.date_list
+    ot_id = obj.id
+    employee_lst = obj.employee_list
     bulk_create_lst = []
     for empl_id in employee_lst:
         for item in data:
             if item['shift']:
-                bulk_create_lst.append(OTMapWithEmployeeShift(
-                    overtime_request_id=ot_id,
-                    shift_id=item['shift']['id'],
-                    date=item['date'],
-                    employee_id=empl_id,
-                    type=item['ot_type'],
-                ))
+                bulk_create_lst.append(
+                    OTMapWithEmployeeShift(
+                        overtime_request_id=ot_id,
+                        shift_id=item['shift']['id'],
+                        date=item['date'],
+                        employee_id=empl_id,
+                        type=item['ot_type'],
+                        company_id=obj.company_id,
+                        tenant_id=obj.tenant_id
+                    )
+                )
     if bulk_create_lst:
         OTMapWithEmployeeShift.objects.bulk_create(bulk_create_lst)
 
@@ -51,12 +59,24 @@ class OvertimeRequestCreateSerializers(AbstractCreateSerializerModel):
                     'group': {'id': str(item.group.id), 'title': item.group.title} if item.group else {},
                     'full_name': item.get_full_name()
                 } for item in employee_list]
+        date_list = [item['date'] for item in validate_data['date_list']]
+        valid_list = OTMapWithEmployeeShift.objects.filter_on_company(
+            date__in=date_list
+        )
+        if len(validate_data['employee_list']):
+            valid_list = valid_list.filter(employee_id__in=validate_data['employee_list'])
+        else:
+            valid_list = valid_list.filter(employee_id=validate_data['employee_inherit']['id'])
+        for item in valid_list:
+            ot_request = item.overtime_request
+            if validate_data['start_time'] < ot_request.end_time and validate_data['end_time'] > ot_request.start_time:
+                raise serializers.ValidationError({'detail': HRMMsg.HRM_OVERTIME_VALID_DATE})
         return validate_data
 
     @decorator_run_workflow
     def create(self, validated_data):
         overtime = OvertimeRequest.objects.create(**validated_data)
-        create_mapped_with_shift(overtime.date_list, overtime.id, overtime.employee_list)
+        create_mapped_with_shift(overtime)
         return overtime
 
     class Meta:
@@ -111,6 +131,18 @@ class OvertimeRequestUpdateSerializers(AbstractCreateSerializerModel):
                     'group': {'id': str(item.group.id), 'title': item.group.title} if item.group else {},
                     'full_name': item.get_full_name()
                 } for item in employee_list]
+        date_list = [item['date'] for item in validate_data['date_list']]
+        valid_list = OTMapWithEmployeeShift.objects.filter_on_company(date__in=date_list).exclude(
+            id__in=self.instance.ot_map_with_employee_shift.all().values_list('id', flat=True)
+        )
+        if len(validate_data['employee_list']):
+            valid_list = valid_list.filter(employee_id__in=validate_data['employee_list'])
+        else:
+            valid_list = valid_list.filter(employee_id=validate_data['employee_inherit']['id'])
+        for item in valid_list:
+            if validate_data['start_time'] < item.overtime_request.end_time \
+                    and validate_data['end_time'] > item.overtime_request.start_time:
+                raise ValueError(HRMMsg.HRM_OVERTIME_VALID_DATE)
         return validate_data
 
     @decorator_run_workflow
@@ -119,7 +151,7 @@ class OvertimeRequestUpdateSerializers(AbstractCreateSerializerModel):
             setattr(instance, key, value)
         instance.save()
         instance.ot_map_with_employee_shift.all().delete()
-        create_mapped_with_shift(instance.date_list, instance.id, instance.employee_list)
+        create_mapped_with_shift(instance)
         return instance
 
     class Meta:
