@@ -148,7 +148,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
         return SerializerCommonValidate.validate_attachment(user=user, model_cls=ARInvoiceAttachmentFile, value=value)
 
     @staticmethod
-    def check_data_item_list_orders(data_item_list):
+    def check_data_item_list_free(data_item_list):
         valid_data_item_list = []
         for item in data_item_list:
             product_obj = Product.objects.filter(id=item.get('product_id')).first()
@@ -232,7 +232,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
         return valid_data_item_list
 
     @staticmethod
-    def check_data_item_list_free(data_item_list):
+    def check_data_item_list_orders(data_item_list):
         valid_data_item_list = []
         for item in data_item_list:
             delivery_item_obj = OrderDeliveryProduct.objects.filter(
