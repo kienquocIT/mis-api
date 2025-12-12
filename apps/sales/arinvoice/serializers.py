@@ -320,7 +320,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
 
     @classmethod
     def check_data_item_list(cls, data_item_list, sale_order_mapped, lease_order_mapped):
-        if not sale_order_mapped and not lease_order_mapped:
+        if sale_order_mapped or lease_order_mapped:
             return cls.check_data_item_list_orders(data_item_list)
         return cls.check_data_item_list_free(data_item_list)
 

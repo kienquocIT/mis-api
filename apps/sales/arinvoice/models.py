@@ -138,7 +138,10 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
 class ARInvoiceItems(SimpleAbstractModel):
     ar_invoice = models.ForeignKey('ARInvoice', on_delete=models.CASCADE, related_name='ar_invoice_items')
     order = models.IntegerField(default=0)
-    delivery_item_mapped = models.ForeignKey('delivery.OrderDeliveryProduct', null=True, on_delete=models.SET_NULL)
+    delivery_item_mapped = models.ForeignKey(
+        'delivery.OrderDeliveryProduct', null=True, on_delete=models.SET_NULL,
+        related_name='ar_delivery_items_mapped'
+    )
 
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     product_data = models.JSONField(default=dict)

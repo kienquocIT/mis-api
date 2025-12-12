@@ -209,6 +209,7 @@ class DeliveryListForARInvoice(BaseListMixin):
     filterset_fields = {
         'order_delivery__sale_order_id': ['exact'],
         'order_delivery__lease_order_id': ['exact'],
+        'order_delivery__service_order_id': ['exact'],
     }
     list_hidden_field = ['tenant_id', 'company_id']
 
@@ -221,6 +222,7 @@ class DeliveryListForARInvoice(BaseListMixin):
             'delivery_product_delivery_sub',
             'order_delivery__sale_order__sale_order_product_sale_order',
             'order_delivery__lease_order__lease_order_product_lease_order',
+            'order_delivery__service_order__service_details',
         ).order_by('date_created')
 
     @swagger_auto_schema(

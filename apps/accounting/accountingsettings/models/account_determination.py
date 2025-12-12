@@ -112,7 +112,7 @@ ASSIGNMENT_APP_CHOICES = [
 
 
 class JEDocumentType(MasterDataAbstractModel):
-    module = models.SmallIntegerField(choices=DOCUMENT_TYPE_CHOICES)
+    module = models.SmallIntegerField()
     app_code = models.CharField(
         max_length=100,
         verbose_name='Code of application',
@@ -194,7 +194,7 @@ class JEPostingRule(MasterDataAbstractModel):
     # Ưu tiên
     priority = models.IntegerField()
     # Role là gì
-    role_key = models.CharField(max_length=50, blank=True, null=True, choices=ROLE_KEY_CHOICES)
+    role_key = models.CharField(max_length=50, blank=True, null=True)
     # Bên Nợ hay Có
     side = models.CharField(max_length=10, choices=SIDE_CHOICES)
     # Lấy tiền từ nguồn nào (field trong model)
@@ -222,8 +222,7 @@ class JEDocData(SimpleAbstractModel):
     app_code = models.CharField(
         max_length=100,
         verbose_name='Code of application',
-        help_text='{app_label}.{model}',
-        choices=JE_DOCUMENT_TYPE_APP
+        help_text='{app_label}.{model}'
     )
     doc_id = models.UUIDField(verbose_name='Document ID')
     # Ghi cho tổng phiếu (HEADER) hay từng dòng trong phiếu (LINE)

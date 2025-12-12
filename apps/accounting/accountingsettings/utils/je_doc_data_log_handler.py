@@ -261,7 +261,7 @@ class JEDocDataLogHandler:
                     rule_level='HEADER',
                     amount_source='TAX',
                     value=ar_invoice_obj.sum_tax_value,
-                    taxable_value=ar_invoice_obj.sum_after_tax_value,
+                    taxable_value=ar_invoice_obj.sum_pretax_value - ar_invoice_obj.sum_discount_value,
                     currency_mapped=currency_mapped,
                     context_data=None
                 )

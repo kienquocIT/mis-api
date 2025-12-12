@@ -48,7 +48,7 @@ class ARInvoiceCommonFunc:
         sum_after_tax_value = 0
         for order, item in enumerate(data_item_list):
             bulk_data.append(ARInvoiceItems(ar_invoice=ar_invoice_obj, order=order, **item))
-            sum_pretax_value += float(item.get('product_subtotal', 0))
+            sum_pretax_value += float(item.get('product_payment_value', 0))
             sum_discount_value += float(item.get('product_discount_value', 0))
             sum_tax_value += float(item.get('product_tax_value', 0))
             sum_after_tax_value += float(item.get('product_subtotal_final', 0))
@@ -346,7 +346,6 @@ class LeaseOrderListSerializerForARInvoice(serializers.ModelSerializer):
 
 class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
     details = serializers.SerializerMethodField()
-    already = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderDeliverySub
@@ -354,56 +353,63 @@ class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
             'id',
             'title',
             'code',
+            'remarks',
             'sale_order_data',
-            'delivery_quantity',
-            'state',
-            'is_active',
-            'already',
+            'lease_order_data',
+            'service_order_data',
+            'is_done_ar_invoice',
+            'actual_delivery_date',
             'details',
-            'actual_delivery_date'
         )
 
     @classmethod
     def get_details(cls, obj):
-        so_mapped = obj.order_delivery.sale_order if obj.order_delivery else None
-        so_product_data = {
-            str(item.product_id): {
-                'product_id': str(item.product_id),
-                'product_data': item.product_data,
-                'product_unit_price': item.product_unit_price,
-                'product_discount_value': item.product_discount_value,
-                'product_tax_data': item.tax_data
-            }
-            for item in so_mapped.sale_order_product_sale_order.all()
-        } if so_mapped else {}
-
         details = []
-        for item in obj.delivery_product_delivery_sub.all():
-            so_product_data_get = so_product_data.get(str(item.product_id), {})
-            if so_product_data_get:
-                product_subtotal = so_product_data_get.get('product_unit_price', 0) * item.picked_quantity
-                product_discount_amount = product_subtotal * so_product_data_get.get('product_discount_value', 0) / 100
-                so_product_data_get['product_subtotal'] = product_subtotal
-                so_product_data_get['product_discount_value'] = product_discount_amount
-                so_product_data_get['product_tax_value'] = (
-                    product_subtotal - product_discount_amount
-                ) * so_product_data_get.get('product_tax_data', {}).get('rate', 0) / 100
-                so_product_data_get['product_subtotal_final'] = (
-                    product_subtotal - product_discount_amount
-                ) + so_product_data_get.get('product_tax_value', 0)
-            details.append({
+        so_mapped = obj.sale_order
+        lo_mapped = obj.lease_order
+        # svo_mapped = obj.service_order
+        if so_mapped:
+            delivery_data = [{
+                'so_id': str(obj.sale_order_id),
                 'id': str(item.id),
-                'delivery_id': str(obj.id),
-                'product_uom_data': item.uom_data,
+                'product_data': item.product_data.get('product_data', {}),
+                'uom_data': item.uom_data,
+                'tax_data': item.tax_data,
                 'delivery_quantity': item.delivery_quantity,
-                'product_quantity': item.picked_quantity,
-                **so_product_data_get
-            })
-        return details
+                'delivered_quantity_before': item.delivered_quantity_before,
+                'picked_quantity': item.picked_quantity,
+                'ar_value_done': item.ar_value_done
+            } for item in obj.delivery_product_delivery_sub.filter(picked_quantity__gt=0)]
 
-    @classmethod
-    def get_already(cls, obj):
-        return obj.is_done_ar_invoice
+            so_data = [{
+                'so_id': str(so_mapped.id),
+                'id': str(item.id),
+                'product_data': item.product_data.get('product_data', {}),
+                'uom_data': item.uom_data,
+                'product_quantity': item.product_quantity,
+                'product_unit_price': item.product_unit_price,
+                'product_subtotal_price': item.product_subtotal_price,
+                'product_discount_value': item.product_discount_value,
+                'tax_data': item.tax_data,
+                'product_tax_value': item.product_tax_value
+            } for item in so_mapped.sale_order_product_sale_order.all()]
+            details = {
+                'delivery_data': delivery_data,
+                'so_data': so_data,
+            }
+        if lo_mapped:
+            details = [{
+                'id': str(item.id),
+                'product_data': item.product_data.get('product_data', {}),
+                'uom_data': item.uom_data,
+                'product_quantity': item.product_quantity,
+                'product_unit_price': item.product_unit_price,
+                'product_subtotal_price': item.product_subtotal_price,
+                'product_discount_value': item.product_discount_value,
+                'tax_data': item.tax_data,
+                'product_tax_value': item.product_tax_value
+            } for item in lo_mapped.lease_order_product_lease_order.all()]
+        return details
 
 
 class ARInvoiceSignCreateSerializer(serializers.ModelSerializer):
