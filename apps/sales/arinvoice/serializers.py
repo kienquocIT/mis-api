@@ -186,8 +186,8 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                 if not 0 <= product_discount_percent <= 100:
                     raise serializers.ValidationError(
                         {'product_discount_percent': "Discount percent must be 0-100."})
-                product_discount_value = product_subtotal * product_discount_percent / 100
-                if product_discount_value > product_subtotal:
+                product_discount_value = product_payment_value * product_discount_percent / 100
+                if product_discount_value > product_payment_value:
                     raise serializers.ValidationError(
                         {'product_discount_value': "Discount value can not be greater than Total value."})
 
@@ -273,8 +273,8 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                 if not 0 <= product_discount_percent <= 100:
                     raise serializers.ValidationError(
                         {'product_discount_percent': "Discount percent must be 0-100."})
-                product_discount_value = product_subtotal * product_discount_percent / 100
-                if product_discount_value > product_subtotal - delivery_item_obj.ar_value_done:
+                product_discount_value = product_payment_value * product_discount_percent / 100
+                if product_discount_value > product_payment_value - delivery_item_obj.ar_value_done:
                     raise serializers.ValidationError(
                         {'product_discount_value': "Discount value can not be greater than Total value."})
 

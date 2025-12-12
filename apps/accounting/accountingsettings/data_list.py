@@ -143,6 +143,13 @@ POSTING_RULE_LIST = [
                 'account_source_type': 'FIXED', 'fixed_account_code': '13881',
                 'description': 'Đối trừ hàng đã xuất (13881)',
             },
+            # Chiết khấu (Nợ) -> FIXED (521)
+            {
+                'rule_level': 'LINE', 'priority': 40, 'role_key': 'SALES_DEDUCTION',
+                'side': 'DEBIT', 'amount_source': 'DISCOUNT',
+                'account_source_type': 'FIXED', 'fixed_account_code': '5211',
+                'description': 'Chiết khấu thương mại theo dòng',
+            }
         ]
     },
 
