@@ -114,9 +114,9 @@ class ReportInvCommonFunc:
             'opening_balance_quantity': last_sub_item.ending_balance_quantity,
             'opening_balance_cost': last_sub_item.ending_balance_cost,
             'opening_balance_value': last_sub_item.ending_balance_value,
-            'periodic_ending_balance_quantity': last_sub_item.periodic_ending_balance_quantity,
-            'periodic_ending_balance_cost': last_sub_item.periodic_ending_balance_cost,
-            'periodic_ending_balance_value': last_sub_item.periodic_ending_balance_value
+            'ending_balance_quantity': last_sub_item.ending_balance_quantity,
+            'ending_balance_cost': last_sub_item.ending_balance_cost,
+            'ending_balance_value': last_sub_item.ending_balance_value
         }
         rp_inv_cost = ReportInventoryCost(**item_parsed)
         bulk_info.append(rp_inv_cost)
