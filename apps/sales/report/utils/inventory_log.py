@@ -52,7 +52,7 @@ class ReportInvLog:
                                 log, period_obj, sub_period_order, cost_cfg, for_balance_init
                             )
                         print('# Add log for balance init successfully!\n'
-                              if for_balance_init else f'# Write {doc_obj.code} to Inventory Report successfully!\n')
+                              if for_balance_init else f'# Write {doc_obj.code} to Inventory Report successfully!')
                         return new_logs
                     raise serializers.ValidationError({'sub_period_obj': 'Sub period order obj does not exist.'})
                 raise serializers.ValidationError({'period_obj': f'Fiscal year {doc_date.year} does not exist.'})

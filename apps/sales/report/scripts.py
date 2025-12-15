@@ -142,7 +142,7 @@ class InventoryReportRun:
     def log_docs(all_doc_sorted):
         print('#log docs')
         for doc in all_doc_sorted:
-            print(f"> doc info: {doc['date_approved'].strftime('%d/%m/%Y')} - {doc['code']} ({doc['type']})")
+            print(f"\n> doc info: {doc['date_approved'].strftime('%d/%m/%Y')} - {doc['code']} ({doc['type']})")
             if doc['type'] == 'delivery':
                 instance = OrderDeliverySub.objects.get(id=doc['id'])
                 IRForDeliveryHandler.push_to_inventory_report(instance)
