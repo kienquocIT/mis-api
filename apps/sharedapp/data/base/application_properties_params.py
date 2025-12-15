@@ -2014,8 +2014,6 @@ LeaseOrder_data__params = {
         'code': 'customer',
         'type': 5,
         'content_type': 'saledata.account',
-        'is_wf_zone': True,
-        'is_wf_condition': True,
         'is_filter_condition': True,
     },
 }
