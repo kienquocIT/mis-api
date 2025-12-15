@@ -740,7 +740,6 @@ class ReportInventorySubFunction:
         ).first()
         latest_log = record.latest_log if record else None
         if latest_log:
-            print(f'Log gần nhất là {latest_log.trans_code} vào ngày {latest_log.system_date} với SL = {latest_log.perpetual_current_quantity}')
             return {
                 'quantity': latest_log.perpetual_current_quantity,
                 'cost': latest_log.perpetual_current_cost,
