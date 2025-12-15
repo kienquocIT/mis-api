@@ -30,21 +30,21 @@ class JELogHandler:
         3. Tìm Account mapped.
         """
         # Lấy dữ liệu từ JSON
-        context_data = data_item.context_data or {}
+        current_app = (data_item.context_data or {}).get('tracking_app')
+        tracking_id = (data_item.context_data or {}).get('tracking_id')
 
         assignment = None
 
-        if not context_data.get('tracking_app') or not context_data.get('tracking_id'):
+        if not current_app or not tracking_id:
             return None
 
-        max_depth = 2
         current_depth = 0
-        candidate_ids = [context_data.get('tracking_id')]
-        while candidate_ids and current_depth < max_depth:
+        candidate_ids = [tracking_id]
+        while candidate_ids and current_depth < 2:  # 2 là max_depth
             # A. Tìm xem có gán nhóm cho đối tượng này không?
             assignment = JEGroupAssignment.objects.filter(
                 company_id=rule.company_id,
-                item_app=context_data.get('tracking_app'),
+                item_app=current_app,
                 item_id__in=candidate_ids
             ).first()
 
@@ -52,14 +52,14 @@ class JELogHandler:
                 break  # tìm ra
 
             # B. Nếu không thấy, tra bản đồ để leo lên cấp cha (Lấy TẤT CẢ cha của TẤT CẢ con)
-            parent_config = cls.TRACKING_HIERARCHY_MAP.get(context_data.get('tracking_app'))
+            parent_config = cls.TRACKING_HIERARCHY_MAP.get(current_app)
             if not parent_config or not parent_config[0]:
                 break
 
             parent_related_name, parent_app_label = parent_config
 
             try:
-                model_tracking = DisperseModel(app_model=context_data.get('tracking_app')).get_model()
+                model_tracking = DisperseModel(app_model=current_app).get_model()
                 if not model_tracking:
                     break
 
@@ -70,7 +70,7 @@ class JELogHandler:
                 # Làm sạch list (bỏ None, bỏ trùng lặp)
                 candidate_ids = list({uid for uid in parent_ids if uid})
                 # Cập nhật app để vòng sau check bảng cha
-                context_data['tracking_app'] = parent_app_label
+                current_app = parent_app_label
                 current_depth += 1
             except Exception as err:
                 logger.error(msg=f"Error in tracking hierarchy: {err}")

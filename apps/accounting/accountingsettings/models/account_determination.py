@@ -53,7 +53,10 @@ AMOUNT_SOURCE_CHOICES = [
     ('TAX', _('Tiền thuế')),
     ('DISCOUNT', _('Chiết khấu')),
     ('CASH', _('Số tiền mặt')),
-    ('BANK', _('Số tiền ngân hàng'))
+    ('BANK', _('Số tiền ngân hàng')),
+    ('SURCHARGE', _('Phụ phí (Vận chuyển, Lắp đặt...)')),
+    ('IMPORT_TAX', _('Thuế Nhập khẩu')),
+    ('ROUNDING', _('Chênh lệch làm tròn')),
 ]
 
 ROLE_KEY_CHOICES = [
@@ -62,7 +65,16 @@ ROLE_KEY_CHOICES = [
     ('COGS', _('Giá vốn hàng bán (632)')),
     # Nhóm Doanh thu
     ('REVENUE', _('Doanh thu (511)')),
+    ('FINANCIAL_INCOME', _('Doanh thu tài chính (515)')),  # Lãi tiền gửi, Chiết khấu thanh toán được hưởng
+    ('OTHER_INCOME', _('Thu nhập khác (711)')),  # Thanh lý tài sản, v.v.
     ('DONI', _('Doanh thu tạm tính/Chưa hóa đơn (1388)')),  # Delivery Order Not Invoiced
+    # Nhóm Giảm trừ Doanh thu
+    ('SALES_DEDUCTION', _('Giảm trừ doanh thu (521)')),  # Chiết khấu thương mại, Giảm giá hàng bán, Hàng bán trả lại
+    # Nhóm Chi phí
+    ('SELLING_EXPENSE', _('Chi phí bán hàng (641)')),
+    ('ADMIN_EXPENSE', _('Chi phí quản lý (642)')),
+    ('FINANCIAL_EXPENSE', _('Chi phí tài chính (635)')),  # Lỗ tỉ giá, Chiết khấu thanh toán cho khách
+    ('OTHER_EXPENSE', _('Chi phí khác (811)')),
     # Nhóm Công nợ Mua
     ('PAYABLE', _('Phải trả người bán (331)')),
     ('GRNI', _('Hàng về chưa hóa đơn (3388)')),  # Goods Received Not Invoiced
@@ -70,10 +82,12 @@ ROLE_KEY_CHOICES = [
     ('RECEIVABLE', _('Phải thu khách hàng (131)')),
     # Nhóm Thuế
     ('TAX_IN', _('Thuế đầu vào (133)')),
-    ('TAX_OUT', _('Thuế đầu ra (333)')),
+    ('TAX_OUT', _('Thuế đầu ra (3331)')),
+    ('TAX_IMPORT', _('Thuế Nhập khẩu (3333)')),
     # Nhóm Tiền
     ('CASH', _('Tiền mặt (111)')),
     ('BANK', _('Tiền gửi ngân hàng (112)')),
+    ('CASH_IN_TRANSIT', _('Tiền đang chuyển (113)')),
 ]
 
 ACCOUNT_SOURCE_TYPE_CHOICES = [
@@ -98,7 +112,7 @@ ASSIGNMENT_APP_CHOICES = [
 
 
 class JEDocumentType(MasterDataAbstractModel):
-    module = models.SmallIntegerField(choices=DOCUMENT_TYPE_CHOICES)
+    module = models.SmallIntegerField()
     app_code = models.CharField(
         max_length=100,
         verbose_name='Code of application',
@@ -180,7 +194,7 @@ class JEPostingRule(MasterDataAbstractModel):
     # Ưu tiên
     priority = models.IntegerField()
     # Role là gì
-    role_key = models.CharField(max_length=50, blank=True, null=True, choices=ROLE_KEY_CHOICES)
+    role_key = models.CharField(max_length=50, blank=True, null=True)
     # Bên Nợ hay Có
     side = models.CharField(max_length=10, choices=SIDE_CHOICES)
     # Lấy tiền từ nguồn nào (field trong model)
@@ -208,8 +222,7 @@ class JEDocData(SimpleAbstractModel):
     app_code = models.CharField(
         max_length=100,
         verbose_name='Code of application',
-        help_text='{app_label}.{model}',
-        choices=JE_DOCUMENT_TYPE_APP
+        help_text='{app_label}.{model}'
     )
     doc_id = models.UUIDField(verbose_name='Document ID')
     # Ghi cho tổng phiếu (HEADER) hay từng dòng trong phiếu (LINE)

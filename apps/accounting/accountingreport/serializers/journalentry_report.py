@@ -42,7 +42,7 @@ class JournalEntryLineListSerializer(serializers.ModelSerializer):
             'code': je_obj.code,
             'je_transaction_app_code': je_obj.je_transaction_app_code,
             'je_transaction_data': je_obj.je_transaction_data,
-            'original_transaction_parsed': dict(JE_DOCUMENT_TYPE_APP)[je_obj.je_transaction_app_code],
+            'original_transaction_parsed': dict(JE_DOCUMENT_TYPE_APP).get(je_obj.je_transaction_app_code),
             'je_posting_date': je_obj.je_posting_date,
             'je_document_date': je_obj.je_document_date,
             'je_state': je_obj.je_state,

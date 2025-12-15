@@ -219,7 +219,6 @@ class JEDocDataLogHandler:
                             'tracking_id': str(deli_product.product_id)
                         }
                     )
-                    print(deli_product.product_cost * deli_product.picked_quantity, currency_exchange_rate)
                     data_row_sales = JEDocData.make_doc_data_obj(
                         company_id=delivery_sub_obj.company_id,
                         app_code=app_code,
@@ -262,7 +261,7 @@ class JEDocDataLogHandler:
                     rule_level='HEADER',
                     amount_source='TAX',
                     value=ar_invoice_obj.sum_tax_value,
-                    taxable_value=ar_invoice_obj.sum_after_tax_value,
+                    taxable_value=ar_invoice_obj.sum_pretax_value - ar_invoice_obj.sum_discount_value,
                     currency_mapped=currency_mapped,
                     context_data=None
                 )
@@ -286,14 +285,13 @@ class JEDocDataLogHandler:
                     delivery_mapped_obj = item.ar_invoice.ar_invoice_deliveries.first()
                     if delivery_mapped_obj.delivery_mapped.sale_order:
                         currency_exchange_rate = delivery_mapped_obj.delivery_mapped.sale_order.currency_exchange_rate
-                    line_value = item.product_subtotal * currency_exchange_rate
-                    data_row = JEDocData.make_doc_data_obj(
+                    data_row_sales = JEDocData.make_doc_data_obj(
                         company_id=ar_invoice_obj.company_id,
                         app_code=app_code,
                         doc_id=ar_invoice_obj.id,
                         rule_level='LINE',
                         amount_source='SALES',
-                        value=line_value,
+                        value=item.product_payment_value * currency_exchange_rate,
                         taxable_value=0,
                         currency_mapped=currency_mapped,
                         context_data = {
@@ -301,7 +299,22 @@ class JEDocDataLogHandler:
                             'tracking_id': str(item.product_id)
                         }
                     )
-                    bulk_info.append(data_row)
+                    data_row_sales_deduction = JEDocData.make_doc_data_obj(
+                        company_id=ar_invoice_obj.company_id,
+                        app_code=app_code,
+                        doc_id=ar_invoice_obj.id,
+                        rule_level='LINE',
+                        amount_source='DISCOUNT',
+                        value=item.product_discount_value * currency_exchange_rate,
+                        taxable_value=0,
+                        currency_mapped=currency_mapped,
+                        context_data={
+                            'tracking_app': 'saledata.Product',
+                            'tracking_id': str(item.product_id)
+                        }
+                    )
+                    bulk_info.append(data_row_sales)
+                    bulk_info.append(data_row_sales_deduction)
                 JEDocData.objects.bulk_create(bulk_info)
                 return True
         except Exception as err:

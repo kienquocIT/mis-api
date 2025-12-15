@@ -5,16 +5,22 @@ import json
 import base64
 import requests
 from drf_yasg.utils import swagger_auto_schema
+
+from apps.sales.leaseorder.models import LeaseOrder
 from apps.sales.saleorder.models import SaleOrder
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import ARInvoice, ARInvoiceSign
 from apps.sales.arinvoice.serializers import (
-    DeliveryListSerializerForARInvoice,
     ARInvoiceListSerializer, ARInvoiceDetailSerializer,
     ARInvoiceCreateSerializer, ARInvoiceUpdateSerializer,
+)
+from apps.sales.arinvoice.serializers_sub import (
+    DeliveryListSerializerForARInvoice,
     ARInvoiceSignListSerializer, ARInvoiceSignCreateSerializer,
-    ARInvoiceSignDetailSerializer, ARInvoiceRecurrenceListSerializer, SaleOrderListSerializerForARInvoice
+    ARInvoiceSignDetailSerializer, ARInvoiceRecurrenceListSerializer,
+    SaleOrderListSerializerForARInvoice,
+    LeaseOrderListSerializerForARInvoice
 )
 
 __all__ = [
@@ -166,8 +172,32 @@ class SaleOrderListForARInvoice(BaseListMixin):
         operation_description="Get Sale Order List",
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        label_code='saleorder', model_code='saleorder', perm_code='view',
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class LeaseOrderListForARInvoice(BaseListMixin):
+    queryset = LeaseOrder.objects
+    search_fields = ['title', 'code', 'customer__name']
+    filterset_fields = {
+        'customer_id': ['exact'],
+    }
+    serializer_list = LeaseOrderListSerializerForARInvoice
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            system_status=3
+        ).select_related('opportunity')
+
+    @swagger_auto_schema(
+        operation_summary="Lease Order List",
+        operation_description="Get Lease Order List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -178,6 +208,8 @@ class DeliveryListForARInvoice(BaseListMixin):
     serializer_list = DeliveryListSerializerForARInvoice
     filterset_fields = {
         'order_delivery__sale_order_id': ['exact'],
+        'order_delivery__lease_order_id': ['exact'],
+        'order_delivery__service_order_id': ['exact'],
     }
     list_hidden_field = ['tenant_id', 'company_id']
 
@@ -187,15 +219,17 @@ class DeliveryListForARInvoice(BaseListMixin):
         ).select_related(
             'order_delivery'
         ).prefetch_related(
-            'delivery_product_delivery_sub', 'order_delivery__sale_order__sale_order_product_sale_order'
+            'delivery_product_delivery_sub',
+            'order_delivery__sale_order__sale_order_product_sale_order',
+            'order_delivery__lease_order__lease_order_product_lease_order',
+            'order_delivery__service_order__service_details',
         ).order_by('date_created')
 
     @swagger_auto_schema(
         operation_summary='Order Delivery List',
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        label_code='delivery', model_code='orderDeliverySub', perm_code='view',
+        login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

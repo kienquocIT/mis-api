@@ -88,9 +88,9 @@ class SaleOrderListSerializer(AbstractListSerializerModel):
             count_no_invoice = 0
             for sub in delivery_obj.delivery_sub_order_delivery.all():
                 count += 1
-                if sub.has_ar_invoice_already is True:
+                if sub.is_done_ar_invoice is True:
                     count_invoice += 1
-                if sub.has_ar_invoice_already is False:
+                if sub.is_done_ar_invoice is False:
                     count_no_invoice += 1
             if count == count_invoice:
                 return 2

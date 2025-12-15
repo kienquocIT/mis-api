@@ -112,6 +112,7 @@ class OrderDeliverySubListSerializer(AbstractListSerializerModel):
             'actual_delivery_date',
             'employee_inherit',
             'state',
+            'is_done_ar_invoice'
         )
 
 

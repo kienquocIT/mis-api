@@ -37,6 +37,8 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
     customer_mapped_data = models.JSONField(default=dict)
     sale_order_mapped = models.ForeignKey('saleorder.SaleOrder', on_delete=models.CASCADE, null=True)
     sale_order_mapped_data = models.JSONField(default=dict)
+    lease_order_mapped = models.ForeignKey('leaseorder.LeaseOrder', on_delete=models.CASCADE, null=True)
+    lease_order_mapped_data = models.JSONField(default=dict)
     company_bank_account = models.ForeignKey('saledata.BankAccount', on_delete=models.SET_NULL, null=True)
     company_bank_account_data = models.JSONField(default=dict)
     posting_date = models.DateTimeField(null=True)
@@ -47,7 +49,7 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
     invoice_example = models.SmallIntegerField(choices=INVOICE_EXP)
     invoice_method = models.SmallIntegerField(choices=INVOICE_METHOD, default=3)
     invoice_status = models.SmallIntegerField(choices=INVOICE_STATUS, default=0)
-    buyer_name = models.CharField(max_length=250, null=True, blank=True)
+    buyer_information = models.TextField(blank=True)
     is_created_einvoice = models.BooleanField(default=False)
     sum_pretax_value = models.FloatField(default=0)
     sum_discount_value = models.FloatField(default=0)
@@ -93,11 +95,20 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
         return True
 
     @classmethod
-    def update_order_delivery_has_ar_invoice_already(cls, instance):
-        for item in instance.ar_invoice_deliveries.all():
-            if item.delivery_mapped:
-                item.delivery_mapped.has_ar_invoice_already = True
-                item.delivery_mapped.save(update_fields=['has_ar_invoice_already'])
+    def update_order_delivery_is_done_ar_invoice(cls, instance):
+        for item in instance.ar_invoice_items.all():
+            if item.delivery_item_mapped:
+                item.delivery_item_mapped.ar_value_done += item.product_payment_value
+                item.delivery_item_mapped.save(update_fields=['ar_value_done'])
+        for item_mapped in instance.ar_invoice_deliveries.all():
+            count = 0
+            all_delivery_item = item_mapped.delivery_mapped.delivery_product_delivery_sub.all()
+            for prd in all_delivery_item:
+                if prd.ar_value_done == prd.product_cost * prd.picked_quantity:
+                    count += 1
+            if count == all_delivery_item.count():
+                item_mapped.delivery_mapped.is_done_ar_invoice = True
+                item_mapped.delivery_mapped.save(update_fields=['is_done_ar_invoice'])
         return True
 
     def save(self, *args, **kwargs):
@@ -107,7 +118,7 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
                     CompanyFunctionNumber.auto_gen_code_based_on_config(
                         app_code=None, instance=self, in_workflow=True, kwargs=kwargs
                     )
-                    self.update_order_delivery_has_ar_invoice_already(self)
+                    self.update_order_delivery_is_done_ar_invoice(self)
                     JEDocDataLogHandler.push_data_to_je_doc_data(self)
                     # ReconForARInvoiceHandler.auto_create_recon_doc(self)
 
@@ -127,6 +138,10 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
 class ARInvoiceItems(SimpleAbstractModel):
     ar_invoice = models.ForeignKey('ARInvoice', on_delete=models.CASCADE, related_name='ar_invoice_items')
     order = models.IntegerField(default=0)
+    delivery_item_mapped = models.ForeignKey(
+        'delivery.OrderDeliveryProduct', null=True, on_delete=models.SET_NULL,
+        related_name='ar_delivery_items_mapped'
+    )
 
     product = models.ForeignKey('saledata.Product', on_delete=models.CASCADE, null=True)
     product_data = models.JSONField(default=dict)
@@ -135,13 +150,18 @@ class ARInvoiceItems(SimpleAbstractModel):
     product_quantity = models.FloatField(default=1)
     product_unit_price = models.FloatField(default=0)
 
-    ar_product_des = models.TextField(null=True, blank=True)
-
     product_subtotal = models.FloatField(default=0)
+
+    product_payment_percent = models.FloatField(default=100, null=True)
+    product_payment_value = models.FloatField(default=0)
+
+    product_discount_percent = models.FloatField(default=0, null=True)
     product_discount_value = models.FloatField(default=0)
+
     product_tax = models.ForeignKey('saledata.Tax', on_delete=models.SET_NULL, null=True)
     product_tax_data = models.JSONField(default=dict)
     product_tax_value = models.FloatField(default=0)
+
     product_subtotal_final = models.FloatField(default=0)
     note = models.TextField(blank=True)
 
