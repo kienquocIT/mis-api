@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.accounting.accountingsettings.models.chart_of_account import (
-    ChartOfAccounts
+    ChartOfAccounts, ChartOfAccountsSummarize
 )
 
 
@@ -31,6 +31,12 @@ class ChartOfAccountsCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChartOfAccounts
         fields = "__all__"
+
+    def create(self, validated_data):
+        instance = ChartOfAccounts.objects.create(**validated_data)
+        ChartOfAccountsSummarize.create_summarize(instance)
+        return instance
+
 
 
 class ChartOfAccountsDetailSerializer(serializers.ModelSerializer):

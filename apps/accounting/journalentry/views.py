@@ -1,9 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
-from apps.accounting.accountingsettings.models.account_determination import JE_DOCUMENT_TYPE_APP
-from apps.accounting.journalentry.models import JournalEntry
+from apps.accounting.journalentry.models import JournalEntry, JournalEntrySummarize
 from apps.accounting.journalentry.serializers import (
     JournalEntryListSerializer, JournalEntryCreateSerializer,
     JournalEntryDetailSerializer, JournalEntryUpdateSerializer
@@ -76,19 +74,13 @@ class JournalEntryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 )
 @api_view(['GET'])
 def get_je_summarize(request, *args, **kwargs):
-    all_je = JournalEntry.objects.filter_on_company()
-
-    summarize_total_je = all_je.count()
-    summarize_total_debit = sum(all_je.values_list('total_debit', flat=True))
-    summarize_total_credit = sum(all_je.values_list('total_credit', flat=True))
-
-    summarize_total_source_type = len(JE_DOCUMENT_TYPE_APP)
+    je_summarize_obj = JournalEntrySummarize.objects.filter(company_id=request.user.company_current_id).first()
 
     return Response({
         'result': {
-            'summarize_total_je': summarize_total_je,
-            'summarize_total_debit': summarize_total_debit,
-            'summarize_total_credit': summarize_total_credit,
-            'summarize_total_source_type': summarize_total_source_type,
-        }
+            'total_je_doc': je_summarize_obj.total_je_doc,
+            'total_debit': je_summarize_obj.total_debit,
+            'total_credit': je_summarize_obj.total_credit,
+            'total_source_type': je_summarize_obj.total_source_type,
+        } if je_summarize_obj else {}
     })

@@ -1,4 +1,6 @@
 from django.db import transaction
+
+from apps.accounting.accountingsettings.models.chart_of_account import ChartOfAccountsSummarize
 from apps.core.company.models import Company
 from apps.accounting.accountingsettings.models import (ChartOfAccounts)
 from apps.masterdata.saledata.models.price import Currency
@@ -888,6 +890,7 @@ class AccountScript:
                     )
                     acc_map[code] = new_acc
                     current_order += 1
+                    ChartOfAccountsSummarize.create_summarize(new_acc)
 
         print(f'> Generated chart of account for {company_obj.title} (TT200)')
         return True

@@ -1,6 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
 from apps.accounting.accountingsettings.models.chart_of_account import (
-    ChartOfAccounts
+    ChartOfAccounts, ChartOfAccountsSummarize
 )
 from apps.accounting.accountingsettings.serializers.chart_of_account import (
     ChartOfAccountsListSerializer, ChartOfAccountsCreateSerializer, ChartOfAccountsDetailSerializer,
@@ -48,3 +51,26 @@ class ChartOfAccountsList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+
+@swagger_auto_schema(
+    method='get',
+    operation_summary="Chart of Accounts Summarize",
+    operation_description="Chart of Accounts Summarize",
+)
+@api_view(['GET'])
+def get_chart_of_accounts_summarize(request, *args, **kwargs):
+    account_id = request.query_params.get('account_id', '')
+    je_chart_of_accounts_obj = ChartOfAccountsSummarize.objects.filter(
+        company_id=request.user.company_current_id,
+        account_id=account_id,
+    ).first()
+
+    return Response({
+        'result': {
+            'opening_balance': je_chart_of_accounts_obj.opening_balance,
+            'total_debit': je_chart_of_accounts_obj.total_debit,
+            'total_credit': je_chart_of_accounts_obj.total_credit,
+            'closing_balance': je_chart_of_accounts_obj.closing_balance,
+        } if je_chart_of_accounts_obj else {}
+    })

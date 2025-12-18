@@ -66,7 +66,7 @@ class ChartOfAccounts(MasterDataAbstractModel):
             ChartOfAccounts.objects.filter(
                 order__gt=parent_account_obj.order, company=company
             ).update(order=F('order') + 1)
-            ChartOfAccounts.objects.create(
+            new_acc = ChartOfAccounts.objects.create(
                 order=parent_account_obj.order + 1,
                 parent_account=parent_account_obj,
                 acc_code=new_acc_code,
@@ -87,7 +87,46 @@ class ChartOfAccounts(MasterDataAbstractModel):
                 is_default=False,
                 is_added=True
             )
+            ChartOfAccountsSummarize.create_summarize(new_acc)
             print(f'Added account {new_acc_code}')
         else:
             print('Can not found parent account || existed account')
         return True
+
+
+class ChartOfAccountsSummarize(MasterDataAbstractModel):
+    account = models.ForeignKey(
+        'accountingsettings.ChartOfAccounts',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='summarize_account'
+    )
+    opening_balance = models.FloatField(default=0)
+    closing_balance = models.FloatField(default=0)
+    total_debit = models.FloatField(default=0)
+    total_credit = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'ChartOfAccountsSummarize'
+        verbose_name_plural = 'ChartOfAccountsSummarize'
+
+    @classmethod
+    def create_summarize(cls, chart_of_accounts_obj):
+        if chart_of_accounts_obj.is_account:
+            cls.objects.create(
+                account=chart_of_accounts_obj,
+                tenant=chart_of_accounts_obj.tenant,
+                company=chart_of_accounts_obj.company,
+            )
+            print('Created Journal Entry Summarize')
+        return True
+
+    @classmethod
+    def update_summarize(cls, je_line_obj):
+        chart_of_accounts_summarize_obj = cls.objects.filter_on_company(account_id=je_line_obj.account_id).first()
+        if chart_of_accounts_summarize_obj:
+            chart_of_accounts_summarize_obj.total_debit += je_line_obj.debit
+            chart_of_accounts_summarize_obj.total_credit += je_line_obj.credit
+            chart_of_accounts_summarize_obj.save(update_fields=['total_debit', 'total_credit'])
+        return True
+

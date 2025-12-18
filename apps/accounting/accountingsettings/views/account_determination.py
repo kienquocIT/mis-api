@@ -1,6 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
 from apps.accounting.accountingsettings.models.account_determination import (
-    JEDocumentType, JEPostingRule, JEPostingGroup, JEGroupAssignment, JEGLAccountMapping
+    JEDocumentType, JEPostingRule, JEPostingGroup, JEGroupAssignment, JEGLAccountMapping, AMOUNT_SOURCE_CHOICES,
+    GROUP_TYPE_CHOICES
 )
 from apps.accounting.accountingsettings.serializers.account_determination import (
     JEDocumentTypeListSerializer, JEDocumentTypeUpdateSerializer,
@@ -109,3 +113,31 @@ class JEPostingRuleList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+@swagger_auto_schema(
+    method='get',
+    operation_summary="Amount source choices",
+    operation_description="Amount source choices",
+)
+@api_view(['GET'])
+def get_je_amount_source(request, *args, **kwargs):
+    return Response({
+        'result': {
+            'je_amount_source': dict(AMOUNT_SOURCE_CHOICES),
+        }
+    })
+
+
+@swagger_auto_schema(
+    method='get',
+    operation_summary="Group type choices",
+    operation_description="Group type choices",
+)
+@api_view(['GET'])
+def get_je_group_type(request, *args, **kwargs):
+    return Response({
+        'result': {
+            'je_group_type': dict(GROUP_TYPE_CHOICES),
+        }
+    })

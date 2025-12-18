@@ -758,9 +758,9 @@ DEBUG_BG_TASK = True if os.environ.get('DEBUG_BG_TASK', '0') in [1, '1'] else Fa
 # mongodb
 MONGO_HOST = os.environ.get('MONGO_HOST', '127.0.0.1')
 MONGO_PORT = int(os.environ.get('MONGO_PORT', 27017))
-MONGO_DB_NAME = os.environ.get('MONGO_DB_NAME', 'bflow')
-MONGO_USERNAME = os.environ.get('MONGO_USERNAME', '')
-MONGO_PASSWORD = os.environ.get('MONGO_PASSWORD', '')
+MONGO_DB_NAME = os.environ.get('MONGO_DB_NAME', 'admin')
+MONGO_USERNAME = os.environ.get('MONGO_USERNAME', 'admin')
+MONGO_PASSWORD = os.environ.get('MONGO_PASSWORD', '123456')
 
 # CI Database
 DB_SQLITE_MOCKUP = os.path.isfile(os.path.join(BASE_DIR, '.gitlab-ci-db.sqlite3'))

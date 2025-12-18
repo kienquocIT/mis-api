@@ -2,6 +2,9 @@ import logging
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+
+from apps.accounting.accountingsettings.models import JE_DOCUMENT_TYPE_APP
+from apps.accounting.accountingsettings.models.chart_of_account import ChartOfAccountsSummarize
 from apps.core.company.models import CompanyFunctionNumber
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Periods, Currency, Product, Account
@@ -117,6 +120,7 @@ class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
                         je_obj.total_debit = total_debit
                         je_obj.total_credit = total_credit
                         je_obj.save(update_fields=['total_debit', 'total_credit'])
+                        JournalEntrySummarize.push_data(je_obj)
                         print(f'# [JE] JE created successfully ({je_obj.code})!\n')
                         return je_obj
                     raise serializers.ValidationError({'sub_period_obj': 'Sub period order obj does not exist.'})
@@ -277,3 +281,37 @@ class JournalEntryLine(MasterDataAbstractModel):
             total_credit += item.get('credit', 0)
         cls.objects.bulk_create(je_line_info)
         return total_debit, total_credit
+
+
+class JournalEntrySummarize(MasterDataAbstractModel):
+    total_je_doc = models.FloatField(default=0)
+    total_debit = models.FloatField(default=0)
+    total_credit = models.FloatField(default=0)
+    total_source_type = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Journal Entry Summarize'
+        verbose_name_plural = 'Journal Entry Summarizes'
+
+    @classmethod
+    def push_data(cls, je_obj):
+        if je_obj.system_status == 3:
+            # JE Summarize
+            je_summarize_obj = cls.objects.filter_on_company().first()
+            if not je_summarize_obj:
+                je_summarize_obj = cls.objects.create(
+                    tenant=je_obj.tenant,
+                    company=je_obj.company
+                )
+                print('Created Journal Entry Summarize')
+            je_summarize_obj.total_je_doc += 1
+            je_summarize_obj.total_debit += je_obj.total_debit
+            je_summarize_obj.total_credit += je_obj.total_credit
+            je_summarize_obj.total_source_type = len(JE_DOCUMENT_TYPE_APP)
+            je_summarize_obj.save(update_fields=['total_je_doc', 'total_debit', 'total_credit', 'total_source_type'])
+
+            # Chart of Account Summarize
+            je_line_list = je_obj.je_lines.all()
+            for line in je_line_list:
+                ChartOfAccountsSummarize.update_summarize(line)
+        return True
