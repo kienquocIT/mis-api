@@ -7,7 +7,6 @@ DOCUMENT_TYPE_LIST = [
     [0, 'DO_SALE', 'delivery.orderdeliverysub'],        # Xuất kho bán hàng
     [0, 'SALES_INVOICE', 'arinvoice.arinvoice'],        # Hóa đơn bán hàng
     [0, 'CASH_IN', 'financialcashflow.cashinflow'],     # Phiếu thu
-
     # --- MUA HÀNG ---
     [1, 'GRN_PURCHASE', 'inventory.goodsreceipt'],      # Nhập kho mua hàng
     [1, 'PURCHASE_INVOICE', 'apinvoice.apinvoice'],     # Hóa đơn mua hàng

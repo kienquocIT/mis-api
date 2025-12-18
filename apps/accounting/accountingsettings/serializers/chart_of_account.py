@@ -38,7 +38,6 @@ class ChartOfAccountsCreateSerializer(serializers.ModelSerializer):
         return instance
 
 
-
 class ChartOfAccountsDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChartOfAccounts

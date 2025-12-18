@@ -29,6 +29,7 @@ class ShiftAssignment(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="shift",
         related_name="shift_assignment_shift",
+        null=True,
     )
     date = models.DateField()
 

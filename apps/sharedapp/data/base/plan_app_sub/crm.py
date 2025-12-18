@@ -3297,6 +3297,48 @@ SERVICEQUOTATION_APP_CONFIG = {
     "allow_permit": True,
 }
 
+POSTING_ENGINE_APP_CONFIG = {
+    "id": "f02ef380-5b42-4b9c-af9b-232809105a1d",
+    "title": "Posting Engine",
+    "code": "postingengine",
+    "model_code": "postingengine",
+    "app_label": "postingengine",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+    "allow_permit": True,
+    "allow_print": False,
+    "allow_process": False,
+    "allow_opportunity": False,
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -3666,6 +3708,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "c9e131ec-760c-45af-8ae6-5349f2bb542e": ApplicationConfigFrame(**SERVICEQUOTATION_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "f02ef380-5b42-4b9c-af9b-232809105a1d": ApplicationConfigFrame(**POSTING_ENGINE_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

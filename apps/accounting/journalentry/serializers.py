@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
+from apps.accounting.accountingsettings.models import ChartOfAccountsSummarize
 from apps.accounting.accountingsettings.models.account_determination import JE_DOCUMENT_TYPE_APP
 from apps.accounting.journalentry.models import JournalEntry, JournalEntrySummarize
 
@@ -49,6 +50,7 @@ class JournalEntryCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         instance = JournalEntry.objects.create(**validated_data)
         JournalEntrySummarize.push_data(instance)
+        ChartOfAccountsSummarize.update_summarize(instance)
         return instance
 
 

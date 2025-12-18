@@ -2,14 +2,14 @@ from django.urls import path
 
 from apps.accounting.accountingsettings.views.asset_category import AssetCategoryList, AssetCategoryDetail
 
-from apps.accounting.accountingsettings.views import InitialBalanceList, InitialBalanceDetail, \
-    get_chart_of_accounts_summarize
+from apps.accounting.accountingsettings.views import InitialBalanceList, InitialBalanceDetail
 from apps.accounting.accountingsettings.views.chart_of_account import (
-    ChartOfAccountsList
+    ChartOfAccountsList, get_chart_of_accounts_summarize
 )
 from apps.accounting.accountingsettings.views.account_determination import (
     JEDocumentTypeList, JEDocumentTypeDetail, JEPostingRuleList, JEPostingGroupList, JEGroupAssignmentList,
-    JEGLAccountMappingList, get_je_amount_source, get_je_group_type,
+    JEGLAccountMappingList, get_je_amount_source, get_je_group_type, JEPostingGroupDetail, JEPostingGroupRoleKeyList,
+    JEGLAccountMappingDetail, get_je_document_type,
 )
 from apps.accounting.accountingsettings.views.dimension import (
     DimensionDefinitionList, DimensionDefinitionDetail,
@@ -21,12 +21,18 @@ from apps.accounting.accountingsettings.views.dimension import (
 
 urlpatterns = [
     path('chart-of-accounts/list', ChartOfAccountsList.as_view(), name='ChartOfAccountsList'),
+    path('get_chart_of_accounts_summarize', get_chart_of_accounts_summarize, name='get_chart_of_accounts_summarize'),
     path('je-document-type/list', JEDocumentTypeList.as_view(), name='JEDocumentTypeList'),
     path('je-document-type/detail/<str:pk>', JEDocumentTypeDetail.as_view(), name='JEDocumentTypeDetail'),
     path('je-posting-group/list', JEPostingGroupList.as_view(), name='JEPostingGroupList'),
+    path('je-posting-group/detail/<str:pk>', JEPostingGroupDetail.as_view(), name='JEPostingGroupDetail'),
+    path('je-posting-group-role-key/list', JEPostingGroupRoleKeyList.as_view(), name='JEPostingGroupRoleKeyList'),
     path('je-group-assignment/list', JEGroupAssignmentList.as_view(), name='JEGroupAssignmentList'),
     path('je-gl-account-mapping/list', JEGLAccountMappingList.as_view(), name='JEGLAccountMappingList'),
+    path('je-gl-account-mapping/detail/<str:pk>', JEGLAccountMappingDetail.as_view(), name='JEGLAccountMappingDetail'),
     path('je-posting-rule/list', JEPostingRuleList.as_view(), name='JEPostingRuleList'),
+    path('get-je-document-type', get_je_document_type, name='get_je_document_type'),
+    path('get-je-group-type', get_je_group_type, name='get_je_group_type'),
     path('get-je-amount-source', get_je_amount_source, name='get_je_amount_source'),
     path('get-je-group-type', get_je_group_type, name='get_je_group_type'),
 ] + [
@@ -106,6 +112,4 @@ urlpatterns = [
       # Initial balance
       path('initial-balance/list', InitialBalanceList.as_view(), name='InitialBalanceList'),
       path('initial-balance/detail/<str:pk>', InitialBalanceDetail.as_view(), name='InitialBalanceDetail')
-] + [
-    path('get_chart_of_accounts_summarize', get_chart_of_accounts_summarize, name='get_chart_of_accounts_summarize'),
 ]

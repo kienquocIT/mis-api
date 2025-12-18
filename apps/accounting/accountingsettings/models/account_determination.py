@@ -6,6 +6,7 @@ __all__ = [
     'JEDocumentType',
     'JEPostingRule',
     'JEPostingGroup',
+    'JEPostingGroupRoleKey',
     'JEGLAccountMapping',
     'JEGroupAssignment',
     'JEDocData',
@@ -61,33 +62,33 @@ AMOUNT_SOURCE_CHOICES = [
 
 ROLE_KEY_CHOICES = [
     # Nhóm Tài sản/Kho
-    ('ASSET', _('Tài sản/Kho (156, 152...)')),
-    ('COGS', _('Giá vốn hàng bán (632)')),
+    ('ASSET', _('Tài sản/Kho')),
+    ('COGS', _('Giá vốn hàng bán')),
     # Nhóm Doanh thu
-    ('REVENUE', _('Doanh thu (511)')),
-    ('FINANCIAL_INCOME', _('Doanh thu tài chính (515)')),  # Lãi tiền gửi, Chiết khấu thanh toán được hưởng
-    ('OTHER_INCOME', _('Thu nhập khác (711)')),  # Thanh lý tài sản, v.v.
-    ('DONI', _('Doanh thu tạm tính/Chưa hóa đơn (1388)')),  # Delivery Order Not Invoiced
+    ('REVENUE', _('Doanh thu')),
+    ('FINANCIAL_INCOME', _('Doanh thu tài chính')),  # Lãi tiền gửi, Chiết khấu thanh toán được hưởng
+    ('OTHER_INCOME', _('Thu nhập khác')),  # Thanh lý tài sản, v.v.
+    ('DONI', _('Doanh thu tạm tính/Chưa hóa đơn')),  # Delivery Order Not Invoiced
     # Nhóm Giảm trừ Doanh thu
-    ('SALES_DEDUCTION', _('Giảm trừ doanh thu (521)')),  # Chiết khấu thương mại, Giảm giá hàng bán, Hàng bán trả lại
+    ('SALES_DEDUCTION', _('Giảm trừ doanh thu')),  # Chiết khấu thương mại, Giảm giá hàng bán, Hàng bán trả lại
     # Nhóm Chi phí
-    ('SELLING_EXPENSE', _('Chi phí bán hàng (641)')),
-    ('ADMIN_EXPENSE', _('Chi phí quản lý (642)')),
-    ('FINANCIAL_EXPENSE', _('Chi phí tài chính (635)')),  # Lỗ tỉ giá, Chiết khấu thanh toán cho khách
-    ('OTHER_EXPENSE', _('Chi phí khác (811)')),
+    ('SELLING_EXPENSE', _('Chi phí bán hàng')),
+    ('ADMIN_EXPENSE', _('Chi phí quản lý')),
+    ('FINANCIAL_EXPENSE', _('Chi phí tài chính')),  # Lỗ tỉ giá, Chiết khấu thanh toán cho khách
+    ('OTHER_EXPENSE', _('Chi phí khác')),
     # Nhóm Công nợ Mua
-    ('PAYABLE', _('Phải trả người bán (331)')),
-    ('GRNI', _('Hàng về chưa hóa đơn (3388)')),  # Goods Received Not Invoiced
+    ('PAYABLE', _('Phải trả người bán')),
+    ('GRNI', _('Hàng về chưa hóa đơn')),  # Goods Received Not Invoiced
     # Nhóm Công nợ Bán
-    ('RECEIVABLE', _('Phải thu khách hàng (131)')),
+    ('RECEIVABLE', _('Phải thu khách hàng')),
     # Nhóm Thuế
-    ('TAX_IN', _('Thuế đầu vào (133)')),
-    ('TAX_OUT', _('Thuế đầu ra (3331)')),
-    ('TAX_IMPORT', _('Thuế Nhập khẩu (3333)')),
+    ('TAX_IN', _('Thuế đầu vào')),
+    ('TAX_OUT', _('Thuế đầu ra')),
+    ('TAX_IMPORT', _('Thuế Nhập khẩu')),
     # Nhóm Tiền
-    ('CASH', _('Tiền mặt (111)')),
-    ('BANK', _('Tiền gửi ngân hàng (112)')),
-    ('CASH_IN_TRANSIT', _('Tiền đang chuyển (113)')),
+    ('CASH', _('Tiền mặt')),
+    ('BANK', _('Tiền gửi ngân hàng')),
+    ('CASH_IN_TRANSIT', _('Tiền đang chuyển')),
 ]
 
 ACCOUNT_SOURCE_TYPE_CHOICES = [
@@ -143,6 +144,23 @@ class JEPostingGroup(MasterDataAbstractModel):
         verbose_name = 'JE Posting Group'
         verbose_name_plural = 'JE Posting Groups'
         ordering = ('posting_group_type', 'code')
+
+
+class JEPostingGroupRoleKey(MasterDataAbstractModel):
+    posting_group = models.ForeignKey(JEPostingGroup, on_delete=models.CASCADE, related_name='role_key_posting_group')
+    role_key = models.CharField(max_length=50)
+    description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'JE PG Role Key'
+        verbose_name_plural = 'JE PG Role Keys'
+        ordering = ('posting_group__code', 'role_key')
+
+    @classmethod
+    def get_key(cls, company_id, posting_group_code, role_key):
+        return cls.objects.filter(
+            company_id=company_id, posting_group__code=posting_group_code, role_key=role_key
+        ).first()
 
 
 class JEGroupAssignment(MasterDataAbstractModel):

@@ -1,7 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
 from apps.accounting.accountingsettings.models.chart_of_account import (
     ChartOfAccounts, ChartOfAccountsSummarize
 )

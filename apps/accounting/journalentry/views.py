@@ -75,7 +75,6 @@ class JournalEntryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 @api_view(['GET'])
 def get_je_summarize(request, *args, **kwargs):
     je_summarize_obj = JournalEntrySummarize.objects.filter(company_id=request.user.company_current_id).first()
-
     return Response({
         'result': {
             'total_je_doc': je_summarize_obj.total_je_doc,

@@ -6,7 +6,8 @@ from apps.shared import MasterDataAbstractModel
 
 
 __all__ = [
-    'ChartOfAccounts'
+    'ChartOfAccounts',
+    'ChartOfAccountsSummarize'
 ]
 
 
@@ -50,7 +51,7 @@ class ChartOfAccounts(MasterDataAbstractModel):
 
     @classmethod
     def get_acc(cls, company_id, code):
-        return ChartOfAccounts.objects.filter(company_id=company_id, acc_code=code).first()
+        return cls.objects.filter(company_id=company_id, acc_code=code).first()
 
     @classmethod
     def add_account(cls, company, parent_acc_type, parent_acc_code, new_acc_code, new_acc_name, new_foreign_acc_name):
@@ -122,11 +123,12 @@ class ChartOfAccountsSummarize(MasterDataAbstractModel):
         return True
 
     @classmethod
-    def update_summarize(cls, je_line_obj):
-        chart_of_accounts_summarize_obj = cls.objects.filter_on_company(account_id=je_line_obj.account_id).first()
-        if chart_of_accounts_summarize_obj:
-            chart_of_accounts_summarize_obj.total_debit += je_line_obj.debit
-            chart_of_accounts_summarize_obj.total_credit += je_line_obj.credit
-            chart_of_accounts_summarize_obj.save(update_fields=['total_debit', 'total_credit'])
+    def update_summarize(cls, je_obj):
+        je_line_list = je_obj.je_lines.all()
+        for line in je_line_list:
+            chart_of_accounts_summarize_obj = cls.objects.filter_on_company(account_id=line.account_id).first()
+            if chart_of_accounts_summarize_obj:
+                chart_of_accounts_summarize_obj.total_debit += line.debit
+                chart_of_accounts_summarize_obj.total_credit += line.credit
+                chart_of_accounts_summarize_obj.save(update_fields=['total_debit', 'total_credit'])
         return True
-

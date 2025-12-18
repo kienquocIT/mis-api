@@ -56,10 +56,7 @@ class ShiftAssignmentCreateSerializer(serializers.ModelSerializer):
         child=serializers.UUIDField(required=False), required=False
     )
     employee_list = serializers.ListSerializer(child=serializers.UUIDField(required=False), required=False)
-    shift = serializers.UUIDField(error_messages={
-        'required': 'Must select shift to apply',
-        'allow_null': 'Must select shift to apply',
-    })
+    shift = serializers.UUIDField(allow_null=True)
     date_list = serializers.ListSerializer(child=serializers.DateField(), error_messages={
         'required': 'Must select date to apply',
     })
@@ -111,7 +108,7 @@ class ShiftAssignmentCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_shift(cls, value):
         try:
-            return ShiftInfo.objects.get_on_company(id=value)
+            return ShiftInfo.objects.get_on_company(id=value) if value is not None else None
         except ShiftInfo.DoesNotExist:
             raise serializers.ValidationError({'shift': BaseMsg.NOT_EXIST})
 

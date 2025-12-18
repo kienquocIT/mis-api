@@ -1,7 +1,8 @@
 import logging
 from django.db import transaction
-from apps.accounting.accountingsettings.models import JEPostingRule, JEDocData, JEDocumentType, JEGroupAssignment, \
-    JEGLAccountMapping
+from apps.accounting.accountingsettings.models import (
+    JEPostingRule, JEDocData, JEDocumentType, JEGroupAssignment, JEGLAccountMapping
+)
 from apps.accounting.journalentry.models import JournalEntry
 from apps.shared import DisperseModel
 

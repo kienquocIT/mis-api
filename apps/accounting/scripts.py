@@ -1,8 +1,6 @@
 from django.db import transaction
-
-from apps.accounting.accountingsettings.models.chart_of_account import ChartOfAccountsSummarize
 from apps.core.company.models import Company
-from apps.accounting.accountingsettings.models import (ChartOfAccounts)
+from apps.accounting.accountingsettings.models import (ChartOfAccounts, ChartOfAccountsSummarize)
 from apps.masterdata.saledata.models.price import Currency
 
 TT200_DATA = {
