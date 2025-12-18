@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from apps.accounting.accountingsettings.models.chart_of_account import (
-    ChartOfAccounts, ChartOfAccountsSummarize
+    ChartOfAccounts, ChartOfAccountsSummarize, CHART_OF_ACCOUNT_TYPE
 )
 from apps.accounting.accountingsettings.serializers.chart_of_account import (
     ChartOfAccountsListSerializer, ChartOfAccountsCreateSerializer, ChartOfAccountsDetailSerializer,
@@ -59,17 +59,41 @@ class ChartOfAccountsList(BaseListMixin, BaseCreateMixin):
 )
 @api_view(['GET'])
 def get_chart_of_accounts_summarize(request, *args, **kwargs):
-    account_id = request.query_params.get('account_id', '')
-    je_chart_of_accounts_obj = ChartOfAccountsSummarize.objects.filter(
-        company_id=request.user.company_current_id,
-        account_id=account_id,
-    ).first()
+    account_id = request.query_params.get('account_id')
+    account_level = request.query_params.get('account_level')
+    account_display = request.query_params.get('account_display')
+
+    queryset = ChartOfAccountsSummarize.objects.filter(
+        company_id=request.user.company_current_id
+    ).select_related('account').order_by(
+        'account__acc_type',
+        'account__acc_code'
+    )
+
+    if account_id:
+        queryset = queryset.filter(account_id=account_id)
+
+    if account_level and int(account_level) >= 0:
+        queryset = queryset.filter(account__level=account_level)
+
+    if int(account_display)==1:
+        queryset = queryset.exclude(closing_balance=0)
+
+    data = []
+
+    for obj in queryset:
+        data.append({
+            'account_id': obj.account_id,
+            'account_code': obj.account.acc_code,
+            'account_name': obj.account.acc_name,
+            'account_type_name': dict(CHART_OF_ACCOUNT_TYPE).get(obj.account.acc_type),
+            'account_level': obj.account.level,
+            'opening_balance': obj.opening_balance,
+            'total_debit': obj.total_debit,
+            'total_credit': obj.total_credit,
+            'closing_balance': obj.closing_balance,
+        })
 
     return Response({
-        'result': {
-            'opening_balance': je_chart_of_accounts_obj.opening_balance,
-            'total_debit': je_chart_of_accounts_obj.total_debit,
-            'total_credit': je_chart_of_accounts_obj.total_credit,
-            'closing_balance': je_chart_of_accounts_obj.closing_balance,
-        } if je_chart_of_accounts_obj else {}
+        'result': data
     })
