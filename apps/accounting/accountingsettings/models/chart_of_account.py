@@ -102,8 +102,10 @@ class ChartOfAccountsSummarize(MasterDataAbstractModel):
         null=True,
         related_name='summarize_account'
     )
-    opening_balance = models.FloatField(default=0)
-    closing_balance = models.FloatField(default=0)
+    opening_debit = models.FloatField(default=0)
+    opening_credit = models.FloatField(default=0)
+    closing_debit = models.FloatField(default=0)
+    closing_credit = models.FloatField(default=0)
     total_debit = models.FloatField(default=0)
     total_credit = models.FloatField(default=0)
 
@@ -130,5 +132,11 @@ class ChartOfAccountsSummarize(MasterDataAbstractModel):
             if chart_of_accounts_summarize_obj:
                 chart_of_accounts_summarize_obj.total_debit += line.debit
                 chart_of_accounts_summarize_obj.total_credit += line.credit
-                chart_of_accounts_summarize_obj.save(update_fields=['total_debit', 'total_credit'])
+                chart_of_accounts_summarize_obj.closing_debit = (
+                        chart_of_accounts_summarize_obj.opening_debit + chart_of_accounts_summarize_obj.total_debit
+                )
+                chart_of_accounts_summarize_obj.closing_credit = (
+                        chart_of_accounts_summarize_obj.opening_credit + chart_of_accounts_summarize_obj.total_credit
+                )
+                chart_of_accounts_summarize_obj.save(update_fields=['total_debit', 'total_credit', 'closing_debit', 'closing_credit'])
         return True

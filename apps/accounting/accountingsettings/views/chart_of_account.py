@@ -76,8 +76,8 @@ def get_chart_of_accounts_summarize(request, *args, **kwargs):
     if account_level and int(account_level) >= 0:
         queryset = queryset.filter(account__level=account_level)
 
-    if int(account_display)==1:
-        queryset = queryset.exclude(closing_balance=0)
+    if account_display and int(account_display)==1:
+        queryset = queryset.exclude(closing_debit=0, closing_credit=0)
 
     data = []
 
@@ -86,12 +86,15 @@ def get_chart_of_accounts_summarize(request, *args, **kwargs):
             'account_id': obj.account_id,
             'account_code': obj.account.acc_code,
             'account_name': obj.account.acc_name,
+            'foreign_account_name': obj.account.foreign_acc_name,
             'account_type_name': dict(CHART_OF_ACCOUNT_TYPE).get(obj.account.acc_type),
             'account_level': obj.account.level,
-            'opening_balance': obj.opening_balance,
+            'opening_debit': obj.opening_debit,
+            'opening_credit': obj.opening_credit,
             'total_debit': obj.total_debit,
             'total_credit': obj.total_credit,
-            'closing_balance': obj.closing_balance,
+            'closing_debit': obj.closing_debit,
+            'closing_credit': obj.closing_credit,
         })
 
     return Response({
