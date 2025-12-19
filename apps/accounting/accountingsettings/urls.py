@@ -1,7 +1,5 @@
 from django.urls import path
-
 from apps.accounting.accountingsettings.views.asset_category import AssetCategoryList, AssetCategoryDetail
-
 from apps.accounting.accountingsettings.views import InitialBalanceList, InitialBalanceDetail
 from apps.accounting.accountingsettings.views.chart_of_account import (
     ChartOfAccountsList, get_chart_of_accounts_summarize
@@ -9,7 +7,7 @@ from apps.accounting.accountingsettings.views.chart_of_account import (
 from apps.accounting.accountingsettings.views.account_determination import (
     JEDocumentTypeList, JEDocumentTypeDetail, JEPostingRuleList, JEPostingGroupList, JEGroupAssignmentList,
     JEGLAccountMappingList, get_je_amount_source, get_je_group_type, JEPostingGroupDetail, JEPostingGroupRoleKeyList,
-    JEGLAccountMappingDetail, get_je_document_type,
+    JEGLAccountMappingDetail, get_je_document_type, JEPostingRuleDetail,
 )
 from apps.accounting.accountingsettings.views.dimension import (
     DimensionDefinitionList, DimensionDefinitionDetail,
@@ -31,6 +29,7 @@ urlpatterns = [
     path('je-gl-account-mapping/list', JEGLAccountMappingList.as_view(), name='JEGLAccountMappingList'),
     path('je-gl-account-mapping/detail/<str:pk>', JEGLAccountMappingDetail.as_view(), name='JEGLAccountMappingDetail'),
     path('je-posting-rule/list', JEPostingRuleList.as_view(), name='JEPostingRuleList'),
+    path('je-posting-rule/detail/<str:pk>', JEPostingRuleDetail.as_view(), name='JEPostingRuleDetail'),
     path('get-je-document-type', get_je_document_type, name='get_je_document_type'),
     path('get-je-group-type', get_je_group_type, name='get_je_group_type'),
     path('get-je-amount-source', get_je_amount_source, name='get_je_amount_source'),

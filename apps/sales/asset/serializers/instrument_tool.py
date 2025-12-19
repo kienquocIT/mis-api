@@ -11,7 +11,6 @@ from apps.masterdata.saledata.models import Product, ToolClassification
 from apps.sales.apinvoice.models import APInvoice, APInvoiceItems
 from apps.sales.asset.models import InstrumentTool, InstrumentToolUseDepartment, InstrumentToolSource, \
     InstrumentToolAPInvoiceItems
-from apps.sales.asset.serializers.handler import CommonHandler
 from apps.shared import BaseMsg, FixedAssetMsg, AbstractCreateSerializerModel, AbstractDetailSerializerModel, \
     AbstractListSerializerModel
 
@@ -279,23 +278,20 @@ class InstrumentToolCreateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def create(self, validated_data):
-        use_departments = validated_data.pop('use_department')
-        asset_sources = validated_data.pop('asset_sources')
-        increase_fa_list = validated_data.pop('increase_fa_list')
 
         try:
             with transaction.atomic():
                 instrument_tool = InstrumentTool.objects.create(**validated_data)
 
-                CommonHandler.create_sub_data(
-                    instrument_tool,
-                    use_departments=use_departments,
-                    asset_sources=asset_sources,
-                    increase_fa_list=increase_fa_list,
-                    use_department_model=InstrumentToolUseDepartment,
-                    source_model=InstrumentToolSource,
-                    feature_ap_invoice_item_model=InstrumentToolAPInvoiceItems
-                )
+                # CommonHandler.create_sub_data(
+                #     instrument_tool,
+                #     use_departments=use_departments,
+                #     asset_sources=asset_sources,
+                #     increase_fa_list=increase_fa_list,
+                #     use_department_model=InstrumentToolUseDepartment,
+                #     source_model=InstrumentToolSource,
+                #     feature_ap_invoice_item_model=InstrumentToolAPInvoiceItems
+                # )
 
             return instrument_tool
         except Exception as err:
@@ -511,10 +507,6 @@ class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
 
     @decorator_run_workflow
     def update(self, instrument_tool, validated_data):
-        use_departments = validated_data.pop('use_department')
-        asset_sources = validated_data.pop('asset_sources')
-        increase_fa_list = validated_data.pop('increase_fa_list')
-
         try:
             with transaction.atomic():
                 for key, value in validated_data.items():
@@ -538,15 +530,15 @@ class InstrumentToolUpdateSerializer(AbstractCreateSerializerModel):
 
                 instrument_tool_apinvoice_items.delete()
 
-                CommonHandler.create_sub_data(
-                    instrument_tool,
-                    use_departments=use_departments,
-                    asset_sources=asset_sources,
-                    increase_fa_list=increase_fa_list,
-                    use_department_model=InstrumentToolUseDepartment,
-                    source_model=InstrumentToolSource,
-                    feature_ap_invoice_item_model=InstrumentToolAPInvoiceItems
-                )
+                # CommonHandler.create_sub_data(
+                #     instrument_tool,
+                #     use_departments=use_departments,
+                #     asset_sources=asset_sources,
+                #     increase_fa_list=increase_fa_list,
+                #     use_department_model=InstrumentToolUseDepartment,
+                #     source_model=InstrumentToolSource,
+                #     feature_ap_invoice_item_model=InstrumentToolAPInvoiceItems
+                # )
 
             return instrument_tool
         except Exception as err:

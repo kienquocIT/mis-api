@@ -383,7 +383,8 @@ class ProductTestCase(AdvanceTestCase):
                 'is_public_website',
                 'production_amount', 'valuation_method',
                 'duration_unit_data',
-                'attribute_list_data'
+                'attribute_list_data',
+                'asset_category'
             ],
             check_sum_second=True,
         )

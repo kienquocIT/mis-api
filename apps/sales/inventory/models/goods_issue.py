@@ -40,6 +40,12 @@ class GoodsIssue(DataAbstractModel, AutoDocumentAbstractModel):
         related_name='goods_issue_pm',
         null=True,
     )
+    fixed_asset = models.ForeignKey(
+        'asset.FixedAsset',
+        on_delete=models.CASCADE,
+        related_name='goods_issue_fa',
+        null=True,
+    )
     note = models.CharField(
         max_length=1000,
         blank=True,
@@ -140,6 +146,9 @@ class GoodsIssue(DataAbstractModel, AutoDocumentAbstractModel):
                     if instance.product_modification.representative_product_modified:
                         instance.product_modification.created_goods_issue_for_root = True
                         instance.product_modification.save(update_fields=['created_goods_issue_for_root'])
+                elif instance.fixed_asset:
+                    for item in instance.goods_issue_product.all():
+                        cls.update_product_warehouse_data(item)
                 return True
         except Exception as err:
             print(err)
@@ -188,6 +197,12 @@ class GoodsIssueProduct(SimpleAbstractModel):
         'productmodification.CurrentComponent',
         on_delete=models.CASCADE,
         related_name='pm_item_goods_issue',
+        null=True,
+    )
+    fixed_asset_item = models.ForeignKey(
+        'asset.FixedAssetInventoryItem',
+        on_delete=models.CASCADE,
+        related_name='fa_item_goods_issue',
         null=True,
     )
     product = models.ForeignKey(

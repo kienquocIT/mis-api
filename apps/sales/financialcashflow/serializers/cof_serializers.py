@@ -29,6 +29,8 @@ __all__ = [
 
 # main serializers
 class CashOutflowListSerializer(AbstractListSerializerModel):
+    supplier_data = serializers.SerializerMethodField()
+
     class Meta:
         model = CashOutflow
         fields = (
@@ -38,8 +40,25 @@ class CashOutflowListSerializer(AbstractListSerializerModel):
             'cof_type',
             'total_value',
             'date_created',
-            'system_status'
+            'system_status',
+            'supplier_data',
         )
+
+    @classmethod
+    def get_supplier_data(cls, obj):
+        supplier_data = obj.supplier_data
+        if obj.supplier:
+            supplier_data['bank_accounts_mapped'] = [{
+                'id': item.id,
+                'bank_country_id': item.country_id,
+                'bank_name': item.bank_name,
+                'bank_code': item.bank_code,
+                'bank_account_name': item.bank_account_name,
+                'bank_account_number': item.bank_account_number,
+                'bic_swift_code': item.bic_swift_code,
+                'is_default': item.is_default
+            } for item in obj.supplier.account_banks_mapped.all()]
+        return supplier_data
 
 
 class CashOutflowCreateSerializer(AbstractCreateSerializerModel):

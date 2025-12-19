@@ -4,14 +4,17 @@
 # =============================================================================
 DOCUMENT_TYPE_LIST = [
     # --- BÁN HÀNG ---
-    [0, 'DO_SALE', 'delivery.orderdeliverysub'],        # Xuất kho bán hàng
-    [0, 'SALES_INVOICE', 'arinvoice.arinvoice'],        # Hóa đơn bán hàng
-    [0, 'CASH_IN', 'financialcashflow.cashinflow'],     # Phiếu thu
-    # --- MUA HÀNG ---
-    [1, 'GRN_PURCHASE', 'inventory.goodsreceipt'],      # Nhập kho mua hàng
-    [1, 'PURCHASE_INVOICE', 'apinvoice.apinvoice'],     # Hóa đơn mua hàng
-    [1, 'CASH_OUT', 'financialcashflow.cashoutflow'],   # Phiếu chi
+    [0, 'DO_SALE', 'delivery.orderdeliverysub', ['COST']],
+    [0, 'SALES_INVOICE', 'arinvoice.arinvoice', ['TOTAL', 'SALES', 'TAX', 'DISCOUNT', 'SURCHARGE', 'ROUNDING']],
+    [0, 'CASH_IN', 'financialcashflow.cashinflow', ['TOTAL', 'CASH', 'BANK']],
+    [1, 'GRN_PURCHASE', 'inventory.goodsreceipt', ['COST']],
+    [1, 'PURCHASE_INVOICE', 'apinvoice.apinvoice', ['TOTAL', 'COST', 'TAX', 'DISCOUNT', 'IMPORT_TAX']],
+    [1, 'CASH_OUT', 'financialcashflow.cashoutflow', ['TOTAL', 'CASH', 'BANK']],
 ]
+
+ALLOWED_AMOUNT_SOURCES_MAP = {
+    row[2]: row[3] for row in DOCUMENT_TYPE_LIST
+}
 
 # =============================================================================
 # 2. POSTING GROUP LIST (Nhóm định khoản)

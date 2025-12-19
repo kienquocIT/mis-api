@@ -17,6 +17,9 @@ class AssetCategoryListSerializer(serializers.ModelSerializer):
     depreciation_method_display = serializers.SerializerMethodField()
     category_type_display = serializers.SerializerMethodField()
     has_children = serializers.SerializerMethodField()
+    asset_account = serializers.SerializerMethodField()
+    accumulated_depreciation_account = serializers.SerializerMethodField()
+    depreciation_expense_account = serializers.SerializerMethodField()
 
     class Meta:
         model = AssetCategory
@@ -30,7 +33,10 @@ class AssetCategoryListSerializer(serializers.ModelSerializer):
             'depreciation_method_display',
             'depreciation_time',
             'has_children',
-            'parent_id'
+            'parent_id',
+            'asset_account',
+            'accumulated_depreciation_account',
+            'depreciation_expense_account',
         )
 
     @classmethod
@@ -45,6 +51,35 @@ class AssetCategoryListSerializer(serializers.ModelSerializer):
     def get_has_children(cls, obj):
         return obj.child_categories.all().count() > 0
 
+    @classmethod
+    def get_asset_account(cls, obj):
+        if obj.asset_account:
+            return {
+                'id': obj.asset_account.id,
+                'acc_code': obj.asset_account.acc_code,
+                'acc_name': obj.asset_account.acc_name,
+            }
+        return None
+
+    @classmethod
+    def get_accumulated_depreciation_account(cls, obj):
+        if obj.accumulated_depreciation_account:
+            return {
+                'id': obj.accumulated_depreciation_account.id,
+                'acc_code': obj.accumulated_depreciation_account.acc_code,
+                'acc_name': obj.accumulated_depreciation_account.acc_name,
+            }
+        return None
+
+    @classmethod
+    def get_depreciation_expense_account(cls, obj):
+        if obj.depreciation_expense_account:
+            return {
+                'id': obj.depreciation_expense_account.id,
+                'acc_code': obj.depreciation_expense_account.acc_code,
+                'acc_name': obj.depreciation_expense_account.acc_name,
+            }
+        return None
 
 class AssetCategoryCreateSerializer(serializers.ModelSerializer):
     parent_id = serializers.UUIDField(allow_null=True, required=False, error_messages={

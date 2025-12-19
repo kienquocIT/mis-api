@@ -34,7 +34,6 @@ class ChartOfAccountsCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         instance = ChartOfAccounts.objects.create(**validated_data)
-        ChartOfAccountsSummarize.create_summarize(instance)
         return instance
 
 

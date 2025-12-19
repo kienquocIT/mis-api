@@ -34,6 +34,8 @@ class APInvoice(DataAbstractModel):
     cash_outflow_done = models.BooleanField(default=False)
     note = models.TextField(blank=True)
 
+    # sum_after_fa_increased
+
     class Meta:
         verbose_name = 'AP Invoice'
         verbose_name_plural = 'AP Invoices'
@@ -89,6 +91,7 @@ class APInvoiceItems(SimpleAbstractModel):
     increased_FA_value = models.FloatField(
         default=0, help_text='increased fixed asset value for this item (product_subtotal)'
     )
+    # increased_FA_quantity = models.BooleanField(default=0)
 
     class Meta:
         verbose_name = 'AP Invoice Item'

@@ -888,7 +888,6 @@ class AccountScript:
                     )
                     acc_map[code] = new_acc
                     current_order += 1
-                    ChartOfAccountsSummarize.create_summarize(new_acc)
 
         print(f'> Generated chart of account for {company_obj.title} (TT200)')
         return True

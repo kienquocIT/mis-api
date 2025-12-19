@@ -23,6 +23,8 @@ __all__ = [
 
 
 class APInvoiceListSerializer(AbstractListSerializerModel):
+    item_mapped = serializers.SerializerMethodField()
+
     class Meta:
         model = APInvoice
         fields = (
@@ -37,9 +39,28 @@ class APInvoiceListSerializer(AbstractListSerializerModel):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
-            'date_created'
+            'date_created',
+            'sum_pretax_value',
+            'item_mapped'
         )
 
+    @classmethod
+    def get_item_mapped(cls, obj):
+        return [{
+            'id': item.id,
+            'order': item.order,
+            'product_data': item.product_data,
+            'product_uom_data': item.product_uom_data,
+            'product_quantity': item.product_quantity,
+            'product_unit_price': item.product_unit_price,
+            'ap_product_des': item.ap_product_des,
+            'product_subtotal': item.product_subtotal,
+            'product_tax_data': item.product_tax_data,
+            'product_tax_value': item.product_tax_value,
+            'product_subtotal_final': item.product_subtotal_final,
+            'note': item.note,
+            'increased_FA_value': item.increased_FA_value,
+        } for item in obj.ap_invoice_items.all()]
 
 class APInvoiceCreateSerializer(AbstractCreateSerializerModel):
     title = serializers.CharField(max_length=100)

@@ -63,31 +63,39 @@ def get_chart_of_accounts_summarize(request, *args, **kwargs):
     account_level = request.query_params.get('account_level')
     account_display = request.query_params.get('account_display')
 
+    filter_set = {
+        'company_id': request.user.company_current_id,
+    }
+    exclude_set = {}
+
+    if account_id:
+        filter_set['account_id'] = account_id
+
+    if account_level and int(account_level) >= 0:
+        filter_set['account__level'] = account_level
+
+    if account_display and int(account_display) == 1:
+        exclude_set['closing_debit'] = 0
+        exclude_set['closing_credit'] = 0
+
     queryset = ChartOfAccountsSummarize.objects.filter(
-        company_id=request.user.company_current_id
+        **filter_set
+    ).exclude(
+        **exclude_set
     ).select_related('account').order_by(
         'account__acc_type',
         'account__acc_code'
     )
 
-    if account_id:
-        queryset = queryset.filter(account_id=account_id)
-
-    if account_level and int(account_level) >= 0:
-        queryset = queryset.filter(account__level=account_level)
-
-    if account_display and int(account_display)==1:
-        queryset = queryset.exclude(closing_debit=0, closing_credit=0)
-
     data = []
-
+    account_dict = dict(CHART_OF_ACCOUNT_TYPE)
     for obj in queryset:
         data.append({
             'account_id': obj.account_id,
             'account_code': obj.account.acc_code,
             'account_name': obj.account.acc_name,
             'foreign_account_name': obj.account.foreign_acc_name,
-            'account_type_name': dict(CHART_OF_ACCOUNT_TYPE).get(obj.account.acc_type),
+            'account_type_name': account_dict.get(obj.account.acc_type),
             'account_level': obj.account.level,
             'opening_debit': obj.opening_debit,
             'opening_credit': obj.opening_credit,

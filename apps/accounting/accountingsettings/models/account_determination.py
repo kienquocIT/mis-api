@@ -1,6 +1,9 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
+
+from apps.accounting.accountingsettings.data_list import ALLOWED_AMOUNT_SOURCES_MAP
+from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 __all__ = [
     'JEDocumentType',
@@ -112,7 +115,7 @@ ASSIGNMENT_APP_CHOICES = [
 ]
 
 
-class JEDocumentType(MasterDataAbstractModel):
+class JEDocumentType(DataAbstractModel):
     module = models.SmallIntegerField()
     app_code = models.CharField(
         max_length=100,
@@ -135,7 +138,7 @@ class JEDocumentType(MasterDataAbstractModel):
         return config.is_auto_je if config else False
 
 
-class JEPostingGroup(MasterDataAbstractModel):
+class JEPostingGroup(DataAbstractModel):
     """Bảng quản lý chung tất cả các nhóm định khoản. Phân loại bằng field 'type'"""
 
     posting_group_type = models.CharField(max_length=20, choices=GROUP_TYPE_CHOICES)
@@ -146,7 +149,7 @@ class JEPostingGroup(MasterDataAbstractModel):
         ordering = ('posting_group_type', 'code')
 
 
-class JEPostingGroupRoleKey(MasterDataAbstractModel):
+class JEPostingGroupRoleKey(DataAbstractModel):
     posting_group = models.ForeignKey(JEPostingGroup, on_delete=models.CASCADE, related_name='role_key_posting_group')
     role_key = models.CharField(max_length=50)
     description = models.TextField(blank=True, null=True)
@@ -163,7 +166,7 @@ class JEPostingGroupRoleKey(MasterDataAbstractModel):
         ).first()
 
 
-class JEGroupAssignment(MasterDataAbstractModel):
+class JEGroupAssignment(DataAbstractModel):
     """Bảng duy nhất quản lý việc: Đối tượng nào thuộc Nhóm định khoản nào"""
 
     item_app = models.CharField(
@@ -181,7 +184,7 @@ class JEGroupAssignment(MasterDataAbstractModel):
         ordering = ('posting_group__posting_group_type', 'posting_group__code', 'item_app')
 
 
-class JEGLAccountMapping(MasterDataAbstractModel):
+class JEGLAccountMapping(DataAbstractModel):
     """Bảng tra cứu: posting_group + role_key => Tài khoản"""
 
     # Input 1: Posting group
@@ -205,7 +208,7 @@ class JEGLAccountMapping(MasterDataAbstractModel):
         ordering = ('posting_group__code', 'role_key')
 
 
-class JEPostingRule(MasterDataAbstractModel):
+class JEPostingRule(DataAbstractModel):
     je_document_type = models.ForeignKey(JEDocumentType, on_delete=models.CASCADE, related_name='je_posting_rules')
     # Ghi cho tổng phiếu (HEADER) hay từng dòng trong phiếu (LINE)
     rule_level = models.CharField(max_length=10, choices=RULE_LEVEL_CHOICES)
@@ -233,6 +236,27 @@ class JEPostingRule(MasterDataAbstractModel):
         verbose_name = 'JE Posting Rule'
         verbose_name_plural = 'JE Posting Rules'
         ordering = ('je_document_type__code', 'rule_level', 'priority')
+
+    @staticmethod
+    def check_posting_rule(rule):
+        # 1. Validate Amount Source theo App Code
+        if rule.je_document_type and rule.amount_source:
+            app_code = rule.je_document_type.app_code
+            allowed_sources = ALLOWED_AMOUNT_SOURCES_MAP.get(app_code)
+            if allowed_sources is not None:
+                if rule.amount_source not in allowed_sources:
+                    source_map = dict(AMOUNT_SOURCE_CHOICES)
+                    source_label = source_map.get(rule.amount_source, rule.amount_source)
+
+                    raise ValidationError({
+                        'amount_source': (
+                            f"Document type '{rule.je_document_type.title}' not allow amount source '{source_label}'. "
+                        )
+                    })
+
+        # 2. Validate Fixed Account
+        if rule.account_source_type == 'FIXED' and not rule.fixed_account:
+            raise ValidationError({'fixed_account': _('Account is required if you choose FIXED.')})
 
 
 class JEDocData(SimpleAbstractModel):

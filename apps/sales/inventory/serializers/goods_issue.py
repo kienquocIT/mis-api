@@ -112,10 +112,12 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
     production_order = serializers.SerializerMethodField()
     work_order = serializers.SerializerMethodField()
     product_modification = serializers.SerializerMethodField()
+    fixed_asset = serializers.SerializerMethodField()
     detail_data_ia = serializers.SerializerMethodField()
     detail_data_po = serializers.SerializerMethodField()
     detail_data_wo = serializers.SerializerMethodField()
     detail_data_pm = serializers.SerializerMethodField()
+    detail_data_fa = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
 
     class Meta:
@@ -130,10 +132,12 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             'production_order',
             'work_order',
             'product_modification',
+            'fixed_asset',
             'detail_data_ia',
             'detail_data_po',
             'detail_data_wo',
             'detail_data_pm',
+            'detail_data_fa',
             'date_created',
             'attachment',
             'system_auto_create'
@@ -171,8 +175,17 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
             'id': str(obj.product_modification_id),
             'title': obj.product_modification.title,
             'code': obj.product_modification.code,
-            'type': 1
+            'type': 3
         } if obj.product_modification else {}
+
+    @classmethod
+    def get_fixed_asset(cls, obj):
+        return {
+            'id': str(obj.fixed_asset_id),
+            'title': obj.fixed_asset.title,
+            'code': obj.fixed_asset.code,
+            'type': 4
+        } if obj.fixed_asset else {}
 
     @classmethod
     def get_detail_data_ia(cls, obj):
@@ -303,6 +316,25 @@ class GoodsIssueDetailSerializer(AbstractDetailSerializerModel):
                     'sn_data': item.sn_data
                 })
         return detail_data_pm
+
+    @classmethod
+    def get_detail_data_fa(cls, obj):
+        detail_data_fa = []
+        if obj.fixed_asset:
+            for item in obj.goods_issue_product.filter(issued_quantity__gt=0):
+                detail_data_fa.append({
+                    'id': item.product_modification_item_id,
+                    'product_mapped': item.product_data,
+                    'uom_mapped': item.uom_data,
+                    'warehouse_mapped': item.warehouse_data,
+                    'sum_quantity': item.issued_quantity,
+                    'before_quantity': item.before_quantity,
+                    'remain_quantity': item.before_quantity,
+                    'issued_quantity': item.issued_quantity,
+                    'lot_data': item.lot_data,
+                    'sn_data': item.sn_data
+                })
+        return detail_data_fa
 
     @classmethod
     def get_attachment(cls, obj):

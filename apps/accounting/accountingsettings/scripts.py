@@ -2,11 +2,12 @@ from django.db import transaction
 from apps.accounting.accountingsettings.data_list import (
     DOCUMENT_TYPE_LIST, POSTING_RULE_LIST, POSTING_GROUP_LIST, GL_MAPPING_TEMPLATE
 )
-from apps.accounting.accountingsettings.models import ChartOfAccounts
+from apps.accounting.accountingsettings.models import ChartOfAccounts, ChartOfAccountsSummarize
 from apps.accounting.accountingsettings.models.account_determination import (
     JEDocumentType, JEPostingRule, JE_DOCUMENT_TYPE_APP, JEPostingGroup, JEGLAccountMapping, JEGroupAssignment,
     JEPostingGroupRoleKey, ROLE_KEY_CHOICES
 )
+from apps.accounting.journalentry.models import JournalEntrySummarize
 from apps.core.company.models import Company
 from apps.masterdata.saledata.models import ProductType, AccountType
 
@@ -15,13 +16,15 @@ class JournalEntryInitData:
     @staticmethod
     def generate_default_je_document_type_with_default_posting_rule(company_id):
         company_obj = Company.objects.get(id=company_id)
+
+        # Clean data cũ
         JEDocumentType.objects.filter(company_id=company_id).delete()
         JEPostingRule.objects.filter(company_id=company_id).delete()
 
         # 1. Tạo Document Type
         app_map = dict(JE_DOCUMENT_TYPE_APP)
         bulk_info = []
-        for module, code, app_code in DOCUMENT_TYPE_LIST:
+        for module, code, app_code, _ in DOCUMENT_TYPE_LIST:
             bulk_info.append(JEDocumentType(
                 tenant_id=company_obj.tenant_id,
                 company_id=company_id,
@@ -36,11 +39,14 @@ class JournalEntryInitData:
         print(f'> Created {len(bulk_info)} Doc Type')
 
         # 2. Tạo Posting Rules
+        doc_types = JEDocumentType.objects.filter(company_id=company_id)
+        doc_type_map = {item.code: item for item in doc_types}
+        all_accounts = ChartOfAccounts.objects.filter(company_id=company_id)
+        account_map = {item.acc_code: item for item in all_accounts}
+
         for posting_rule_data in POSTING_RULE_LIST:
             je_doc_type_code = posting_rule_data.get('je_doc_type')
-            je_doc_type_obj = JEDocumentType.objects.filter(
-                company_id=company_id, code=je_doc_type_code
-            ).first()
+            je_doc_type_obj = doc_type_map.get(je_doc_type_code)
             if je_doc_type_obj:
                 bulk_info = []
                 for rule_data in posting_rule_data.get('posting_rule_list', []):
@@ -48,7 +54,7 @@ class JournalEntryInitData:
                     fixed_acc = None
                     fixed_code = rule_payload.pop('fixed_account_code', None)
                     if fixed_code:
-                        fixed_acc = ChartOfAccounts.objects.filter(company_id=company_id, acc_code=fixed_code).first()
+                        fixed_acc = account_map.get(fixed_code)
                     bulk_info.append(JEPostingRule(
                         tenant_id=je_doc_type_obj.tenant_id,
                         company_id=je_doc_type_obj.company_id,
@@ -88,20 +94,22 @@ class JournalEntryInitData:
         company_obj = Company.objects.get(id=company_id)
         all_groups = JEPostingGroup.objects.filter(company_id=company_id)
 
+        role_choices_map = dict(ROLE_KEY_CHOICES)
+
         bulk_info = []
         for group in all_groups:
             acc_config = GL_MAPPING_TEMPLATE.get(group.code)
             if not acc_config:
                 continue
 
-            for role_key in acc_config.keys():
-                if acc_config[role_key]:
+            for role_key, default_acc in acc_config.items():
+                if default_acc is not None:
                     bulk_info.append(JEPostingGroupRoleKey(
                         tenant_id=company_obj.tenant_id,
                         company_id=company_id,
                         posting_group=group,
                         role_key=role_key,
-                        description=dict(ROLE_KEY_CHOICES).get(role_key)
+                        description=role_choices_map.get(role_key, role_key)
                     ))
 
         JEPostingGroupRoleKey.objects.filter(company_id=company_id).delete()
@@ -112,17 +120,14 @@ class JournalEntryInitData:
     @classmethod
     def generate_default_je_group_assignment(cls, company_id):
         """ Bước 2: Tạo các phân bổ Nhóm định khoản """
-        # ITEM_GROUP
         company_obj = Company.objects.get(id=company_id)
-
         bulk_info = []
 
-        item_posting_group = JEPostingGroup.objects.filter(
-            company_id=company_id,
-            posting_group_type='ITEM_GROUP'
-        )
+        # ITEM_GROUP
+        item_posting_group = JEPostingGroup.objects.filter(company_id=company_id, posting_group_type='ITEM_GROUP')
+        item_group_map = {item.code: item for item in item_posting_group}
         if item_posting_group:
-            ITEM_CODE_MAP = {
+            item_code_map = {
                 'goods': 'GOODS',  # Hàng hóa
                 'material': 'MATERIAL',  # Nguyên vật liệu
                 'finished_goods': 'FINISHED_GOODS',  # Thành phẩm
@@ -133,7 +138,7 @@ class JournalEntryInitData:
             }
             default_product_type = ProductType.objects.filter(company_id=company_id, is_default=True)
             for item in default_product_type:
-                posting_group_obj = item_posting_group.filter(code=ITEM_CODE_MAP.get(item.code)).first()
+                posting_group_obj = item_group_map.get(item_code_map.get(item.code))
                 if posting_group_obj:
                     bulk_info.append(JEGroupAssignment(
                         tenant_id=company_obj.tenant_id,
@@ -149,12 +154,11 @@ class JournalEntryInitData:
                     ))
             print(f"Found {default_product_type.count()} Product Type records.")
 
-        partner_posting_group = JEPostingGroup.objects.filter(
-            company_id=company_id,
-            posting_group_type='PARTNER_GROUP'
-        )
+        # PARTNER_GROUP
+        partner_posting_group = JEPostingGroup.objects.filter(company_id=company_id, posting_group_type='PARTNER_GROUP')
+        item_group_map = {item.code: item for item in partner_posting_group}
         if partner_posting_group:
-            ITEM_CODE_MAP = {
+            partner_code_map = {
                 'AT001': 'CUSTOMER',
                 'AT002': 'SUPPLIER',
                 'AT003': 'PARTNER_OTHER',
@@ -162,7 +166,7 @@ class JournalEntryInitData:
             }
             default_account_type = AccountType.objects.filter(company_id=company_id, is_default=True)
             for item in default_account_type:
-                posting_group_obj = partner_posting_group.filter(code=ITEM_CODE_MAP.get(item.code)).first()
+                posting_group_obj = item_group_map.get(partner_code_map.get(item.code))
                 if posting_group_obj:
                     bulk_info.append(JEGroupAssignment(
                         tenant_id=company_obj.tenant_id,
@@ -189,6 +193,9 @@ class JournalEntryInitData:
         company_obj = Company.objects.get(id=company_id)
         all_groups = JEPostingGroup.objects.filter(company_id=company_id)
 
+        all_accounts = ChartOfAccounts.objects.filter(company_id=company_id)
+        account_map = {item.acc_code: item for item in all_accounts}
+
         bulk_info = []
         for group in all_groups:
             acc_config = GL_MAPPING_TEMPLATE.get(group.code)
@@ -199,7 +206,7 @@ class JournalEntryInitData:
                 if not acc_code:
                     continue
                 # Tìm Account
-                account = ChartOfAccounts.get_acc(company_id, acc_code)
+                account = account_map.get(acc_code)
                 if account:
                     bulk_info.append(JEGLAccountMapping(
                         tenant_id=company_obj.tenant_id,
@@ -218,6 +225,8 @@ class JournalEntryInitData:
     def run(cls, company_id):
         with transaction.atomic():
             print("--- Cleaning old config ---")
+            ChartOfAccountsSummarize.objects.filter(company_id=company_id).delete()
+            JournalEntrySummarize.objects.filter(company_id=company_id).delete()
             cls.generate_default_je_document_type_with_default_posting_rule(company_id)
             cls.generate_default_je_posting_group(company_id)
             cls.generate_default_je_posting_group_role_keys(company_id)

@@ -13,7 +13,8 @@ from apps.accounting.accountingsettings.serializers.account_determination import
     JEDocumentTypeListSerializer, JEDocumentTypeUpdateSerializer,
     JEPostingRuleListSerializer, JEPostingGroupListSerializer, JEGroupAssignmentListSerializer,
     JEGLAccountMappingListSerializer, JEPostingGroupCreateSerializer, JEPostingGroupDetailSerializer,
-    JEPostingGroupUpdateSerializer, JEPostingGroupRoleKeyListSerializer, JEGLAccountMappingUpdateSerializer
+    JEPostingGroupUpdateSerializer, JEPostingGroupRoleKeyListSerializer, JEGLAccountMappingUpdateSerializer,
+    JEPostingRuleCreateSerializer, JEPostingRuleDetailSerializer, JEPostingRuleUpdateSerializer
 )
 from apps.shared import BaseListMixin, BaseUpdateMixin, BaseCreateMixin, BaseDestroyMixin, mask_view
 
@@ -22,7 +23,7 @@ class JEDocumentTypeList(BaseListMixin):
     queryset = JEDocumentType.objects
     search_fields = ['title', 'code']
     serializer_list = JEDocumentTypeListSerializer
-    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="JE Document Type List",
@@ -39,7 +40,7 @@ class JEDocumentTypeList(BaseListMixin):
 class JEDocumentTypeDetail(BaseUpdateMixin):
     queryset = JEDocumentType.objects
     serializer_update = JEDocumentTypeUpdateSerializer
-    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Update JE Document Type",
@@ -63,8 +64,11 @@ class JEPostingGroupList(BaseListMixin, BaseCreateMixin):
     serializer_list = JEPostingGroupListSerializer
     serializer_create = JEPostingGroupCreateSerializer
     serializer_detail = JEPostingGroupDetailSerializer
-    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_delete=False)
 
     @swagger_auto_schema(
         operation_summary="JE Posting Group List",
@@ -93,7 +97,7 @@ class JEPostingGroupList(BaseListMixin, BaseCreateMixin):
 class JEPostingGroupDetail(BaseUpdateMixin, BaseDestroyMixin):
     queryset = JEPostingGroup.objects
     serializer_update = JEPostingGroupUpdateSerializer
-    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Update JE Posting Group",
@@ -122,7 +126,10 @@ class JEGroupAssignmentList(BaseListMixin):
     queryset = JEGroupAssignment.objects
     search_fields = ['posting_group__code']
     serializer_list = JEGroupAssignmentListSerializer
-    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_delete=False)
 
     @swagger_auto_schema(
         operation_summary="JE Group Assignment List",
@@ -143,7 +150,10 @@ class JEPostingGroupRoleKeyList(BaseListMixin):
         "posting_group_id": ["exact"]
     }
     serializer_list = JEPostingGroupRoleKeyListSerializer
-    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_delete=False)
 
     @swagger_auto_schema(
         operation_summary="JE Posting Group Role key List",
@@ -163,8 +173,11 @@ class JEGLAccountMappingList(BaseListMixin, BaseCreateMixin):
     serializer_list = JEGLAccountMappingListSerializer
     serializer_create = JEGLAccountMappingCreateSerializer
     serializer_detail = JEGLAccountMappingDetailSerializer
-    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_delete=False)
 
     @swagger_auto_schema(
         operation_summary="JE GL Account Mapping List",
@@ -183,7 +196,7 @@ class JEGLAccountMappingList(BaseListMixin, BaseCreateMixin):
         request_body=JEGLAccountMappingCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='postingengine', model_code='postingengine', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
@@ -193,7 +206,7 @@ class JEGLAccountMappingList(BaseListMixin, BaseCreateMixin):
 class JEGLAccountMappingDetail(BaseUpdateMixin, BaseDestroyMixin):
     queryset = JEGLAccountMapping.objects
     serializer_update = JEGLAccountMappingUpdateSerializer
-    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Update GL Account Mapping",
@@ -217,12 +230,18 @@ class JEGLAccountMappingDetail(BaseUpdateMixin, BaseDestroyMixin):
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
-
-class JEPostingRuleList(BaseListMixin):
+# Posting rule
+class JEPostingRuleList(BaseListMixin, BaseCreateMixin):
     queryset = JEPostingRule.objects
     search_fields = ['title', 'code']
     serializer_list = JEPostingRuleListSerializer
-    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    serializer_create = JEPostingRuleCreateSerializer
+    serializer_detail = JEPostingRuleDetailSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_delete=False)
 
     @swagger_auto_schema(
         operation_summary="JE Posting Rule List",
@@ -235,6 +254,46 @@ class JEPostingRuleList(BaseListMixin):
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
+    @swagger_auto_schema(
+        operation_summary="Create JE Posting Rule",
+        operation_description="Create new JE Posting Rule",
+        request_body=JEPostingRuleCreateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='postingengine', model_code='postingengine', perm_code='create',
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class JEPostingRuleDetail(BaseUpdateMixin, BaseDestroyMixin):
+    queryset = JEPostingRule.objects
+    serializer_update = JEPostingRuleUpdateSerializer
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Update JE Posting Rule",
+        request_body=JEPostingRuleUpdateSerializer
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='postingengine', model_code='postingengine', perm_code='edit',
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Delete JE Posting Rule",
+        operation_description="Delete JE Posting Rule by ID",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='postingengine', model_code='postingengine', perm_code='delete',
+    )
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
 
 @swagger_auto_schema(
     method='get',
@@ -245,7 +304,7 @@ class JEPostingRuleList(BaseListMixin):
 def get_je_document_type(request, *args, **kwargs):
     je_document_type = []
     app_title_map = dict(JE_DOCUMENT_TYPE_APP)
-    for _, code, app_code in DOCUMENT_TYPE_LIST:
+    for _, code, app_code, _ in DOCUMENT_TYPE_LIST:
         title = app_title_map.get(app_code, '')
         je_document_type.append((app_code, code, title))
     return Response({

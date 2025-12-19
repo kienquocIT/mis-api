@@ -24,6 +24,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     attribute_list_data = serializers.SerializerMethodField()
     duration_unit_data = serializers.SerializerMethodField()
     stock_amount = serializers.SerializerMethodField()
+    asset_category = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -41,7 +42,10 @@ class ProductListSerializer(serializers.ModelSerializer):
             'duration_unit_data',
             'attribute_list_data',
             # Transaction information
-            'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount'
+            'stock_amount', 'wait_delivery_amount', 'wait_receipt_amount', 'available_amount', 'production_amount',
+
+            # asset category
+            'asset_category'
         )
 
     @classmethod
@@ -125,6 +129,31 @@ class ProductListSerializer(serializers.ModelSerializer):
     def get_stock_amount(cls, obj):
         return sum(obj.product_warehouse_product.values_list("stock_amount", flat=True))
 
+    @classmethod
+    def get_asset_category(cls, obj):
+        return {
+            'id': obj.asset_category_id,
+            'title': obj.asset_category.title,
+            'code': obj.asset_category.code,
+            'depreciation_method': obj.asset_category.depreciation_method,
+            'depreciation_method_display': obj.asset_category.get_depreciation_method_display(),
+            'depreciation_time': obj.asset_category.depreciation_time,
+            'asset_account': {
+                'id': obj.asset_category.asset_account_id,
+                'acc_code': obj.asset_category.asset_account.acc_code,
+                'acc_name': obj.asset_category.asset_account.acc_name,
+            } if obj.asset_category.asset_account else {},
+            'accumulated_depreciation_account': {
+                'id': obj.asset_category.accumulated_depreciation_account_id,
+                'acc_code': obj.asset_category.accumulated_depreciation_account.acc_code,
+                'acc_name': obj.asset_category.accumulated_depreciation_account.acc_name,
+            } if obj.asset_category.accumulated_depreciation_account else {},
+            'depreciation_expense_account': {
+                'id': obj.asset_category.depreciation_expense_account_id,
+                'acc_code': obj.asset_category.depreciation_expense_account.acc_code,
+                'acc_name': obj.asset_category.depreciation_expense_account.acc_name,
+            } if obj.asset_category.depreciation_expense_account else {},
+        } if obj.asset_category else {}
 
 class ProductCreateSerializer(serializers.ModelSerializer):
     product_choice = serializers.ListField(child=serializers.ChoiceField(choices=PRODUCT_OPTION))

@@ -1,25 +1,32 @@
 from django.db.models import Q, Prefetch
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.views import APIView
 
+from apps.masterdata.saledata.models import ProductWareHouse
 from apps.sales.asset.models import FixedAsset
 from apps.sales.asset.serializers import FixedAssetListSerializer, FixedAssetCreateSerializer, \
-    FixedAssetDetailSerializer, FixedAssetUpdateSerializer, AssetForLeaseListSerializer, AssetStatusLeaseListSerializer
+    FixedAssetDetailSerializer, FixedAssetUpdateSerializer, AssetForLeaseListSerializer, \
+    AssetStatusLeaseListSerializer, ProductWarehouseListSerializerForFixedAsset, \
+    FixedAssetListWithDepreciationSerializer, RunFixedAssetDepreciationSerializer
 from apps.sales.delivery.models import OrderDeliveryProductAsset
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, \
+    ResponseController, HttpMsg
 
 __all__ =[
     'FixedAssetList',
     'FixedAssetDetail',
     'AssetForLeaseList',
     'AssetStatusLeaseList',
-    'AssetListNoPerm'
+    'AssetListNoPerm',
+    'ProductWarehouseListForFixedAsset',
+    'FixedAssetListWithDepreciationList',
+    'RunDepreciationAPIView'
 ]
 
 class FixedAssetList(BaseListMixin, BaseCreateMixin):
     queryset = FixedAsset.objects
     search_fields = ['title', 'code']
     filterset_fields = {
-        'product': ['exact', 'in'],
         'status': ['exact'],
         'manage_department': ['exact', 'in'],
         'source_type': ['exact', 'in'],
@@ -31,7 +38,7 @@ class FixedAssetList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        query_set = (super().get_queryset().select_related('product', 'manage_department', 'use_customer')
+        query_set = (super().get_queryset().select_related('manage_department', 'use_customer')
                                            .prefetch_related('use_departments'))
         # get fixed assets that haven't been written off
         return query_set.filter(
@@ -72,8 +79,8 @@ class FixedAssetDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        query_set = (super().get_queryset().select_related('classification', 'product', 'manage_department')
-                                           .prefetch_related('use_departments', 'asset_sources', 'ap_invoice_items'))
+        query_set = (super().get_queryset().select_related('manage_department')
+                                           .prefetch_related('use_departments'))
         return query_set
 
     @swagger_auto_schema(
@@ -193,3 +200,65 @@ class AssetListNoPerm(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class ProductWarehouseListForFixedAsset(BaseListMixin):
+    queryset = ProductWareHouse.objects
+    serializer_list = ProductWarehouseListSerializerForFixedAsset
+    filterset_fields = {
+        "id": ["exact"],
+        "product_id": ["exact"],
+        "warehouse_id": ["exact"],
+    }
+
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('warehouse').prefetch_related()
+
+    @swagger_auto_schema(operation_summary='Product WareHouse')
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class FixedAssetListWithDepreciationList(BaseListMixin):
+    queryset = FixedAsset.objects
+    serializer_list = FixedAssetListWithDepreciationSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        query_set = (super().get_queryset().select_related('manage_department', 'use_customer')
+                     .prefetch_related('use_departments'))
+        # get fixed assets that haven't been written off
+        return query_set.filter(
+            Q(fixed_asset_write_off__isnull=True) |
+            Q(fixed_asset_write_off__isnull=False, fixed_asset_write_off__system_status=0))
+
+    @swagger_auto_schema(
+        operation_summary="Fixed Asset List With Depreciation",
+        operation_description="Fixed Asset List With Depreciation",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='asset', model_code='fixedasset', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class RunDepreciationAPIView(APIView):
+    @swagger_auto_schema(
+        operation_summary="Fixed Asset Run Depreciation",
+        operation_description="Fixed Asset Run Depreciation",
+        request_body=RunFixedAssetDepreciationSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='asset', model_code='fixedasset', perm_code='edit',
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = RunFixedAssetDepreciationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')

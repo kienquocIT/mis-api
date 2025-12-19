@@ -429,7 +429,11 @@ class ProductList(BaseListMixin, BaseCreateMixin):
             'general_uom_group',
             'sale_tax',
             'sale_default_uom',
-            'inventory_uom'
+            'inventory_uom',
+            'asset_category',
+            'asset_category__asset_account',
+            'asset_category__accumulated_depreciation_account',
+            'asset_category__depreciation_expense_account',
         ).prefetch_related(
             'product_warehouse_product',
             'general_product_types_mapped',
