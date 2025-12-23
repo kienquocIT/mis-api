@@ -513,8 +513,11 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             for obj in plan_check:
                 application_data = app_by_plan[str(obj.plan_id)]
                 if application_data and TypeCheck.check_uuid_list(application_data):
-                    objs_tmp = PlanApplication.objects.filter(plan_id=obj.plan_id, application_id__in=application_data)
-                    if objs_tmp.count() != len(application_data):
+                    objs_tmp = PlanApplication.objects.filter(
+                        plan_id=obj.plan_id, application_id__in=application_data
+                    ).values_list('application_id', flat=True)
+                    # print(list(set(list(map(str, objs_tmp))) ^ set(application_data)))
+                    if len(objs_tmp) != len(application_data):
                         raise serializers.ValidationError({'plan_app': HRMsg.APP_NOT_MATCH_PLAN})
             return app_by_plan
 

@@ -370,7 +370,7 @@ class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
         # svo_mapped = obj.service_order
         if so_mapped:
             delivery_data = [{
-                'so_id': str(obj.sale_order_id),
+                'order_id': str(obj.sale_order_id),
                 'id': str(item.id),
                 'product_data': item.product_data.get('product_data', {}),
                 'uom_data': item.uom_data,
@@ -382,7 +382,7 @@ class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
             } for item in obj.delivery_product_delivery_sub.filter(picked_quantity__gt=0)]
 
             so_data = [{
-                'so_id': str(so_mapped.id),
+                'order_id': str(so_mapped.id),
                 'id': str(item.id),
                 'product_data': item.product_data.get('product_data', {}),
                 'uom_data': item.uom_data,
@@ -393,22 +393,43 @@ class DeliveryListSerializerForARInvoice(serializers.ModelSerializer):
                 'tax_data': item.tax_data,
                 'product_tax_value': item.product_tax_value
             } for item in so_mapped.sale_order_product_sale_order.all()]
+
             details = {
                 'delivery_data': delivery_data,
-                'so_data': so_data,
+                'order_data': so_data,
             }
         if lo_mapped:
-            details = [{
+            delivery_data = [{
+                'order_id': str(obj.lease_order_id),
+                'id': str(item.id),
+                'product_data': item.product_data.get('product_data', {}),
+                'uom_data': item.uom_data,
+                'tax_data': item.tax_data,
+                'delivery_quantity': item.delivery_quantity,
+                'delivered_quantity_before': item.delivered_quantity_before,
+                'picked_quantity': item.picked_quantity,
+                'product_quantity_time': item.product_quantity_time,
+                'ar_value_done': item.ar_value_done
+            } for item in obj.delivery_product_delivery_sub.filter(picked_quantity__gt=0)]
+
+            lo_data = [{
+                'order_id': str(lo_mapped.id),
                 'id': str(item.id),
                 'product_data': item.product_data.get('product_data', {}),
                 'uom_data': item.uom_data,
                 'product_quantity': item.product_quantity,
+                'product_quantity_time': item.product_quantity_time,
                 'product_unit_price': item.product_unit_price,
                 'product_subtotal_price': item.product_subtotal_price,
                 'product_discount_value': item.product_discount_value,
                 'tax_data': item.tax_data,
                 'product_tax_value': item.product_tax_value
             } for item in lo_mapped.lease_order_product_lease_order.all()]
+
+            details = {
+                'delivery_data': delivery_data,
+                'order_data': lo_data,
+            }
         return details
 
 

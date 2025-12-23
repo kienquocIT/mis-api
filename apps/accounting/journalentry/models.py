@@ -119,7 +119,7 @@ class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
                         je_obj.total_debit = total_debit
                         je_obj.total_credit = total_credit
                         je_obj.save(update_fields=['total_debit', 'total_credit'])
-                        JournalEntrySummarize.push_data(je_obj)
+                        JournalEntrySummarize.update_summarize(je_obj)
                         ChartOfAccountsSummarize.update_summarize(je_obj)
                         print(f'# [JE] JE created successfully ({je_obj.code})!\n')
                         return je_obj
@@ -294,7 +294,7 @@ class JournalEntrySummarize(MasterDataAbstractModel):
         verbose_name_plural = 'Journal Entry Summarizes'
 
     @classmethod
-    def push_data(cls, je_obj):
+    def update_summarize(cls, je_obj):
         if je_obj.system_status == 3:
             # JE Summarize
             je_summarize_obj = cls.objects.filter(company=je_obj.company).first()

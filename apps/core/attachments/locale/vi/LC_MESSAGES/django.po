@@ -50,7 +50,7 @@ msgstr "Bạn không có quyền xóa quyền truy cập này"
 msgid "You need the 'Create subfolders' permission to perform this action."
 msgstr "Bạn cần quyền 'Tạo thư mục con' để tiếp tục."
 
-msgid "Parent is not exists"
+msgid "Parent does not exist"
 msgstr "Thư mục cha không tồn tại"
 
 msgid "A folder cannot reference itself as a parent"

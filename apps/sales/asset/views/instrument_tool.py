@@ -21,7 +21,6 @@ class InstrumentToolList(BaseListMixin, BaseCreateMixin):
     queryset = InstrumentTool.objects
     search_fields = ['title', 'code']
     filterset_fields = {
-        'product': ['exact', 'in'],
         'status': ['exact', 'in'],
         'manage_department': ['exact', 'in'],
         'source_type': ['exact', 'in'],
@@ -168,7 +167,6 @@ class InstrumentToolNoPermList(BaseListMixin):
     serializer_list = InstrumentToolListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
-        'product': ['exact', 'in'],
         'status': ['exact'],
         'manage_department': ['exact', 'in'],
         'source_type': ['exact', 'in'],

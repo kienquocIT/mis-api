@@ -2510,158 +2510,12 @@ LEASEORDER_APP_CONFIG = {
     "allow_recurrence": True,
 }
 
-FINANCIAL_CASHFLOW_CASH_INFLOW_APP_CONFIG = {
-    "id": "7ba35923-d8ff-4f6d-bf80-468a7190a63b",
-    "title": "Cash Inflow",
-    "code": "cashinflow",
-    "model_code": "cashinflow",
-    "app_label": "financialcashflow",
-    "is_workflow": True,
-    "app_depend_on": [
-        "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
-    ],
-    "permit_mapping": {
-        "view": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {},
-        },
-        "create": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {
-                    "view": "==",
-                },
-            },
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "edit": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {
-                    "view": "==",
-                },
-            },
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "delete": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-    },
-    "allow_permit": True,
-    "allow_print": True,
-    "allow_process": False,
-    "allow_opportunity": False,
-}
-
-FINANCIAL_CASHFLOW_CASH_OUTFLOW_APP_CONFIG = {
-    "id": "c51857ef-513f-4dbf-babd-26d68950ad6e",
-    "title": "Cash Outflow",
-    "code": "cashoutflow",
-    "model_code": "cashoutflow",
-    "app_label": "financialcashflow",
-    "is_workflow": True,
-    "app_depend_on": [
-        "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
-    ],
-    "permit_mapping": {
-        "view": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {},
-        },
-        "create": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {
-                    "view": "==",
-                },
-            },
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "edit": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "4e48c863-861b-475a-aa5e-97a4ed26f294": {
-                    "view": "==",
-                },
-            },
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "delete": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-    },
-    "allow_permit": True,
-    "allow_print": True,
-    "allow_process": False,
-    "allow_opportunity": False,
-}
-
 FINANCIAL_RECON_APP_CONFIG = {
     "id": "b690b9ff-670a-474b-8ae2-2c17d7c30f40",
     "title": "Reconciliation",
     "code": "reconciliation",
     "model_code": "reconciliation",
     "app_label": "reconciliation",
-    "is_workflow": True,
-    "app_depend_on": [],
-    "permit_mapping": {
-        "view": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {},
-        },
-        "create": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "edit": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "delete": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-    },
-    "allow_permit": True,
-    "allow_print": True,
-    "allow_process": False,
-    "allow_opportunity": False,
-}
-
-ACCOUNTING_JE_APP_CONFIG = {
-    "id": "a9bb7b64-4f3c-412d-9e08-3b713d58d31d",
-    "title": "Journal Entry",
-    "code": "reconciliation",
-    "model_code": "journalentry",
-    "app_label": "accounting",
     "is_workflow": True,
     "app_depend_on": [],
     "permit_mapping": {
@@ -3297,48 +3151,6 @@ SERVICEQUOTATION_APP_CONFIG = {
     "allow_permit": True,
 }
 
-POSTING_ENGINE_APP_CONFIG = {
-    "id": "f02ef380-5b42-4b9c-af9b-232809105a1d",
-    "title": "Posting Engine",
-    "code": "postingengine",
-    "model_code": "postingengine",
-    "app_label": "postingengine",
-    "is_workflow": True,
-    "app_depend_on": [],
-    "permit_mapping": {
-        "view": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {},
-        },
-        "create": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "edit": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-        "delete": {
-            "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
-        },
-    },
-    "allow_permit": True,
-    "allow_print": False,
-    "allow_process": False,
-    "allow_opportunity": False,
-}
-
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -3433,22 +3245,7 @@ Application_crm_data = {
         filtering_inheritor=True,
         spacing_allow=["0", "1"],
     ),
-    "7ba35923-d8ff-4f6d-bf80-468a7190a63b": ApplicationConfigFrame(**FINANCIAL_CASHFLOW_CASH_INFLOW_APP_CONFIG).data(
-        depend_follow_main=True,
-        filtering_inheritor=True,
-        spacing_allow=["0", "1"],
-    ),
-    "c51857ef-513f-4dbf-babd-26d68950ad6e": ApplicationConfigFrame(**FINANCIAL_CASHFLOW_CASH_OUTFLOW_APP_CONFIG).data(
-        depend_follow_main=True,
-        filtering_inheritor=True,
-        spacing_allow=["0", "1"],
-    ),
     "b690b9ff-670a-474b-8ae2-2c17d7c30f40": ApplicationConfigFrame(**FINANCIAL_RECON_APP_CONFIG).data(
-        depend_follow_main=True,
-        filtering_inheritor=True,
-        spacing_allow=["0", "1"],
-    ),
-    "a9bb7b64-4f3c-412d-9e08-3b713d58d31d": ApplicationConfigFrame(**ACCOUNTING_JE_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
         spacing_allow=["0", "1"],
@@ -3708,10 +3505,6 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "c9e131ec-760c-45af-8ae6-5349f2bb542e": ApplicationConfigFrame(**SERVICEQUOTATION_APP_CONFIG).data(
-        depend_follow_main=False,
-        filtering_inheritor=True,
-    ),
-    "f02ef380-5b42-4b9c-af9b-232809105a1d": ApplicationConfigFrame(**POSTING_ENGINE_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),

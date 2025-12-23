@@ -386,6 +386,10 @@ msgstr "Đơn dịch vụ"
 msgid "Absence explanation"
 msgstr "Giải trình vắng mặt"
 
+# f02ef380-5b42-4b9c-af9b-232809105a1d
+msgid "Posting Engine"
+msgstr "Bộ máy hạch toán"
+
 #
 msgid "Does not exist"
 msgstr "Không tồn tại"

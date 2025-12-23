@@ -3,6 +3,7 @@ from .plan_app_sub.crm import Application_crm_data as _Application_crm_data
 from .plan_app_sub.eoffice import Application_eOffice_data as _Application_eOffice_data
 from .plan_app_sub.hrm import Application_hrm_data as _Application_hrm_data
 from .plan_app_sub.kms import Application_kms_data as _Application_kms_data
+from .plan_app_sub.financial import Application_financial_data as _Application_financial_data
 
 __all__ = [
     "SubscriptionPlan_data",
@@ -26,6 +27,10 @@ SubscriptionPlan_data = {
         "title": "Sale",
         "code": "sale",
     },
+    "9518009b-f199-466e-a579-a08710756ff7": {
+        "title": "Financial",
+        "code": "financial",
+    },
     "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8": {
         "title": "E-Office",
         "code": "e-office",
@@ -46,6 +51,7 @@ Application_data = {
     **_Application_eOffice_data,
     **_Application_hrm_data,
     **_Application_kms_data,
+    **_Application_financial_data
 }
 
 _PlanApplication_base_data = {
@@ -391,21 +397,9 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "010404b3-bb91-4b24-9538-075f5f00ef14",  # Lease Order
     },
-    "7ba35923-d8ff-4f6d-bf80-468a7190a63b": {
-        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
-        "application_id": "7ba35923-d8ff-4f6d-bf80-468a7190a63b",  # Cash infow
-    },
-    "c51857ef-513f-4dbf-babd-26d68950ad6e": {
-        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
-        "application_id": "c51857ef-513f-4dbf-babd-26d68950ad6e",  # Cash outfow
-    },
     "b690b9ff-670a-474b-8ae2-2c17d7c30f40": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "b690b9ff-670a-474b-8ae2-2c17d7c30f40",  # Recon
-    },
-    "a9bb7b64-4f3c-412d-9e08-3b713d58d31d": {
-        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
-        "application_id": "a9bb7b64-4f3c-412d-9e08-3b713d58d31d",  # JE
     },
     "488a6284-6341-4c51-b837-fb6964e51d82": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
@@ -467,8 +461,23 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",  # Service Quotation
     },
+}
+
+_PlanApplication_financial_data = {
+    "7ba35923-d8ff-4f6d-bf80-468a7190a63b": {
+        "plan_id": "9518009b-f199-466e-a579-a08710756ff7",  # Financial
+        "application_id": "7ba35923-d8ff-4f6d-bf80-468a7190a63b",  # Cash inflow
+    },
+    "c51857ef-513f-4dbf-babd-26d68950ad6e": {
+        "plan_id": "9518009b-f199-466e-a579-a08710756ff7",  # Financial
+        "application_id": "c51857ef-513f-4dbf-babd-26d68950ad6e",  # Cash outflow
+    },
+    "a9bb7b64-4f3c-412d-9e08-3b713d58d31d": {
+        "plan_id": "9518009b-f199-466e-a579-a08710756ff7",  # Financial
+        "application_id": "a9bb7b64-4f3c-412d-9e08-3b713d58d31d",  # JE
+    },
     "f02ef380-5b42-4b9c-af9b-232809105a1d": {
-        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "plan_id": "9518009b-f199-466e-a579-a08710756ff7",  # Financial
         "application_id": "f02ef380-5b42-4b9c-af9b-232809105a1d",  # Posting Engine
     },
 }
@@ -519,6 +528,7 @@ PlanApplication_data = {
     **_PlanApplication_base_data,
     **_PlanApplication_hrm_data,
     **_PlanApplication_sale_data,
+    **_PlanApplication_financial_data,
     **_PlanApplication_eOffice_data,
     **_PlanApplication_kms_data,
 }

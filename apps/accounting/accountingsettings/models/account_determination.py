@@ -1,8 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
-from apps.accounting.accountingsettings.data_list import ALLOWED_AMOUNT_SOURCES_MAP
+from apps.accounting.accountingsettings.data_list import ALLOWED_AMOUNT_SOURCES_MAP, POSTING_GROUP_TYPE_MAP
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 __all__ = [
@@ -60,6 +59,7 @@ AMOUNT_SOURCE_CHOICES = [
     ('BANK', _('Số tiền ngân hàng')),
     ('SURCHARGE', _('Phụ phí (Vận chuyển, Lắp đặt...)')),
     ('IMPORT_TAX', _('Thuế Nhập khẩu')),
+    ('EXPORT_TAX', _('Thuế Xuất khẩu')),
     ('ROUNDING', _('Chênh lệch làm tròn')),
 ]
 
@@ -88,6 +88,7 @@ ROLE_KEY_CHOICES = [
     ('TAX_IN', _('Thuế đầu vào')),
     ('TAX_OUT', _('Thuế đầu ra')),
     ('TAX_IMPORT', _('Thuế Nhập khẩu')),
+    ('TAX_EXPORT', _('Thuế Xuất khẩu')),
     # Nhóm Tiền
     ('CASH', _('Tiền mặt')),
     ('BANK', _('Tiền gửi ngân hàng')),
@@ -183,6 +184,28 @@ class JEGroupAssignment(DataAbstractModel):
         verbose_name_plural = 'GL Group Assignments'
         ordering = ('posting_group__posting_group_type', 'posting_group__code', 'item_app')
 
+    @staticmethod
+    def create_assignment_data(posting_group_obj, assignment_data_list):
+        item_app = POSTING_GROUP_TYPE_MAP.get(posting_group_obj.posting_group_type)
+        if item_app:
+            bulk_info = []
+            for item in assignment_data_list:
+                bulk_info.append(JEGroupAssignment(
+                    tenant_id=posting_group_obj.tenant_id,
+                    company_id=posting_group_obj.company_id,
+                    posting_group=posting_group_obj,
+                    item_app=item_app,
+                    item_app_data={
+                        'id': str(item.id),
+                        'code': item.code,
+                        'title': item.title,
+                    },
+                    item_id=str(item.id)
+                ))
+            JEGroupAssignment.objects.filter_on_company(posting_group=posting_group_obj).delete()
+            JEGroupAssignment.objects.bulk_create(bulk_info)
+        return True
+
 
 class JEGLAccountMapping(DataAbstractModel):
     """Bảng tra cứu: posting_group + role_key => Tài khoản"""
@@ -205,7 +228,7 @@ class JEGLAccountMapping(DataAbstractModel):
     class Meta:
         verbose_name = 'JE GL Account Mapping'
         verbose_name_plural = 'JE GL Accounts Mapping'
-        ordering = ('posting_group__code', 'role_key')
+        ordering = ('posting_group__posting_group_type', 'posting_group__code', 'role_key')
 
 
 class JEPostingRule(DataAbstractModel):

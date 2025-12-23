@@ -49,7 +49,7 @@ class JournalEntryCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         instance = JournalEntry.objects.create(**validated_data)
-        JournalEntrySummarize.push_data(instance)
+        JournalEntrySummarize.update_summarize(instance)
         ChartOfAccountsSummarize.update_summarize(instance)
         return instance
 

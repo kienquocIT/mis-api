@@ -40,7 +40,7 @@ class AttachmentMsg:
     SOME_FILES_NOT_CORRECT = _('Some attachments are being used by another document or do not exist')
     FILE_NOT_FOUND = _('File not found')
     REQUIRED_PERM_SUBFOLDER = _('You need the \'Create subfolders\' permission to perform this action.')
-    PARENT_NOT_EXISTS = _("Parent is not exists")
+    PARENT_NOT_EXISTS = _("Parent does not exist")
 
 
 class MailMsg:

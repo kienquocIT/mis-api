@@ -104,7 +104,13 @@ class ARInvoice(DataAbstractModel, RecurrenceAbstractModel):
             count = 0
             all_delivery_item = item_mapped.delivery_mapped.delivery_product_delivery_sub.all()
             for prd in all_delivery_item:
-                if prd.ar_value_done == prd.product_cost * prd.picked_quantity:
+                if instance.sale_order_mapped and (
+                    prd.ar_value_done == prd.product_cost * prd.picked_quantity
+                ):
+                    count += 1
+                if instance.lease_order_mapped and (
+                    prd.ar_value_done == prd.product_cost * prd.picked_quantity * prd.product_quantity_time
+                ):
                     count += 1
             if count == all_delivery_item.count():
                 item_mapped.delivery_mapped.is_done_ar_invoice = True
@@ -148,6 +154,7 @@ class ARInvoiceItems(SimpleAbstractModel):
     product_uom = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.SET_NULL, null=True)
     product_uom_data = models.JSONField(default=dict)
     product_quantity = models.FloatField(default=1)
+    product_quantity_time = models.FloatField(default=0)
     product_unit_price = models.FloatField(default=0)
 
     product_subtotal = models.FloatField(default=0)

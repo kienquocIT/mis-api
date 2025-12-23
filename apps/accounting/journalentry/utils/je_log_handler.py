@@ -20,6 +20,7 @@ class JELogHandler:
         return JEPostingRule.objects.filter(
             company_id=company_id,
             je_document_type=je_document_type,
+            is_delete=False
         ).select_related('fixed_account').order_by('priority') if je_document_type else []
 
     @classmethod
@@ -46,7 +47,8 @@ class JELogHandler:
             assignment = JEGroupAssignment.objects.filter(
                 company_id=rule.company_id,
                 item_app=current_app,
-                item_id__in=candidate_ids
+                item_id__in=candidate_ids,
+                is_delete=False
             ).first()
 
             if assignment:
@@ -65,7 +67,8 @@ class JELogHandler:
                     break
 
                 parent_ids = model_tracking.objects.filter(
-                    id__in=candidate_ids
+                    id__in=candidate_ids,
+                    is_delete=False
                 ).values_list(parent_related_name, flat=True)
 
                 # Làm sạch list (bỏ None, bỏ trùng lặp)
@@ -83,7 +86,8 @@ class JELogHandler:
             mapping = JEGLAccountMapping.objects.filter(
                 company_id=rule.company_id,
                 posting_group=assignment.posting_group,
-                role_key=rule.role_key  # VD: ASSET, COGS
+                role_key=rule.role_key,  # VD: ASSET, COGS
+                is_delete=False
             ).select_related('account').first()
 
             return mapping.account if mapping else None
@@ -192,7 +196,7 @@ class JELogHandler:
             with transaction.atomic():
                 app_code = transaction_obj.get_model_code()
                 je_document_type = JEDocumentType.objects.filter(
-                    company_id=transaction_obj.company_id, app_code=app_code, is_auto_je=True
+                    company_id=transaction_obj.company_id, app_code=app_code, is_auto_je=True, is_delete=False
                 ).first()
                 debit_rows_data, credit_rows_data = cls.parse_je_line_data(transaction_obj, je_document_type)
                 if len(debit_rows_data) == 0 and len(credit_rows_data) == 0:

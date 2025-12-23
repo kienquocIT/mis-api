@@ -1135,6 +1135,50 @@ AppProp_SaleData_Opportunity_data = {
             ]
         }
     },
+    '3f76583a-ab55-4c93-9264-84375e70dda2': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Bidding Status',
+        'code': 'bidding_status',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': 'Approved',
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': 'Approved',
+                }
+            ]
+        }
+    },
+    '9c0a8fe0-e508-408f-9f91-765077b61aa9': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Consulting Status',
+        'code': 'consulting_status',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': 'Approved',
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': 'Approved',
+                }
+            ]
+        }
+    },
 }
 
 AppProp_SaleData_SaleOrder_data = {
@@ -2723,13 +2767,21 @@ AppProp_SaleData_Advance_Payment_data = {
         'is_wf_zone': True,
     },
     # workflow
-    '10e6397d-cd03-4d1f-8bc6-18df5ca1e0ab': {
+    '57e6c9b9-b023-418c-91d6-bd17c6aa2a81': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
-        'title': 'Advance value',
+        'title': 'Pretax amount',
+        'code': 'advance_value_before_tax',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
+    'ebd90853-5733-4083-b770-0e267e9bf91a': {
+        'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
+        'title': 'Total amount',
         'code': 'advance_value',
         'type': 6,
+        'is_wf_zone': False,
         'is_wf_condition': True,
-        'is_wf_zone': True,
     },
     'a6e612a9-551d-4ffa-bf4a-7adbf87f7791': {
         'application_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
@@ -2895,13 +2947,21 @@ AppProp_SaleData_Payment_data = {
         'is_wf_zone': True,
     },
     # workflow
+    '7a4b5afc-004d-4dfd-a6aa-9b6c67ede6b0': {
+        'application_id': '1010563f-7c94-42f9-ba99-63d5d26a1aca',
+        'title': 'Pretax amount',
+        'code': 'payment_value_before_tax',
+        'type': 6,
+        'is_wf_zone': False,
+        'is_wf_condition': True,
+    },
     '8f89a3f6-e8ba-48df-845f-cc6d82dbfbaa': {
         'application_id': '1010563f-7c94-42f9-ba99-63d5d26a1aca',
-        'title': 'Payment value',
+        'title': 'Total amount',
         'code': 'payment_value',
         'type': 6,
+        'is_wf_zone': False,
         'is_wf_condition': True,
-        'is_wf_zone': True,
     },
     '614505ec-e918-4d6f-8e81-755a4912632c': {
         'application_id': '1010563f-7c94-42f9-ba99-63d5d26a1aca',
@@ -3008,7 +3068,7 @@ AppProp_SaleData_FinancialCashflow_CashInflow_data = {
 }
 
 AppProp_SaleData_FinancialRecon_Recon_data = {
-    "355c278c-7901-4f6d-8330-76eb9082b40f": {
+    "bc205e8b-7559-406a-afbf-1279b7a0c8f0": {
         "application_id": "b690b9ff-670a-474b-8ae2-2c17d7c30f40",
         "title": "Title",
         "code": "title",
@@ -3018,7 +3078,7 @@ AppProp_SaleData_FinancialRecon_Recon_data = {
 }
 
 AppProp_SaleData_AccountingJE_Recon_data = {
-    "355c278c-7901-4f6d-8330-76eb9082b40f": {
+    "399a874f-0ed6-491f-ba70-2b5e7670021e": {
         "application_id": "a9bb7b64-4f3c-412d-9e08-3b713d58d31d",
         "title": "Title",
         "code": "title",
@@ -3603,65 +3663,6 @@ AppProp_SaleData_ServiceQuotation_data = {
     }
 }
 
-ApplicationProperty_data = {
-    **Bastion_data_params,
-    **AppProp_SaleData_Contact_data,
-    **AppProp_SaleData_Account_data,
-    **AppProp_SaleData_Quotation_data,
-    **AppProp_SaleData_Opportunity_data,
-    **AppProp_SaleData_SaleOrder_data,
-    **AppProp_Eoffice_Leave_data,
-    **AppProp_Eoffice_Business_trip_data,
-    **AppProp_AssetTools_Provide_data,
-    **AppProp_AssetTools_Delivery_data,
-    **AppProp_AssetTools_Return_data,
-    **AppProp_Sales_Project_data,
-    **AppProp_Sales_Project_Baseline_data,
-    **AppProp_SaleData_Delivery_data,
-    **AppProp_SaleData_Contract_Approval_data,
-    **AppProp_SaleData_LeaseOrder_data,
-    **AppProp_SaleData_PurchaseOrder_data,
-    # haind
-    **AppProp_SaleData_Advance_Payment_data,
-    **AppProp_SaleData_AP_Invoice_data,
-    **AppProp_SaleData_AR_Invoice_data,
-    **AppProp_SaleData_Goods_Issue_data,
-    **AppProp_SaleData_Goods_Return_data,
-    **AppProp_SaleData_Goods_Transfer_data,
-    **AppProp_SaleData_Payment_data,
-    **AppProp_SaleData_Purchase_Quotation_data,
-    **AppProp_SaleData_Purchase_Quotation_Request_data,
-    **AppProp_SaleData_Purchase_Request_data,
-    **AppProp_SaleData_Return_Payment_data,
-    **AppProp_SaleData_Distribution_Plan_data,
-    **AppProp_SaleData_BOM_data,
-    **AppProp_SaleData_FinancialCashflow_CashInflow_data,
-    **AppProp_SaleData_FinancialRecon_Recon_data,
-    **AppProp_SaleData_AccountingJE_Recon_data,
-    **AppProp_SaleData_Product_Modification_data,
-    **AppProp_SaleData_Equipment_Loan_data,
-    **AppProp_SaleData_Equipment_Return_data,
-
-    **AppProp_SaleData_Bidding_data,
-    **AppProp_SaleData_IA_data,
-    **AppProp_SaleData_Consulting_data,
-    **AppProp_SaleData_ReportRevenue_data,
-    **AppProp_SaleData_FixedAsset_data,
-    **AppProp_SaleData_InstrumentTool_data,
-    **AppProp_SaleData_FixedAssetWriteOff_data,
-    **AppProp_SaleData_InstrumentToolWriteOff_data,
-    #  KMS
-    **AppProp_KMS_Document_data,
-    **AppProp_KMS_IncomingDocument_data,
-
-    # HRM
-    **AppProp_HRM_AbsenceExplanation_data,
-    **AppProp_HRM_OvertimeRequest_data,
-
-    # saledata
-    **AppProp_SaleData_ServiceOrder_data
-}
-
 AppProp_HRM_PayrollTemplate_data = {
     '552cc05e-12df-4d63-8fb8-646fae8547ab': {
         'application_id': 'fc16cfb2-da09-4735-aba5-c476489b4d0e',
@@ -3719,4 +3720,64 @@ AppProp_HRM_PayrollTemplate_data = {
         'type': 1,
         'is_print': True,
     },
+}
+
+
+ApplicationProperty_data = {
+    **Bastion_data_params,
+    **AppProp_SaleData_Contact_data,
+    **AppProp_SaleData_Account_data,
+    **AppProp_SaleData_Quotation_data,
+    **AppProp_SaleData_Opportunity_data,
+    **AppProp_SaleData_SaleOrder_data,
+    **AppProp_Eoffice_Leave_data,
+    **AppProp_Eoffice_Business_trip_data,
+    **AppProp_AssetTools_Provide_data,
+    **AppProp_AssetTools_Delivery_data,
+    **AppProp_AssetTools_Return_data,
+    **AppProp_Sales_Project_data,
+    **AppProp_Sales_Project_Baseline_data,
+    **AppProp_SaleData_Delivery_data,
+    **AppProp_SaleData_Contract_Approval_data,
+    **AppProp_SaleData_LeaseOrder_data,
+    **AppProp_SaleData_PurchaseOrder_data,
+    # haind
+    **AppProp_SaleData_Advance_Payment_data,
+    **AppProp_SaleData_AP_Invoice_data,
+    **AppProp_SaleData_AR_Invoice_data,
+    **AppProp_SaleData_Goods_Issue_data,
+    **AppProp_SaleData_Goods_Return_data,
+    **AppProp_SaleData_Goods_Transfer_data,
+    **AppProp_SaleData_Payment_data,
+    **AppProp_SaleData_Purchase_Quotation_data,
+    **AppProp_SaleData_Purchase_Quotation_Request_data,
+    **AppProp_SaleData_Purchase_Request_data,
+    **AppProp_SaleData_Return_Payment_data,
+    **AppProp_SaleData_Distribution_Plan_data,
+    **AppProp_SaleData_BOM_data,
+    **AppProp_SaleData_FinancialCashflow_CashInflow_data,
+    **AppProp_SaleData_FinancialRecon_Recon_data,
+    **AppProp_SaleData_AccountingJE_Recon_data,
+    **AppProp_SaleData_Product_Modification_data,
+    **AppProp_SaleData_Equipment_Loan_data,
+    **AppProp_SaleData_Equipment_Return_data,
+
+    **AppProp_SaleData_Bidding_data,
+    **AppProp_SaleData_IA_data,
+    **AppProp_SaleData_Consulting_data,
+    **AppProp_SaleData_ReportRevenue_data,
+    **AppProp_SaleData_FixedAsset_data,
+    **AppProp_SaleData_InstrumentTool_data,
+    **AppProp_SaleData_FixedAssetWriteOff_data,
+    **AppProp_SaleData_InstrumentToolWriteOff_data,
+    #  KMS
+    **AppProp_KMS_Document_data,
+    **AppProp_KMS_IncomingDocument_data,
+
+    # HRM
+    **AppProp_HRM_AbsenceExplanation_data,
+    **AppProp_HRM_OvertimeRequest_data,
+
+    # saledata
+    **AppProp_SaleData_ServiceOrder_data
 }

@@ -138,14 +138,4 @@ class ChartOfAccountsSummarize(MasterDataAbstractModel):
             chart_of_accounts_summarize_obj.save(
                 update_fields=['total_debit', 'total_credit', 'closing_debit', 'closing_credit']
             )
-            if chart_of_accounts_summarize_obj:
-                chart_of_accounts_summarize_obj.total_debit += line.debit
-                chart_of_accounts_summarize_obj.total_credit += line.credit
-                chart_of_accounts_summarize_obj.closing_debit = (
-                        chart_of_accounts_summarize_obj.opening_debit + chart_of_accounts_summarize_obj.total_debit
-                )
-                chart_of_accounts_summarize_obj.closing_credit = (
-                        chart_of_accounts_summarize_obj.opening_credit + chart_of_accounts_summarize_obj.total_credit
-                )
-                chart_of_accounts_summarize_obj.save(update_fields=['total_debit', 'total_credit', 'closing_debit', 'closing_credit'])
         return True

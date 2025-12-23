@@ -176,7 +176,6 @@ class AssetListNoPerm(BaseListMixin):
     serializer_list = FixedAssetListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
-        'product': ['exact', 'in'],
         'status': ['exact'],
         'manage_department': ['exact', 'in'],
         'source_type': ['exact', 'in'],

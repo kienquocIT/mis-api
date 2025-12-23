@@ -38,6 +38,7 @@ class ARInvoiceListSerializer(AbstractListSerializerModel):
             'customer_mapped_data',
             'buyer_information',
             'sale_order_mapped_data',
+            'lease_order_mapped_data',
             'posting_date',
             'document_date',
             'invoice_date',
@@ -247,6 +248,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
 
             # Lấy giá trị gốc
             product_quantity = delivery_item_obj.picked_quantity
+            product_quantity_time = delivery_item_obj.product_quantity_time
             product_unit_price = delivery_item_obj.product_cost
             product_subtotal = product_quantity * product_unit_price  # Tổng (Net)
 
@@ -298,6 +300,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                     'group_id': str(uom_obj.group_id)
                 } if uom_obj else {},
                 'product_quantity': product_quantity,
+                'product_quantity_time': product_quantity_time,
                 'product_unit_price': product_unit_price,
                 'product_subtotal': product_subtotal,
                 # Các số liệu tính toán cho Hóa đơn này
@@ -463,6 +466,7 @@ class ARInvoiceDetailSerializer(AbstractDetailSerializerModel):
             'product_data': item.product_data,
             'product_uom_data': item.product_uom_data,
             'product_quantity': item.product_quantity,
+            'product_quantity_time': item.product_quantity_time,
             'product_unit_price': item.product_unit_price,
             'product_subtotal': item.product_subtotal,
             'product_payment_percent': item.product_payment_percent,

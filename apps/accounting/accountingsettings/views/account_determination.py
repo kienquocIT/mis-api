@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from apps.accounting.accountingsettings.data_list import DOCUMENT_TYPE_LIST
+from apps.accounting.accountingsettings.data_list import DOCUMENT_TYPE_LIST, ALLOWED_AMOUNT_SOURCES_MAP
 from apps.accounting.accountingsettings.models.account_determination import (
     JEDocumentType, JEPostingRule, JEPostingGroup, JEGroupAssignment, JEGLAccountMapping, AMOUNT_SOURCE_CHOICES,
     GROUP_TYPE_CHOICES, JEPostingGroupRoleKey, JE_DOCUMENT_TYPE_APP
@@ -335,8 +335,19 @@ def get_je_group_type(request, *args, **kwargs):
 )
 @api_view(['GET'])
 def get_je_amount_source(request, *args, **kwargs):
+    document_type_app_code = request.query_params.get('document_type_app_code')
+    je_amount_source = []
+    if document_type_app_code:
+        allowed_keys = ALLOWED_AMOUNT_SOURCES_MAP.get(document_type_app_code)
+        if allowed_keys:
+            je_amount_source = [
+                {
+                    'code': code,
+                    'description': f"{code} - {description}",
+                }
+                for code, description in AMOUNT_SOURCE_CHOICES
+                if code in allowed_keys
+            ]
     return Response({
-        'result': {
-            'je_amount_source': AMOUNT_SOURCE_CHOICES,
-        }
+        'result': je_amount_source
     })

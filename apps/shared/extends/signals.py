@@ -916,17 +916,34 @@ class ConfigDefaultData:
 
     def opportunity_config_stage(self):
         for stage in self.opportunity_config_stage_data:
-            config_stage = OpportunityConfigStage.objects.create(
-                company=self.company_obj,
-                **stage
-            )
-            for condition in stage['condition_datas']:
-                StageCondition.objects.create(
-                    stage=config_stage,
-                    condition_property_id=condition['condition_property']['id'],
-                    comparison_operator=condition['comparison_operator'],
-                    compare_data=condition['compare_data']
+            if 'indicator' in stage and 'condition_datas' in stage:
+                stage_obj, _created = OpportunityConfigStage.objects.get_or_create(
+                    company=self.company_obj,
+                    indicator=stage['indicator'],
+                    defaults={**stage}
                 )
+
+                # Update condition_datas if record already existed
+                if not _created:
+                    stage_obj.condition_datas = stage['condition_datas']
+                    stage_obj.save(update_fields=['condition_datas'])
+
+                # Create/update conditions
+                for condition in stage['condition_datas']:
+                    condition_obj, condition_created = StageCondition.objects.get_or_create(
+                        stage=stage_obj,
+                        condition_property_id=condition['condition_property']['id'],
+                        defaults={
+                            'comparison_operator': condition['comparison_operator'],
+                            'compare_data': condition['compare_data']
+                        }
+                    )
+
+                    # Update existing condition
+                    if not condition_created:
+                        condition_obj.comparison_operator = condition['comparison_operator']
+                        condition_obj.compare_data = condition['compare_data']
+                        condition_obj.save(update_fields=['comparison_operator', 'compare_data'])
 
     def lead_stage(self):
         for stage in self.lead_stage_data:

@@ -8,7 +8,8 @@ MODULE_MAPPING = {
         'module_id': '9ac02039-a9a4-42e9-825e-169f740b5b5b'
     },
     'sale': {  # SAlE
-        'name': 'Sales', 'module_id': '76ab081b-eee4-4923-97b9-1cbb09deef78',
+        'name': 'Sales',
+        'module_id': '76ab081b-eee4-4923-97b9-1cbb09deef78',
         'plan': '4e082324-45e2-4c27-a5aa-e16a758d5627'
     },
     'kms': {  # KMS
@@ -25,8 +26,12 @@ MODULE_MAPPING = {
         'name': 'E-Office',
         'module_id': '57bc22f9-08a8-4a4b-b207-51c0f6428c56',
         'plan': 'a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8'
-    }
-
+    },
+    'financial': {  # SAlE
+        'name': 'Financial',
+        'module_id': 'a88aee83-39b4-468e-960f-b9fd215195bc',
+        'plan': '9518009b-f199-466e-a579-a08710756ff7'
+    },
 }
 
 HIERARCHY_RULES = {

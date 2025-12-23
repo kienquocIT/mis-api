@@ -4,16 +4,32 @@
 # =============================================================================
 DOCUMENT_TYPE_LIST = [
     # --- BÁN HÀNG ---
-    [0, 'DO_SALE', 'delivery.orderdeliverysub', ['COST']],
-    [0, 'SALES_INVOICE', 'arinvoice.arinvoice', ['TOTAL', 'SALES', 'TAX', 'DISCOUNT', 'SURCHARGE', 'ROUNDING']],
+    [0, 'DO_SALE', 'delivery.orderdeliverysub', ['COST', 'SALES']],
+    [
+        0,
+        'SALES_INVOICE',
+        'arinvoice.arinvoice',
+        ['TOTAL', 'SALES', 'TAX', 'DISCOUNT', 'SURCHARGE', 'ROUNDING', 'EXPORT_TAX']
+    ],
     [0, 'CASH_IN', 'financialcashflow.cashinflow', ['TOTAL', 'CASH', 'BANK']],
+    # --- MUA HÀNG ---
     [1, 'GRN_PURCHASE', 'inventory.goodsreceipt', ['COST']],
-    [1, 'PURCHASE_INVOICE', 'apinvoice.apinvoice', ['TOTAL', 'COST', 'TAX', 'DISCOUNT', 'IMPORT_TAX']],
+    [
+        1,
+        'PURCHASE_INVOICE',
+        'apinvoice.apinvoice',
+        ['TOTAL', 'COST', 'TAX', 'DISCOUNT', 'SURCHARGE', 'ROUNDING', 'IMPORT_TAX']
+    ],
     [1, 'CASH_OUT', 'financialcashflow.cashoutflow', ['TOTAL', 'CASH', 'BANK']],
 ]
 
 ALLOWED_AMOUNT_SOURCES_MAP = {
     row[2]: row[3] for row in DOCUMENT_TYPE_LIST
+}
+
+POSTING_GROUP_TYPE_MAP = {
+    'ITEM_GROUP': 'saledata.producttype',
+    'PARTNER_GROUP': 'saledata.accounttype',
 }
 
 # =============================================================================
@@ -151,7 +167,14 @@ POSTING_RULE_LIST = [
                 'side': 'DEBIT', 'amount_source': 'DISCOUNT',
                 'account_source_type': 'FIXED', 'fixed_account_code': '5211',
                 'description': 'Chiết khấu thương mại theo dòng',
-            }
+            },
+            # Thuế Xuất khẩu (Có) -> FIXED (3333)
+            # {
+            #     'rule_level': 'HEADER', 'priority': 50, 'role_key': 'TAX_EXPORT',
+            #     'side': 'CREDIT', 'amount_source': 'EXPORT_TAX',
+            #     'account_source_type': 'FIXED', 'fixed_account_code': '3333',
+            #     'description': 'Thuế Xuất khẩu (3333)',
+            # },
         ]
     },
 
@@ -205,6 +228,34 @@ POSTING_RULE_LIST = [
                 'account_source_type': 'FIXED', 'fixed_account_code': '33881',
                 'description': 'Đối trừ hàng về chưa hóa đơn',
             },
+            # Thuế Nhập khẩu (Có) -> FIXED (3333 - Phải nộp NN)
+            # {
+            #     'rule_level': 'HEADER', 'priority': 40, 'role_key': 'TAX_IMPORT',
+            #     'side': 'CREDIT', 'amount_source': 'IMPORT_TAX',
+            #     'account_source_type': 'FIXED', 'fixed_account_code': '3333',
+            #     'description': 'Thuế Nhập khẩu phải nộp (3333)',
+            # },
+            # Thuế Nhập khẩu (Nợ) -> LOOKUP (ASSET - Cộng vào giá trị Kho)
+            # {
+            #     'rule_level': 'HEADER', 'priority': 41, 'role_key': 'ASSET',
+            #     'side': 'DEBIT', 'amount_source': 'IMPORT_TAX',
+            #     'account_source_type': 'LOOKUP', # Tự tìm theo nhóm SP để nợ 156/152/211
+            #     'description': 'Thuế Nhập khẩu (Cộng vào kho)',
+            # },
+            # Phụ phí mua hàng (Nợ) -> LOOKUP (ASSET - Cộng vào kho) hoặc FIXED 1562
+            # {
+            #     'rule_level': 'HEADER', 'priority': 50, 'role_key': 'ASSET',
+            #     'side': 'DEBIT', 'amount_source': 'SURCHARGE',
+            #     'account_source_type': 'LOOKUP', # Hoặc chọn FIXED 1562 nếu muốn
+            #     'description': 'Phụ phí mua hàng',
+            # },
+            # Làm tròn (Nợ) -> FIXED (811 - Chi phí khác)
+            # {
+            #     'rule_level': 'HEADER', 'priority': 60, 'role_key': 'OTHER_EXPENSE',
+            #     'side': 'DEBIT', 'amount_source': 'ROUNDING',
+            #     'account_source_type': 'FIXED', 'fixed_account_code': '811',
+            #     'description': 'Chênh lệch làm tròn',
+            # },
         ]
     },
 

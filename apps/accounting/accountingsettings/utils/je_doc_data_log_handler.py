@@ -1,6 +1,8 @@
 import logging
 from django.db import transaction
 from django.db.models import Sum
+
+from apps.accounting.accountingsettings.data_list import ALLOWED_AMOUNT_SOURCES_MAP
 from apps.accounting.accountingsettings.models.account_determination import JEDocData, JEDocumentType
 from apps.accounting.journalentry.utils import JELogHandler
 from apps.masterdata.saledata.models import Currency
@@ -11,6 +13,38 @@ logger = logging.getLogger(__name__)
 
 
 class JEDocDataLogHandler:
+    @classmethod
+    def enrich_bulk_info_with_missing_sources(cls, bulk_info, app_code, doc_obj, currency_mapped):
+        """
+        Nhận vào danh sách bulk_info hiện có.
+        Tự động kiểm tra data_list xem thiếu amount_source nào thì bổ sung dòng đó với value=0, rule_level='HEADER'.
+        Trả về danh sách bulk_info đã đầy đủ.
+        """
+        company_id = doc_obj.company_id
+        doc_id = doc_obj.id
+        # 1. Lấy danh sách các source đã có trong bulk_info
+        existing_sources = {item.amount_source for item in bulk_info}
+        # 2. Lấy danh sách các source BẮT BUỘC phải có theo cấu hình
+        required_sources = ALLOWED_AMOUNT_SOURCES_MAP.get(app_code, [])
+        # 3. Tìm các source còn thiếu
+        missing_sources = set(required_sources) - existing_sources
+        # 4. Tạo các dòng còn thiếu
+        for source in missing_sources:
+            logger.error(msg=f'[JE] Can not found any config for Amount Source {source} in app {app_code}')
+            filler_row = JEDocData.make_doc_data_obj(
+                company_id=company_id,
+                app_code=app_code,
+                doc_id=doc_id,
+                rule_level='HEADER',
+                amount_source=source,
+                value=0,
+                taxable_value=0,
+                currency_mapped=currency_mapped,
+                context_data={}
+            )
+            bulk_info.append(filler_row)
+        return bulk_info
+
     @classmethod
     def get_cost_from_stock_for_each_product(cls, transaction_obj):
         logs = ReportStockLog.objects.filter(
@@ -55,6 +89,9 @@ class JEDocDataLogHandler:
                         }
                     )
                     bulk_info.append(data_row)
+                bulk_info = cls.enrich_bulk_info_with_missing_sources(
+                    bulk_info, app_code, gr_obj, currency_mapped
+                )
                 JEDocData.objects.bulk_create(bulk_info)
                 return True
         except Exception as err:
@@ -106,7 +143,7 @@ class JEDocDataLogHandler:
                 bulk_info = [data_1, data_2]
                 for item in ap_invoice_obj.ap_invoice_items.all():
                     line_value = cost_map.get(str(item.product_id), 0)
-                    data_row = JEDocData.make_doc_data_obj(
+                    data_row_cost = JEDocData.make_doc_data_obj(
                         company_id=ap_invoice_obj.company_id,
                         app_code=app_code,
                         doc_id=ap_invoice_obj.id,
@@ -120,7 +157,10 @@ class JEDocDataLogHandler:
                             'tracking_id': str(item.product_id)
                         }
                     )
-                    bulk_info.append(data_row)
+                    bulk_info.append(data_row_cost)
+                bulk_info = cls.enrich_bulk_info_with_missing_sources(
+                    bulk_info, app_code, ap_invoice_obj, currency_mapped
+                )
                 JEDocData.objects.bulk_create(bulk_info)
                 return True
         except Exception as err:
@@ -179,6 +219,9 @@ class JEDocDataLogHandler:
                     context_data=None
                 )
                 bulk_info = [data_1, data_2, data_3]
+                bulk_info = cls.enrich_bulk_info_with_missing_sources(
+                    bulk_info, app_code, cof_obj, currency_mapped
+                )
                 JEDocData.objects.bulk_create(bulk_info)
                 return True
         except Exception as err:
@@ -235,6 +278,9 @@ class JEDocDataLogHandler:
                     )
                     bulk_info.append(data_row_cost)
                     bulk_info.append(data_row_sales)
+                bulk_info = cls.enrich_bulk_info_with_missing_sources(
+                    bulk_info, app_code, delivery_sub_obj, currency_mapped
+                )
                 JEDocData.objects.bulk_create(bulk_info)
                 return True
         except Exception as err:
@@ -299,7 +345,7 @@ class JEDocDataLogHandler:
                             'tracking_id': str(item.product_id)
                         }
                     )
-                    data_row_sales_deduction = JEDocData.make_doc_data_obj(
+                    data_row_discount = JEDocData.make_doc_data_obj(
                         company_id=ar_invoice_obj.company_id,
                         app_code=app_code,
                         doc_id=ar_invoice_obj.id,
@@ -314,7 +360,10 @@ class JEDocDataLogHandler:
                         }
                     )
                     bulk_info.append(data_row_sales)
-                    bulk_info.append(data_row_sales_deduction)
+                    bulk_info.append(data_row_discount)
+                bulk_info = cls.enrich_bulk_info_with_missing_sources(
+                    bulk_info, app_code, ar_invoice_obj, currency_mapped
+                )
                 JEDocData.objects.bulk_create(bulk_info)
                 return True
         except Exception as err:
@@ -369,6 +418,9 @@ class JEDocDataLogHandler:
                     context_data=None
                 )
                 bulk_info = [data_1, data_2, data_3]
+                bulk_info = cls.enrich_bulk_info_with_missing_sources(
+                    bulk_info, app_code, cif_obj, currency_mapped
+                )
                 JEDocData.objects.bulk_create(bulk_info)
                 return True
         except Exception as err:

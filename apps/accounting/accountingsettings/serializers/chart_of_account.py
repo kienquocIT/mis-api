@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.accounting.accountingsettings.models.chart_of_account import (
-    ChartOfAccounts, ChartOfAccountsSummarize
+    ChartOfAccounts
 )
 
 

@@ -1,12 +1,13 @@
 from django.core.exceptions import ValidationError
-from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
 from apps.accounting.accountingsettings.models import ChartOfAccounts
 from apps.accounting.accountingsettings.models.account_determination import (
     JEDocumentType, JEPostingRule, JEPostingGroup, JEGroupAssignment, JEGLAccountMapping,
     JE_DOCUMENT_TYPE_APP, DOCUMENT_TYPE_CHOICES, ASSIGNMENT_APP_CHOICES, GROUP_TYPE_CHOICES, ROLE_KEY_CHOICES,
     AMOUNT_SOURCE_CHOICES, RULE_LEVEL_CHOICES, SIDE_CHOICES, JEPostingGroupRoleKey,
 )
+from apps.masterdata.saledata.models import ProductType, AccountType
 from apps.shared import BaseMsg
 
 # =============================================================================
@@ -48,6 +49,7 @@ class JEDocumentTypeUpdateSerializer(serializers.ModelSerializer):
 # =============================================================================
 class JEPostingGroupListSerializer(serializers.ModelSerializer):
     posting_group_type_parsed = serializers.SerializerMethodField()
+    assignment_data_list = serializers.SerializerMethodField()
 
     class Meta:
         model = JEPostingGroup
@@ -57,6 +59,7 @@ class JEPostingGroupListSerializer(serializers.ModelSerializer):
             'title',
             'posting_group_type',
             'posting_group_type_parsed',
+            'assignment_data_list',
             'is_active'
         )
 
@@ -64,8 +67,13 @@ class JEPostingGroupListSerializer(serializers.ModelSerializer):
     def get_posting_group_type_parsed(cls, obj):
         return dict(GROUP_TYPE_CHOICES).get(obj.posting_group_type, obj.posting_group_type)
 
+    @classmethod
+    def get_assignment_data_list(cls, obj):
+        return [item.item_app_data for item in obj.assignment_posting_group.all()]
+
 
 class JEPostingGroupCreateSerializer(serializers.ModelSerializer):
+    assignment_data_list = serializers.JSONField(default=list, required=False)
 
     class Meta:
         model = JEPostingGroup
@@ -73,6 +81,7 @@ class JEPostingGroupCreateSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'posting_group_type',
+            'assignment_data_list',
             'is_active'
         )
 
@@ -81,6 +90,57 @@ class JEPostingGroupCreateSerializer(serializers.ModelSerializer):
         if JEPostingGroup.objects.filter_on_company(code=value).exists():
             raise serializers.ValidationError({"code": BaseMsg.CODE_IS_EXISTS})
         return value
+
+    def validate(self, validate_data):
+        posting_group_type = validate_data.get('posting_group_type')
+        assignment_data_list = validate_data.pop('assignment_data_list', [])
+
+        if posting_group_type == 'ITEM_GROUP':
+            validated_assignment_data_list = []
+            existing_objs = ProductType.objects.filter(id__in=assignment_data_list)
+            existing_map = {str(obj.id): obj for obj in existing_objs}
+            assigned_qs = JEGroupAssignment.objects.filter_on_company(item_id__in=assignment_data_list)
+            assigned_map = {str(x.item_id): x for x in assigned_qs}
+            for item_id in assignment_data_list:
+                item_str = str(item_id)
+                if item_str not in existing_map:
+                    raise serializers.ValidationError({"prd_type_obj": _('Product type does not exist')})
+                if item_str in assigned_map:
+                    obj = existing_map[item_str]
+                    raise serializers.ValidationError(
+                        {"prd_type_obj": _(f'{obj.code} - {obj.title} is belong to other group')}
+                    )
+                validated_assignment_data_list.append(existing_map[item_str])
+            validate_data['assignment_data_list'] = validated_assignment_data_list
+
+        elif posting_group_type == 'PARTNER_GROUP':
+            validated_assignment_data_list = []
+            existing_objs = AccountType.objects.filter(id__in=assignment_data_list)
+            existing_map = {str(obj.id): obj for obj in existing_objs}
+            assigned_qs = JEGroupAssignment.objects.filter_on_company(item_id__in=assignment_data_list)
+            assigned_map = {str(x.item_id): x for x in assigned_qs}
+            for item_id in assignment_data_list:
+                item_str = str(item_id)
+                if item_str not in existing_map:
+                    raise serializers.ValidationError({"acc_type_obj": _('Account type does not exist')})
+                if item_str in assigned_map:
+                    obj = existing_map[item_str]
+                    raise serializers.ValidationError(
+                        {"acc_type_obj": _(f'{obj.code} - {obj.title} is belong to other group')}
+                    )
+                validated_assignment_data_list.append(existing_map[item_str])
+            validate_data['assignment_data_list'] = validated_assignment_data_list
+
+        return validate_data
+
+    def create(self, validated_data):
+        assignment_data_list = validated_data.pop('assignment_data_list', [])
+
+        pg_obj = JEPostingGroup.objects.create(**validated_data)
+
+        JEGroupAssignment.create_assignment_data(pg_obj, assignment_data_list)
+
+        return pg_obj
 
 
 class JEPostingGroupDetailSerializer(serializers.ModelSerializer):
@@ -97,13 +157,72 @@ class JEPostingGroupDetailSerializer(serializers.ModelSerializer):
 
 
 class JEPostingGroupUpdateSerializer(serializers.ModelSerializer):
+    assignment_data_list = serializers.JSONField(default=list, required=False)
 
     class Meta:
         model = JEPostingGroup
         fields = (
             'title',
             'is_active',
+            'assignment_data_list'
         )
+
+    def validate(self, validate_data):
+        posting_group_type = validate_data.get('posting_group_type')
+        assignment_data_list = validate_data.pop('assignment_data_list', [])
+
+        if posting_group_type == 'ITEM_GROUP':
+            validated_assignment_data_list = []
+            existing_objs = ProductType.objects.filter(id__in=assignment_data_list)
+            existing_map = {str(obj.id): obj for obj in existing_objs}
+            assigned_qs = JEGroupAssignment.objects.filter_on_company(item_id__in=assignment_data_list)
+            if self.instance:
+                assigned_qs = assigned_qs.exclude(posting_group_id=self.instance.id)
+            assigned_map = {str(x.item_id): x for x in assigned_qs}
+            for item_id in assignment_data_list:
+                item_str = str(item_id)
+                if item_str not in existing_map:
+                    raise serializers.ValidationError({"prd_type_obj": _('Product type does not exist')})
+                if item_str in assigned_map:
+                    obj = existing_map[item_str]
+                    raise serializers.ValidationError(
+                        {"prd_type_obj": _(f'{obj.code} - {obj.title} is belong to other group')}
+                    )
+                validated_assignment_data_list.append(existing_map[item_str])
+            validate_data['assignment_data_list'] = validated_assignment_data_list
+
+        elif posting_group_type == 'PARTNER_GROUP':
+            validated_assignment_data_list = []
+            existing_objs = AccountType.objects.filter(id__in=assignment_data_list)
+            existing_map = {str(obj.id): obj for obj in existing_objs}
+            assigned_qs = JEGroupAssignment.objects.filter_on_company(item_id__in=assignment_data_list)
+            if self.instance:
+                assigned_qs = assigned_qs.exclude(posting_group_id=self.instance.id)
+            assigned_map = {str(x.item_id): x for x in assigned_qs}
+            for item_id in assignment_data_list:
+                item_str = str(item_id)
+                if item_str not in existing_map:
+                    raise serializers.ValidationError({"acc_type_obj": _('Account type does not exist')})
+                if item_str in assigned_map:
+                    obj = existing_map[item_str]
+                    raise serializers.ValidationError(
+                        {"acc_type_obj": _(f'{obj.code} - {obj.title} is belong to other group')}
+                    )
+                validated_assignment_data_list.append(existing_map[item_str])
+            validate_data['assignment_data_list'] = validated_assignment_data_list
+
+        return validate_data
+
+    def update(self, instance, validated_data):
+        assignment_data_list = validated_data.pop('assignment_data_list', [])
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        JEGroupAssignment.create_assignment_data(instance, assignment_data_list)
+
+        return instance
 
 # =============================================================================
 # POSTING GROUP - ROLE KEY
@@ -376,7 +495,7 @@ class JEPostingRuleCreateSerializer(serializers.ModelSerializer):
         try:
             return JEDocumentType.objects.get_on_company(app_code=value)
         except JEDocumentType.DoesNotExist:
-            raise serializers.ValidationError({'je_document_type': _('Document type is not exist')})
+            raise serializers.ValidationError({'je_document_type': _('Document type does not exist')})
 
     def validate(self, validate_data):
         account_source_type = validate_data.get('account_source_type')
@@ -423,10 +542,10 @@ class JEPostingRuleCreateSerializer(serializers.ModelSerializer):
             # Init Model ảo
             temp_rule = JEPostingRule(**validate_data_clone)
             JEPostingRule.check_posting_rule(temp_rule)
-        except ValidationError as e:
-            raise serializers.ValidationError(e.message_dict)
-        except TypeError as e:
-            raise serializers.ValidationError({'error': str(e)})
+        except ValidationError as error:
+            raise serializers.ValidationError(error.message_dict)
+        except TypeError as error:
+            raise serializers.ValidationError({'error': str(error)})
 
         return validate_data
 

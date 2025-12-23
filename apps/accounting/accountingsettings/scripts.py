@@ -156,7 +156,7 @@ class JournalEntryInitData:
 
         # PARTNER_GROUP
         partner_posting_group = JEPostingGroup.objects.filter(company_id=company_id, posting_group_type='PARTNER_GROUP')
-        item_group_map = {item.code: item for item in partner_posting_group}
+        partner_group_map = {item.code: item for item in partner_posting_group}
         if partner_posting_group:
             partner_code_map = {
                 'AT001': 'CUSTOMER',
@@ -166,7 +166,7 @@ class JournalEntryInitData:
             }
             default_account_type = AccountType.objects.filter(company_id=company_id, is_default=True)
             for item in default_account_type:
-                posting_group_obj = item_group_map.get(partner_code_map.get(item.code))
+                posting_group_obj = partner_group_map.get(partner_code_map.get(item.code))
                 if posting_group_obj:
                     bulk_info.append(JEGroupAssignment(
                         tenant_id=company_obj.tenant_id,
