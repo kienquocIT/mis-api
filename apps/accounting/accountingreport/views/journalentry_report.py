@@ -12,7 +12,7 @@ class JournalEntryLineFilter(rest_framework.FilterSet):
 
     class Meta:
         model = JournalEntryLine
-        fields = ['account_id']
+        fields = []
 
 
 class JournalEntryLineList(BaseListMixin):
@@ -24,14 +24,12 @@ class JournalEntryLineList(BaseListMixin):
     def get_queryset(self):
         if 'is_general_ledger' in self.request.query_params and self.request.query_params.get('account_id') is None:
             return super().get_queryset().none()
-        return super().get_queryset().filter(journal_entry__system_status=3).select_related(
+        return super().get_queryset().filter(
+            journal_entry__system_status=3,
+            account_id__in=self.request.query_params.get('account_id', '').split(',')
+        ).select_related(
             'journal_entry',
             'journal_entry__employee_created',
-            'account',
-            'product_mapped',
-            'business_partner',
-            'business_employee',
-            'currency_mapped'
         ).order_by(
             '-journal_entry__date_created'
         )
