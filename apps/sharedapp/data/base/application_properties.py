@@ -1179,6 +1179,50 @@ AppProp_SaleData_Opportunity_data = {
             ]
         }
     },
+    'f1ee73b4-0306-46a6-8a07-c2f58d3047bb': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Bidding',
+        'code': 'bidding',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    '88d6afb4-ba9b-4948-b3fe-a7130e8cf9d6': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Consulting',
+        'code': 'consulting',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
 }
 
 AppProp_SaleData_SaleOrder_data = {
