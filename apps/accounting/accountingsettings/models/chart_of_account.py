@@ -119,6 +119,9 @@ class ChartOfAccountsSummarize(MasterDataAbstractModel):
     @classmethod
     def initial_summarize(cls, je_obj):
         je_line_list = je_obj.je_lines.all()
+        cls.objects.filter_on_company(account_id__in=je_line_list.values_list('account_id', flat=True)).update(
+            opening_debit=0, opening_credit=0
+        )
         for line in je_line_list:
             chart_of_accounts_summarize_obj = cls.objects.filter_on_company(account_id=line.account_id).first()
             if not chart_of_accounts_summarize_obj:
