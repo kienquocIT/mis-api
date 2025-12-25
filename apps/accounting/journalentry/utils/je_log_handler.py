@@ -1,7 +1,7 @@
 import logging
 from django.db import transaction
 from apps.accounting.accountingsettings.models import (
-    JEPostingRule, JEDocData, JEDocumentType, JEGroupAssignment, JEGLAccountMapping
+    JEPostingRule, JEDocData, JEDocumentType, JEGroupAssignment, JEGLAccountMapping, InitialBalance
 )
 from apps.accounting.journalentry.models import JournalEntry
 from apps.shared import DisperseModel
@@ -137,6 +137,7 @@ class JELogHandler:
             'description': rule.description or ''
         }
 
+    # cho chức năng thông thường
     @classmethod
     def parse_je_line_data(cls, transaction_obj, je_document_type):
         """ Hàm parse dữ liệu từ JEDocData """
@@ -199,8 +200,6 @@ class JELogHandler:
                     company_id=transaction_obj.company_id, app_code=app_code, is_auto_je=True, is_delete=False
                 ).first()
                 debit_rows_data, credit_rows_data = cls.parse_je_line_data(transaction_obj, je_document_type)
-                if len(debit_rows_data) == 0 and len(credit_rows_data) == 0:
-                    return False
                 kwargs = {
                     'je_transaction_app_code': app_code,
                     'je_transaction_id': str(transaction_obj.id),
@@ -218,6 +217,58 @@ class JELogHandler:
                 }
                 JournalEntry.auto_create_journal_entry(transaction_obj, **kwargs)
                 return True
+        except Exception as err:
+            logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')
+            return False
+
+    # cho khởi tạo số dư đầu kì
+    @classmethod
+    def parse_je_line_data_for_ib(cls, ib_obj):
+        """ Hàm parse dữ liệu từ JEDocData """
+        debit_rows_data = []
+        credit_rows_data = []
+
+        for item in ib_obj.ib_line_initial_balance.all():
+            debit_rows_data.append({
+                'account': item.account,
+                # 'product_mapped_id': get_tracking_id('saledata.Product'),
+                # 'business_partner_id': get_tracking_id('saledata.Account'),
+                # 'business_employee_id': get_tracking_id('hr.Employee'),
+                'debit': item.debit_value,
+                'credit': item.credit_value,
+                'is_fc': False,
+                'taxable_value': 0,
+            })
+
+        return debit_rows_data, credit_rows_data
+
+    @classmethod
+    def push_ib_to_journal_entry_for_ib(cls, ib_id):
+        """ Chuẩn bị data để tự động tạo Bút Toán """
+        try:
+            with transaction.atomic():
+                ib_obj = InitialBalance.objects.filter(id=ib_id).first()
+                if ib_obj:
+                    debit_rows_data, credit_rows_data = cls.parse_je_line_data_for_ib(ib_obj)
+                    kwargs = {
+                        'je_transaction_app_code': None,
+                        'je_transaction_id': str(ib_obj.id),
+                        'je_transaction_data': {
+                            'id': str(ib_obj.id),
+                            'code': ib_obj.code,
+                            'title': ib_obj.title,
+                            'date_created': str(ib_obj.date_created),
+                            'date_approved': str(ib_obj.date_approved),
+                        },
+                        'je_line_data': {
+                            'debit_rows': debit_rows_data,
+                            'credit_rows': credit_rows_data
+                        }
+                    }
+                    JournalEntry.create_or_update_je_initial_balance(ib_obj, **kwargs)
+                    return True
+                logger.error(msg=f'[JE] Can not found Initial balance obj')
+                return False
         except Exception as err:
             logger.error(msg=f'[JE] Error while creating Journal Entry: {err}')
             return False

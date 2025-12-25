@@ -141,6 +141,7 @@ class CommonHandler:
             ))
         FixedAssetCashOutPurchaseItem.objects.bulk_create(bulk_data)
 
+
     @classmethod
     def create_depreciation_data(cls, instance, depreciation_data):
         if not depreciation_data:

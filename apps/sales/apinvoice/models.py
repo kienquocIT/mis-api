@@ -88,10 +88,9 @@ class APInvoiceItems(SimpleAbstractModel):
     product_tax_value = models.FloatField(default=0)
     product_subtotal_final = models.FloatField(default=0)
     note = models.TextField(blank=True)
-    increased_FA_value = models.FloatField(
-        default=0, help_text='increased fixed asset value for this item (product_subtotal)'
+    increased_asset_quantity = models.IntegerField(
+        default=0, help_text='increased fixed asset quantity for this item'
     )
-    # increased_FA_quantity = models.BooleanField(default=0)
 
     class Meta:
         verbose_name = 'AP Invoice Item'

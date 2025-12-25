@@ -59,7 +59,7 @@ class APInvoiceListSerializer(AbstractListSerializerModel):
             'product_tax_value': item.product_tax_value,
             'product_subtotal_final': item.product_subtotal_final,
             'note': item.note,
-            'increased_FA_value': item.increased_FA_value,
+            'increased_asset_quantity': item.increased_asset_quantity,
         } for item in obj.ap_invoice_items.all()]
 
 class APInvoiceCreateSerializer(AbstractCreateSerializerModel):

@@ -3,6 +3,7 @@ from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.accounting.accountingsettings.models import ChartOfAccounts
+from apps.accounting.journalentry.utils import JELogHandler
 from apps.masterdata.saledata.models import (
     Periods, Currency, Product, WareHouse, Account,
 )
@@ -72,6 +73,8 @@ class InitialBalanceCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         ib_obj = InitialBalance.objects.create(**validated_data)
+        ib_obj.date_approved = ib_obj.date_created
+        ib_obj.save(update_fields=['date_approved'])
         return ib_obj
 
 
@@ -364,6 +367,8 @@ class InitialBalanceUpdateSerializer(serializers.ModelSerializer):
         for tab_type, (tab_name, tab_data) in enumerate(tabs_data.items()):
             if len(tab_data) > 0:  # Chỉ update nếu có data
                 InitialBalanceCommonFunction.common_update_tab(instance, tab_type, tab_name, tab_data)
+
+        JELogHandler.push_ib_to_journal_entry_for_ib(instance.id)
 
         return instance
 

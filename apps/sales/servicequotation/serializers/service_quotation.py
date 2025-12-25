@@ -1,6 +1,5 @@
 from django.db import transaction
 from rest_framework import serializers
-from apps.core.attachments.models import update_files_is_approved
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
@@ -107,7 +106,7 @@ class ServiceQuotationCreateSerializer(AbstractCreateSerializerModel):
             if value is None:
                 return value
             return Employee.objects.get_on_company(id=value).id
-        except Opportunity.DoesNotExist:
+        except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee_inherit_id': OpportunityOnlyMsg.EMP_NOT_EXIST})
 
     def validate(self, validate_data):
@@ -158,13 +157,6 @@ class ServiceQuotationCreateSerializer(AbstractCreateSerializerModel):
             )
             ServiceQuotationCommonFunc.create_payment(service_quotation_obj, payment_data, service_detail_id_map)
 
-            # adhoc case after create SQ
-            update_files_is_approved(
-                ServiceQuotationAttachMapAttachFile.objects.filter(
-                    service_quotation=service_quotation_obj, attachment__is_approved=False
-                ), service_quotation_obj,
-            )
-
             return service_quotation_obj
 
     class Meta:
@@ -182,7 +174,11 @@ class ServiceQuotationCreateSerializer(AbstractCreateSerializerModel):
             'service_detail_data',
             'work_order_data',
             'payment_data',
-            'exchange_rate_data'
+            'exchange_rate_data',
+
+            'total_expense_pretax_amount',
+            'total_expense_tax',
+            'total_expense',
         )
 
 
@@ -417,15 +413,16 @@ class ServiceQuotationDetailSerializer(AbstractDetailSerializerModel):
             'start_date',
             'end_date',
             'shipment',
-            'expense_pretax_value',
-            'expense_tax_value',
-            'expense_total_value',
             'attachment',
             'service_detail_data',
             'work_order_data',
             'payment_data',
             'expenses_data',
-            'exchange_rate_data'
+            'exchange_rate_data',
+
+            'total_expense_pretax_amount',
+            'total_expense_tax',
+            'total_expense',
         )
 
 
@@ -436,9 +433,6 @@ class ServiceQuotationUpdateSerializer(AbstractCreateSerializerModel):
     end_date = serializers.DateField()
     shipment = ServiceQuotationShipmentSerializer(many=True)
     expenses_data = ServiceQuotationExpenseSerializer(many=True)
-    expense_pretax_value = serializers.FloatField(required=False, allow_null=True)
-    expense_tax_value = serializers.FloatField(required=False, allow_null=True)
-    expense_total_value = serializers.FloatField(required=False, allow_null=True)
     service_detail_data = ServiceQuotationServiceDetailSerializer(many=True)
     work_order_data = ServiceQuotationWorkOrderSerializer(many=True)
     payment_data = ServiceQuotationPaymentSerializer(many=True)
@@ -506,13 +500,6 @@ class ServiceQuotationUpdateSerializer(AbstractCreateSerializerModel):
                                                          shipment_map_id)
             ServiceQuotationCommonFunc.create_payment(instance, payment_data, service_detail_id_map)
 
-            # adhoc case update file to KMS
-            update_files_is_approved(
-                ServiceQuotationAttachMapAttachFile.objects.filter(
-                    service_quotation=instance, attachment__is_approved=False
-                ), instance,
-            )
-
             return instance
 
     class Meta:
@@ -524,14 +511,15 @@ class ServiceQuotationUpdateSerializer(AbstractCreateSerializerModel):
             'end_date',
             'shipment',
             'expenses_data',
-            'expense_pretax_value',
-            'expense_tax_value',
-            'expense_total_value',
             'attachment',
             'service_detail_data',
             'work_order_data',
             'payment_data',
             'exchange_rate_data',
+
+            'total_expense_pretax_amount',
+            'total_expense_tax',
+            'total_expense',
         )
 
 
@@ -663,7 +651,7 @@ class ServiceQuotationCommonFunc:
                     "title": tax_obj.title,
                     "rate": tax_obj.rate,
                 } if tax_obj else {},
-                subtotal_price=expense_data_item.get("quantity", 0) * expense_data_item.get("expense_price", 0),
+                expense_subtotal_price=expense_data_item.get("quantity", 0) * expense_data_item.get("expense_price", 0),
                 company=service_quotation_obj.company,
                 tenant=service_quotation_obj.tenant,
             )
@@ -943,22 +931,18 @@ class ServiceQuotationCommonFunc:
         ServiceQuotationPaymentReconcile.objects.bulk_create(bulk_data)
 
     @staticmethod
-    def calculate_total_expense(service_quotation_obj, expense_data: []):
-        service_quotation_obj['expense_pretax_value'] = 0
-        service_quotation_obj['expense_tax_value'] = 0
-        service_quotation_obj['expense_total_value'] = 0
-
+    def calculate_total_expense(service_order_obj, expense_data: []):
+        service_order_obj['total_expense_pretax_amount'] = 0
+        service_order_obj['total_expense_tax'] = 0
+        service_order_obj['total_expense'] = 0
         if len(expense_data) > 0:
             for expense_item in expense_data:
                 pretax_value = expense_item.get('quantity', 0) * expense_item.get('expense_price', 0)
-                service_quotation_obj['expense_pretax_value'] += pretax_value
-
+                service_order_obj['total_expense_pretax_amount'] += pretax_value
                 tax_id = expense_item.get("tax")
                 tax_obj = Tax.objects.filter(id=tax_id).first() if tax_id else None
                 tax_rate = tax_obj.rate if tax_obj else 0
-                service_quotation_obj['expense_tax_value'] += pretax_value * tax_rate / 100
-
-            service_quotation_obj['expense_total_value'] = service_quotation_obj['expense_pretax_value'] + \
-                                                           service_quotation_obj['expense_tax_value']
-
-        return service_quotation_obj
+                service_order_obj['total_expense_tax'] += pretax_value * tax_rate / 100
+            service_order_obj['total_expense'] = \
+                service_order_obj['total_expense_pretax_amount'] + service_order_obj['total_expense_tax']
+        return service_order_obj

@@ -117,11 +117,6 @@ class AssetForLeaseList(BaseListMixin, BaseCreateMixin):
     serializer_list = AssetForLeaseListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
-    def get_queryset(self):
-        return super().get_queryset().select_related(
-            "product",
-            "product__sale_default_uom",
-        )
 
     @swagger_auto_schema(
         operation_summary="Fixed Asset For Lease List",
@@ -229,10 +224,8 @@ class FixedAssetListWithDepreciationList(BaseListMixin):
     def get_queryset(self):
         query_set = (super().get_queryset().select_related('manage_department', 'use_customer')
                      .prefetch_related('use_departments'))
-        # get fixed assets that haven't been written off
-        return query_set.filter(
-            Q(fixed_asset_write_off__isnull=True) |
-            Q(fixed_asset_write_off__isnull=False, fixed_asset_write_off__system_status=0))
+        # get only workflow finished
+        return query_set.filter(system_status=3)
 
     @swagger_auto_schema(
         operation_summary="Fixed Asset List With Depreciation",

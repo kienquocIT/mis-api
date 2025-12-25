@@ -113,7 +113,7 @@ class InitialBalanceLine(DataAbstractModel):
     employee_payable_employee_data = models.JSONField(default=dict)
     employee_payable_detail_data = models.JSONField(default=dict)
 
-    # for tab tools
+    # for tab toolsjournal-entry/api
     tools_value = models.FloatField(default=0)
     tools_detail_data = models.JSONField(default=dict)
 

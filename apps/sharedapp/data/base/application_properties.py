@@ -1223,6 +1223,28 @@ AppProp_SaleData_Opportunity_data = {
             ]
         }
     },
+    '5ae09a93-67e9-438d-9928-decacee3fac2': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Service Quotation',
+        'code': 'servicequotation',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
 }
 
 AppProp_SaleData_SaleOrder_data = {
@@ -3698,13 +3720,244 @@ AppProp_SaleData_ServiceOrder_data = {
 }
 
 AppProp_SaleData_ServiceQuotation_data = {
+    # General fields
+    "aedca149-d3f9-4e08-9a49-4e742a4dfe3d": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Opportunity",
+        "code": "opportunity",
+        "type": 5,
+        "content_type": "opportunity.opportunity",
+        'is_wf_zone': True,
+    },
+    "f02ad2bb-3e05-4ae4-b639-d26e58d656ea": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Employee Inherit",
+        "code": "employee_inherit_id",
+        "type": 5,
+        'content_type': 'hr.employee',
+        'is_wf_zone': True,
+    },
     "fd0e714b-5a1e-4630-ac49-383b454410fa": {
         "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
         "title": "Title",
         "code": "title",
         "type": 1,
         'is_wf_zone': True,
-    }
+    },
+    "8a1b2c3d-4e5f-6789-abcd-ef0123456789": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Customer",
+        "code": "customer",
+        "type": 5,
+        "content_type": "saledata.account",
+        'is_wf_zone': True,
+    },
+    "9b2c3d4e-5f67-89ab-cdef-0123456789ab": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Customer - Name",
+        "code": "customer_data__name",
+        "type": 1,
+    },
+    "ac3d4e5f-6789-abcd-ef01-23456789abcd": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Customer - Code",
+        "code": "customer_data__code",
+        "type": 1,
+    },
+    "bd4e5f67-89ab-cdef-0123-456789abcdef": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Start Date",
+        "code": "start_date",
+        "type": 2,
+        'is_wf_zone': True,
+    },
+    "ce5f6789-abcd-ef01-2345-6789abcdef01": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "End Date",
+        "code": "end_date",
+        "type": 2,
+        'is_wf_zone': True,
+    },
+    # Exchange rate data
+    "df6789ab-cdef-0123-4567-89abcdef0123": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Exchange Rate Data",
+        "code": "exchange_rate_data",
+        "type": 1,
+    },
+    # Expense totals
+    "e0789abc-def0-1234-5678-9abcdef01234": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Total Expense Pretax Amount",
+        "code": "total_expense_pretax_amount",
+        "type": 6,
+    },
+    "f189abcd-ef01-2345-6789-abcdef012345": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Total Expense Tax",
+        "code": "total_expense_tax",
+        "type": 6,
+    },
+    "029abcde-f012-3456-789a-bcdef0123456": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Total Expense",
+        "code": "total_expense",
+        "type": 6,
+    },
+    # Service Detail related (array fields)
+    "13abcdef-0123-4567-89ab-cdef01234567": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Service Details - Product Name",
+        "code": "service_details___product_data__name",
+        "type": 1,
+    },
+    "24bcdef0-1234-5678-9abc-def012345678": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Service Details - Description",
+        "code": "service_details___description",
+        "type": 1,
+    },
+    "35cdef01-2345-6789-abcd-ef0123456789": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Service Details - Quantity",
+        "code": "service_details___quantity",
+        "type": 6,
+    },
+    "46def012-3456-789a-bcde-f01234567890": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Service Details - Price",
+        "code": "service_details___price",
+        "type": 6,
+    },
+    "57ef0123-4567-89ab-cdef-012345678901": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Service Details - Sub Total Value",
+        "code": "service_details___sub_total_value",
+        "type": 6,
+    },
+    "68f01234-5678-9abc-def0-123456789012": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Service Details - Total Value",
+        "code": "service_details___total_value",
+        "type": 6,
+    },
+    "79012345-6789-abcd-ef01-234567890123": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Service Details - Service Percent",
+        "code": "service_details___service_percent",
+        "type": 6,
+    },
+    # Work Order related
+    "8a123456-789a-bcde-f012-345678901234": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Work Orders - Start Date",
+        "code": "work_orders___start_date",
+        "type": 2,
+    },
+    "9b234567-89ab-cdef-0123-456789012345": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Work Orders - End Date",
+        "code": "work_orders___end_date",
+        "type": 2,
+    },
+    "ac345678-9abc-def0-1234-567890123456": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Work Orders - Quantity",
+        "code": "work_orders___quantity",
+        "type": 6,
+    },
+    "bd456789-abcd-ef01-2345-678901234567": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Work Orders - Unit Cost",
+        "code": "work_orders___unit_cost",
+        "type": 6,
+    },
+    "ce567890-bcde-f012-3456-789012345678": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Work Orders - Total Value",
+        "code": "work_orders___total_value",
+        "type": 6,
+    },
+    "df678901-cdef-0123-4567-890123456789": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Work Orders - Is Delivery Point",
+        "code": "work_orders___is_delivery_point",
+        "type": 4,
+    },
+    # Payment related
+    "e0789012-def0-1234-5678-901234567890": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Payments - Installment",
+        "code": "payments___installment",
+        "type": 6,
+    },
+    "f1890123-ef01-2345-6789-012345678901": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Payments - Description",
+        "code": "payments___description",
+        "type": 1,
+    },
+    "02901234-f012-3456-789a-123456789012": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Payments - Payment Value",
+        "code": "payments___payment_value",
+        "type": 6,
+    },
+    "13012345-0123-4567-89ab-234567890123": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Payments - Tax Value",
+        "code": "payments___tax_value",
+        "type": 6,
+    },
+    "24123456-1234-5678-9abc-345678901234": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Payments - Reconcile Value",
+        "code": "payments___reconcile_value",
+        "type": 6,
+    },
+    "35234567-2345-6789-abcd-456789012345": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Payments - Receivable Value",
+        "code": "payments___receivable_value",
+        "type": 6,
+    },
+    "46345678-3456-789a-bcde-567890123456": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Payments - Due Date",
+        "code": "payments___due_date",
+        "type": 2,
+    },
+    "57456789-4567-89ab-cdef-678901234567": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Payments - Is Invoice Required",
+        "code": "payments___is_invoice_required",
+        "type": 4,
+    },
+    # Expense related
+    "68567890-5678-9abc-def0-789012345678": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Expenses - Expense Item",
+        "code": "service_quotation_expense_service_quotation___expense_item_data__name",
+        "type": 1,
+    },
+    "79678901-6789-abcd-ef01-890123456789": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Expenses - Quantity",
+        "code": "service_quotation_expense_service_quotation___quantity",
+        "type": 6,
+    },
+    "8a789012-789a-bcde-f012-901234567890": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Expenses - Expense Price",
+        "code": "service_quotation_expense_service_quotation___expense_price",
+        "type": 6,
+    },
+    "9b890123-89ab-cdef-0123-012345678901": {
+        "application_id": "c9e131ec-760c-45af-8ae6-5349f2bb542e",
+        "title": "Expenses - Expense Subtotal Price",
+        "code": "service_quotation_expense_service_quotation___expense_subtotal_price",
+        "type": 6,
+    },
 }
 
 AppProp_HRM_PayrollTemplate_data = {
@@ -3766,7 +4019,6 @@ AppProp_HRM_PayrollTemplate_data = {
     },
 }
 
-
 ApplicationProperty_data = {
     **Bastion_data_params,
     **AppProp_SaleData_Contact_data,
@@ -3823,5 +4075,6 @@ ApplicationProperty_data = {
     **AppProp_HRM_OvertimeRequest_data,
 
     # saledata
-    **AppProp_SaleData_ServiceOrder_data
+    **AppProp_SaleData_ServiceOrder_data,
+    **AppProp_SaleData_ServiceQuotation_data,
 }

@@ -72,6 +72,7 @@ HIERARCHY_RULES = {
                 'opportunitytask'
             },
         },
+        'servicequotation': {},
         'opportunitytask': {}
     },
     'e-office': {
@@ -128,7 +129,8 @@ APP_NAME = {
     'meetingschedule': _('Meeting Schedule'),
     'employeeinfo': _('Employee Info'),
     'kmsdocumentapproval': _('Document Approval'),
-    'kmsincomingdocument': _('Incoming Document')
+    'kmsincomingdocument': _('Incoming Document'),
+    'servicequotation': _('Service quotation'),
 }
 
 # APP_NAME = {**Application_crm_data, **Application_eOffice_data, **Application_hrm_data, **Application_kms_data}

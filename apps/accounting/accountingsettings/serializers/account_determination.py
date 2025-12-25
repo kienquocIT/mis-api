@@ -7,7 +7,8 @@ from apps.accounting.accountingsettings.models.account_determination import (
     JE_DOCUMENT_TYPE_APP, DOCUMENT_TYPE_CHOICES, ASSIGNMENT_APP_CHOICES, GROUP_TYPE_CHOICES, ROLE_KEY_CHOICES,
     AMOUNT_SOURCE_CHOICES, RULE_LEVEL_CHOICES, SIDE_CHOICES, JEPostingGroupRoleKey,
 )
-from apps.masterdata.saledata.models import ProductType, AccountType
+from apps.masterdata.saledata.models.product import ProductType
+from apps.masterdata.saledata.models.accounts import AccountType
 from apps.shared import BaseMsg
 
 # =============================================================================

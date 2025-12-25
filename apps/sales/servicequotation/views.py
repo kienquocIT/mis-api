@@ -22,6 +22,9 @@ class ServiceQuotationList(BaseListMixin, BaseCreateMixin):
         'title',
         'code',
     ]
+    filterset_fields = {
+        'system_status': ['exact'],
+    }
     serializer_list = ServiceQuotationListSerializer
     serializer_create = ServiceQuotationCreateSerializer
     serializer_detail = ServiceQuotationDetailSerializer

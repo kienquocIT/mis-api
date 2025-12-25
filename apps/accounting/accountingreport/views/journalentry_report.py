@@ -22,6 +22,15 @@ class JournalEntryLineList(BaseListMixin):
     filterset_class = JournalEntryLineFilter
 
     def get_queryset(self):
+        if 'is_general_ledger' not in self.request.query_params:
+            return super().get_queryset().filter(
+                journal_entry__system_status=3,
+            ).select_related(
+                'journal_entry',
+                'journal_entry__employee_created',
+            ).order_by(
+                '-journal_entry__date_created'
+            )
         if 'is_general_ledger' in self.request.query_params and self.request.query_params.get('account_id') is None:
             return super().get_queryset().none()
         return super().get_queryset().filter(

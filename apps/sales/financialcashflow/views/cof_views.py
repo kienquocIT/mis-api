@@ -29,7 +29,9 @@ class CashOutflowList(BaseListMixin, BaseCreateMixin):
     serializer_list = CashOutflowListSerializer
     serializer_create = CashOutflowCreateSerializer
     serializer_detail = CashOutflowDetailSerializer
-    filterset_fields = {}
+    filterset_fields = {
+        'asset_purchase_items': ['isnull'],
+    }
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 

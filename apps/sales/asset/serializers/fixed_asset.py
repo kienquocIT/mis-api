@@ -33,7 +33,6 @@ __all__= [
     'RunFixedAssetDepreciationSerializer'
 ]
 
-
 class FixedAssetListSerializer(AbstractListSerializerModel):
     manage_department = serializers.SerializerMethodField()
     use_department = serializers.SerializerMethodField()
@@ -88,12 +87,9 @@ class FixedAssetListSerializer(AbstractListSerializerModel):
     def get_depreciation_status(cls, obj):
         if obj.net_book_value == 0:
             return {'status': 2, 'display': _('Fully Depreciated')}
-
         has_posted = obj.depreciations.filter(is_posted=True).exists()
-
         if not has_posted:
             return {'status': 0, 'display': _('Not Yet Started')}
-
         return {'status': 1, 'display': _('In Depreciation')}
 
 
@@ -102,7 +98,7 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
     use_department = serializers.ListSerializer(
         child=serializers.UUIDField(required=False)
     )
-    asset_code = serializers.CharField(required=False)
+    asset_code = serializers.CharField(required=False, allow_blank=True)
     original_cost = serializers.FloatField()
     net_book_value = serializers.FloatField()
     depreciation_value = serializers.FloatField()
@@ -198,10 +194,8 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
     def validate(self, validate_data):
         depreciation_value = validate_data.get('depreciation_value')
         original_cost = validate_data.get('original_cost')
-
         if int(depreciation_value) > int(original_cost):
             raise serializers.ValidationError({"depreciation_value": FixedAssetMsg.DEPRECIATION_MUST_BE_LESS_THAN_COST})
-
         return validate_data
 
     @decorator_run_workflow
@@ -213,23 +207,19 @@ class FixedAssetCreateSerializer(AbstractCreateSerializerModel):
         try:
             with transaction.atomic():
                 fixed_asset = FixedAsset.objects.create(**validated_data)
-
                 CommonHandler.create_use_department(
                     fixed_asset,
                     use_departments=use_departments,
                     use_department_model=FixedAssetUseDepartment,
                 )
-
                 CommonHandler.create_source_detail(
                     fixed_asset,
                     source_data = source_data
                 )
-
                 CommonHandler.create_depreciation_data(
                     fixed_asset,
                     depreciation_data=depreciation_data,
                 )
-
             return fixed_asset
         except Exception as err:
             logger.error(msg=f'Create fixed asset errors: {str(err)}')
@@ -302,11 +292,15 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_source_data(cls, obj):
         source_type = obj.source_type
-
         # Inventory source
         if source_type == 0:
             item = obj.inventory_items.first()
             if item:
+                product_warehouse_id = None
+                if item.product_warehouse_serial is not None:
+                    product_warehouse_id = item.product_warehouse_serial_id
+                if item.product_warehouse_serial is not None:
+                    product_warehouse_id = item.product_warehouse_serial_id
                 return {
                     'id': item.id,
                     'product_id': item.product_id,
@@ -318,10 +312,9 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
                     'tracking_number': item.tracking_number,
                     'tracking_method': item.tracking_method,
                     'total_register_value': item.total_register_value,
+                    'product_warehouse_id': product_warehouse_id,
                 }
             return {}
-
-
         # AP Invoice purchase source
         if source_type == 1:
             ap_invoice_item_data = []
@@ -343,7 +336,6 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
                         'unit_price': detail_product.unit_price,
                     } for detail_product in item.detail_products.all()]
                 })
-
             cash_out_item_data=[]
             for item in obj.cash_out_purchase_items.select_related('cash_out').all():
                 cash_out_item_data.append({
@@ -354,7 +346,6 @@ class FixedAssetDetailSerializer(AbstractDetailSerializerModel):
                     'cof_type': item.cash_out.cof_type if item.cash_out else None,
                     'total_register_value': item.total_register_value,
                 })
-
             return {
                 'ap_invoice_items': ap_invoice_item_data,
                 'cash_out_items' : cash_out_item_data
@@ -397,7 +388,7 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
     use_department = serializers.ListSerializer(
         child=serializers.UUIDField(required=False)
     )
-    asset_code = serializers.CharField(required=False)
+    asset_code = serializers.CharField(required=False, allow_blank=True)
     original_cost = serializers.FloatField()
     net_book_value = serializers.FloatField()
     depreciation_value = serializers.FloatField()
@@ -493,38 +484,64 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
     def validate(self, validate_data):
         depreciation_value = validate_data.get('depreciation_value')
         original_cost = validate_data.get('original_cost')
-
         if int(depreciation_value) > int(original_cost):
             raise serializers.ValidationError({"depreciation_value": FixedAssetMsg.DEPRECIATION_MUST_BE_LESS_THAN_COST})
-
         return validate_data
+
+    @classmethod
+    def _validate_ap_invoice_increased_values(cls, fixed_asset):
+        if fixed_asset and fixed_asset.ap_purchase_items.all().exists():
+            for purchase_item in fixed_asset.ap_purchase_items.all():
+                for product_detail in purchase_item.detail_products.all():
+                    if not product_detail.ap_invoice_item:
+                        return
+                    ap_invoice_item = product_detail.ap_invoice_item
+                    title = ap_invoice_item.ap_invoice.title
+                    quantity = product_detail.quantity
+                    available_quantity = ap_invoice_item.product_quantity - ap_invoice_item.increased_asset_quantity
+                    if quantity > available_quantity:
+                        raise serializers.ValidationError({'ap_invoice':
+                            f"Increased FA quantity: {quantity} exceeds available quantity {available_quantity} "
+                            f"for AP Invoice: {title}"})
+
+    @classmethod
+    def _validate_inventory_goods_issue(cls, fixed_asset):
+        inventory_items = fixed_asset.inventory_items.select_related(
+            'product_warehouse_serial',
+            'product_warehouse_lot'
+        ).all()
+        for inventory_item in inventory_items:
+            if inventory_item.product_warehouse_serial and \
+                    inventory_item.product_warehouse_serial.serial_status == 1:
+                raise serializers.ValidationError(
+                    {'inventory_item': _('This product serial number is already associated with another fixed asset')}
+                )
+            if inventory_item.product_warehouse_lot and \
+                    inventory_item.product_warehouse_lot.quantity_import <= 0:
+                raise serializers.ValidationError(
+                    {'inventory_item': _('Exceed available lot/batch Product quantity')}
+                )
 
     @classmethod
     def _delete_related_models(cls, fixed_asset):
         FixedAssetUseDepartment.objects.filter(fixed_asset=fixed_asset).delete()
-
         FixedAssetInventoryItem.objects.filter(fixed_asset=fixed_asset).delete()
-
         ap_invoice_items = FixedAssetApInvoicePurchaseItem.objects.filter(fixed_asset=fixed_asset)
         for ap_item in ap_invoice_items:
             FixedAssetApInvoicePurchaseItemDetailProduct.objects.filter(
                 ap_invoice_purchase_item=ap_item
             ).delete()
         ap_invoice_items.delete()
-
         FixedAssetCashOutPurchaseItem.objects.filter(fixed_asset=fixed_asset).delete()
-
         # remove all depreciation and update last posted date
         FixedAssetDepreciation.objects.filter(fixed_asset=fixed_asset).delete()
         setattr(fixed_asset, 'last_posted_date', None)
-
 
     @decorator_run_workflow
     def update(self, fixed_asset, validated_data):
         use_departments = validated_data.pop('use_department', None)
         source_data = validated_data.pop('source_data', None)
         depreciation_data = validated_data.get('depreciation_data', None)
-
         try:
             with transaction.atomic():
                 self._delete_related_models(fixed_asset)
@@ -539,20 +556,26 @@ class FixedAssetUpdateSerializer(AbstractCreateSerializerModel):
                         use_departments=use_departments,
                         use_department_model=FixedAssetUseDepartment,
                     )
-
                 if source_data is not None:
                     CommonHandler.create_source_detail(
                         fixed_asset,
                         source_data=source_data
                     )
-
                 if depreciation_data is not None:
                     CommonHandler.create_depreciation_data(
                         fixed_asset,
                         depreciation_data=depreciation_data
                     )
 
-            return fixed_asset
+                # validate
+                match fixed_asset.source_type:
+                    case 0:
+                        self._validate_inventory_goods_issue(fixed_asset)
+                    case 1:
+                        self._validate_ap_invoice_increased_values(fixed_asset)
+                return fixed_asset
+        except serializers.ValidationError:
+            raise
         except Exception as err:
             logger.error(msg=f'Update fixed asset errors: {str(err)}')
             raise serializers.ValidationError({'asset': FixedAssetMsg.ERROR_CREATE})
@@ -577,7 +600,6 @@ class AssetForLeaseListSerializer(serializers.ModelSerializer):
             'net_value',
             'product_id',
             'product_data',
-
             'depreciation_method',
             'depreciation_time',
             'adjustment_factor',
@@ -800,6 +822,7 @@ class FixedAssetListWithDepreciationSerializer(serializers.ModelSerializer):
             return {'status': 0, 'display': _('Not Yet Started')}
 
         return {'status': 1, 'display': _('In Depreciation')}
+
 
 class RunFixedAssetDepreciationSerializer(serializers.Serializer):
     asset_list = serializers.ListField(

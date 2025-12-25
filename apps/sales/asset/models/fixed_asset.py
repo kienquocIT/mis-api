@@ -270,8 +270,15 @@ class FixedAsset(DataAbstractModel):
                     CompanyFunctionNumber.auto_gen_code_based_on_config(
                         app_code=None, instance=self, in_workflow=True, kwargs=kwargs
                     )
+
                     # B1: xuất hàng
                     self.auto_create_goods_issue(self)
+
+        if self.system_status == 3 and self.ap_purchase_items.all().exists():
+            for purchase_item in self.ap_purchase_items.all():
+                for product_detail in purchase_item.detail_products.all():
+                    product_detail.update_ap_invoice_item_increased_values()
+
         # hit DB
         super().save(*args, **kwargs)
 
@@ -379,6 +386,17 @@ class FixedAssetApInvoicePurchaseItemDetailProduct(MasterDataAbstractModel):
     quantity = models.IntegerField(default=0)
     unit_price = models.FloatField(default=0)
     amount = models.FloatField(default=0)
+
+    def update_ap_invoice_item_increased_values(self):
+        if not self.ap_invoice_item:
+            return
+
+        ap_invoice_item = self.ap_invoice_item
+        quantity = self.quantity
+
+        # Update with new totals
+        ap_invoice_item.increased_asset_quantity += quantity
+        ap_invoice_item.save(update_fields=['increased_asset_quantity'])
 
 
 class FixedAssetCashOutPurchaseItem(MasterDataAbstractModel):

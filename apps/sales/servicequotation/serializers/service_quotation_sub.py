@@ -137,6 +137,17 @@ class ServiceQuotationWorkOrderSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'work_order_cost': _('Tax of work order cost does not exist')})
             else:
                 raise serializers.ValidationError({'work_order_cost': _('Tax of work order cost is missing')})
+
+            expense_item_id = cost.get('expense_item_id', None)
+            if expense_item_id:
+                try:
+                    ExpenseItem.objects.get(id=expense_item_id)
+                except ExpenseItem.DoesNotExist:
+                    raise serializers.ValidationError(
+                        {'work_order_cost': _('Expense Item of work order cost does not exist')}
+                    )
+            else:
+                raise serializers.ValidationError({'work_order_cost': _('Expense Item of work order cost is missing')})
         return cost_data
 
 
@@ -213,7 +224,7 @@ class ServiceQuotationExpenseSerializer(serializers.ModelSerializer):
             "quantity",
             "expense_price",
             "tax",
-            "subtotal_price",
+            "expense_subtotal_price",
         )
 
 

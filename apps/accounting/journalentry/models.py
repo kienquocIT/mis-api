@@ -5,10 +5,9 @@ from rest_framework import serializers
 from apps.accounting.accountingsettings.models import JE_DOCUMENT_TYPE_APP
 from apps.accounting.accountingsettings.models.chart_of_account import ChartOfAccountsSummarize
 from apps.core.company.models import CompanyFunctionNumber
-from apps.core.hr.models import Employee
-from apps.masterdata.saledata.models import Periods, Currency, Product, Account
-from apps.shared import DataAbstractModel, AutoDocumentAbstractModel, MasterDataAbstractModel
-
+from apps.masterdata.saledata.models.price import Currency
+from apps.masterdata.saledata.models.periods import Periods
+from apps.shared import DataAbstractModel, AutoDocumentAbstractModel, MasterDataAbstractModel, DisperseModel
 
 logger = logging.getLogger(__name__)
 
@@ -48,18 +47,17 @@ class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
     def valid_je_data(**kwargs):
         """ Valid JE data trước khi tạo phiếu tự động """
         # valid je fields
-        required_fields = ['je_transaction_app_code', 'je_transaction_id', 'je_transaction_data', 'je_line_data']
+        required_fields = ['je_transaction_id', 'je_transaction_data', 'je_line_data']
         missing_fields = [field for field in required_fields if field not in kwargs or kwargs[field] is None]
         if missing_fields:
-            print(f'[JE] Missing required fields: {missing_fields}')
             logger.error(msg=f'[JE] Missing required fields: {missing_fields}')
             return False
         je_line_data = kwargs.pop('je_line_data', {})
         # valid je lines
         debit_rows = je_line_data.get('debit_rows', [])
         credit_rows = je_line_data.get('credit_rows', [])
-        if len(debit_rows) == 0 or len(credit_rows) == 0:
-            logger.error(msg='[JE] Debit list or Credit list is empty => can not create.')
+        if len(debit_rows) == 0 and len(credit_rows) == 0:
+            logger.error(msg='[JE] Debit list and Credit list is empty => can not create.')
             return False
         return True
 
@@ -116,11 +114,70 @@ class JournalEntry(DataAbstractModel, AutoDocumentAbstractModel):
                         je_obj.save(update_fields=['code', 'system_status'])
                         total_debit, total_credit = JournalEntryLine.create_je_line_mapped(je_obj, je_line_data)
                         # cập nhập lại total value vào phiếu gốc
-                        je_obj.total_debit = total_debit
-                        je_obj.total_credit = total_credit
+                        je_obj.total_debit += total_debit
+                        je_obj.total_credit += total_credit
                         je_obj.save(update_fields=['total_debit', 'total_credit'])
                         JournalEntrySummarize.update_summarize(je_obj)
                         ChartOfAccountsSummarize.update_summarize(je_obj)
+                        print(f'# [JE] JE created successfully ({je_obj.code})!\n')
+                        return je_obj
+                    raise serializers.ValidationError({'sub_period_obj': 'Sub period order obj does not exist.'})
+                raise serializers.ValidationError({'period_obj': f'Fiscal year {doc_date.year} does not exist.'})
+        except Exception as err:
+            print(err)
+            return None
+
+    @classmethod
+    def create_or_update_je_initial_balance(cls, ib_obj, **kwargs):
+        try:
+            doc_date = ib_obj.date_approved or ib_obj.date_created
+            je_line_data = kwargs.pop('je_line_data', {})
+            with transaction.atomic():
+                period_obj = ib_obj.period_mapped
+                if period_obj:
+                    sub_period_obj = Periods.get_sub_period_by_doc_date(period_obj, doc_date)
+                    if sub_period_obj:
+                        sub_period_order = sub_period_obj.order
+                        je_obj = cls.objects.filter_on_company(je_transaction_app_code=None).first()
+                        if not je_obj:
+                            je_obj = cls.objects.create(
+                                **kwargs,
+                                je_posting_date=str(ib_obj.date_approved),
+                                je_document_date=str(ib_obj.date_approved),
+                                je_state=1, # Posted
+                                total_debit=0, # Updated below
+                                total_credit=0, # Updated below
+                                reversed_by=None,
+                                period_mapped=period_obj,
+                                sub_period_order=sub_period_order,
+                                sub_period=sub_period_obj,
+                                # system fields
+                                system_status=3,
+                                system_auto_create=True,
+                                tenant=ib_obj.tenant,
+                                company=ib_obj.company,
+                                employee_created_id=ib_obj.employee_created_id or ib_obj.employee_inherit_id,
+                                employee_inherit_id=ib_obj.employee_inherit_id,
+                                date_created=str(ib_obj.date_approved),
+                                date_approved=str(ib_obj.date_approved)
+                            )
+                            # duyệt tự động
+                            CompanyFunctionNumber.auto_gen_code_based_on_config(
+                                app_code=None, instance=je_obj, in_workflow=True, kwargs=None
+                            )
+                            je_obj.system_status = 3
+                            je_obj.save(update_fields=['code', 'system_status'])
+                        else:
+                            je_obj.total_debit = 0
+                            je_obj.total_credit = 0
+                            je_obj.save(update_fields=['total_debit', 'total_credit'])
+                        total_debit, total_credit = JournalEntryLine.create_je_line_mapped(je_obj, je_line_data)
+                        # cập nhập lại total value vào phiếu gốc
+                        je_obj.total_debit += total_debit
+                        je_obj.total_credit += total_credit
+                        je_obj.save(update_fields=['total_debit', 'total_credit'])
+                        JournalEntrySummarize.update_summarize(je_obj)
+                        ChartOfAccountsSummarize.initial_summarize(je_obj)
                         print(f'# [JE] JE created successfully ({je_obj.code})!\n')
                         return je_obj
                     raise serializers.ValidationError({'sub_period_obj': 'Sub period order obj does not exist.'})
@@ -193,14 +250,18 @@ class JournalEntryLine(MasterDataAbstractModel):
         business_partner_data = {}
         business_employee_data = {}
         if item.get('product_mapped_id'):
-            product_obj = Product.objects.filter(id=item.get('product_mapped_id')).first()
+            product_obj = DisperseModel(app_model='saledata.Product').get_model().objects.filter(
+                id=item.get('product_mapped_id')
+            ).first()
             product_mapped_data = {
                 'id': str(product_obj.id),
                 'code': product_obj.code,
                 'title': product_obj.title,
             } if product_obj else {}
         if item.get('business_partner_id'):
-            account_obj = Account.objects.filter(id=item.get('business_partner_id')).first()
+            account_obj = DisperseModel(app_model='saledata.Account').get_model().objects.filter(
+                id=item.get('business_partner_id')
+            ).first()
             business_partner_data = {
                 'id': str(account_obj.id),
                 'code': account_obj.code,
@@ -208,7 +269,9 @@ class JournalEntryLine(MasterDataAbstractModel):
                 'tax_code': account_obj.tax_code,
             } if account_obj else {}
         if item.get('business_employee_id'):
-            employee_obj = Employee.objects.filter(id=item.get('business_employee_id')).first()
+            employee_obj = DisperseModel(app_model='hr.Employee').get_model().objects.filter(
+                id=item.get('business_employee_id')
+            ).first()
             business_employee_data = employee_obj.get_detail_with_group() if employee_obj else {}
 
         return cls(
@@ -279,6 +342,8 @@ class JournalEntryLine(MasterDataAbstractModel):
             credit_je_line_obj = cls.parse_obj_je_line_mapped(je_obj, order, item, 1)
             je_line_info.append(credit_je_line_obj)
             total_credit += item.get('credit', 0)
+
+        je_obj.je_lines.all().delete()
         cls.objects.bulk_create(je_line_info)
         return total_debit, total_credit
 

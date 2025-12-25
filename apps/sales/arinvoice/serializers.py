@@ -249,8 +249,9 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
             # Lấy giá trị gốc
             product_quantity = delivery_item_obj.picked_quantity
             product_quantity_time = delivery_item_obj.product_quantity_time
-            product_unit_price = delivery_item_obj.product_cost
-            product_subtotal = product_quantity * product_unit_price  # Tổng (Net)
+            product_subtotal = product_quantity * delivery_item_obj.product_cost  # Tổng (Net)
+            if product_quantity_time:
+                product_subtotal = product_subtotal * product_quantity_time
 
             # Lấy input từ client
             product_payment_percent = item.get('product_payment_percent')
@@ -276,7 +277,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                     raise serializers.ValidationError(
                         {'product_discount_percent': "Discount percent must be 0-100."})
                 product_discount_value = product_payment_value * product_discount_percent / 100
-                if product_discount_value > product_payment_value - delivery_item_obj.ar_value_done:
+                if product_discount_value > product_payment_value:
                     raise serializers.ValidationError(
                         {'product_discount_value': "Discount value can not be greater than Total value."})
 
@@ -301,7 +302,7 @@ class ARInvoiceCreateSerializer(AbstractCreateSerializerModel):
                 } if uom_obj else {},
                 'product_quantity': product_quantity,
                 'product_quantity_time': product_quantity_time,
-                'product_unit_price': product_unit_price,
+                'product_unit_price': delivery_item_obj.product_cost,
                 'product_subtotal': product_subtotal,
                 # Các số liệu tính toán cho Hóa đơn này
                 'product_payment_percent': product_payment_percent,

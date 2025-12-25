@@ -32,9 +32,19 @@ class ServiceQuotation(DataAbstractModel, BastionFieldAbstractModel):
     exchange_rate_data = models.JSONField(default=dict)
 
     # expense value
-    expense_pretax_value = models.FloatField(default=0)
-    expense_tax_value = models.FloatField(default=0)
-    expense_total_value = models.FloatField(default=0)
+    total_expense_pretax_amount = models.FloatField(default=0, help_text="total pretax amount of tab expense")
+    total_expense_tax = models.FloatField(default=0, help_text="total tax of tab expense")
+    total_expense = models.FloatField(default=0, help_text="total amount of tab expense")
+
+    # FILE
+    @classmethod
+    def set_true_file_is_approved(cls, instance):
+        for m2m_attachment in instance.service_quotation_attachment_service_quotation.all():
+            attachment = m2m_attachment.attachment
+            if attachment:
+                attachment.is_approved = True
+                attachment.save(update_fields=['is_approved'])
+        return True
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:  # added, finish
@@ -43,6 +53,7 @@ class ServiceQuotation(DataAbstractModel, BastionFieldAbstractModel):
                     CompanyFunctionNumber.auto_gen_code_based_on_config(
                         app_code=None, instance=self, in_workflow=True, kwargs=kwargs
                     )
+                    self.set_true_file_is_approved(instance=self)
         # hit DB
         AdvanceHandler.push_opportunity_log(self)
         super().save(*args, **kwargs)
@@ -271,6 +282,7 @@ class ServiceQuotationPaymentDetail(SimpleAbstractModel):
 
 
 class ServiceQuotationPaymentReconcile(SimpleAbstractModel):
+    order = models.IntegerField(default=0)
     advance_payment_detail = models.ForeignKey(
         'ServiceQuotationPaymentDetail',
         on_delete=models.CASCADE,
@@ -294,7 +306,7 @@ class ServiceQuotationPaymentReconcile(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Service quotation payment reconcile'
         verbose_name_plural = 'Service quotation payment reconciles'
-        ordering = ()
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
@@ -427,7 +439,7 @@ class ServiceQuotationExpense(MasterDataAbstractModel):
         related_name="service_quotation_expense_tax"
     )
     tax_data = models.JSONField(default=dict)
-    subtotal_price = models.FloatField(default=0)
+    expense_subtotal_price = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Service quotation expense'

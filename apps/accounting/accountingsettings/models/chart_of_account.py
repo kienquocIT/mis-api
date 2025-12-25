@@ -117,15 +117,39 @@ class ChartOfAccountsSummarize(MasterDataAbstractModel):
         verbose_name_plural = 'ChartOfAccountsSummarize'
 
     @classmethod
+    def initial_summarize(cls, je_obj):
+        je_line_list = je_obj.je_lines.all()
+        for line in je_line_list:
+            chart_of_accounts_summarize_obj = cls.objects.filter_on_company(account_id=line.account_id).first()
+            if not chart_of_accounts_summarize_obj:
+                chart_of_accounts_summarize_obj = cls.objects.create(
+                    tenant=je_obj.tenant,
+                    company=je_obj.company,
+                    account=line.account,
+                )
+            chart_of_accounts_summarize_obj.opening_debit += line.debit
+            chart_of_accounts_summarize_obj.opening_credit += line.credit
+            chart_of_accounts_summarize_obj.closing_debit = (
+                    chart_of_accounts_summarize_obj.opening_debit + chart_of_accounts_summarize_obj.total_debit
+            )
+            chart_of_accounts_summarize_obj.closing_credit = (
+                    chart_of_accounts_summarize_obj.opening_credit + chart_of_accounts_summarize_obj.total_credit
+            )
+            chart_of_accounts_summarize_obj.save(
+                update_fields=['opening_debit', 'opening_credit', 'closing_debit', 'closing_credit']
+            )
+        return True
+
+    @classmethod
     def update_summarize(cls, je_obj):
         je_line_list = je_obj.je_lines.all()
         for line in je_line_list:
             chart_of_accounts_summarize_obj = cls.objects.filter_on_company(account_id=line.account_id).first()
             if not chart_of_accounts_summarize_obj:
                 chart_of_accounts_summarize_obj = cls.objects.create(
-                    account=line.account,
                     tenant=je_obj.tenant,
                     company=je_obj.company,
+                    account=line.account,
                 )
             chart_of_accounts_summarize_obj.total_debit += line.debit
             chart_of_accounts_summarize_obj.total_credit += line.credit

@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 from apps.core.attachments.models import update_files_is_approved
 from apps.core.base.models import Application
@@ -93,7 +94,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
             if value is None:
                 return value
             return Employee.objects.get_on_company(id=value).id
-        except Opportunity.DoesNotExist:
+        except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee_inherit_id': OpportunityOnlyMsg.EMP_NOT_EXIST})
 
     def validate(self, validate_data):
@@ -115,6 +116,7 @@ class ServiceOrderCreateSerializer(AbstractCreateSerializerModel):
         return validate_data
 
     @decorator_run_workflow
+    @transaction.atomic
     def create(self, validated_data):
         shipment_data = validated_data.pop('shipment', [])
         expense_data = validated_data.pop('expenses_data', [])
@@ -525,6 +527,7 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
         return validate_data
 
     @decorator_run_workflow
+    @transaction.atomic
     def update(self, instance, validated_data):
         shipment_data = validated_data.pop('shipment', [])
         expense_data = validated_data.pop('expenses_data', [])
@@ -538,7 +541,6 @@ class ServiceOrderUpdateSerializer(AbstractCreateSerializerModel):
         instance.save()
         shipment_map_id = ServiceOrderCommonFunc.create_shipment(instance, shipment_data)
 
-        ServiceOrderCommonFunc.create_shipment(instance, shipment_data)
         ServiceOrderCommonFunc.create_expense(instance, expense_data)
         SerializerCommonHandle.handle_attach_file(
             relate_app=Application.objects.filter(id="36f25733-a6e7-43ea-b710-38e2052f0f6d").first(),
